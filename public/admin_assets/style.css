@@ -1,0 +1,86 @@
+
+html {
+    font-family: 'Roboto', sans-serif !important;
+}
+
+body {
+    margin: 0;
+    font-size: 1rem !important;
+    font-weight: 400;
+    line-height: 1.5;
+    /* color: #212529; */
+    text-align: left;
+    background-color: #fff;
+}
+
+
+
+th,
+td {
+    text-align: left;
+    padding: 12px;
+    vertical-align: baseline;
+}
+
+th {
+    background-color: #f1f5f980;
+    font-weight: bold;
+
+}
+
+tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* Style for the DataTable length (number of entries per page) */
+.dataTables_length {
+    float:left;
+}
+
+.dataTables_length label {
+    margin-right: 10px;
+    font-weight: 600;
+}
+
+.dataTables_length select {
+    /* padding: 6px 10px; */
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    background-color: #f7f8fa;
+    /* font-size: 14px; */
+    width: auto;
+    max-width: 120px;
+    margin-right: 5px;
+}
+
+/* Style for the DataTable buttons (Excel, PDF, Copy, etc.) */
+.dt-buttons {
+    /* display: flex;
+    justify-content: flex-start; */
+    align-items: center;
+    gap: 10px;
+    float: right;
+    margin-bottom: 10px;
+}
+
+
+.dt-buttons .btn:hover {
+    background-color: #004d40;  /* Darker teal on hover */
+    border-color: #004d40;
+    cursor: pointer;
+}
+
+/* Optional: Add a focus style for accessibility */
+.dt-buttons .btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Blue shadow for focus */
+}
+
+#customers_filter{
+    display: none;
+}
+/* table.table-bordered.dataTable{width: 100%;} */
+.container-fluid .card .row{
+    margin-right: 0px !important;
+    margin-left: 0px !important;
+}
