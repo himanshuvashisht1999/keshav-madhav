@@ -34,6 +34,7 @@ class ItemService {
         // }
         $save_data = new Item;
         $save_data->name = $request->name;
+        $save_data->sku = $request->sku;
         $save_data->status = 1;
         $save_data->save();
         return true;
@@ -61,6 +62,7 @@ class ItemService {
         //     $update_data->image = $imgName;
         // }
         $update_data->name = $request->name;
+        $update_data->sku = $request->sku;
         $update_data->save();
         return true;
     }

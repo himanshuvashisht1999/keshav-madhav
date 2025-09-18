@@ -22,6 +22,7 @@ class FabricDyeStoreRequest extends FormRequest{
         // dd($this);
         return [
             'name' => 'required',
+            'sku'    => 'required|unique:fabric_dye,sku',
             // 'status' =>'required',
         ];
     }

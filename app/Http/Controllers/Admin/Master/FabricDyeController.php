@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\Master\FabricDyeService as Service;
 use App\Requests\Admin\Master\FabricDyeStoreRequest;
+use App\Requests\Admin\Master\FabricDyeUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
 use Auth;
 
@@ -33,7 +34,7 @@ class FabricDyeController extends Controller {
         $response['data'] = $this->service->edit($request);
         return view('admin.master.fabric_dye.edit',$response);
     }
-    public function update(FabricDyeStoreRequest $request){
+    public function update(FabricDyeUpdateRequest $request){
         $data = $this->service->update($request);
         return redirect()->route('admin.master.fabric_dye.index')->withSuccess('The fabric dye has been successfully updated.');
     }

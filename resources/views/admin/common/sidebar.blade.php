@@ -75,7 +75,8 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{{route('admin.master.fabric.index')}}" class="{{str_contains($page_url,'admin/master/fabric') ? 'nav-link active' : 'nav-link'}}">
+                                <a href="{{route('admin.master.fabric.index')}}" 
+                                class="{{ $page_url === 'admin/master/fabric' || str_starts_with($page_url, 'admin/master/fabric/') ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Fabric</p>
                                 </a>
@@ -89,12 +90,12 @@
                             </li>
                             
                             <!-- General Settings -->
-                            <li class="nav-item">
+                            <!-- <li class="nav-item">
                                 <a href="{{route('admin.settings.edit')}}" class="{{str_contains($page_url,'admin/master/setting') ? 'nav-link active' : 'nav-link'}}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>General Settings</p>
                                 </a>
-                            </li>
+                            </li> -->
                             
                         </ul>
                     </li>

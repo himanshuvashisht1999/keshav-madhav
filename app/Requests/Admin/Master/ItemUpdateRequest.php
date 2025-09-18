@@ -22,6 +22,7 @@ class ItemUpdateRequest extends FormRequest{
         // dd($this);
         return [
             'name' => 'required',
+            'sku'    => 'required|unique:items,sku,' . $request->id,
             // 'status' =>'required',
         ];
     }

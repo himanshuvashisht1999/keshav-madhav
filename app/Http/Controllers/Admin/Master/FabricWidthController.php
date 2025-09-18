@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\Master\FabricWidthService as Service;
 use App\Requests\Admin\Master\FabricWidthStoreRequest;
+use App\Requests\Admin\Master\FabricWidthUpdateRequest;
 use IllumFabricWeaveControllerinate\Support\Facades\Crypt;
 use Auth;
 
@@ -33,7 +34,7 @@ class FabricWidthController extends Controller {
         $response['data'] = $this->service->edit($request);
         return view('admin.master.fabric_width.edit',$response);
     }
-    public function update(FabricWidthStoreRequest $request){
+    public function update(FabricWidthUpdateRequest $request){
         $data = $this->service->update($request);
         return redirect()->route('admin.master.fabric_width.index')->withSuccess('The fabric width has been successfully updated.');
     }

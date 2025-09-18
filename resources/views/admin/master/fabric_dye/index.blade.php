@@ -42,6 +42,9 @@
                         <td>
                             <input type="text" class="form-control" name="name" id="name" autocomplete="off">
                         </td>
+                        <td>
+                            <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
+                        </td>
 
                         
                         <td>
@@ -51,6 +54,7 @@
                   <tr>
                     <th>ID</th>
                     <th>Name</th>
+                    <th>SKU</th>
                     
                     <th>Action</th>
                   </tr>
@@ -88,6 +92,7 @@
                 data: function (d) {
                     d.id = $('#id').val();
                     d.name = $('#name').val();
+                    d.sku = $('#sku').val();
                   
                 },
                 orderable: false
@@ -95,6 +100,7 @@
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'name', name: 'name'},
+                {data: 'sku', name: 'sku'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
@@ -112,6 +118,10 @@
         });
 
         $('#name').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#sku').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });

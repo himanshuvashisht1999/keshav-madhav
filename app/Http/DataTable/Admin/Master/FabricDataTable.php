@@ -22,6 +22,7 @@ class FabricDataTable  {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
                 if ($request->has('dye_id') && $request->filled('dye_id')) {
+                    // dd($request->get('dye_id'));
                     $query->where('dye_id', $request->get('dye_id'));
                 }
                 if ($request->has('width_id') && $request->filled('width_id')) {
@@ -43,6 +44,15 @@ class FabricDataTable  {
 				$status= $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
             })
+            ->editColumn('dye_id', function ($queue) {
+				return $queue?->fabric_dye->name;
+            })
+            ->editColumn('gsm_id', function ($queue) {
+				return $queue?->fabric_gsm->name;
+            })
+            ->editColumn('composition_id', function ($queue) {
+				return $queue?->fabric_composition->name;
+            })
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
                 return '
@@ -50,7 +60,7 @@ class FabricDataTable  {
                 ';
             })
             
-            ->rawColumns(['action', 'status'])
+            ->rawColumns(['action', 'status','dye_id','gsm_id','composition_id'])
             ->make(true);
     }
 }

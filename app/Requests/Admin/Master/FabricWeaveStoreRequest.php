@@ -22,6 +22,7 @@ class FabricWeaveStoreRequest extends FormRequest{
         // dd($this);
         return [
             'name' => 'required',
+            'sku'    => 'required|unique:fabric_weave_type,sku',
             // 'status' =>'required',
         ];
     }

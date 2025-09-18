@@ -22,6 +22,7 @@ class ItemStoreRequest extends FormRequest{
         // dd($this);
         return [
             'name' => 'required',
+            'sku'    => 'required|unique:items,sku',
             // 'status' =>'required',
         ];
     }

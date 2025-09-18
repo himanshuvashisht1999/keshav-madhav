@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\Master\FabricCompositionService as Service;
 use App\Requests\Admin\Master\FabricCompositionStoreRequest;
+use App\Requests\Admin\Master\FabricCompositionUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
 use Auth;
 
@@ -33,7 +34,7 @@ class FabricCompositionController extends Controller {
         $response['data'] = $this->service->edit($request);
         return view('admin.master.fabric_composition.edit',$response);
     }
-    public function update(FabricCompositionStoreRequest $request){
+    public function update(FabricCompositionUpdateRequest $request){
         $data = $this->service->update($request);
         return redirect()->route('admin.master.fabric_composition.index')->withSuccess('The fabric composition has been successfully updated.');
     }
