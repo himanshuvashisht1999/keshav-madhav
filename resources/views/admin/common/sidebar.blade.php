@@ -32,11 +32,23 @@
                         <a href="#" class="{{str_contains($page_url,'admin/master') ? 'nav-link active' : 'nav-link'}}">
                             <i class="nav-icon fas fa-cogs"></i>
                             <p>
-                                Master Settings
+                                Masters
                                 <i class="right fas fa-angle-left"></i>
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{{route('admin.master.item.index')}}" class="{{str_contains($page_url,'admin/master/item') ? 'nav-link active' : 'nav-link'}}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Items</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{route('admin.master.fabric_dye.index')}}" class="{{str_contains($page_url,'admin/master/fabric_dye') ? 'nav-link active' : 'nav-link'}}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Fabric Dye</p>
+                                </a>
+                            </li>
                             
                             <li class="nav-item">
                                 <a href="{{route('admin.master.vendor.index')}}" class="{{str_contains($page_url,'admin/master/vendors') ? 'nav-link active' : 'nav-link'}}">

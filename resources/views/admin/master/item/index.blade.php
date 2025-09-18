@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Vendors</h1>
+                    <h1>Manage Items</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Vendors</li>
+                        <li class="breadcrumb-item active">Manage Items</li>
                     </ol>
                 </div>
             </div>
@@ -25,10 +25,10 @@
             <div class="card card-default ">
                  <div class="row" >
                     <div class="col-9 card-header">
-                        <h3 class="card-title">Manage Vendors</h3>
+                        <h3 class="card-title">Manage Items</h3>
                     </div>
                     <div class="col-3 card-header">
-                        <a href="{{route('admin.master.vendor.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Vendors</a>
+                        <a href="{{route('admin.master.item.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Items</a>
                     </div>
                 </div>
                 
@@ -43,28 +43,7 @@
                             <input type="text" class="form-control" name="name" id="name" autocomplete="off">
                         </td>
 
-                        <td>
-                            <select class="form-control" name="type" id="type" autocomplete="off">
-                                <option value="">ALL</option>
-                                <option value="Local">Local</option>
-                                <option value="Company">Company</option>
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="phone" id="phone" autocomplete="off">
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="email" id="email" autocomplete="off">
-                        </td>
-                       
                         
-                        <td>
-                            <select class="form-control" name="status" id="status" autocomplete="off">
-                                <option value="">ALL</option>
-                                <option value="1">Active</option>
-                                <option value="0">Inactive</option>
-                            </select>
-                        </td>
                         <td>
                        
                        </td>
@@ -72,10 +51,7 @@
                   <tr>
                     <th>ID</th>
                     <th>Name</th>
-                    <th>Type</th>
-                    <th>Phone</th>
-                    <th>Email</th>
-                    <th>Status</th>
+                    
                     <th>Action</th>
                   </tr>
                   </thead>
@@ -108,24 +84,17 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.master.vendor.indexList') !!}',
+                url: '{!! route('admin.master.item.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.name = $('#name').val();
-                    d.type = $('#type').val();
-                    d.phone = $('#phone').val();
-                    d.email = $('#email').val();
-					d.status = $('#status').val();
+                  
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'name', name: 'name'},
-                {data: 'type', name: 'type'},
-                {data: 'phone', name: 'phone'},
-                {data: 'email', name: 'email'},
-                {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
@@ -147,24 +116,7 @@
             e.preventDefault();
         });
 
-        $('#phone').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#email').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-     
-
-        $('#status').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#type').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+        
 
     });
 
@@ -184,7 +136,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.master.vendor.delete', ['id' => '']) }}" + id;
+                window.location.href = "{{ route('admin.master.item.delete', ['id' => '']) }}" + id;
             }
         });
     }
