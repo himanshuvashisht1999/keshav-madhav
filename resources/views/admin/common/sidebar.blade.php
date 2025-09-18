@@ -49,6 +49,31 @@
                                     <p>Fabric Dye</p>
                                 </a>
                             </li>
+
+                            <li class="nav-item">
+                                <a href="{{route('admin.master.fabric_composition.index')}}" class="{{str_contains($page_url,'admin/master/fabric_composition') ? 'nav-link active' : 'nav-link'}}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Fabric Composition</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{route('admin.master.fabric_gsm.index')}}" class="{{str_contains($page_url,'admin/master/fabric_gsm') ? 'nav-link active' : 'nav-link'}}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Fabric GSM</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{route('admin.master.fabric_weave.index')}}" class="{{str_contains($page_url,'admin/master/fabric_weave') ? 'nav-link active' : 'nav-link'}}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Fabric Weave</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{route('admin.master.fabric_width.index')}}" class="{{str_contains($page_url,'admin/master/fabric_width') ? 'nav-link active' : 'nav-link'}}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Fabric Width</p>
+                                </a>
+                            </li>
                             
                             <li class="nav-item">
                                 <a href="{{route('admin.master.vendor.index')}}" class="{{str_contains($page_url,'admin/master/vendors') ? 'nav-link active' : 'nav-link'}}">

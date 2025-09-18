@@ -10,6 +10,12 @@ use App\Http\Controllers\Admin\VendorController as AdminVendorController;
 use App\Http\Controllers\Admin\Master\ItemController as AdminItemController;
 use App\Http\Controllers\Admin\Master\FabricDyeController as AdminFabricDyeController;
 
+///// new 
+use App\Http\Controllers\Admin\Master\FabricGsmController as AdminFabricGsmController;
+use App\Http\Controllers\Admin\Master\FabricCompositionController as AdminAdminFabricCompositionController;
+use App\Http\Controllers\Admin\Master\FabricWeaveController as AdminFabricWeaveController;
+use App\Http\Controllers\Admin\Master\FabricWidthController as AdminFabricWidthController;
+
 
 ////// Website
 Route::get('/',[AdminLoginController::class,'login'])->name('web.homepage');
@@ -55,6 +61,43 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/edit',[AdminFabricDyeController::class,'edit'])->name('edit');
             Route::post('/update',[AdminFabricDyeController::class,'update'])->name('update');
             Route::get('/delete',[AdminFabricDyeController::class,'delete'])->name('delete');
+        });
+
+        Route::prefix('master/fabric_gsm')->name('master.fabric_gsm.')->group(function () {
+            Route::get('/index',[AdminFabricGsmController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminFabricGsmController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminFabricGsmController::class,'create'])->name('create');
+            Route::post('/store',[AdminFabricGsmController::class,'store'])->name('store');
+            Route::get('/edit',[AdminFabricGsmController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminFabricGsmController::class,'update'])->name('update');
+            Route::get('/delete',[AdminFabricGsmController::class,'delete'])->name('delete');
+        });
+        Route::prefix('master/fabric_composition')->name('master.fabric_composition.')->group(function () {
+            Route::get('/index',[AdminFabricCompositionController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminFabricCompositionController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminFabricCompositionController::class,'create'])->name('create');
+            Route::post('/store',[AdminFabricCompositionController::class,'store'])->name('store');
+            Route::get('/edit',[AdminFabricCompositionController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminFabricCompositionController::class,'update'])->name('update');
+            Route::get('/delete',[AdminFabricCompositionController::class,'delete'])->name('delete');
+        });
+        Route::prefix('master/fabric_weave')->name('master.fabric_weave.')->group(function () {
+            Route::get('/index',[AdminFabricWeaveController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminFabricWeaveController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminFabricWeaveController::class,'create'])->name('create');
+            Route::post('/store',[AdminFabricWeaveController::class,'store'])->name('store');
+            Route::get('/edit',[AdminFabricWeaveController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminFabricWeaveController::class,'update'])->name('update');
+            Route::get('/delete',[AdminFabricWeaveController::class,'delete'])->name('delete');
+        });
+        Route::prefix('master/fabric_width')->name('master.fabric_width.')->group(function () {
+            Route::get('/index',[AdminFabricWidthController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminFabricWidthController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminFabricWidthController::class,'create'])->name('create');
+            Route::post('/store',[AdminFabricWidthController::class,'store'])->name('store');
+            Route::get('/edit',[AdminFabricWidthController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminFabricWidthController::class,'update'])->name('update');
+            Route::get('/delete',[AdminFabricWidthController::class,'delete'])->name('delete');
         });
 
         
