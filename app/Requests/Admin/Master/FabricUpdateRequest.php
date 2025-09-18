@@ -4,7 +4,7 @@ namespace App\Requests\Admin\Master;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Http\FormRequest;
 
-class VendorStoreRequest extends FormRequest{
+class FabricStoreRequest extends FormRequest{
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -22,11 +22,13 @@ class VendorStoreRequest extends FormRequest{
         // dd($this);
         return [
             'name' => 'required',
-            'phone' => 'required',
-            'email' => 'required',
-            // 'image' => 'required',
-            'status' =>'required',
-            'sku'    => 'required|unique:vendors,sku',
+            'sku'    => 'required|unique:fabrics,sku,' . $id,
+            'dye_id' => 'required',
+            'width_id' => 'required',
+            'weave_type_id' => 'required',
+            'gsm_id' => 'required',
+            'composition_id' => 'required',
+            // 'status' =>'required',
         ];
     }
 

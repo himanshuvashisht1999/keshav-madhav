@@ -4,10 +4,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Vendor extends Model
+class Fabric extends Model
 {
     use HasFactory;
-    protected $table= 'vendors';
+    protected $table= 'fabrics';
     protected $fillable = [
         'id',
         'sno',
@@ -16,10 +16,11 @@ class Vendor extends Model
         'project_id',
         'sku',
         'name',
-        'phone', 
-        'email', 
-        'address',
-        'items',
+        'dye_id',
+        'width_id',
+        'weave_type_id',
+        'gsm_id',
+        'composition_id',
         'status',
         'created_at',
         'updated_at'

@@ -20,13 +20,14 @@ class VendorUpdateRequest extends FormRequest{
      */
     public function rules(Request $request){
         // dd($this);
+        $id = $request->id;
         return [
             'name' => 'required',
-            'type' => 'required',
             'phone' => 'required',
             'email' => 'required',
             // 'image' => 'required',
             'status' =>'required',
+            'sku'    => 'required|unique:vendors,sku,' . $id,
         ];
     }
 

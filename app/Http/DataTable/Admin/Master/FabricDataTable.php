@@ -3,17 +3,13 @@
 namespace App\Http\DataTable\Admin\Master;
 
 use Illuminate\Http\Request;
-use App\Models\Vendor;
+use App\Models\Fabric;
 use Yajra\DataTables\Facades\DataTables;
 
-class VendorDataTable  {
-
-    public function __construct(Vendor $vendor) {
-        $this->vendor = $vendor;
-    }
+class FabricDataTable  {
 
     public function indexList($request){
-        $queue = Vendor::query();
+        $queue = Fabric::query();
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -22,20 +18,24 @@ class VendorDataTable  {
                 if ($request->has('name') && !empty($request->name)) {
                     $query->where('name', 'like', "%{$request->get('name')}%");
                 }
-                if ($request->has('phone') && !empty($request->phone)) {
-                    $query->where('phone', 'like', "%{$request->get('phone')}%");
-                }
-                if ($request->has('email') && !empty($request->email)) {
-                    $query->where('email', 'like', "%{$request->get('email')}%");
-                }
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
-
-                if ($request->has('status') && $request->filled('status')) {
-                    $query->where('status', $request->get('status'));
+                if ($request->has('dye_id') && $request->filled('dye_id')) {
+                    $query->where('dye_id', $request->get('dye_id'));
                 }
-
+                if ($request->has('width_id') && $request->filled('width_id')) {
+                    $query->where('width_id', $request->get('width_id'));
+                }
+                if ($request->has('weave_type_id') && $request->filled('weave_type_id')) {
+                    $query->where('weave_type_id', $request->get('weave_type_id'));
+                }
+                if ($request->has('gsm_id') && $request->filled('gsm_id')) {
+                    $query->where('gsm_id', $request->get('gsm_id'));
+                }
+                if ($request->has('composition_id') && $request->filled('composition_id')) {
+                    $query->where('composition_id', $request->get('composition_id'));
+                }
                 
             }) 
          
@@ -46,7 +46,7 @@ class VendorDataTable  {
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
                 return '
-                <a href="' . route('admin.master.vendor.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                <a href="' . route('admin.master.fabric.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
                 ';
             })
             

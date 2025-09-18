@@ -74,6 +74,12 @@
                                     <p>Fabric Width</p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="{{route('admin.master.fabric.index')}}" class="{{str_contains($page_url,'admin/master/fabric') ? 'nav-link active' : 'nav-link'}}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Fabric</p>
+                                </a>
+                            </li>
                             
                             <li class="nav-item">
                                 <a href="{{route('admin.master.vendor.index')}}" class="{{str_contains($page_url,'admin/master/vendors') ? 'nav-link active' : 'nav-link'}}">
