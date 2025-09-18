@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Vendor</h1>
+                    <h1>Fabric</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Create Vendor</li>
+                        <li class="breadcrumb-item active">Create Fabric</li>
                     </ol>
                 </div>
             </div>
@@ -24,16 +24,16 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Create Vendor</h3>
+                    <h3 class="card-title">Create Fabric</h3>
                 </div>
-                <form action="{{route('admin.master.vendor.store')}}" method="post" enctype="multipart/form-data">
+                <form action="{{route('admin.master.fabric.store')}}" method="post" enctype="multipart/form-data">
                     @csrf
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Name</label>
-                                    <input type="text" name="name" class="form-control" placeholder="Enter name" value="{{old('name')}}">
+                                    <label for="exampleInputEmail1">Fabric Name</label>
+                                    <input type="text" name="name" class="form-control" placeholder="Enter fabric name" value="{{old('name')}}">
                                     @if ($errors->has('name'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('name') }}
@@ -44,87 +44,84 @@
 
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Phone</label>
-                                    <input type="number" name="phone" class="form-control" placeholder="Enter phone" value="{{old('name')}}">
-                                    @if ($errors->has('phone'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('phone') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">Email</label>
-                                    <input type="text" name="email" class="form-control" placeholder="Enter email" value="{{old('name')}}">
-                                    @if ($errors->has('email'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('email') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">Address</label>
-                                    <input type="text" name="address" class="form-control" placeholder="Enter address" value="{{old('name')}}">
-                                    @if ($errors->has('address'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('address') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Items</label>
-                                    <select name="items[]" class="form-control select2" style="width: 100%;" multiple required>
-                                        @foreach($items as $item)
-                                        <option value="{{$item->id}}">{{$item->name}}</option>
+                                    <label>Fabric Dye</label>
+                                    <select name="dye_id" class="form-control select2" style="width: 100%;">
+                                        @foreach($dye_data as $single_data)
+                                        <option value="{{$single_data->id}}" {{old('dye_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
                                         @endforeach
                                         
                                     </select>
-                                    @if ($errors->has('items'))
+                                    @if ($errors->has('dye_id'))
                                         <span class="invalid-feedback d-block">
-                                        {{ $errors->first('items') }}
+                                        {{ $errors->first('dye_id') }}
                                         </span>
                                     @endif
                                 </div>
                             </div>
 
-                            
-
-                            <!-- <div class="col-md-6">
+                            <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="exampleInputFile">Upload Image (Recommended size: 500 × 300 px)</label>
-                                    <div class="input-group">
-                                        <div class="custom-file">
-                                            <input type="file" name="image" class="custom-file-input" id="image-input" onchange="previewImage()"  accept=".jpg,.jpeg,.png">
-                                            <label class="custom-file-label" for="exampleInputFile">Choose file</label>
-                                        </div>
+                                    <label>Fabric Width</label>
+                                    <select name="width_id" class="form-control select2" style="width: 100%;">
+                                        @foreach($fab_width_data as $single_data)
+                                        <option value="{{$single_data->id}}" {{old('width_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                        @endforeach
                                         
-                                        @if ($errors->has('image'))
-                                            <span class="invalid-feedback d-block">
-                                            {{ $errors->first('image') }}
-                                            </span>
-                                        @endif
-                                    </div>
+                                    </select>
+                                    @if ($errors->has('width_id'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('width_id') }}
+                                        </span>
+                                    @endif
                                 </div>
-                            </div> -->
+                            </div>
 
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>Status</label>
-                                    <select name="status" class="form-control select2" style="width: 100%;">
-                                        <!-- <option value="">Select</option> -->
-                                        <option value="1" {{old('status') == '1' ? 'selected' : ''}}>Active</option>
-                                        <option value="0" {{old('status') == '0' ? 'selected' : ''}}>Inactive</option>
+                                    <label>Fabric Weave Type</label>
+                                    <select name="weave_type_id" class="form-control select2" style="width: 100%;">
+                                        @foreach($fab_weave_data as $single_data)
+                                        <option value="{{$single_data->id}}" {{old('weave_type_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                        @endforeach
+                                        
                                     </select>
-                                    @if ($errors->has('status'))
+                                    @if ($errors->has('weave_type_id'))
                                         <span class="invalid-feedback d-block">
-                                        {{ $errors->first('status') }}
+                                        {{ $errors->first('weave_type_id') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Fabric GSM</label>
+                                    <select name="gsm_id" class="form-control select2" style="width: 100%;">
+                                        @foreach($fab_gsm_data as $single_data)
+                                        <option value="{{$single_data->id}}" {{old('gsm_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                        @endforeach
+                                        
+                                    </select>
+                                    @if ($errors->has('gsm_id'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('gsm_id') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Fabric Composition</label>
+                                    <select name="composition_id" class="form-control select2" style="width: 100%;">
+                                        @foreach($fab_composition_data as $single_data)
+                                        <option value="{{$single_data->id}}" {{old('composition_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                        @endforeach
+                                        
+                                    </select>
+                                    @if ($errors->has('composition_id'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('composition_id') }}
                                         </span>
                                     @endif
                                 </div>
@@ -141,22 +138,8 @@
                                     @endif
                                 </div>
                             </div>
-                            <!-- <div class="col-md-6">
-                                <img class="" src="{{asset('images/image-placeholder.png')}}" alt="Preview" id="image-preview" height="80px" width="80px">
-                            </div> -->
 
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">Description</label>
-                                    
-                                    <textarea name="description" class="form-control" placeholder="Enter description">{{old('description')}}</textarea>
-                                    @if ($errors->has('description'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('description') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
+                            
                            
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">
@@ -171,25 +154,7 @@
         </div>
     </section>
 </div>
-<script>
-        // function previewImage() {
-        //     var imageInput = document.getElementById('image-input');
-        //     var imagePreview = document.getElementById('image-preview');
-            
-        //     if (imageInput.files && imageInput.files[0]) {
-        //         var reader = new FileReader();
-        //         reader.onload = function(e) {
-        //             imagePreview.src = e.target.result;
-        //         };
-                
-        //         reader.readAsDataURL(imageInput.files[0]);
-        //     } else {
-        //         // If no file is selected or supported, clear the preview
-        //         imagePreview.src = "";
-        //     }
-        // }
 
-</script>
 <script>
     function generateSKU() {
         let name = document.querySelector("input[name='name']").value.trim();
@@ -244,7 +209,5 @@
         this.dataset.edited = true;
     });
 </script>
-
-
 
 @endsection

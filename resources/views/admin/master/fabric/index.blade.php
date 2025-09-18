@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Vendors</h1>
+                    <h1>Manage Fabric</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Vendors</li>
+                        <li class="breadcrumb-item active">Manage Fabric</li>
                     </ol>
                 </div>
             </div>
@@ -25,10 +25,10 @@
             <div class="card card-default ">
                  <div class="row" >
                     <div class="col-9 card-header">
-                        <h3 class="card-title">Manage Vendors</h3>
+                        <h3 class="card-title">Manage Fabric</h3>
                     </div>
                     <div class="col-3 card-header">
-                        <a href="{{route('admin.master.vendor.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Vendors</a>
+                        <a href="{{route('admin.master.fabric.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Fabric</a>
                     </div>
                 </div>
                 
@@ -42,25 +42,43 @@
                         <td>
                             <input type="text" class="form-control" name="name" id="name" autocomplete="off">
                         </td>
-                        <td>
+                         <td>
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
-
                         <td>
-                            <input type="text" class="form-control" name="phone" id="phone" autocomplete="off">
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="email" id="email" autocomplete="off">
-                        </td>
-                       
-                        
-                        <td>
-                            <select class="form-control" name="status" id="status" autocomplete="off">
+                            <select class="form-control" name="dye_id" id="dye_id" autocomplete="off">
                                 <option value="">ALL</option>
-                                <option value="1">Active</option>
-                                <option value="0">Inactive</option>
+                                @foreach($dye_data as $single_data)
+                                    <option value="{{$single_data->id}}" >{{$single_data->name}}</option>
+                                @endforeach
                             </select>
                         </td>
+                        <!-- <td>
+                            <select class="form-control" name="width_id" id="width_id" autocomplete="off">
+                                <option value="">ALL</option>
+                                @foreach($fab_width_data as $single_data)
+                                    <option value="{{$single_data->id}}" >{{$single_data->name}}</option>
+                                @endforeach
+                            </select>
+                        </td> -->
+                        <td>
+                            <select class="form-control" name="gsm_id" id="gsm_id" autocomplete="off">
+                                <option value="">ALL</option>
+                                @foreach($fab_gsm_data as $single_data)
+                                    <option value="{{$single_data->id}}" >{{$single_data->name}}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-control" name="composition_id" id="composition_id" autocomplete="off">
+                                <option value="">ALL</option>
+                                @foreach($fab_composition_data as $single_data)
+                                    <option value="{{$single_data->id}}" >{{$single_data->name}}</option>
+                                @endforeach
+                            </select>
+                        </td>
+
+                        
                         <td>
                        
                        </td>
@@ -68,10 +86,11 @@
                   <tr>
                     <th>ID</th>
                     <th>Name</th>
-                    <th>Sku</th>
-                    <th>Phone</th>
-                    <th>Email</th>
-                    <th>Status</th>
+                    <th>SKU</th>
+                    <th>Dye</th>
+                    <th>GSM</th>
+                    <th>Composition</th>
+                    
                     <th>Action</th>
                   </tr>
                   </thead>
@@ -104,14 +123,15 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.master.vendor.indexList') !!}',
+                url: '{!! route('admin.master.fabric.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.name = $('#name').val();
                     d.sku = $('#sku').val();
-                    d.phone = $('#phone').val();
-                    d.email = $('#email').val();
-					d.status = $('#status').val();
+                    d.dye_id = $('#dye_id').val();
+                    d.gsm_id = $('#gsm_id').val();
+                    d.composition_id = $('#composition_id').val();
+                  
                 },
                 orderable: false
             },
@@ -119,9 +139,10 @@
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'name', name: 'name'},
                 {data: 'sku', name: 'sku'},
-                {data: 'phone', name: 'phone'},
-                {data: 'email', name: 'email'},
-                {data: 'status', name: 'status'},
+                {data: 'dye_id', name: 'dye_id'},
+                {data: 'gsm_id', name: 'gsm_id'},
+                {data: 'composition_id', name: 'composition_id'},
+                
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
@@ -142,26 +163,23 @@
             oTable.draw();
             e.preventDefault();
         });
-
-        $('#phone').on('keyup', function (e) {
+        $('#dye_id').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
-        $('#email').on('keyup', function (e) {
+        $('#gsm_id').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
-        $('#sku').on('keyup', function (e) {
+        $('#composition_id').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
-     
-
-        $('#status').on('change', function (e) {
+        $('#sku').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
-
+        
 
     });
 
@@ -181,7 +199,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.master.vendor.delete', ['id' => '']) }}" + id;
+                window.location.href = "{{ route('admin.master.fabric.delete', ['id' => '']) }}" + id;
             }
         });
     }
