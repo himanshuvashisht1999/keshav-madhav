@@ -47,7 +47,7 @@
                                 <div class="form-group">
                                     <label>Fabric Dye</label>
                                     <select name="dye_id" class="form-control select2" style="width: 100%;">
-                                        @foreach($dye_data as $single_data)
+                                        @foreach($fab_dye_data as $single_data)
                                         <option value="{{$single_data->id}}" {{$data->dye_id == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
                                         @endforeach
                                         
@@ -159,55 +159,43 @@
 <script>
     function generateSKU() {
         let name = document.querySelector("input[name='name']").value.trim();
-        let phone = document.querySelector("input[name='phone']").value.trim();
-        let address = document.querySelector("input[name='address']").value.trim();
-        
-        // Get first 4 letters of name (fresh every time)
+        let dye = document.querySelector("select[name='dye_id'] option:checked").text.trim();
+        let width = document.querySelector("select[name='width_id'] option:checked").text.trim();
+        let gsm = document.querySelector("select[name='gsm_id'] option:checked").text.trim();
+
+        // Get first 4 letters of fabric name
         let part1 = name.replace(/[^a-zA-Z]/g, '').substring(0, 4);
 
-        // Get last 3 digits of phone
-        let part2 = phone.replace(/[^0-9]/g, '');
-        part2 = part2.length >= 3 ? part2.slice(-3) : part2;
+        // Get first 3 letters of dye
+        let part2 = dye.replace(/[^a-zA-Z]/g, '').substring(0, 4);
 
-        // Get first 3 letters of address
-        let part3 = address.replace(/[^a-zA-Z]/g, '').substring(0, 3);
+        // Get first 3 letters of width
+        let part3 = width.replace(/[^a-zA-Z0-9]/g, '').substring(0, 4);
+        let part4 = gsm.replace(/[^a-zA-Z0-9]/g, '');
 
         // Combine
-        let sku = part1 + "-" + part2 + "-" + part3;
+        let sku = part1 + "-" + part2 + "-" + part3 + "-" + part4;
 
         let skuInput = document.getElementById("sku");
 
-        // Only overwrite if user has not manually typed in SKU
         if (!skuInput.dataset.edited || skuInput.value === "") {
             skuInput.value = sku;
         }
     }
 
-    // Attach auto-generate on typing (name, phone, address)
-    document.querySelector("input[name='name']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
+    // When page is ready
+    $(document).ready(function() {
+        // Trigger SKU generation when typing name
+        $("input[name='name']").on("input", generateSKU);
 
-    document.querySelector("input[name='phone']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
+        // Trigger SKU when changing select2 dropdowns
+        $('select[name="dye_id"]').on("change", generateSKU);
+        $('select[name="width_id"]').on("change", generateSKU);
 
-    document.querySelector("input[name='address']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
-
-    // Mark as manually edited when user types in SKU
-    document.getElementById("sku").addEventListener("input", function() {
-        this.dataset.edited = true;
+        // Mark SKU as edited if user types
+        $("#sku").on("input", function() {
+            this.dataset.edited = true;
+        });
     });
 </script>
 

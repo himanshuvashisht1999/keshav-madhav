@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\Master\FabricGsmService as Service;
 use App\Requests\Admin\Master\FabricGsmStoreRequest;
+use App\Requests\Admin\Master\FabricGsmUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
 use Auth;
 
@@ -33,7 +34,7 @@ class FabricGsmController extends Controller {
         $response['data'] = $this->service->edit($request);
         return view('admin.master.fabric_gsm.edit',$response);
     }
-    public function update(FabricGsmStoreRequest $request){
+    public function update(FabricGsmUpdateRequest $request){
         $data = $this->service->update($request);
         return redirect()->route('admin.master.fabric_gsm.index')->withSuccess('The fabric gsm has been successfully updated.');
     }

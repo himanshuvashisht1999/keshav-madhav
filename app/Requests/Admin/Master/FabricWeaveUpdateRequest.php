@@ -4,7 +4,7 @@ namespace App\Requests\Admin\Master;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Http\FormRequest;
 
-class FabricGsmStoreRequest extends FormRequest{
+class FabricWeaveUpdateRequest extends FormRequest{
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -22,7 +22,7 @@ class FabricGsmStoreRequest extends FormRequest{
         // dd($this);
         return [
             'name' => 'required',
-            'sku'    => 'required|unique:fabric_gsm,sku',
+            'sku'    => 'required|unique:fabric_weave_type,sku,' . $request->id,
             // 'status' =>'required',
         ];
     }

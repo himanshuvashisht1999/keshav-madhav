@@ -4,7 +4,7 @@ namespace App\Requests\Admin\Master;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Http\FormRequest;
 
-class FabricStoreRequest extends FormRequest{
+class FabricUpdateRequest extends FormRequest{
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -20,6 +20,7 @@ class FabricStoreRequest extends FormRequest{
      */
     public function rules(Request $request){
         // dd($this);
+        $id = $request->id;
         return [
             'name' => 'required',
             'sku'    => 'required|unique:fabrics,sku,' . $id,

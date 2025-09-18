@@ -25,5 +25,20 @@ class Fabric extends Model
         'created_at',
         'updated_at'
     ];
+    public function fabric_gsm(){
+        return $this->hasOne('App\Models\FabricGsm','id','gsm_id');
+    }
+    public function fabric_width(){
+        return $this->hasOne('App\Models\FabricWidth','id','width_id');
+    }
+    public function fabric_weave_type(){
+        return $this->hasOne('App\Models\FabricWeave','id','weave_type_id');
+    }
+    public function fabric_composition(){
+        return $this->hasOne('App\Models\FabricComposition','id','composition_id');
+    }
+    public function fabric_dye(){
+        return $this->hasOne('App\Models\FabricDye','id','dye_id');
+    }
     
 }

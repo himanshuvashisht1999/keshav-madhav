@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\Master\FabricWeaveService as Service;
 use App\Requests\Admin\Master\FabricWeaveStoreRequest;
+use App\Requests\Admin\Master\FabricWeaveUpdateRequest;
 use IllumFabricWeaveControllerinate\Support\Facades\Crypt;
 use Auth;
 
@@ -33,7 +34,7 @@ class FabricWeaveController extends Controller {
         $response['data'] = $this->service->edit($request);
         return view('admin.master.fabric_weave.edit',$response);
     }
-    public function update(FabricWeaveStoreRequest $request){
+    public function update(FabricWeaveUpdateRequest $request){
         $data = $this->service->update($request);
         return redirect()->route('admin.master.fabric_weave.index')->withSuccess('The fabric weave has been successfully updated.');
     }

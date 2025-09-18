@@ -48,7 +48,7 @@
                         <td>
                             <select class="form-control" name="dye_id" id="dye_id" autocomplete="off">
                                 <option value="">ALL</option>
-                                @foreach($dye_data as $single_data)
+                                @foreach($fab_dye_data as $single_data)
                                     <option value="{{$single_data->id}}" >{{$single_data->name}}</option>
                                 @endforeach
                             </select>
@@ -175,7 +175,7 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#sku').on('change', function (e) {
+        $('#sku').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });

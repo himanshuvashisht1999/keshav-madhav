@@ -22,6 +22,7 @@ class FabricCompositionStoreRequest extends FormRequest{
         // dd($this);
         return [
             'name' => 'required',
+            'sku'    => 'required|unique:fabric_composition,sku',
             // 'status' =>'required',
         ];
     }

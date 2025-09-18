@@ -36,6 +36,7 @@ class FabricGsmService {
         // }
         $save_data = new FabricGsm;
         $save_data->name = $request->name;
+        $save_data->sku = $request->sku;
         $save_data->status = 1;
         $save_data->save();
         return true;
@@ -63,6 +64,7 @@ class FabricGsmService {
         //     $update_data->image = $imgName;
         // }
         $update_data->name = $request->name;
+        $update_data->sku = $request->sku;
         $update_data->save();
         return true;
     }

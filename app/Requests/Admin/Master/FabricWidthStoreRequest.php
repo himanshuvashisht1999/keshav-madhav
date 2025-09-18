@@ -22,6 +22,7 @@ class FabricWidthStoreRequest extends FormRequest{
         // dd($this);
         return [
             'name' => 'required',
+            'sku'    => 'required|unique:fabric_width,sku',
             // 'status' =>'required',
         ];
     }

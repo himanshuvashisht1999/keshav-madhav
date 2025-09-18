@@ -34,6 +34,7 @@ class FabricWidthService {
         // }
         $save_data = new FabricWidth;
         $save_data->name = $request->name;
+        $save_data->sku = $request->sku;
         $save_data->status = 1;
         $save_data->save();
         return true;
@@ -61,6 +62,7 @@ class FabricWidthService {
         //     $update_data->image = $imgName;
         // }
         $update_data->name = $request->name;
+        $update_data->sku = $request->sku;
         $update_data->save();
         return true;
     }
