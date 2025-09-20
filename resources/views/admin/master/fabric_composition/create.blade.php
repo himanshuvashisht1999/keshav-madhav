@@ -73,7 +73,7 @@
         let name = document.querySelector("input[name='name']").value.trim();
         let part1 = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
         let part2 = Math.floor(1000 + Math.random() * 9000);
-        let sku = 'FABRIC-COMPOSITION-' + part1 + "-" + part2;
+        let sku = part1;
         let skuInput = document.getElementById("sku");
         if (!skuInput.dataset.edited || skuInput.value === "") {
             skuInput.value = sku;

@@ -30,9 +30,9 @@
                     @csrf
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Name</label>
+                                    <label for="exampleInputEmail1">Width</label>
                                     <input type="text" name="name" class="form-control" placeholder="Enter name" value="{{old('name')}}">
                                     @if ($errors->has('name'))
                                         <span class="invalid-feedback d-block">
@@ -41,7 +41,23 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Unit</label>
+                                    <select name="unit" class="form-control select2" style="width: 100%;">
+                                        <!-- <option value="">Select</option> -->
+                                        <option value="cm" {{old('unit') == 'cm' ? 'selected' : ''}}>cm</option>
+                                        <option value="inch" {{old('unit') == 'inch' ? 'selected' : ''}}>inch</option>
+                                        <option value="meter" {{old('unit') == 'meter' ? 'selected' : ''}}>meter</option>
+                                    </select>
+                                    @if ($errors->has('unit'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('unit') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="sku">SKU</label>
                                     <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU">
@@ -71,27 +87,27 @@
 <script>
     function generateSKU() {
         let name = document.querySelector("input[name='name']").value.trim();
+        let unit = document.querySelector("select[name='unit'] option:checked").text.trim();
         let part1 = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        
-        let part2 = Math.floor(1000 + Math.random() * 9000);
-        let sku = 'FABRIC-WIDTH-' + part1 + "-" + part2;
+        let part2 = unit.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+        // Combine
+        let sku = part1 + "-" + part2;
+
         let skuInput = document.getElementById("sku");
+
         if (!skuInput.dataset.edited || skuInput.value === "") {
             skuInput.value = sku;
         }
     }
 
-    // Attach auto-generate on typing (name, phone, address)
-    document.querySelector("input[name='name']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
-
-    // Mark as manually edited when user types in SKU
-    document.getElementById("sku").addEventListener("input", function() {
-        this.dataset.edited = true;
+    // When page is ready
+    $(document).ready(function() {
+        $("input[name='name']").on("input", generateSKU);
+        $('select[name="unit"]').on("change", generateSKU);
+        $("#sku").on("input", function() {
+            this.dataset.edited = true;
+        });
     });
 </script>
 

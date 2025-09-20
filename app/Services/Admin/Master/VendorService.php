@@ -72,7 +72,7 @@ class VendorService {
         $update_data->items = serialize($request->items);
         $update_data->phone = $request->phone;
         $update_data->email = $request->email;
-        $update_data->sku = $request->sku;
+        // $update_data->sku = $request->sku;
         $update_data->address = $request->address;
         $update_data->status = $request->status;
         $update_data->description = $request->description;

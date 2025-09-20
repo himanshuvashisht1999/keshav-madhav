@@ -32,11 +32,22 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Name</label>
-                                    <input type="text" name="name" class="form-control" placeholder="Enter name" value="{{old('name')}}">
-                                    @if ($errors->has('name'))
+                                    <label for="exampleInputEmail1">Color</label>
+                                    <input type="text" name="color" class="form-control" placeholder="Enter color" value="{{old('color')}}">
+                                    @if ($errors->has('color'))
                                         <span class="invalid-feedback d-block">
-                                        {{ $errors->first('name') }}
+                                        {{ $errors->first('color') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">Pantone</label>
+                                    <input type="text" name="pantone" class="form-control" placeholder="Enter pantone" value="{{old('pantone')}}">
+                                    @if ($errors->has('pantone'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('pantone') }}
                                         </span>
                                     @endif
                                 </div>
@@ -70,18 +81,25 @@
 </div>
 <script>
     function generateSKU() {
-        let name = document.querySelector("input[name='name']").value.trim();
-        let part1 = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        let part2 = Math.floor(1000 + Math.random() * 9000);
-        let sku = 'FABRIC-DYE-' + part1 + "-" + part2;
+        let color = document.querySelector("input[name='color']").value.trim();
+        let pantone = document.querySelector("input[name='pantone']").value.trim();
+        let part1 = color.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        let part2 = pantone.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        let sku = part1 + "-" + part2;
         let skuInput = document.getElementById("sku");
         if (!skuInput.dataset.edited || skuInput.value === "") {
             skuInput.value = sku;
         }
     }
 
-    // Attach auto-generate on typing (name, phone, address)
-    document.querySelector("input[name='name']").addEventListener("input", function() {
+    document.querySelector("input[name='color']").addEventListener("input", function() {
+        let skuInput = document.getElementById("sku");
+        if (!skuInput.dataset.edited) {
+            generateSKU();
+        }
+    });
+
+    document.querySelector("input[name='pantone']").addEventListener("input", function() {
         let skuInput = document.getElementById("sku");
         if (!skuInput.dataset.edited) {
             generateSKU();

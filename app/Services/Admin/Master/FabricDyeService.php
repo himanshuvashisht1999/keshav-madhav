@@ -25,15 +25,9 @@ class FabricDyeService {
     }
 
     public function store(Request $request){
-        // if($request->file('image')){
-        //     $image = $request->file('image');
-        //     $extImage = $image->getClientOriginalExtension();
-        //     $imgName = "service-".rand()."_".time().".".$extImage;
-        //     $destinationPath = public_path().'/assets/services';
-        //     $image->move($destinationPath, $imgName);
-        // }
         $save_data = new FabricDye;
-        $save_data->name = $request->name;
+        $save_data->color = $request->color;
+        $save_data->pantone = $request->pantone;
         $save_data->sku = $request->sku;
         $save_data->status = 1;
         $save_data->save();
@@ -46,23 +40,10 @@ class FabricDyeService {
     }
     public function update(Request $request){
         $update_data = FabricDye::find($request->id);
-        // if($request->file('image')){
-        //     $oldImageName = $update_data->getRawOriginal('image');
-        //     if ($oldImageName) {
-        //         $oldImagePath = public_path('assets/services/' . $oldImageName);
-        //         if (file_exists($oldImagePath)) {
-        //             unlink($oldImagePath);
-        //         }
-        //     }
-        //     $image = $request->file('image');
-        //     $extImage = $image->getClientOriginalExtension();
-        //     $imgName = "service-".rand()."_".time().".".$extImage;
-        //     $destinationPath = public_path().'/assets/services';
-        //     $image->move($destinationPath, $imgName);
-        //     $update_data->image = $imgName;
-        // }
-        $update_data->name = $request->name;
-        $update_data->sku = $request->sku;
+        $update_data->color = $request->color;
+        $update_data->pantone = $request->pantone;
+        
+        // $update_data->sku = $request->sku;
         $update_data->save();
         return true;
     }

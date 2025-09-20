@@ -46,7 +46,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="sku">SKU</label>
-                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}">
+                                    <input type="text" name="sku" id="sku_n" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}" readonly>
                                     @if ($errors->has('sku'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('sku') }}

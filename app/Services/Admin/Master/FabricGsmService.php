@@ -64,7 +64,7 @@ class FabricGsmService {
         //     $update_data->image = $imgName;
         // }
         $update_data->name = $request->name;
-        $update_data->sku = $request->sku;
+        // $update_data->sku = $request->sku;
         $update_data->save();
         return true;
     }

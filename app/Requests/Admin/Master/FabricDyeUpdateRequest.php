@@ -21,7 +21,8 @@ class FabricDyeUpdateRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'name' => 'required',
+            'color' => 'required',
+            'pantone' => 'required',
             'sku'    => 'required|unique:fabric_dye,sku,' . $request->id,
             // 'status' =>'required',s
         ];

@@ -48,7 +48,7 @@
                                     <label>Fabric Dye</label>
                                     <select name="dye_id" class="form-control select2" style="width: 100%;">
                                         @foreach($fab_dye_data as $single_data)
-                                        <option value="{{$single_data->id}}" {{$data->dye_id == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                        <option value="{{$single_data->id}}" {{$data->dye_id == $single_data->id ? 'selected' : ''}}>{{$single_data->sku}}</option>
                                         @endforeach
                                         
                                     </select>
@@ -65,7 +65,7 @@
                                     <label>Fabric Width</label>
                                     <select name="width_id" class="form-control select2" style="width: 100%;">
                                         @foreach($fab_width_data as $single_data)
-                                        <option value="{{$single_data->id}}" {{$data->width_id == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                        <option value="{{$single_data->id}}" {{$data->width_id == $single_data->id ? 'selected' : ''}}>{{$single_data->sku}}</option>
                                         @endforeach
                                         
                                     </select>
@@ -82,7 +82,7 @@
                                     <label>Fabric Weave Type</label>
                                     <select name="weave_type_id" class="form-control select2" style="width: 100%;">
                                         @foreach($fab_weave_data as $single_data)
-                                        <option value="{{$single_data->id}}" {{$data->weave_type_id == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                        <option value="{{$single_data->id}}" {{$data->weave_type_id == $single_data->id ? 'selected' : ''}}>{{$single_data->sku}}</option>
                                         @endforeach
                                         
                                     </select>
@@ -99,7 +99,7 @@
                                     <label>Fabric GSM</label>
                                     <select name="gsm_id" class="form-control select2" style="width: 100%;">
                                         @foreach($fab_gsm_data as $single_data)
-                                        <option value="{{$single_data->id}}" {{$data->gsm_id == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                        <option value="{{$single_data->id}}" {{$data->gsm_id == $single_data->id ? 'selected' : ''}}>{{$single_data->sku}}</option>
                                         @endforeach
                                         
                                     </select>
@@ -116,7 +116,7 @@
                                     <label>Fabric Composition</label>
                                     <select name="composition_id" class="form-control select2" style="width: 100%;">
                                         @foreach($fab_composition_data as $single_data)
-                                        <option value="{{$single_data->id}}" {{$data->composition_id == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                        <option value="{{$single_data->id}}" {{$data->composition_id == $single_data->id ? 'selected' : ''}}>{{$single_data->sku}}</option>
                                         @endforeach
                                         
                                     </select>
@@ -131,7 +131,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="sku">SKU</label>
-                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}">
+                                    <input type="text" name="sku" id="sku_n" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}" readonly>
                                     @if ($errors->has('sku'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('sku') }}
@@ -156,47 +156,6 @@
     </section>
 </div>
 
-<script>
-    function generateSKU() {
-        let name = document.querySelector("input[name='name']").value.trim();
-        let dye = document.querySelector("select[name='dye_id'] option:checked").text.trim();
-        let width = document.querySelector("select[name='width_id'] option:checked").text.trim();
-        let gsm = document.querySelector("select[name='gsm_id'] option:checked").text.trim();
 
-        // Get first 4 letters of fabric name
-        let part1 = name.replace(/[^a-zA-Z]/g, '').substring(0, 4);
-
-        // Get first 3 letters of dye
-        let part2 = dye.replace(/[^a-zA-Z]/g, '').substring(0, 4);
-
-        // Get first 3 letters of width
-        let part3 = width.replace(/[^a-zA-Z0-9]/g, '').substring(0, 4);
-        let part4 = gsm.replace(/[^a-zA-Z0-9]/g, '');
-
-        // Combine
-        let sku = part1 + "-" + part2 + "-" + part3 + "-" + part4;
-
-        let skuInput = document.getElementById("sku");
-
-        if (!skuInput.dataset.edited || skuInput.value === "") {
-            skuInput.value = sku;
-        }
-    }
-
-    // When page is ready
-    $(document).ready(function() {
-        // Trigger SKU generation when typing name
-        $("input[name='name']").on("input", generateSKU);
-
-        // Trigger SKU when changing select2 dropdowns
-        $('select[name="dye_id"]').on("change", generateSKU);
-        $('select[name="width_id"]').on("change", generateSKU);
-
-        // Mark SKU as edited if user types
-        $("#sku").on("input", function() {
-            this.dataset.edited = true;
-        });
-    });
-</script>
 
 @endsection

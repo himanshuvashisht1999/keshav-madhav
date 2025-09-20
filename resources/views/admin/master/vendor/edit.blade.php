@@ -148,7 +148,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="sku">SKU</label>
-                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}">
+                                    <input type="text" name="sku" id="sku_n" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}" readonly>
                                     @if ($errors->has('sku'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('sku') }}
@@ -208,17 +208,14 @@
         let address = document.querySelector("input[name='address']").value.trim();
         
         // Get first 4 letters of name (fresh every time)
-        let part1 = name.replace(/[^a-zA-Z]/g, '').substring(0, 4);
+        let part1 = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
         // Get last 3 digits of phone
         let part2 = phone.replace(/[^0-9]/g, '');
         part2 = part2.length >= 3 ? part2.slice(-3) : part2;
 
-        // Get first 3 letters of address
-        let part3 = address.replace(/[^a-zA-Z]/g, '').substring(0, 3);
-
         // Combine
-        let sku = part1 + "-" + part2 + "-" + part3;
+        let sku = 'VENDOR-' + part1 + "-" + part2;
 
         let skuInput = document.getElementById("sku");
 

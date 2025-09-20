@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Requests\Admin\Master;
+namespace App\Requests\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Http\FormRequest;
 
-class FabricDyeStoreRequest extends FormRequest{
+class PurchaseOrderUpdateRequest extends FormRequest{
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -21,10 +21,10 @@ class FabricDyeStoreRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'color' => 'required',
-            'pantone' => 'required',
-            'sku'    => 'required|unique:fabric_dye,sku',
-            // 'status' =>'required',
+            'sku'    => 'required|unique:purchase_orders,sku,' . $request->id,
+            'date' => 'required',
+            'vendor_id' => 'required',
+            'delivery_date' => 'required',
         ];
     }
 
