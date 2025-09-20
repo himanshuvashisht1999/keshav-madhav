@@ -11,7 +11,7 @@
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Create Fabric</li>
+                        <li class="breadcrumb-item active">Edit Fabric</li>
                     </ol>
                 </div>
             </div>
@@ -24,16 +24,17 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Create Fabric</h3>
+                    <h3 class="card-title">Edit Fabric</h3>
                 </div>
-                <form action="{{route('admin.master.fabric.store')}}" method="post" enctype="multipart/form-data">
+                <form action="{{route('admin.master.fabric.update')}}" method="post" enctype="multipart/form-data">
                     @csrf
+                    <input type="hidden" name="id" value="{{$data->id}}">
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Fabric Name</label>
-                                    <input type="text" name="name" class="form-control" placeholder="Enter fabric name" value="{{old('name')}}">
+                                    <input type="text" name="name" class="form-control" placeholder="Enter fabric name" value="{{$data->name}}">
                                     @if ($errors->has('name'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('name') }}
@@ -47,7 +48,7 @@
                                     <label>Fabric Dye</label>
                                     <select name="dye_id" class="form-control select2" style="width: 100%;">
                                         @foreach($fab_dye_data as $single_data)
-                                        <option value="{{$single_data->id}}" {{old('dye_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->sku}}</option>
+                                        <option value="{{$single_data->id}}" {{$data->dye_id == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
                                         @endforeach
                                         
                                     </select>
@@ -64,7 +65,7 @@
                                     <label>Fabric Width</label>
                                     <select name="width_id" class="form-control select2" style="width: 100%;">
                                         @foreach($fab_width_data as $single_data)
-                                        <option value="{{$single_data->id}}" {{old('width_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->sku}}</option>
+                                        <option value="{{$single_data->id}}" {{$data->width_id == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
                                         @endforeach
                                         
                                     </select>
@@ -81,7 +82,7 @@
                                     <label>Fabric Weave Type</label>
                                     <select name="weave_type_id" class="form-control select2" style="width: 100%;">
                                         @foreach($fab_weave_data as $single_data)
-                                        <option value="{{$single_data->id}}" {{old('weave_type_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->sku}}</option>
+                                        <option value="{{$single_data->id}}" {{$data->weave_type_id == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
                                         @endforeach
                                         
                                     </select>
@@ -98,7 +99,7 @@
                                     <label>Fabric GSM</label>
                                     <select name="gsm_id" class="form-control select2" style="width: 100%;">
                                         @foreach($fab_gsm_data as $single_data)
-                                        <option value="{{$single_data->id}}" {{old('gsm_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->sku}}</option>
+                                        <option value="{{$single_data->id}}" {{$data->gsm_id == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
                                         @endforeach
                                         
                                     </select>
@@ -115,7 +116,7 @@
                                     <label>Fabric Composition</label>
                                     <select name="composition_id" class="form-control select2" style="width: 100%;">
                                         @foreach($fab_composition_data as $single_data)
-                                        <option value="{{$single_data->id}}" {{old('composition_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->sku}}</option>
+                                        <option value="{{$single_data->id}}" {{$data->composition_id == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
                                         @endforeach
                                         
                                     </select>
@@ -130,7 +131,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="sku">SKU</label>
-                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU">
+                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}">
                                     @if ($errors->has('sku'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('sku') }}
@@ -154,49 +155,48 @@
         </div>
     </section>
 </div>
+
 <script>
     function generateSKU() {
-        let name = $("input[name='name']").val().trim();
+        let name = document.querySelector("input[name='name']").value.trim();
+        let dye = document.querySelector("select[name='dye_id'] option:checked").text.trim();
+        let width = document.querySelector("select[name='width_id'] option:checked").text.trim();
+        let gsm = document.querySelector("select[name='gsm_id'] option:checked").text.trim();
 
-        // Get selected options' text
-        let dye = $("select[name='dye_id'] option:selected").text().trim();
-        let width = $("select[name='width_id'] option:selected").text().trim();
-        let weave = $("select[name='weave_type_id'] option:selected").text().trim();
-        let gsm = $("select[name='gsm_id'] option:selected").text().trim();
-        let comp = $("select[name='composition_id'] option:selected").text().trim();
+        // Get first 4 letters of fabric name
+        let part1 = name.replace(/[^a-zA-Z]/g, '').substring(0, 4);
 
-        // Remove special characters and uppercase
-        let partName = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        let partDye = dye.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        let partWidth = width.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        let partWeave = weave.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        let partGsm = gsm.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        let partComp = comp.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        // Get first 3 letters of dye
+        let part2 = dye.replace(/[^a-zA-Z]/g, '').substring(0, 4);
 
-        let sku = partName + '-' + partDye + '-' + partWidth + '-' + partWeave + '-' + partGsm + '-' + partComp;
+        // Get first 3 letters of width
+        let part3 = width.replace(/[^a-zA-Z0-9]/g, '').substring(0, 4);
+        let part4 = gsm.replace(/[^a-zA-Z0-9]/g, '');
 
-        let skuInput = $("#sku");
-        if (!skuInput.data('edited') || skuInput.val() === "") {
-            skuInput.val(sku);
+        // Combine
+        let sku = part1 + "-" + part2 + "-" + part3 + "-" + part4;
+
+        let skuInput = document.getElementById("sku");
+
+        if (!skuInput.dataset.edited || skuInput.value === "") {
+            skuInput.value = sku;
         }
     }
 
+    // When page is ready
     $(document).ready(function() {
-        // Name input
+        // Trigger SKU generation when typing name
         $("input[name='name']").on("input", generateSKU);
 
-        // All select fields
-        $("select[name='dye_id'], select[name='width_id'], select[name='weave_type_id'], select[name='gsm_id'], select[name='composition_id']").on("change", generateSKU);
+        // Trigger SKU when changing select2 dropdowns
+        $('select[name="dye_id"]').on("change", generateSKU);
+        $('select[name="width_id"]').on("change", generateSKU);
 
-        // Mark SKU as manually edited
+        // Mark SKU as edited if user types
         $("#sku").on("input", function() {
-            $(this).data('edited', true);
+            this.dataset.edited = true;
         });
     });
 </script>
-
-
-
-
 
 @endsection

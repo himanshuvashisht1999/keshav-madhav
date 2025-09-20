@@ -40,8 +40,12 @@
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="name" id="name" autocomplete="off">
+                            <input type="text" class="form-control" name="color" id="color" autocomplete="off">
                         </td>
+                        <td>
+                            <input type="text" class="form-control" name="pantone" id="pantone" autocomplete="off">
+                        </td>
+                        
                         <td>
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
@@ -53,7 +57,8 @@
                     </tr>
                   <tr>
                     <th>ID</th>
-                    <th>Name</th>
+                    <th>Color</th>
+                    <th>Pantone</th>
                     <th>SKU</th>
                     
                     <th>Action</th>
@@ -91,7 +96,8 @@
                 url: '{!! route('admin.master.fabric_dye.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
-                    d.name = $('#name').val();
+                    d.color = $('#color').val();
+                    d.pantone = $('#pantone').val();
                     d.sku = $('#sku').val();
                   
                 },
@@ -99,7 +105,8 @@
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'name', name: 'name'},
+                {data: 'color', name: 'color'},
+                {data: 'pantone', name: 'pantone'},
                 {data: 'sku', name: 'sku'},
                 {data: 'action', name: 'action', searchable: false}
             ],
@@ -117,7 +124,11 @@
             e.preventDefault();
         });
 
-        $('#name').on('keyup', function (e) {
+        $('#color').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#pantone').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });

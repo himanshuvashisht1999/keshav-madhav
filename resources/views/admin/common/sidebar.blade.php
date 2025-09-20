@@ -25,6 +25,13 @@
                         </a>
                     </li>
 
+                    <li class="nav-item">
+                        <a href="{{route('admin.purchase_order.index')}}" class="{{str_contains($page_url,'admin/purchase-order') ? 'nav-link active' : 'nav-link'}}" style="position:static;">
+                            <i class="nav-icon fas fa-store"></i>
+                            <p>Purchase Order</p>
+                        </a>
+                    </li>
+
                     
                     
                     <!-- Master Settings (Dropdown) -->

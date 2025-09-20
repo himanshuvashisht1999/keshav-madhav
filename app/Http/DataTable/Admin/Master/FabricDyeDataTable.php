@@ -13,10 +13,13 @@ class FabricDyeDataTable  {
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $query->orderBy('id','desc');
-                $query->orWhere('name', 'like', "%{$request->get('search')['value']}%");
-                if ($request->has('name') && !empty($request->name)) {
-                    $query->where('name', 'like', "%{$request->get('name')}%");
+                // $query->orderBy('id','desc');
+                $query->orWhere('color', 'like', "%{$request->get('search')['value']}%");
+                if ($request->has('color') && !empty($request->color)) {
+                    $query->where('color', 'like', "%{$request->get('color')}%");
+                }
+                if ($request->has('pantone') && !empty($request->pantone)) {
+                    $query->where('pantone', 'like', "%{$request->get('pantone')}%");
                 }
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");

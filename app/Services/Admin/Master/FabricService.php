@@ -71,7 +71,7 @@ class FabricService {
         //     $image->move($destinationPath, $imgName);
         //     $update_data->image = $imgName;
         // }
-        $update_data->sku = $request->sku;
+        // $update_data->sku = $request->sku;
         $update_data->name = $request->name;
         $update_data->dye_id = $request->dye_id;
         $update_data->width_id = $request->width_id;

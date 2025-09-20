@@ -13,10 +13,13 @@ class FabricWidthDataTable  {
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $query->orderBy('id','desc');
+                // $query->orderBy('id','desc');
                 $query->orWhere('name', 'like', "%{$request->get('search')['value']}%");
                 if ($request->has('name') && !empty($request->name)) {
                     $query->where('name', 'like', "%{$request->get('name')}%");
+                }
+                if ($request->has('unit') && !empty($request->unit)) {
+                    $query->where('unit', 'like', "%{$request->get('unit')}%");
                 }
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");

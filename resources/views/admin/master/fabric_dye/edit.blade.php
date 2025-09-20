@@ -33,11 +33,22 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Name</label>
-                                    <input type="text" name="name" class="form-control" placeholder="Enter name" value="{{$data->name}}">
-                                    @if ($errors->has('name'))
+                                    <label for="exampleInputEmail1">Color</label>
+                                    <input type="text" name="color" class="form-control" placeholder="Enter color" value="{{$data->color}}">
+                                    @if ($errors->has('color'))
                                         <span class="invalid-feedback d-block">
-                                        {{ $errors->first('name') }}
+                                        {{ $errors->first('color') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">Pantone</label>
+                                    <input type="text" name="pantone" class="form-control" placeholder="Enter pantone" value="{{$data->pantone}}">
+                                    @if ($errors->has('pantone'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('pantone') }}
                                         </span>
                                     @endif
                                 </div>
@@ -45,7 +56,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="sku">SKU</label>
-                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}">
+                                    <input type="text" name="sku" id="sku_n" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}" readonly>
                                     @if ($errors->has('sku'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('sku') }}

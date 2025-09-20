@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Fabric Width</h1>
+                    <h1>Manage Purchase Order</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Fabric Width</li>
+                        <li class="breadcrumb-item active">Manage Purchase Order</li>
                     </ol>
                 </div>
             </div>
@@ -25,10 +25,10 @@
             <div class="card card-default ">
                  <div class="row" >
                     <div class="col-9 card-header">
-                        <h3 class="card-title">Manage Fabric Width</h3>
+                        <h3 class="card-title">Manage Purchase Order</h3>
                     </div>
                     <div class="col-3 card-header">
-                        <a href="{{route('admin.master.fabric_width.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Fabric Width</a>
+                        <a href="{{route('admin.purchase_order.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Purchase Order</a>
                     </div>
                 </div>
                 
@@ -40,28 +40,39 @@
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="name" id="name" autocomplete="off">
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="unit" id="unit" autocomplete="off">
-                        </td>
-                        <td>
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
+                        <td>
+                            <input type="date" class="form-control" name="date" id="date" autocomplete="off">
+                        </td>
+                        <td>
+                            <select class="form-control" name="vendor_id" id="vendor_id" autocomplete="off">
+                                <option value="">ALL</option>
+                                @foreach($vendors as $single_data)
+                                    <option value="{{$single_data->id}}" >{{$single_data->name}}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <input type="date" class="form-control" name="delivery_date" id="delivery_date" autocomplete="off">
+                        </td>
+                        
+                        
 
                         
                         <td>
                        
                        </td>
                     </tr>
-                  <tr>
-                    <th>ID</th>
-                    <th>Width</th>
-                    <th>Unit</th>
-                    <th>SKU</th>
-                    
-                    <th>Action</th>
-                  </tr>
+                    <tr>
+                        <th>ID</th>
+                        <th>SKU</th>
+                        <th>Date</th>
+                        <th>Vendor</th>
+                        <th>Delivery Date</th>
+                        
+                        <th>Action</th>
+                    </tr>
                   </thead>
                   <tbody>
                   <!-- <tr>
@@ -92,21 +103,24 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.master.fabric_width.indexList') !!}',
+                url: '{!! route('admin.purchase_order.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
-                    d.name = $('#name').val();
-                    d.unit = $('#unit').val();
                     d.sku = $('#sku').val();
+                    d.date = $('#date').val();
+                    d.vendor_id = $('#vendor_id').val();
+                    d.delivery_date = $('#delivery_date').val();
                   
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'name', name: 'name'},
-                {data: 'unit', name: 'unit'},
                 {data: 'sku', name: 'sku'},
+                {data: 'date', name: 'date'},
+                {data: 'vendor_id', name: 'vendor_id'},
+                {data: 'delivery_date', name: 'delivery_date'},
+                
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
@@ -123,11 +137,15 @@
             e.preventDefault();
         });
 
-        $('#name').on('keyup', function (e) {
+        $('#date').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
-        $('#unit').on('keyup', function (e) {
+        $('#vendor_id').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#delivery_date').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
@@ -135,7 +153,6 @@
             oTable.draw();
             e.preventDefault();
         });
-
         
 
     });
@@ -156,7 +173,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.master.item.delete', ['id' => '']) }}" + id;
+                window.location.href = "{{ route('admin.purchase_order.delete', ['id' => '']) }}" + id;
             }
         });
     }

@@ -9,13 +9,12 @@ use App\Http\Controllers\Admin\GeneralSettingsController as AdminGeneralSettings
 use App\Http\Controllers\Admin\Master\VendorController as AdminVendorController;
 use App\Http\Controllers\Admin\Master\ItemController as AdminItemController;
 use App\Http\Controllers\Admin\Master\FabricDyeController as AdminFabricDyeController;
-
-///// new 
 use App\Http\Controllers\Admin\Master\FabricGsmController as AdminFabricGsmController;
 use App\Http\Controllers\Admin\Master\FabricCompositionController as AdminFabricCompositionController;
 use App\Http\Controllers\Admin\Master\FabricWeaveController as AdminFabricWeaveController;
 use App\Http\Controllers\Admin\Master\FabricWidthController as AdminFabricWidthController;
 use App\Http\Controllers\Admin\Master\FabricController as AdminFabricController;
+use App\Http\Controllers\Admin\PurchaseOrderController as AdminPurchaseOrderController;
 
 
 ////// Website
@@ -32,6 +31,17 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
         Route::get('/logout',[AdminLoginController::class,'logout'])->name('logout');
         Route::get('/dashboard',[AdminDashboardController::class,'dashboard'])->name('dashboard');
 
+        Route::prefix('/purchase-order')->name('purchase_order.')->group(function () {
+            Route::get('/index',[AdminPurchaseOrderController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminPurchaseOrderController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminPurchaseOrderController::class,'create'])->name('create');
+            Route::post('/store',[AdminPurchaseOrderController::class,'store'])->name('store');
+            Route::get('/edit',[AdminPurchaseOrderController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminPurchaseOrderController::class,'update'])->name('update');
+            Route::get('/delete',[AdminPurchaseOrderController::class,'delete'])->name('delete');
+            Route::get('/view',[AdminPurchaseOrderController::class,'view'])->name('view');
+
+        });
 
         
 

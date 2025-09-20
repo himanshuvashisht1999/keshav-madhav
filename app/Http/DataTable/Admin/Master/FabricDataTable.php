@@ -13,7 +13,7 @@ class FabricDataTable  {
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $query->orderBy('id','desc');
+                // $query->orderBy('id','desc');
                 $query->orWhere('name', 'like', "%{$request->get('search')['value']}%");
                 if ($request->has('name') && !empty($request->name)) {
                     $query->where('name', 'like', "%{$request->get('name')}%");
@@ -45,7 +45,7 @@ class FabricDataTable  {
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
             })
             ->editColumn('dye_id', function ($queue) {
-				return $queue?->fabric_dye->name;
+				return $queue?->fabric_dye->color;
             })
             ->editColumn('gsm_id', function ($queue) {
 				return $queue?->fabric_gsm->name;

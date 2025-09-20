@@ -31,9 +31,9 @@
                     <input type="hidden" name="id" value="{{$data->id}}">
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Name</label>
+                                    <label for="exampleInputEmail1">Width</label>
                                     <input type="text" name="name" class="form-control" placeholder="Enter name" value="{{$data->name}}">
                                     @if ($errors->has('name'))
                                         <span class="invalid-feedback d-block">
@@ -42,10 +42,26 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Unit</label>
+                                    <select name="unit" class="form-control select2" style="width: 100%;">
+                                        <!-- <option value="">Select</option> -->
+                                        <option value="cm" {{$data->unit == 'cm' ? 'selected' : ''}}>cm</option>
+                                        <option value="inch" {{$data->unit == 'inch' ? 'selected' : ''}}>inch</option>
+                                        <option value="meter" {{$data->unit == 'meter' ? 'selected' : ''}}>meter</option>
+                                    </select>
+                                    @if ($errors->has('unit'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('unit') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="sku">SKU</label>
-                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}">
+                                    <input type="text" name="sku" id="sku_n" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}" readonly>
                                     @if ($errors->has('sku'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('sku') }}
