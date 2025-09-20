@@ -31,6 +31,12 @@
                             <p>Purchase Order</p>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{route('admin.fabric_receipt.index')}}" class="{{str_contains($page_url,'admin/fabric-receipt') ? 'nav-link active' : 'nav-link'}}" style="position:static;">
+                            <i class="nav-icon fas fa-store"></i>
+                            <p>Fabric Receipt</p>
+                        </a>
+                    </li>
 
                     
                     
