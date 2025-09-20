@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\Master\FabricWeaveController as AdminFabricWeaveC
 use App\Http\Controllers\Admin\Master\FabricWidthController as AdminFabricWidthController;
 use App\Http\Controllers\Admin\Master\FabricController as AdminFabricController;
 use App\Http\Controllers\Admin\PurchaseOrderController as AdminPurchaseOrderController;
+use App\Http\Controllers\Admin\FabricReceiptController as AdminFabricReceiptController;
 
 
 ////// Website
@@ -40,6 +41,21 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/update',[AdminPurchaseOrderController::class,'update'])->name('update');
             Route::get('/delete',[AdminPurchaseOrderController::class,'delete'])->name('delete');
             Route::get('/view',[AdminPurchaseOrderController::class,'view'])->name('view');
+
+        });
+
+        Route::prefix('/fabric-receipt')->name('fabric_receipt.')->group(function () {
+            Route::get('/index',[AdminFabricReceiptController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminFabricReceiptController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminFabricReceiptController::class,'create'])->name('create');
+            Route::post('/store',[AdminFabricReceiptController::class,'store'])->name('store');
+            Route::get('/edit',[AdminFabricReceiptController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminFabricReceiptController::class,'update'])->name('update');
+            Route::get('/delete',[AdminFabricReceiptController::class,'delete'])->name('delete');
+            Route::get('/view',[AdminFabricReceiptController::class,'view'])->name('view');
+            Route::get('/detail',[AdminFabricReceiptController::class,'detail'])->name('detail');
+            Route::post('/store-detail',[AdminFabricReceiptController::class,'storeDetail'])->name('storeDetail');
+            Route::get('/purchase-order-items/{id}', [AdminFabricReceiptController::class, 'getPurchaseOrderItems'])->name('items');
 
         });
 
