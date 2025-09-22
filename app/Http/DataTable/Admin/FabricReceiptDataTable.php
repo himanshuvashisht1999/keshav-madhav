@@ -16,6 +16,7 @@ class FabricReceiptDataTable  {
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id','desc');
+                
                 $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
@@ -36,6 +37,7 @@ class FabricReceiptDataTable  {
                 if ($request->has('roll') && !empty($request->roll)) {
                     $query->where('roll', 'like', "%{$request->get('roll')}%");
                 }
+                $query->where('status',1);
                                 
                 
             }) 

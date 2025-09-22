@@ -66,17 +66,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="meter">Meter</label>
-                                    <input type="number" name="meter" id="meter" class="form-control" placeholder="Enter meters" >
-                                    @if ($errors->has('meter'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('meter') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
+                            
                             
                             
 
@@ -87,6 +77,18 @@
                                     @if ($errors->has('roll'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('roll') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="meter">Meter (per roll)</label>
+                                    <input type="number" name="meter" id="meter" class="form-control" placeholder="Enter meters" >
+                                    @if ($errors->has('meter'))
+                                        <span class="invalid-feedback d-block">
+                                            {{ $errors->first('meter') }}
                                         </span>
                                     @endif
                                 </div>
