@@ -61,8 +61,8 @@
                                 <th>Purchase Order SKU</th>
                                 <th>Fabric SKU</th>
                                 <!-- <th>Fabric Name</th> -->
-                                <th>Meters</th>
                                 <th>Rolls</th>
+                                <th>Meter (per roll)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -72,8 +72,8 @@
                                     <td>{{ $detail->purchase_order->sku ?? '-' }}</td>
                                     <td>{{ $detail->fabric_sku }}</td>
                                     <!-- <td>{{ $detail->fabric->name ?? '-' }}</td> -->
-                                    <td>{{ $detail->meter }}</td>
                                     <td>{{ $detail->roll }}</td>
+                                    <td>{{ $detail->meter }}</td>
                                 </tr>
                             @empty
                                 <tr>
