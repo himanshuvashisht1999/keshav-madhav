@@ -6,9 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\Fabric;
 use Yajra\DataTables\Facades\DataTables;
 
-class FabricDataTable  {
+class FabricDataTable
+{
 
-    public function indexList($request){
+    public function indexList($request)
+    {
         $queue = Fabric::query();
 
         return DataTables::of($queue)->addIndexColumn()
@@ -37,30 +39,37 @@ class FabricDataTable  {
                 if ($request->has('composition_id') && $request->filled('composition_id')) {
                     $query->where('composition_id', $request->get('composition_id'));
                 }
-                
-            }) 
-         
+                if ($request->has('path') && $request->filled('path')) {
+                    $query->where('path', $request->get('path'));
+                }
+            })
+
             ->editColumn('status', function ($queue) {
-				$status= $queue->status;
+                $status = $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
             })
             ->editColumn('dye_id', function ($queue) {
-				return $queue?->fabric_dye->color;
+                return $queue?->fabric_dye->color;
             })
             ->editColumn('gsm_id', function ($queue) {
-				return $queue?->fabric_gsm->name;
+                return $queue?->fabric_gsm->name;
             })
             ->editColumn('composition_id', function ($queue) {
-				return $queue?->fabric_composition->name;
+                return $queue?->fabric_composition->name;
             })
+            ->editColumn('image', function ($queue) {
+                return $queue->fabric_path?->image ?? 'No Image';
+            })
+
+
             ->addColumn('action', function ($queue) {
-				$parameter= $queue->id;
+                $parameter = $queue->id;
                 return '
-                <a href="' . route('admin.master.fabric.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                <a href="' . route('admin.master.fabric.edit', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
                 ';
             })
-            
-            ->rawColumns(['action', 'status','dye_id','gsm_id','composition_id'])
+
+            ->rawColumns(['action', 'status', 'dye_id', 'gsm_id', 'composition_id', 'image'])
             ->make(true);
     }
 }
