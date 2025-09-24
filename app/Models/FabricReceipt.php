@@ -21,6 +21,7 @@ class FabricReceipt extends Model
         'roll',
         'received_by',
         'shipment_photo',
+        'challan_photo',
         'status',
         'created_at',
         'updated_at'
@@ -34,11 +35,19 @@ class FabricReceipt extends Model
     public function getShipmentPhotoAttribute($value)
     {
         if ($value) {
-            return asset('assets/shipment-image/'. $value);
+            return asset('assets/receipts/shipment-image/'. $value);
         } else {
             return asset('images/image-placeholder.png');
         }
-    } 
+    }
+    public function getChallanPhotoAttribute($value)
+    {
+        if ($value) {
+            return asset('assets/receipts/challan-image/'. $value);
+        } else {
+            return asset('images/image-placeholder.png');
+        }
+    }
 
     
 }

@@ -21,7 +21,7 @@ class PurchaseOrderStoreRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'sku'    => 'required|unique:purchase_orders,sku',
+            // 'sku'    => 'required|unique:purchase_orders,sku',
             'date' => 'required',
             'vendor_id' => 'required',
             'delivery_date' => 'required',

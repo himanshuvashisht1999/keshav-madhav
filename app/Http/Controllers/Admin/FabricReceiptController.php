@@ -32,16 +32,10 @@ class FabricReceiptController extends Controller {
     public function detail(Request $request){
         $response['data'] = $this->service->view($request);
         $response['vendors'] = $this->service->vendors();
+        $response['fabrics'] = $this->service->fabrics();
+
         $request->merge(['vendor_id' => $response['data']->vendor_id]);
         $response['purchase_orders'] = $this->service->purchase_orders($request);
-        if($response['purchase_orders']){
-            if($response['purchase_orders'][0]){
-                $purchase_order_id = $response['purchase_orders'][0]->id;
-            }
-        }else{
-            $purchase_order_id = 0;
-        }
-        $response['purchase_order_items'] = $this->service->purchase_order_items($purchase_order_id);
         return view('admin.fabric_receipt.detail',$response);
     }
     public function getPurchaseOrderItems($id)

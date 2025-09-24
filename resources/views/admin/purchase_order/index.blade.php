@@ -66,7 +66,7 @@
                     </tr>
                     <tr>
                         <th>ID</th>
-                        <th>SKU</th>
+                        <th>PO No.</th>
                         <th>Date</th>
                         <th>Vendor</th>
                         <th>Delivery Date</th>

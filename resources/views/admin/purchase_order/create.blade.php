@@ -72,7 +72,7 @@
 
                             
 
-                            <div class="col-md-6">
+                            <div class="col-md-6" style="display:none;">
                                 <div class="form-group">
                                     <label for="sku">SKU</label>
                                     <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU">

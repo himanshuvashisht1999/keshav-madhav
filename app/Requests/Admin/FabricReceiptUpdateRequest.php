@@ -21,7 +21,7 @@ class FabricReceiptUpdateRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'sku'    => 'required|unique:fabric_receipts,sku,' . $request->id,
+            // 'sku'    => 'required|unique:fabric_receipts,sku,' . $request->id,
             'vendor_id' => 'required',
             'truck_number' => 'required',
             'time' => 'required',

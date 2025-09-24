@@ -18,13 +18,22 @@ class StockExpend extends Model
         'stock_id',
         'roll',
         'roll_no',
-        'barcode',
+        'qrcode',
+        'unique_number',
         'status',
         'created_at',
         'updated_at'
     ];
     public function stock(){
         return $this->hasOne('App\Models\Stock','id','stock_id');
+    }
+    public function getQrcodeAttribute($value)
+    {
+        if ($value) {
+            return asset('assets/qrcodes/'. $value);
+        } else {
+            return asset('images/image-placeholder.png');
+        }
     }
 
 

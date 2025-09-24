@@ -96,6 +96,28 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputFile">Challan Photo</label>
+                                    <div class="input-group">
+                                        <div class="custom-file">
+                                            <input type="file" name="challan_photo" class="custom-file-input" id="image-input2" onchange="previewImage2()"  accept=".jpg,.jpeg,.png">
+                                            <label class="custom-file-label" for="exampleInputFile">Choose file</label>
+                                        </div>
+                                        
+                                        @if ($errors->has('challan_photo'))
+                                            <span class="invalid-feedback d-block">
+                                            {{ $errors->first('challan_photo') }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <img class="" src="{{asset('images/image-placeholder.png')}}" alt="Preview" id="image-preview-2" height="80px" width="80px">
+                            </div>
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputFile">Shipment Photo</label>
                                     <div class="input-group">
@@ -112,7 +134,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6" style="display:none;">
                                 <div class="form-group">
                                     <label for="sku">SKU</label>
                                     <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU">
@@ -126,6 +148,8 @@
                             <div class="col-md-6">
                                 <img class="" src="{{asset('images/image-placeholder.png')}}" alt="Preview" id="image-preview" height="80px" width="80px">
                             </div>
+
+                            
 
                            
                             <div class="col-md-12">
@@ -216,7 +240,25 @@
         });
     });
 </script>
+<script>
+    function previewImage2() {
+        var imageInput = document.getElementById('image-input2');
+        var imagePreview = document.getElementById('image-preview-2');
+        
+        if (imageInput.files && imageInput.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(imageInput.files[0]);
+        } else {
+            // If no file is selected or supported, clear the preview
+            imagePreview.src = "";
+        }
+    }
 
+</script>
 
 
 @endsection
