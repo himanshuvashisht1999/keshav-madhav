@@ -1,13 +1,14 @@
 <?php
 
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Fabric extends Model
 {
     use HasFactory;
-    protected $table= 'fabrics';
+    protected $table = 'fabrics';
     protected $fillable = [
         'id',
         'sno',
@@ -25,20 +26,33 @@ class Fabric extends Model
         'created_at',
         'updated_at'
     ];
-    public function fabric_gsm(){
-        return $this->hasOne('App\Models\FabricGsm','id','gsm_id');
+    public function fabric_gsm()
+    {
+        return $this->hasOne('App\Models\FabricGsm', 'id', 'gsm_id');
     }
-    public function fabric_width(){
-        return $this->hasOne('App\Models\FabricWidth','id','width_id');
+    public function fabric_width()
+    {
+        return $this->hasOne('App\Models\FabricWidth', 'id', 'width_id');
     }
-    public function fabric_weave_type(){
-        return $this->hasOne('App\Models\FabricWeave','id','weave_type_id');
+    public function fabric_weave_type()
+    {
+        return $this->hasOne('App\Models\FabricWeave', 'id', 'weave_type_id');
     }
-    public function fabric_composition(){
-        return $this->hasOne('App\Models\FabricComposition','id','composition_id');
+    public function fabric_composition()
+    {
+        return $this->hasOne('App\Models\FabricComposition', 'id', 'composition_id');
     }
-    public function fabric_dye(){
-        return $this->hasOne('App\Models\FabricDye','id','dye_id');
+    public function fabric_dye()
+    {
+        return $this->hasOne('App\Models\FabricDye', 'id', 'dye_id');
     }
-    
+    public function fabric_path()
+    {
+        // MainImage me "fabric_sku" hai jo Fabric ke "sku" se match karega
+        return $this->hasOne('App\Models\FabricMainImage', 'fabric_sku', 'sku');
+    }
+    public function fabric_main_image()
+    {
+        return $this->belongsTo('App\Models\FabricMainImage', 'main_id');
+    }
 }
