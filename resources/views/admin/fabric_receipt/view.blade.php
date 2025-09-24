@@ -37,6 +37,14 @@
                         <div class="col-md-4"><strong>Rolls / Boxes:</strong> {{ $data->roll }}</div>
                         <div class="col-md-4"><strong>Received By:</strong> {{ $data->received_by }}</div>
                         <div class="col-md-4">
+                            <strong>Challan Photo:</strong><br>
+                            @if($data->challan_photo)
+                                <img src="{{$data->challan_photo}}" alt="Challan" height="100">
+                            @else
+                                -
+                            @endif
+                        </div>
+                        <div class="col-md-4">
                             <strong>Shipment Photo:</strong><br>
                             @if($data->shipment_photo)
                                 <img src="{{$data->shipment_photo}}" alt="Shipment" height="100">
@@ -58,7 +66,7 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Purchase Order SKU</th>
+                                <th>Purchase Order</th>
                                 <th>Fabric SKU</th>
                                 <!-- <th>Fabric Name</th> -->
                                 <th>Rolls</th>

@@ -32,14 +32,29 @@
                     <div class="card-body">
                         <div class="row">
 
-                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Purchase Order</label>
+                                    <select name="purchase_order_id" id="purchase_order_id" class="form-control select2" style="width: 100%;">
+                                        @foreach($purchase_orders as $single_data)
+                                        <option value="{{$single_data->id}}">{{$single_data->sku}}</option>
+                                        @endforeach
+                                        
+                                    </select>
+                                    @if ($errors->has('purchase_order_id'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('purchase_order_id') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
 
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Fabric SKU</label>
                                     <select name="fabric_sku" id="fabric_sku" class="form-control select2" style="width: 100%;">
-                                        @foreach($fabrics as $single_data)
-                                        <option value="{{$single_data->id}}" >{{$single_data->sku}}</option>
+                                        @foreach($purchase_order_items as $single_data)
+                                        <option value="{{$single_data->id}}" >{{$single_data->fabric_sku}}</option>
                                         @endforeach
                                         
                                     </select>
@@ -78,23 +93,6 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Purchase Order</label>
-                                    <select name="purchase_order_id" id="purchase_order_id" class="form-control select2" style="width: 100%;">
-                                        <option value="0">NIL</option>
-                                        @foreach($purchase_orders as $single_data)
-                                        <option value="{{$single_data->id}}">{{$single_data->sku}}</option>
-                                        @endforeach
-                                        
-                                    </select>
-                                    @if ($errors->has('purchase_order_id'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('purchase_order_id') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
 
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">
@@ -117,5 +115,32 @@
     </section>
 </div>
 
+<script>
+$(document).ready(function () {
+    $('#purchase_order_id').on('change', function () {
+        var purchaseOrderId = $(this).val();
+
+        if (purchaseOrderId) {
+            var url = "{{ route('admin.fabric_receipt.items', ':id') }}";
+            url = url.replace(':id', purchaseOrderId);
+            $.ajax({
+                url: url,
+                type: "GET",
+                dataType: "json",
+                success: function (data) {
+                    $('#fabric_sku').empty(); // clear old options
+                    $('#fabric_sku').append('<option value="">Select Fabric SKU</option>');
+                    $.each(data, function (key, value) {
+                        $('#fabric_sku').append('<option value="'+ value.id +'">'+ value.fabric_sku +'</option>');
+                    });
+                    $('#fabric_sku').trigger('change'); // refresh select2 if used
+                }
+            });
+        } else {
+            $('#fabric_sku').empty();
+        }
+    });
+});
+</script>
 
 @endsection

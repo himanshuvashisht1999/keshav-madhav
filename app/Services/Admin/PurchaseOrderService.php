@@ -33,7 +33,7 @@ class PurchaseOrderService {
 
     public function store(Request $request){
         $save_data = new PurchaseOrder;
-        $save_data->sku = $request->sku;
+        $save_data->sku = '';
         $save_data->date = $request->date;
         $save_data->vendor_id = $request->vendor_id;
         $save_data->delivery_date = $request->delivery_date;
@@ -46,7 +46,7 @@ class PurchaseOrderService {
                 $save_po_item = new PurchaseOrderItem;
                 $save_po_item->purchase_order_id = $save_data->id;
                 $save_po_item->fabric_sku = $fab_data->sku;
-                $save_po_item->sku = $single_data['sku'];
+                //$save_po_item->sku = $single_data['sku'];
                 $save_po_item->fabric_id = $fab_data->id;
                 $save_po_item->meter = $single_data['meter'];
                 $save_po_item->price = $single_data['price'];
@@ -56,6 +56,11 @@ class PurchaseOrderService {
             }
             
         }
+        //// save-purchase order id
+        $sku_update = PurchaseOrder::where('id',$save_data->id)->update([
+            'sku' => 'PO-'.$save_data->id,
+        ]);
+
         // Reload purchase order with relationships for email
         $data = PurchaseOrder::with('items','vendor')->find($save_data->id);
 
