@@ -17,14 +17,20 @@ class FabricOtherImage extends Model
         'sub_company_id',
         'project_id',
         'sku',
-        'main_id',
+        'fabric_id',
         'image',
+        'status',
         'created_at',
         'updated_at'
     ];
-
-    public function mainImage()
+    public function getImageAttribute($value)
     {
-        return $this->belongsTo('App\Models\MainImage', 'main_id');
+        if ($value) {
+            return asset('assets/fabric/'. $value);
+        } else {
+            return asset('images/image-placeholder.png');
+        }
     }
+
+
 }

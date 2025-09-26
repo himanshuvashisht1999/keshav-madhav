@@ -134,6 +134,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/edit',[AdminFabricController::class,'edit'])->name('edit');
             Route::post('/update',[AdminFabricController::class,'update'])->name('update');
             Route::get('/delete',[AdminFabricController::class,'delete'])->name('delete');
+            Route::get('/deleteImage',[AdminFabricController::class,'deleteImage'])->name('deleteImage');
         });
 
         

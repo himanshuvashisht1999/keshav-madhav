@@ -94,7 +94,7 @@
                                     <th>Dye</th>
                                     <th>GSM</th>
                                     <th>Composition</th>
-                                    <th>Path</th>
+                                    <th>Image</th>
 
                                     <th>Action</th>
                                 </tr>

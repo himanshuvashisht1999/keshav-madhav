@@ -151,53 +151,42 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-6">
+                                <div class="col-md-6 mt-2">
                                     <div class="form-group">
                                         <label for="exampleInputFile">Main Image</label>
                                         <div class="input-group">
                                             <div class="custom-file">
-                                                <input type="file" name="main_image" class="custom-file-input"
-                                                    id="image-input" onchange="previewImage()" accept=".jpg,.jpeg,.png">
+                                                <input type="file" name="image" class="custom-file-input" id="image-input" onchange="previewImage()"  accept=".jpg,.jpeg,.png">
                                                 <label class="custom-file-label" for="exampleInputFile">Choose file</label>
                                             </div>
-
-                                            @if ($errors->has('main_image'))
+                                            
+                                            @if ($errors->has('image'))
                                                 <span class="invalid-feedback d-block">
-                                                    {{ $errors->first('main_image') }}
+                                                {{ $errors->first('image') }}
                                                 </span>
                                             @endif
                                         </div>
                                     </div>
                                 </div>
+                                <div class="col-md-6 mt-2">
+                                    <img class="" src="{{asset('images/image-placeholder.png')}}" alt="Preview" id="image-preview" height="80px" width="80px">
+                                </div>
 
-
-                                <div class="col-md-6">
+                                <div class="col-md-12 mt-2">
                                     <div class="form-group">
                                         <label for="exampleInputFile">Other Images</label>
                                         <div class="input-group">
                                             <div class="custom-file">
-                                                <input type="file" name="other_image[]" class="custom-file-input"
-                                                    id="image-input" onchange="previewMultipleImages(event)"
-                                                    accept=".jpg,.jpeg,.png" multiple>
-                                                <label class="custom-file-label" for="exampleInputFile">Choose
-                                                    files</label>
+                                                
+                                                <input type="file" name="other_images[]" id="other-images" class="custom-file-input" multiple accept=".jpg,.jpeg,.png">
+                                                <label class="custom-file-label" for="exampleInputFile">Choose file</label>
                                             </div>
-
-                                            @if ($errors->has('other_image'))
-                                                <span class="invalid-feedback d-block">
-                                                    {{ $errors->first('other_image') }}
-                                                </span>
-                                            @endif
+                                            
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <img class="" src="{{ asset('images/image-placeholder.png') }}" alt="Preview"
-                                        id="image-preview" height="80px" width="80px">
-                                </div>
-                                <div class="col-md-6" id="image-preview-container">
-                                    <img src="{{ asset('images/image-placeholder.png') }}" alt="Preview"
-                                        id="default-preview" height="80px" width="80px">
+                                <div class="col-md-12 mt-2" id="preview-multiple-images">
+                                    
                                 </div>
                                 <div class="col-md-12">
                                     <div class="mt-2" style="float:right">
@@ -212,43 +201,7 @@
             </div>
         </section>
     </div>
-    <script>
-        function previewMultipleImages(event) {
-            let container = document.getElementById("image-preview-container");
-            container.innerHTML = ""; // clear old previews
-            for (let file of event.target.files) {
-                let reader = new FileReader();
-                reader.onload = function(e) {
-                    let img = document.createElement("img");
-                    img.src = e.target.result;
-                    img.height = 80;
-                    img.width = 80;
-                    img.style.margin = "5px";
-                    container.appendChild(img);
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-    </script>
-
-    <script>
-        function previewImage() {
-            var imageInput = document.getElementById('image-input');
-            var imagePreview = document.getElementById('image-preview');
-
-            if (imageInput.files && imageInput.files[0]) {
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    imagePreview.src = e.target.result;
-                };
-
-                reader.readAsDataURL(imageInput.files[0]);
-            } else {
-                // If no file is selected or supported, clear the preview
-                imagePreview.src = "";
-            }
-        }
-    </script>
+    
 
     <script>
         function generateSKU() {
@@ -289,6 +242,43 @@
             $("#sku").on("input", function() {
                 $(this).data('edited', true);
             });
-        });
-    </script>
+        });</script>
+
+    <script>
+    function previewImage() {
+        var imageInput = document.getElementById('image-input');
+        var imagePreview = document.getElementById('image-preview');
+        
+        if (imageInput.files && imageInput.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(imageInput.files[0]);
+        } else {
+            // If no file is selected or supported, clear the preview
+            imagePreview.src = "";
+        }
+    }
+    document.getElementById('other-images').addEventListener('change', function() {
+        let previewContainer = document.getElementById('preview-multiple-images');
+        previewContainer.innerHTML = ""; // clear old previews
+
+        if (this.files) {
+            [...this.files].forEach(file => {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    let img = document.createElement("img");
+                    img.src = e.target.result;
+                    img.classList.add("m-1", "border", "rounded");
+                    img.style.width = "80px";
+                    img.style.height = "80px";
+                    previewContainer.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    });
+</script>
 @endsection

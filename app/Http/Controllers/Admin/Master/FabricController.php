@@ -55,5 +55,9 @@ class FabricController extends Controller {
         $data = $this->service->delete($request);
         return redirect()->route('admin.master.fabric.index')->withSuccess('The fabric has been successfully deleted.'); 
     }
+    public function deleteImage(Request $request){
+        $data = $this->service->deleteImage($request);
+        return redirect()->route('admin.master.fabric.edit',['id' => $request->fabric_id])->withSuccess('Image deleted successfully.');
+    }
 
 }
