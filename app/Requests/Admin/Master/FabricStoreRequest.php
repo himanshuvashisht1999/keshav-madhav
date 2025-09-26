@@ -28,6 +28,7 @@ class FabricStoreRequest extends FormRequest{
             'weave_type_id' => 'required',
             'gsm_id' => 'required',
             'composition_id' => 'required',
+            'image' => 'required',
             // 'status' =>'required',
         ];
     }

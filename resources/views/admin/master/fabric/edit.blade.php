@@ -152,27 +152,58 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-6">
+                                <div class="col-md-6 mt-2">
                                     <div class="form-group">
                                         <label for="exampleInputFile">Main Image</label>
                                         <div class="input-group">
                                             <div class="custom-file">
-                                                <input type="file" name="shipment_photo" class="custom-file-input"
-                                                    id="image-input" onchange="previewImage()" accept=".jpg,.jpeg,.png">
+                                                <input type="file" name="image" class="custom-file-input" id="image-input" onchange="previewImage()"  accept=".jpg,.jpeg,.png">
                                                 <label class="custom-file-label" for="exampleInputFile">Choose file</label>
                                             </div>
-
-                                            @if ($errors->has('main_image'))
+                                            
+                                            @if ($errors->has('image'))
                                                 <span class="invalid-feedback d-block">
-                                                    {{ $errors->first('main_image') }}
+                                                {{ $errors->first('image') }}
                                                 </span>
                                             @endif
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <img class="" src="{{ $data->image }}" alt="Preview" id="image-preview"
-                                        height="80px" width="80px">
+                                <div class="col-md-6 mt-2">
+                                    <img class="" src="{{$data->image}}" alt="Preview" id="image-preview" height="80px" width="80px">
+                                </div>
+
+                                <div class="col-md-12 mt-2">
+                                    <div class="form-group">
+                                        <label for="exampleInputFile">Other Images</label>
+                                        <div class="input-group">
+                                            <div class="custom-file">
+                                                
+                                                <input type="file" name="other_images[]" id="other-images" class="custom-file-input" multiple accept=".jpg,.jpeg,.png">
+                                                <label class="custom-file-label" for="exampleInputFile">Choose file</label>
+                                            </div>
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mt-2 d-flex flex-wrap" id="preview-multiple-images">
+                                    @foreach($data->other_images as $single_image)
+                                        <div class="position-relative d-inline-block m-1">
+                                            <img src="{{$single_image->image}}" 
+                                                alt="Preview" 
+                                                class="border rounded" 
+                                                height="80px" 
+                                                width="80px">
+
+                                            <!-- Delete Icon as <a> -->
+                                            <a href="{{ route('admin.master.fabric.deleteImage', ['id' => $single_image->id, 'fabric_id' => $single_image->fabric_id]) }}" 
+                                            class="btn btn-sm btn-danger rounded-circle p-0" 
+                                            style="position:absolute; top:2px; right:2px; width:22px; height:22px; line-height:18px; text-align:center;"
+                                            onclick="return confirm('Are you sure you want to delete this image?')">
+                                                ×
+                                            </a>
+                                        </div>
+                                    @endforeach
                                 </div>
 
                                 <div class="col-md-12">
@@ -189,22 +220,41 @@
         </section>
     </div>
 
-    <script>
-        function previewImage() {
-            var imageInput = document.getElementById('image-input');
-            var imagePreview = document.getElementById('image-preview');
-
-            if (imageInput.files && imageInput.files[0]) {
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    imagePreview.src = e.target.result;
-                };
-
-                reader.readAsDataURL(imageInput.files[0]);
-            } else {
-                // If no file is selected or supported, clear the preview
-                imagePreview.src = "";
-            }
+<script>
+    function previewImage() {
+        var imageInput = document.getElementById('image-input');
+        var imagePreview = document.getElementById('image-preview');
+        
+        if (imageInput.files && imageInput.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(imageInput.files[0]);
+        } else {
+            // If no file is selected or supported, clear the preview
+            imagePreview.src = "";
         }
-    </script>
+    }
+    document.getElementById('other-images').addEventListener('change', function() {
+        let previewContainer = document.getElementById('preview-multiple-images');
+        // previewContainer.innerHTML = ""; // clear old previews
+
+        if (this.files) {
+            [...this.files].forEach(file => {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    let img = document.createElement("img");
+                    img.src = e.target.result;
+                    img.classList.add("m-1", "border", "rounded");
+                    img.style.width = "80px";
+                    img.style.height = "80px";
+                    previewContainer.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    });
+</script>
 @endsection

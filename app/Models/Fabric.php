@@ -22,10 +22,19 @@ class Fabric extends Model
         'weave_type_id',
         'gsm_id',
         'composition_id',
+        'image',
         'status',
         'created_at',
         'updated_at'
     ];
+    public function getImageAttribute($value)
+    {
+        if ($value) {
+            return asset('assets/fabric/'. $value);
+        } else {
+            return asset('images/image-placeholder.png');
+        }
+    }
     public function fabric_gsm()
     {
         return $this->hasOne('App\Models\FabricGsm', 'id', 'gsm_id');
@@ -46,13 +55,9 @@ class Fabric extends Model
     {
         return $this->hasOne('App\Models\FabricDye', 'id', 'dye_id');
     }
-    public function fabric_path()
+    public function other_images()
     {
-        // MainImage me "fabric_sku" hai jo Fabric ke "sku" se match karega
-        return $this->hasOne('App\Models\FabricMainImage', 'fabric_sku', 'sku');
+        return $this->hasMany('App\Models\FabricOtherImage', 'fabric_id', 'id');
     }
-    public function fabric_main_image()
-    {
-        return $this->belongsTo('App\Models\FabricMainImage', 'main_id');
-    }
+
 }

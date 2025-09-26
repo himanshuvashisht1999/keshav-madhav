@@ -58,7 +58,8 @@ class FabricDataTable
                 return $queue?->fabric_composition->name;
             })
             ->editColumn('image', function ($queue) {
-                return $queue->fabric_path?->image ?? 'No Image';
+                $image = $queue->image;
+                return '<a href="'.$image.'" target="_blank">Image</a>';
             })
 
 
