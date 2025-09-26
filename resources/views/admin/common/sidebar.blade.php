@@ -37,6 +37,12 @@
                             <p>Fabric Receipt</p>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{route('admin.stock.index')}}" class="{{str_contains($page_url,'admin/stock') ? 'nav-link active' : 'nav-link'}}" style="position:static;">
+                            <i class="nav-icon fas fa-store"></i>
+                            <p>Stock</p>
+                        </a>
+                    </li>
 
                     
                     
