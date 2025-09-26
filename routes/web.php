@@ -17,6 +17,13 @@ use App\Http\Controllers\Admin\Master\FabricController as AdminFabricController;
 use App\Http\Controllers\Admin\PurchaseOrderController as AdminPurchaseOrderController;
 use App\Http\Controllers\Admin\FabricReceiptController as AdminFabricReceiptController;
 use App\Http\Controllers\Admin\StockController as AdminStockController;
+use App\Http\Controllers\Admin\Master\ProductionGoodsController as AdminProductionGoodsController;
+use App\Http\Controllers\Admin\Master\SizeMeasurementController as AdminSizeMeasurementController;
+
+////new master
+use App\Http\Controllers\Admin\Master\MasterColorController as AdminMasterColorController;
+use App\Http\Controllers\Admin\Master\MasterDesignController as AdminMasterDesignController;
+use App\Http\Controllers\Admin\Master\MasterMaterialontroller as AdminMasterMaterialontroller;
 
 
 ////// Website
@@ -142,6 +149,54 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/update',[AdminFabricController::class,'update'])->name('update');
             Route::get('/delete',[AdminFabricController::class,'delete'])->name('delete');
             Route::get('/deleteImage',[AdminFabricController::class,'deleteImage'])->name('deleteImage');
+        });
+        Route::prefix('master/size-measurement')->name('master.size-measurement.')->group(function () {
+            Route::get('/index',[AdminSizeMeasurementController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminSizeMeasurementController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminSizeMeasurementController::class,'create'])->name('create');
+            Route::post('/store',[AdminSizeMeasurementController::class,'store'])->name('store');
+            Route::get('/edit',[AdminSizeMeasurementController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminSizeMeasurementController::class,'update'])->name('update');
+            Route::get('/delete',[AdminSizeMeasurementController::class,'delete'])->name('delete');
+        });
+        
+
+        Route::prefix('master/production-goods')->name('master.production-goods.')->group(function () {
+            Route::get('/index',[AdminProductionGoodsController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminProductionGoodsController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminProductionGoodsController::class,'create'])->name('create');
+            Route::post('/store',[AdminProductionGoodsController::class,'store'])->name('store');
+            Route::get('/edit',[AdminProductionGoodsController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminProductionGoodsController::class,'update'])->name('update');
+            Route::get('/delete',[AdminProductionGoodsController::class,'delete'])->name('delete');
+        });
+
+        Route::prefix('master/colors')->name('master.colors.')->group(function () {
+            Route::get('/index',[AdminMasterColorController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminMasterColorController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminMasterColorController::class,'create'])->name('create');
+            Route::post('/store',[AdminMasterColorController::class,'store'])->name('store');
+            Route::get('/edit',[AdminMasterColorController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminMasterColorController::class,'update'])->name('update');
+            Route::get('/delete',[AdminMasterColorController::class,'delete'])->name('delete');
+        });
+        Route::prefix('master/designs')->name('master.designs.')->group(function () {
+            Route::get('/index',[AdminMasterDesignController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminMasterDesignController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminMasterDesignController::class,'create'])->name('create');
+            Route::post('/store',[AdminMasterDesignController::class,'store'])->name('store');
+            Route::get('/edit',[AdminMasterDesignController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminMasterDesignController::class,'update'])->name('update');
+            Route::get('/delete',[AdminMasterDesignController::class,'delete'])->name('delete');
+        });
+        Route::prefix('master/materials')->name('master.materials.')->group(function () {
+            Route::get('/index',[AdminMasterMaterialontroller::class,'index'])->name('index');
+            Route::get('/indexList',[AdminMasterMaterialontroller::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminMasterMaterialontroller::class,'create'])->name('create');
+            Route::post('/store',[AdminMasterMaterialontroller::class,'store'])->name('store');
+            Route::get('/edit',[AdminMasterMaterialontroller::class,'edit'])->name('edit');
+            Route::post('/update',[AdminMasterMaterialontroller::class,'update'])->name('update');
+            Route::get('/delete',[AdminMasterMaterialontroller::class,'delete'])->name('delete');
         });
 
         
