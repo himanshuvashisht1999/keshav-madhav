@@ -108,6 +108,37 @@
                                     <p>Vendors</p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="{{route('admin.master.size-measurement.index')}}" class="{{str_contains($page_url,'admin/master/vendors') ? 'nav-link active' : 'nav-link'}}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Size Measurement</p>
+                                </a>
+                            </li>
+                           
+                            <li class="nav-item">
+                                <a href="{{route('admin.master.production-goods.index')}}" class="{{str_contains($page_url,'admin/master/production-goods') ? 'nav-link active' : 'nav-link'}}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Production Goods</p>
+                                </a>
+                            </li>
+                             <li class="nav-item">
+                                <a href="{{route('admin.master.colors.index')}}" class="{{str_contains($page_url,'admin/master/colors') ? 'nav-link active' : 'nav-link'}}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Color</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{route('admin.master.designs.index')}}" class="{{str_contains($page_url,'admin/master/designs') ? 'nav-link active' : 'nav-link'}}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Designs</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{route('admin.master.materials.index')}}" class="{{str_contains($page_url,'admin/master/materials') ? 'nav-link active' : 'nav-link'}}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Material</p>
+                                </a>
+                            </li>
                             
                             <!-- General Settings -->
                             <!-- <li class="nav-item">
