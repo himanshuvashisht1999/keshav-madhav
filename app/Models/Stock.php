@@ -28,6 +28,10 @@ class Stock extends Model
         return $this->hasOne('App\Models\PurchaseOrder','id','purchase_order');
     }
 
+    public function expends(){
+        return $this->hasMany('App\Models\StockExpend','stock_id','id');
+    }
+
 
     
 }
