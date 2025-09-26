@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\Master\FabricWidthController as AdminFabricWidthC
 use App\Http\Controllers\Admin\Master\FabricController as AdminFabricController;
 use App\Http\Controllers\Admin\PurchaseOrderController as AdminPurchaseOrderController;
 use App\Http\Controllers\Admin\FabricReceiptController as AdminFabricReceiptController;
+use App\Http\Controllers\Admin\StockController as AdminStockController;
 
 
 ////// Website
@@ -57,6 +58,12 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/store-detail',[AdminFabricReceiptController::class,'storeDetail'])->name('storeDetail');
             Route::get('/purchase-order-items/{id}', [AdminFabricReceiptController::class, 'getPurchaseOrderItems'])->name('items');
 
+        });
+
+        Route::prefix('/stock')->name('stock.')->group(function () {
+            Route::get('/index',[AdminStockController::class,'index'])->name('index');
+            Route::get('/view',[AdminStockController::class,'view'])->name('view');
+            Route::get('/detail',[AdminStockController::class,'detail'])->name('detail');
         });
 
         
