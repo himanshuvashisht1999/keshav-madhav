@@ -21,13 +21,13 @@ class ProductionGoodsUpdateRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'name_of_garments' => 'required',
+            'name_of_garment' => 'required',
             'master_material_id' => 'required',
             'master_color_id' => 'required',
             'master_size_id' => 'required',
             'master_design_id' => 'required',
             'fabric_sku' => 'required',
-            'sku'    => 'required|unique:production_goods,sku,' . $id,
+            //'sku'    => 'required|unique:production_goods,sku,' . $request->id,
             // 'status' =>'required',
         ];
     }

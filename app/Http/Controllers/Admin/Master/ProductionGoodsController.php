@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\Admin\Master;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Services\Admin\Master\SizeMeasurementService as Service;
+use App\Services\Admin\Master\ProductionGoodsService as Service;
 use App\Requests\Admin\Master\ProductionGoodsStoreRequest;
 use App\Requests\Admin\Master\ProductionGoodsUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
@@ -14,13 +14,24 @@ class ProductionGoodsController extends Controller {
         $this->service = $service;
     }
     public function index(){
-        return view('admin.master.production-goods.index');
+        $response['colors'] = $this->service->colors();
+        $response['sizes'] = $this->service->sizes();
+        $response['designs'] = $this->service->designs();
+        $response['materials'] = $this->service->materials();
+        $response['fabrics'] = $this->service->fabrics();
+
+        return view('admin.master.production-goods.index',$response);
     }
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
     public function create(){
-        return view('admin.master.production-goods.create');
+        $response['colors'] = $this->service->colors();
+        $response['sizes'] = $this->service->sizes();
+        $response['designs'] = $this->service->designs();
+        $response['materials'] = $this->service->materials();
+        $response['fabrics'] = $this->service->fabrics();
+        return view('admin.master.production-goods.create',$response);
     }
     public function store(ProductionGoodsStoreRequest $request){
         $data = $this->service->store($request);
@@ -32,7 +43,11 @@ class ProductionGoodsController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
-        $response['size_selections'] = $this->service->size_selections();
+        $response['colors'] = $this->service->colors();
+        $response['sizes'] = $this->service->sizes();
+        $response['designs'] = $this->service->designs();
+        $response['materials'] = $this->service->materials();
+        $response['fabrics'] = $this->service->fabrics();
         return view('admin.master.production-goods.edit',$response);
     }
     public function update(ProductionGoodsUpdateRequest $request){

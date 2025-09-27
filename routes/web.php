@@ -23,7 +23,7 @@ use App\Http\Controllers\Admin\Master\SizeMeasurementController as AdminSizeMeas
 ////new master
 use App\Http\Controllers\Admin\Master\MasterColorController as AdminMasterColorController;
 use App\Http\Controllers\Admin\Master\MasterDesignController as AdminMasterDesignController;
-use App\Http\Controllers\Admin\Master\MasterMaterialontroller as AdminMasterMaterialontroller;
+use App\Http\Controllers\Admin\Master\MasterMaterialController as AdminMasterMaterialController;
 
 
 ////// Website
@@ -190,13 +190,13 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/delete',[AdminMasterDesignController::class,'delete'])->name('delete');
         });
         Route::prefix('master/materials')->name('master.materials.')->group(function () {
-            Route::get('/index',[AdminMasterMaterialontroller::class,'index'])->name('index');
-            Route::get('/indexList',[AdminMasterMaterialontroller::class,'indexList'])->name('indexList');
-            Route::get('/create',[AdminMasterMaterialontroller::class,'create'])->name('create');
-            Route::post('/store',[AdminMasterMaterialontroller::class,'store'])->name('store');
-            Route::get('/edit',[AdminMasterMaterialontroller::class,'edit'])->name('edit');
-            Route::post('/update',[AdminMasterMaterialontroller::class,'update'])->name('update');
-            Route::get('/delete',[AdminMasterMaterialontroller::class,'delete'])->name('delete');
+            Route::get('/index',[AdminMasterMaterialController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminMasterMaterialController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminMasterMaterialController::class,'create'])->name('create');
+            Route::post('/store',[AdminMasterMaterialController::class,'store'])->name('store');
+            Route::get('/edit',[AdminMasterMaterialController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminMasterMaterialController::class,'update'])->name('update');
+            Route::get('/delete',[AdminMasterMaterialController::class,'delete'])->name('delete');
         });
 
         
