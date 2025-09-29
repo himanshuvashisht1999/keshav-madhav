@@ -69,6 +69,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
         Route::prefix('/stock')->name('stock.')->group(function () {
             Route::get('/index',[AdminStockController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminStockController::class,'indexList'])->name('indexList');
             Route::get('/view',[AdminStockController::class,'view'])->name('view');
             Route::get('/detail',[AdminStockController::class,'detail'])->name('detail');
         });
