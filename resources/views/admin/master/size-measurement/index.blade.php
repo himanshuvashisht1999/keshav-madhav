@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Garment Size Measurement</h1>
+                    <h1>Manage Garment Size</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Garment Size Measurement</li>
+                        <li class="breadcrumb-item active">Manage Garment Size</li>
                     </ol>
                 </div>
             </div>
@@ -25,10 +25,10 @@
             <div class="card card-default ">
                  <div class="row" >
                     <div class="col-9 card-header">
-                        <h3 class="card-title">Manage Garment Size Measurement</h3>
+                        <h3 class="card-title">Manage Garment Size</h3>
                     </div>
                     <div class="col-3 card-header">
-                        <a href="{{route('admin.master.size-measurement.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Size Measurement</a>
+                        <a href="{{route('admin.master.size-measurement.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Garment Size</a>
                     </div>
                 </div>
                 
@@ -45,9 +45,7 @@
                         <td>
                             <input type="text" class="form-control" name="measurement" id="measurement" autocomplete="off">
                         </td>
-                        <td>
-                            <input type="text" class="form-control" name="base_cloth_consumption" id="base_cloth_consumption" autocomplete="off">
-                        </td>
+                        
                         
                         <td>
                             <select class="form-control" name="status" id="status" autocomplete="off">
@@ -64,7 +62,6 @@
                     <th>ID</th>
                     <th>Size</th>
                     <th>Measurement</th>
-                    <th>Base Cloth Consumption</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
@@ -103,7 +100,6 @@
                     d.id = $('#id').val();
                     d.size_selection = $('#size_selection').val();
                     d.measurement = $('#measurement').val();
-                    d.base_cloth_consumption = $('#base_cloth_consumption').val();
 					d.status = $('#status').val();
                 },
                 orderable: false
@@ -112,7 +108,6 @@
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'size_selection', name: 'size_selection'},
                 {data: 'measurement', name: 'measurement'},
-                {data: 'base_cloth_consumption', name: 'base_cloth_consumption'},
                 {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', searchable: false}
             ],
@@ -139,10 +134,7 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#base_cloth_consumption').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+       
 
         $('#status').on('change', function (e) {
             oTable.draw();

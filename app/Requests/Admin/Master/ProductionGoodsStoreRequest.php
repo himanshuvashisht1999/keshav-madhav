@@ -22,10 +22,9 @@ class ProductionGoodsStoreRequest extends FormRequest{
         // dd($this);
         return [
             'name_of_garment' => 'required',
-            'master_material_id' => 'required',
-            'master_color_id' => 'required',
+            'type_of_garment' => 'required',
+            'garment_pattern' => 'required',
             'master_size_id' => 'required',
-            'master_design_id' => 'required',
             'fabric_sku' => 'required',
             'sku'    => 'required|unique:production_goods,sku',
             // 'status' =>'required',

@@ -22,9 +22,7 @@ class SizeMeasurementDataTable  {
                 if ($request->has('measurement') && !empty($request->measurement)) {
                     $query->where('measurement', 'like', "%{$request->get('measurement')}%");
                 }
-                if ($request->has('base_cloth_consumption') && !empty($request->base_cloth_consumption)) {
-                    $query->where('base_cloth_consumption', 'like', "%{$request->get('base_cloth_consumption')}%");
-                }
+
                 if ($request->has('size_selection_id') && $request->filled('size_selection_id')) {
                     $query->where('size_selection_id', $request->get('size_selection_id'));
                 }

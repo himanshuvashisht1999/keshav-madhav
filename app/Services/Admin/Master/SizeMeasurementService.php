@@ -29,8 +29,7 @@ class SizeMeasurementService {
 
         $save_data = new MasterSizeMeasurement;
         $save_data->size_selection = $request->size_selection;
-        $save_data->measurement = $request->measurement;
-        $save_data->base_cloth_consumption = $request->base_cloth_consumption;
+        $save_data->measurement = $request->measurement;;
         $save_data->status = $request->status;
         $save_data->save();
         return true;
@@ -44,7 +43,6 @@ class SizeMeasurementService {
         $update_data = MasterSizeMeasurement::find($request->id);
         $update_data->size_selection = $request->size_selection;
         $update_data->measurement = $request->measurement;
-        $update_data->base_cloth_consumption = $request->base_cloth_consumption;
         $update_data->status = $request->status;
         $update_data->save();
         return true;

@@ -134,7 +134,7 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                             </li>
 
 
-                            <li class="nav-item">
+                            <!-- <li class="nav-item">
                                 <a href="{{ route('admin.master.colors.index') }}"
                                     class="{{ str_contains($page_url, 'admin/master/colors') ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
@@ -154,13 +154,13 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Garment Material</p>
                                 </a>
-                            </li>
+                            </li> -->
 
                             <li class="nav-item">
                                 <a href="{{ route('admin.master.production-goods.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/production-goods') ? 'nav-link active' : 'nav-link' }}">
+                                    class="{{ str_contains($page_url, 'admin/master/garment') ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Production Goods</p>
+                                    <p>Garment</p>
                                 </a>
                             </li>
                             

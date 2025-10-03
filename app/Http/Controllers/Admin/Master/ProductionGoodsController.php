@@ -19,18 +19,17 @@ class ProductionGoodsController extends Controller {
         $response['designs'] = $this->service->designs();
         $response['materials'] = $this->service->materials();
         $response['fabrics'] = $this->service->fabrics();
-
+ 
         return view('admin.master.production-goods.index',$response);
     }
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
     public function create(){
-        $response['colors'] = $this->service->colors();
         $response['sizes'] = $this->service->sizes();
-        $response['designs'] = $this->service->designs();
-        $response['materials'] = $this->service->materials();
         $response['fabrics'] = $this->service->fabrics();
+        $response['garment_types'] = $this->service->garment_types();
+        $response['garment_patterns'] = $this->service->garment_patterns();
         return view('admin.master.production-goods.create',$response);
     }
     public function store(ProductionGoodsStoreRequest $request){
@@ -43,11 +42,10 @@ class ProductionGoodsController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
-        $response['colors'] = $this->service->colors();
         $response['sizes'] = $this->service->sizes();
-        $response['designs'] = $this->service->designs();
-        $response['materials'] = $this->service->materials();
         $response['fabrics'] = $this->service->fabrics();
+        $response['garment_types'] = $this->service->garment_types();
+        $response['garment_patterns'] = $this->service->garment_patterns();
         return view('admin.master.production-goods.edit',$response);
     }
     public function update(ProductionGoodsUpdateRequest $request){
