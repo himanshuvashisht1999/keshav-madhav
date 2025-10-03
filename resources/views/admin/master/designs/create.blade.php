@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Designs</h1>
+                    <h1>Garment Designs</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Create Designs</li>
+                        <li class="breadcrumb-item active">Create Garment Designs</li>
                     </ol>
                 </div>
             </div>
@@ -24,7 +24,7 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Create Designs</h3>
+                    <h3 class="card-title">Create Garment Designs</h3>
                 </div>
                 <form action="{{route('admin.master.designs.store')}}" method="post" enctype="multipart/form-data">
                     @csrf

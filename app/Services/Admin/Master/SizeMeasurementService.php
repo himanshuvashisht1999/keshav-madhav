@@ -58,7 +58,7 @@ class SizeMeasurementService {
     }
 
     public function size_selections(){
-        $data = MasterSizeSelection::where('status',1)->get();
+        $data = MasterSizeMeasurement::where('status',1)->get();
         return $data;
     }
 

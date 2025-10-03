@@ -6,7 +6,7 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Designs</h1>
+                    <h1>Garment Designs</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
@@ -24,7 +24,7 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Edit Designs</h3>
+                    <h3 class="card-title">Edit Garment Designs</h3>
                 </div>
                 <form action="{{route('admin.master.designs.update')}}" method="post" enctype="multipart/form-data">
                     @csrf
