@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Size Measurement</h1>
+                    <h1>Garment Size Measurement</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Create Size Measurement</li>
+                        <li class="breadcrumb-item active">Create Garment Size Measurement</li>
                     </ol>
                 </div>
             </div>

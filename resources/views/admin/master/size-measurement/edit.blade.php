@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Size Measurement</h1>
+                    <h1>Garment Size Measurement</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Edit Size Measurement</li>
+                        <li class="breadcrumb-item active">Edit Garment Size Measurement</li>
                     </ol>
                 </div>
             </div>
@@ -24,7 +24,7 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Create Size Measurement</h3>
+                    <h3 class="card-title">Create Garment Size Measurement</h3>
                 </div>
                 <form action="{{route('admin.master.size-measurement.update')}}" method="post" enctype="multipart/form-data">
                     @csrf
@@ -33,7 +33,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Selection</label>
+                                    <label for="exampleInputEmail1">Size</label>
                                     <input type="text" name="size_selection" class="form-control" placeholder="Enter size selection" value="{{$data->size_selection}}">
                                     @if ($errors->has('size_selection'))
                                         <span class="invalid-feedback d-block">
