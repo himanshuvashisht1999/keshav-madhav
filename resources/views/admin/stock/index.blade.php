@@ -24,7 +24,7 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default ">
                  <div class="row" >
-                    <div class="col-9 card-header">
+                    <div class="col-12 card-header">
                         <h3 class="card-title">Manage Stock</h3>
                     </div>
                 </div>
