@@ -110,7 +110,7 @@
                             </div>  
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>Color</label>
+                                    <label>Fabric</label>
                                     <select name="fabric_sku" class="form-control select2" style="width: 100%;">
                                         <!-- <option value="">Select</option> -->
                                         @foreach($fabrics as $single_data)

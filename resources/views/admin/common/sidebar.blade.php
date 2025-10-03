@@ -33,7 +33,7 @@
                     </li>
                     <li class="nav-item">
                         <a href="{{route('admin.fabric_receipt.index')}}" class="{{str_contains($page_url,'admin/fabric-receipt') ? 'nav-link active' : 'nav-link'}}" style="position:static;">
-                            <i class="nav-icon fas fa-store"></i>
+                            <i class="nav-icon fas fa-receipt"></i>
                             <p>Fabric Receipt</p>
                         </a>
                     </li>
@@ -115,12 +115,7 @@
                                 </a>
                             </li>
                            
-                            <li class="nav-item">
-                                <a href="{{route('admin.master.production-goods.index')}}" class="{{str_contains($page_url,'admin/master/production-goods') ? 'nav-link active' : 'nav-link'}}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Production Goods</p>
-                                </a>
-                            </li>
+                            
                              <li class="nav-item">
                                 <a href="{{route('admin.master.colors.index')}}" class="{{str_contains($page_url,'admin/master/colors') ? 'nav-link active' : 'nav-link'}}">
                                     <i class="far fa-circle nav-icon"></i>
@@ -137,6 +132,13 @@
                                 <a href="{{route('admin.master.materials.index')}}" class="{{str_contains($page_url,'admin/master/materials') ? 'nav-link active' : 'nav-link'}}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Material</p>
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a href="{{route('admin.master.production-goods.index')}}" class="{{str_contains($page_url,'admin/master/production-goods') ? 'nav-link active' : 'nav-link'}}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Production Goods</p>
                                 </a>
                             </li>
                             
