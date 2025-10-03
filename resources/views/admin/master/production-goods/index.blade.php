@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Production Goods</h1>
+                    <h1>Manage Garments</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Production Goods</li>
+                        <li class="breadcrumb-item active">Manage Garments</li>
                     </ol>
                 </div>
             </div>
@@ -25,10 +25,10 @@
             <div class="card card-default ">
                  <div class="row" >
                     <div class="col-9 card-header">
-                        <h3 class="card-title">Manage Production Goods</h3>
+                        <h3 class="card-title">Manage Garments</h3>
                     </div>
                     <div class="col-3 card-header">
-                        <a href="{{route('admin.master.production-goods.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Production Goods</a>
+                        <a href="{{route('admin.master.production-goods.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Garments</a>
                     </div>
                 </div>
                 
@@ -42,12 +42,8 @@
                         <td>
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
-                        <td>
-                            <input type="text" class="form-control" name="name_of_garment" id="name_of_garment" autocomplete="off">
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="fabric_sku" id="fabric_sku" autocomplete="off">
-                        </td>
+                        
+                      
 
                         <td>
                        
@@ -56,8 +52,6 @@
                   <tr>
                     <th>ID</th>
                     <th>SKU</th>
-                    <th>Garment Name</th>
-                    <th>Fabric SKU</th>
                     <th>Action</th>
                   </tr>
                   </thead>
@@ -94,16 +88,12 @@
                 data: function (d) {
                     d.id = $('#id').val();
                     d.sku = $('#sku').val();
-                    d.name_of_garment = $('#name_of_garment').val();
-                    d.fabric_sku = $('#fabric_sku').val();
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'sku', name: 'sku'},
-                {data: 'name_of_garment', name: 'name_of_garment'},
-                {data: 'fabric_sku', name: 'fabric_sku'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
@@ -125,14 +115,7 @@
             e.preventDefault();
         });
 
-        $('#name_of_garment').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#fabric_sku').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+       
 
     });
 

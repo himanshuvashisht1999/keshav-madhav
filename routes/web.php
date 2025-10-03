@@ -162,7 +162,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
         });
         
 
-        Route::prefix('master/production-goods')->name('master.production-goods.')->group(function () {
+        Route::prefix('master/garment')->name('master.production-goods.')->group(function () {
             Route::get('/index',[AdminProductionGoodsController::class,'index'])->name('index');
             Route::get('/indexList',[AdminProductionGoodsController::class,'indexList'])->name('indexList');
             Route::get('/create',[AdminProductionGoodsController::class,'create'])->name('create');

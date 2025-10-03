@@ -23,7 +23,6 @@ class SizeMeasurementUpdateRequest extends FormRequest{
         return [
             'size_selection' => 'required',
             'measurement' => 'required',
-            'measurement' => 'required',
             'status' =>'required',
         ];
     }
