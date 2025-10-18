@@ -1,147 +1,200 @@
 @extends('admin.layouts.app')
 @section('content')
-    <div class="content-wrapper">
-        <!-- Content Header (Page header) -->
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1>Fabric Receipt Detail</h1>
-                    </div>
-                    <div class="col-sm-6">
-                        <ol class="breadcrumb float-sm-right">
-                            <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                            <li class="breadcrumb-item active">Fabric Receipt Detail</li>
-                        </ol>
-                    </div>
+<div class="content-wrapper">
+    <!-- Content Header -->
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Fabric Receipt Detail</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
+                        <li class="breadcrumb-item active">Fabric Receipt Detail</li>
+                    </ol>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Main content -->
-        <section class="content">
-            <div class="container-fluid">
-                <!-- SELECT2 EXAMPLE -->
-                <div class="card card-default">
-                    <div class="card-header">
-                        <h3 class="card-title">Fabric Receipt Detail</h3>
-                    </div>
-                    <form action="{{ route('admin.fabric_receipt.storeDetail') }}" method="post"
-                        enctype="multipart/form-data">
-                        @csrf
-                        <input type="hidden" name="id" value="{{ $data->id }}">
-                        <div class="card-body">
-                            <div class="row">
+    <!-- Main content -->
+    <section class="content">
+        <div class="container-fluid">
 
+            <div class="card card-default">
+                <div class="card-header">
+                    <h3 class="card-title">Fabric Receipt Detail</h3>
+                </div>
 
+                <form action="{{ route('admin.fabric_receipt.storeDetail') }}" method="post" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="id" value="{{ $data->id }}">
 
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Fabric SKU</label>
-                                        <select name="fabric_sku" id="fabric_sku" class="form-control select2"
-                                            style="width: 100%;">
-                                            @foreach ($fabrics as $single_data)
-                                                <option value="{{ $single_data->id }}">{{ $single_data->sku }}</option>
-                                            @endforeach
-
-                                        </select>
-                                        @if ($errors->has('vendor_id'))
-                                            <span class="invalid-feedback d-block">
-                                                {{ $errors->first('vendor_id') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-
-
-
-
-
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="roll">Rolls / Boxes</label>
-                                        <input type="number" name="roll" id="roll" class="form-control"
-                                            placeholder="Enter rolls">
-                                        @if ($errors->has('roll'))
-                                            <span class="invalid-feedback d-block">
-                                                {{ $errors->first('roll') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="meter">Meter (per roll)</label>
-                                        <input type="number" name="meter" id="meter" class="form-control"
-                                            placeholder="Enter meters">
-                                        @if ($errors->has('meter'))
-                                            <span class="invalid-feedback d-block">
-                                                {{ $errors->first('meter') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Purchase Order</label>
-                                        <select name="purchase_order_id" id="purchase_order_id" class="form-control select2"
-                                            style="width: 100%;">
-                                            <option value="0">NIL</option>
-                                            @foreach ($purchase_orders as $single_data)
-                                                <option value="{{ $single_data->id }}">{{ $single_data->sku }}</option>
-                                            @endforeach
-
-                                        </select>
-                                        @if ($errors->has('purchase_order_id'))
-                                            <span class="invalid-feedback d-block">
-                                                {{ $errors->first('purchase_order_id') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                @for ($i = 1; $i <= $data->roll; $i++)
-                                    <div class="col-md-12 mb-3">
-                                        <label class="fw-semibold">Roll {{ $i }}</label>
-
-                                        <div class="row g-2 align-items-center fabric-roll-row">
-                                            {{-- Hidden roll number --}}
-                                            <input type="hidden" name="rolls[{{ $i }}][roll_number]"
-                                                value="{{ $i }}" required>
-
-                                            <div class="col-md-2">
-                                                <input type="number" name="rolls[{{ $i }}][meter]"
-                                                    class="form-control" placeholder="Meters" required>
-                                            </div>
-
-                                            <div class="col-md-2">
-                                                <input type="text" name="rolls[{{ $i }}][batch]"
-                                                    class="form-control" placeholder="Batch" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endfor
-
-
-                                <div class="col-md-12">
-                                    <div class="mt-2" style="float:right">
-                                        <button type="submit" class="btn btn-success">
-                                            Save & Add New
-                                        </button>
-                                        <a href="{{ route('admin.fabric_receipt.index') }}" class="btn btn-danger">
-                                            Exit Without Save
-                                        </a>
-                                    </div>
-                                </div>
-
-
+                    <div class="card-body">
+                        
+                        <!-- Purchase Order -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label>Purchase Order</label>
+                                <select name="purchase_order_id" id="purchase_order_id" class="form-control select2" style="width: 100%;" required>
+                                    <option value="">Select Purchase Order</option>
+                                    @foreach ($purchase_orders as $single_data)
+                                        <option value="{{ $single_data->id }}">{{ $single_data->sku }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
 
-                    </form>
-                </div>
+                        <!-- Excel style table -->
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped text-center align-middle">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>Roll No</th>
+                                        <th>Fabric SKU</th>
+                                        <th>Meter</th>
+                                        <th>Batch No.</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for ($i = 1; $i <= $data->roll; $i++)
+                                        <tr>
+                                            <!-- Roll Number -->
+                                            <td>
+                                                <input type="hidden" name="rolls[{{ $i }}][roll]" value="{{ $i }}">
+                                                <span class="fw-bold">{{ $i }}</span>
+                                            </td>
+
+                                            <!-- Fabric SKU -->
+                                            <td>
+                                                <select name="rolls[{{ $i }}][fabric_sku]" 
+                                                        class="form-control select2 fabric-sku" 
+                                                        data-row="{{ $i }}" required>
+                                                    <option value="">Select SKU</option>
+                                                    @foreach ($fabrics as $single_data)
+                                                        <option value="{{ $single_data->id }}">{{ $single_data->sku }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
+
+                                            <!-- Meter -->
+                                            <td>
+                                                <input type="number" 
+                                                    name="rolls[{{ $i }}][meter]" 
+                                                    class="form-control meter" 
+                                                    data-row="{{ $i }}" 
+                                                    placeholder="Enter Meters" required>
+                                            </td>
+
+                                            <!-- Batch -->
+                                            <td>
+                                                <input type="text" 
+                                                    name="rolls[{{ $i }}][batch]" 
+                                                    class="form-control batch" 
+                                                    data-row="{{ $i }}" 
+                                                    placeholder="Batch Number" required>
+                                            </td>
+                                        </tr>
+                                    @endfor
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="mt-4" style="float:right">
+                            <button type="submit" class="btn btn-success">Save</button>
+                            <a href="{{ route('admin.fabric_receipt.index') }}" class="btn btn-danger">Exit Without Save</a>
+                        </div>
+
+                    </div>
+                </form>
             </div>
-        </section>
-    </div>
+        </div>
+    </section>
+</div>
+
+<script>
+$(document).ready(function () {
+    // init select2 once
+    $('.select2').select2({ width: '100%' });
+
+    // guard flags to avoid re-entrant propagation
+    window._propagatingFabric = false;
+    window._propagatingMeter  = false;
+    window._propagatingBatch  = false;
+
+    // ---------- Fabric SKU: change on a row -> copy to ALL rows BELOW ----------
+    $(document).on('change', '.fabric-sku', function () {
+        if (window._propagatingFabric) return; // avoid recursion
+        const row = parseInt($(this).data('row'));
+        const value = $(this).val();
+
+        // only propagate non-empty selections
+        if (value === null || value === '') return;
+
+        window._propagatingFabric = true;
+
+        // set value for every lower row (overwrite)
+        $('.fabric-sku').each(function () {
+            const currentRow = parseInt($(this).data('row'));
+            if (currentRow > row) {
+                $(this).val(value);
+
+                // update Select2 UI
+                $(this).trigger('change.select2'); // ensures Select2 shows updated value
+            }
+        });
+
+        window._propagatingFabric = false;
+    });
+
+    // ---------- Meter: input on a row -> copy to ALL rows BELOW ----------
+    $(document).on('input', '.meter', function () {
+        if (window._propagatingMeter) return;
+        const row = parseInt($(this).data('row'));
+        const value = $(this).val();
+
+        if (value === '') return;
+
+        window._propagatingMeter = true;
+
+        $('.meter').each(function () {
+            const currentRow = parseInt($(this).data('row'));
+            if (currentRow > row) {
+                $(this).val(value);
+                // optionally trigger input event if some logic listens to it:
+                $(this).trigger('input');
+            }
+        });
+
+        window._propagatingMeter = false;
+    });
+
+    // ---------- Batch: input on a row -> copy to ALL rows BELOW ----------
+    $(document).on('input', '.batch', function () {
+        if (window._propagatingBatch) return;
+        const row = parseInt($(this).data('row'));
+        const value = $(this).val();
+
+        if (value === '') return;
+
+        window._propagatingBatch = true;
+
+        $('.batch').each(function () {
+            const currentRow = parseInt($(this).data('row'));
+            if (currentRow > row) {
+                $(this).val(value);
+                $(this).trigger('input');
+            }
+        });
+
+        window._propagatingBatch = false;
+    });
+});
+</script>
+
 @endsection
+
+
+

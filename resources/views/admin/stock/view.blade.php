@@ -4,15 +4,15 @@
     <!-- Content Header -->
     <section class="content-header">
         <div class="container-fluid">
-            <div class="row mb-2">
+            <div class="row mb-2 align-items-center">
                 <div class="col-sm-6">
-                    <h1>Stock</h1>
+                    <h1 class="mb-0">Fabric Stock Details</h1>
                 </div>
                 <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
+                    <ol class="breadcrumb float-sm-right mb-0">
                         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('admin.stock.index') }}">Stock</a></li>
-                        <li class="breadcrumb-item active">View Stock</li>
+                        <li class="breadcrumb-item"><a href="{{ route('admin.stock.index') }}">Fabric Stock</a></li>
+                        <li class="breadcrumb-item active">View Fabric Stock</li>
                     </ol>
                 </div>
             </div>
@@ -22,56 +22,90 @@
     <!-- Main Content -->
     <section class="content">
         <div class="container-fluid">
-
-            <!-- Receipt Info -->
-            <div class="card card-primary">
-                <div class="card-header">
-                    <h3 class="card-title">Stock Information</h3>
+            
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title"><i class="fas fa-boxes mr-2"></i> Fabric Stock Information</h3>
                 </div>
                 <div class="card-body">
+
                     <div class="row">
-                        <div class="col-md-4"><strong>SKU:</strong> {{ $data->sku}}</div>
-                        <div class="col-md-4"><strong>Date:</strong> {{ \Carbon\Carbon::parse($data->date)->format('d M Y') }}</div>
-                        <div class="col-md-4"><strong>Goods Entry Number:</strong> {{ $data->goods_entry_number }}</div>
-                        <div class="col-md-4"><strong>Meter:</strong> {{ $data->meter}}</div>
-                        <div class="col-md-4"><strong>Roll:</strong> {{ $data->roll }}</div>
+                        <!-- Left column -->
+                        <div class="col-md-6">
+                            <div class="info-box bg-light shadow-sm rounded">
+                                <div class="info-box-content">
+                                    <span class="info-box-text d-block text-muted mb-1"><strong>SKU :</strong></span>
+                                    <span class="info-box-number">{{ $data->sku }}</span>
+                                </div>
+                            </div>
+
+                            <div class="info-box bg-light shadow-sm rounded">
+                                <div class="info-box-content">
+                                    <span class="info-box-text d-block text-muted mb-1"><strong>Date :</strong></span>
+                                    <span class="info-box-number">{{ \Carbon\Carbon::parse($data->date)->format('d M Y') }}</span>
+                                </div>
+                            </div>
+
+                            
+                            <div class="info-box bg-light shadow-sm rounded">
+                                <div class="info-box-content">
+                                    <span class="info-box-text d-block text-muted mb-1"><strong>Goods Entry No:</strong></span>
+                                    <span class="info-box-number">{{ $data->goods_entry_number }}</span>
+                                </div>
+                            </div>
+                            <div class="info-box bg-light shadow-sm rounded">
+                                <div class="info-box-content">
+                                    <span class="info-box-text d-block text-muted mb-1"><strong>Meter:</strong></span>
+                                    <span class="info-box-number">{{ $data->meter }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right column -->
+                        <div class="col-md-6">
+                            <div class="info-box bg-light shadow-sm rounded">
+                                <div class="info-box-content">
+                                    <span class="info-box-text d-block text-muted mb-1"><strong>Purchase Order ID:</strong></span>
+                                    <span class="info-box-number">{{ $data->purchase_order_id }}</span>
+                                </div>
+                            </div>
+                            <div class="info-box bg-light shadow-sm rounded">
+                                <div class="info-box-content">
+                                    <span class="info-box-text d-block text-muted mb-1"><strong>Unique Number:</strong></span>
+                                    <span class="info-box-number">{{ $data->unique_number }}</span>
+                                </div>
+                            </div>
+                            <div class="info-box bg-light shadow-sm rounded">
+                                <div class="info-box-content">
+                                    <span class="info-box-text d-block text-muted mb-1"><strong>Batch No:</strong></span>
+                                    <span class="info-box-number">{{ $data->batch_no }}</span>
+                                </div>
+                            </div>
+                            <div class="info-box bg-light shadow-sm rounded">
+                                <div class="info-box-content">
+                                    <span class="info-box-text d-block text-muted mb-1"><strong>Roll:</strong></span>
+                                    <span class="info-box-number">{{ $data->roll }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- QR Code -->
+                        <div class="col-md-12 text-center mt-4">
+                            <strong class="d-block mb-2">QR Code</strong>
+                            <div class="border rounded p-3 d-inline-block bg-white shadow-sm">
+                                <img src="{{ $data->qrcode }}" alt="QR Code" class="img-fluid" style="height:200px;width:200px;">
+                            </div>
+                        </div>
                     </div>
+
                 </div>
             </div>
 
-            <!-- Receipt Details -->
-            <div class="card card-secondary">
-                <div class="card-header">
-                    <h3 class="card-title">Stock Details</h3>
-                </div>
-                <div class="card-body table-responsive">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Fabric SKU</th>
-                                <th>Unique Number</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($data->expends as $key => $detail)
-                                <tr>
-                                    <td>{{ $key + 1 }}</td>
-                                    <td>{{ $detail->sku ?? '-' }}</td>
-                                    <td>{{ $detail->unique_number }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="text-center">No details found</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="mt-2">
-                <a href="{{ route('admin.stock.index') }}" class="btn btn-primary">Back to List</a>
+            <!-- Back Button -->
+            <div class="mt-3 text-right">
+                <a href="{{ route('admin.stock.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to List
+                </a>
             </div>
 
         </div>

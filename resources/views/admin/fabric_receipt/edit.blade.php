@@ -75,8 +75,8 @@
 
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="roll">Rolls / Boxes</label>
-                                    <input type="number" name="roll" id="roll" class="form-control" placeholder="Enter rolls" value="{{$data->roll}}">
+                                    <label for="roll">Packets</label>
+                                    <input type="number" name="roll" id="roll" class="form-control" placeholder="Enter packets" value="{{$data->roll}}">
                                     @if ($errors->has('roll'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('roll') }}

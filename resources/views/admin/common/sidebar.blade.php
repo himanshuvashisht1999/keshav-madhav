@@ -49,7 +49,24 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                             class="{{ str_contains($page_url, 'admin/stock') ? 'nav-link active' : 'nav-link' }}"
                             style="position:static;">
                             <i class="nav-icon fas fa-store"></i>
-                            <p>Stock</p>
+                            <p>Fabric Stock</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ route('admin.sales_order.create') }}"
+                            class="{{ str_contains($page_url, 'admin/sales-order') ? 'nav-link active' : 'nav-link' }}"
+                            style="position:static;">
+                            <i class="nav-icon fas fa-store"></i>
+                            <p>Sales Order</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.product_order.index') }}"
+                            class="{{ str_contains($page_url, 'admin/production-order') ? 'nav-link active' : 'nav-link' }}"
+                            style="position:static;">
+                            <i class="nav-icon fas fa-store"></i>
+                            <p>Production</p>
                         </a>
                     </li>
 
@@ -129,19 +146,19 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                                 <a href="{{ route('admin.master.size-measurement.index') }}"
                                     class="{{ str_contains($page_url, 'admin/master/size-measurement') ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Garment Size</p>
+                                    <p>Product Size</p>
                                 </a>
                             </li>
 
 
-                            <!-- <li class="nav-item">
+                            <li class="nav-item">
                                 <a href="{{ route('admin.master.colors.index') }}"
                                     class="{{ str_contains($page_url, 'admin/master/colors') ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Garment Color</p>
+                                    <p>Product Color</p>
                                 </a>
                             </li>
-                            <li class="nav-item">
+                            <!-- <li class="nav-item">
                                 <a href="{{ route('admin.master.designs.index') }}"
                                     class="{{ str_contains($page_url, 'admin/master/designs') ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
@@ -155,12 +172,19 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                                     <p>Garment Material</p>
                                 </a>
                             </li> -->
+                            <li class="nav-item">
+                                <a href="{{ route('admin.master.product_stage.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/master/product-stage') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Production Stages</p>
+                                </a>
+                            </li>
 
                             <li class="nav-item">
                                 <a href="{{ route('admin.master.production-goods.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/garment') ? 'nav-link active' : 'nav-link' }}">
+                                    class="{{ str_contains($page_url, 'admin/master/product/') ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Garment</p>
+                                    <p>Products</p>
                                 </a>
                             </li>
                             

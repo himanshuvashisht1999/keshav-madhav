@@ -20,17 +20,18 @@ class StockDataTable  {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
                 
-                   if ($request->has('date') && !empty($request->date)) {
+                if ($request->has('date') && !empty($request->date)) {
                     $query->where('date', 'like', "%{$request->get('date')}%");
-                }
-                if ($request->has('goods_entry_number') && !empty($request->goods_entry_number)) {
-                    $query->where('goods_entry_number', 'like', "%{$request->get('goods_entry_number')}%");
                 }
                 if ($request->has('meter') && !empty($request->meter)) {
                     $query->where('meter', 'like', "%{$request->get('meter')}%");
                 }
-                if ($request->has('roll') && !empty($request->roll)) {
-                    $query->where('roll', 'like', "%{$request->get('roll')}%");
+                if ($request->has('unique_number') && !empty($request->unique_number)) {
+                    $query->where('unique_number', 'like', "%{$request->get('unique_number')}%");
+                }
+                
+                if ($request->has('batch_no') && !empty($request->batch_no)) {
+                    $query->where('batch_no', 'like', "%{$request->get('batch_no')}%");
                 }
                 $query->where('status',1);
             }) 

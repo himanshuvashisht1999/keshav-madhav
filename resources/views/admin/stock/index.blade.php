@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Stock</h1>
+                    <h1>Manage Fabric Stock</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Stock</li>
+                        <li class="breadcrumb-item active">Manage Fabric Stock</li>
                     </ol>
                 </div>
             </div>
@@ -25,7 +25,7 @@
             <div class="card card-default ">
                  <div class="row" >
                     <div class="col-12 card-header">
-                        <h3 class="card-title">Manage Stock</h3>
+                        <h3 class="card-title">Manage Fabric Stock</h3>
                     </div>
                 </div>
                 
@@ -43,15 +43,16 @@
                         <td>
                             <input type="date" class="form-control" name="date" id="date" autocomplete="off">
                         </td>
-                        <td>
-                            <input type="text" class="form-control" name="goods_entry_number" id="goods_entry_number" autocomplete="off">
-                        </td>
+                        
                         
                         <td>
                             <input type="text" class="form-control" name="meter" id="meter" autocomplete="off">
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="roll" id="roll" autocomplete="off">
+                            <input type="text" class="form-control" name="unique_number" id="unique_number" autocomplete="off">
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" name="batch_no" id="batch_no" autocomplete="off">
                         </td>  
                         <td>
                        
@@ -61,9 +62,9 @@
                         <th>ID</th>
                         <th>SKU</th>
                         <th>Date</th>
-                        <th>Goods Entry Number</th>
                         <th>Meter</th>
-                        <th>Roll</th>
+                        <th>Unique No</th>
+                        <th>Batch No</th>
                         <th>Action</th>
                     </tr>
                   </thead>
@@ -101,9 +102,9 @@
                     d.id = $('#id').val();
                     d.sku = $('#sku').val();
                     d.date = $('#date').val();
-                    d.goods_entry_number = $('#goods_entry_number').val();
                     d.meter = $('#meter').val();
-                    d.roll = $('#roll').val();
+                    d.unique_number = $('#unique_number').val();
+                    d.batch_no = $('#batch_no').val();
                   
                 },
                 orderable: false
@@ -112,9 +113,9 @@
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'sku', name: 'sku'},
                 {data: 'date', name: 'date'},
-                {data: 'goods_entry_number', name: 'goods_entry_number'},
                 {data: 'meter', name: 'meter'},
-                {data: 'roll', name: 'roll'},
+                {data: 'unique_number', name: 'unique_number'},
+                {data: 'batch_no', name: 'batch_no'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
@@ -135,7 +136,7 @@
             e.preventDefault();
         });
 
-        $('#goods_entry_number').on('keyup', function (e) {
+        $('#unique_number').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
@@ -144,7 +145,7 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#roll').on('keyup', function (e) {
+        $('#batch_no').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });

@@ -38,7 +38,10 @@ class ProductionGoods extends Model
         return $this->hasOne('App\Models\MasterColor','id','master_color_id');
     }
     public function bill_of_materials(){
-        return $this->hasMany('App\Models\BillOfMaterial','garment_id','id')->where('status',1);
+        return $this->hasMany('App\Models\BillOfMaterial','product_id','id')->where('status',1);
+    }
+    public function product_stages(){
+        return $this->hasMany('App\Models\ProductStage','master_product_id','id')->where('status',1);
     }
     
 }

@@ -29,12 +29,12 @@
                     <h3 class="card-title">Receipt Information</h3>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row">   
                         <div class="col-md-4"><strong>SKU:</strong> {{ $data->sku }}</div>
                         <div class="col-md-4"><strong>Vendor:</strong> {{ $data->vendor->name ?? '-' }}</div>
                         <div class="col-md-4"><strong>Truck Number:</strong> {{ $data->truck_number }}</div>
                         <div class="col-md-4"><strong>Date & Time:</strong> {{ \Carbon\Carbon::parse($data->time)->format('d M Y, h:i A') }}</div>
-                        <div class="col-md-4"><strong>Rolls / Boxes:</strong> {{ $data->roll }}</div>
+                        <div class="col-md-4"><strong>Packets:</strong> {{ $data->roll }}</div>
                         <div class="col-md-4"><strong>Received By:</strong> {{ $data->received_by }}</div>
                         <div class="col-md-4">
                             <strong>Challan Photo:</strong><br>
@@ -71,6 +71,7 @@
                                 <!-- <th>Fabric Name</th> -->
                                 <th>Rolls</th>
                                 <th>Meter (per roll)</th>
+                                <th>Batch No</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -82,6 +83,7 @@
                                     <!-- <td>{{ $detail->fabric->name ?? '-' }}</td> -->
                                     <td>{{ $detail->roll }}</td>
                                     <td>{{ $detail->meter }}</td>
+                                    <td>{{ $detail->batch_no }}</td>
                                 </tr>
                             @empty
                                 <tr>
