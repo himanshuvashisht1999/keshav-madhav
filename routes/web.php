@@ -20,10 +20,14 @@ use App\Http\Controllers\Admin\StockController as AdminStockController;
 use App\Http\Controllers\Admin\Master\ProductionGoodsController as AdminProductionGoodsController;
 use App\Http\Controllers\Admin\Master\SizeMeasurementController as AdminSizeMeasurementController;
 
+/// order
+use App\Http\Controllers\Admin\ProductOrderController as AdminProductOrderController;
+
 ////new master
 use App\Http\Controllers\Admin\Master\MasterColorController as AdminMasterColorController;
 use App\Http\Controllers\Admin\Master\MasterDesignController as AdminMasterDesignController;
 use App\Http\Controllers\Admin\Master\MasterMaterialController as AdminMasterMaterialController;
+use App\Http\Controllers\Admin\Master\MasterProductStageController as AdminMasterProductStageController;
 
 
 ////// Website
@@ -72,6 +76,27 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/indexList',[AdminStockController::class,'indexList'])->name('indexList');
             Route::get('/view',[AdminStockController::class,'view'])->name('view');
             Route::get('/detail',[AdminStockController::class,'detail'])->name('detail');
+        });
+
+        Route::prefix('/sales-order')->name('sales_order.')->group(function () {
+            Route::get('/create',[AdminProductOrderController::class,'create'])->name('create');
+            Route::post('/store',[AdminProductOrderController::class,'store'])->name('store');
+        });
+
+        Route::prefix('/production-order')->name('product_order.')->group(function () {
+            Route::get('/index',[AdminProductOrderController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminProductOrderController::class,'indexList'])->name('indexList');
+            
+            Route::get('/edit',[AdminProductOrderController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminProductOrderController::class,'update'])->name('update');
+            Route::get('/delete',[AdminProductOrderController::class,'delete'])->name('delete');
+            Route::get('/view',[AdminProductOrderController::class,'view'])->name('view');
+            Route::post('/transfer',[AdminProductOrderController::class,'transfer'])->name('transfer');
+            Route::get('/produce',[AdminProductOrderController::class,'produce'])->name('produce');
+            Route::get('/issue-fabric',[AdminProductOrderController::class,'issueFabric'])->name('issueFabric');
+            Route::post('/issue-fabric-post',[AdminProductOrderController::class,'issueFabricPost'])->name('issueFabricPost');
+
+
         });
 
         
@@ -160,9 +185,18 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/update',[AdminSizeMeasurementController::class,'update'])->name('update');
             Route::get('/delete',[AdminSizeMeasurementController::class,'delete'])->name('delete');
         });
-        
 
-        Route::prefix('master/garment')->name('master.production-goods.')->group(function () {
+        Route::prefix('master/product-stage')->name('master.product_stage.')->group(function () {
+            Route::get('/index',[AdminMasterProductStageController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminMasterProductStageController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminMasterProductStageController::class,'create'])->name('create');
+            Route::post('/store',[AdminMasterProductStageController::class,'store'])->name('store');
+            Route::get('/edit',[AdminMasterProductStageController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminMasterProductStageController::class,'update'])->name('update');
+            Route::get('/delete',[AdminMasterProductStageController::class,'delete'])->name('delete');
+        });
+
+        Route::prefix('master/product')->name('master.production-goods.')->group(function () {
             Route::get('/index',[AdminProductionGoodsController::class,'index'])->name('index');
             Route::get('/indexList',[AdminProductionGoodsController::class,'indexList'])->name('indexList');
             Route::get('/create',[AdminProductionGoodsController::class,'create'])->name('create');

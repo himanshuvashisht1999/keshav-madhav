@@ -33,7 +33,7 @@ class FabricReceiptController extends Controller {
         $response['data'] = $this->service->view($request);
         $response['vendors'] = $this->service->vendors();
         $response['fabrics'] = $this->service->fabrics();
-
+ 
         $request->merge(['vendor_id' => $response['data']->vendor_id]);
         $response['purchase_orders'] = $this->service->purchase_orders($request);
         return view('admin.fabric_receipt.detail',$response);
@@ -56,7 +56,8 @@ class FabricReceiptController extends Controller {
     }
     public function storeDetail(FabricReceiptDetailStoreRequest $request){
         $data = $this->service->storeDetail($request);
-        return redirect()->route('admin.fabric_receipt.detail',['id' => $request->id])->withSuccess('The fabric receipt detail has been successfully created.');
+        return redirect()->route('admin.fabric_receipt.index')->withSuccess('The fabric receipt detail has been successfully created.');
+        // return redirect()->route('admin.fabric_receipt.detail',['id' => $request->id])->withSuccess('The fabric receipt detail has been successfully created.');
         
     }
     public function view(Request $request){

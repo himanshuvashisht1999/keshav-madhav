@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Models;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class OrderStageTransaction extends Model
+{
+    use HasFactory;
+    protected $table= 'order_stage_transactions';
+    protected $fillable = [
+        'id',
+        'sno',
+        'company_id',
+        'sub_company_id',
+        'project_id',
+        'sku',
+        'order_product_id',
+        'from_stage_id',
+        'to_stage_id',
+        'quantity',
+        'processed_by',
+        'remarks',
+        'status',
+        'created_at',
+        'updated_at'
+    ];
+
+    public function from_stage(){
+        return $this->hasMany('App\Models\MasterProductStage','id','from_stage_id');
+    }
+    public function to_stage(){
+        return $this->hasMany('App\Models\MasterProductStage','id','to_stage_id');
+    }
+
+    
+}

@@ -23,7 +23,8 @@ class FabricReceiptDetail extends Model
         'meter',
         'status',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'batch_no'
     ];
     public function fabric_receipt(){
         return $this->hasOne('App\Models\FabricReceipt','id','fabric_receipt_id');

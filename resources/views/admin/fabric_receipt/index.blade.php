@@ -76,7 +76,7 @@
                         <th>Vendor</th>
                         <th>Truck Number</th>
                         <th>Time</th>
-                        <th>Roll</th>
+                        <th>Packet</th>
                         <th>Received By</th>
                         
                         <th>Action</th>

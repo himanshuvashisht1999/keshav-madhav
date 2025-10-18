@@ -30,7 +30,7 @@ class StockService
 
     public function view(Request $request)
     {
-        $data = Stock::with('expends')->where('id', $request->id)->first();
+        $data = Stock::where('id', $request->id)->first();
         return $data;
     }
 }

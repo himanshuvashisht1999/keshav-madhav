@@ -65,9 +65,9 @@ class PurchaseOrderService {
         $data = PurchaseOrder::with('items','vendor')->find($save_data->id);
 
         // ✅ Send email with same $data you use in view
-        if ($data->vendor && $data->vendor->email) {
-            Mail::to($data->vendor->email)->send(new PurchaseOrderMail($data));
-        }
+        // if ($data->vendor && $data->vendor->email) {
+        //     Mail::to($data->vendor->email)->send(new PurchaseOrderMail($data));
+        // }
 
         
         return true;

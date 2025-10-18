@@ -22,9 +22,9 @@ class FabricReceiptDetailStoreRequest extends FormRequest{
         // dd($this);
         return [
             'purchase_order_id' => 'required',
-            'fabric_sku' => 'required',
-            'roll' => 'required',
-            'meter' => 'required',
+            // 'fabric_sku' => 'required',
+            // 'roll' => 'required',
+            //'meter' => 'required',
         ];
     }
 
