@@ -48,7 +48,7 @@ class ProductOrderDataTable  {
 				$parameter= $queue->id;
                 return '
                 <!-- <a href="' . route('admin.product_order.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>  --!>
-                <a href="' . route('admin.product_order.produce',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-paper-plane text-muted"></i></a>
+                <a href="' . route('admin.product_order.produce',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-paper-plane text-muted ml-2"></i></a>
                 ';
             })
             
