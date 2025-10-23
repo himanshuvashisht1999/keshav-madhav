@@ -69,14 +69,14 @@ class ProductOrderController extends Controller {
     }
     public function issueFabric(Request $request){
         $response['data'] = $this->service->issueFabric($request);
-        // dd($response['data']);
         return view('admin.product_order.issue_fabric',$response);
     }
     public function issueFabricPost(Request $request){
-        dd($request->all());
-        $response['data'] = $this->service->issueFabric($request);
-        // dd($response['data']);
-        return view('admin.product_order.issue_fabric',$response);
+        $response= $this->service->issueFabricPost($request);
+        if($response['status'] == 0){
+           return redirect()->back()->with('error',$response['message']);
+        }
+        return redirect()->route('admin.product_order.index')->withSuccess($response['message']); 
     }
 
 }

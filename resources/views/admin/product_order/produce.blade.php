@@ -32,13 +32,16 @@
                         <tr>
                             <th width="20%">Order SKU</th>
                             <td>{{ $data->sku }}</td>
-                            <th>Created Date</th>
-                            <td>{{ \Carbon\Carbon::parse($data->created_at)->format('d M Y, h:i A') }}</td>
+                            <th width="20%">Customer</th>
+                            <td>{{ $data->customer->name}}</td>
+                            
                             
                         </tr>
                         <tr>
-                            <th width="20%">Customer</th>
-                            <td>{{ $data->customer->name}}</td>
+                            
+
+                            <th>Created Date</th>
+                            <td>{{ \Carbon\Carbon::parse($data->created_at)->format('d M Y, h:i A') }}</td>
                             <th width="20%">Expected Delivery Date</th>
                             <td>{{ \Carbon\Carbon::parse($data->expected_delivery_date)->format('d M Y') }}</td>
                             <!-- <th>Status</th>
@@ -107,7 +110,13 @@
 
 
                                     </td>
-                                    <td><a href="{{route('admin.product_order.issueFabric',['id' => $product->id])}}">Issue</a></td>
+                                    <td>
+                                        @if($product->status == 2)
+                                        Issued
+                                        @else
+                                        <a href="{{route('admin.product_order.issueFabric',['id' => $product->id])}}">Issue</a>
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>

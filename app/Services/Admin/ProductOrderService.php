@@ -122,28 +122,28 @@ class ProductOrderService {
 
                     //// save order product stages
                     
-                    // $product_stages = ProductStage::where('master_product_id',$product_data->id)->orderBy('id','asc')->where('status',1)->get();
-                    // foreach($product_stages as $key=>$single_stage){
-                    //     $save_order_product_stage = new OrderProductStage;
-                    //     $save_order_product_stage->order_product_id = $save_order_product->id;
-                    //     $save_order_product_stage->stage_id = $single_stage->master_stage_id;
-                    //     $save_order_product_stage->sequence = $key+1;
-                    //     if($key == 0){
-                    //         $save_order_product_stage->total_qty = $order_quantity;
-                    //         $save_order_product_stage->completed_qty = 0;
-                    //         $save_order_product_stage->pending_qty = $order_quantity;
-                    //         $save_order_product_stage->status = 1;  // 1: In progress
-                    //     }else{
-                    //         $save_order_product_stage->total_qty = 0;
-                    //         $save_order_product_stage->completed_qty = 0;
-                    //         $save_order_product_stage->pending_qty = 0;
-                    //         $save_order_product_stage->status = 0;  // 0-pending
-                    //     }
+                    $product_stages = ProductStage::where('master_product_id',$product_data->id)->orderBy('id','asc')->where('status',1)->get();
+                    foreach($product_stages as $key=>$single_stage){
+                        $save_order_product_stage = new OrderProductStage;
+                        $save_order_product_stage->order_product_id = $save_order_product->id;
+                        $save_order_product_stage->stage_id = $single_stage->master_stage_id;
+                        $save_order_product_stage->sequence = $key+1;
+                        if($key == 0){
+                            $save_order_product_stage->total_qty = $order_quantity;
+                            $save_order_product_stage->completed_qty = 0;
+                            $save_order_product_stage->pending_qty = $order_quantity;
+                            $save_order_product_stage->status = 1;  // 1: In progress
+                        }else{
+                            $save_order_product_stage->total_qty = 0;
+                            $save_order_product_stage->completed_qty = 0;
+                            $save_order_product_stage->pending_qty = 0;
+                            $save_order_product_stage->status = 0;  // 0-pending
+                        }
                         
-                    //     $save_order_product_stage->save();
+                        $save_order_product_stage->save();
 
 
-                    // }
+                    }
                     
 
                 }
@@ -172,7 +172,7 @@ class ProductOrderService {
         return $data;
     }
     public function issueFabric(Request $request){
-        $data = OrderProduct::with('product_details.fabric_stocks','order_stages')->where('id',$request->id)->first();
+        $data = OrderProduct::with('product_details.fabric_stocks','order_stages','first_stage')->where('id',$request->id)->first();
         return $data;
     }
 
@@ -264,6 +264,91 @@ class ProductOrderService {
         $data = MasterCustomer::where('status',1)->get();
         return $data;
     }
+
+    public function issueFabricPost(Request $request)
+    {
+        DB::beginTransaction();
+
+        try {
+            // 1️⃣ Fetch main order product
+            $orderProduct = OrderProduct::find($request->order_product_id);
+            if (!$orderProduct) {
+                return back()->with('error', 'Order not found.');
+            }
+
+            // 2️⃣ Loop through each product detail (fabric type)
+            foreach ($request->order_product_detail_ids as $index => $detailId) {
+                $orderProductDetail = OrderProductDetail::find($detailId);
+                if (!$orderProductDetail) {
+                    
+                    throw new \Exception("Order product detail not found (ID: {$detailId})");
+                }
+
+                // Get corresponding roll & meter arrays for this detail
+                $rolls = $request->fabric_roll[$index] ?? [];
+                $meters = $request->meter[$index] ?? [];
+
+                if (count($rolls) !== count($meters)) {
+                    throw new \Exception("Mismatch between roll and meter inputs for fabric detail ID: {$detailId}");
+                }
+                
+
+                $totalIssued = 0;
+
+                // 3️⃣ Loop through each roll issued for this fabric
+                foreach ($rolls as $key => $fabricStockId) {
+                    $usedMeter = floatval($meters[$key]);
+
+                    if (!$fabricStockId || $usedMeter <= 0) continue;
+
+                    // Fetch stock record
+                    $stock = Stock::find($fabricStockId);
+                    if (!$stock) {
+                        throw new \Exception("Stock not found for Fabric Stock ID: {$fabricStockId}");
+                    }
+
+                    if ($usedMeter > $stock->meter) {
+                        throw new \Exception("Not enough stock for Roll #{$stock->unique_number}. Trying to issue {$usedMeter}m but only {$stock->meter}m available.");
+                    }
+                    
+
+                    // 🔹 Save issue record
+                    $issuedStock = new OrderProductDetailStock;
+                    $issuedStock->order_product_id = $orderProduct->id;
+                    $issuedStock->order_product_detail_id = $orderProductDetail->id;
+                    $issuedStock->fabric_stock_id = $stock->id;
+                    $issuedStock->meter = $usedMeter;
+                    $issuedStock->save();
+
+                    // 🔹 Update stock balance
+                    $stock->meter -= $usedMeter;
+                    $stock->save();
+
+                    $totalIssued += $usedMeter;
+                }
+
+                // 4️⃣ Validate that issued = required
+                if (round($totalIssued, 2) != round($orderProductDetail->total_meter, 2)) {
+                    throw new \Exception("Issued total meter ({$totalIssued}) does not match required ({$orderProductDetail->total_meter}) for fabric {$orderProductDetail->fabric_sku}");
+                }
+                OrderProduct::where('id',$orderProduct->id)->update([
+                    'status' => 2
+                ]);
+            }
+
+            DB::commit();
+            $data['status'] = 1;
+            $data['message'] = 'Fabric issued successfully.';
+            return $data;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $data['status'] = 0;
+            $data['message'] = 'Error issuing fabric: ' . $e->getMessage();
+            return $data;
+        }
+    }
+
 
     
 

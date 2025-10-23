@@ -7,7 +7,7 @@
         <div class="container-fluid">
             <div class="row mb-2 align-items-center">
                 <div class="col-sm-6">
-                    <h1 class="mb-0">Product Order Details</h1>
+                    <h1 class="mb-0">Production Order Details</h1>
                 </div>
                 <div class="col-sm-6 text-right">
                     <a href="{{ route('admin.product_order.index') }}" class="btn btn-secondary">
@@ -25,27 +25,22 @@
             <!-- Order Info -->
             <div class="card mb-4 shadow-sm border-0">
                 <div class="card-header bg-primary text-white">
-                    <strong><i class="fas fa-info-circle mr-1"></i> Order Information</strong>
+                    <strong><i class="fas fa-info-circle mr-1"></i>Production Order Information</strong>
                 </div>
                 <div class="card-body">
                     <table class="table table-bordered table-striped mb-0">
                         <tr>
                             <th width="20%">Order SKU</th>
                             <td>{{ $data->sku }}</td>
-                            <th width="20%">Order Type</th>
-                            <td>{{ ucfirst($data->order_type) }}</td>
+                            <th width="20%">Customer</th>
+                            <td>{{ $data->customer->name}}</td>
+                            
                         </tr>
                         <tr>
-                            <th>Created On</th>
+                            <th>Created Date</th>
                             <td>{{ \Carbon\Carbon::parse($data->created_at)->format('d M Y, h:i A') }}</td>
-                            <th>Status</th>
-                            <td>
-                                @if($data->status == 1)
-                                    <span class="badge badge-success">Active</span>
-                                @else
-                                    <span class="badge badge-danger">Inactive</span>
-                                @endif
-                            </td>
+                            <th width="20%">Expected Delivery Date</th>
+                            <td>{{ \Carbon\Carbon::parse($data->expected_delivery_date)->format('d M Y') }}</td>
                         </tr>
                     </table>
                 </div>
@@ -111,7 +106,7 @@
                                                 </div>
                                             @endforeach
                                         </div>
-
+                                        @if($product->status == 2)
                                         <!-- Product Stages -->
                                         @if($product->order_stages->count() > 0)
                                             <div class="mt-4">
@@ -213,6 +208,7 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                        @endif
                                         @endif
 
                                     </td>
