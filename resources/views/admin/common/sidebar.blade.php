@@ -70,8 +70,6 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                         </a>
                     </li>
 
-
-
                     <!-- Master Settings (Dropdown) -->
                     <li class="{{ str_contains($page_url, 'admin/master') ? 'nav-item menu-open' : 'nav-item' }}">
                         <a href="#"
@@ -195,7 +193,13 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                                     <p>General Settings</p>
                                 </a>
                             </li> -->
-
+                            <li class="nav-item">
+                                <a href="{{ route('admin.master.customer.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/master/customers') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Customers</p>
+                                </a>
+                            </li>
                         </ul>
                     </li>
 
