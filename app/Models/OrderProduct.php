@@ -31,6 +31,9 @@ class OrderProduct extends Model
     public function order_stage_trnsactions(){
         return $this->hasMany('App\Models\OrderStageTransaction','order_product_id','id');
     }
+    public function first_stage(){
+        return $this->hasOne('App\Models\OrderProductStage','order_product_id','id')->orderBy('id','asc');
+    }
 
     
 }
