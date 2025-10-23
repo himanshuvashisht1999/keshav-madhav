@@ -7,7 +7,8 @@
         <div class="container-fluid">
             <div class="row mb-2 align-items-center">
                 <div class="col-sm-6">
-                    <h1 class="mb-0">Fabric Issue</h1>
+                    
+                    <h1 class="mb-0">Issue Fabric to {{$data->first_stage->stage->name}}</h1>
                 </div>
                 <div class="col-sm-6 text-right">
                     <a href="{{ route('admin.product_order.index') }}" class="btn btn-secondary">
@@ -25,8 +26,11 @@
             <!-- ✅ Wrap entire content inside form -->
             <form id="fabricIssueForm" action="{{ route('admin.product_order.issueFabricPost') }}" method="POST">
                 @csrf
-
+                
+                <input type="hidden" name="order_product_id" value="{{$data->id}}">
+                
                 @foreach($data->product_details as $index => $single_detail)
+                <input type="hidden" name="order_product_detail_ids[]" value="{{$single_detail->id}}">
                 <div class="card mb-4 shadow-sm border-0">
                     <div class="card-header bg-primary text-white">
                         <strong>
