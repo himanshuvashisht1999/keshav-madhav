@@ -28,7 +28,7 @@ use App\Http\Controllers\Admin\Master\MasterColorController as AdminMasterColorC
 use App\Http\Controllers\Admin\Master\MasterDesignController as AdminMasterDesignController;
 use App\Http\Controllers\Admin\Master\MasterMaterialController as AdminMasterMaterialController;
 use App\Http\Controllers\Admin\Master\MasterProductStageController as AdminMasterProductStageController;
-
+use App\Http\Controllers\Admin\Master\CustomerController as AdminCustomerController;
 
 ////// Website
 Route::get('/',[AdminLoginController::class,'login'])->name('web.homepage');
@@ -234,7 +234,15 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/delete',[AdminMasterMaterialController::class,'delete'])->name('delete');
         });
 
-        
+        Route::prefix('master/customers')->name('master.customer.')->group(function () {
+            Route::get('/index',[AdminCustomerController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminCustomerController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminCustomerController::class,'create'])->name('create');
+            Route::post('/store',[AdminCustomerController::class,'store'])->name('store');
+            Route::get('/edit',[AdminCustomerController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminCustomerController::class,'update'])->name('update');
+            Route::get('/delete',[AdminCustomerController::class,'delete'])->name('delete');
+        }); 
 
         Route::get('edit-profile',[AdminUserController::class,'profileEdit'])->name('user.profileEdit');
         Route::post('profile-update',[AdminUserController::class,'profileUpdate'])->name('user.profileUpdate');
