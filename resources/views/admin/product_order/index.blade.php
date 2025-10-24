@@ -44,6 +44,7 @@
                         </td>
                         <td>
                             <select name="master_customer_id" id="master_customer_id" class="form-control">
+                                <option value="">All</option>
                                 @foreach($customers as $customer)
                                 <option value="{{$customer->id}}">{{$customer->name}}</option>
                                 @endforeach
@@ -62,7 +63,7 @@
                     </tr>
                     <tr>
                         <th>ID</th>
-                        <th>SKU</th>
+                        <th>Order ID</th>
                         <th>Customer</th>
                         <th>Created Date</th>
                         <th>Expected Delivery Date</th>

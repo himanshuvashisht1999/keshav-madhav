@@ -27,10 +27,14 @@ class OrderStageTransaction extends Model
     ];
 
     public function from_stage(){
-        return $this->hasMany('App\Models\MasterProductStage','id','from_stage_id');
+        return $this->hasOne('App\Models\MasterProductStage','id','from_stage_id');
     }
     public function to_stage(){
-        return $this->hasMany('App\Models\MasterProductStage','id','to_stage_id');
+        return $this->hasOne('App\Models\MasterProductStage','id','to_stage_id');
+    }
+    public function orderProduct()
+    {
+        return $this->belongsTo(OrderProduct::class, 'order_product_id');
     }
 
     

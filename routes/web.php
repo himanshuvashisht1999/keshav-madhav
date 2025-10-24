@@ -23,6 +23,9 @@ use App\Http\Controllers\Admin\Master\SizeMeasurementController as AdminSizeMeas
 /// order
 use App\Http\Controllers\Admin\ProductOrderController as AdminProductOrderController;
 
+///// Order Stages
+use App\Http\Controllers\Admin\OrderStagesController as AdminOrderStagesController;
+
 ////new master
 use App\Http\Controllers\Admin\Master\MasterColorController as AdminMasterColorController;
 use App\Http\Controllers\Admin\Master\MasterDesignController as AdminMasterDesignController;
@@ -95,6 +98,22 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/produce',[AdminProductOrderController::class,'produce'])->name('produce');
             Route::get('/issue-fabric',[AdminProductOrderController::class,'issueFabric'])->name('issueFabric');
             Route::post('/issue-fabric-post',[AdminProductOrderController::class,'issueFabricPost'])->name('issueFabricPost');
+
+
+        });
+
+        Route::prefix('/order_stages')->name('order_stages.')->group(function () {
+            Route::get('/index',[AdminOrderStagesController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminOrderStagesController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminOrderStagesController::class,'create'])->name('create');
+            // Route::get('/edit',[AdminOrderStagesController::class,'edit'])->name('edit');
+            // Route::post('/update',[AdminOrderStagesController::class,'update'])->name('update');
+            // Route::get('/delete',[AdminOrderStagesController::class,'delete'])->name('delete');
+            // Route::get('/view',[AdminOrderStagesController::class,'view'])->name('view');
+            // Route::post('/transfer',[AdminOrderStagesController::class,'transfer'])->name('transfer');
+            // Route::get('/produce',[AdminOrderStagesController::class,'produce'])->name('produce');
+            // Route::get('/issue-fabric',[AdminOrderStagesController::class,'issueFabric'])->name('issueFabric');
+            // Route::post('/issue-fabric-post',[AdminOrderStagesController::class,'issueFabricPost'])->name('issueFabricPost');
 
 
         });

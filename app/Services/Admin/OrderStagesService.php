@@ -14,11 +14,12 @@ use App\Models\OrderProductStage;
 use App\Models\OrderStageTransaction;
 use App\Models\ProductStage;
 use App\Models\MasterCustomer;
+use App\Models\MasterProductStage;
 
-use App\Http\DataTable\Admin\ProductOrderDataTable as DataTable;
+use App\Http\DataTable\Admin\OrderStagesDataTable as DataTable;
 use Illuminate\Support\Facades\DB;
 
-class ProductOrderService {
+class OrderStagesService {
     public function __construct(
         DataTable $datatable,
         Order $order
@@ -35,6 +36,11 @@ class ProductOrderService {
        
         return $this->datatable->indexList($request);
     }
+    public function stage_data(Request $request){
+        $data = MasterProductStage::where('id',$request->stage_id)->first();
+        return $data;
+    }
+
 
     public function store(Request $request)
     {
@@ -263,8 +269,8 @@ class ProductOrderService {
     }
 
 
-    public function customers(){
-        $data = MasterCustomer::where('status',1)->get();
+    public function product_stage(){
+        $data = MasterProductStage::where('status',1)->get();
         return $data;
     }
 
@@ -329,7 +335,6 @@ class ProductOrderService {
 
                     $totalIssued += $usedMeter;
                 }
-                
 
                 // 4️⃣ Validate that issued = required
                 if (round($totalIssued, 2) != round($orderProductDetail->total_meter, 2)) {
@@ -339,17 +344,6 @@ class ProductOrderService {
                     'status' => 2
                 ]);
             }
-            $currentStage = OrderProductStage::where('order_product_id', $orderProduct->id)->orderBy('id','asc')->first();
-
-            OrderStageTransaction::create([
-                'order_product_id' => $orderProduct->id,
-                'from_stage_id' => 0,
-                'to_stage_id' => $currentStage->stage_id ?? null,
-                'quantity' => $orderProduct->quantity,
-                'processed_by' => '0',
-                'remarks' =>'first stage',
-                'status' => 1, // Transaction completed
-            ]);
 
             DB::commit();
             $data['status'] = 1;

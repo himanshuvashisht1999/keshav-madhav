@@ -1,6 +1,7 @@
 <?php
 $page_url = $_SERVER['REQUEST_URI'];
 $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
+$stage_data = App\Models\MasterProductStage::where('status', 1)->get();
 ?>
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
@@ -69,7 +70,18 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                             <p>Production</p>
                         </a>
                     </li>
-
+                   
+                    @foreach($stage_data as $stage)
+                    
+                    <li class="nav-item">
+                        <a href="{{ route('admin.order_stages.index',['stage_id' => $stage->id]) }}"
+                             class="{{ str_contains(strtolower($page_url), 'admin/' . strtolower($stage->name)) ? 'nav-link active' : 'nav-link' }}"
+                            style="position:static;">
+                            <i class="nav-icon fas fa-store"></i>
+                            <p>{{$stage->name}}</p>
+                        </a>
+                    </li>
+                    @endforeach
                     <!-- Master Settings (Dropdown) -->
                     <li class="{{ str_contains($page_url, 'admin/master') ? 'nav-item menu-open' : 'nav-item' }}">
                         <a href="#"
