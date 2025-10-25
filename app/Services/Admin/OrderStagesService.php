@@ -14,11 +14,12 @@ use App\Models\OrderProductStage;
 use App\Models\OrderStageTransaction;
 use App\Models\ProductStage;
 use App\Models\MasterCustomer;
+use App\Models\MasterProductStage;
 
-use App\Http\DataTable\Admin\ProductOrderDataTable as DataTable;
+use App\Http\DataTable\Admin\OrderStagesDataTable as DataTable;
 use Illuminate\Support\Facades\DB;
 
-class ProductOrderService {
+class OrderStagesService {
     public function __construct(
         DataTable $datatable,
         Order $order
@@ -35,6 +36,11 @@ class ProductOrderService {
        
         return $this->datatable->indexList($request);
     }
+    public function stage_data(Request $request){
+        $data = MasterProductStage::where('id',$request->stage_id)->first();
+        return $data;
+    }
+
 
     public function store(Request $request)
     {
@@ -251,25 +257,7 @@ class ProductOrderService {
                 'processed_by' => $user_id,
                 'remarks' => $remarks,
                 'status' => 1, // Transaction completed
-                // 'remaining_quantity' => $currentStage->pending_qty,
             ]);
-
-            $total_quantity = $quantity;
-
-            $order_stage_transction_data_update = OrderStageTransaction::where('order_product_id', $order_product_id)
-            ->where('to_stage_id', $from_stage_id)->where('remaining_quantity','>',0)->get();
-            foreach($order_stage_transction_data_update as $single_data){
-                if($total_quantity >= $single_data->remaining_quantity){
-                    $total_quantity = $total_quantity - $single_data->remaining_quantity;
-                    $single_data->remaining_quantity = 0;
-                    $single_data->save();
-                }else{
-                    $single_data->remaining_quantity = $single_data->remaining_quantity - $total_quantity;
-                    $single_data->save();
-                    $total_quantity = 0;
-                    break;
-                }
-            }
 
             DB::commit();
             return true;
@@ -281,8 +269,8 @@ class ProductOrderService {
     }
 
 
-    public function customers(){
-        $data = MasterCustomer::where('status',1)->get();
+    public function product_stage(){
+        $data = MasterProductStage::where('status',1)->get();
         return $data;
     }
 
@@ -347,7 +335,6 @@ class ProductOrderService {
 
                     $totalIssued += $usedMeter;
                 }
-                
 
                 // 4️⃣ Validate that issued = required
                 if (round($totalIssued, 2) != round($orderProductDetail->total_meter, 2)) {
@@ -357,18 +344,7 @@ class ProductOrderService {
                     'status' => 2
                 ]);
             }
-            $currentStage = OrderProductStage::where('order_product_id', $orderProduct->id)->orderBy('id','asc')->first();
-            
-            $dataaa = OrderStageTransaction::create([
-                'order_product_id' => $orderProduct->id,
-                'from_stage_id' => 0,
-                'to_stage_id' => $currentStage->stage_id ?? null,
-                'quantity' => $orderProduct->quantity,
-                'processed_by' => '0',
-                'remarks' =>'first stage',
-                'remaining_quantity' => $orderProduct->quantity,
-                'status' => 1, // Transaction completed
-            ]);
+
             DB::commit();
             $data['status'] = 1;
             $data['message'] = 'Fabric issued successfully.';

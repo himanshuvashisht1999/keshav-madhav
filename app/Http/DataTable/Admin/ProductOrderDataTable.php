@@ -29,7 +29,6 @@ class ProductOrderDataTable  {
                     $query->where('expected_delivery_date', 'like', "%{$request->get('expected_delivery_date')}%");
                 }
                 
-                
             }) 
          
             ->editColumn('status', function ($queue) {
