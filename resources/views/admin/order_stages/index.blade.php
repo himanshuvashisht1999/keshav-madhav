@@ -59,7 +59,9 @@
                         <td>
                             <input type="text" class="form-control" name="quantity" id="quantity" autocomplete="off">
                         </td>
-                       
+                        <td>
+                            <input type="text" class="form-control" name="remaining_quantity" id="remaining_quantity" autocomplete="off">
+                        </td>
                         <td>
                             <input type="date" class="form-control" name="created_at" id="created_at" autocomplete="off">
                         </td>
@@ -73,6 +75,7 @@
                         <th>Product SKU</th>
                         <th>From Stage</th>
                         <th>Quantity</th>
+                        <th>Remaining Quantity</th>
                         <th>Created Date</th>
                         <th>Action</th>
                     </tr>
@@ -107,11 +110,11 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="order_product_id" id="order_tansaction_id">
-                    <input type="hidden" name="from_stage_id" value="{{ $stage->stage_id }}">
+                    <input type="hidden" name="from_stage_id" id="order_stage_id">
 
                     <div class="form-group">
                         <label>Quantity to Transfer</label>
-                        <input type="number" name="transfer_quantity" class="form-control" required>
+                        <input type="number" name="quantity" class="form-control" required>
                     </div>
 
                     <div class="form-group">
@@ -148,6 +151,7 @@
                     d.order_product_id = $('#order_product_id').val();
                     d.from_stage_id = $('#from_stage_id').val();
                     d.quantity = $('#quantity').val();
+                    d.remaining_quantity = $('#remaining_quantity').val();
                     d.created_at = $('#created_at').val();
                   
                 },
@@ -159,6 +163,7 @@
                 {data: 'order_product_id', name: 'order_product_id'},                
                 {data: 'from_stage_id', name: 'from_stage_id'},                
                 {data: 'quantity', name: 'quantity'},
+                {data: 'remaining_quantity', name: 'remaining_quantity'},
                 {data: 'created_at', name: 'created_at'},                
                 {data: 'action', name: 'action', searchable: false}
             ],
@@ -193,6 +198,11 @@
             e.preventDefault();
         });
 
+        $('#remaining_quantity').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        
         $('#order_product_id').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
@@ -209,7 +219,10 @@
 
     $(document).on('click', '.viewBtn', function() {
         var id = $(this).data('id');
+        var order_stage_id = "{{ $stage_data->id }}";
         $('#order_tansaction_id').val(id);
+        $('#order_stage_id').val(order_stage_id);
+        
     });
 
     $(document).ready(function () {

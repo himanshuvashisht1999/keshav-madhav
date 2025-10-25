@@ -13,8 +13,8 @@ class OrderStagesDataTable  {
 
     public function indexList($request){
         $queue = OrderStageTransaction::query();
-       
-
+        
+        
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id','desc');
@@ -36,6 +36,9 @@ class OrderStagesDataTable  {
                     $query->where('quantity', $request->get('quantity'));
                 }
 
+                if ($request->has('remaining_quantity') && !empty($request->remaining_quantity)) {
+                    $query->where('remaining_quantity', $request->get('remaining_quantity'));
+                }
                 if ($request->has('from_stage_id') && $request->filled('from_stage_id')) {
                     $query->where('from_stage_id', $request->get('from_stage_id'));
                 }
@@ -73,12 +76,14 @@ class OrderStagesDataTable  {
             
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
+                
                 return '
                     <button class="btn btn-sm btn-primary viewBtn" 
-                            data-id="'.$queue->id.'" 
+                            data-id="'.$queue->order_product_id.'" 
+                            data-stage_id="'.$queue->from_stage_id.'"
                             data-toggle="modal" 
                             data-target="#viewModal">
-                        View
+                        Transfer
                     </button>
                 ';
             })
