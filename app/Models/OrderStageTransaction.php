@@ -20,6 +20,7 @@ class OrderStageTransaction extends Model
         'to_stage_id',
         'quantity',
         'processed_by',
+        'remaining_quantity',
         'remarks',
         'status',
         'created_at',

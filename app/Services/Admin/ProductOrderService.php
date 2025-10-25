@@ -251,7 +251,25 @@ class ProductOrderService {
                 'processed_by' => $user_id,
                 'remarks' => $remarks,
                 'status' => 1, // Transaction completed
+                // 'remaining_quantity' => $currentStage->pending_qty,
             ]);
+
+            $total_quantity = $quantity;
+
+            $order_stage_transction_data_update = OrderStageTransaction::where('order_product_id', $order_product_id)
+            ->where('to_stage_id', $from_stage_id)->where('remaining_quantity','>',0)->get();
+            foreach($order_stage_transction_data_update as $single_data){
+                if($total_quantity >= $single_data->remaining_quantity){
+                    $total_quantity = $total_quantity - $single_data->remaining_quantity;
+                    $single_data->remaining_quantity = 0;
+                    $single_data->save();
+                }else{
+                    $single_data->remaining_quantity = $single_data->remaining_quantity - $total_quantity;
+                    $single_data->save();
+                    $total_quantity = 0;
+                    break;
+                }
+            }
 
             DB::commit();
             return true;
@@ -340,17 +358,17 @@ class ProductOrderService {
                 ]);
             }
             $currentStage = OrderProductStage::where('order_product_id', $orderProduct->id)->orderBy('id','asc')->first();
-
-            OrderStageTransaction::create([
+            
+            $dataaa = OrderStageTransaction::create([
                 'order_product_id' => $orderProduct->id,
                 'from_stage_id' => 0,
                 'to_stage_id' => $currentStage->stage_id ?? null,
                 'quantity' => $orderProduct->quantity,
                 'processed_by' => '0',
                 'remarks' =>'first stage',
+                'remaining_quantity' => $orderProduct->quantity,
                 'status' => 1, // Transaction completed
             ]);
-
             DB::commit();
             $data['status'] = 1;
             $data['message'] = 'Fabric issued successfully.';
