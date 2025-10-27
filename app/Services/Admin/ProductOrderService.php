@@ -251,7 +251,7 @@ class ProductOrderService {
                 'processed_by' => $user_id,
                 'remarks' => $remarks,
                 'status' => 1, // Transaction completed
-                // 'remaining_quantity' => $currentStage->pending_qty,
+                'remaining_quantity' => $quantity,
             ]);
 
             $total_quantity = $quantity;
@@ -260,17 +260,17 @@ class ProductOrderService {
             ->where('to_stage_id', $from_stage_id)->where('remaining_quantity','>',0)->get();
             foreach($order_stage_transction_data_update as $single_data){
                 if($total_quantity >= $single_data->remaining_quantity){
-                    $total_quantity = $total_quantity - $single_data->remaining_quantity;
-                    $single_data->remaining_quantity = 0;
-                    $single_data->save();
+                    $save_order_transaction = OrderStageTransaction::where('id', $single_data->id)->first();
+                    $save_order_transaction->remaining_quantity = 0;
+                    $save_order_transaction->save();
                 }else{
-                    $single_data->remaining_quantity = $single_data->remaining_quantity - $total_quantity;
-                    $single_data->save();
-                    $total_quantity = 0;
+                    $save_order_transaction = OrderStageTransaction::where('id', $single_data->id)->first();
+                    $save_order_transaction->remaining_quantity = $single_data->remaining_quantity - $total_quantity;
+                    $save_order_transaction->save();
+
                     break;
                 }
             }
-
             DB::commit();
             return true;
 
