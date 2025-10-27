@@ -260,6 +260,7 @@ class ProductOrderService {
             ->where('to_stage_id', $from_stage_id)->where('remaining_quantity','>',0)->get();
             foreach($order_stage_transction_data_update as $single_data){
                 if($total_quantity >= $single_data->remaining_quantity){
+                    $total_quantity = $total_quantity - $single_data->remaining_quantity;
                     $save_order_transaction = OrderStageTransaction::where('id', $single_data->id)->first();
                     $save_order_transaction->remaining_quantity = 0;
                     $save_order_transaction->save();
@@ -267,7 +268,7 @@ class ProductOrderService {
                     $save_order_transaction = OrderStageTransaction::where('id', $single_data->id)->first();
                     $save_order_transaction->remaining_quantity = $single_data->remaining_quantity - $total_quantity;
                     $save_order_transaction->save();
-
+                    $total_quantity = 0;
                     break;
                 }
             }
