@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Order {{$stage_data->name}}</h1>
+                    <h1>Manage {{$stage_data->name}} Stage</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Production Order</li>
+                        <li class="breadcrumb-item active">Manage {{$stage_data->name}} Stage</li>
                     </ol>
                 </div>
             </div>
@@ -25,7 +25,7 @@
             <div class="card card-default ">
                  <div class="row" >
                     <div class="col-9 card-header">
-                        <h3 class="card-title">Manage Production Order</h3>
+                        <h3 class="card-title">Manage {{$stage_data->name}} Stage</h3>
                     </div>
                     <div class="col-3 card-header">
                         {{-- <a href="{{route('admin.order_stages.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Create Slip</a> --}}

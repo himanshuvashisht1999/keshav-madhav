@@ -68,7 +68,18 @@
                                         </span>
                                     @endif
                                 </div>
-                            </div>                            
+                            </div>   
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="sku">SKU</label>
+                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU">
+                                    @if ($errors->has('sku'))
+                                        <span class="invalid-feedback d-block">
+                                            {{ $errors->first('sku') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>                         
                            
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">
@@ -83,6 +94,37 @@
         </div>
     </section>
 </div>
+<script>
+    function generateSKU() {
+        let size_selection = document.querySelector("input[name='size_selection']").value.trim();
+        let measurement = document.querySelector("input[name='measurement']").value.trim();
+        let part1 = size_selection.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        let part2 = measurement.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        let sku = part1 + "-" + part2;
+        let skuInput = document.getElementById("sku");
+        if (!skuInput.dataset.edited || skuInput.value === "") {
+            skuInput.value = sku;
+        }
+    }
 
+    document.querySelector("input[name='size_selection']").addEventListener("input", function() {
+        let skuInput = document.getElementById("sku");
+        if (!skuInput.dataset.edited) {
+            generateSKU();
+        }
+    });
+
+    document.querySelector("input[name='measurement']").addEventListener("input", function() {
+        let skuInput = document.getElementById("sku");
+        if (!skuInput.dataset.edited) {
+            generateSKU();
+        }
+    });
+
+    // Mark as manually edited when user types in SKU
+    document.getElementById("sku").addEventListener("input", function() {
+        this.dataset.edited = true;
+    });
+</script>
 
 @endsection

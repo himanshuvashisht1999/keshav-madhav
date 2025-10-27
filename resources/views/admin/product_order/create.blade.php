@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Product Order</h1>
+                    <h1>Sales Order</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Create Product Order</li>
+                        <li class="breadcrumb-item active">Create Sales Order</li>
                     </ol>
                 </div>
             </div>
@@ -51,7 +51,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Estimated Delivery Date</label>
-                                    <input type="date" name="expected_delivery_date" class="form-control" value="{{old('expected_delivery_date')}}">
+                                    <input type="date" name="expected_delivery_date" class="form-control" value="{{old('expected_delivery_date')}}" min="{{ date('Y-m-d') }}">
                                     @if ($errors->has('expected_delivery_date'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('expected_delivery_date') }}
@@ -64,7 +64,7 @@
                                 <label>Select Product Sku</label>
                                 <div id="products-container">
                                     <div class="product-row row mb-2">
-                                        <div class="col-md-5">
+                                        <div class="col-md-6">
                                             <div class="form-group">
                                                 <select name="product_sku[]" class="form-control select2 stage-select" style="width: 100%;" required>
                                                     <option value="">Select Product SKU</option>
@@ -80,7 +80,7 @@
                                                 
                                             </div>
                                         </div>
-                                        <div class="col-md-2">
+                                        <div class="col-md-1">
                                             <button type="button" class="btn btn-success add-product"><i class="fa fa-plus"></i></button>
                                         </div>
                                     </div>
