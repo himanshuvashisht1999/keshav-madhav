@@ -139,7 +139,7 @@
             processing: true,
             serverSide: true,
             stateSave: true,
-            searching: true,
+            searching: false,
             ordering:false,
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
