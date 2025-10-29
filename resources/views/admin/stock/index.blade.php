@@ -30,6 +30,18 @@
                 </div>
                 
                 <div class="card-body table-responsive">
+                <div class="d-flex justify-content-end me-3 ">
+                    <button id="generatePDF" class="btn btn-secondary m-1" name="generatePDF">
+                        <i class="nav-icon fas fa-download"></i> PDF Reports
+                    </button>
+                    <button id="generateExcel" class="btn btn-secondary m-1" name="generateExcel">
+                        <i class="nav-icon fas fa-download"></i> Excel Reports
+                    </button>
+                    <button name="fabric_quantity" class="btn btn-secondary m-1 " onclick="window.location.href='{{ route('admin.stock.fabricQuantityExcel') }}'">
+                        <i class="nav-icon fas fa-download"></i> Fabric Quantity
+                    </button>
+                </div>
+                
                 <table id="customers" class="table table-bordered table-hover">
                   <thead>
                     <tr role="row" class="filter">
@@ -118,8 +130,7 @@
                 {data: 'batch_no', name: 'batch_no'},
                 {data: 'action', name: 'action', searchable: false}
             ],
-            dom: 'lBfrtip',
-            buttons: ['excel', 'csv', 'pdf', 'copy']
+            
         });
 
         $('#id').on('keyup', function (e) {
@@ -153,7 +164,58 @@
     });
 
     $(document).ready(function () {
-        
+        $('#generatePDF').on('click', function (e) {
+            e.preventDefault(); // prevent default behavior
+
+            // Collect filter values
+            var data = {
+                sku: $('#sku').val(),
+                date: $('#date').val(),
+                meter: $('#meter').val(),
+                unique_number: $('#unique_number').val(),
+                batch_no: $('#batch_no').val(),
+                _token: '{{ csrf_token() }}'
+            };
+
+            // Create a hidden form for POST submission (so file download works)
+            var form = $('<form>', {
+                action: '{{ route("admin.stock.generatePdf") }}',
+                method: 'POST',
+                target: '_blank'
+            }).append($.map(data, function(v, k) {
+                return $('<input>', { type: 'hidden', name: k, value: v });
+            }));
+
+            $('body').append(form);
+            form.submit();
+            form.remove();
+        });
+        $('#generateExcel').on('click', function (e) {
+            e.preventDefault(); // prevent default behavior
+
+            // Collect filter values
+            var data = {
+                sku: $('#sku').val(),
+                date: $('#date').val(),
+                meter: $('#meter').val(),
+                unique_number: $('#unique_number').val(),
+                batch_no: $('#batch_no').val(),
+                _token: '{{ csrf_token() }}'
+            };
+
+            // Create a hidden form for POST submission (so file download works)
+            var form = $('<form>', {
+                action: '{{ route("admin.stock.generateExcel") }}',
+                method: 'POST',
+                target: '_blank'
+            }).append($.map(data, function(v, k) {
+                return $('<input>', { type: 'hidden', name: k, value: v });
+            }));
+
+            $('body').append(form);
+            form.submit();
+            form.remove();
+        });
     });
 
 </script>
