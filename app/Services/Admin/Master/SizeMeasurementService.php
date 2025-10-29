@@ -29,7 +29,8 @@ class SizeMeasurementService {
 
         $save_data = new MasterSizeMeasurement;
         $save_data->size_selection = $request->size_selection;
-        $save_data->measurement = $request->measurement;;
+        $save_data->measurement = $request->measurement;
+        $save_data->sku = $request->sku;
         $save_data->status = $request->status;
         $save_data->save();
         return true;

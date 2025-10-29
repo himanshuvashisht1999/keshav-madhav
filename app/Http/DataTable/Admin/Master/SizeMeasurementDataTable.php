@@ -29,6 +29,9 @@ class SizeMeasurementDataTable  {
                 if ($request->has('status') && $request->filled('status')) {
                     $query->where('status', $request->get('status'));
                 }
+                if ($request->has('sku') && !empty($request->sku)) {
+                    $query->where('sku', 'like', "%{$request->get('sku')}%");
+                }
                 
             }) 
          

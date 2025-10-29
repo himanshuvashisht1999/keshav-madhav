@@ -38,9 +38,7 @@
                                 <button type="submit" class="btn btn-primary">Update</button>
                             </div>
                         </div>
-
-                    
-                       
+                
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">

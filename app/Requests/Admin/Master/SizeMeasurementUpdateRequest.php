@@ -24,6 +24,7 @@ class SizeMeasurementUpdateRequest extends FormRequest{
             'size_selection' => 'required',
             'measurement' => 'required',
             'status' =>'required',
+            'sku'    => 'required|unique:fabric_dye,sku,' . $request->id,
         ];
     }
 

@@ -28,7 +28,7 @@
                         <h3 class="card-title">Manage Customers</h3>
                     </div>
                     <div class="col-3 card-header">
-                        <a href="{{route('admin.master.customer.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Customers</a>
+                        <a href="{{route('admin.master.customer.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Customer</a>
                     </div>
                 </div>
                 
