@@ -79,6 +79,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/indexList',[AdminStockController::class,'indexList'])->name('indexList');
             Route::get('/view',[AdminStockController::class,'view'])->name('view');
             Route::get('/detail',[AdminStockController::class,'detail'])->name('detail');
+            Route::post('/generatePdf', [AdminStockController::class, 'generateStockReportPDF'])->name('generatePdf');
+            Route::post('/generateExcel', [AdminStockController::class, 'generateStockReportExcel'])->name('generateExcel');
+            Route::get('/fabricQuantityExcel', [AdminStockController::class, 'generateFebricQuantityReportExcel'])->name('fabricQuantityExcel');
         });
 
         Route::prefix('/sales-order')->name('sales_order.')->group(function () {

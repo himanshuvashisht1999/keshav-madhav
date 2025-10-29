@@ -28,7 +28,7 @@
                         <h3 class="card-title">Manage Items</h3>
                     </div>
                     <div class="col-3 card-header">
-                        <a href="{{route('admin.master.item.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Items</a>
+                        <a href="{{route('admin.master.item.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Item</a>
                     </div>
                 </div>
                 

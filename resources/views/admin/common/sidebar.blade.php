@@ -58,7 +58,7 @@ $stage_data = App\Models\MasterProductStage::where('status', 1)->get();
                         <a href="{{ route('admin.sales_order.create') }}"
                             class="{{ str_contains($page_url, 'admin/sales-order') ? 'nav-link active' : 'nav-link' }}"
                             style="position:static;">
-                            <i class="nav-icon fas fa-store"></i>
+                            <i class="nav-icon fas fa-shopping-cart"></i>
                             <p>Sales Order</p>
                         </a>
                     </li>
@@ -66,22 +66,36 @@ $stage_data = App\Models\MasterProductStage::where('status', 1)->get();
                         <a href="{{ route('admin.product_order.index') }}"
                             class="{{ str_contains($page_url, 'admin/production-order') ? 'nav-link active' : 'nav-link' }}"
                             style="position:static;">
-                            <i class="nav-icon fas fa-store"></i>
+                            <i class="nav-icon fas fa-industry"></i>
                             <p>Production</p>
                         </a>
                     </li>
-                   
-                    @foreach($stage_data as $stage)
-                    
-                    <li class="nav-item">
-                        <a href="{{ route('admin.order_stages.index',['stage_id' => $stage->id]) }}"
-                             class="{{ str_contains(strtolower($page_url), 'admin/' . strtolower($stage->name)) ? 'nav-link active' : 'nav-link' }}"
-                            style="position:static;">
-                            <i class="nav-icon fas fa-store"></i>
-                            <p>{{$stage->name}}</p>
+                    <li class="{{ str_contains($page_url, 'admin/order_stages') ? 'nav-item menu-open' : 'nav-item' }}">
+                        <a href="#"
+                            class="{{ str_contains($page_url, 'admin/order_stages') ? 'nav-link active' : 'nav-link' }}">
+                            <i class="nav-icon fas fa-cube"></i>
+                            <p>
+                                Stages
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
                         </a>
+                        
+                        <ul class="nav nav-treeview">
+                            @foreach($stage_data as $stage)
+                                
+                            <li class="nav-item">
+                                <a href="{{ route('admin.order_stages.index',['stage_id' => $stage->id]) }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/order_stages') &&  (request('stage_id') == $stage->id)  ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <!-- <i class="nav-icon fas fa-store"></i> -->
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>{{$stage->name}}</p>
+                                </a>
+                            </li>
+
+                            @endforeach
+                        </ul>
                     </li>
-                    @endforeach
                     <!-- Master Settings (Dropdown) -->
                     <li class="{{ str_contains($page_url, 'admin/master') ? 'nav-item menu-open' : 'nav-item' }}">
                         <a href="#"

@@ -9,12 +9,14 @@
     "license": "MIT",
     "require": {
         "php": "^8.0.2",
+        "barryvdh/laravel-dompdf": "^3.1",
         "endroid/qr-code": "^5.0",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^9.19",
         "laravel/passport": "^11.10",
         "laravel/sanctum": "^3.0",
         "laravel/tinker": "^2.7",
+        "phpoffice/phpspreadsheet": "^5.2",
         "simplesoftwareio/simple-qrcode": "^4.2",
         "stripe/stripe-php": "^13.9",
         "yajra/laravel-datatables-oracle": "^10.3.1"

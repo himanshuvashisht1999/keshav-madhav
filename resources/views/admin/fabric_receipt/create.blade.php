@@ -63,7 +63,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Date & Time</label>
-                                    <input type="datetime-local" name="time" class="form-control" placeholder="Enter time" value="{{ \Carbon\Carbon::now()->format('Y-m-d\TH:i') }}">
+                                    <input type="datetime-local" name="time" id="datetime" class="form-control" placeholder="Enter time" value="{{ \Carbon\Carbon::now()->format('Y-m-d\TH:i') }}">
                                     @if ($errors->has('time'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('time') }}
@@ -238,6 +238,13 @@
         $("#sku").on("input", function() {
             this.dataset.edited = true;
         });
+
+
+        const now = new Date();
+        const formattedDateTime = now.toISOString().slice(0, 16);
+        $('#datetime').attr('min', formattedDateTime);
+        $('#datetime').val(formattedDateTime);
+
     });
 </script>
 <script>
