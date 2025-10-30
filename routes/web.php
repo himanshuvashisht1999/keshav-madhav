@@ -101,7 +101,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/produce',[AdminProductOrderController::class,'produce'])->name('produce');
             Route::get('/issue-fabric',[AdminProductOrderController::class,'issueFabric'])->name('issueFabric');
             Route::post('/issue-fabric-post',[AdminProductOrderController::class,'issueFabricPost'])->name('issueFabricPost');
-
+            Route::get('/issue-slip',[AdminProductOrderController::class,'issueSlip'])->name('issueSlip');
         });
 
         Route::prefix('/order_stages')->name('order_stages.')->group(function () {

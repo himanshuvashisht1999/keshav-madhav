@@ -87,6 +87,38 @@
         </div>
     </section>
 </div>
+<style >
+    #hoverBox {
+        position: absolute;
+        display: none;
+        background: #fff;
+        border-radius: 10px;
+        padding: 10px 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        min-width: 220px;
+        z-index: 9999;
+        transition: all 0.2s ease-in-out;
+    }
+
+    #hoverBox h6 {
+        margin: 0 0 5px;
+        font-weight: 600;
+        color: #007bff;
+    }
+
+    #hoverBox p {
+        margin: 0;
+        font-size: 14px;
+        color: #444;
+    }
+
+    #productTable tbody tr:hover {
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+
+</style>
+<div id="hoverBox"></div>
 <script>
     $(function () {
         var i = 1;
@@ -173,6 +205,48 @@
             }
         });
     }
+
+
+    $(document).ready(function() {
+        let table = $('#customers').DataTable();
+        const hoverBox = $('#hoverBox');
+
+        // When mouse enters a row
+        $('#customers tbody').on('mouseenter', 'tr', function(e) {
+            const row = $(this);
+            const name = row.find('td:eq(0)').text();
+            const price = row.find('td:eq(1)').text();
+
+            // Static data (for now)
+            const desc = "This is a high-quality product with great performance.";
+
+            // Set box content
+            hoverBox.html(`
+                <h6>${name}</h6>
+                <p><strong>Price:</strong> ${price}</p>
+                <p>${desc}</p>
+            `);
+
+            // Position near cursor and show
+            hoverBox.css({
+                top: e.pageY + 10 + 'px',
+                left: e.pageX + 10 + 'px'
+            }).fadeIn(150);
+        });
+
+        // Move box with cursor
+        $('#productTable tbody').on('mousemove', 'tr', function(e) {
+            hoverBox.css({
+                top: e.pageY + 10 + 'px',
+                left: e.pageX + 10 + 'px'
+            });
+        });
+
+        // Hide box when mouse leaves row
+        $('#productTable tbody').on('mouseleave', 'tr', function() {
+            hoverBox.hide();
+        });
+    });
 </script>
 
 @endsection

@@ -7,7 +7,7 @@ use App\Requests\Admin\ProductOrderStoreRequest;
 use App\Requests\Admin\ProductOrderUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
 use Auth;
-
+use PDF;
 class ProductOrderController extends Controller { 
     protected $service;
     public function __construct(Service $service) {
@@ -77,6 +77,33 @@ class ProductOrderController extends Controller {
            return redirect()->back()->with('error',$response['message']);
         }
         return redirect()->route('admin.product_order.index')->withSuccess($response['message']); 
+    }
+
+    public function issueSlip(Request $request)
+    {
+       
+        $filters = $request->all();
+
+        
+         $data = [
+            'order_no' => 'ORD-2025-0012',
+            'customer_name' => 'ABC Textiles',
+            'order_date' => now()->format('d M Y'),
+            'order_time' => now()->format('H:i'),
+            'product_sku' => 'PRD-1001',
+            'product_qty' => '120 pcs',
+            'fabric_sku' => 'FAB-A23',
+            'fabric_qty' => '30.50 m',
+            'items' => [
+                ['name' => 'Shirt - Blue', 'sku' => 'PRD-1001', 'qty' => 60],
+            ],
+        ];
+
+        $pdf = PDF::loadView('admin.pdf.order_slip', $data)
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream('order_slip.pdf');
+        // return $pdf->download('order_slip.pdf');
     }
 
 }

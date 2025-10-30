@@ -113,6 +113,7 @@
                                     <td>
                                         @if($product->status == 2)
                                         Issued
+                                        <a href="{{route('admin.product_order.issueSlip',['id' => $product->id])}}">Slip</a>
                                         @else
                                         <a href="{{route('admin.product_order.issueFabric',['id' => $product->id])}}">Issue</a>
                                         @endif
