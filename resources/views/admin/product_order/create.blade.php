@@ -112,10 +112,10 @@ $(document).ready(function () {
     $(document).on('click', '.add-product', function () {
         let newRow = `
             <div class="product-row row mb-2">
-                <div class="col-md-5">
+                <div class="col-md-6">
                     <div class="form-group">
                         <select name="product_sku[]" class="form-control select2 stage-select" style="width: 100%;" required>
-                            <option value="">Select Stage</option>
+                            <option value="">Select Product SKU</option>
                             @foreach($products as $product)
                                 <option value="{{ $product->sku }}">{{ $product->sku }}</option>
                             @endforeach
@@ -127,7 +127,7 @@ $(document).ready(function () {
                         <input type="number" name="product_quantity[]" id=""class="form-control" placeholder="Quantity" required>
                     </div>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-1">
                     <button type="button" class="btn btn-danger remove-product"><i class="fa fa-minus"></i></button>
                 </div>
             </div>
