@@ -242,8 +242,22 @@ class ProductOrderService {
                 $nextStage->save();
             }
 
+            $orderProduct = OrderProduct::with('order')->where('id',$order_product_id)->first();
+            $stage_sku = $nextStage->stage->sku;
+            $orderProducts = OrderProduct::where('order_id', $orderProduct->order->id)
+            ->orderBy('id', 'asc')
+            ->pluck('id')
+            ->toArray();
+            $order_product_number = array_search($orderProduct->id, $orderProducts) + 1;
+            $stageCount = OrderStageTransaction::where('order_product_id', $orderProduct->id)
+                ->where('to_stage_id', $nextStage->stage_id)
+                ->count() + 1;
+            $sku_for_trans = "{$orderProduct->order->sku}/{$order_product_number}/{$stage_sku}/{$stageCount}";
+
+
             // 3️⃣ Record transaction
             OrderStageTransaction::create([
+                'sku' => $sku_for_trans,
                 'order_product_id' => $order_product_id,
                 'from_stage_id' => $from_stage_id,
                 'to_stage_id' => $nextStage->stage_id ?? null,
@@ -359,8 +373,24 @@ class ProductOrderService {
                 ]);
             }
             $currentStage = OrderProductStage::where('order_product_id', $orderProduct->id)->orderBy('id','asc')->first();
+
+            $orderProduct = OrderProduct::with('order')->where('id',$request->order_product_id)->first();
+            $stage_sku = $currentStage->stage->sku;
+
+           $orderProducts = OrderProduct::where('order_id', $orderProduct->order->id)
+            ->orderBy('id', 'asc')
+            ->pluck('id')
+            ->toArray();
+            $order_product_number = array_search($orderProduct->id, $orderProducts) + 1;
+
+            $stageCount = OrderStageTransaction::where('order_product_id', $orderProduct->id)
+                ->where('to_stage_id', $currentStage->stage_id)
+                ->count() + 1;
+
+            $sku_for_trans = "{$orderProduct->order->sku}/{$order_product_number}/{$stage_sku}/{$stageCount}";
             
             $dataaa = OrderStageTransaction::create([
+                'sku' => $sku_for_trans,
                 'order_product_id' => $orderProduct->id,
                 'from_stage_id' => 0,
                 'to_stage_id' => $currentStage->stage_id ?? null,

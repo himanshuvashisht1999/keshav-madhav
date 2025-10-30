@@ -40,7 +40,7 @@
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="order_no" id="order_no" autocomplete="off">
+                            <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
                         <td>
                             <input type="text" class="form-control" name="order_product_id" id="order_product_id" autocomplete="off">
@@ -147,7 +147,7 @@
                 url: '{!! route('admin.order_stages.indexList',['stage_id' => $stage_data->id]) !!}',
                 data: function (d) {
                     d.id = $('#id').val();
-                    d.order_no = $('#order_no').val();
+                    d.sku = $('#sku').val();
                     d.order_product_id = $('#order_product_id').val();
                     d.from_stage_id = $('#from_stage_id').val();
                     d.quantity = $('#quantity').val();
@@ -159,7 +159,7 @@
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'order_no', name: 'order_no'},
+                {data: 'sku', name: 'sku'},
                 {data: 'order_product_id', name: 'order_product_id'},                
                 {data: 'from_stage_id', name: 'from_stage_id'},                
                 {data: 'quantity', name: 'quantity'},
@@ -181,7 +181,7 @@
             e.preventDefault();
         });
 
-        $('#order_no').on('keyup', function (e) {
+        $('#sku').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });

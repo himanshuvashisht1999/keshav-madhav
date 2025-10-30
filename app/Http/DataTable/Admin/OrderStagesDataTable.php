@@ -20,10 +20,13 @@ class OrderStagesDataTable  {
                 $query->orderBy('id','desc');
 
                 // ✅ Filter by order_no (from related Order model)
-                if ($request->has('order_no') && !empty($request->order_no)) {
-                    $query->whereHas('orderProduct.order', function ($q) use ($request) {
-                        $q->where('sku', 'like', '%' . $request->get('order_no') . '%');
-                    });
+                // if ($request->has('order_no') && !empty($request->order_no)) {
+                //     $query->whereHas('orderProduct.order', function ($q) use ($request) {
+                //         $q->where('sku', 'like', '%' . $request->get('order_no') . '%');
+                //     });
+                // }
+                if ($request->has('sku') && !empty($request->sku)) {
+                    $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
 
                 // ✅ Filter by order_product_id (product_sku in OrderProduct)
