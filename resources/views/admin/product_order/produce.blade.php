@@ -1,13 +1,13 @@
 @extends('admin.layouts.app')
+
 @section('content')
 <div class="content-wrapper">
-
-    <!-- Page Header -->
+    <!-- Header -->
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2 align-items-center">
-                <div class="col-sm-6">
-                    <h1 class="mb-0">Production Order Details</h1>
+                <div class="col-sm-6 text-right">
+                    <h1 class="mb-0">First Stage</h1>
                 </div>
                 <div class="col-sm-6 text-right">
                     <a href="{{ route('admin.product_order.index') }}" class="btn btn-secondary">
@@ -18,111 +18,91 @@
         </div>
     </section>
 
-    <!-- Main Section -->
-    <section class="content">
+    <!-- Main Content -->
+    <section class="content mt-3">
         <div class="container-fluid">
 
             <!-- Order Info -->
-            <div class="card mb-4 shadow-sm border-0">
-                <div class="card-header bg-primary text-white">
-                    <strong><i class="fas fa-info-circle mr-1"></i> Production Order Information</strong>
-                </div>
-                <div class="card-body">
-                    <table class="table table-bordered table-striped mb-0">
+            <div class="bg-white rounded p-3 mb-4 border">
+                <h6 class="mb-3 text-primary font-weight-bold">
+                    <i class="fas fa-info-circle mr-1"></i> Order Information
+                </h6>
+                <table class="table table-sm table-borderless mb-0">
+                    <tbody>
                         <tr>
-                            <th width="20%">Order SKU</th>
+                            <th width="20%">Order SKU:</th>
                             <td>{{ $data->sku }}</td>
-                            <th width="20%">Customer</th>
-                            <td>{{ $data->customer->name}}</td>
-                            
-                            
+                            <th width="20%">Customer:</th>
+                            <td>{{ $data->customer->name }}</td>
                         </tr>
                         <tr>
-                            
-
-                            <th>Created Date</th>
+                            <th>Created Date:</th>
                             <td>{{ \Carbon\Carbon::parse($data->created_at)->format('d M Y, h:i A') }}</td>
-                            <th width="20%">Expected Delivery Date</th>
+                            <th>Expected Delivery:</th>
                             <td>{{ \Carbon\Carbon::parse($data->expected_delivery_date)->format('d M Y') }}</td>
-                            <!-- <th>Status</th>
-                            <td>
-                                @if($data->status == 1)
-                                    <span class="badge badge-success">Active</span>
-                                @else
-                                    <span class="badge badge-danger">Inactive</span>
-                                @endif
-                            </td> -->
                         </tr>
-                    </table>
-                </div>
+                    </tbody>
+                </table>
             </div>
 
-            <!-- Ordered Products -->
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-info text-white">
-                    <strong><i class="fas fa-box mr-1"></i> Ordered Products</strong>
-                </div>
-                <div class="card-body p-0">
-                    <table class="table table-bordered table-hover mb-0">
-                        <thead class="bg-light">
+            <!-- Products -->
+            <div class="bg-white rounded p-3 border">
+                <h6 class="mb-3 text-primary font-weight-bold">
+                    <i class="fas fa-box mr-1"></i> Ordered Products
+                </h6>
+
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead class="thead-light">
                             <tr>
-                                <!-- <th width="5%">Order SKU</th> -->
-                                <th width="20%">Product SKU</th>
-                                <th width="10%">Quantity</th>
-                                <th>Details</th>
-                                <th>Action</th>
+                                <th>Product SKU</th>
+                                <th>Quantity</th>
+                                <th>Fabric Details</th>
+                                <th width="15%">Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($data->products as $index => $product)
-                                <tr>
-                                    <!-- <td class="align-top">{{ $data->sku }}</td> -->
-                                    <td class="align-top">{{ $product->product_sku }}</td>
-                                    <td class="align-top">{{ $product->quantity }}</td>
-                                    <td>
-                                        <!-- Fabric Details -->
-                                        <div class="mb-3">
-                                            
-
-                                            @if($product->product_details->count() > 0)
-                                                <table class="table table-sm table-bordered mb-0 bg-light">
-                                                    <thead class="thead-light">
-                                                        <tr>
-                                                            <th>Fabric SKU</th>
-                                                            <th>Meter per Product</th>
-                                                            <th>Total Required Meter</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach($product->product_details as $detail)
-                                                            <tr>
-                                                                <td>{{ $detail->fabric_sku }}</td>
-                                                                <td>{{ $detail->meter }}</td>
-                                                                <td>{{ $detail->total_meter }}</td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            @else
-                                                <p class="text-muted mb-0">No fabric details available.</p>
-                                            @endif
-                                        </div>
-
-
-                                    </td>
-                                    <td>
-                                        @if($product->status == 2)
-                                        Issued
-                                        <a href="{{route('admin.product_order.issueSlip',['id' => $product->id])}}">Slip</a>
-                                        @else
-                                        <a href="{{route('admin.product_order.issueFabric',['id' => $product->id])}}">Issue</a>
-                                        @endif
-                                    </td>
-                                </tr>
+                            @forelse($data->products as $product)
+                            <tr>
+                                <td>{{ $product->product_sku }}</td>
+                                <td class="text-center">{{ $product->quantity }}</td>
+                                <td>
+                                    @if($product->product_details->count() > 0)
+                                        <table class="table table-sm mb-0">
+                                            <thead class="bg-light">
+                                                <tr>
+                                                    <th>Fabric SKU</th>
+                                                    <th>Meter per Product</th>
+                                                    <th>Total Meter</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($product->product_details as $detail)
+                                                <tr>
+                                                    <td>{{ $detail->fabric_sku }}</td>
+                                                    <td>{{ $detail->meter }}</td>
+                                                    <td>{{ $detail->total_meter }}</td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    @else
+                                        <span class="text-muted">No fabric details.</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($product->status == 2)
+                                        <span class="badge badge-success">Issued</span><br>
+                                        <a href="{{ route('admin.product_order.issueSlip', ['id' => $product->id]) }}" class="small">View Slip</a>
+                                    @else
+                                        <a href="{{ route('admin.product_order.issueFabric', ['id' => $product->id]) }}" class="btn btn-sm btn-outline-primary">Issue</a>
+                                    @endif
+                                </td>
+                            </tr>
                             @empty
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted">No products found for this order.</td>
-                                </tr>
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">No products found for this order.</td>
+                            </tr>
                             @endforelse
                         </tbody>
                     </table>
