@@ -6,6 +6,10 @@ use App\Services\Admin\OrderStagesService as Service;
 use App\Requests\Admin\OrderStagesStoreRequest;
 use App\Requests\Admin\OrderStagesUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
+use App\Models\OrderStageTransaction;
+use App\Models\OrderProduct;
+use App\Models\OrderProductStage;
+use PDF;
 use Auth;
 
 class OrderStagesController extends Controller { 
@@ -17,9 +21,28 @@ class OrderStagesController extends Controller {
         $response['product_stage'] = $this->service->product_stage();
         $response['stage_data'] = $this->service->stage_data($request);
         return view('admin.order_stages.index',$response);
-    } 
+    }
     public function indexList(Request $request){
         return $this->service->indexList($request);
+    }
+
+    public function downLoadReceipt(Request $request)
+    {
+        $transaction = OrderStageTransaction::with(['from_stage', 'to_stage', 'orderProduct.order'])->findOrFail($request->order_transaction_id);
+
+        $orderProduct = $transaction->orderProduct;
+        $order = $orderProduct->order;
+
+        $data = [
+            'transaction' => $transaction,
+            'order' => $order,
+            'orderProduct' => $orderProduct,
+        ];
+        $safeSku = str_replace(['/', '\\'], '_', $transaction->sku);
+
+        $pdf = \PDF::loadView('admin.order_stages.stage_transfer_slip', $data)->setPaper('A4');
+
+        return $pdf->download('StageTransferSlip_'.$safeSku.'.pdf');
     }
     
 

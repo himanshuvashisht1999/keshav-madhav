@@ -51,12 +51,21 @@
                             </select>
                             
                         </td>
+                        
                        
                         <td>
                             <input type="date" class="form-control" name="created_at" id="created_at" autocomplete="off">
                         </td>
                         <td>
                             <input type="date" class="form-control" name="expected_delivery_date" id="expected_delivery_date" autocomplete="off">
+                        </td>
+                        <td>
+                            <select id="status" class="form-control form-control-sm">
+                                <option value="">All</option>
+                                <option value="1">Not Issued</option>
+                                <option value="2">In Progress</option>
+                                <option value="3">Completed</option>
+                            </select>
                         </td>
 
                         <td></td>
@@ -65,8 +74,9 @@
                         <th>ID</th>
                         <th>Order ID</th>
                         <th>Customer</th>
-                        <th>Created Date</th>
-                        <th>Expected Delivery Date</th>
+                        <th>Order Date</th>
+                        <th>Expected Delivery</th>
+                        <th>Status</th>
                         <th>Action</th>
                     </tr>
                   </thead>
@@ -138,6 +148,7 @@
                     d.master_customer_id = $('#master_customer_id').val();
                     d.created_at = $('#created_at').val();
                     d.expected_delivery_date = $('#expected_delivery_date').val();
+                    d.status = $('#status').val();
                   
                 },
                 orderable: false
@@ -148,6 +159,7 @@
                 {data: 'master_customer_id', name: 'master_customer_id'},                
                 {data: 'created_at', name: 'created_at'},                
                 {data: 'expected_delivery_date', name: 'expected_delivery_date'},                
+                {data: 'status', name: 'status'},                
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
@@ -177,6 +189,14 @@
             e.preventDefault();
         });
         $('#created_at').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#created_at').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#status').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
@@ -254,11 +274,11 @@
                     Object.values(stages).forEach(row => {
                         let statusBadge = "";
                         if (row.status === 0) {
-                            statusBadge = 'Pending';
+                            statusBadge = '<span class="badge badge-primary">Pending</span>';
                         } else if (row.status === 1) {
-                            statusBadge = 'In Progress';
+                            statusBadge = '<span class="badge badge-warning">In Progress</span>';
                         } else if (row.status === 2) {
-                            statusBadge = 'Completed';
+                            statusBadge = '<span class="badge badge-success">Completed</span>';
                         }
                         tableHtml += `
                         <tr>

@@ -48,6 +48,16 @@ class OrderStagesDataTable  {
                 if ($request->has('created_at') && !empty($request->created_at)) {
                     $query->where('created_at', 'like', "%{$request->get('created_at')}%");
                 }
+                if ($request->has('updated_at') && !empty($request->updated_at)) {
+                    $query->where('updated_at', 'like', "%{$request->get('updated_at')}%");
+                }
+                if ($request->has('status') && !empty($request->status)) {
+                    if ($request->status === 'in_progress') {
+                        $query->where('remaining_quantity', '>', 0);
+                    } elseif ($request->status === 'completed') {
+                        $query->where('remaining_quantity', '=', 0);
+                    }
+                }
                 
                 $query->where('to_stage_id',$request->stage_id);
             }) 
@@ -76,24 +86,53 @@ class OrderStagesDataTable  {
             ->editColumn('created_at', function ($queue) {
                 return $queue->created_at ? $queue->created_at->format('d-m-Y H:i A') : '-';
             })
+            ->editColumn('updated_at', function ($queue) {
+                return $queue->remaining_quantity == 0 
+                ? \Carbon\Carbon::parse($queue->updated_at)->format('d M Y h:i A')
+                : '-';
+            })
+            ->addColumn('status', function ($queue) {
+                if ($queue->remaining_quantity > 0) {
+                    return '<span class="badge badge-warning">In Progress</span>';
+                } else {
+                    return '<span class="badge badge-success">Completed</span>';
+                }
+            })
+
             
             ->addColumn('action', function ($queue) {
-				$parameter= $queue->id;
-                
-                return '
-                    <button class="btn btn-sm btn-primary viewBtn" 
-                            data-id="'.$queue->order_product_id.'" 
-                            data-stage_id="'.$queue->from_stage_id.'"
-                            data-order_transaction_id="'.$queue->id.'"
-                            data-total_remaining_qty="'.$queue->remaining_quantity.'"
-                            data-toggle="modal" 
-                            data-target="#viewModal">
-                        Transfer
-                    </button>
-                ';
+                // Common variables
+                $transferBtn = '';
+                $downloadBtn = '';
+
+                // When work still in progress
+                if ($queue->remaining_quantity > 0) {
+                    $transferBtn = '
+                        <button class="btn btn-sm btn-primary viewBtn" 
+                                data-id="'.$queue->order_product_id.'" 
+                                data-stage_id="'.$queue->from_stage_id.'"
+                                data-order_transaction_id="'.$queue->id.'"
+                                data-total_remaining_qty="'.$queue->remaining_quantity.'"
+                                data-toggle="modal" 
+                                data-target="#viewModal">
+                            <i class="fas fa-exchange-alt"></i> Transfer
+                        </button>';
+                }
+
+                // When completed
+                if ($queue->remaining_quantity == 0) {
+                    $downloadBtn = '
+                        <a href="'.route('admin.order_stages.downLoadReceipt', ['order_transaction_id' => $queue->id]).'" 
+                        class="btn btn-sm btn-success">
+                        <i class="fas fa-download"></i> Receipt
+                        </a>';
+                }
+
+                return '<div class="btn-group">'.$transferBtn.' '.$downloadBtn.'</div>';
             })
+
             
-            ->rawColumns(['action','order_no','order_product_id','from_stage_id','created_at'])
+            ->rawColumns(['action','status','order_no','order_product_id','from_stage_id','created_at','updated_at'])
             ->make(true);
     }
 }

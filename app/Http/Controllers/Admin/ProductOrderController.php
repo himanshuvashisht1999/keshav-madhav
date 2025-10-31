@@ -85,7 +85,7 @@ class ProductOrderController extends Controller {
         if($response['status'] == 0){
            return redirect()->back()->with('error',$response['message']);
         }
-        return redirect()->route('admin.product_order.index')->withSuccess($response['message']); 
+        return redirect()->route('admin.product_order.produce',['id' => $response['order_id']])->withSuccess($response['message']); 
     }
 
     public function issueSlip(Request $request)

@@ -1,178 +1,159 @@
 @extends('admin.layouts.app')
 @section('content')
 <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Manage {{$stage_data->name}} Stage</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage {{$stage_data->name}} Stage</li>
-                    </ol>
-                </div>
-            </div>
+
+    <!-- ✅ Header (Simplified & Compact) -->
+    <section class="content-header py-2 border-bottom">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-dark">
+                <i class="fas fa-tasks text-secondary"></i> {{ $stage_data->name }} Stage
+            </h5>
+            <ol class="breadcrumb float-sm-right mb-0 small">
+                <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-primary">Home</a></li>
+                <li class="breadcrumb-item active text-muted">Manage Stage</li>
+            </ol>
         </div>
     </section>
 
-    <!-- Main content -->
-    <section class="content">
+    <!-- ✅ Table Section -->
+    <section class="content mt-3">
         <div class="container-fluid">
-            <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default ">
-                 <div class="row" >
-                    <div class="col-9 card-header">
-                        <h3 class="card-title">Manage {{$stage_data->name}} Stage</h3>
-                    </div>
-                    <div class="col-3 card-header">
-                        {{-- <a href="{{route('admin.order_stages.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Create Slip</a> --}}
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-secondary">
+                        <i class="fas fa-table"></i> Stage Overview
+                    </h6>
+                </div>
+
+                <div class="card-body p-2">
+                    <div class="table-responsive">
+                        <table id="order_stage" class="table table-sm table-bordered text-center align-middle mb-0" style="font-size: 13px;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Order No</th>
+                                    <th>Product SKU</th>
+                                    <th>From Stage</th>
+                                    <th>Qty</th>
+                                    <th>Remain</th>
+                                    <th>Status</th>
+                                    <th>Received</th>
+                                    <th>Delivered</th>
+                                    <th>Action</th>
+                                </tr>
+                                <tr class="bg-white">
+                                    <td></td>
+                                    <td><input type="text" class="form-control form-control-sm" id="sku" placeholder="Order No"></td>
+                                    <td><input type="text" class="form-control form-control-sm" id="order_product_id" placeholder="Product SKU"></td>
+                                    <td>
+                                        <select id="from_stage_id" class="form-control form-control-sm">
+                                            <option value="">All</option>
+                                            @foreach($product_stage as $stage)
+                                                <option value="{{ $stage->id }}">{{ $stage->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" id="quantity" placeholder="Qty"></td>
+                                    <td><input type="text" class="form-control form-control-sm" id="remaining_quantity" placeholder="Remain"></td>
+                                    <td>
+                                        <select id="status" class="form-control form-control-sm">
+                                            <option value="">All</option>
+                                            <option value="in_progress">In Progress</option>
+                                            <option value="completed">Completed</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="date" class="form-control form-control-sm" id="created_at"></td>
+                                    <td><input type="date" class="form-control form-control-sm" id="updated_at"></td>
+                                    <td></td>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
-                
-                <div class="card-body table-responsive">
-                <table id="order_stage" class="table table-bordered table-hover">
-                  <thead>
-                    <tr role="row" class="filter">
-                        <td>
-                            <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="order_product_id" id="order_product_id" autocomplete="off">
-                        </td>
-                       
-                        <td>
-                            <select name="from_stage_id" id="from_stage_id" class="form-control">
-                                <option value="">All</option>
-                                @foreach($product_stage as $stage)
-                                <option value="{{$stage->id}}">{{$stage->name}}</option>
-                                @endforeach
-                            </select>
-                            
-                         </td>
-                           
-                        <td>
-                            <input type="text" class="form-control" name="quantity" id="quantity" autocomplete="off">
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="remaining_quantity" id="remaining_quantity" autocomplete="off">
-                        </td>
-                        <td>
-                            <input type="date" class="form-control" name="created_at" id="created_at" autocomplete="off">
-                        </td>
-                        
-
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <th>ID</th>
-                        <th>Order No.</th>
-                        <th>Product SKU</th>
-                        <th>From Stage</th>
-                        <th>Quantity</th> 
-                        <th>Remaining Quantity</th>
-                        <th>Created Date</th>
-                        <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  <!-- <tr>
-                    <td>1</td>
-                    <td>wefds</td>
-                    <td>Win 95+</td>
-                    <td> 4</td>
-                    <td>X</td>
-                  </tr> -->
-                  
-                  </tbody>
-                  
-                </table>
-              </div>
             </div>
         </div>
     </section>
 </div>
 
-<!-- Modal -->
+<!-- ✅ Transfer Modal -->
 <div class="modal fade" id="viewModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        <div class="modal-content border-0 shadow-sm rounded-3">
             <form method="POST" action="{{ route('admin.product_order.transfer') }}">
                 @csrf
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Transfer to Next Stage</h5>
-                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                <div class="modal-header bg-success text-white py-2">
+                    <h6 class="modal-title fw-bold mb-0"><i class="fas fa-exchange-alt"></i> Transfer to Next Stage</h6>
+                    <button type="button" class="btn-close btn-close-white" data-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+
+                <div class="modal-body py-3">
                     <input type="hidden" name="order_product_id" id="order_product_id_modal">
                     <input type="hidden" name="from_stage_id" id="order_stage_id">
                     <input type="hidden" name="order_transaction_id" id="order_transaction_id">
 
-                    <div class="form-group">
-                        <label>Quantity to Transfer</label>
-                        <input type="number" name="quantity" class="form-control" id="total_remaining_qty" required min="1" step="1">
+                    <div class="form-group mb-3">
+                        <label class="small mb-1"><strong>Quantity to Transfer</strong></label>
+                        <input type="number" name="quantity" class="form-control form-control-sm" id="total_remaining_qty" required min="1" step="1">
+                        <small class="text-muted">Max allowed: <span id="maxQtyText"></span></small>
                     </div>
 
-                    <div class="form-group">
-                        <label>Remarks (optional)</label>
-                        <textarea name="remarks" class="form-control" rows="2"></textarea>
+                    <div class="form-group mb-0">
+                        <label class="small mb-1"><strong>Remarks (optional)</strong></label>
+                        <textarea name="remarks" class="form-control form-control-sm" rows="2" placeholder="Enter remarks..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer">
+
+                <div class="modal-footer bg-light py-2">
                     <button type="submit" class="btn btn-success btn-sm">
-                        <i class="fas fa-check-circle"></i> Confirm Transfer
+                        <i class="fas fa-check-circle"></i> Confirm
                     </button>
-                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-<script>
-    $(function () {
-        var i = 1;
-        var oTable = $('#order_stage').DataTable({
-            processing: true,
-            serverSide: true,
-            stateSave: true,
-            searching: false,
-            ordering:false,
-            lengthMenu: [[25, 100, -1], [25, 100, "All"]],
-            "pageLength":25,
-            ajax: {
-                url: '{!! route('admin.order_stages.indexList',['stage_id' => $stage_data->id]) !!}',
-                data: function (d) {
-                    d.id = $('#id').val();
-                    d.sku = $('#sku').val();
-                    d.order_product_id = $('#order_product_id').val();
-                    d.from_stage_id = $('#from_stage_id').val();
-                    d.quantity = $('#quantity').val();
-                    d.remaining_quantity = $('#remaining_quantity').val();
-                    d.created_at = $('#created_at').val();
-                  
-                },
-                orderable: false
-            },
-            columns: [
-                {data: 'DT_RowIndex', name: 'id'},
-                {data: 'sku', name: 'sku'},
-                {data: 'order_product_id', name: 'order_product_id'},                
-                {data: 'from_stage_id', name: 'from_stage_id'},                
-                {data: 'quantity', name: 'quantity'},
-                {data: 'remaining_quantity', name: 'remaining_quantity'},
-                {data: 'created_at', name: 'created_at'},                
-                {data: 'action', name: 'action', searchable: false}
-            ],
-            dom: 'lBfrtip',
-            buttons: ['excel', 'csv', 'pdf', 'copy']
-        });
 
-        $('#email-queue-search-form').on('submit', function (e) {
+<!-- ✅ JS Section -->
+<script>
+$(function () {
+    var oTable = $('#order_stage').DataTable({
+        processing: true,
+        serverSide: true,
+        ordering: false,
+        searching: false,
+        pageLength: 10,
+        ajax: {
+            url: '{!! route('admin.order_stages.indexList',['stage_id' => $stage_data->id]) !!}',
+            data: function (d) {
+                d.sku = $('#sku').val();
+                d.order_product_id = $('#order_product_id').val();
+                d.from_stage_id = $('#from_stage_id').val();
+                d.quantity = $('#quantity').val();
+                d.remaining_quantity = $('#remaining_quantity').val();
+                d.status = $('#status').val();
+                d.created_at = $('#created_at').val();
+                d.updated_at = $('#updated_at').val();
+            }
+        },
+        columns: [
+            { data: 'DT_RowIndex', name: 'id', width: '5%' },
+            { data: 'sku', name: 'sku', width: '10%' },
+            { data: 'order_product_id', name: 'order_product_id', width: '12%' },
+            { data: 'from_stage_id', name: 'from_stage_id', width: '10%' },
+            { data: 'quantity', name: 'quantity', width: '7%' },
+            { data: 'remaining_quantity', name: 'remaining_quantity', width: '7%' },
+            { data: 'status', name: 'status', width: '9%' },
+            { data: 'created_at', name: 'created_at', width: '12%' },
+            { data: 'updated_at', name: 'updated_at', width: '12%' },
+            { data: 'action', name: 'action', width: '10%', orderable: false, searchable: false }
+        ]
+    });
+
+    $('#email-queue-search-form').on('submit', function (e) {
             oTable.draw();
             e.preventDefault();
         });
@@ -214,36 +195,29 @@
             e.preventDefault();
         });
         
-        
 
-    });
+});
 
-    $(document).on('click', '.viewBtn', function() {
-        var id = $(this).data('id');
-        var order_transaction_id = $(this).data('order_transaction_id');
-        var total_remaining_qty = $(this).data('total_remaining_qty');
-        var order_stage_id = "{{ $stage_data->id }}";
-        $('#order_product_id_modal').val(id);
-        $('#order_stage_id').val(order_stage_id);
-        $('#order_transaction_id').val(order_transaction_id);
-        $('#total_remaining_qty').val(total_remaining_qty);
-        $('#total_remaining_qty').attr('max', total_remaining_qty);
-        
-    });
+// Modal Handling
+$(document).on('click', '.viewBtn', function() {
+    const remaining = $(this).data('total_remaining_qty');
+    $('#order_product_id_modal').val($(this).data('id'));
+    $('#order_stage_id').val("{{ $stage_data->id }}");
+    $('#order_transaction_id').val($(this).data('order_transaction_id'));
+    $('#total_remaining_qty').val(remaining).attr('max', remaining);
+    $('#maxQtyText').text(remaining);
+});
 
-    $(document).on('input', '#total_remaining_qty', function() {
-        var max = parseFloat($(this).attr('max'));
-        var val = parseFloat($(this).val());
-
-        if (val > max) {
-            alert('You cannot transfer more than ' + max + ' units.');
-            $(this).val(max);
-        } else if (val < 0) {
-            $(this).val(0);
-        }
-    });
-
-   
+// Prevent over-transfer
+$(document).on('input', '#total_remaining_qty', function() {
+    const max = parseFloat($(this).attr('max'));
+    const val = parseFloat($(this).val());
+    if (val > max) {
+        alert('You cannot transfer more than ' + max + ' units.');
+        $(this).val(max);
+    } else if (val < 0) {
+        $(this).val(0);
+    }
+});
 </script>
-
 @endsection

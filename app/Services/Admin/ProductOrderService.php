@@ -42,26 +42,27 @@ class ProductOrderService {
 
         try {
             // Create main order
-            $save_data = new Order;
-            $save_data->sku = '';
-            $save_data->expected_delivery_date = $request->expected_delivery_date;
-            $save_data->master_customer_id = $request->master_customer_id;
-            $save_data->status = 1;
-            $save_data->save();
-            $customer_data = MasterCustomer::where('id',$request->master_customer_id)->first();
-            $firstThree = strtoupper(substr($customer_data->name, 0, 3));
-            
-            // Update SKU after save
-            // $save_data->sku = 'Production-' . $save_data->id;
-            $save_data->sku = $firstThree . "/". date('m/Y').'/' . $save_data->id;
-            $save_data->save();
-
-            // Default success response
-            $return_data['message'] = 'The sales order has been successfully created.';
-            $return_data['status_code'] = 1;
-
-            // Loop through ordered products
             foreach ($request->product_sku as $key => $single_data) {
+                $save_data = new Order;
+                $save_data->sku = '';
+                $save_data->expected_delivery_date = $request->expected_delivery_date;
+                $save_data->master_customer_id = $request->master_customer_id;
+                $save_data->status = 1;
+                $save_data->save();
+                $customer_data = MasterCustomer::where('id',$request->master_customer_id)->first();
+                $firstThree = strtoupper(substr($customer_data->name, 0, 3));
+                
+                // Update SKU after save
+                // $save_data->sku = 'Production-' . $save_data->id;
+                $save_data->sku = $firstThree . "/". date('m/Y').'/' . $save_data->id;
+                $save_data->save();
+
+                // Default success response
+                $return_data['message'] = 'The sales order has been successfully created.';
+                $return_data['status_code'] = 1;
+
+                // Loop through ordered products
+            
                 $product_data = ProductionGoods::where('sku', $single_data)->first();
 
                 if ($product_data) {
@@ -90,37 +91,7 @@ class ProductOrderService {
                         $save_order_detail->total_meter = $total_meter;
                         $save_order_detail->save();
 
-                        // Handle stock deduction
-                        // $remaining_meter = $total_meter;
-                        // $available_stocks = Stock::where('sku', $fabric_sku)
-                        //     ->where('meter', '>', 0)
-                        //     ->orderBy('id', 'asc')
-                        //     ->get();
 
-                        // foreach ($available_stocks as $stock_item) {
-                        //     if ($remaining_meter <= 0) break;
-
-                        //     $used_meter = min($remaining_meter, $stock_item->meter);
-
-                        //     // Save detail stock mapping
-                        //     $save_order_product_detail_stock = new OrderProductDetailStock;
-                        //     $save_order_product_detail_stock->order_product_id = $save_order_product->id;
-                        //     $save_order_product_detail_stock->order_product_detail_id = $save_order_detail->id;
-                        //     $save_order_product_detail_stock->fabric_stock_id = $stock_item->id;
-                        //     $save_order_product_detail_stock->meter = $used_meter;
-                        //     $save_order_product_detail_stock->save();
-
-                        //     // Update stock roll
-                        //     $stock_item->meter -= $used_meter;
-                        //     $stock_item->save();
-
-                        //     $remaining_meter -= $used_meter;
-                        // }
-
-                        // If still not enough stock
-                        // if ($remaining_meter > 0) {
-                        //     throw new \Exception("Insufficient stock for fabric: {$fabric_sku}. Short by {$remaining_meter} meters.");
-                        // }
                     }
 
                     //// save order product stages
@@ -245,53 +216,52 @@ class ProductOrderService {
                 $nextStage->pending_qty += $quantity;
                 $nextStage->status = $nextStage->status == 0 ? 1 : $nextStage->status; // Pending → In Progress
                 $nextStage->save();
+            
+
+                $orderProduct = OrderProduct::with('order')->where('id',$order_product_id)->first();
+                $stage_sku = $nextStage->stage->sku;
+                $orderProducts = OrderProduct::where('order_id', $orderProduct->order->id)
+                ->orderBy('id', 'asc')
+                ->pluck('id')
+                ->toArray();
+                $order_product_number = array_search($orderProduct->id, $orderProducts) + 1;
+                $stageCount = OrderStageTransaction::where('order_product_id', $orderProduct->id)
+                    ->where('to_stage_id', $nextStage->stage_id)
+                    ->count() + 1;
+                $sku_for_trans = "{$orderProduct->order->sku}/{$order_product_number}/{$stage_sku}/{$stageCount}";
+
+
+                // 3️⃣ Record transaction
+                OrderStageTransaction::create([
+                    'sku' => $sku_for_trans,
+                    'order_product_id' => $order_product_id,
+                    'from_stage_id' => $from_stage_id,
+                    'to_stage_id' => $nextStage->stage_id ?? null,
+                    'quantity' => $quantity,
+                    'processed_by' => $user_id,
+                    'remarks' => $remarks,
+                    'status' => 1, // Transaction completed
+                    'remaining_quantity' => $quantity,
+                ]);
+            }else{
+                $orderProduct = OrderProduct::where('id',$order_product_id)->first();
+                if($currentStage->completed_qty == $orderProduct->quantity){
+                    $orderProduct->status = 3;
+                    $orderProduct->save();
+                    $order_data = Order::where('id',$orderProduct->id)->update([
+                        'status' => 3,
+                    ]);
+
+                }
+                
             }
-
-            $orderProduct = OrderProduct::with('order')->where('id',$order_product_id)->first();
-            $stage_sku = $nextStage->stage->sku;
-            $orderProducts = OrderProduct::where('order_id', $orderProduct->order->id)
-            ->orderBy('id', 'asc')
-            ->pluck('id')
-            ->toArray();
-            $order_product_number = array_search($orderProduct->id, $orderProducts) + 1;
-            $stageCount = OrderStageTransaction::where('order_product_id', $orderProduct->id)
-                ->where('to_stage_id', $nextStage->stage_id)
-                ->count() + 1;
-            $sku_for_trans = "{$orderProduct->order->sku}/{$order_product_number}/{$stage_sku}/{$stageCount}";
-
-
-            // 3️⃣ Record transaction
-            OrderStageTransaction::create([
-                'sku' => $sku_for_trans,
-                'order_product_id' => $order_product_id,
-                'from_stage_id' => $from_stage_id,
-                'to_stage_id' => $nextStage->stage_id ?? null,
-                'quantity' => $quantity,
-                'processed_by' => $user_id,
-                'remarks' => $remarks,
-                'status' => 1, // Transaction completed
-                'remaining_quantity' => $quantity,
-            ]);
 
             $total_quantity = $quantity;
 
-            // $order_stage_transction_data_update = OrderStageTransaction::where('order_product_id', $order_product_id)
-            // ->where('to_stage_id', $from_stage_id)->where('remaining_quantity','>',0)->get();
-            $order_stage_transction_data_update = OrderStageTransaction::where('id', $request->order_transaction_id)->get();
-            foreach($order_stage_transction_data_update as $single_data){
-                if($total_quantity >= $single_data->remaining_quantity){
-                    $total_quantity = $total_quantity - $single_data->remaining_quantity;
-                    $save_order_transaction = OrderStageTransaction::where('id', $single_data->id)->first();
-                    $save_order_transaction->remaining_quantity = 0;
-                    $save_order_transaction->save();
-                }else{
-                    $save_order_transaction = OrderStageTransaction::where('id', $single_data->id)->first();
-                    $save_order_transaction->remaining_quantity = $single_data->remaining_quantity - $total_quantity;
-                    $save_order_transaction->save();
-                    $total_quantity = 0;
-                    break;
-                }
-            }
+            $save_order_transaction = OrderStageTransaction::where('id', $request->order_transaction_id)->first();
+            $save_order_transaction->remaining_quantity = $save_order_transaction->remaining_quantity - $total_quantity;
+            $save_order_transaction->save();
+
             DB::commit();
             return true;
 
@@ -377,6 +347,9 @@ class ProductOrderService {
                 OrderProduct::where('id',$orderProduct->id)->update([
                     'status' => 2
                 ]);
+                $order_data = Order::where('id',$orderProduct->id)->update([
+                    'status' => 2,
+                ]);
             }
             $currentStage = OrderProductStage::where('order_product_id', $orderProduct->id)->orderBy('id','asc')->first();
 
@@ -409,12 +382,14 @@ class ProductOrderService {
             DB::commit();
             $data['status'] = 1;
             $data['message'] = 'Fabric issued successfully.';
+            $data['order_id'] = $orderProduct->order_id;
             return $data;
 
         } catch (\Exception $e) {
             DB::rollBack();
             $data['status'] = 0;
             $data['message'] = 'Error issuing fabric: ' . $e->getMessage();
+            $data['order_id'] = $orderProduct->order_id;
             return $data;
         }
     }

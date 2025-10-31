@@ -28,13 +28,22 @@ class ProductOrderDataTable  {
                 if ($request->has('expected_delivery_date') && !empty($request->expected_delivery_date)) {
                     $query->where('expected_delivery_date', 'like', "%{$request->get('expected_delivery_date')}%");
                 }
+                if ($request->has('status') && !empty($request->status)) {
+                    $query->where('status', $request->get('status'));
+                }
                 
             }) 
          
-            ->editColumn('status', function ($queue) {
-				$status= $queue->status;
-                return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
+            ->addColumn('status', function ($queue) {
+                if ($queue->status == 1) {
+                    return '<span class="badge badge-primary">Not Issued</span>';
+                }elseif($queue->status == 3){
+                    return '<span class="badge badge-success">Completed</span>';
+                } else {
+                    return '<span class="badge badge-warning">In Progress</span>';
+                }
             })
+            
             ->editColumn('master_customer_id', function ($queue) {
 				return $queue->customer?->name;
                 
@@ -46,12 +55,12 @@ class ProductOrderDataTable  {
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
                 return '
-                <a href="' . route('admin.product_order.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
-                <a href="' . route('admin.product_order.produce',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-paper-plane text-muted"></i></a>
+                <a href="' . route('admin.product_order.produce',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
+               
                 ';
             })
             
-            ->rawColumns(['action','master_customer_id','created_at'])
+            ->rawColumns(['action','master_customer_id','created_at','status'])
             ->make(true);
     }
 }
