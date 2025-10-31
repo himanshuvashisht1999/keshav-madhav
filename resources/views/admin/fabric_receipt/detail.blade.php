@@ -67,7 +67,7 @@
                                             </td>
 
                                             <!-- Fabric SKU -->
-                                            <td>
+                                            <td style="width:40%;">
                                                 <select name="rolls[{{ $i }}][fabric_sku]" 
                                                         class="form-control select2 fabric-sku" 
                                                         data-row="{{ $i }}" required>
