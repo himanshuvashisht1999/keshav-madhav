@@ -419,6 +419,27 @@ class ProductOrderService {
         }
     }
 
+    public function productStatusHoverData(Request $request){
+        $data_obj = Order::with('products.product_details.product_detail_stocks','products.order_stages.stage','products.order_stage_trnsactions')->where('id',$request->id)->first();
+        // $data = json_decode(json_encode($data)); 
+        $data_obj = $data_obj ? $data_obj->toArray() : [];
+        $products = $data_obj['products'] ?? [];
+        $data = [];
+        
+        foreach ($products as $product_data) {
+            foreach ($product_data['order_stages'] as $order_stages) {
+                $stage_name = $order_stages['stage']['name'] ?? '';
+                $data[$order_stages['stage']['id']] = [
+                    'name' => $stage_name,
+                    'total_qty' => $order_stages['total_qty'],
+                    'completed_qty' => $order_stages['completed_qty'],
+                    'pending_qty' => $order_stages['pending_qty'],
+                    'status' => $order_stages['status'],
+                ];
+            }
+        }  
+        return response()->json($data);
+    }
 
     
 
