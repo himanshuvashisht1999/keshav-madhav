@@ -74,7 +74,7 @@
                         <th>Order No.</th>
                         <th>Product SKU</th>
                         <th>From Stage</th>
-                        <th>Quantity</th>
+                        <th>Quantity</th> 
                         <th>Remaining Quantity</th>
                         <th>Created Date</th>
                         <th>Action</th>
@@ -109,12 +109,13 @@
                     <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" name="order_product_id" id="order_tansaction_id">
+                    <input type="hidden" name="order_product_id" id="order_product_id_modal">
                     <input type="hidden" name="from_stage_id" id="order_stage_id">
+                    <input type="hidden" name="order_transaction_id" id="order_transaction_id">
 
                     <div class="form-group">
                         <label>Quantity to Transfer</label>
-                        <input type="number" name="quantity" class="form-control" required>
+                        <input type="number" name="quantity" class="form-control" id="total_remaining_qty" required min="1" step="1">
                     </div>
 
                     <div class="form-group">
@@ -219,14 +220,27 @@
 
     $(document).on('click', '.viewBtn', function() {
         var id = $(this).data('id');
+        var order_transaction_id = $(this).data('order_transaction_id');
+        var total_remaining_qty = $(this).data('total_remaining_qty');
         var order_stage_id = "{{ $stage_data->id }}";
-        $('#order_tansaction_id').val(id);
+        $('#order_product_id_modal').val(id);
         $('#order_stage_id').val(order_stage_id);
+        $('#order_transaction_id').val(order_transaction_id);
+        $('#total_remaining_qty').val(total_remaining_qty);
+        $('#total_remaining_qty').attr('max', total_remaining_qty);
         
     });
 
-    $(document).ready(function () {
-        
+    $(document).on('input', '#total_remaining_qty', function() {
+        var max = parseFloat($(this).attr('max'));
+        var val = parseFloat($(this).val());
+
+        if (val > max) {
+            alert('You cannot transfer more than ' + max + ' units.');
+            $(this).val(max);
+        } else if (val < 0) {
+            $(this).val(0);
+        }
     });
 
    
