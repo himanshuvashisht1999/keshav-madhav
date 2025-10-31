@@ -56,9 +56,15 @@ class ProductOrderController extends Controller {
     public function transfer(Request $request)
     {
         try {
-            $this->service->transfer($request);
+            
+            $result = $this->service->transfer($request);
+            if($result = true){
+                return redirect()->back()->with('success', 'The product order has been successfully transferred.');
+            }else{
+                return redirect()->back()->with('error', $result);
+            }
 
-            return redirect()->back()->with('success', 'The product order has been successfully transferred.');
+            
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }

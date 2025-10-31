@@ -84,6 +84,8 @@ class OrderStagesDataTable  {
                     <button class="btn btn-sm btn-primary viewBtn" 
                             data-id="'.$queue->order_product_id.'" 
                             data-stage_id="'.$queue->from_stage_id.'"
+                            data-order_transaction_id="'.$queue->id.'"
+                            data-total_remaining_qty="'.$queue->remaining_quantity.'"
                             data-toggle="modal" 
                             data-target="#viewModal">
                         Transfer
