@@ -106,4 +106,9 @@ class ProductOrderController extends Controller {
         // return $pdf->download('order_slip.pdf');
     }
 
+    public function productStatusHoverData(Request $request){
+        $response['data'] = $this->service->productStatusHoverData($request);
+        return response()->json($response);
+    }
+
 }
