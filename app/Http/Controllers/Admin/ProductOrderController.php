@@ -8,6 +8,9 @@ use App\Requests\Admin\ProductOrderUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
 use Auth;
 use PDF;
+use App\Models\OrderProduct;
+use App\Models\OrderProductDetailStock;
+
 class ProductOrderController extends Controller { 
     protected $service;
     public function __construct(Service $service) {
@@ -87,29 +90,32 @@ class ProductOrderController extends Controller {
 
     public function issueSlip(Request $request)
     {
-       
-        $filters = $request->all();
+        $orderProduct = OrderProduct::with('order')->where('id',$request->id)->first();
+        $order = $orderProduct->order;
+        $issuedRecords = OrderProductDetailStock::where('order_product_id', $orderProduct->id)
+            ->with('stock')
+            ->get();
 
-        
-         $data = [
-            'order_no' => 'ORD-2025-0012',
-            'customer_name' => 'ABC Textiles',
-            'order_date' => now()->format('d M Y'),
-            'order_time' => now()->format('H:i'),
-            'product_sku' => 'PRD-1001',
-            'product_qty' => '120 pcs',
-            'fabric_sku' => 'FAB-A23',
-            'fabric_qty' => '30.50 m',
-            'items' => [
-                ['name' => 'Shirt - Blue', 'sku' => 'PRD-1001', 'qty' => 60],
-            ],
+        $issuedData = $issuedRecords->map(function($item) {
+            return [
+                'fabric_name' => $item->stock->sku ?? 'N/A',
+                'roll_no' => $item->stock->unique_number ?? 'N/A',
+                'meter' => $item->meter
+            ];
+        })->toArray();
+
+        $pdfData = [
+            'order' => $order,
+            'orderProduct' => $orderProduct,
+            'issuedData' => $issuedData,
+            'issuer' => 'Stock Manager',
+            'receiver' => $orderProduct->first_stage->stage->name ?? 'Next Stage',
         ];
 
-        $pdf = PDF::loadView('admin.pdf.order_slip', $data)
-            ->setPaper('a4', 'portrait');
+        $pdf = \PDF::loadView('admin.product_order.fabric_combined_receipt', $pdfData)
+            ->setPaper('A4', 'portrait');
 
-        return $pdf->stream('order_slip.pdf');
-        // return $pdf->download('order_slip.pdf');
+        return $pdf->download('Fabric_Issue_Receive_Slip.pdf');
     }
 
     public function productStatusHoverData(Request $request){
