@@ -102,6 +102,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/issue-fabric',[AdminProductOrderController::class,'issueFabric'])->name('issueFabric');
             Route::post('/issue-fabric-post',[AdminProductOrderController::class,'issueFabricPost'])->name('issueFabricPost');
             Route::get('/issue-slip',[AdminProductOrderController::class,'issueSlip'])->name('issueSlip');
+            Route::get('/status-hover-data',[AdminProductOrderController::class,'productStatusHoverData'])->name('statusHoverData');
+            
         });
 
         Route::prefix('/order_stages')->name('order_stages.')->group(function () {

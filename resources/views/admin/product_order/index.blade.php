@@ -210,40 +210,97 @@
     $(document).ready(function() {
         let table = $('#customers').DataTable();
         const hoverBox = $('#hoverBox');
+        let ajaxTimeout;
+        let currentCell = null; // 👈 track current hovered cell
+        // Find the index of the "Product Name" column dynamically
+        const colIndex = $('#customers thead th').filter(function() {
+            return $(this).text().trim() === 'Order ID';
+        }).index() + 1;
 
-        // When mouse enters a row
-        $('#customers tbody').on('mouseenter', 'tr', function(e) {
-            const row = $(this);
-            const name = row.find('td:eq(0)').text();
-            const price = row.find('td:eq(1)').text();
+        // Hover only on that column
+        $('#customers tbody').on('mouseenter', `tr td:nth-child(${colIndex})`, function(e) {
+            const cell = this; // current cell reference
+            currentCell = cell; // mark current active cell
+            // $('#customers tbody').on('mouseenter', `tr td:nth-child(${colIndex})`, function(e) {
+            const productName = $(this).text().trim();
+            console.log(productName);
+            let product_order_id = productName.substring(productName.lastIndexOf('/') + 1);
+            // clear any old ajax delay
+                clearTimeout(ajaxTimeout);
 
-            // Static data (for now)
-            const desc = "This is a high-quality product with great performance.";
+                // small delay to avoid too many calls
+                ajaxTimeout = setTimeout(() => {
+                $.ajax({
+                    url: '/admin/production-order/status-hover-data', // Laravel route
+                    type: 'GET',
+                    data: { id: product_order_id },
+                    success: function (response) {
+                    const stages = response.data.original;
+                    // console.log(stages);
+                    let tableHtml = `
+                        <table class="table table-bordered table-sm mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                            <th>Stage</th>
+                            <th>Total</th>
+                            <th>Completed</th>
+                            <th>Pending</th>
+                            <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                    `;
 
-            // Set box content
-            hoverBox.html(`
-                <h6>${name}</h6>
-                <p><strong>Price:</strong> ${price}</p>
-                <p>${desc}</p>
-            `);
+                    Object.values(stages).forEach(row => {
+                        let statusBadge = "";
+                        if (row.status === 0) {
+                            statusBadge = 'Pending';
+                        } else if (row.status === 1) {
+                            statusBadge = 'In Progress';
+                        } else if (row.status === 2) {
+                            statusBadge = 'Completed';
+                        }
+                        tableHtml += `
+                        <tr>
+                            <td>${row.name}</td>
+                            <td>${row.total_qty}</td>
+                            <td>${row.completed_qty}</td>
+                            <td>${row.pending_qty}</td>
+                            <td><span >${statusBadge}</span></td>
+                        </tr>
+                        `;
+                    });
 
-            // Position near cursor and show
-            hoverBox.css({
-                top: e.pageY + 10 + 'px',
-                left: e.pageX + 10 + 'px'
-            }).fadeIn(150);
-        });
+                    tableHtml += '</tbody></table>';
+                
+                    hoverBox.html(`
+                        <strong>Order ID: ${productName} </strong>
+                        <hr class="my-2">
+                        ${tableHtml}
+                    `).css({
+                        top: e.pageY + 15 + 'px',
+                        left: e.pageX + 15 + 'px'
+                    }).fadeIn(200);
+                    },
+                    error: function () {
+                    hoverBox.html("<strong>Error loading data</strong>").fadeIn(150);
+                    }
+                });
+                }, 200);
+            });
 
         // Move box with cursor
-        $('#productTable tbody').on('mousemove', 'tr', function(e) {
+       $('#customers tbody').on('mousemove', `tr td:nth-child(${colIndex})`, function(e) {
             hoverBox.css({
                 top: e.pageY + 10 + 'px',
                 left: e.pageX + 10 + 'px'
             });
         });
 
-        // Hide box when mouse leaves row
-        $('#productTable tbody').on('mouseleave', 'tr', function() {
+        // Hide box when mouse leaves the cell
+        $('#customers tbody').on('mouseleave', `tr td:nth-child(${colIndex})`, function() {
+            currentCell = null; // 👈 reset current cell
+            clearTimeout(ajaxTimeout);
             hoverBox.hide();
         });
     });
