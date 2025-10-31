@@ -22,7 +22,7 @@ class MasterColorsUpdateRequest extends FormRequest{
         // dd($this);
         return [
             'name' => 'required',
-            'sku'    => 'required|unique:fabric_weave_type,sku,' . $request->id,
+            'sku'    => 'required|unique:master_colors,sku,' . $request->id,
             // 'status' =>'required',
         ];
     }
