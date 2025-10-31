@@ -22,8 +22,8 @@ class VendorStoreRequest extends FormRequest{
         // dd($this);
         return [
             'name' => 'required',
-            'phone' => 'required',
-            'email' => 'required',
+            'phone' => 'required|unique:vendors,phone',
+            'email' => 'required|unique:vendors,email',
             // 'image' => 'required',
             'status' =>'required',
             'sku'    => 'required|unique:vendors,sku',
