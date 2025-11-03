@@ -23,14 +23,14 @@
         <div class="container-fluid">
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default ">
-                 <div class="row" >
+                <!-- <div class="row" >
                     <div class="col-9 card-header">
                         <h3 class="card-title">Manage Production Order</h3>
                     </div>
                     <div class="col-3 card-header">
-                        <!-- <a href="{{route('admin.sales_order.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Sales Order</a> -->
+                        <a href="{{route('admin.sales_order.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Sales Order</a>
                     </div>
-                </div>
+                </div> -->
                 
                 <div class="card-body table-responsive">
                 <table id="customers" class="table table-bordered table-hover">
@@ -97,6 +97,27 @@
         </div>
     </section>
 </div>
+
+<!-- Modal -->
+<div class="modal fade" id="tableModal" tabindex="-1" role="dialog" aria-labelledby="tableModalLabel" aria-hidden="true">
+   <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h4 class="modal-title" id="tableModalLabel"></h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span>&times;</span>
+        </button>
+      </div>
+      
+      <div class="modal-body" id="tableContainer">
+        <!-- Table will be injected here -->
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <style >
     #hoverBox {
         position: absolute;
@@ -162,8 +183,7 @@
                 {data: 'status', name: 'status'},                
                 {data: 'action', name: 'action', searchable: false}
             ],
-            dom: 'lBfrtip',
-            buttons: ['excel', 'csv', 'pdf', 'copy']
+           
         });
 
         $('#email-queue-search-form').on('submit', function (e) {
@@ -226,28 +246,12 @@
         });
     }
 
-
+    
     $(document).ready(function() {
-        let table = $('#customers').DataTable();
-        const hoverBox = $('#hoverBox');
-        let ajaxTimeout;
-        let currentCell = null; // 👈 track current hovered cell
-        // Find the index of the "Product Name" column dynamically
-        const colIndex = $('#customers thead th').filter(function() {
-            return $(this).text().trim() === 'Order ID';
-        }).index() + 1;
 
-        // Hover only on that column
-        $('#customers tbody').on('mouseenter', `tr td:nth-child(${colIndex})`, function(e) {
-            const cell = this; // current cell reference
-            currentCell = cell; // mark current active cell
-            // $('#customers tbody').on('mouseenter', `tr td:nth-child(${colIndex})`, function(e) {
-            const productName = $(this).text().trim();
-            console.log(productName);
-            let product_order_id = productName.substring(productName.lastIndexOf('/') + 1);
-            // clear any old ajax delay
-                clearTimeout(ajaxTimeout);
-
+       $(document).on('click', '.statusLink', function() {
+            let product_order_id = $(this).data('id');   // Get ID from data-id
+            let order_sku = $(this).data('order_sku');   // Get ID from data-id    
                 // small delay to avoid too many calls
                 ajaxTimeout = setTimeout(() => {
                 $.ajax({
@@ -256,51 +260,54 @@
                     data: { id: product_order_id },
                     success: function (response) {
                     const stages = response.data.original;
+                    // console.log("Product Order ID:", order_sku);
                     // console.log(stages);
+                    $('#tableModalLabel').text('Order ID: ' + order_sku);
                     let tableHtml = `
-                        <table class="table table-bordered table-sm mb-0">
+                    
+                    <table class="table table-bordered table-sm mb-0">
                         <thead class="bg-light">
-                            <tr>
+                        <tr>
                             <th>Stage</th>
                             <th>Total</th>
                             <th>Completed</th>
                             <th>Pending</th>
                             <th>Status</th>
-                            </tr>
+                        </tr>
                         </thead>
                         <tbody>
                     `;
 
                     Object.values(stages).forEach(row => {
-                        let statusBadge = "";
-                        if (row.status === 0) {
-                            statusBadge = '<span class="badge badge-primary">Pending</span>';
-                        } else if (row.status === 1) {
-                            statusBadge = '<span class="badge badge-warning">In Progress</span>';
-                        } else if (row.status === 2) {
-                            statusBadge = '<span class="badge badge-success">Completed</span>';
-                        }
-                        tableHtml += `
+                    let statusBadge = "";
+                    if (row.status === 0) {
+                        statusBadge = '<span class="badge badge-primary">Pending</span>';
+                    } else if (row.status === 1) {
+                        statusBadge = '<span class="badge badge-warning">In Progress</span>';
+                    } else if (row.status === 2) {
+                        statusBadge = '<span class="badge badge-success">Completed</span>';
+                    }
+
+                    tableHtml += `
                         <tr>
-                            <td>${row.name}</td>
-                            <td>${row.total_qty}</td>
-                            <td>${row.completed_qty}</td>
-                            <td>${row.pending_qty}</td>
-                            <td><span >${statusBadge}</span></td>
+                        <td>${row.name}</td>
+                        <td>${row.total_qty}</td>
+                        <td>${row.completed_qty}</td>
+                        <td>${row.pending_qty}</td>
+                        <td>${statusBadge}</td>
                         </tr>
-                        `;
+                    `;
                     });
 
                     tableHtml += '</tbody></table>';
-                
-                    hoverBox.html(`
-                        <strong>Order ID: ${productName} </strong>
-                        <hr class="my-2">
-                        ${tableHtml}
-                    `).css({
-                        top: e.pageY + 15 + 'px',
-                        left: e.pageX + 15 + 'px'
-                    }).fadeIn(200);
+
+                    // Inject table into modal body
+                    $('#tableContainer').html(tableHtml);
+
+                    // Show modal
+                    $('#tableModal').modal('show');
+                    
+                    
                     },
                     error: function () {
                     hoverBox.html("<strong>Error loading data</strong>").fadeIn(150);
@@ -308,21 +315,6 @@
                 });
                 }, 200);
             });
-
-        // Move box with cursor
-       $('#customers tbody').on('mousemove', `tr td:nth-child(${colIndex})`, function(e) {
-            hoverBox.css({
-                top: e.pageY + 10 + 'px',
-                left: e.pageX + 10 + 'px'
-            });
-        });
-
-        // Hide box when mouse leaves the cell
-        $('#customers tbody').on('mouseleave', `tr td:nth-child(${colIndex})`, function() {
-            currentCell = null; // 👈 reset current cell
-            clearTimeout(ajaxTimeout);
-            hoverBox.hide();
-        });
     });
 </script>
 
