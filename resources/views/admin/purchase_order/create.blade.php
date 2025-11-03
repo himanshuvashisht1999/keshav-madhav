@@ -60,7 +60,7 @@
                             </div>
                              <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Delivery Date</label>
+                                    <label for="exampleInputEmail1">Expected Delivery Date</label>
                                     <input type="date" name="delivery_date" class="form-control" placeholder="Enter delivery date" value="{{old('delivery_date')}}" required>
                                     @if ($errors->has('delivery_date'))
                                         <span class="invalid-feedback d-block">
@@ -119,8 +119,6 @@
 
                             </div>
                             
-                            
-                           
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">
                                     <button type="submit" class="btn btn-primary">Submit</button>

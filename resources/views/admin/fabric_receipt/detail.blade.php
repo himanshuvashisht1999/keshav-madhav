@@ -37,8 +37,8 @@
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <label>Purchase Order</label>
-                                <select name="purchase_order_id" id="purchase_order_id" class="form-control select2" style="width: 100%;" required>
-                                    <option value="">Select Purchase Order</option>
+                                <select name="purchase_order_id" id="purchase_order_id" class="form-control select2" style="width: 100%;" >
+                                    <option value="">NILL</option>
                                     @foreach ($purchase_orders as $single_data)
                                         <option value="{{ $single_data->id }}">{{ $single_data->sku }}</option>
                                     @endforeach
