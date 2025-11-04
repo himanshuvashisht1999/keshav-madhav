@@ -23,14 +23,6 @@
         <div class="container-fluid">
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default ">
-                 <div class="row" >
-                    <div class="col-9 card-header">
-                        <h3 class="card-title">Manage Items</h3>
-                    </div>
-                    <div class="col-3 card-header">
-                        <a href="{{route('admin.master.item.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Item</a>
-                    </div>
-                </div>
                 
                 <div class="card-body table-responsive">
                 <table id="customers" class="table table-bordered table-hover">
@@ -104,7 +96,15 @@
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
-            buttons: ['excel', 'csv', 'pdf', 'copy']
+            buttons: [
+                {
+                    text: 'Add Item',
+                    className: 'btn-datatable',
+                    action: function (e, dt, node, config) {
+                        window.location.href = "{{ route('admin.master.item.create') }}";
+                    }
+                }
+            ]
         });
 
         $('#email-queue-search-form').on('submit', function (e) {
@@ -125,7 +125,6 @@
             oTable.draw();
             e.preventDefault();
         });
-
         
 
     });

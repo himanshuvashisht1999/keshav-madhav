@@ -23,24 +23,24 @@
         <div class="container-fluid">
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default ">
-                 <div class="row" >
+                 <!-- <div class="row" >
                     <div class="col-12 card-header">
                         <h3 class="card-title">Manage Fabric Stock</h3>
                     </div>
-                </div>
+                </div> -->
                 
                 <div class="card-body table-responsive">
-                <div class="d-flex justify-content-end me-3 ">
-                    <button id="generatePDF" class="btn btn-secondary m-1" name="generatePDF">
+                <!-- <div class="d-flex justify-content-end me-3 ">
+                    <button id="generatePDF" class="btn btn-primary m-1" name="generatePDF">
                         <i class="nav-icon fas fa-download"></i> PDF Reports
                     </button>
-                    <button id="generateExcel" class="btn btn-secondary m-1" name="generateExcel">
+                    <button id="generateExcel" class="btn btn-primary m-1" name="generateExcel">
                         <i class="nav-icon fas fa-download"></i> Excel Reports
                     </button>
-                    <button name="fabric_quantity" class="btn btn-secondary m-1 " onclick="window.location.href='{{ route('admin.stock.fabricQuantityExcel') }}'">
+                    <button name="fabric_quantity" class="btn btn-primary m-1 " onclick="window.location.href='{{ route('admin.stock.fabricQuantityExcel') }}'">
                         <i class="nav-icon fas fa-download"></i> Fabric Quantity
                     </button>
-                </div>
+                </div> -->
                 
                 <table id="customers" class="table table-bordered table-hover">
                   <thead>
@@ -130,7 +130,45 @@
                 {data: 'batch_no', name: 'batch_no'},
                 {data: 'action', name: 'action', searchable: false}
             ],
-            
+            dom: 'lBfrtip',
+            buttons: [
+                {
+                    text: `<i class="nav-icon fas fa-download"></i> PDF Reports`,
+                    attr: {
+                        id: 'generatePDF',
+                        name: 'generatePDF'
+                    },
+                    className: 'btn-datatable',
+                    action: function (e, dt, node, config) {
+                        e.preventDefault();
+                        // Add your PDF generation logic here
+                    }
+                },
+                {
+                    text: `<i class="nav-icon fas fa-download"></i> Excel Reports`,
+                    attr: {
+                        id: 'generateExcel',
+                        name: 'generateExcel'
+                    },
+                    className: 'btn-datatable',
+                    action: function (e, dt, node, config) {
+                        e.preventDefault();
+                        // Add your Excel generation logic here
+                    }
+                },
+                {
+                    text: `<i class="nav-icon fas fa-download"></i> Fabric Quantity`,
+                    attr: {
+                        id: 'fabric_quantity',
+                        name: 'fabric_quantity'
+                    },
+                    className: 'btn-datatable',
+                    action: function (e, dt, node, config) {
+                        // Redirect to your Laravel route
+                        window.location.href = "{{ route('admin.stock.fabricQuantityExcel') }}";
+                    }
+                }
+            ]
         });
 
         $('#id').on('keyup', function (e) {

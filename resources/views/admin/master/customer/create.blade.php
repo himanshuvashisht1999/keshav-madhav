@@ -56,7 +56,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Email</label>
-                                    <input type="text" name="email" class="form-control" placeholder="Enter email" value="{{old('name')}}">
+                                    <input type="text" name="email" class="form-control" placeholder="Enter email" value="{{old('email')}}">
                                     @if ($errors->has('email'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('email') }}
