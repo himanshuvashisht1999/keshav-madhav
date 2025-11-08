@@ -33,6 +33,8 @@ use App\Http\Controllers\Admin\Master\MasterMaterialController as AdminMasterMat
 use App\Http\Controllers\Admin\Master\MasterProductStageController as AdminMasterProductStageController;
 use App\Http\Controllers\Admin\Master\CustomerController as AdminCustomerController;
 
+///// Reports
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 ////// Website
 Route::get('/',[AdminLoginController::class,'login'])->name('web.homepage');
 
@@ -106,13 +108,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             
         });
 
-        Route::prefix('/order_stages')->name('order_stages.')->group(function () {
+        Route::prefix('/order-stages')->name('order-stages.')->group(function () {
             Route::get('/index',[AdminOrderStagesController::class,'index'])->name('index');
             Route::get('/indexList',[AdminOrderStagesController::class,'indexList'])->name('indexList');
             Route::get('/download-receipt',[AdminOrderStagesController::class,'downLoadReceipt'])->name('downLoadReceipt');
-
-
-
         });
 
         
@@ -267,9 +266,27 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/update',[AdminGeneralSettingsController::class,'update'])->name('update');
         });
 
-       
-            
+        Route::prefix('/reports')->name('reports.')->group(function () {
+            Route::get('/fabric-receipt',[AdminReportController::class,'fabricReceipt'])->name('fabricReceipt');
+            Route::get('/fabric-receipt-list',[AdminReportController::class,'fabricReceiptList'])->name('fabricReceiptList');
+            Route::post('/fabric-receipt-excel',[AdminReportController::class,'generateFabricReceiptExcel'])->name('fabricReceiptExcel');
 
+            Route::get('/purchase-order',[AdminReportController::class,'purchaseOrder'])->name('purchaseOrder');
+            Route::get('/purchase-order-list',[AdminReportController::class,'purchaseOrderList'])->name('purchaseOrderList');
+            Route::post('/purchase-order-excel',[AdminReportController::class,'generatePurchaseOrderExcel'])->name('purchaseOrderExcel');
+
+            Route::get('/fabric-stock',[AdminReportController::class,'fabricStock'])->name('fabricStock');
+            Route::get('/fabric-stock-list',[AdminReportController::class,'fabricStockList'])->name('fabricStockList');
+            Route::post('/fabric-stock-excel',[AdminReportController::class,'generateFabricStockExcel'])->name('fabricStockExcel');
+
+            Route::get('/production',[AdminReportController::class,'production'])->name('production');
+            Route::get('production-list',[AdminReportController::class,'productionList'])->name('productionList');
+            Route::post('/production-excel',[AdminReportController::class,'generateProductionExcel'])->name('productionExcel');
+
+            Route::get('/stages',[AdminReportController::class,'stages'])->name('stages');
+            Route::get('stages-list',[AdminReportController::class,'stagesList'])->name('stagesList');
+            Route::post('/stages-excel',[AdminReportController::class,'generateStagesReportExcel'])->name('stagesExcel');
+        });
     });
 });
 

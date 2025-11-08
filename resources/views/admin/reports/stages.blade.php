@@ -10,7 +10,7 @@
             </h5>
             <ol class="breadcrumb float-sm-right mb-0 small">
                 <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-primary">Home</a></li>
-                <li class="breadcrumb-item active text-muted">Manage Stage</li>
+                <li class="breadcrumb-item active text-muted">Stage Report</li>
             </ol>
         </div>
     </section>
@@ -21,7 +21,7 @@
             <div class="card shadow-sm border-0 rounded-3">
                 <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
                     <h6 class="mb-0 fw-bold text-secondary">
-                        <i class="fas fa-table"></i> Stage Overview
+                        <i class="fas fa-table"></i> Stage Report
                     </h6>
                 </div>
 
@@ -39,7 +39,7 @@
                                     <th>Status</th>
                                     <th>Received</th>
                                     <th>Delivered</th>
-                                    <th>Action</th>
+                                    
                                 </tr>
                                 <tr class="bg-white">
                                     <td></td>
@@ -63,8 +63,7 @@
                                         </select>
                                     </td>
                                     <td><input type="date" class="form-control form-control-sm" id="created_at"></td>
-                                    <td><input type="date" class="form-control form-control-sm" id="updated_at"></td>
-                                    <td></td>
+                                    <td><input type="date" class="form-control form-control-sm" id="updated_at"></td>                                    
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -76,46 +75,6 @@
     </section>
 </div>
 
-<!-- ✅ Transfer Modal -->
-<div class="modal fade" id="viewModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-sm rounded-3">
-            <form method="POST" action="{{ route('admin.product_order.transfer') }}">
-                @csrf
-                <div class="modal-header bg-success text-white py-2">
-                    <h6 class="modal-title fw-bold mb-0"><i class="fas fa-exchange-alt"></i> Transfer to Next Stage</h6>
-                    <button type="button" class="btn-close btn-close-white" data-dismiss="modal"></button>
-                </div>
-
-                <div class="modal-body py-3">
-                    <input type="hidden" name="order_product_id" id="order_product_id_modal">
-                    <input type="hidden" name="from_stage_id" id="order_stage_id">
-                    <input type="hidden" name="order_transaction_id" id="order_transaction_id">
-
-                    <div class="form-group mb-3">
-                        <label class="small mb-1"><strong>Quantity to Transfer</strong></label>
-                        <input type="number" name="quantity" class="form-control form-control-sm" id="total_remaining_qty" required min="1" step="1">
-                        <small class="text-muted">Max allowed: <span id="maxQtyText"></span></small>
-                    </div>
-
-                    <div class="form-group mb-0">
-                        <label class="small mb-1"><strong>Remarks (optional)</strong></label>
-                        <textarea name="remarks" class="form-control form-control-sm" rows="2" placeholder="Enter remarks..."></textarea>
-                    </div>
-                </div>
-
-                <div class="modal-footer bg-light py-2">
-                    <button type="submit" class="btn btn-success btn-sm">
-                        <i class="fas fa-check-circle"></i> Confirm
-                    </button>
-                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <!-- ✅ JS Section -->
 <script>
@@ -148,79 +107,104 @@ $(function () {
             { data: 'remaining_quantity', name: 'remaining_quantity', width: '7%' },
             { data: 'status', name: 'status', width: '9%' },
             { data: 'created_at', name: 'created_at', width: '12%' },
-            { data: 'updated_at', name: 'updated_at', width: '12%' },
-            { data: 'action', name: 'action', width: '10%', orderable: false, searchable: false }
+            { data: 'updated_at', name: 'updated_at', width: '12%' }
+        ],
+        dom: 'lBfrtip',
+        buttons: [
+            {
+                text: `<i class="nav-icon fas fa-download"></i> Excel Reports`,
+                attr: {
+                    id: 'generateExcel',
+                    name: 'generateExcel'
+                },
+                className: 'btn-datatable',
+                action: function (e, dt, node, config) {
+                    e.preventDefault();
+                }
+            }
         ]
     });
 
     $('#email-queue-search-form').on('submit', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+        oTable.draw();
+        e.preventDefault();
+    });
 
-        $('#id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+    $('#id').on('keyup', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
 
-        $('#sku').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#order_product_id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#from_stage_id').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#quantity').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+    $('#sku').on('keyup', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
+    $('#order_product_id').on('keyup', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
+    $('#from_stage_id').on('change', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
+    $('#quantity').on('keyup', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
 
-        $('#remaining_quantity').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        
-        $('#order_product_id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-       
-        $('#created_at').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#status').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });        
+    $('#remaining_quantity').on('keyup', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
+    
+    $('#order_product_id').on('keyup', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
+    
+    $('#created_at').on('change', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
+    $('#status').on('change', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });        
 
+    $(document).ready(function () {
+        $('#generateExcel').on('click', function (e) {
+            e.preventDefault(); // prevent default behavior
+
+            // Collect filter values
+            var data = {
+                id: $('#id').val(),
+                sku: $('#sku').val(),
+                order_product_id: $('#order_product_id').val(),
+                from_stage_id: $('#from_stage_id').val(),
+                quantity: $('#quantity').val(),   
+                remaining_quantity: $('#remaining_quantity').val(),
+                status: $('#status').val(),
+                created_at: $('#created_at').val(),
+                updated_at: $('#updated_at').val(),
+                _token: '{{ csrf_token() }}'
+            };
+
+            // Create a hidden form for POST submission (so file download works)
+            var form = $('<form>', {
+                action: '{{ route("admin.reports.stagesExcel" ,['stage_id' => $stage_data->id]) }}',
+                method: 'POST',
+                target: '_blank'
+            }).append($.map(data, function(v, k) {
+                return $('<input>', { type: 'hidden', name: k, value: v });
+            }));
+
+            $('body').append(form);
+            form.submit();
+            form.remove();
+        });
+    });
 });
 
-// Modal Handling
-$(document).on('click', '.viewBtn', function() {
-    const remaining = $(this).data('total_remaining_qty');
-    $('#order_product_id_modal').val($(this).data('id'));
-    $('#order_stage_id').val("{{ $stage_data->id }}");
-    $('#order_transaction_id').val($(this).data('order_transaction_id'));
-    $('#total_remaining_qty').val(remaining).attr('max', remaining);
-    $('#maxQtyText').text(remaining);
-});
 
-// Prevent over-transfer
-$(document).on('input', '#total_remaining_qty', function() {
-    const max = parseFloat($(this).attr('max'));
-    const val = parseFloat($(this).val());
-    if (val > max) {
-        alert('You cannot transfer more than ' + max + ' units.');
-        $(this).val(max);
-    } else if (val < 0) {
-        $(this).val(0);
-    }
-});
 </script>
 @endsection

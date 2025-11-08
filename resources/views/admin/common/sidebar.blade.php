@@ -84,7 +84,7 @@ $stage_data = App\Models\MasterProductStage::where('status', 1)->get();
                             @foreach($stage_data as $stage)
                                 
                             <li class="nav-item">
-                                <a href="{{ route('admin.order_stages.index',['stage_id' => $stage->id]) }}"
+                                <a href="{{ route('admin.order-stages.index',['stage_id' => $stage->id]) }}"
                                     class="{{ str_contains(strtolower($page_url), 'admin/order_stages') &&  (request('stage_id') == $stage->id)  ? 'nav-link active' : 'nav-link' }}"
                                     >
                                     <!-- <i class="nav-icon fas fa-store"></i> -->
@@ -228,7 +228,72 @@ $stage_data = App\Models\MasterProductStage::where('status', 1)->get();
                             </li>
                         </ul>
                     </li>
+                   
 
+                    <li class="{{ str_contains($page_url, 'admin/reports') ? 'nav-item menu-open' : 'nav-item' }}">
+                        <a href="#"
+                            class="{{ str_contains($page_url, 'admin/reports') ? 'nav-link active' : 'nav-link' }}">
+                            <i class="nav-icon fa fa-print" aria-hidden="true"></i>
+                            <p>
+                                Reports
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        
+                        <ul class="nav nav-treeview">
+                             <li class="nav-item">
+                                <a href="{{ route('admin.reports.purchaseOrder') }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/reports/purchase-order')  ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <!-- <i class="nav-icon fas fa-store"></i> -->
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Purchase Order</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.reports.fabricReceipt') }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/reports/fabric-receipt') ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <!-- <i class="nav-icon fas fa-store"></i> -->
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Fabric Receipt</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.reports.fabricStock') }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/reports/fabric-stock') ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <!-- <i class="nav-icon fas fa-store"></i> -->
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Fabric Stock</p>
+                                </a>
+                            </li>
+                            
+                            <li class="nav-item">
+                                <a href="{{ route('admin.reports.production') }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/reports/production') ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <!-- <i class="nav-icon fas fa-store"></i> -->
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Production</p>
+                                </a>
+                            </li>
+                            
+                            @foreach($stage_data as $stage)
+                                
+                            <li class="nav-item">
+                                <a href="{{ route('admin.reports.stages',['stage_id' => $stage->id]) }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/reports') &&  (request('stage_id') == $stage->id)  ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <!-- <i class="nav-icon fas fa-store"></i> -->
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>{{$stage->name}}</p>
+                                </a>
+                            </li>
+
+                            @endforeach
+                        </ul>
+                    </li>
                     <!-- Logout -->
                     <li class="nav-item">
                         <a href="{{ route('admin.logout') }}" class="nav-link" style="position:static;">

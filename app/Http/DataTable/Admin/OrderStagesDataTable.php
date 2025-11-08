@@ -122,7 +122,7 @@ class OrderStagesDataTable  {
                 // When completed
                 if ($queue->remaining_quantity == 0) {
                     $downloadBtn = '
-                        <a href="'.route('admin.order_stages.downLoadReceipt', ['order_transaction_id' => $queue->id]).'" 
+                        <a href="'.route('admin.order-stages.downLoadReceipt', ['order_transaction_id' => $queue->id]).'" 
                         class="btn btn-sm btn-success">
                         <i class="fas fa-download"></i> Receipt
                         </a>';

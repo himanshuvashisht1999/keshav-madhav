@@ -111,75 +111,7 @@ class StockController extends Controller
         // Download
         return $pdf->download($fileName);
     }
-    // public function generateStockReportExcel(Request $request)
-    // {
-    //     $filters = $request->all();
-
-    //     // Base query
-    //     $query = Stock::query();
-
-    //     // Filter conditions
-    //     if (!empty($filters['sku'])) {
-    //         $query->where('sku', 'like', '%' . $filters['sku'] . '%');
-    //     }
-
-    //     if (!empty($filters['date'])) {
-    //         $query->whereDate('date', $filters['date']);
-    //     }
-
-    //     if (!empty($filters['meter'])) {
-    //         $query->where('meter', $filters['meter']);
-    //     }
-
-    //     if (!empty($filters['unique_number'])) {
-    //         $query->where('unique_number', 'like', '%' . $filters['unique_number'] . '%');
-    //     }
-
-    //     if (!empty($filters['batch_no'])) {
-    //         $query->where('batch_no', 'like', '%' . $filters['batch_no'] . '%');
-    //     }
-
-    //     //  Filtered result
-    //     $stocks = $query->get();
-
-    //     // Agar koi record nahi mila
-    //     if ($stocks->isEmpty()) {
-    //         return response()->json(['error' => 'No records found for given filters.'], 404);
-    //     }
-    //     header("Content-Type: application/vnd.ms-excel");
-    //     header("Content-Disposition: attachment; filename=stock_report_" . date('Y-m-d_H-i-s') . ".xls");
-    //     header("Pragma: no-cache");
-    //     header("Expires: 0");
-    //     // 2 Array ko HTML string 
-    //     $html = '<h2 style="text-align:center;">Manage Fabric Stock</h2>';
-    //     $html .= '<table border="1" cellspacing="0" cellpadding="6" width="100%">
-    //                 <thead>
-    //                     <tr>
-    //                         <th>ID</th>
-    //                         <th>SKU</th>
-    //                         <th>Date</th>
-    //                         <th>Meter</th>
-    //                         <th>Unique No</th>
-    //                         <th>Batch No</th>
-    //                     </tr>
-    //                 </thead>
-    //                 <tbody>';
-    //     $sno = 0;
-    //     foreach ($stocks as $stock) {
-    //         $sno++;
-    //         $html .= '<tr>
-    //                     <td>'.$sno.'</td>
-    //                     <td>'.$stock['sku'].'</td>
-    //                     <td>'.$stock['date'].'</td>
-    //                     <td>'.$stock['meter'].'</td>
-    //                     <td>'.$stock['unique_number'].'</td>
-    //                     <td>'.$stock['batch_no'].'</td>
-    //                 </tr>';
-    //     }
-    //     $html .= '</tbody></table>';
-    //     echo $html;
-    //     exit;
-    // }
+    
 
     public function generateStockReportExcel(Request $request)
     {
