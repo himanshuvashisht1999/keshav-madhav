@@ -39,7 +39,10 @@ class Stock extends Model
             return asset('images/image-placeholder.png');
         }
     }
-
+    public function fabric()
+    {
+        return $this->belongsTo('App\Models\fabric', 'sku', 'sku');
+    }
     // public function expends(){
     //     return $this->hasMany('App\Models\StockExpend','stock_id','id');
     // }

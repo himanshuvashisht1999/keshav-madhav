@@ -31,7 +31,7 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4"><strong>SKU:</strong> {{ $data->sku}}</div>
-                        <div class="col-md-4"><strong>Date:</strong> {{ \Carbon\Carbon::parse($data->date)->format('d M Y') }}</div>
+                        <div class="col-md-4"><strong>Date:</strong> {{ getformatDate($data->date) }}</div>
                         <div class="col-md-4"><strong>Goods Entry Number:</strong> {{ $data->goods_entry_number }}</div>
                         <div class="col-md-4"><strong>Meter:</strong> {{ $data->meter}}</div>
                         <div class="col-md-4"><strong>Roll:</strong> {{ $data->roll }}</div>

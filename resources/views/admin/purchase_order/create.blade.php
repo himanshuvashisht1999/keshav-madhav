@@ -32,7 +32,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Date</label>
+                                    <label for="exampleInputEmail1">Purchase Order Date</label>
                                     <input type="date" name="date" class="form-control" placeholder="Enter date" value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
                                     @if ($errors->has('date'))
                                         <span class="invalid-feedback d-block">

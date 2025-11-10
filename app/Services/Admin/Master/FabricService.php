@@ -168,4 +168,10 @@ class FabricService
         $data = FabricOtherImage::where('id',$request->id)->delete();
         return $data;
     }
+    public function getFabricById(Request $request)
+    {
+        $data = Fabric::where('id', $request->id)->first();
+        return $data;
+    }
+
 }

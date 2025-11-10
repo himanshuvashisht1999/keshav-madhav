@@ -36,11 +36,11 @@
                         </div>
                         <div class="col-md-3 col-6 mb-2">
                             <small class="text-muted d-block">Ordered Date</small>
-                            <span>{{ \Carbon\Carbon::parse($data->created_at)->format('d M Y, h:i A') }}</span>
+                            <span>{{ getformatDateTime($data->created_at) }}</span>
                         </div>
                         <div class="col-md-3 col-6 mb-2">
                             <small class="text-muted d-block">Expected Delivery Date</small>
-                            <span>{{ \Carbon\Carbon::parse($data->expected_delivery_date)->format('d M Y') }}</span>
+                            <span>{{ getformatDate($data->expected_delivery_date) }}</span>
                         </div>
                     </div>
                 </div>
