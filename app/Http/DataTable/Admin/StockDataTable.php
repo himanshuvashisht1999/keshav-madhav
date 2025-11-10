@@ -4,6 +4,7 @@ namespace App\Http\DataTable\Admin;
 
 use Illuminate\Http\Request;
 use App\Models\Stock;
+use App\Models\Fabric;
 use Yajra\DataTables\Facades\DataTables;
 
 class StockDataTable  {
@@ -56,4 +57,29 @@ class StockDataTable  {
             ->rawColumns(['action', 'status'])
             ->make(true);
     }
+
+     public function fabricIndexList($request){
+        $queue = Fabric::withSum('stocks as total_meter', 'meter');
+        return DataTables::of($queue)->addIndexColumn()
+            ->filter(function ($query) use ($request) {
+                $query->orderBy('id','desc');
+                
+                $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
+                if ($request->has('sku') && !empty($request->sku)) {
+                    $query->where('sku', 'like', "%{$request->get('sku')}%");
+                }
+            
+                $query->where('status',1);
+            })
+            ->editColumn('total_meter', function ($queue) {
+                return $queue->total_meter ?? 0;
+            })
+            ->addColumn('action', function($row){
+                // Example: return button(s)
+                return '<a href="' . route('admin.stock.index',['id' => $row->id]) . '" class="btn btn-sm btn-primary">View</a>';
+            })
+            ->rawColumns(['total_meter','action'])
+            ->make(true);
+    }
+
 }
