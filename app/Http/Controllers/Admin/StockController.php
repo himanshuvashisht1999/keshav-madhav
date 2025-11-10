@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\StockService as Service;
+use App\Services\Admin\Master\FabricService;
+use App\Services\Admin\Master\ProductionGoodsService;
 use Illuminate\Support\Facades\Crypt;
 use App\Models\Stock;
 use Illuminate\Support\Facades\DB;
@@ -18,13 +20,16 @@ use PDF;
 class StockController extends Controller
 {
     protected $service;
-    public function __construct(Service $service)
+    public function __construct(Service $service, ProductionGoodsService $productionGoodsService, FabricService $fabricService)
     {
         $this->service = $service;
+        $this->productionGoodsService = $productionGoodsService;
+        $this->fabricService = $fabricService;
     }
-    public function index()
-    {
-        return view('admin.stock.index');
+    public function index(Request $request)
+    {   
+        $response['fabrics'] = $this->fabricService->getFabricById($request);
+        return view('admin.stock.index', $response);
     }
     public function indexList(Request $request){
         return $this->service->indexList($request);
@@ -38,6 +43,16 @@ class StockController extends Controller
     {
         $response['data'] = $this->service->view($request);
         return view('admin.stock.detail', $response);
+    }
+    
+    public function fabricIndex()
+    {
+        $response['fabrics'] = $this->productionGoodsService->fabrics();
+        return view('admin.stock.fabric_index', $response);
+    }
+
+    public function fabricIndexList(Request $request){
+        return $this->service->fabricIndexList($request);
     }
     public function generateStockReportPDF(Request $request)
     {

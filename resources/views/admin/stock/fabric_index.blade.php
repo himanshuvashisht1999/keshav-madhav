@@ -5,16 +5,16 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-8">
-                    <h3 style="font-size:1.2rem;">Fabric Stock SKU : <span class="text-muted">{{ $fabrics->sku }}</span></h3>
+                <div class="col-sm-6">
+                    <h1>Manage Fabric Stock</h1>
                 </div>
-                <div class="col-sm-4">
+                <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Fabric Stock Report</li>
+                        <li class="breadcrumb-item active">Manage Fabric Stock</li>
                     </ol>
                 </div>
-            </div>  
+            </div>
         </div>
     </section>
 
@@ -31,30 +31,23 @@
                     <tr role="row" class="filter">
                         <td>
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
-                            <input type="hidden" class="form-control" name="sku" id="sku" value="{{$fabrics->sku}}" autocomplete="off">
-                        </td>
-                        
-                        <td>
-                            <input type="date" class="form-control" name="date" id="date" autocomplete="off">
-                        </td>
-                        
-                        
-                        <td>
-                            <input type="text" class="form-control" name="meter" id="meter" autocomplete="off">
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="unique_number" id="unique_number" autocomplete="off">
+                            <select name="sku" id="sku"  class="form-control">
+                                <option value="">All Fabric SKU</option>
+                                @foreach($fabrics as $fabric)
+                                    <option value="{{ $fabric->sku }}">{{ $fabric->sku }}</option>
+                                @endforeach
+                            </select>
                         </td>
-                        <td>
-                            <input type="text" class="form-control" name="batch_no" id="batch_no" autocomplete="off">
-                        </td>  
+                        <td></td>
+                        <td></td>
                     </tr>
                     <tr>
                         <th>ID</th>
-                        <th>Date</th>
-                        <th>Meter</th>
-                        <th>Unique No</th>
-                        <th>Batch No</th>
+                        <th>SKU</th>
+                        <th>Total Fabric (Meters)</th>
+                        <th>action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -86,23 +79,18 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.reports.fabricStockList') !!}',
+                url: '{!! route('admin.stock.fabricIndexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.sku = $('#sku').val();
-                    d.date = $('#date').val();
-                    d.meter = $('#meter').val();
-                    d.unique_number = $('#unique_number').val();
-                    d.batch_no = $('#batch_no').val();
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'date', name: 'date'},
-                {data: 'meter', name: 'meter'},
-                {data: 'unique_number', name: 'unique_number'},
-                {data: 'batch_no', name: 'batch_no'}
+                {data: 'sku', name: 'sku'},
+                {data: 'total_meter', name: 'total_meter'},
+                {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
             buttons: [
@@ -121,30 +109,7 @@
            
         });
 
-        $('#id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#sku').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        
-        $('#date').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#unique_number').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#meter').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#batch_no').on('keyup', function (e) {
+        $('#sku').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
@@ -157,16 +122,12 @@
                 var data = {
                     id: $('#id').val(),
                     sku: $('#sku').val(),
-                    date: $('#date').val(),
-                    meter: $('#meter').val(),
-                    unique_number: $('#unique_number').val(),
-                    batch_no: $('#batch_no').val(),
                     _token: '{{ csrf_token() }}'
                 };
 
                 // Create a hidden form for POST submission (so file download works)
                 var form = $('<form>', {
-                    action: '{{ route("admin.reports.fabricStockExcel") }}',
+                    action: '{{ route("admin.reports.fabricStockSkuExcel") }}',
                     method: 'POST',
                     target: '_blank'
                 }).append($.map(data, function(v, k) {
