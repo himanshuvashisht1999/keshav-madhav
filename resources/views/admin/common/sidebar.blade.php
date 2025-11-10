@@ -46,7 +46,7 @@ $stage_data = App\Models\MasterProductStage::where('status', 1)->get();
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ route('admin.stock.index') }}"
+                        <a href="{{ route('admin.stock.fabricIndex') }}"
                             class="{{ str_contains($page_url, 'admin/stock') ? 'nav-link active' : 'nav-link' }}"
                             style="position:static;">
                             <i class="nav-icon fas fa-store"></i>

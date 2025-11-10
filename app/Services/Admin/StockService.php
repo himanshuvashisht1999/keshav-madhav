@@ -33,4 +33,8 @@ class StockService
         $data = Stock::where('id', $request->id)->first();
         return $data;
     }
+
+    public function fabricIndexList(Request $request){
+        return $this->datatable->fabricIndexList($request);
+    }
 }
