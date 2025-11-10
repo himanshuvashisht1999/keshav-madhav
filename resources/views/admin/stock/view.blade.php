@@ -42,7 +42,7 @@
                             <div class="info-box bg-light shadow-sm rounded">
                                 <div class="info-box-content">
                                     <span class="info-box-text d-block text-muted mb-1"><strong>Date :</strong></span>
-                                    <span class="info-box-number">{{ \Carbon\Carbon::parse($data->date)->format('d M Y') }}</span>
+                                    <span class="info-box-number">{{ getformatDate($data->date) }}</span>
                                 </div>
                             </div>
 

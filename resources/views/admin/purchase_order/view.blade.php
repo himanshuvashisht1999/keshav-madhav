@@ -78,8 +78,8 @@
                     <div class="col-md-6 po-box text-right">
                         <h5 class="text-primary"><b>Purchase Order Info</b></h5>
                         <p class="mb-1"><b>PO Number:</b> {{ $data->sku }}</p>
-                        <p class="mb-1"><b>PO Date:</b> {{ \Carbon\Carbon::parse($data->date)->format('d-m-Y') }}</p>
-                        <p><b>Delivery Date:</b> {{ \Carbon\Carbon::parse($data->delivery_date)->format('d-m-Y') }}</p>
+                        <p class="mb-1"><b>PO Date:</b> {{ getformatDate($data->date) }}</p>
+                        <p><b>Delivery Date:</b> {{ getformatDate($data->delivery_date) }}</p>
                     </div>
                 </div>
 

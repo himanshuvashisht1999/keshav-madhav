@@ -65,7 +65,7 @@
                         <th>Order ID</th>
                         <th>Customer</th>
                         <th>Order Date</th>
-                        <th>Expected Delivery</th>
+                        <th>Estimated Delivery Date</th>
                         <th>Status</th>
                     </tr>
                   </thead>
@@ -119,7 +119,7 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.product_order.indexList') !!}',
+                url: '{!! route('admin.reports.productionList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.sku = $('#sku').val();

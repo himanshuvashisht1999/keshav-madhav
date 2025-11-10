@@ -52,9 +52,9 @@
                     <tr>
                         <th>ID</th>
                         <th>PO No.</th>
-                        <th>Date</th>
+                        <th>Purchase Order Date</th>
                         <th>Vendor</th>
-                        <th>Delivery Date</th>
+                        <th>Expected Delivery Date</th>
                        
                     </tr>
                   </thead>
@@ -87,7 +87,7 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.purchase_order.indexList') !!}',
+                url: '{!! route('admin.reports.purchaseOrderList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.sku = $('#sku').val();

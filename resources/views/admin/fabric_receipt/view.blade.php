@@ -33,7 +33,7 @@
                         <div class="col-md-4"><strong>SKU:</strong> {{ $data->sku }}</div>
                         <div class="col-md-4"><strong>Vendor:</strong> {{ $data->vendor->name ?? '-' }}</div>
                         <div class="col-md-4"><strong>Truck Number:</strong> {{ $data->truck_number }}</div>
-                        <div class="col-md-4"><strong>Date & Time:</strong> {{ \Carbon\Carbon::parse($data->time)->format('d M Y, h:i A') }}</div>
+                        <div class="col-md-4"><strong>Date & Time:</strong> {{ getformatDateTime($data->time) }}</div>
                         <div class="col-md-4"><strong>Packets:</strong> {{ $data->roll }}</div>
                         <div class="col-md-4"><strong>Received By:</strong> {{ $data->received_by }}</div>
                         <div class="col-md-4">

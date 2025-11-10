@@ -66,7 +66,7 @@
                         <th>SKU</th>
                         <th>Vendor</th>
                         <th>Truck Number</th>
-                        <th>Time</th>
+                        <th>Date & Time</th>
                         <th>Packet</th>
                         <th>Received By</th>
                         

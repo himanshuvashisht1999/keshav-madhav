@@ -4,14 +4,22 @@ namespace App\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Services\Admin\ReportService as Service;
-use App\Services\Admin\ProductOrderService as ProductOrderService;
-use App\Services\Admin\OrderStagesService as OrderStagesService;
-use App\Models\FabricReceipt;
-use App\Models\purchaseOrder;
-use App\Models\Stock;
-use App\Models\Order;
-use App\Models\OrderStageTransaction;
+use App\Services\Admin\{
+    ReportService as Service,
+    ProductOrderService,
+    OrderStagesService,
+    Master\ProductionGoodsService,
+    Master\FabricService
+};
+use App\Models\{
+    FabricReceipt,
+    PurchaseOrder,
+    Stock,
+    Fabric,
+    Order,
+    OrderStageTransaction
+};
+use Illuminate\Support\Facades\DB;
 
 // excel import use
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -20,11 +28,18 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class ReportController extends Controller
 {
     protected $service;
-    public function __construct(Service $service, ProductOrderService $productOrderService, OrderStagesService $orderStagesService) {
+    public function __construct(
+        Service $service, 
+        ProductOrderService $productOrderService, 
+        OrderStagesService $orderStagesService, 
+        ProductionGoodsService $productionGoodsService, 
+        FabricService $fabricService
+    ) {
         $this->service = $service;
         $this->productOrderService = $productOrderService;
         $this->orderStagesService = $orderStagesService;
-        
+        $this->productionGoodsService = $productionGoodsService;
+        $this->fabricService = $fabricService;
     }
     public function fabricReceipt()
     {
@@ -82,7 +97,7 @@ class ReportController extends Controller
                 $sheet->setCellValue('A' . $row, $fabricReceipt['sku']);
                 $sheet->setCellValue('B' . $row, $fabricReceipt['vendor']?->name);
                 $sheet->setCellValue('C' . $row, $fabricReceipt['truck_number']);
-                $sheet->setCellValue('D' . $row, $fabricReceipt['time']);
+                $sheet->setCellValue('D' . $row, getformatDateTime($fabricReceipt['time']));
                 $sheet->setCellValue('E' . $row, $fabricReceipt['roll']);
                 $sheet->setCellValue('F' . $row, $fabricReceipt['received_by']);
                 $row++;
@@ -117,9 +132,9 @@ class ReportController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         $sheet->setCellValue('A1', 'SKU');
-        $sheet->setCellValue('B1', 'Date');
+        $sheet->setCellValue('B1', 'Purchase Order Date');
         $sheet->setCellValue('C1', 'Vendor');
-        $sheet->setCellValue('D1', 'Delivery Date');
+        $sheet->setCellValue('D1', 'Expected Delivery Date');
 
         $filters = $request->all();
 
@@ -153,9 +168,9 @@ class ReportController extends Controller
             $row = 2;
             foreach ($purchaseOrders as $purchaseOrder) {
                 $sheet->setCellValue('A' . $row, $purchaseOrder['sku']);
-                $sheet->setCellValue('B' . $row, $purchaseOrder['date']);
+                $sheet->setCellValue('B' . $row, getformatDate($purchaseOrder['date']));
                 $sheet->setCellValue('C' . $row, $purchaseOrder['vendor']?->name);
-                $sheet->setCellValue('D' . $row, $purchaseOrder['delivery_date']);
+                $sheet->setCellValue('D' . $row, getformatDate($purchaseOrder['delivery_date']));
                 $row++;
             }
         }
@@ -167,17 +182,33 @@ class ReportController extends Controller
         // Return file as download
         return response()->download($filePath)->deleteFileAfterSend(true);
     }
-    
 
     public function fabricStock()
-    {
-        $response['vendors'] = $this->service->vendors();
-        return view('admin.reports.fabric_stock');
+    {   
+        $response['fabrics'] = $this->productionGoodsService->fabrics();
+        return view('admin.reports.fabric_stock', $response);
+    }
+
+    public function fabricStockDetails(Request $request)
+    {      
+        $response['fabrics'] = $this->fabricService->getFabricById($request);
+        return view('admin.reports.fabric_stock_details', $response);
+    }
+
+    public function fabricStockSku()
+    {   
+        $response['fabrics'] = $this->productionGoodsService->fabrics();
+        return view('admin.reports.fabric_stock', $response);
     }
     
     public function fabricStockList(Request $request)
     {
         return $this->service->fabricStockList($request);
+    }
+
+    public function fabricStockSkuList(Request $request)
+    {
+        return $this->service->fabricStockSkuList($request);
     }
     public function generateFabricStockExcel(Request $request)
     {
@@ -226,10 +257,51 @@ class ReportController extends Controller
             $row = 2;
             foreach ($stocks as $stock) {
                 $sheet->setCellValue('A' . $row, $stock['sku']);
-                $sheet->setCellValue('B' . $row, $stock['date']);
+                $sheet->setCellValue('B' . $row, getformatDate($stock['date']));
                 $sheet->setCellValue('C' . $row, $stock['meter']);
                 $sheet->setCellValue('D' . $row, $stock['unique_number']);
                 $sheet->setCellValue('E' . $row, $stock['batch_no']);
+                $row++;
+            }
+        }
+        // Save file
+        $filePath = storage_path('app/public/'. $stock['sku'] .'_stock_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx');
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($filePath);
+
+        // Return file as download
+        return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+     public function generateFabricStockSkuExcel(Request $request)
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('A1', 'SKU');
+        $sheet->setCellValue('B1', 'Total Fabric (Meters)');
+
+        $filters = $request->all();
+
+        $query = Fabric::withSum('stocks as total_meter', 'meter');
+
+        // Filter conditions 
+        if (!empty($filters['sku'])) {
+            $query->where('sku', 'like', '%' . $filters['sku'] . '%');
+        }
+        
+        $query->orderBy('id','desc');
+        
+
+        // Filtered result
+        $stocks = $query->get();
+
+        if (!$stocks->isEmpty()) {
+        
+            $row = 2;
+            foreach ($stocks as $stock) {
+                $sheet->setCellValue('A' . $row, $stock['sku']);
+                $sheet->setCellValue('B' . $row, $stock['total_meter'] ?? 0);
                 $row++;
             }
         }
@@ -241,7 +313,6 @@ class ReportController extends Controller
         // Return file as download
         return response()->download($filePath)->deleteFileAfterSend(true);
     }
-
     public function production()
     {
         // $response['products'] = $this->service->products();
@@ -305,8 +376,8 @@ class ReportController extends Controller
             foreach ($orders as $order) {
                 $sheet->setCellValue('A' . $row, $order['sku']);
                 $sheet->setCellValue('B' . $row, $order->customer?->name);
-                $sheet->setCellValue('C' . $row, $order['created_at'] ? $order['created_at']->format('d-m-Y H:i A') : '-');
-                $sheet->setCellValue('D' . $row, $order['expected_delivery_date']);
+                $sheet->setCellValue('C' . $row, $order['created_at'] ? getformatDateTime($order['created_at']) : '-');
+                $sheet->setCellValue('D' . $row, getformatDate($order['expected_delivery_date']));
                 $statusText = '';
                 if ($order['status'] == 1) {
                     $statusText = 'Not Issued';
@@ -410,9 +481,9 @@ class ReportController extends Controller
                 $sheet->setCellValue('E' . $row, $order['remaining_quantity']);
                 $statusText = $order['remaining_quantity'] > 0 ? 'In Progress' : 'Completed';   
                 $sheet->setCellValue('F' . $row, $statusText);
-                $sheet->setCellValue('G' . $row, $order['created_at'] ? $order['created_at']->format('d-m-Y H:i A') : '-');
+                $sheet->setCellValue('G' . $row, $order['created_at'] ? getformatDateTime($order['created_at']) : '-');
                 
-                $delivered = $order['remaining_quantity'] == 0 ? \Carbon\Carbon::parse($order['updated_at'])->format('d M Y h:i A') : '-';
+                $delivered = $order['remaining_quantity'] == 0 ? getformatDateTime($order['updated_at']) : 'In Progress';
                 $sheet->setCellValue('H' . $row, $delivered);
                 $row++;
             }

@@ -26,6 +26,10 @@ class ReportService {
     public function fabricStockList(Request $request){
         return $this->datatable->fabricStockList($request);
     }
+
+    public function fabricStockSkuList(Request $request){
+        return $this->datatable->fabricStockSkuList($request);
+    }
     public function productionList(Request $request){
         return $this->datatable->productionList($request);
     }

@@ -42,8 +42,8 @@
                         <td valign="top" style="width:50%; background:#f9fafc; padding:15px; border-radius:8px; text-align:right;">
                             <h3 style="margin:0 0 10px; color:#222;">Purchase Order Info</h3>
                             <p style="margin:3px 0;"><b>PO Number:</b> {{ $data->sku }}</p>
-                            <p style="margin:3px 0;"><b>PO Date:</b> {{ \Carbon\Carbon::parse($data->date)->format('d-m-Y') }}</p>
-                            <p style="margin:3px 0;"><b>Delivery Date:</b> {{ \Carbon\Carbon::parse($data->delivery_date)->format('d-m-Y') }}</p>
+                            <p style="margin:3px 0;"><b>PO Date:</b> {{ getformatDate($data->date) }}</p>
+                            <p style="margin:3px 0;"><b>Delivery Date:</b> {{ getformatDate($data->delivery_date) }}</p>
                         </td>
                     </tr>
                 </table>

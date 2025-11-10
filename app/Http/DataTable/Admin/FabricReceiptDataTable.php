@@ -3,9 +3,7 @@
 namespace App\Http\DataTable\Admin;
 
 use Illuminate\Http\Request;
-use App\Models\Fabric;
 use App\Models\FabricReceipt;
-use App\Models\PurchaseOrder;
 use Yajra\DataTables\Facades\DataTables;
 
 class FabricReceiptDataTable  {
@@ -41,7 +39,9 @@ class FabricReceiptDataTable  {
                                 
                 
             }) 
-         
+            ->editColumn('time', function ($queue) {
+                return getformatDateTime($queue->time);
+            })
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';

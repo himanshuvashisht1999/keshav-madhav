@@ -38,9 +38,9 @@
                         </tr>
                         <tr>
                             <th>Created Date</th>
-                            <td>{{ \Carbon\Carbon::parse($data->created_at)->format('d M Y, h:i A') }}</td>
+                            <td>{{ getformatDateTime($data->created_at) }}</td>
                             <th width="20%">Expected Delivery Date</th>
-                            <td>{{ \Carbon\Carbon::parse($data->expected_delivery_date)->format('d M Y') }}</td>
+                            <td>{{ getformatDate($data->expected_delivery_date) }}</td>
                         </tr>
                     </table>
                 </div>
