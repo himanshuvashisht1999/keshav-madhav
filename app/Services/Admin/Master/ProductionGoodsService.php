@@ -39,7 +39,9 @@ class ProductionGoodsService {
         $save_data->type_of_garment = $request->type_of_garment;
         $save_data->master_size_id = $request->master_size_id;
         $save_data->garment_pattern = $request->garment_pattern;
+        $save_data->is_embroidery = $request->is_embroidery;
         $save_data->master_color_id = $request->master_color_id;
+        $save_data->is_printing = $request->is_printing;
         $save_data->fabric_sku = '';
         $save_data->status = 1;
         $save_data->save();
@@ -70,6 +72,8 @@ class ProductionGoodsService {
         $update_data->master_size_id = $request->master_size_id;
         $update_data->garment_pattern = $request->garment_pattern;
         $update_data->master_color_id = $request->master_color_id;
+        $update_data->master_color_id = $request->master_color_id;
+        $update_data->is_printing = $request->is_printing;
         $update_data->fabric_sku = '';
         $update_data->save();
         BillOfMaterial::where('product_id', $request->id)

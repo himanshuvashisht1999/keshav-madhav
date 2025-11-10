@@ -21,6 +21,8 @@ class ProductionGoods extends Model
         'master_size_id',
         'master_design_id',
         'fabric_sku',
+        'is_printing',
+        'is_embroidery',
         'status',
         'created_at',
         'updated_at'
