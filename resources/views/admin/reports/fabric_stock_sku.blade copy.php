@@ -33,21 +33,31 @@
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
                         <td>
-                            <select name="sku" id="sku"  class="form-control">
-                                <option value="">All Fabric SKU</option>
-                                @foreach($fabrics as $fabric)
-                                    <option value="{{ $fabric->sku }}">{{ $fabric->sku }}</option>
-                                @endforeach
-                            </select>
+                            <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
-                        <td></td>
-                        <td></td>
+                        
+                        <td>
+                            <input type="date" class="form-control" name="date" id="date" autocomplete="off">
+                        </td>
+                        
+                        
+                        <td>
+                            <input type="text" class="form-control" name="meter" id="meter" autocomplete="off">
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" name="unique_number" id="unique_number" autocomplete="off">
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" name="batch_no" id="batch_no" autocomplete="off">
+                        </td>  
                     </tr>
                     <tr>
                         <th>ID</th>
                         <th>SKU</th>
-                        <th>Total Fabric (Meters)</th>
-                        <th>action</th>
+                        <th>Date</th>
+                        <th>Meter</th>
+                        <th>Unique No</th>
+                        <th>Batch No</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -79,18 +89,25 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.reports.fabricStockSkuList') !!}',
+                url: '{!! route('admin.stock.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.sku = $('#sku').val();
+                    d.date = $('#date').val();
+                    d.meter = $('#meter').val();
+                    d.unique_number = $('#unique_number').val();
+                    d.batch_no = $('#batch_no').val();
+                  
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'sku', name: 'sku'},
-                {data: 'total_meter', name: 'total_meter'},
-                {data: 'action', name: 'action', searchable: false}
+                {data: 'date', name: 'date'},
+                {data: 'meter', name: 'meter'},
+                {data: 'unique_number', name: 'unique_number'},
+                {data: 'batch_no', name: 'batch_no'}
             ],
             dom: 'lBfrtip',
             buttons: [
@@ -109,7 +126,30 @@
            
         });
 
-        $('#sku').on('change', function (e) {
+        $('#id').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#sku').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        
+        $('#date').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+
+        $('#unique_number').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+
+        $('#meter').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#batch_no').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
@@ -122,12 +162,16 @@
                 var data = {
                     id: $('#id').val(),
                     sku: $('#sku').val(),
+                    date: $('#date').val(),
+                    meter: $('#meter').val(),
+                    unique_number: $('#unique_number').val(),
+                    batch_no: $('#batch_no').val(),
                     _token: '{{ csrf_token() }}'
                 };
 
                 // Create a hidden form for POST submission (so file download works)
                 var form = $('<form>', {
-                    action: '{{ route("admin.reports.fabricStockSkuExcel") }}',
+                    action: '{{ route("admin.reports.fabricStockExcel") }}',
                     method: 'POST',
                     target: '_blank'
                 }).append($.map(data, function(v, k) {

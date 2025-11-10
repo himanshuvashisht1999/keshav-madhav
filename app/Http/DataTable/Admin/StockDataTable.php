@@ -35,7 +35,9 @@ class StockDataTable  {
                 }
                 $query->where('status',1);
             }) 
-         
+            ->editColumn('date', function ($queue) {
+				return getformatDate($queue->date);
+            })
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';

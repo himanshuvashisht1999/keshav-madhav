@@ -94,7 +94,7 @@ class StockController extends Controller
             $html .= '<tr>
                         <td>'.$sno.'</td>
                         <td>'.$stock['sku'].'</td>
-                        <td>'.$stock['date'].'</td>
+                        <td>'.getformatDate($stock['date']).'</td>
                         <td>'.$stock['meter'].'</td>
                         <td>'.$stock['unique_number'].'</td>
                         <td>'.$stock['batch_no'].'</td>
@@ -160,7 +160,7 @@ class StockController extends Controller
         $row = 2;
         foreach ($stocks as $stock) {
             $sheet->setCellValue('A' . $row, $stock['sku']);
-            $sheet->setCellValue('B' . $row, $stock['date']);
+            $sheet->setCellValue('B' . $row, getformatDate($stock['date']));
             $sheet->setCellValue('C' . $row, $stock['meter']);
             $sheet->setCellValue('D' . $row, $stock['unique_number']);
             $sheet->setCellValue('E' . $row, $stock['batch_no']);

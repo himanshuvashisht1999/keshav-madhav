@@ -4,7 +4,13 @@ namespace App\Http\DataTable\Admin;
 
 use Illuminate\Http\Request;
 use App\Models\FabricReceipt;
+use App\Models\PurchaseOrder;
+use App\Models\Fabric;
+use App\Models\Stock;
+use App\Models\Order;
+use App\Models\OrderStageTransaction;
 use Yajra\DataTables\Facades\DataTables;
+
 
 class ReportDataTable  {
 
@@ -39,7 +45,9 @@ class ReportDataTable  {
                                 
                 
             }) 
-         
+            ->editColumn('time', function ($queue) {
+				return getformatDateTime($queue->time);
+            })
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
@@ -76,7 +84,12 @@ class ReportDataTable  {
                 
                 
             }) 
-         
+            ->editColumn('date', function ($queue) {
+                return getformatDate($queue->date);
+            })
+            ->editColumn('delivery_date', function ($queue) {
+                return getformatDate($queue->delivery_date);
+            })
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
@@ -126,6 +139,27 @@ class ReportDataTable  {
             ->make(true);
     }
 
+    public function fabricStockSkuList($request){
+        $queue = Fabric::withSum('stocks as total_meter', 'meter');
+        return DataTables::of($queue)->addIndexColumn()
+            ->filter(function ($query) use ($request) {
+                $query->orderBy('id','desc');
+                
+                $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
+                if ($request->has('sku') && !empty($request->sku)) {
+                    $query->where('sku', 'like', "%{$request->get('sku')}%");
+                }
+            
+                $query->where('status',1);
+            })
+            ->addColumn('action', function($row){
+                // Example: return button(s)
+                return '<a href="' . route('admin.reports.fabricStockDetails',['id' => $row->id]) . '" class="btn btn-sm btn-primary">View</a>';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
     public function productionList($request){
         $queue = Order::query();
 
@@ -150,7 +184,9 @@ class ReportDataTable  {
                 }
                 
             }) 
-         
+            ->editColumn('expected_delivery_date', function ($queue) {
+                return $queue->expected_delivery_date ? getformatDate($queue->expected_delivery_date) : '-';
+            })
             ->addColumn('status', function ($queue) {
                 if ($queue->status == 1) {
                     return '<span class="badge badge-primary">Not Issued</span>';
@@ -166,7 +202,7 @@ class ReportDataTable  {
                 
             })
             ->editColumn('created_at', function ($queue) {
-                return $queue->created_at ? $queue->created_at->format('d-m-Y H:i A') : '-';
+                return $queue->created_at ? getformatDateTime($queue->created_at) : '-';
             })
             
             ->rawColumns(['master_customer_id','created_at','status'])
@@ -181,17 +217,11 @@ class ReportDataTable  {
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id','desc');
 
-                // ✅ Filter by order_no (from related Order model)
-                // if ($request->has('order_no') && !empty($request->order_no)) {
-                //     $query->whereHas('orderProduct.order', function ($q) use ($request) {
-                //         $q->where('sku', 'like', '%' . $request->get('order_no') . '%');
-                //     });
-                // }
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
 
-                // ✅ Filter by order_product_id (product_sku in OrderProduct)
+                // Filter by order_product_id (product_sku in OrderProduct)
                 if ($request->has('order_product_id') && !empty($request->order_product_id)) {
                     $query->whereHas('orderProduct', function ($q) use ($request) {
                         $q->where('product_sku', 'like', '%' . $request->get('order_product_id') . '%');
@@ -246,12 +276,12 @@ class ReportDataTable  {
          
            
             ->editColumn('created_at', function ($queue) {
-                return $queue->created_at ? $queue->created_at->format('d-m-Y H:i A') : '-';
+                return $queue->created_at ? getformatDateTime($queue->created_at) : '-';
             })
             ->editColumn('updated_at', function ($queue) {
                 return $queue->remaining_quantity == 0 
-                ? \Carbon\Carbon::parse($queue->updated_at)->format('d M Y h:i A')
-                : '-';
+                ? getformatDateTime($queue->updated_at)
+                : 'In Progress';
             })
             ->addColumn('status', function ($queue) {
                 if ($queue->remaining_quantity > 0) {

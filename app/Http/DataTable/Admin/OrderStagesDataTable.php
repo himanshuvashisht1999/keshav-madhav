@@ -84,12 +84,12 @@ class OrderStagesDataTable  {
          
            
             ->editColumn('created_at', function ($queue) {
-                return $queue->created_at ? $queue->created_at->format('d-m-Y H:i A') : '-';
+                return $queue->created_at ? getformatDateTime($queue->created_at) : '-';
             })
             ->editColumn('updated_at', function ($queue) {
                 return $queue->remaining_quantity == 0 
-                ? \Carbon\Carbon::parse($queue->updated_at)->format('d M Y h:i A')
-                : '-';
+                ? getformatDateTime($queue->updated_at)
+                : 'In Progress';
             })
             ->addColumn('status', function ($queue) {
                 if ($queue->remaining_quantity > 0) {

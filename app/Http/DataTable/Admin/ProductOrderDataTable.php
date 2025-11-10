@@ -49,7 +49,10 @@ class ProductOrderDataTable  {
                 
             })
             ->editColumn('created_at', function ($queue) {
-                return $queue->created_at ? $queue->created_at->format('d-m-Y H:i A') : '-';
+                return $queue->created_at ? getformatDateTime($queue->created_at) : '-';
+            })
+            ->editColumn('expected_delivery_date', function ($queue) {
+                return getformatDate($queue->expected_delivery_date);
             })
             
             ->addColumn('action', function ($queue) {

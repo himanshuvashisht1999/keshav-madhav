@@ -57,20 +57,14 @@
                             <input type="date" class="form-control" name="delivery_date" id="delivery_date" autocomplete="off">
                         </td>
                         
-                        
-
-                        
-                        <td>
-                       
-                       </td>
+                        <td> </td>
                     </tr>
                     <tr>
                         <th>ID</th>
                         <th>PO No.</th>
-                        <th>Date</th>
+                        <th>Purchase Order Date</th>
                         <th>Vendor</th>
-                        <th>Delivery Date</th>
-                        
+                        <th>Expected Delivery Date</th>
                         <th>Action</th>
                     </tr>
                   </thead>

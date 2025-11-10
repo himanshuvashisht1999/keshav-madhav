@@ -75,7 +75,7 @@
                         <th>Order ID</th>
                         <th>Customer</th>
                         <th>Order Date</th>
-                        <th>Expected Delivery</th>
+                        <th>Estimated Delivery Date</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>

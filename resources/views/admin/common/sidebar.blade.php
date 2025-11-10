@@ -260,8 +260,8 @@ $stage_data = App\Models\MasterProductStage::where('status', 1)->get();
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{{ route('admin.reports.fabricStock') }}"
-                                    class="{{ str_contains(strtolower($page_url), 'admin/reports/fabric-stock') ? 'nav-link active' : 'nav-link' }}"
+                                <a href="{{ route('admin.reports.fabricStockSku') }}"
+                                    class="{{ (str_contains(strtolower($page_url), 'admin/reports/fabric-stock-sku') || str_contains(strtolower($page_url), 'admin/reports/fabric-stock-details')) ? 'nav-link active' : 'nav-link' }}"
                                     >
                                     <!-- <i class="nav-icon fas fa-store"></i> -->
                                     <i class="far fa-circle nav-icon"></i>

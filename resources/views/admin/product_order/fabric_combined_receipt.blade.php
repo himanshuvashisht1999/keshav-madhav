@@ -49,7 +49,7 @@
         <tr>
             <td><strong>Order SKU:</strong> {{ $order->sku ?? 'N/A' }}</td>
             <td><strong>Product SKU:</strong> {{ $orderProduct->product_sku ?? 'N/A' }}</td>
-            <td><strong>Date:</strong> {{ now()->format('d M, Y') }}</td>
+            <td><strong>Date:</strong> {{ getformatDate(now()) }}</td>
         </tr>
     </table>
 
@@ -86,7 +86,7 @@
         <tr>
             <td><strong>Order SKU:</strong> {{ $order->sku ?? 'N/A' }}</td>
             <td><strong>Product SKU:</strong> {{ $orderProduct->product_sku ?? 'N/A' }}</td>
-            <td><strong>Date:</strong> {{ now()->format('d M, Y') }}</td>
+            <td><strong>Date:</strong> {{ getformatDate(now()) }}</td>
         </tr>
     </table>
 

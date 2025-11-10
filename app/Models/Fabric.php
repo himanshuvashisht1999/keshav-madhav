@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+
 class Fabric extends Model
 {
     use HasFactory;
@@ -58,6 +59,11 @@ class Fabric extends Model
     public function other_images()
     {
         return $this->hasMany('App\Models\FabricOtherImage', 'fabric_id', 'id');
+    }
+
+    public function stocks()
+    {
+        return $this->hasMany('App\Models\stock', 'sku', 'sku');
     }
 
 }

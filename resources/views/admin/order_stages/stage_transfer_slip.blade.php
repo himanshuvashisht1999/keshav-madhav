@@ -63,7 +63,7 @@
             <tr><td><strong>From Stage:</strong></td><td>{{ $transaction->from_stage->name ?? 'N/A' }}</td></tr>
             <tr><td><strong>To Stage:</strong></td><td>{{ $transaction->to_stage->name ?? 'N/A' }}</td></tr>
             <tr><td><strong>Quantity:</strong></td><td>{{ $transaction->quantity }}</td></tr>
-            <tr><td><strong>Date:</strong></td><td>{{ $transaction->created_at->format('d-m-Y h:i A') }}</td></tr>
+            <tr><td><strong>Date:</strong></td><td>{{ getformatDateTime($transaction->created_at) }}</td></tr>
         </table>
 
         <div class="sign-section">
@@ -89,7 +89,7 @@
             <tr><td><strong>From Stage:</strong></td><td>{{ $transaction->from_stage->name ?? 'N/A' }}</td></tr>
             <tr><td><strong>To Stage:</strong></td><td>{{ $transaction->to_stage->name ?? 'N/A' }}</td></tr>
             <tr><td><strong>Quantity:</strong></td><td>{{ $transaction->quantity }}</td></tr>
-            <tr><td><strong>Date:</strong></td><td>{{ $transaction->created_at->format('d-m-Y h:i A') }}</td></tr>
+            <tr><td><strong>Date:</strong></td><td>{{ getformatDateTime($transaction->created_at) }}</td></tr>
         </table>
 
         <div class="sign-section">
