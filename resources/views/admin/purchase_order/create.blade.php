@@ -69,6 +69,21 @@
                                     @endif
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Is Notify To Vendor</label>
+                                    <select name="is_notify" class="form-control select2" style="width: 100%;">
+                                        <option value="1">Yes</option>
+                                        <option value="0">No</option>
+                                        
+                                    </select>
+                                    @if ($errors->has('is_notify'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('is_notify') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
 
                             
 

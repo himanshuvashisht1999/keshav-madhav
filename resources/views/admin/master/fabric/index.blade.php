@@ -52,7 +52,7 @@
                                         <select class="form-control" name="dye_id" id="dye_id" autocomplete="off">
                                             <option value="">ALL</option>
                                             @foreach ($fab_dye_data as $single_data)
-                                                <option value="{{ $single_data->id }}">{{ $single_data->name }}</option>
+                                                <option value="{{ $single_data->id }}">{{ $single_data->sku }}</option>
                                             @endforeach
                                         </select>
                                     </td>

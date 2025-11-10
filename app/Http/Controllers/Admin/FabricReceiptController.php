@@ -33,6 +33,8 @@ class FabricReceiptController extends Controller {
         $response['data'] = $this->service->view($request);
         $response['vendors'] = $this->service->vendors();
         $response['fabrics'] = $this->service->fabrics();
+
+        $response['new_batch_no'] = $this->service->new_batch_no();
  
         $request->merge(['vendor_id' => $response['data']->vendor_id]);
         $response['purchase_orders'] = $this->service->purchase_orders($request);

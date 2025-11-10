@@ -18,7 +18,7 @@ class PurchaseOrder extends Model
         'date',
         'vendor_id',
         'delivery_date',
-       
+        'is_notify',
         'status',
         'created_at',
         'updated_at'
