@@ -37,6 +37,7 @@ class PurchaseOrderService {
         $save_data->date = $request->date;
         $save_data->vendor_id = $request->vendor_id;
         $save_data->delivery_date = $request->delivery_date;
+        $save_data->is_notify = $request->is_notify;
         $save_data->status = 1;
         $save_data->save();
 

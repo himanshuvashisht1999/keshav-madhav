@@ -387,5 +387,14 @@ class FabricReceiptService {
         $data = Fabric::where('status',1)->get();
         return $data;
     }
+    public function new_batch_no(){
+        $data = FabricReceiptDetail::orderBy('id','desc')->first();
+        if($data){
+            $new_batch_no = $data->batch_no + 1;
+        }else{
+            $new_batch_no = 1;
+        }
+        return $new_batch_no;
+    }
 
 }

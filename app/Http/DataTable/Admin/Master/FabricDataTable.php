@@ -49,7 +49,7 @@ class FabricDataTable
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
             })
             ->editColumn('dye_id', function ($queue) {
-                return $queue?->fabric_dye->color;
+                return $queue?->fabric_dye->sku;
             })
             ->editColumn('gsm_id', function ($queue) {
                 return $queue?->fabric_gsm->name;

@@ -93,7 +93,7 @@
                                                     name="rolls[{{ $i }}][batch]" 
                                                     class="form-control batch" 
                                                     data-row="{{ $i }}" 
-                                                    placeholder="Batch Number" required>
+                                                    placeholder="Batch Number" value="{{$new_batch_no + $i - 1 }}" required readonly>
                                             </td>
                                         </tr>
                                     @endfor
@@ -104,7 +104,7 @@
                         <!-- Actions -->
                         <div class="mt-4" style="float:right">
                             <button type="submit" class="btn btn-success">Save</button>
-                            <a href="{{ route('admin.fabric_receipt.index') }}" class="btn btn-danger">Exit Without Save</a>
+                            <!-- <a href="{{ route('admin.fabric_receipt.index') }}" class="btn btn-danger">Exit Without Save</a> -->
                         </div>
 
                     </div>
@@ -172,25 +172,25 @@ $(document).ready(function () {
     });
 
     // ---------- Batch: input on a row -> copy to ALL rows BELOW ----------
-    $(document).on('input', '.batch', function () {
-        if (window._propagatingBatch) return;
-        const row = parseInt($(this).data('row'));
-        const value = $(this).val();
+    // $(document).on('input', '.batch', function () {
+    //     if (window._propagatingBatch) return;
+    //     const row = parseInt($(this).data('row'));
+    //     const value = $(this).val();
 
-        if (value === '') return;
+    //     if (value === '') return;
 
-        window._propagatingBatch = true;
+    //     window._propagatingBatch = true;
 
-        $('.batch').each(function () {
-            const currentRow = parseInt($(this).data('row'));
-            if (currentRow > row) {
-                $(this).val(value);
-                $(this).trigger('input');
-            }
-        });
+    //     $('.batch').each(function () {
+    //         const currentRow = parseInt($(this).data('row'));
+    //         if (currentRow > row) {
+    //             $(this).val(value);
+    //             $(this).trigger('input');
+    //         }
+    //     });
 
-        window._propagatingBatch = false;
-    });
+    //     window._propagatingBatch = false;
+    // });
 });
 </script>
 
