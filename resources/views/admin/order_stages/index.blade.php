@@ -19,11 +19,11 @@
     <section class="content mt-3">
         <div class="container-fluid">
             <div class="card shadow-sm border-0 rounded-3">
-                <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+                <!-- <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
                     <h6 class="mb-0 fw-bold text-secondary">
                         <i class="fas fa-table"></i> Stage Overview
                     </h6>
-                </div>
+                </div> -->
 
                 <div class="card-body p-2">
                     <div class="table-responsive">

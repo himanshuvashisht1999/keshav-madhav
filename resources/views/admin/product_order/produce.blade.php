@@ -95,7 +95,7 @@
                         @endif
 
                         <div class="text-right">
-                            @if($product->status == 2)
+                            @if($product->status == 2 || $product->status == 3)
                                 <a href="{{ route('admin.product_order.issueSlip', ['id' => $product->id]) }}"
                                    class="btn btn-sm btn-outline-success">
                                    <i class="fas fa-file-download mr-1"></i> Download Slip
