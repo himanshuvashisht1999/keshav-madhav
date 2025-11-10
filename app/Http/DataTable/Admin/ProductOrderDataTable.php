@@ -59,7 +59,7 @@ class ProductOrderDataTable  {
 				$parameter = $queue->id;
                 
                 $view = '<a href="' . route('admin.product_order.produce',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
-                $status = '<a href="javascript:void(0);" data-id="'.$parameter.'" data-order_sku="'.$queue->sku.'" title="Status" class="statusLink m-2"><i class="fas fa-chart-line text-muted"></i> </a>';
+                $status = '<a href="javascript:void(0);" data-id="'.$parameter.'" data-order_sku="'.$queue->sku.'" title="Status" class="statusLink"><i class="fas fa-chart-line text-muted"></i> </a>';
                 
                 return $view . ' ' . (($queue->status != 1) ? $status : '');
             })

@@ -70,9 +70,9 @@ $stage_data = App\Models\MasterProductStage::where('status', 1)->get();
                             <p>Production</p>
                         </a>
                     </li>
-                    <li class="{{ str_contains($page_url, 'admin/order_stages') ? 'nav-item menu-open' : 'nav-item' }}">
+                    <li class="{{ str_contains($page_url, 'admin/order-stages') ? 'nav-item menu-open' : 'nav-item' }}">
                         <a href="#"
-                            class="{{ str_contains($page_url, 'admin/order_stages') ? 'nav-link active' : 'nav-link' }}">
+                            class="{{ str_contains($page_url, 'admin/order-stages') ? 'nav-link active' : 'nav-link' }}">
                             <i class="nav-icon fas fa-cube"></i>
                             <p>
                                 Stages
@@ -85,7 +85,7 @@ $stage_data = App\Models\MasterProductStage::where('status', 1)->get();
                                 
                             <li class="nav-item">
                                 <a href="{{ route('admin.order-stages.index',['stage_id' => $stage->id]) }}"
-                                    class="{{ str_contains(strtolower($page_url), 'admin/order_stages') &&  (request('stage_id') == $stage->id)  ? 'nav-link active' : 'nav-link' }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/order-stages') &&  (request('stage_id') == $stage->id)  ? 'nav-link active' : 'nav-link' }}"
                                     >
                                     <!-- <i class="nav-icon fas fa-store"></i> -->
                                     <i class="far fa-circle nav-icon"></i>
