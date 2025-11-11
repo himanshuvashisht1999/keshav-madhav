@@ -38,9 +38,10 @@ class OrderStagesService {
         return $this->datatable->indexList($request);
     }
     public function stage_data(Request $request){
-        $data = MasterProductStage::where('id',$request->stage_id)->first();
+        $data = MasterProductStage::with('sub_stages')->where('id',$request->stage_id)->first();
         return $data;
     }
+    
     public function product_stage(){
         $data = MasterProductStage::where('status',1)->get();
         return $data;
