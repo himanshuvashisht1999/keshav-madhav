@@ -26,4 +26,5 @@ class MasterProductSubStage extends Model
     {
         return $this->belongsTo('App\Models\MasterProductStage', 'id', 'master_product_stage_id');
     }
+    
 }

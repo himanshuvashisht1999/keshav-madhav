@@ -24,6 +24,8 @@ class MasterProductStage extends Model
     public function masterProductSubStage()
     {
         return $this->hasMany('App\Models\MasterProductSubStage', 'id', 'master_product_stage_id');
+    public function sub_stages(){
+        return $this->hasMany('App\Models\MasterProductSubStage','master_product_stage_id','id');
     }
     
 }

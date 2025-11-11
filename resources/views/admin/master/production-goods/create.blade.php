@@ -98,6 +98,24 @@
                                     @endif
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Is Printing</label>
+                                    <select name="is_printing" class="form-control select2" style="width: 100%;">
+                                        <option value="0">No</option>
+                                        <option value="1">Yes</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Is Embroidery</label>
+                                    <select name="is_embroidery" class="form-control select2" style="width: 100%;">
+                                        <option value="0">No</option>
+                                        <option value="1">Yes</option>
+                                    </select>
+                                </div>
+                            </div>
                             
                             
                             <div class="col-md-6">
