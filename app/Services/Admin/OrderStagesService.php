@@ -15,6 +15,7 @@ use App\Models\OrderStageTransaction;
 use App\Models\ProductStage;
 use App\Models\MasterCustomer;
 use App\Models\MasterProductStage;
+use App\Models\MasterProductSubStage;
 
 use App\Http\DataTable\Admin\OrderStagesDataTable as DataTable;
 use Illuminate\Support\Facades\DB;
@@ -42,6 +43,17 @@ class OrderStagesService {
     }
     public function product_stage(){
         $data = MasterProductStage::where('status',1)->get();
+        return $data;
+    }
+    public function getSubStages($order_product_id,$from_stage_id){
+        $currentStage = OrderProductStage::where('order_product_id', $order_product_id)
+            ->where('stage_id', $from_stage_id)
+            ->firstOrFail();
+        $nextStage = OrderProductStage::where('order_product_id', $order_product_id)
+            ->where('sequence', '>', $currentStage->sequence)
+            ->orderBy('sequence', 'asc')
+            ->first();
+        $data = MasterProductSubStage::where('master_product_stage_id',$nextStage->stage_id)->get();
         return $data;
     }
 

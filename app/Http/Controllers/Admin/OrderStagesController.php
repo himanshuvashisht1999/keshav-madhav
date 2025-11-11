@@ -20,6 +20,7 @@ class OrderStagesController extends Controller {
     public function index(Request $request){
         $response['product_stage'] = $this->service->product_stage();
         $response['stage_data'] = $this->service->stage_data($request);
+
         return view('admin.order_stages.index',$response);
     }
     public function indexList(Request $request){
@@ -43,6 +44,11 @@ class OrderStagesController extends Controller {
         $pdf = \PDF::loadView('admin.order_stages.stage_transfer_slip', $data)->setPaper('A4');
 
         return $pdf->download('StageTransferSlip_'.$safeSku.'.pdf');
+    }
+
+    public function getSubStages($order_product_id,$from_stage_id){
+        $data =  $this->service->getSubStages($order_product_id,$from_stage_id);
+        return response()->json(['status' => true, 'data' => $data]);
     }
     
 

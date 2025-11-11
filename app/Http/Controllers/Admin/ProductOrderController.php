@@ -78,6 +78,7 @@ class ProductOrderController extends Controller {
     }
     public function issueFabric(Request $request){
         $response['data'] = $this->service->issueFabric($request);
+        $response['sub_stages_cutting'] = $this->service->sub_stages_cutting();
         return view('admin.product_order.issue_fabric',$response);
     }
     public function issueFabricPost(Request $request){

@@ -14,6 +14,7 @@ use App\Models\OrderProductStage;
 use App\Models\OrderStageTransaction;
 use App\Models\ProductStage;
 use App\Models\MasterCustomer;
+use App\Models\MasterProductSubStage;
 
 use App\Http\DataTable\Admin\ProductOrderDataTable as DataTable;
 use Illuminate\Support\Facades\DB;
@@ -242,6 +243,8 @@ class ProductOrderService {
                     'remarks' => $remarks,
                     'status' => 1, // Transaction completed
                     'remaining_quantity' => $quantity,
+                    'lot_no' => $request->lot_no,
+                    'sub_stage_id' => $request->sub_stage,
                 ]);
             }else{
                 $orderProduct = OrderProduct::where('id',$order_product_id)->first();
@@ -373,6 +376,7 @@ class ProductOrderService {
                 'order_product_id' => $orderProduct->id,
                 'from_stage_id' => 0,
                 'to_stage_id' => $currentStage->stage_id ?? null,
+                'sub_stage_id' => $request->sub_stage_id ?? null,
                 'quantity' => $orderProduct->quantity,
                 'processed_by' => '0',
                 'remarks' =>'first stage',
@@ -416,6 +420,10 @@ class ProductOrderService {
         return response()->json($data);
     }
 
+    public function sub_stages_cutting(){
+        $data = MasterProductSubStage::where('status',1)->where('master_product_stage_id',1)->get();
+        return $data;
+    }
     
 
 }
