@@ -22,5 +22,9 @@ class MasterProductSubStage extends Model
         'updated_at'
     ];
 
+    public function masterProductStage()
+    {
+        return $this->belongsTo('App\Models\MasterProductStage', 'id', 'master_product_stage_id');
+    }
     
 }

@@ -15,11 +15,16 @@ class MasterProductStageController extends Controller {
         $this->orderStagesService = $orderStagesService;
         $this->service = $service;
     }
+    
     public function index(Request $request){
         $response['stage_data'] = $this->orderStagesService->stage_data($request);
-        return view('admin.master.product_stage.index', $response);
+        return view('admin.master.product-sub-stage.index', $response);
     } 
-    
+
+    public function subStageList(Request $request){
+        return $this->service->subStageList($request);
+    }
+
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
@@ -41,29 +46,6 @@ class MasterProductStageController extends Controller {
     public function update(MasterProductStageUpdateRequest $request){
         $data = $this->service->update($request);
         return redirect()->route('admin.master.product_stage.index')->withSuccess('The production stage has been successfully updated.');
-    }
-
-    /////// sub stage
-    public function indexSubStage(Request $request){
-        $response['stage_data'] = $this->orderStagesService->stage_data($request);
-        return view('admin.master.product-sub-stage.index', $response);
-    } 
-
-    public function subStageIndex(Request $request){
-        $response['stage_data'] = $this->orderStagesService->stage_data($request);
-        return view('admin.master.product_sub_stage.index', $response);
-    } 
-
-    public function subStageList(Request $request){
-        return $this->service->subStageList($request);
-    }
-    public function editSubStage(Request $request){
-        $response['data'] = $this->service->editSubStage($request);
-        return view('admin.master.product_sub_stage.edit',$response);
-    }
-    public function updateSubStage(MasterProductStageUpdateRequest $request){
-        $data = $this->service->updateSubStage($request);
-        return redirect()->route('admin.master.product-sub-stage.index', ['stage_id' => 1])->withSuccess('The production stage has been successfully updated.');
     }
 
 }
