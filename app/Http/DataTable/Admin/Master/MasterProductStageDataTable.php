@@ -43,14 +43,11 @@ class MasterProductStageDataTable  {
 
     public function subStageList($request){
         $queue = MasterProductSubStage::query();
+        $queue->where('master_product_stage_id',$request->stage_id);
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
                 // $query->orderBy('id','desc');
-                if ($request->has('stage_id') && !empty($request->stage_id)) {
-                    $query->where('master_product_stage_id', $request->get('stage_id'));
-                }
-                $query->orWhere('name', 'like', "%{$request->get('search')['value']}%");
                 if ($request->has('name') && !empty($request->name)) {
                     $query->where('name', 'like', "%{$request->get('name')}%");
                 }

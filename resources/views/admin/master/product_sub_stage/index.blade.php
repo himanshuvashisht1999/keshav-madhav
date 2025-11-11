@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Production Sub Stage ({{$stage_data->name}})</h1>
+                    <h1>Manage Production Stage</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Product Sub Stage</li>
+                        <li class="breadcrumb-item active">Manage Product Stage</li>
                     </ol>
                 </div>
             </div>
@@ -37,7 +37,7 @@
                   <thead>
                     <tr role="row" class="filter">
                         <td>
-                            <input type="hidden" class="form-control" name="stage_id" id="stage_id" value="{{$stage_data->id}}" autocomplete="off">
+                            <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
                         <td>
                             <input type="text" class="form-control" name="name" id="name" autocomplete="off">
@@ -88,17 +88,17 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.master.product-sub-stage.subStageList') !!}',
+                url: '{!! route('admin.master.product-sub-stage.subStageList',['stage_id' => $stage_data->id]) !!}',
                 data: function (d) {
-                    d.stage_id = $('#stage_id').val();
+                    d.id = $('#id').val();
                     d.name = $('#name').val();
                     d.sku = $('#sku').val();
+                  
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'stage_id', name: 'stage_id'},
                 {data: 'name', name: 'name'},
                 {data: 'sku', name: 'sku'},
                 {data: 'action', name: 'action', searchable: false}
@@ -106,10 +106,10 @@
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Sub Stage',
+                    text: 'Add Production Stage',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.master.product-sub-stage.create') }}";
+                        window.location.href = "{{ route('admin.master.product_stage.create') }}";
                     }
                 }
             ]

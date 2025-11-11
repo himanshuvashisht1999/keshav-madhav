@@ -13,65 +13,65 @@ class DashboardController extends Controller {
     public function dashboard(Request $request)
     {
 
-        $accessToken = 'EAFdjyjFcJZAUBP9NIvna2pGX0Q7DH2huFpl9aLkeRyePWXfqvrfFWoU0McdKi3iojSYZArs40ZCvBShJsgyUn7SyZBZAZC0MLqCbJger1qWHbqoJ0XF5ymlKYDYdVsCHVMBs7OaLKGZAtcQhAiZCbgzmnUT3PESKZAMUXLrm3ZBQXI0t2QcGAR9rFNC095a3ZCf0ZCxQggZDZD'; // Replace with your access token
-$phoneNumberId = '661493770388470';
-$apiVersion = 'v22.0';
-$userPhone = '918950317241'; // e.g. 919876543210
+//         $accessToken = 'EAFdjyjFcJZAUBP9NIvna2pGX0Q7DH2huFpl9aLkeRyePWXfqvrfFWoU0McdKi3iojSYZArs40ZCvBShJsgyUn7SyZBZAZC0MLqCbJger1qWHbqoJ0XF5ymlKYDYdVsCHVMBs7OaLKGZAtcQhAiZCbgzmnUT3PESKZAMUXLrm3ZBQXI0t2QcGAR9rFNC095a3ZCf0ZCxQggZDZD'; // Replace with your access token
+// $phoneNumberId = '661493770388470';
+// $apiVersion = 'v22.0';
+// $userPhone = '918950317241'; // e.g. 919876543210
 
-$url = "https://graph.facebook.com/{$apiVersion}/{$phoneNumberId}/messages";
+// $url = "https://graph.facebook.com/{$apiVersion}/{$phoneNumberId}/messages";
 
-$data = [
-    "messaging_product" => "whatsapp",
-    "to" => $userPhone,
-    "type" => "template",
-    "template" => [
-        "name" => "hello_world",
-        "language" => [
-            "code" => "en_US"
-        ]
-    ]
-];
+// $data = [
+//     "messaging_product" => "whatsapp",
+//     "to" => $userPhone,
+//     "type" => "template",
+//     "template" => [
+//         "name" => "hello_world",
+//         "language" => [
+//             "code" => "en_US"
+//         ]
+//     ]
+// ];
 
-$ch = curl_init();
+// $ch = curl_init();
 
-curl_setopt_array($ch, [
-    CURLOPT_URL => $url,
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST => true,
-    CURLOPT_HTTPHEADER => [
-        "Authorization: Bearer $accessToken",
-        "Content-Type: application/json"
-    ],
-    CURLOPT_POSTFIELDS => json_encode($data)
-]);
+// curl_setopt_array($ch, [
+//     CURLOPT_URL => $url,
+//     CURLOPT_RETURNTRANSFER => true,
+//     CURLOPT_POST => true,
+//     CURLOPT_HTTPHEADER => [
+//         "Authorization: Bearer $accessToken",
+//         "Content-Type: application/json"
+//     ],
+//     CURLOPT_POSTFIELDS => json_encode($data)
+// ]);
 
-$response = curl_exec($ch);
-$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  dd($response);
-if (curl_errno($ch)) {
-    echo 'cURL Error: ' . curl_error($ch);
-} else {
-    echo "HTTP Status Code: " . $httpcode . "\n";
-    echo "Response: " . $response . "\n";
-}
+// $response = curl_exec($ch);
+// $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+//   dd($response);
+// if (curl_errno($ch)) {
+//     echo 'cURL Error: ' . curl_error($ch);
+// } else {
+//     echo "HTTP Status Code: " . $httpcode . "\n";
+//     echo "Response: " . $response . "\n";
+// }
 
-curl_close($ch);
-        dd($response);
+// curl_close($ch);
+//         dd($response);
 
-        if (curl_errno($ch)) {
-            echo 'Error: ' . curl_error($ch);
-        } else {
-            echo 'Response: ' . $response;
-        }
+//         if (curl_errno($ch)) {
+//             echo 'Error: ' . curl_error($ch);
+//         } else {
+//             echo 'Response: ' . $response;
+//         }
 
-        curl_close($response);
+//         curl_close($response);
 
 
-        dd('dfgd');
+//         dd('dfgd');
 
-        $year = $request->input('year') ?? date('Y');
+//         $year = $request->input('year') ?? date('Y');
 
-        $total_users = User::whereYear('created_at', $year)->count();
+//         $total_users = User::whereYear('created_at', $year)->count();
 
 
         // Grouped data for chart
