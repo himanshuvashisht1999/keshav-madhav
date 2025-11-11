@@ -31,6 +31,7 @@ use App\Http\Controllers\Admin\Master\MasterColorController as AdminMasterColorC
 use App\Http\Controllers\Admin\Master\MasterDesignController as AdminMasterDesignController;
 use App\Http\Controllers\Admin\Master\MasterMaterialController as AdminMasterMaterialController;
 use App\Http\Controllers\Admin\Master\MasterProductStageController as AdminMasterProductStageController;
+use App\Http\Controllers\Admin\Master\MasterProductSubStageController as MasterProductSubStageController;
 use App\Http\Controllers\Admin\Master\CustomerController as AdminCustomerController;
 
 ///// Reports
@@ -212,6 +213,19 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/edit',[AdminMasterProductStageController::class,'edit'])->name('edit');
             Route::post('/update',[AdminMasterProductStageController::class,'update'])->name('update');
             Route::get('/delete',[AdminMasterProductStageController::class,'delete'])->name('delete');
+
+            // Route::get('/index',[AdminMasterProductStageController::class,'subStageIndex'])->name('index');
+            // Route::get('/subStageList',[AdminMasterProductStageController::class,'subStageList'])->name('subStageList');
+            
+        });
+
+        Route::prefix('master/product-sub-stage')->name('master.product-sub-stage.')->group(function () {
+            Route::get('/index',[AdminMasterProductStageController::class,'subStageIndex'])->name('index');
+            Route::get('/subStageList',[AdminMasterProductStageController::class,'subStageList'])->name('subStageList');
+            Route::get('/create',[AdminMasterProductStageController::class,'createSubStage'])->name('create');
+            Route::get('/edit',[AdminMasterProductStageController::class,'editSubStage'])->name('edit');
+             Route::post('/update',[AdminMasterProductStageController::class,'updateSubStage'])->name('update');
+            
         });
 
         Route::prefix('master/product')->name('master.production-goods.')->group(function () {

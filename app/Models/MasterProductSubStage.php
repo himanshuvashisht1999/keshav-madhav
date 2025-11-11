@@ -4,10 +4,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MasterProductStage extends Model
+class MasterProductSubStage extends Model
 {
     use HasFactory;
-    protected $table= 'master_product_stages';
+    protected $table= 'master_product_sub_stages';
     protected $fillable = [
         'id',
         'sno',
@@ -15,15 +15,15 @@ class MasterProductStage extends Model
         'sub_company_id',
         'project_id',
         'sku',
+        'master_product_stage_id',
         'name',
         'status',
         'created_at',
         'updated_at'
     ];
 
-    public function masterProductSubStage()
+    public function masterProductStage()
     {
-        return $this->hasMany('App\Models\MasterProductSubStage', 'id', 'master_product_stage_id');
+        return $this->belongsTo('App\Models\MasterProductStage', 'id', 'master_product_stage_id');
     }
-    
 }
