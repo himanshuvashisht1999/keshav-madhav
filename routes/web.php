@@ -116,6 +116,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/index',[AdminOrderStagesController::class,'index'])->name('index');
             Route::get('/indexList',[AdminOrderStagesController::class,'indexList'])->name('indexList');
             Route::get('/download-receipt',[AdminOrderStagesController::class,'downLoadReceipt'])->name('downLoadReceipt');
+            Route::get('/get-sub-stages/{order_product_id}/{from_stage_id}',[AdminOrderStagesController::class,'getSubStages'])->name('getSubStages');
         });
 
         
