@@ -69,9 +69,9 @@ class DashboardController extends Controller {
 
 //         dd('dfgd');
 
-//         $year = $request->input('year') ?? date('Y');
+        $year = $request->input('year') ?? date('Y');
 
-//         $total_users = User::whereYear('created_at', $year)->count();
+        $total_users = User::whereYear('created_at', $year)->count();
 
 
         // Grouped data for chart
