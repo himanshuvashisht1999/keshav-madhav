@@ -97,6 +97,16 @@
                         <input type="number" name="quantity" class="form-control form-control-sm" id="total_remaining_qty" required min="1" step="1">
                         <small class="text-muted">Max allowed: <span id="maxQtyText"></span></small>
                     </div>
+                    <div class="form-group mb-3">
+                        <label class="small mb-1"><strong>Lot No.</strong></label>
+                        <input type="number" name="lot_no" class="form-control form-control-sm" id="lot_no" required min="1" step="1">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="small mb-1"><strong>Select Sub Stage</strong></label>
+                        <select name="sub_stage" id="sub_stage" class="form-control">
+                            <option value=""></option>
+                        </select>
+                    </div>
 
                     <div class="form-group mb-0">
                         <label class="small mb-1"><strong>Remarks (optional)</strong></label>
@@ -215,12 +225,59 @@ $(document).on('click', '.viewBtn', function() {
 $(document).on('input', '#total_remaining_qty', function() {
     const max = parseFloat($(this).attr('max'));
     const val = parseFloat($(this).val());
-    if (val > max) {
+    if (val > max) { 
         alert('You cannot transfer more than ' + max + ' units.');
         $(this).val(max);
     } else if (val < 0) {
         $(this).val(0);
     }
 });
+</script>
+
+<script>
+    // Modal Handling + API Call
+$(document).on('click', '.viewBtn', function() {
+    const orderProductId = $(this).data('id');
+    const lot_no = $(this).data('lot_no');
+    const remaining = $(this).data('total_remaining_qty');
+    const from_stage_id = "{{ $stage_data->id }}";
+    
+    $('#order_product_id_modal').val(orderProductId);
+    if (lot_no && lot_no !== '') {
+        $('#lot_no').val(lot_no).prop('readonly', true).addClass('bg-light'); // make readonly + light background
+    } else {
+        $('#lot_no').val('').prop('readonly', false).removeClass('bg-light');
+    }
+    $('#order_stage_id').val("{{ $stage_data->id }}");
+    $('#order_transaction_id').val($(this).data('order_transaction_id'));
+    $('#total_remaining_qty').val(remaining).attr('max', remaining);
+    $('#maxQtyText').text(remaining);
+
+    // Clear existing options first
+    $('#sub_stage').html('<option value="">Loading...</option>');
+
+    // ✅ Fetch sub stages via GET API
+    let apiUrl = "{{ route('admin.order-stages.getSubStages', [':order_product_id', ':from_stage_id']) }}";
+    apiUrl = apiUrl.replace(':order_product_id', orderProductId).replace(':from_stage_id', from_stage_id);
+    $.ajax({
+        url: apiUrl,
+        type: "GET",
+        success: function(response) {
+            if (response.status && response.data.length > 0) {
+                let options = '<option value="">Select Sub Stage</option>';
+                response.data.forEach(function(stage) {
+                    options += `<option value="${stage.id}">${stage.name}</option>`;
+                });
+                $('#sub_stage').html(options);
+            } else {
+                $('#sub_stage').html('<option value="">No sub stages found</option>');
+            }
+        },
+        error: function() {
+            $('#sub_stage').html('<option value="">Error fetching data</option>');
+        }
+    });
+});
+
 </script>
 @endsection

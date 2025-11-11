@@ -22,9 +22,22 @@
             <form id="fabricIssueForm" action="{{ route('admin.product_order.issueFabricPost') }}" method="POST">
                 @csrf
                 <input type="hidden" name="order_product_id" value="{{ $data->id }}">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label>Select Sub Stage</label>
+                        <select name="sub_stage_id" class="form-control select2" style="width: 100%;" required>
+                            @foreach($sub_stages_cutting as $single_data)
+                            <option value="{{$single_data->id}}">{{$single_data->name}}</option>
+                            @endforeach
+                            
+                        </select>
+                    </div>
+                </div>
 
                 @foreach($data->product_details as $index => $detail)
                 <input type="hidden" name="order_product_detail_ids[]" value="{{ $detail->id }}">
+
+                
 
                 <div class="bg-white p-3 rounded border mb-4">
                     <h6 class="mb-3 text-primary">

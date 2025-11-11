@@ -113,6 +113,7 @@ class OrderStagesDataTable  {
                                 data-stage_id="'.$queue->from_stage_id.'"
                                 data-order_transaction_id="'.$queue->id.'"
                                 data-total_remaining_qty="'.$queue->remaining_quantity.'"
+                                data-lot_no="'.$queue->lot_no.'"
                                 data-toggle="modal" 
                                 data-target="#viewModal">
                             <i class="fas fa-exchange-alt"></i> Transfer
