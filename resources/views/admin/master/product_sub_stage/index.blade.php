@@ -106,7 +106,7 @@
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Sub-Stage',
+                    text: 'Add Sub Stage',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
                         window.location.href = "{{ route('admin.master.product-sub-stage.create', ['stage_id' => $stage_data->id]) }}";
