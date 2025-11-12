@@ -230,8 +230,19 @@ class ProductOrderService {
                     ->where('to_stage_id', $nextStage->stage_id)
                     ->count() + 1;
                 $sku_for_trans = "{$orderProduct->order->sku}/{$order_product_number}/{$stage_sku}/{$stageCount}";
+                
+                $cuttingStage = ProductStage::where('master_product_id', $order_product_id)
+                    ->orderBy('id', 'asc')
+                    ->first();
+                $cuttingStageId = $cuttingStage->master_stage_id ?? 1;
 
+                $isExistLotNO = OrderStageTransaction::where('order_product_id', $order_product_id)
+                    ->where('lot_no', $request->lot_no)
+                    ->exists();
 
+                if ($cuttingStageId == $from_stage_id && $isExistLotNO) {
+                    throw new \Exception(" This Lot no {$request->lot_no} is already exist");
+                }
                 // 3️⃣ Record transaction
                 OrderStageTransaction::create([
                     'sku' => $sku_for_trans,
