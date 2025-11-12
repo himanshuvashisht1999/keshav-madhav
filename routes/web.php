@@ -8,7 +8,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\GeneralSettingsController as AdminGeneralSettingsController;
 use App\Http\Controllers\Admin\Master\VendorController as AdminVendorController;
 use App\Http\Controllers\Admin\Master\ItemController as AdminItemController;
-use App\Http\Controllers\Admin\Master\ItemController as AdminSubItemController;
+use App\Http\Controllers\Admin\Master\SubItemController as AdminSubItemController;
 use App\Http\Controllers\Admin\Master\FabricDyeController as AdminFabricDyeController;
 use App\Http\Controllers\Admin\Master\FabricGsmController as AdminFabricGsmController;
 use App\Http\Controllers\Admin\Master\FabricCompositionController as AdminFabricCompositionController;
