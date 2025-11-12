@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Items</h1>
+                    <h1>Manage Sub Items</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Items</li>
+                        <li class="breadcrumb-item active">Manage Sub Items</li>
                     </ol>
                 </div>
             </div>
@@ -80,7 +80,7 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.master.item.indexList') !!}',
+                url: '{!! route('admin.master.item-attributes.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.name = $('#name').val();
@@ -98,10 +98,10 @@
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Item',
+                    text: 'Add Sub Item',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.master.item.create') }}";
+                        window.location.href = "{{ route('admin.master.item-attributes.create') }}";
                     }
                 }
             ]
@@ -145,7 +145,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.master.item.delete', ['id' => '']) }}" + id;
+                window.location.href = "{{ route('admin.master.item-attributes.delete', ['id' => '']) }}" + id;
             }
         });
     }

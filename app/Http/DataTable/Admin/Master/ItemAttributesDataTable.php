@@ -3,24 +3,23 @@
 namespace App\Http\DataTable\Admin\Master;
 
 use Illuminate\Http\Request;
-use App\Models\Item;
+use App\Models\ItemAttribute;
 use Yajra\DataTables\Facades\DataTables;
 
-class ItemDataTable  {
+class ItemAttributesDataTable  {
 
-    public function __construct(Item $item) {
-        $this->item = $item;
+    public function __construct(ItemAttribute $sub_item) {
+        $this->sub_item = $sub_item;
     }
 
     public function indexList($request){
-        $queue = Item::query();
+        $queue = ItemAttribute::query();
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id','desc');
-                $query->orWhere('name', 'like', "%{$request->get('search')['value']}%");
-                if ($request->has('name') && !empty($request->name)) {
-                    $query->where('name', 'like', "%{$request->get('name')}%");
+                if ($request->has('item_attribute_id') && !empty($request->item_attribute_id)) {
+                    $query->where('item_attribute_id', 'like', "%{$request->get('item_attribute_id')}%");
                 }
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
@@ -35,8 +34,7 @@ class ItemDataTable  {
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
                 return '
-                <a href="' . route('admin.master.item.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                <a href="' . route('admin.master.item-attributes.index',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="View" data-original-title="View"><i class="fas fa-eye text-muted"></i></a>
+                <a href="' . route('admin.master.item-attributes.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
                 ';
             })
             

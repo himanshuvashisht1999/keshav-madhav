@@ -8,7 +8,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\GeneralSettingsController as AdminGeneralSettingsController;
 use App\Http\Controllers\Admin\Master\VendorController as AdminVendorController;
 use App\Http\Controllers\Admin\Master\ItemController as AdminItemController;
-use App\Http\Controllers\Admin\Master\SubItemController as AdminSubItemController;
+use App\Http\Controllers\Admin\Master\ItemAttributesController as AdminItemAttributesController;
 use App\Http\Controllers\Admin\Master\FabricDyeController as AdminFabricDyeController;
 use App\Http\Controllers\Admin\Master\FabricGsmController as AdminFabricGsmController;
 use App\Http\Controllers\Admin\Master\FabricCompositionController as AdminFabricCompositionController;
@@ -141,14 +141,14 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/delete',[AdminItemController::class,'delete'])->name('delete');
         });
 
-        Route::prefix('master/sub-item')->name('master.sub-item.')->group(function () {
-            Route::get('/index',[AdminSubItemController::class,'index'])->name('index');
-            Route::get('/indexList',[AdminSubItemController::class,'indexList'])->name('indexList');
-            Route::get('/create',[AdminSubItemController::class,'create'])->name('create');
-            Route::post('/store',[AdminSubItemController::class,'store'])->name('store');
-            Route::get('/edit',[AdminSubItemController::class,'edit'])->name('edit');
-            Route::post('/update',[AdminSubItemController::class,'update'])->name('update');
-            Route::get('/delete',[AdminSubItemController::class,'delete'])->name('delete');
+        Route::prefix('master/item-attributes')->name('master.item-attributes.')->group(function () {
+            Route::get('/index',[AdminItemAttributesController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminItemAttributesController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminItemAttributesController::class,'create'])->name('create');
+            Route::post('/store',[AdminItemAttributesController::class,'store'])->name('store');
+            Route::get('/edit',[AdminItemAttributesController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminItemAttributesController::class,'update'])->name('update');
+            Route::get('/delete',[AdminItemAttributesController::class,'delete'])->name('delete');
         });
 
         Route::prefix('master/fabric_dye')->name('master.fabric_dye.')->group(function () {

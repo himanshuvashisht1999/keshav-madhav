@@ -4,10 +4,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Item extends Model
+class ItemAttributeValue extends Model
 {
     use HasFactory;
-    protected $table= 'items';
+    protected $table= 'item_attribute_values';
     protected $fillable = [
         'id',
         'sno',
@@ -15,14 +15,15 @@ class Item extends Model
         'sub_company_id',
         'project_id',
         'sku',
-        'name',
+        'item_attribute_id',
+        'value',
         'status',
         'created_at',
         'updated_at'
     ];
 
-    public function attributes() {
-        return $this->hasMany('App\Models\ItemAttribute', 'item_id', 'id');
+    public function attribute() {
+        return $this->belongsTo('App\Models\ItemAttribute', 'item_attribute_id', 'id');
     }
-    
 }
+
