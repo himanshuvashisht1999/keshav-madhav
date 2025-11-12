@@ -20,7 +20,6 @@ class OrderStagesController extends Controller {
     public function index(Request $request){
         $response['product_stage'] = $this->service->product_stage();
         $response['stage_data'] = $this->service->stage_data($request);
-
         return view('admin.order_stages.index',$response);
     }
     public function indexList(Request $request){

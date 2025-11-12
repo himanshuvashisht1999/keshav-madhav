@@ -7,7 +7,9 @@ use App\Models\Fabric;
 use App\Models\Order;
 use App\Models\OrderStageTransaction;
 use App\Models\OrderProduct;
+use App\Models\MasterProductSubStage;
 use Yajra\DataTables\Facades\DataTables;
+
 
 class OrderStagesDataTable  {
 
@@ -35,6 +37,9 @@ class OrderStagesDataTable  {
                         $q->where('product_sku', 'like', '%' . $request->get('order_product_id') . '%');
                     });
                 }
+                if ($request->has('lot_no') && !empty($request->lot_no)) {
+                    $query->where('lot_no', 'like', "%{$request->get('lot_no')}%");
+                }
                 if ($request->has('quantity') && !empty($request->quantity)) {
                     $query->where('quantity', $request->get('quantity'));
                 }
@@ -44,6 +49,9 @@ class OrderStagesDataTable  {
                 }
                 if ($request->has('from_stage_id') && $request->filled('from_stage_id')) {
                     $query->where('from_stage_id', $request->get('from_stage_id'));
+                }
+                if ($request->has('sub_stage_id') && !empty($request->sub_stage_id)) {
+                    $query->where('sub_stage_id', $request->get('sub_stage_id'));
                 }
                 if ($request->has('created_at') && !empty($request->created_at)) {
                     $query->where('created_at', 'like', "%{$request->get('created_at')}%");
@@ -62,6 +70,11 @@ class OrderStagesDataTable  {
                 $query->where('to_stage_id',$request->stage_id);
             }) 
 
+            ->editColumn('sub_stage_id', function ($queue) {
+				$sub_stage_id= $queue->sub_stage_id;
+                $order_product_data = MasterProductSubStage::where('id',$sub_stage_id)->first();
+                return $order_product_data->name;
+            })
             ->editColumn('order_no', function ($queue) {
 				$order_product_id= $queue->order_product_id;
                 $order_product_data = OrderProduct::with('order')->where('id',$order_product_id)->first();

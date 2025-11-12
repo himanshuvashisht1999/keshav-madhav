@@ -17,7 +17,7 @@ class SizeMeasurementDataTable  {
         
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                // $query->orderBy('id','desc');
+                $query->orderBy('id','desc');
                 $query->orWhere('measurement', 'like', "%{$request->get('search')['value']}%");
                 if ($request->has('measurement') && !empty($request->measurement)) {
                     $query->where('measurement', 'like', "%{$request->get('measurement')}%");

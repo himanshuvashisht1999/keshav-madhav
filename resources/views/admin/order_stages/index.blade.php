@@ -33,7 +33,9 @@
                                     <th>#</th>
                                     <th>Order No</th>
                                     <th>Product SKU</th>
+                                    <th>Lot No.</th>
                                     <th>From Stage</th>
+                                    <th>Sub Stage</th>
                                     <th>Qty</th>
                                     <th>Remain</th>
                                     <th>Status</th>
@@ -45,10 +47,20 @@
                                     <td></td>
                                     <td><input type="text" class="form-control form-control-sm" id="sku" placeholder="Order No"></td>
                                     <td><input type="text" class="form-control form-control-sm" id="order_product_id" placeholder="Product SKU"></td>
+                                    <td><input type="text" class="form-control form-control-sm" id="lot_no" placeholder="Lot No."></td>
+                                    
                                     <td>
                                         <select id="from_stage_id" class="form-control form-control-sm">
                                             <option value="">All</option>
                                             @foreach($product_stage as $stage)
+                                                <option value="{{ $stage->id }}">{{ $stage->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select id="sub_stage_id" class="form-control form-control-sm">
+                                            <option value="">All</option>
+                                            @foreach($stage_data->sub_stages as $stage)
                                                 <option value="{{ $stage->id }}">{{ $stage->name }}</option>
                                             @endforeach
                                         </select>
@@ -99,7 +111,7 @@
                     </div>
                     <div class="form-group mb-3">
                         <label class="small mb-1"><strong>Lot No.</strong></label>
-                        <input type="number" name="lot_no" class="form-control form-control-sm" id="lot_no" required min="1" step="1">
+                        <input type="number" name="lot_no" class="form-control form-control-sm" id="lot_no_m" required min="1" step="1">
                     </div>
                     <div class="form-group mb-3">
                         <label class="small mb-1"><strong>Select Sub Stage</strong></label>
@@ -142,6 +154,8 @@ $(function () {
                 d.sku = $('#sku').val();
                 d.order_product_id = $('#order_product_id').val();
                 d.from_stage_id = $('#from_stage_id').val();
+                d.sub_stage_id = $('#sub_stage_id').val();
+                d.lot_no = $('#lot_no').val();
                 d.quantity = $('#quantity').val();
                 d.remaining_quantity = $('#remaining_quantity').val();
                 d.status = $('#status').val();
@@ -153,7 +167,9 @@ $(function () {
             { data: 'DT_RowIndex', name: 'id', width: '5%' },
             { data: 'sku', name: 'sku', width: '10%' },
             { data: 'order_product_id', name: 'order_product_id', width: '12%' },
+            { data: 'lot_no', name: 'lot_no' },
             { data: 'from_stage_id', name: 'from_stage_id', width: '10%' },
+            { data: 'sub_stage_id', name: 'sub_stage_id' },
             { data: 'quantity', name: 'quantity', width: '7%' },
             { data: 'remaining_quantity', name: 'remaining_quantity', width: '7%' },
             { data: 'status', name: 'status', width: '9%' },
@@ -185,11 +201,20 @@ $(function () {
             oTable.draw();
             e.preventDefault();
         });
-        $('#quantity').on('keyup', function (e) {
+
+        $('#sub_stage_id').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
 
+        $('#quantity').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#lot_no').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        })
         $('#remaining_quantity').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
@@ -244,9 +269,9 @@ $(document).on('click', '.viewBtn', function() {
     
     $('#order_product_id_modal').val(orderProductId);
     if (lot_no && lot_no !== '') {
-        $('#lot_no').val(lot_no).prop('readonly', true).addClass('bg-light'); // make readonly + light background
+        $('#lot_no_m').val(lot_no).prop('readonly', true).addClass('bg-light'); // make readonly + light background
     } else {
-        $('#lot_no').val('').prop('readonly', false).removeClass('bg-light');
+        $('#lot_no_m').val('').prop('readonly', false).removeClass('bg-light');
     }
     $('#order_stage_id').val("{{ $stage_data->id }}");
     $('#order_transaction_id').val($(this).data('order_transaction_id'));
