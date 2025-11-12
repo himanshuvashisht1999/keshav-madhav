@@ -71,4 +71,14 @@ class MasterProductStageService {
         $update_data->save();
         return true;
     }
+
+    public function storeSubStage(Request $request){
+        $save_data=new MasterProductSubStage;
+        $save_data->name = $request->name;
+        $save_data->sku = $request->sku;
+        $save_data->master_product_stage_id = $request->stage_id;
+        $save_data->status = 1;
+        $save_data->save();
+        return true;
+    }
 }

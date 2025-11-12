@@ -198,7 +198,7 @@ $stage_data = App\Models\MasterProductStage::where('status', 1)->get();
                             </li> -->
                             <li class="nav-item">
                                 <a href="{{ route('admin.master.product_stage.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/product-stage') ? 'nav-link active' : 'nav-link' }}">
+                                    class="{{ (str_contains($page_url, 'admin/master/product-stage') || str_contains($page_url, 'admin/master/product-sub-stage')) ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Production Stages</p>
                                 </a>

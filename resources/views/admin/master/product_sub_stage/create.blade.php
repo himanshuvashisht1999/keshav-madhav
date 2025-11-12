@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Production Stage</h1>
+                    <h1>Create Sub Stage ({{$stage_data->name}})</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Create Production Stage</li>
+                        <li class="breadcrumb-item active">Create Sub Stage</li>
                     </ol>
                 </div>
             </div>
@@ -24,15 +24,16 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Create Production Stage</h3>
+                    <h3 class="card-title">Create Sub Stage</h3>
                 </div>
-                <form action="{{route('admin.master.product_stage.store')}}" method="post" enctype="multipart/form-data">
+                <form action="{{route('admin.master.product-sub-stage.store')}}" method="post" enctype="multipart/form-data">
                     @csrf
+                    <input type="hidden" name="stage_id" value="{{$stage_data->id}}">
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Stage</label>
+                                    <label for="exampleInputEmail1">Name</label>
                                     <input type="text" name="name" class="form-control" placeholder="Enter name" value="{{old('name')}}">
                                     @if ($errors->has('name'))
                                         <span class="invalid-feedback d-block">

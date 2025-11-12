@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Production Sub Stage ({{$stage_data->name}})</h1>
+                    <h1>Manage Production Stage ({{$stage_data->name}})</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Product Sub Stage</li>
+                        <li class="breadcrumb-item active">Manage Product Stage</li>
                     </ol>
                 </div>
             </div>
@@ -88,7 +88,7 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.master.product-sub-stage.subStageList') !!}',
+                url: '{!! route('admin.master.product_stage.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.name = $('#name').val();
@@ -105,10 +105,10 @@
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Sub Stage',
+                    text: 'Add Production Stage',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.master.product-sub-stage.create') }}";
+                        window.location.href = "{{ route('admin.master.product_stage.create') }}";
                     }
                 }
             ]

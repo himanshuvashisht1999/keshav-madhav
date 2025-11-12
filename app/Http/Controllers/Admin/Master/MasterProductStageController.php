@@ -8,6 +8,8 @@ use App\Requests\Admin\Master\MasterProductStageStoreRequest;
 use App\Requests\Admin\Master\MasterProductStageUpdateRequest;
 use IllumFabricWeaveControllerinate\Support\Facades\Crypt;
 use Auth;
+use App\Models\MasterProductStage;
+use App\Requests\Admin\Master\MasterProductSubStageStoreRequest;
 
 class MasterProductStageController extends Controller { 
     protected $service;
@@ -59,11 +61,22 @@ class MasterProductStageController extends Controller {
     }
     public function editSubStage(Request $request){
         $response['data'] = $this->service->editSubStage($request);
+        $sub_stage = $response['data'];
+        $response['stage_data'] = MasterProductStage::find($sub_stage->master_product_stage_id);
         return view('admin.master.product_sub_stage.edit',$response);
     }
     public function updateSubStage(MasterProductStageUpdateRequest $request){
         $data = $this->service->updateSubStage($request);
-        return redirect()->route('admin.master.product-sub-stage.index', ['stage_id' => 1])->withSuccess('The production stage has been successfully updated.');
+        return redirect()->route('admin.master.product-sub-stage.index', ['stage_id' => $request->master_product_stage_id])->withSuccess('The production sub stage has been successfully updated.');
+    }
+    public function createSubStage(Request $request){
+        $stage_id = $request->stage_id ?? $request->query('stage_id');
+        $response ['stage_data'] = MasterProductStage::find($stage_id);
+        return view('admin.master.product_sub_stage.create', $response);
+    }
+    public function storeSubStage (MasterProductSubStageStoreRequest $request){
+        $data = $this->service->storeSubStage($request);
+        return redirect()->route('admin.master.product-sub-stage.index', ['stage_id' => $request->stage_id])-> withSuccess('The production sub stage has been successfully created.');
     }
 
 }
