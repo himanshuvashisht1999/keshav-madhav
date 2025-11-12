@@ -118,6 +118,15 @@ class OrderStagesDataTable  {
                 $transferBtn = '';
                 $downloadBtn = '';
 
+                // last stage logic 
+                // $latestStage = ProductStage::where('master_product_id', $queue->order_product_id)
+                //     ->orderBy('id', 'desc')
+                //     ->first();
+                // $lastStageId = $latestStage->master_stage_id ?? 0;
+                
+                
+                // When work still in progress
+                // if ($queue->remaining_quantity > 0 && $lastStageId != $queue->to_stage_id) {
                 // When work still in progress
                 if ($queue->remaining_quantity > 0) {
                     $transferBtn = '

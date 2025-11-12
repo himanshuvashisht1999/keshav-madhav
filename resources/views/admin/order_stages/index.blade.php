@@ -96,7 +96,7 @@
                 @csrf
                 <div class="modal-header bg-success text-white py-2">
                     <h6 class="modal-title fw-bold mb-0"><i class="fas fa-exchange-alt"></i> Transfer to Next Stage</h6>
-                    <button type="button" class="btn-close btn-close-white" data-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-dismiss="modal">X</button>
                 </div>
 
                 <div class="modal-body py-3">
