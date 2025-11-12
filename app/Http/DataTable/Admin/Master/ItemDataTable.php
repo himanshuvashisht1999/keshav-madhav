@@ -36,7 +36,7 @@ class ItemDataTable  {
 				$parameter= $queue->id;
                 return '
                 <a href="' . route('admin.master.item.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                <a href="' . route('admin.master.item.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
+                <a href="' . route('admin.master.sub-item.index',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="View" data-original-title="View"><i class="fas fa-eye text-muted"></i></a>
                 ';
             })
             
