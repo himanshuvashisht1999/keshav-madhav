@@ -6,14 +6,14 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Production Sub Stage</h1>
+                    <h1>Edit Sub Stage ({{$stage_data->name}})</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Edit Production Sub Stage</li>
+                        <li class="breadcrumb-item active">Edit Sub Stage</li>
                     </ol>
-                </div>
+                </div> 
             </div>
         </div>
     </section>
@@ -24,16 +24,17 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Edit Production Sub Stage</h3>
+                    <h3 class="card-title">Edit Sub Stage</h3>
                 </div>
                 <form action="{{route('admin.master.product-sub-stage.update')}}" method="post" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="id" value="{{$data->id}}">
+                    <input type="hidden" name="master_product_stage_id" value="{{ $data->master_product_stage_id}}">
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Stage</label>
+                                    <label for="exampleInputEmail1">Name</label>
                                     <input type="text" name="name" class="form-control" placeholder="Enter name" value="{{$data->name}}">
                                     @if ($errors->has('name'))
                                         <span class="invalid-feedback d-block">
