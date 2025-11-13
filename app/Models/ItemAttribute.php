@@ -27,4 +27,8 @@ class ItemAttribute extends Model
         return $this->belongsTo('App\Models\Item', 'item_attribute_id', 'id');
     }
 
+    public function item_attribute_values(){
+        return $this->hasMany('App\Models\ItemAttributeValue','item_attribute_id','id');
+    }
+
 }

@@ -182,7 +182,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-12">
+                            <!-- <div class="col-md-12">
                                 <label>Fabric Details</label>
                                 <div id="fabric-container">
                                     @foreach($data->bill_of_materials as $key=>$single_bom)
@@ -214,11 +214,8 @@
                                 </div>
 
 
-                            </div>
-
-
-                                          
-                           
+                            </div> -->
+                                        
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">
                                     <button type="submit" class="btn btn-primary">Submit</button>
