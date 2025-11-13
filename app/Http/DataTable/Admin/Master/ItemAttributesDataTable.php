@@ -3,26 +3,26 @@
 namespace App\Http\DataTable\Admin\Master;
 
 use Illuminate\Http\Request;
-use App\Models\ItemAttribute;
+use App\Models\ItemAttributeValue;
 use Yajra\DataTables\Facades\DataTables;
 
 class ItemAttributesDataTable  {
 
-    public function __construct(ItemAttribute $sub_item) {
-        $this->sub_item = $sub_item;
-    }
-
     public function indexList($request){
-        $queue = ItemAttribute::query();
+        $queue = ItemAttributeValue::query()
+        ->select('item_attribute_values.*')
+        ->join('item_attributes', 'item_attribute_values.item_attribute_id', '=', 'item_attributes.id');
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
+                $item_id = $request->item_id;
                 $query->orderBy('id','desc');
-                if ($request->has('item_attribute_id') && !empty($request->item_attribute_id)) {
-                    $query->where('item_attribute_id', 'like', "%{$request->get('item_attribute_id')}%");
-                }
+
                 if ($request->has('sku') && !empty($request->sku)) {
-                    $query->where('sku', 'like', "%{$request->get('sku')}%");
+                    $query->where('item_attribute_values.sku', 'like', "%{$request->get('sku')}%");
+                }
+                if ($request->has('item_id') && !empty($request->item_id)) {
+                    $query->where('item_attributes.item_id', $request->item_id);
                 }
                 
             }) 
@@ -31,6 +31,7 @@ class ItemAttributesDataTable  {
 				$status= $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
             })
+
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
                 return '

@@ -21,8 +21,9 @@ class ItemAttributesUpdateRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'name' => 'required',
-            'sku'    => 'required|unique:items,sku,' . $request->id,
+            'item_attribute_id' => 'required',
+            'value' => 'required',
+            'sku'    => 'required|unique:item_attribute_values,sku,' . $request->id,
             // 'status' =>'required',
         ];
     }
