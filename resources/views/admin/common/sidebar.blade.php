@@ -31,10 +31,18 @@ $stage_data = App\Models\MasterProductStage::where('status', 1)->get();
 
                     <li class="nav-item">
                         <a href="{{ route('admin.purchase_order.index') }}"
-                            class="{{ str_contains($page_url, 'admin/purchase-order') ? 'nav-link active' : 'nav-link' }}"
+                            class="{{ (str_contains($page_url, 'admin/purchase-order') && !str_contains($page_url, 'admin/purchase-order-material')) ? 'nav-link active' : 'nav-link' }}"
                             style="position:static;">
                             <i class="nav-icon fas fa-store"></i>
                             <p>Purchase Order</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.purchase_order_material.index') }}"
+                            class="{{ str_contains($page_url, 'admin/purchase-order-material') ? 'nav-link active' : 'nav-link' }}"
+                            style="position:static;">
+                            <i class="nav-icon fas fa-store"></i>
+                            <p>Purchase Order Items</p>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -250,6 +258,7 @@ $stage_data = App\Models\MasterProductStage::where('status', 1)->get();
                                     <p>Purchase Order</p>
                                 </a>
                             </li>
+
                             <li class="nav-item">
                                 <a href="{{ route('admin.reports.fabricReceipt') }}"
                                     class="{{ str_contains(strtolower($page_url), 'admin/reports/fabric-receipt') ? 'nav-link active' : 'nav-link' }}"
