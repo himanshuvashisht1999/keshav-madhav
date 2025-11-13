@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\StockController as AdminStockController;
 use App\Http\Controllers\Admin\Master\ProductionGoodsController as AdminProductionGoodsController;
 use App\Http\Controllers\Admin\Master\ProductionGoodsItemController as AdminProductionGoodsItemController;
 use App\Http\Controllers\Admin\Master\SizeMeasurementController as AdminSizeMeasurementController;
+use App\Http\Controllers\Admin\PurchaseOrderMaterialController as AdminPurchaseOrderMaterialController;
 
 /// order
 use App\Http\Controllers\Admin\ProductOrderController as AdminProductOrderController;
@@ -61,6 +62,17 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/delete',[AdminPurchaseOrderController::class,'delete'])->name('delete');
             Route::get('/view',[AdminPurchaseOrderController::class,'view'])->name('view');
 
+        });
+
+        Route::prefix('/purchase-order-material')->name('purchase_order_material.')->group(function () {
+            Route::get('/index',[AdminPurchaseOrderMaterialController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminPurchaseOrderMaterialController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminPurchaseOrderMaterialController::class,'create'])->name('create');
+            Route::post('/store',[AdminPurchaseOrderMaterialController::class,'store'])->name('store');
+            Route::get('/edit',[AdminPurchaseOrderMaterialController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminPurchaseOrderMaterialController::class,'update'])->name('update');
+            Route::get('/delete',[AdminPurchaseOrderMaterialController::class,'delete'])->name('delete');
+            Route::get('/view',[AdminPurchaseOrderMaterialController::class,'view'])->name('view');
         });
 
         Route::prefix('/fabric-receipt')->name('fabric_receipt.')->group(function () {

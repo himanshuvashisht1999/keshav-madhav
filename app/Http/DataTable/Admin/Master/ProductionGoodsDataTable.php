@@ -29,12 +29,8 @@ class ProductionGoodsDataTable  {
                 }
                 if ($request->has('fabric_sku') && !empty($request->fabric_sku)) {
                     $query->where('fabric_sku', 'like', "%{$request->get('fabric_sku')}%");
-                }
-                
-               
-                
+                }                            
             }) 
-
            
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;

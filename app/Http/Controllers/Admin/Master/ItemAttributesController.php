@@ -13,18 +13,21 @@ class ItemAttributesController extends Controller {
     public function __construct(Service $service) {
         $this->service = $service;
     }
-    public function index(){
-        return view('admin.master.item-attributes.index');
+    public function index(Request $request){
+        $response['item_id'] = $request->id;
+        return view('admin.master.item-attributes.index',$response);
     } 
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
-    public function create(){
-        return view('admin.master.item-attributes.create');
+    public function create(Request $request){
+        $response['attributes'] = $this->service->attributes($request);
+        $response['item_id'] = $request->item_id;
+        return view('admin.master.item-attributes.create',$response);
     }
-    public function store(ItemStoreRequest $request){
+    public function store(ItemAttributesStoreRequest $request){
         $data = $this->service->store($request);
-        return redirect()->route('admin.master.item-attributes.index')->withSuccess('The sub item has been successfully created.');
+        return redirect()->route('admin.master.item-attributes.index',['id' => $request->item_id])->withSuccess('The sub item has been successfully created.');
     }
     public function delete(Request $request){
         $data = $this->service->delete($request);
@@ -32,11 +35,14 @@ class ItemAttributesController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        $response['item_id'] = $response['data']->attribute->item_id;
+        $request->merge(['item_id' => $response['item_id']]);
+        $response['attributes'] = $this->service->attributes($request);
         return view('admin.master.item-attributes.edit',$response);
     }
     public function update(ItemAttributesUpdateRequest $request){
         $data = $this->service->update($request);
-        return redirect()->route('admin.master.item-attributes.index')->withSuccess('The sub item has been successfully updated.');
+        return redirect()->route('admin.master.item-attributes.index',['id' => $request->item_id])->withSuccess('The sub item has been successfully updated.');
     }
 
 }

@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Item Attributes</h1>
+                    <h1>Manage Purchase Order Items</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Item Attributes</li>
+                        <li class="breadcrumb-item active">Purchase Order Items</li>
                     </ol>
                 </div>
             </div>
@@ -21,42 +21,44 @@
     <!-- Main content -->
     <section class="content">
         <div class="container-fluid">
-            <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default ">
-                
+            <div class="card card-default">
                 <div class="card-body table-responsive">
                 <table id="customers" class="table table-bordered table-hover">
                   <thead>
                     <tr role="row" class="filter">
                         <td>
+                            <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
                         <td>
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
-
-                        
                         <td>
-                       
-                       </td>
+                            <input type="date" class="form-control" name="date" id="date" autocomplete="off">
+                        </td>
+                        <td>
+                            <select class="form-control" name="vendor_id" id="vendor_id" autocomplete="off">
+                                <option value="">ALL</option>
+                                @foreach($vendors as $single_data)
+                                    <option value="{{$single_data->id}}" >{{$single_data->name}}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <input type="date" class="form-control" name="delivery_date" id="delivery_date" autocomplete="off">
+                        </td>
+                        <td> </td>
                     </tr>
-                  <tr>
-                    <th>ID</th>
-                    <th>SKU</th>
-                    
-                    <th>Action</th>
-                  </tr>
+                    <tr>
+                        <th>ID</th>
+                        <th>PO No.</th>
+                        <th>Purchase Order Date</th>
+                        <th>Vendor</th>
+                        <th>Expected Delivery Date</th>
+                        <th>Action</th>
+                    </tr>
                   </thead>
                   <tbody>
-                  <!-- <tr>
-                    <td>1</td>
-                    <td>wefds</td>
-                    <td>Win 95+</td>
-                    <td> 4</td>
-                    <td>X</td>
-                  </tr> -->
-                  
                   </tbody>
-                  
                 </table>
               </div>
             </div>
@@ -65,7 +67,6 @@
 </div>
 <script>
     $(function () {
-        var i = 1;
         var oTable = $('#customers').DataTable({
             processing: true,
             serverSide: true,
@@ -75,73 +76,53 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.master.item-attributes.indexList',['item_id' => $item_id]) !!}',
+                url: '{!! route('admin.purchase_order_material.indexList') !!}',
                 data: function (d) {
-                    d.id = $('#id').val();
                     d.sku = $('#sku').val();
-                  
-                },
-                orderable: false
+                    d.date = $('#date').val();
+                    d.vendor_id = $('#vendor_id').val();
+                    d.delivery_date = $('#delivery_date').val();
+                }
             },
             columns: [
-                {data: 'DT_RowIndex', name: 'id'},
+                {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'sku', name: 'sku'},
+                {data: 'date', name: 'date'},
+                {data: 'vendor_id', name: 'vendor_id'},
+                {data: 'delivery_date', name: 'delivery_date'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Item Attribute',
+                    text: 'Add Purchase Order Items',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.master.item-attributes.create',['item_id' => $item_id]) }}";
+                        window.location.href = "{{ route('admin.purchase_order_material.create') }}";
                     }
                 }
             ]
         });
 
-        $('#email-queue-search-form').on('submit', function (e) {
+        $('#sku').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
 
-        $('#id').on('keyup', function (e) {
+        $('#date').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
 
-        $('#name').on('keyup', function (e) {
+        $('#vendor_id').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
-         $('#sku').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        
 
+        $('#delivery_date').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
     });
-
-    $(document).ready(function () {
-        
-    });
-
-    function deleteData(id){
-        Swal.fire({
-            title: "Are you sure?",
-            text: "You won't be able to revert this!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, delete it!"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.master.item-attributes.delete', ['id' => '']) }}" + id;
-            }
-        });
-    }
 </script>
-
 @endsection
