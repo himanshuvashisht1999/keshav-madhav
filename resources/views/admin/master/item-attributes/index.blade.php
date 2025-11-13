@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Sub Items</h1>
+                    <h1>Manage Item Attributes</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Sub Items</li>
+                        <li class="breadcrumb-item active">Manage Item Attributes</li>
                     </ol>
                 </div>
             </div>
@@ -29,10 +29,6 @@
                   <thead>
                     <tr role="row" class="filter">
                         <td>
-                            <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="name" id="name" autocomplete="off">
                         </td>
                         <td>
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
@@ -45,7 +41,6 @@
                     </tr>
                   <tr>
                     <th>ID</th>
-                    <th>Name</th>
                     <th>SKU</th>
                     
                     <th>Action</th>
@@ -80,10 +75,9 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.master.item-attributes.indexList') !!}',
+                url: '{!! route('admin.master.item-attributes.indexList',['item_id' => $item_id]) !!}',
                 data: function (d) {
                     d.id = $('#id').val();
-                    d.name = $('#name').val();
                     d.sku = $('#sku').val();
                   
                 },
@@ -91,17 +85,16 @@
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'name', name: 'name'},
                 {data: 'sku', name: 'sku'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Sub Item',
+                    text: 'Add Item Attribute',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.master.item-attributes.create') }}";
+                        window.location.href = "{{ route('admin.master.item-attributes.create',['item_id' => $item_id]) }}";
                     }
                 }
             ]
