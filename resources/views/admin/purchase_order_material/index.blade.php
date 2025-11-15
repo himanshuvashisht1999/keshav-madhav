@@ -36,7 +36,7 @@
                             <input type="date" class="form-control" name="date" id="date" autocomplete="off">
                         </td>
                         <td>
-                            <select class="form-control" name="vendor_id" id="vendor_id" autocomplete="off">
+                            <select class="form-control select2" name="vendor_id" id="vendor_id" style="width: 100%;">
                                 <option value="">ALL</option>
                                 @foreach($vendors as $single_data)
                                     <option value="{{$single_data->id}}" >{{$single_data->name}}</option>

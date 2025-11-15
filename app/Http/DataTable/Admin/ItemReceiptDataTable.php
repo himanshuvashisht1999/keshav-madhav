@@ -20,7 +20,7 @@ class ItemReceiptDataTable  {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
                 
-                if ($request->has('vendor_id') && $request->filled('vendor_id')) {
+                if ($request->has('vendor_id') && !empty($request->vendor_id)) {
                     $query->where('vendor_id', $request->get('vendor_id'));
                 }
                 if ($request->has('truck_number') && !empty($request->truck_number)) {
