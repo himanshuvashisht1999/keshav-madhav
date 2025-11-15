@@ -179,7 +179,7 @@
                         <input type="hidden" name="items[${rowCount}][sku]" class="form-control item-sku" placeholder="Auto SKU">
                     </div>
                     <div class="col-md-1">
-                        <button type="button" class="btn btn-success addRow">+</button>
+                        <button type="button" class="btn btn-danger removeRow">-</button>
                     </div>
                 </div>
             `;

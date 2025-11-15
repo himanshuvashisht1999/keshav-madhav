@@ -1,0 +1,53 @@
+<?php
+
+namespace App\Models;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class ItemReceipt extends Model
+{
+    use HasFactory;
+    protected $table= 'items_receipts';
+    protected $fillable = [
+        'id',
+        'sno',
+        'company_id',
+        'sub_company_id',
+        'project_id',
+        'sku',
+        'vendor_id',
+        'truck_number',
+        'time',
+        'box',
+        'received_by',
+        'shipment_photo',
+        'challan_photo',
+        'status',
+        'created_at',
+        'updated_at'
+    ];
+    public function vendor(){
+        return $this->hasOne('App\Models\Vendor','id','vendor_id');
+    }
+    public function details(){
+        return $this->hasMany('App\Models\ItemReceiptDetail','fabric_receipt_id','id');
+    }
+    public function getShipmentPhotoAttribute($value)
+    {
+        if ($value) {
+            return asset('assets/receipts/shipment-image/'. $value);
+        } else {
+            return asset('images/image-placeholder.png');
+        }
+    }
+    public function getChallanPhotoAttribute($value)
+    {
+        if ($value) {
+            return asset('assets/receipts/challan-image/'. $value);
+        } else {
+            return asset('images/image-placeholder.png');
+        }
+    }
+
+    
+}

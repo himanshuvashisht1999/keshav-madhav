@@ -142,6 +142,10 @@ class ProductionGoodsService {
         $data = Fabric::where('status',1)->get();
         return $data;
     }
+    public function items(){
+        $data = \App\Models\ItemAttributeValue::where('status',1)->get();
+        return $data;
+    }
     public function garment_types(){
         $data = ProductionGoods::where('status',1)->select('type_of_garment')->distinct()->get();
         return $data;
