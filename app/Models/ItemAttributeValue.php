@@ -25,5 +25,9 @@ class ItemAttributeValue extends Model
     public function attribute() {
         return $this->belongsTo('App\Models\ItemAttribute', 'item_attribute_id', 'id');
     }
+
+    public function item_stocks() {
+        return $this->hasMany('App\Models\ItemStock', 'sku', 'sku');
+    }
 }
 
