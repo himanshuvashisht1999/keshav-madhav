@@ -11,18 +11,21 @@ class ItemAttributesDataTable  {
     public function indexList($request){
         $queue = ItemAttributeValue::query()
         ->select('item_attribute_values.*')
-        ->join('item_attributes', 'item_attribute_values.item_attribute_id', '=', 'item_attributes.id');
+        ->join('items', 'item_attribute_values.item_id', '=', 'items.id');
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $item_id = $request->item_id;
                 $query->orderBy('id','desc');
 
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('item_attribute_values.sku', 'like', "%{$request->get('sku')}%");
                 }
-                if ($request->has('item_id') && !empty($request->item_id)) {
-                    $query->where('item_attributes.item_id', $request->item_id);
+                if ($request->has('id') && !empty($request->id)) {
+                    $query->where('item_attribute_values.item_id', $request->id);
+                }
+
+                if ($request->has('status') && !empty($request->status)) {
+                    $query->where('item_attribute_values.status', $request->status);
                 }
                 
             }) 
@@ -41,5 +44,5 @@ class ItemAttributesDataTable  {
             
             ->rawColumns(['action', 'status'])
             ->make(true);
-    }
+        }
 }

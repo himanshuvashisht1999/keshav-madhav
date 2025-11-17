@@ -21,7 +21,7 @@ class ItemAttributesStoreRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'item_attribute_id' => 'required',
+            'id' => 'required',
             'value' => 'required',
             'sku'    => 'required|unique:item_attribute_values,sku',
             // 'status' =>'required',

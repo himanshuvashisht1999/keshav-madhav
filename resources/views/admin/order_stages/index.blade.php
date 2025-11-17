@@ -2,7 +2,7 @@
 @section('content')
 <div class="content-wrapper">
 
-    <!-- ✅ Header (Simplified & Compact) -->
+    <!--  Header (Simplified & Compact) -->
     <section class="content-header py-2 border-bottom">
         <div class="container-fluid d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold text-dark">
@@ -15,7 +15,7 @@
         </div>
     </section>
 
-    <!-- ✅ Table Section -->
+    <!--  Table Section -->
     <section class="content mt-3">
         <div class="container-fluid">
             <div class="card shadow-sm border-0 rounded-3">
@@ -88,7 +88,7 @@
     </section>
 </div>
 
-<!-- ✅ Transfer Modal -->
+<!--  Transfer Modal -->
 <div class="modal fade" id="viewModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-sm rounded-3">
@@ -139,7 +139,7 @@
     </div>
 </div>
 
-<!-- ✅ JS Section -->
+<!--  JS Section -->
 <script>
 $(function () {
     var oTable = $('#order_stage').DataTable({
@@ -281,7 +281,7 @@ $(document).on('click', '.viewBtn', function() {
     // Clear existing options first
     $('#sub_stage').html('<option value="">Loading...</option>');
 
-    // ✅ Fetch sub stages via GET API
+    //  Fetch sub stages via GET API
     let apiUrl = "{{ route('admin.order-stages.getSubStages', [':order_product_id', ':from_stage_id']) }}";
     apiUrl = apiUrl.replace(':order_product_id', orderProductId).replace(':from_stage_id', from_stage_id);
     $.ajax({

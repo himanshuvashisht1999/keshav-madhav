@@ -42,7 +42,7 @@
                   <tr>
                     <th>ID</th>
                     <th>SKU</th>
-                    
+                    <th>Status</th>
                     <th>Action</th>
                   </tr>
                   </thead>
@@ -75,17 +75,18 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.master.item-attributes.indexList',['item_id' => $item_id]) !!}',
+                url: '{!! route('admin.master.item-attributes.indexList',['id' => $id]) !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.sku = $('#sku').val();
-                  
+                    d.status = $('#status').val();
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'sku', name: 'sku'},
+                {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
@@ -94,7 +95,7 @@
                     text: 'Add Item Attribute',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.master.item-attributes.create',['item_id' => $item_id]) }}";
+                        window.location.href = "{{ route('admin.master.item-attributes.create',['id' => $id]) }}";
                     }
                 }
             ]
@@ -118,6 +119,10 @@
             oTable.draw();
             e.preventDefault();
         });
+        $('#status').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });   
         
 
     });
