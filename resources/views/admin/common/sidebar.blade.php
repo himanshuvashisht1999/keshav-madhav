@@ -53,12 +53,29 @@ $stage_data = App\Models\MasterProductStage::where('status', 1)->get();
                             <p>Fabric Receipt</p>
                         </a>
                     </li>
+
+                    <!-- Item Receipt Menu -->
+<li class="nav-item">
+    <a href="{{route('admin.item_receipt.index')}}" class="nav-link {{ (request()->segment(2) == 'item-receipt') ? 'active' : '' }}">
+        <i class="fas fa-store nav-icon"></i>
+        <p>Item Receipt</p>
+    </a>
+</li>
                     <li class="nav-item">
                         <a href="{{ route('admin.stock.fabricIndex') }}"
                             class="{{ str_contains($page_url, 'admin/stock') ? 'nav-link active' : 'nav-link' }}"
                             style="position:static;">
                             <i class="nav-icon fas fa-store"></i>
                             <p>Fabric Stock</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ route('admin.item_stock.itemIndex') }}"
+                            class="{{ str_contains($page_url, 'admin/item-stock') ? 'nav-link active' : 'nav-link' }}"
+                            style="position:static;">
+                            <i class="nav-icon fas fa-box"></i>
+                            <p>Item Stock</p>
                         </a>
                     </li>
 

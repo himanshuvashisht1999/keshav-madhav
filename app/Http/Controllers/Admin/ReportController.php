@@ -313,6 +313,7 @@ class ReportController extends Controller
         // Return file as download
         return response()->download($filePath)->deleteFileAfterSend(true);
     }
+
     public function production()
     {
         // $response['products'] = $this->service->products();

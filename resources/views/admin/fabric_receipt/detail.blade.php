@@ -84,7 +84,7 @@
                                                     name="rolls[{{ $i }}][meter]" 
                                                     class="form-control meter" 
                                                     data-row="{{ $i }}" 
-                                                    placeholder="Enter Meters" required>
+                                                    placeholder="Enter Meters" min="0" step="0.01" required>
                                             </td>
 
                                             <!-- Batch -->

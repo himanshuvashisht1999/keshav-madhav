@@ -54,6 +54,7 @@ class StockController extends Controller
     public function fabricIndexList(Request $request){
         return $this->service->fabricIndexList($request);
     }
+
     public function generateStockReportPDF(Request $request)
     {
        

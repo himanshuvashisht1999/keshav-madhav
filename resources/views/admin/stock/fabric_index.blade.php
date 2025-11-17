@@ -33,7 +33,7 @@
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
                         <td>
-                            <select name="sku" id="sku"  class="form-control">
+                            <select name="sku" id="sku" class="form-control select2" style="width: 100%;">
                                 <option value="">All Fabric SKU</option>
                                 @foreach($fabrics as $fabric)
                                     <option value="{{ $fabric->sku }}">{{ $fabric->sku }}</option>

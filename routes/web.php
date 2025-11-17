@@ -22,6 +22,8 @@ use App\Http\Controllers\Admin\Master\ProductionGoodsController as AdminProducti
 use App\Http\Controllers\Admin\Master\ProductionGoodsItemController as AdminProductionGoodsItemController;
 use App\Http\Controllers\Admin\Master\SizeMeasurementController as AdminSizeMeasurementController;
 use App\Http\Controllers\Admin\PurchaseOrderMaterialController as AdminPurchaseOrderMaterialController;
+use App\Http\Controllers\Admin\ItemReceiptController as AdminItemReceiptController;
+use App\Http\Controllers\Admin\ItemStockController as AdminItemStockController;
 
 /// order
 use App\Http\Controllers\Admin\ProductOrderController as AdminProductOrderController;
@@ -90,6 +92,20 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
         });
 
+        Route::prefix('/item-receipt')->name('item_receipt.')->group(function () {
+        Route::get('/index',[AdminItemReceiptController::class,'index'])->name('index');
+        Route::get('/indexList',[AdminItemReceiptController::class,'indexList'])->name('indexList');
+        Route::get('/create',[AdminItemReceiptController::class,'create'])->name('create');
+        Route::post('/store',[AdminItemReceiptController::class,'store'])->name('store');
+        Route::get('/detail',[AdminItemReceiptController::class,'detail'])->name('detail');
+        Route::get('/getPurchaseOrderItems/{id}', [AdminItemReceiptController::class, 'getPurchaseOrderItems'])->name('getPurchaseOrderItems');
+        Route::get('/edit',[AdminItemReceiptController::class,'edit'])->name('edit');
+        Route::post('/update',[AdminItemReceiptController::class,'update'])->name('update');
+        Route::post('/storeDetail',[AdminItemReceiptController::class,'storeDetail'])->name('storeDetail');
+        Route::get('/view',[AdminItemReceiptController::class,'view'])->name('view');
+        Route::post('/delete',[AdminItemReceiptController::class,'delete'])->name('delete');
+    });
+
         Route::prefix('/stock')->name('stock.')->group(function () {
             Route::get('/index',[AdminStockController::class,'index'])->name('index');
             Route::get('/indexList',[AdminStockController::class,'indexList'])->name('indexList');
@@ -101,6 +117,19 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             
             Route::get('/fabricIndex',[AdminStockController::class,'fabricIndex'])->name('fabricIndex');
             Route::get('/fabricIndexList',[AdminStockController::class,'fabricIndexList'])->name('fabricIndexList');
+        });
+
+        Route::prefix('/item-stock')->name('item_stock.')->group(function () {
+            Route::get('/index',[AdminItemStockController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminItemStockController::class,'indexList'])->name('indexList');
+            Route::get('/view',[AdminItemStockController::class,'view'])->name('view');
+            Route::get('/detail',[AdminItemStockController::class,'detail'])->name('detail');
+            Route::post('/generatePdf', [AdminItemStockController::class, 'generateStockReportPDF'])->name('generatePdf');
+            Route::post('/generateExcel', [AdminItemStockController::class, 'generateStockReportExcel'])->name('generateExcel');
+            Route::get('/itemQuantityExcel', [AdminItemStockController::class, 'generateItemQuantityReportExcel'])->name('itemQuantityExcel');
+            
+            Route::get('/itemIndex',[AdminItemStockController::class,'itemIndex'])->name('itemIndex');
+            Route::get('/itemIndexList',[AdminItemStockController::class,'itemIndexList'])->name('itemIndexList');
         });
 
         Route::prefix('/sales-order')->name('sales_order.')->group(function () {

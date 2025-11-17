@@ -229,6 +229,10 @@ $(function () {
             oTable.draw();
             e.preventDefault();
         });
+        $('#updated_at').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
         $('#status').on('change', function (e) {
             oTable.draw();
             e.preventDefault();

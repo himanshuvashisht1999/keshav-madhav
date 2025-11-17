@@ -40,6 +40,12 @@
         font-weight: bold;
         background: #f1f1f1;
     }
+    
+    @media print {
+        .action-buttons {
+            display: none !important;
+        }
+    }
 </style>
 
 <div class="content-wrapper">
@@ -129,7 +135,7 @@
                     </div>
                 </div>
 
-                <div class="mt-4 text-right">
+                <div class="mt-4 text-right action-buttons">
                     <a href="{{ route('admin.purchase_order.index') }}" class="btn btn-secondary">Back</a>
                     <button onclick="window.print()" class="btn btn-primary">Print</button>
                 </div>

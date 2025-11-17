@@ -101,12 +101,6 @@
                 </div>
             </div>
 
-            <!-- Back Button -->
-            <div class="mt-3 text-right">
-                <a href="{{ route('admin.stock.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left mr-1"></i> Back to List
-                </a>
-            </div>
 
         </div>
     </section>

@@ -17,8 +17,8 @@ class StockDataTable  {
                 $query->orderBy('id','desc');
                 
                 $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
-                if ($request->has('sku') && !empty($request->sku)) {
-                    $query->where('sku', 'like', "%{$request->get('sku')}%");
+                if ($request->has('id') && !empty($request->id)) {
+                    $query->where('id', 'like', "%{$request->get('id')}%");
                 }
                 
                 if ($request->has('date') && !empty($request->date)) {
@@ -37,18 +37,15 @@ class StockDataTable  {
                 $query->where('status',1);
             }) 
             ->editColumn('date', function ($queue) {
-				return getformatDate($queue->date);
+                return getformatDate($queue->date);
             })
             ->editColumn('status', function ($queue) {
-				$status= $queue->status;
+                $status= $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
             })
-            // ->editColumn('date', function ($queue) {
-			// 	return $queue?->date->name;
-            // })
             
             ->addColumn('action', function ($queue) {
-				$parameter= $queue->id;
+                $parameter= $queue->id;
                 return '
                 <a href="' . route('admin.stock.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
                 ';
@@ -58,7 +55,7 @@ class StockDataTable  {
             ->make(true);
     }
 
-     public function fabricIndexList($request){
+    public function fabricIndexList($request){
         $queue = Fabric::withSum('stocks as total_meter', 'meter');
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -75,7 +72,6 @@ class StockDataTable  {
                 return $queue->total_meter ?? 0;
             })
             ->addColumn('action', function($row){
-                // Example: return button(s)
                 return '<a href="' . route('admin.stock.index',['id' => $row->id]) . '" class="btn btn-sm btn-primary">View</a>';
             })
             ->rawColumns(['total_meter','action'])
