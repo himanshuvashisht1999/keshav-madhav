@@ -1,5 +1,10 @@
 @extends('admin.layouts.app')
 @section('content')
+<style>
+    #customers td:nth-child(3) {
+        min-width: 130px;
+    }
+</style>
 <div class="content-wrapper">
     <!-- Content Header (Page header) -->
     <section class="content-header">
@@ -36,7 +41,7 @@
                         </td>
                         
                         <td>
-                            <select class="form-control" name="vendor_id" id="vendor_id" autocomplete="off">
+                            <select class="form-control select2" name="vendor_id" id="vendor_id" style="width: 100%;">
                                 <option value="">ALL</option>
                                 @foreach($vendors as $single_data)
                                     <option value="{{$single_data->id}}" >{{$single_data->name}}</option>

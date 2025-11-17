@@ -75,7 +75,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="roll">Packets</label>
-                                    <input type="number" name="roll" id="roll" class="form-control" placeholder="Enter packets">
+                                    <input type="number" name="roll" id="roll" class="form-control" placeholder="Enter packets" min="0" step="1">
                                     @if ($errors->has('roll'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('roll') }}

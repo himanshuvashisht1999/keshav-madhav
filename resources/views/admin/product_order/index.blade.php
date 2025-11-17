@@ -43,13 +43,12 @@
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
                         <td>
-                            <select name="master_customer_id" id="master_customer_id" class="form-control">
+                            <select name="master_customer_id" id="master_customer_id" class="form-control select2" style="width: 100%;">
                                 <option value="">All</option>
                                 @foreach($customers as $customer)
                                 <option value="{{$customer->id}}">{{$customer->name}}</option>
                                 @endforeach
                             </select>
-                            
                         </td>
                         
                        

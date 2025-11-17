@@ -33,7 +33,7 @@ class MasterProductStageDataTable  {
 				$parameter= $queue->id;
                 return '
                 <a href="' . route('admin.master.product_stage.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                <a href="' . route('admin.master.product-sub-stage.index',['stage_id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="View"><i class="fas fa-eye text-muted"></i></a>
+                <a href="' . route('admin.master.product-sub-stage.index',['stage_id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="View" style="margin-left: 8px;"><i class="fas fa-eye text-muted"></i></a>
                 ';
             })
             

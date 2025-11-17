@@ -75,7 +75,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="box">Boxes</label>
-                                    <input type="number" name="box" id="box" class="form-control" placeholder="Enter boxes">
+                                    <input type="number" name="box" id="box" class="form-control" placeholder="Enter boxes" min="0" step="1">
                                     @if ($errors->has('box'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('box') }}
