@@ -4,7 +4,7 @@ namespace App\Requests\Admin\Master;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Http\FormRequest;
 
-class ItemAttributesStoreRequest extends FormRequest{
+class ProductionGoodsItemUpdateRequest extends FormRequest{
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -21,10 +21,7 @@ class ItemAttributesStoreRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'id' => 'required',
-            'value' => 'required',
-            'sku'    => 'required|unique:item_attribute_values,sku',
-            // 'status' =>'required',
+            'product_id' => 'required',
         ];
     }
 

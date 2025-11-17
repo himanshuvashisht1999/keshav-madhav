@@ -45,13 +45,13 @@ class ProductionGoodsService {
         $save_data->fabric_sku = '';
         $save_data->status = 1;
         $save_data->save();
-        foreach($request->fabric_sku as $key=>$single){
-            $save_boe = new BillOfMaterial;
-            $save_boe->product_id = $save_data->id;
-            $save_boe->fabric_sku = $single;
-            $save_boe->meter = $request->fabric_meter[$key];
-            $save_boe->save();
-        }
+        // foreach($request->fabric_sku as $key=>$single){
+        //     $save_boe = new BillOfMaterial;
+        //     $save_boe->product_id = $save_data->id;
+        //     $save_boe->fabric_sku = $single;
+        //     $save_boe->meter = $request->fabric_meter[$key];
+        //     $save_boe->save();
+        // }
         foreach($request->product_stage_id as $key=>$single){
             $save_stage = new ProductStage;
             $save_stage->master_product_id = $save_data->id;
@@ -76,24 +76,24 @@ class ProductionGoodsService {
         $update_data->is_printing = $request->is_printing;
         $update_data->fabric_sku = '';
         $update_data->save();
-        BillOfMaterial::where('product_id', $request->id)
-                  ->whereNotIn('fabric_sku', $request->fabric_sku)->update([
-                    'status' => 0
-                  ]);
-        foreach($request->fabric_sku as $key=>$single){
-            $old_data = BillOfMaterial::where('product_id',$request->id)->where('fabric_sku',$single)->first();
-            if($old_data){
-                $save_boe = BillOfMaterial::where('product_id',$request->id)->where('fabric_sku',$single)->first();
-            }else{
-                $save_boe = new BillOfMaterial;
-            }
+        // BillOfMaterial::where('product_id', $request->id)
+        //           ->whereNotIn('fabric_sku', $request->fabric_sku)->update([
+        //             'status' => 0
+        //           ]);
+        // foreach($request->fabric_sku as $key=>$single){
+        //     $old_data = BillOfMaterial::where('product_id',$request->id)->where('fabric_sku',$single)->first();
+        //     if($old_data){
+        //         $save_boe = BillOfMaterial::where('product_id',$request->id)->where('fabric_sku',$single)->first();
+        //     }else{
+        //         $save_boe = new BillOfMaterial;
+        //     }
             
-            $save_boe->product_id = $request->id;
-            $save_boe->fabric_sku = $single;
-            $save_boe->meter = $request->fabric_meter[$key];
-            $save_boe->status = 1;
-            $save_boe->save();
-        }
+        //     $save_boe->product_id = $request->id;
+        //     $save_boe->fabric_sku = $single;
+        //     $save_boe->meter = $request->fabric_meter[$key];
+        //     $save_boe->status = 1;
+        //     $save_boe->save();
+        // }
 
         ProductStage::where('master_product_id', $request->id)
                   ->whereNotIn('master_stage_id', $request->product_stage_id)->update([

@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\PurchaseOrderController as AdminPurchaseOrderCont
 use App\Http\Controllers\Admin\FabricReceiptController as AdminFabricReceiptController;
 use App\Http\Controllers\Admin\StockController as AdminStockController;
 use App\Http\Controllers\Admin\Master\ProductionGoodsController as AdminProductionGoodsController;
+use App\Http\Controllers\Admin\Master\ProductionGoodsItemController as AdminProductionGoodsItemController;
 use App\Http\Controllers\Admin\Master\SizeMeasurementController as AdminSizeMeasurementController;
 use App\Http\Controllers\Admin\PurchaseOrderMaterialController as AdminPurchaseOrderMaterialController;
 use App\Http\Controllers\Admin\ItemReceiptController as AdminItemReceiptController;
@@ -294,6 +295,18 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/delete',[AdminProductionGoodsController::class,'delete'])->name('delete');
         });
 
+        Route::prefix('master/production-goods-item')->name('master.production-goods-item.')->group(function () {
+            // Route::get('/index',[AdminProductionGoodsItemController::class,'index'])->name('index');
+            // Route::get('/indexList',[AdminProductionGoodsItemController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminProductionGoodsItemController::class,'create'])->name('create');
+            Route::post('/store',[AdminProductionGoodsItemController::class,'store'])->name('store');
+            
+            // Route::get('/edit',[AdminProductionGoodsItemController::class,'edit'])->name('edit');
+            // Route::post('/update',[AdminProductionGoodsItemController::class,'update'])->name('update');
+            // Route::get('/delete',[AdminProductionGoodsItemController::class,'delete'])->name('delete');
+        });
+
+        
         Route::prefix('master/colors')->name('master.colors.')->group(function () {
             Route::get('/index',[AdminMasterColorController::class,'index'])->name('index');
             Route::get('/indexList',[AdminMasterColorController::class,'indexList'])->name('indexList');

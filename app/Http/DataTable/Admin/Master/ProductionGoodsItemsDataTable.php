@@ -3,22 +3,17 @@
 namespace App\Http\DataTable\Admin\Master;
 
 use Illuminate\Http\Request;
-use App\Models\ProductionGoods;
-use App\Models\MasterColor;
-use App\Models\MasterDesign;
-use App\Models\MasterMaterial;
-use App\Models\MasterSizeMeasurement;
-use App\Models\Fabric;
+use App\Models\ProductionGoodsItem;
 use Yajra\DataTables\Facades\DataTables;
 
-class ProductionGoodsDataTable  {
+class ProductionGoodsItemsDataTable  {
 
-    public function __construct(ProductionGoods $production_goods) {
-        $this->production_goods = $production_goods;
+    public function __construct(ProductionGoodsItem $production_goods_item) {
+        $this->production_goods_item = $production_goods_item;
     }
 
     public function indexList($request){
-        $queue = ProductionGoods::query();
+        $queue = ProductionGoodsItem::query();
         
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -26,11 +21,10 @@ class ProductionGoodsDataTable  {
                 $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
-                }
-                if ($request->has('fabric_sku') && !empty($request->fabric_sku)) {
-                    $query->where('fabric_sku', 'like', "%{$request->get('fabric_sku')}%");
-                }                            
+                }          
+                
             }) 
+
            
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
@@ -40,7 +34,7 @@ class ProductionGoodsDataTable  {
 				$parameter= $queue->id;
                 return '
                 <a href="' . route('admin.master.production-goods.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                <a href="' . route('admin.master.production-goods-item.create',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
+                <a href="' . route('admin.master.production-goods.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
                 ';
             })
             

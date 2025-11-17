@@ -25,36 +25,23 @@
                 </div>
                 <form action="{{route('admin.master.item-attributes.store')}}" method="post" enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="item_id" value="{{$item_id}}">
+                    <input type="hidden" name="id" value="{{ request('id') }}">
                     <div class="card-body">
                         <div class="row">
                             <!-- ATTRIBUTE DROPDOWN -->
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Item Attribute</label>
-                                    <select name="item_attribute_id" id="item_attribute_id" class="form-control select2" style="width: 100%;">
-                                        @foreach($attributes as $single_data)
-                                            <option value="{{$single_data->id}}" data-sku="{{$single_data->sku}}" {{old('item_attribute_id') == $single_data->id ? 'selected' : ''}}>
-                                                {{$single_data->name}}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @if ($errors->has('item_attribute_id'))
-                                        <span class="invalid-feedback d-block">{{ $errors->first('item_attribute_id') }}</span>
-                                    @endif
-                                </div>
-                            </div>
+                            @foreach($attributes as $single_data)
 
                             <!-- VALUE INPUT -->
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="value">Value</label>
-                                    <input type="text" name="value" id="value" class="form-control" placeholder="Enter value" value="{{old('value')}}" required>
+                                    <label for="value">{{$single_data->sku}}</label>
+                                    <input type="text" name="value[{{$single_data->sku}}]" id="value-{{$single_data->id}}" value="{{ old('value.' . $single_data->sku) }}" class="form-control" placeholder="Enter value" required>
                                     @if ($errors->has('value'))
                                         <span class="invalid-feedback d-block">{{ $errors->first('value') }}</span>
                                     @endif
                                 </div>
                             </div>
+                            @endforeach
 
                             <!-- SKU FIELD -->
                             <div class="col-md-6">
@@ -82,70 +69,35 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    const $ = window.jQuery || null;
+    function updateSKU() {
+        let skuParts = [];
+        let prefixAdded = false;
 
-    function sanitizePart(str) {
-        if (!str) return '';
-        // remove leading/trailing, replace sequences of non-alnum with single dash, uppercase
-        return String(str).trim()
-            .replace(/[^a-zA-Z0-9]+/g, '-')   // convert spaces/symbols -> '-'
-            .replace(/^-+|-+$/g, '')          // trim leading/trailing dashes
-            .toUpperCase();
+        document.querySelectorAll("input[name^='value']").forEach(input => {
+            let key = input.name.match(/value\[(.*?)\]/)[1];
+            let firstPart = key.split("-")[0].toUpperCase();   // ZIP
+            let val = input.value.trim().replace(/\s+/g, "").toUpperCase(); // RED, 5METER, 40
+
+            if (val !== "") {
+
+                // Add ZIP only for the first field
+                if (!prefixAdded) {
+                    skuParts.push(firstPart);  // Add ZIP
+                    prefixAdded = true;
+                }
+
+                // Add ONLY value next
+                skuParts.push(val);
+            }
+        });
+
+        document.getElementById("sku").value = skuParts.join("-");
     }
 
-    function getSelectedDataSku() {
-        const attributeSelect = document.getElementById("item_attribute_id");
-        if (!attributeSelect) return '';
-
-        const selectedOption = attributeSelect.options[attributeSelect.selectedIndex];
-        if (!selectedOption) return '';
-
-        // prefer data-sku attribute if present and non-empty
-        const ds = selectedOption.getAttribute("data-sku");
-        if (ds && ds.trim() !== '') return sanitizePart(ds);
-
-        // fallback to option text (attribute name) sanitized
-        return sanitizePart(selectedOption.textContent || selectedOption.innerText || '');
-    }
-
-    function generateSKU() {
-        const baseSku = getSelectedDataSku();
-        const rawValue = document.getElementById("value") ? document.getElementById("value").value : '';
-        const valuePart = sanitizePart(rawValue);
-
-        const skuInput = document.getElementById("sku");
-        if (!skuInput) return;
-
-        if (baseSku && valuePart) {
-            skuInput.value = `${baseSku}-${valuePart}`;
-        } else if (baseSku) {
-            skuInput.value = baseSku;
-        } else if (valuePart) {
-            skuInput.value = valuePart;
-        } else {
-            skuInput.value = '';
-        }
-    }
-
-    // trigger when attribute changes (works for select2 and native select)
-    // If jQuery/Select2 is present, use delegated listener to ensure we catch select2 changes
-    if ($) {
-        // in some setups Select2 triggers 'change.select2' events; listen to both
-        $(document).on('change', '#item_attribute_id', generateSKU);
-        $(document).on('change.select2', '#item_attribute_id', generateSKU);
-    } else {
-        const attr = document.getElementById("item_attribute_id");
-        if (attr) attr.addEventListener('change', generateSKU);
-    }
-
-    // trigger on value input
-    const valInput = document.getElementById("value");
-    if (valInput) {
-        valInput.addEventListener('input', generateSKU);
-    }
-
-    // ensure SKU is generated on page load (if old values exist)
-    generateSKU();
+    document.querySelectorAll("input[name^='value']").forEach(input => {
+        input.addEventListener("input", updateSKU);
+    });
+    
 });
 </script>
 
