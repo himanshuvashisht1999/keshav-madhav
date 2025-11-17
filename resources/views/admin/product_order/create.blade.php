@@ -76,7 +76,7 @@
                                         </div>
                                         <div class="col-md-5">
                                             <div class="form-group">
-                                                <input type="number" name="product_quantity[]" id=""class="form-control" placeholder="Quantity" required>
+                                                <input type="number" name="product_quantity[]" id="" class="form-control" placeholder="Quantity" min="1" step="1" required>
                                                 
                                             </div>
                                         </div>
@@ -124,7 +124,7 @@ $(document).ready(function () {
                 </div>
                 <div class="col-md-5">
                     <div class="form-group">
-                        <input type="number" name="product_quantity[]" id=""class="form-control" placeholder="Quantity" required>
+                        <input type="number" name="product_quantity[]" id="" class="form-control" placeholder="Quantity" min="1" step="1" required>
                     </div>
                 </div>
                 <div class="col-md-1">
