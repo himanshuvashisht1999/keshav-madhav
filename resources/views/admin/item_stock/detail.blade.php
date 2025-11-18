@@ -49,7 +49,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="box">Boxes</label>
-                                    <input type="number" name="box" id="box" class="form-control" placeholder="Enter boxes" >
+                                    <input type="number" name="box" id="box" class="form-control" step="1" min="1" placeholder="Enter boxes" >
                                     @if ($errors->has('box'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('box') }}
@@ -61,7 +61,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="quantity">Quantity (per box)</label>
-                                    <input type="number" name="quantity" id="quantity" class="form-control" placeholder="Enter quantity" >
+                                    <input type="number" name="quantity" id="quantity" class="form-control" placeholder="Enter quantity" step="1" min="1">
                                     @if ($errors->has('quantity'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('quantity') }}

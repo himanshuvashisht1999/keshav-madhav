@@ -45,7 +45,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Measurement</label>
-                                    <input type="number" name="measurement" class="form-control" placeholder="Enter measurement" value="{{$data->measurement}}">
+                                    <input type="number" name="measurement" class="form-control" placeholder="Enter measurement" step="1" min="1" value="{{$data->measurement}}">
                                     @if ($errors->has('measurement'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('measurement') }}

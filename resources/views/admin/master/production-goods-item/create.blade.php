@@ -53,7 +53,7 @@
                                                 </div>
                                                 <div class="col-md-5">
                                                     <div class="form-group">
-                                                        <input type="number" name="old_fabric_meter[{{$fabric->id}}]" id=""class="form-control" placeholder="Meter" min="1" value="{{$fabric->meter}}" required>
+                                                        <input type="number" name="old_fabric_meter[{{$fabric->id}}]" id=""class="form-control" placeholder="Meter" min="0.01" step="0.01" value="{{$fabric->meter}}" required>
                                                         
                                                     </div>
                                                 </div>
@@ -84,7 +84,7 @@
                                             </div>
                                         </div>
                                         <div class="col-md-5">
-                                            <input type="number" name="fabric_meter[]" class="form-control" placeholder="Enter meter" step="0.01" min="0" required>
+                                            <input type="number" name="fabric_meter[]" class="form-control" placeholder="Enter meter" step="0.01" min="0.01" required>
                                         </div>
                                         <div class="col-md-1">
                                             <button type="button" class="btn btn-success add-fabric"><i class="fa fa-plus"></i></button>
@@ -113,7 +113,7 @@
                                                 </div>
                                                 <div class="col-md-5">
                                                     <div class="form-group">
-                                                        <input type="number" name="old_item_quantity[{{$item->id}}]" id=""class="form-control" placeholder="Quantity" min="1" value="{{$item->quantity}}" required>
+                                                        <input type="number" name="old_item_quantity[{{$item->id}}]" id=""class="form-control" placeholder="Quantity" step="1" min="1" value="{{$item->quantity}}" required>
                                                         
                                                     </div>
                                                 </div>
@@ -144,7 +144,7 @@
                                         </div>
                                         <div class="col-md-5">
                                             <div class="form-group">
-                                                <input type="number" name="item_quantity[]" id=""class="form-control" placeholder="Quantity" required>
+                                                <input type="number" name="item_quantity[]" id=""class="form-control" placeholder="Quantity" step="1" min="1" required>
                                                 
                                             </div>
                                         </div>
@@ -225,7 +225,7 @@
                         </div>
                         <div class="col-md-5">
                             <div class="form-group">
-                                <input type="number" name="item_quantity[]" id=""class="form-control" placeholder="Quantity" required>
+                                <input type="number" name="item_quantity[]" id=""class="form-control" placeholder="Quantity" step="1" min="1" required>
                             </div>
                         </div>
                         <div class="col-md-1">
@@ -258,7 +258,7 @@
                     </div>
                 </div>
                 <div class="col-md-5">
-                    <input type="number" name="fabric_meter[]" class="form-control" placeholder="Enter meter" step="0.01" min="0" required>
+                    <input type="number" name="fabric_meter[]" class="form-control" placeholder="Enter meter" step="0.01" min="0.01" required>
                 </div>
                 <div class="col-md-1">
                     <button type="button" class="btn btn-danger remove-fabric"><i class="fa fa-minus"></i></button>

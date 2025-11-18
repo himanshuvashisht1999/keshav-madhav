@@ -95,7 +95,7 @@
             <form method="POST" action="{{ route('admin.product_order.transfer') }}">
                 @csrf
                 <div class="modal-header bg-success text-white py-2">
-                    <h6 class="modal-title fw-bold mb-0"><i class="fas fa-exchange-alt"></i> Transfer to Next Stage</h6>
+                    <h6 class="modal-title fw-bold mb-0"><i class="fas fa-exchange-alt"></i> Transfer to <span id="next_stage_name"></span> Stage</h6>
                     <button type="button" class="btn-close btn-close-white" data-dismiss="modal">X</button>
                 </div>
 
@@ -119,7 +119,9 @@
                             <option value=""></option>
                         </select>
                     </div>
+                    <div id="item-list">
 
+                    </div>
                     <div class="form-group mb-0">
                         <label class="small mb-1"><strong>Remarks (optional)</strong></label>
                         <textarea name="remarks" class="form-control form-control-sm" rows="2" placeholder="Enter remarks..."></textarea>
@@ -292,15 +294,31 @@ $(document).on('click', '.viewBtn', function() {
         url: apiUrl,
         type: "GET",
         success: function(response) {
+            if (lot_no == '') {
+                $('#lot_no_m').val(response.lot_no).prop('readonly', true).addClass('bg-light');
+            }
+            $('#next_stage_name').html(response.next_product_stage);
+            response.data.length
             if (response.status && response.data.length > 0) {
-                let options = '<option value="">Select Sub Stage</option>';
+                let options = '';
                 response.data.forEach(function(stage) {
-                    options += `<option value="${stage.id}">${stage.name}</option>`;
+                    options += `<option value="${stage.id}" >${stage.name}</option>`;
                 });
                 $('#sub_stage').html(options);
             } else {
                 $('#sub_stage').html('<option value="">No sub stages found</option>');
             }
+           
+            if (response.status && response.items_details.length > 0) {
+                let item_list = '';
+                response.items_details.forEach(function(items) {
+                    item_list += ` <div class="form-group mb-3">
+                                    <label class="small mb-1"><strong>${items.item_sku}</strong></label>
+                                    <input type="number" name="items[${items.item_sku}]" class="form-control form-control-sm" id="${items.item_sku}" min="1" max="${items.pending_quantity}" value="${items.pending_quantity}" step="1">
+                                </div>`;
+                });
+                $('#item-list').html(item_list);
+            } 
         },
         error: function() {
             $('#sub_stage').html('<option value="">Error fetching data</option>');

@@ -10,28 +10,27 @@ use App\Models\OrderProduct;
 use App\Models\MasterProductSubStage;
 use Yajra\DataTables\Facades\DataTables;
 
-
 class OrderStagesDataTable  {
 
     public function indexList($request){
         $queue = OrderStageTransaction::query();
         
-        
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id','desc');
 
-                // ✅ Filter by order_no (from related Order model)
+                //  Filter by order_no (from related Order model)
                 // if ($request->has('order_no') && !empty($request->order_no)) {
                 //     $query->whereHas('orderProduct.order', function ($q) use ($request) {
                 //         $q->where('sku', 'like', '%' . $request->get('order_no') . '%');
                 //     });
                 // }
+
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
 
-                // ✅ Filter by order_product_id (product_sku in OrderProduct)
+                //  Filter by order_product_id (product_sku in OrderProduct)
                 if ($request->has('order_product_id') && !empty($request->order_product_id)) {
                     $query->whereHas('orderProduct', function ($q) use ($request) {
                         $q->where('product_sku', 'like', '%' . $request->get('order_product_id') . '%');
@@ -73,7 +72,7 @@ class OrderStagesDataTable  {
             ->editColumn('sub_stage_id', function ($queue) {
 				$sub_stage_id= $queue->sub_stage_id;
                 $order_product_data = MasterProductSubStage::where('id',$sub_stage_id)->first();
-                return $order_product_data->name;
+                return $order_product_data->name ?? '';
             })
             ->editColumn('order_no', function ($queue) {
 				$order_product_id= $queue->order_product_id;

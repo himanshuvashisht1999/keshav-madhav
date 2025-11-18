@@ -30,8 +30,20 @@ class ProductionGoodsItemController extends Controller {
         return view('admin.master.production-goods-item.create', $response);
     }
     public function store(ProductionGoodsItemStoreRequest $request){
-        $data = $this->service->store($request);
-        return redirect()->route('admin.master.production-goods.index')->withSuccess('The production goods has been successfully created.');
+        try {
+            
+            $result = $this->service->store($request);
+            if($result = true){
+                return redirect()->route('admin.master.production-goods.index')->withSuccess('The production goods has been successfully created.');
+            }else{
+                return redirect()->back()->with('error', $result);
+            }
+
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
     }
     public function delete(Request $request){
         $data = $this->service->delete($request);
