@@ -31,9 +31,6 @@
                     <input type="hidden" name="id" value="{{$data->id}}" >
                     <div class="card-body">
                         <div class="row">
-
-                            
-
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Fabric SKU</label>
@@ -51,14 +48,10 @@
                                 </div>
                             </div>
 
-                            
-                            
-                            
-
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="roll">Rolls / Boxes</label>
-                                    <input type="number" name="roll" id="roll" class="form-control" placeholder="Enter rolls" >
+                                    <input type="number" name="roll" id="roll" class="form-control" placeholder="Enter rolls" step="1" min="1">
                                     @if ($errors->has('roll'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('roll') }}
@@ -70,7 +63,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="meter">Meter (per roll)</label>
-                                    <input type="number" name="meter" id="meter" class="form-control" placeholder="Enter meters" >
+                                    <input type="number" name="meter" id="meter" class="form-control" placeholder="Enter meters" step="0.01" min="0.01">
                                     @if ($errors->has('meter'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('meter') }}
@@ -106,8 +99,6 @@
                                     </a>
                                 </div>
                             </div>
-                           
-                            
                         </div>
                     </div>
                     

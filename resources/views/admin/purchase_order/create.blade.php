@@ -114,10 +114,10 @@
                                             </select>
                                         </div>
                                         <div class="col-md-2">
-                                            <input type="number" name="fabrics[0][meter]" class="form-control meter-input" placeholder="Enter meters" required>
+                                            <input type="number" name="fabrics[0][meter]" class="form-control meter-input" placeholder="Enter meters" step="0.01" min="0.01" required>
                                         </div>
                                         <div class="col-md-2">
-                                            <input type="number" name="fabrics[0][price]" class="form-control meter-input" placeholder="Enter Price (per meter)" required>
+                                            <input type="number" name="fabrics[0][price]" class="form-control meter-input" placeholder="Enter Price (per meter)" step="0.01" min="0.01" required>
                                         </div>
                                         <div class="col-md-3">
                                             <input type="number" name="fabrics[0][total_price]" class="form-control meter-input" placeholder="Enter total price" value="0" readonly required>

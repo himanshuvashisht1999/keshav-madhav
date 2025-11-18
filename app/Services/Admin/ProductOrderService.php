@@ -15,6 +15,12 @@ use App\Models\OrderStageTransaction;
 use App\Models\ProductStage;
 use App\Models\MasterCustomer;
 use App\Models\MasterProductSubStage;
+use App\Models\OrderMain;
+use App\Models\ProductionGoodsItem;
+use App\Models\OrderProductItem;
+use App\Models\OrderProductItemTransaction;
+use App\Models\ItemStock;
+
 
 use App\Http\DataTable\Admin\ProductOrderDataTable as DataTable;
 use Illuminate\Support\Facades\DB;
@@ -42,9 +48,24 @@ class ProductOrderService {
         DB::beginTransaction();
 
         try {
+
+            $save_data_main = new OrderMain;
+            $save_data_main->sku = '';
+            $save_data_main->expected_delivery_date = $request->expected_delivery_date;
+            $save_data_main->master_customer_id = $request->master_customer_id;
+            $save_data_main->status = 1;
+            $save_data_main->save();
+            $customer_data = MasterCustomer::where('id',$request->master_customer_id)->first();
+            $firstThree = strtoupper(substr($customer_data->name, 0, 3));
+
+            $save_data_main->sku = $firstThree . "/". date('m/Y').'/' . $save_data_main->id;
+            $save_data_main->save();
+
+
             // Create main order
             foreach ($request->product_sku as $key => $single_data) {
                 $save_data = new Order;
+                $save_data->order_main_id = $save_data_main->id;
                 $save_data->sku = '';
                 $save_data->expected_delivery_date = $request->expected_delivery_date;
                 $save_data->master_customer_id = $request->master_customer_id;
@@ -114,22 +135,34 @@ class ProductOrderService {
                             $save_order_product_stage->pending_qty = 0;
                             $save_order_product_stage->status = 0;  // 0-pending
                         }
-                        
                         $save_order_product_stage->save();
 
+                    }
+
+                    $product_items = ProductionGoodsItem::where('product_id',$product_data->id)->orderBy('id','asc')->where('status',1)->get();
+                    foreach($product_items as $key=>$single_item){
+                        $total_qty = $single_item->quantity * $order_quantity;
+                        $save_order_product_items = new OrderProductItem;
+                        $save_order_product_items->order_product_id = $save_order_product->id;
+                        $save_order_product_items->item_sku = $single_item->item_attribute_value_sku;
+                        $save_order_product_items->quantity = $single_item->quantity;
+                        $save_order_product_items->order_quantity = $order_quantity;
+                        $save_order_product_items->total_item_quantity = $total_qty;
+                        $save_order_product_items->pending_quantity = $total_qty;
+                        $save_order_product_items->status = 0;
+                        $save_order_product_items->save();
 
                     }
-                    
 
                 }
             }
 
-            // ✅ Commit everything if all successful
+            // Commit everything if all successful
             DB::commit();
             return $return_data;
 
         } catch (\Exception $e) {
-            // ❌ Rollback everything on any error
+            //  Rollback everything on any error
             DB::rollBack();
 
             $return_data['message'] = $e->getMessage();
@@ -179,6 +212,7 @@ class ProductOrderService {
         DB::beginTransaction();
 
         try {
+
             $order_product_id = $request->order_product_id;
             $from_stage_id = $request->from_stage_id;
             $quantity = $request->quantity;
@@ -244,7 +278,7 @@ class ProductOrderService {
                     throw new \Exception(" This Lot no {$request->lot_no} is already exist");
                 }
                 // 3️⃣ Record transaction
-                OrderStageTransaction::create([
+                $OrderStageTransaction = OrderStageTransaction::create([
                     'sku' => $sku_for_trans,
                     'order_product_id' => $order_product_id,
                     'from_stage_id' => $from_stage_id,
@@ -257,6 +291,55 @@ class ProductOrderService {
                     'lot_no' => $request->lot_no,
                     'sub_stage_id' => $request->sub_stage,
                 ]);
+                $OrderStageTransaction_id = $OrderStageTransaction->id;
+
+                // entry order_product_item_transactions  
+                if (!empty($request->items)){
+                    foreach($request->items as $item_sku => $item_qty){
+                        $save_item_data = new OrderProductItemTransaction;
+                        $save_item_data->order_stage_transaction_id = $OrderStageTransaction_id;
+                        $save_item_data->item_sku = $item_sku;
+                        $save_item_data->quantiy = $item_qty;
+                        $save_item_data->save();
+
+                        /// update OrderProductItem 
+                        $orderProductItem = OrderProductItem::where('item_sku', $item_sku)
+                            ->where('order_product_id', $order_product_id)
+                            ->first();  
+
+                        if ($orderProductItem) {
+                            $orderProductItem->pending_quantity -= $item_qty;
+                            $orderProductItem->status = $orderProductItem->pending_quantity == 0 ? 1 : 0;
+                            $orderProductItem->save();
+                            // // update stock items
+                            $useItems = $item_qty;
+                            $totalQty = ItemStock::where('sku', $item_sku)->where('status', 1)->sum('quantity');
+                            if ($totalQty < $useItems ) {
+                                throw new \Exception("Insufficient stock available for this item.");
+                            }
+                            $rows = ItemStock::where('sku', $item_sku)->where('status', 1)->orderBy('id', 'ASC')->get();
+
+                            foreach ($rows as $row) {
+
+                                $currentQty = $row->quantity;
+
+                                if ($currentQty <= $useItems) {
+                                    $row->quantity = 0;
+                                    $row->save();
+                                    $useItems -= $currentQty;
+
+                                } else {
+                                    // Reduce only required amount
+                                    $row->quantity = $currentQty - $useItems;
+                                    $row->save();
+                                    // All done
+                                    $useItems = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+
             }else{
                 $orderProduct = OrderProduct::where('id',$order_product_id)->first();
                 if($currentStage->completed_qty == $orderProduct->quantity){

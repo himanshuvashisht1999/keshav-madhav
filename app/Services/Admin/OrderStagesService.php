@@ -16,6 +16,7 @@ use App\Models\ProductStage;
 use App\Models\MasterCustomer;
 use App\Models\MasterProductStage;
 use App\Models\MasterProductSubStage;
+use App\Models\OrderProductItem;
 
 use App\Http\DataTable\Admin\OrderStagesDataTable as DataTable;
 use Illuminate\Support\Facades\DB;
@@ -58,6 +59,30 @@ class OrderStagesService {
         return $data;
     }
 
+    public function getItemDetails($order_product_id){
+        $data = OrderProductItem::where('order_product_id', $order_product_id)
+            ->where('pending_quantity', '>', 0)
+            ->get();
+        return $data;
+    }
+    
+    public function nextProductStage($order_product_id,$from_stage_id){
+        $currentStage = OrderProductStage::where('order_product_id', $order_product_id)
+            ->where('stage_id', $from_stage_id)
+            ->firstOrFail();
+        $nextStage = OrderProductStage::where('order_product_id', $order_product_id)
+            ->where('sequence', '>', $currentStage->sequence)
+            ->orderBy('sequence', 'asc')
+            ->first();
+        $res =  MasterProductStage::find($nextStage->stage_id);
+        return $res['name'] ?? '';
+    }
+
+    public function getLotNo(){
+        $lot_no  = OrderStageTransaction::max('lot_no');
+        $lot_no = $lot_no + 1;
+        return $lot_no;
+    }
 
     
 

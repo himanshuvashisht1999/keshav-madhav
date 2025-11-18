@@ -169,7 +169,7 @@
 
                                                                                 <div class="form-group">
                                                                                     <label>Quantity to Transfer</label>
-                                                                                    <input type="number" name="quantity" class="form-control" max="{{ $stage->pending_qty }}" required>
+                                                                                    <input type="number" name="quantity" class="form-control" step="1" min="1" max="{{ $stage->pending_qty }}" required>
                                                                                 </div>
 
                                                                                 <div class="form-group">
