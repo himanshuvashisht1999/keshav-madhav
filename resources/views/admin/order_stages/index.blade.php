@@ -313,8 +313,9 @@ $(document).on('click', '.viewBtn', function() {
                 let item_list = '';
                 response.items_details.forEach(function(items) {
                     item_list += ` <div class="form-group mb-3">
-                                    <label class="small mb-1"><strong>${items.item_sku}</strong></label>
-                                    <input type="number" name="items[${items.item_sku}]" class="form-control form-control-sm" id="${items.item_sku}" min="1" max="${items.pending_quantity}" value="${items.pending_quantity}" step="1">
+                                    <input type="checkbox" onclick="clickToggle(this)" id="chk_${items.item_sku}">
+                                    <label class="small mb-1" for="chk_${items.item_sku}"><strong>${items.item_sku}</strong></label>
+                                    <input type="number" style="display:none;"  name="items[${items.item_sku}]" class="form-control form-control-sm" id="input_${items.item_sku}" min="1" max="${items.pending_quantity}" value="${items.pending_quantity}" step="1">
                                 </div>`;
                 });
                 $('#item-list').html(item_list);
@@ -325,6 +326,21 @@ $(document).on('click', '.viewBtn', function() {
         }
     });
 });
+
+function clickToggle(checkbox){
+    // const checkbox = document.getElementById('toggleInput');
+    // alert(checkbox.checked);
+    const sku = checkbox.id.replace('chk_', '');
+    const numberInput = document.getElementById('input_' + sku);
+
+    if (checkbox.checked) {
+        numberInput.style.display = 'block';
+        numberInput.disabled = false; // enable input so it will be submitted
+    } else {
+        numberInput.style.display = 'none';
+        numberInput.disabled = true; // disable input so it will NOT be submitted
+    }
+}
 
 </script>
 @endsection

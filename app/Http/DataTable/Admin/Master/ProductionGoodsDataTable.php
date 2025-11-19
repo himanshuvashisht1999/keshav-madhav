@@ -29,12 +29,15 @@ class ProductionGoodsDataTable  {
                 }
                 if ($request->has('fabric_sku') && !empty($request->fabric_sku)) {
                     $query->where('fabric_sku', 'like', "%{$request->get('fabric_sku')}%");
+                }  
+                if ($request->has('status') && !empty($request->status)) {
+                    $query->where('status', $request->get('status'));
                 }                            
             }) 
            
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
-                return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
+                return ($status == 1) ? '<span class="badge badge-xs badge-success">Published</span>' : '<span class="badge badge-xs badge-primary">Pending BOM</span>';
             })
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
