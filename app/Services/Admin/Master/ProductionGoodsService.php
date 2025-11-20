@@ -43,7 +43,7 @@ class ProductionGoodsService {
         $save_data->master_color_id = $request->master_color_id;
         $save_data->is_printing = $request->is_printing;
         $save_data->fabric_sku = '';
-        $save_data->status = 1;
+        $save_data->status = 0;
         $save_data->save();
         // foreach($request->fabric_sku as $key=>$single){
         //     $save_boe = new BillOfMaterial;

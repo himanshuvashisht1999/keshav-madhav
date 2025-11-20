@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\ProductionGoodsItem;
 use App\Models\ItemAttribute;
+use App\Models\ProductionGoods;
 use App\Models\ItemAttributeValue;
 use App\Models\BillOfMaterial;
 use DB;
@@ -78,7 +79,18 @@ class ProductionGoodsItemService {
                     }
                 }
             }
-
+            // if any fabric added then status change of the product 
+            $BillOfMaterial = BillOfMaterial::where("product_id", $request->product_id)
+                                ->where('status', 1)
+                                ->exists(); 
+            if ($BillOfMaterial) {
+                $product = ProductionGoods::find($request->product_id);  
+                if ($product) {  
+                    $product->update([
+                        'status' => 1,
+                    ]);
+                }
+            }
             //  items logic 
             if (!empty($request->old_items_sku) && is_array($request->old_items_sku)) {
                 $updated_items_id = [];

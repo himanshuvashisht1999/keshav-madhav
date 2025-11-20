@@ -42,9 +42,13 @@
                         <td>
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
-                        
-                      
-
+                        <td>
+                            <select class="form-control" name="status" id="status" autocomplete="off">
+                                <option value="">ALL</option>
+                                <option value="1">Published</option>
+                                <option value="0">Pending BOM</option>
+                            </select>
+                        </td>
                         <td>
                        
                        </td>
@@ -52,6 +56,7 @@
                   <tr>
                     <th>ID</th>
                     <th>SKU</th>
+                    <th>Status</th>
                     <th>Action</th>
                   </tr>
                   </thead>
@@ -88,12 +93,14 @@
                 data: function (d) {
                     d.id = $('#id').val();
                     d.sku = $('#sku').val();
+                    d.status = $('#status').val();
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'sku', name: 'sku'},
+                {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
