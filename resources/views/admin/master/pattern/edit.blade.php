@@ -77,76 +77,103 @@
                         </div>
                         <br/>
                         <div id="items-container">
-                            <label for="exampleInputEmail1">Pattern Parts : </label>
+                            <label>Pattern Parts :</label>
+
                             @if ($parts_data->isNotEmpty()) 
                                 @foreach($parts_data as $index => $part)
-                                    <input type="hidden" name="old_parts_id[]" value="{{$part->id}}">
-                                    <div class="items-row row mb-2 item-row">
-                                        <div class="col-md-1">
-                                            <input type="text" name="old_part_no[{{$part->id}}]" class="form-control part_no" readonly>
+                                    <input type="hidden" name="old_parts_id[]" value="{{ $part->id }}">
+
+                                    <div class="items-row row mb-2 item-row align-items-center">
+
+                                        <div class="col-12 col-md-1 mb-2">
+                                            <input type="text" name="old_part_no[{{ $part->id }}]" 
+                                                class="form-control part_no" readonly>
                                         </div>
 
-                                        <div class="col-md-4">
-                                            <input class="form-control" type="text" name="old_part_name[{{$part->id}}]" id="part_name_{{$part->id}}"  value="{{$part->name}}" required>
+                                        <div class="col-12 col-md-4 mb-2">
+                                            <input type="text" name="old_part_name[{{ $part->id }}]" 
+                                                class="form-control" value="{{ $part->name }}" required>
                                         </div>
 
-                                        <div class="col-md-6 mx-auto d-flex align-items-center justify-content-between flex-wrap">
-                                            <div class="form-check me-3">
-                                                <input class="form-check-input" type="checkbox" name="old_is_printing[{{$part->id}}]" id="is_printing_{{$part->id}}" {{ $part->is_printing ? 'checked' : '' }} >
-                                                <label class="form-check-label" for="is_printing_{{$part->id}}">Printing</label>
-                                            </div>
-
-                                            <div class="form-check me-3">
-                                                <input class="form-check-input" type="checkbox" name="old_is_embroidery[{{$part->id}}]" id="old_is_embroidery_{{$part->id}}" {{ $part->is_embroidery ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="old_is_embroidery_{{$part->id}}">Embroidery</label>
-                                            </div>
-
-                                            <div class="form-check d-flex flex-column align-items-center" style="height:100%">
-                                                <input class="form-control" type="file" name="old_part_img[{{$part->id}}]" {{ $part->parts_img == '' ? 'required' : '' }} >
+                                        <div class="col-6 col-md-2 mb-2">
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input"
+                                                    name="old_is_printing[{{ $part->id }}]"
+                                                    {{ $part->is_printing ? 'checked' : '' }}>
+                                                <label class="form-check-label">Printing</label>
                                             </div>
                                         </div>
 
-                                        <div class="col-md-1">
+                                        <div class="col-6 col-md-2 mb-2">
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input"
+                                                    name="old_is_embroidery[{{ $part->id }}]"
+                                                    {{ $part->is_embroidery ? 'checked' : '' }}>
+                                                <label class="form-check-label">Embroidery</label>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12 col-md-2 mb-2">
+                                            <input type="file" name="old_part_img[{{ $part->id }}]" 
+                                                class="form-control"
+                                                {{ $part->parts_img == '' ? 'required' : '' }}>
+                                        </div>
+
+                                        <div class="col-12 col-md-1 mb-2 d-flex justify-content-center">
                                             @if($index == 0)
-                                                <button type="button" class="btn btn-success add-item"><i class="fa fa-plus"></i></button>
+                                                <button type="button" class="btn btn-success add-item">
+                                                    <i class="fa fa-plus"></i>
+                                                </button>
                                             @else
-                                                <button type="button" class="btn btn-danger remove-item"><i class="fa fa-minus"></i></button>
+                                                <button type="button" class="btn btn-danger remove-item">
+                                                    <i class="fa fa-minus"></i>
+                                                </button>
                                             @endif
                                         </div>
+
                                     </div>
+
                                 @endforeach
+
                             @else
-                            <div class="items-row row mb-2 item-row">
-                                <div class="col-md-1">
-                                    <input type="text" name="part_no[]" class="form-control part_no" readonly>
-                                </div>
+                                <div class="items-row row mb-2 item-row align-items-center">
 
-                                <div class="col-md-4">
-                                    <input class="form-control" type="text" name="part_name[]" id="part_name" required>
-                                </div>
-
-                                <div class="col-md-6 mx-auto d-flex align-items-center justify-content-between flex-wrap">
-                                    <div class="form-check me-3">
-                                        <input class="form-check-input" type="checkbox" name="is_printing[]" id="is_printing">
-                                        <label class="form-check-label" for="is_printing">Printing</label>
+                                    <div class="col-12 col-md-1 mb-2">
+                                        <input type="text" name="part_no[]" class="form-control part_no" readonly>
                                     </div>
 
-                                    <div class="form-check me-3">
-                                        <input class="form-check-input" type="checkbox" name="is_embroidery[]" id="is_embroidery">
-                                        <label class="form-check-label" for="is_embroidery">Embroidery</label>
+                                    <div class="col-12 col-md-4 mb-2">
+                                        <input type="text" name="part_name[]" class="form-control" required>
                                     </div>
 
-                                    <div class="form-check d-flex flex-column align-items-center" style="height:100%">
-                                        <input class="form-control" type="file" name="part_img[]" required>
+                                    <div class="col-6 col-md-2 mb-2">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" name="is_printing[]">
+                                            <label class="form-check-label">Printing</label>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div class="col-md-1">
-                                    <button type="button" class="btn btn-success add-item"><i class="fa fa-plus"></i></button>
+                                    <div class="col-6 col-md-2 mb-2">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" name="is_embroidery[]">
+                                            <label class="form-check-label">Embroidery</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 col-md-2 mb-2">
+                                        <input type="file" name="part_img[]" class="form-control" required>
+                                    </div>
+
+                                    <div class="col-12 col-md-1 mb-2 d-flex justify-content-center">
+                                        <button type="button" class="btn btn-success add-item">
+                                            <i class="fa fa-plus"></i>
+                                        </button>
+                                    </div>
+
                                 </div>
-                            </div>
                             @endif
                         </div>
+
                         <br/><br/>
                         <div class="row">
                             <div class="col-md-12">
@@ -217,35 +244,43 @@
         let uniquePrintId  = "print_" + rowCounter;
         let uniqueEmbId    = "embro_" + rowCounter;
 
-        let newRow = ` <div class="items-row row mb-2 item-row">
-                        <div class="col-md-1">
-                            <input type="text" name="part_no[]" class="form-control part_no" readonly>
-                        </div>
+        let newRow = `
+            <div class="items-row row mb-2 item-row align-items-center">
 
-                        <div class="col-md-4">
-                            <input class="form-control" type="text" name="part_name[]" id="${uniquePartName}" required>
-                        </div>
+                <div class="col-12 col-md-1 mb-2">
+                    <input type="text" name="part_no[]" class="form-control part_no" readonly>
+                </div>
 
-                        <div class="col-md-6 mx-auto d-flex align-items-center justify-content-between flex-wrap">
-                            <div class="form-check me-3">
-                                <input class="form-check-input" type="checkbox" name="is_printing[]" id="${uniquePrintId}">
-                                <label class="form-check-label" for="${uniquePrintId}">Printing</label>
-                            </div>
+                <div class="col-12 col-md-4 mb-2">
+                    <input type="text" name="part_name[]" class="form-control" required>
+                </div>
 
-                            <div class="form-check me-3">
-                                <input class="form-check-input" type="checkbox" name="is_embroidery[]" id="${uniqueEmbId}">
-                                <label class="form-check-label" for="${uniqueEmbId}">Embroidery</label>
-                            </div>
+                <div class="col-6 col-md-2 mb-2">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="is_printing[]">
+                        <label class="form-check-label">Printing</label>
+                    </div>
+                </div>
 
-                            <div class="form-check d-flex flex-column align-items-center" style="height:100%">
-                                <input class="form-control" type="file" name="part_img[]" required>
-                            </div>
-                        </div>
+                <div class="col-6 col-md-2 mb-2">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="is_embroidery[]">
+                        <label class="form-check-label">Embroidery</label>
+                    </div>
+                </div>
 
-                        <div class="col-md-1">
-                            <button type="button" class="btn btn-danger remove-item"><i class="fa fa-minus"></i></button>
-                        </div>
-                    </div>`;
+                <div class="col-12 col-md-2 mb-2">
+                    <input type="file" name="part_img[]" class="form-control" required>
+                </div>
+
+                <div class="col-12 col-md-1 mb-2 d-flex justify-content-center">
+                    <button type="button" class="btn btn-danger remove-item">
+                        <i class="fa fa-minus"></i>
+                    </button>
+                </div>
+
+            </div>`;
+
         $('#items-container').append(newRow);
         $('.select2').select2(); 
         generateSKU();

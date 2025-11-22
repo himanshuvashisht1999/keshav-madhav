@@ -22,7 +22,7 @@ class MasterProductStageDataTable  {
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
-                
+                $query->where('status',1);
             }) 
          
             ->editColumn('status', function ($queue) {
