@@ -119,11 +119,12 @@ class ProductOrderService {
                     //// save order product stages
                     
                     $product_stages = ProductStage::where('master_product_id',$product_data->id)->orderBy('id','asc')->where('status',1)->get();
+                    $sequence_value = 1;
                     foreach($product_stages as $key=>$single_stage){
                         $save_order_product_stage = new OrderProductStage;
                         $save_order_product_stage->order_product_id = $save_order_product->id;
                         $save_order_product_stage->stage_id = $single_stage->master_stage_id;
-                        $save_order_product_stage->sequence = $key+1;
+                        $save_order_product_stage->sequence = $sequence_value;
                         if($key == 0){
                             $save_order_product_stage->total_qty = $order_quantity;
                             $save_order_product_stage->completed_qty = 0;
@@ -136,6 +137,32 @@ class ProductOrderService {
                             $save_order_product_stage->status = 0;  // 0-pending
                         }
                         $save_order_product_stage->save();
+                        $sequence_value++;
+
+                        // if($single_stage->master_stage_id == $product_data->printing_stage_after){
+                        //     $save_order_product_stage = new OrderProductStage;
+                        //     $save_order_product_stage->order_product_id = $save_order_product->id;
+                        //     $save_order_product_stage->stage_id = 1;
+                        //     $save_order_product_stage->sequence = $sequence_value;
+                        //     $save_order_product_stage->total_qty = 0;
+                        //     $save_order_product_stage->completed_qty = 0;
+                        //     $save_order_product_stage->pending_qty = 0;
+                        //     $save_order_product_stage->status = 0;
+                        //     $save_order_product_stage->save();
+                        //     $sequence_value++;
+                        // }
+                        // if($single_stage->master_stage_id == $product_data->embroidery_stage_after){
+                        //     $save_order_product_stage = new OrderProductStage;
+                        //     $save_order_product_stage->order_product_id = $save_order_product->id;
+                        //     $save_order_product_stage->stage_id = 2;
+                        //     $save_order_product_stage->sequence = $sequence_value;
+                        //     $save_order_product_stage->total_qty = 0;
+                        //     $save_order_product_stage->completed_qty = 0;
+                        //     $save_order_product_stage->pending_qty = 0;
+                        //     $save_order_product_stage->status = 0;
+                        //     $save_order_product_stage->save();
+                        //     $sequence_value++;
+                        // }
 
                     }
 
@@ -224,20 +251,19 @@ class ProductOrderService {
                 throw new \Exception("Quantity exceeds pending quantity of this stage.");
             }
 
-            // Get current stage
-            $currentStage = OrderProductStage::where('order_product_id', $order_product_id)
-                                ->where('stage_id', $from_stage_id)
-                                ->firstOrFail();
-
+            $currentStage = getCurrentStage($order_product_id,$from_stage_id);
             if ($quantity > $currentStage->pending_qty) {
                 throw new \Exception("Quantity exceeds pending quantity of this stage.");
             }
 
             // Get next stage
-            $nextStage = OrderProductStage::where('order_product_id', $order_product_id)
-                            ->where('sequence', '>', $currentStage->sequence)
-                            ->orderBy('sequence', 'asc')
-                            ->first();
+            if($from_stage_id == 0 || $from_stage_id == 1){
+                $nextStage = '';
+            }else{
+                $nextStage = getNextStage($order_product_id,$currentStage->sequence);
+            }
+
+
 
             // 1️⃣ Update current stage
             $currentStage->completed_qty += $quantity;
@@ -265,9 +291,7 @@ class ProductOrderService {
                     ->count() + 1;
                 $sku_for_trans = "{$orderProduct->order->sku}/{$order_product_number}/{$stage_sku}/{$stageCount}";
                 
-                $cuttingStage = ProductStage::where('master_product_id', $order_product_id)
-                    ->orderBy('id', 'asc')
-                    ->first();
+                $cuttingStage = getFirstStage($order_product_id);
                 $cuttingStageId = $cuttingStage->master_stage_id ?? 1;
 
                 $isExistLotNO = OrderStageTransaction::where('order_product_id', $order_product_id)
@@ -340,6 +364,9 @@ class ProductOrderService {
                     }
                 }
 
+            }else if($from_stage_id == 1 || $from_stage_id == 2){
+
+                
             }else{
                 $orderProduct = OrderProduct::where('id',$order_product_id)->first();
                 if($currentStage->completed_qty == $orderProduct->quantity){
@@ -353,11 +380,68 @@ class ProductOrderService {
                 
             }
 
-            $total_quantity = $quantity;
+            // if($from_stage_id != 1 && $from_stage_id != 2){
+                $total_quantity = $quantity;
 
-            $save_order_transaction = OrderStageTransaction::where('id', $request->order_transaction_id)->first();
-            $save_order_transaction->remaining_quantity = $save_order_transaction->remaining_quantity - $total_quantity;
-            $save_order_transaction->save();
+                $save_order_transaction = OrderStageTransaction::where('id', $request->order_transaction_id)->first();
+                $save_order_transaction->remaining_quantity = $save_order_transaction->remaining_quantity - $total_quantity;
+                $save_order_transaction->save();
+
+            // }
+
+            
+
+            //// code for printing and emproidary
+
+            $orderProduct = OrderProduct::where('id',$order_product_id)->first();
+            $product_data = ProductionGoods::where('sku',$orderProduct->product_sku)->first();
+            if($product_data && $from_stage_id == $product_data->printing_stage_after){
+
+                $sku_for_printing = "{$orderProduct->order->sku}/{$order_product_number}/PRINTING/{$stageCount}";
+                $OrderStageTransaction = OrderStageTransaction::create([
+                    'sku' => $sku_for_printing,
+                    'order_product_id' => $order_product_id,
+                    'from_stage_id' => $from_stage_id,
+                    'to_stage_id' => 1,
+                    'quantity' => $quantity,
+                    'processed_by' => $user_id,
+                    'remarks' => $remarks,
+                    'status' => 1, // Transaction completed
+                    'remaining_quantity' => $quantity,
+                    'lot_no' => $request->lot_no,
+                    'sub_stage_id' => 0,
+                ]);
+
+                $order_product_stage_update = OrderProductStage::where('order_product_id',$order_product_id)->where('stage_id',1)->update([
+                    'total_qty' => $quantity,
+                    'pending_qty' => $quantity
+                ]);
+            }
+
+            if($product_data && $from_stage_id == $product_data->embroidery_stage_after){
+
+                $sku_for_embroidery= "{$orderProduct->order->sku}/{$order_product_number}/EMBROIDERY/{$stageCount}";
+                $OrderStageTransaction = OrderStageTransaction::create([
+                    'sku' => $sku_for_printing,
+                    'order_product_id' => $order_product_id,
+                    'from_stage_id' => $from_stage_id,
+                    'to_stage_id' => 2,
+                    'quantity' => $quantity,
+                    'processed_by' => $user_id,
+                    'remarks' => $remarks,
+                    'status' => 1, // Transaction completed
+                    'remaining_quantity' => $quantity,
+                    'lot_no' => $request->lot_no,
+                    'sub_stage_id' => 0,
+                ]);
+
+                $order_product_stage_update = OrderProductStage::where('order_product_id',$order_product_id)->where('stage_id',1)->update([
+                    'total_qty' => $quantity,
+                    'pending_qty' => $quantity
+                ]);
+            }
+
+            ///// end code 
 
             DB::commit();
             return true;
@@ -515,7 +599,7 @@ class ProductOrderService {
     }
 
     public function sub_stages_cutting(){
-        $data = MasterProductSubStage::where('status',1)->where('master_product_stage_id',1)->get();
+        $data = getCuttingSubStages();
         return $data;
     }
     

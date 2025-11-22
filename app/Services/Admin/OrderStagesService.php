@@ -48,13 +48,9 @@ class OrderStagesService {
         return $data;
     }
     public function getSubStages($order_product_id,$from_stage_id){
-        $currentStage = OrderProductStage::where('order_product_id', $order_product_id)
-            ->where('stage_id', $from_stage_id)
-            ->firstOrFail();
-        $nextStage = OrderProductStage::where('order_product_id', $order_product_id)
-            ->where('sequence', '>', $currentStage->sequence)
-            ->orderBy('sequence', 'asc')
-            ->first();
+
+        $currentStage = getCurrentStage($order_product_id,$from_stage_id);
+        $nextStage = getNextStage($order_product_id,$currentStage->sequence);
         $data = MasterProductSubStage::where('master_product_stage_id',$nextStage->stage_id)->get();
         return $data;
     }
@@ -67,13 +63,8 @@ class OrderStagesService {
     }
     
     public function nextProductStage($order_product_id,$from_stage_id){
-        $currentStage = OrderProductStage::where('order_product_id', $order_product_id)
-            ->where('stage_id', $from_stage_id)
-            ->firstOrFail();
-        $nextStage = OrderProductStage::where('order_product_id', $order_product_id)
-            ->where('sequence', '>', $currentStage->sequence)
-            ->orderBy('sequence', 'asc')
-            ->first();
+        $currentStage = getCurrentStage($order_product_id,$from_stage_id);
+        $nextStage = getNextStage($order_product_id,$currentStage->sequence);
         $res =  MasterProductStage::find($nextStage->stage_id);
         return $res['name'] ?? '';
     }

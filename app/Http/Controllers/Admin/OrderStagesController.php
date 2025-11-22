@@ -49,7 +49,6 @@ class OrderStagesController extends Controller {
         $data               =   $this->service->getSubStages($order_product_id,$from_stage_id);
         $items_details      =   $this->service->getItemDetails($order_product_id);
         $nextProductStage   =   $this->service->nextProductStage($order_product_id,$from_stage_id);
-        $nextProductStage   =   $this->service->nextProductStage($order_product_id,$from_stage_id);
         $lot_no             =   $this->service->getLotNo();
         return response()->json(['status' => true, 'data' => $data, 'items_details' => $items_details, 'next_product_stage' => $nextProductStage, 'lot_no' => $lot_no]);
     }
