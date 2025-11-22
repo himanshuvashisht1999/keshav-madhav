@@ -63,7 +63,7 @@ class OrderStagesService {
     }
     
     public function nextProductStage($order_product_id,$from_stage_id){
-        $getCurrentStage = getCurrentStage($order_product_id,$from_stage_id);
+        $currentStage = getCurrentStage($order_product_id,$from_stage_id);
         $nextStage = getNextStage($order_product_id,$currentStage->sequence);
         $res =  MasterProductStage::find($nextStage->stage_id);
         return $res['name'] ?? '';

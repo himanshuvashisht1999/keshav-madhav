@@ -1,4 +1,7 @@
 <?php
+use App\Models\MasterProductSubStage;
+use App\Models\OrderProductStage;
+use App\Models\ProductStage;
 
 function getformatDateTime($dateString)
 {
@@ -10,8 +13,12 @@ function getformatDate($dateString)
     return date('d M Y', strtotime($dateString));
 }
 
+// function getCurrentStage($order_product_id,$from_stage_id){
+//     $data = OrderProductStage::where('order_product_id', $order_product_id)->where('stage_id', $from_stage_id)->whereNotIn('stage_id',[1,2])->first();
+//     return $data;
+// }
 function getCurrentStage($order_product_id,$from_stage_id){
-    $data = OrderProductStage::where('order_product_id', $order_product_id)->where('stage_id', $from_stage_id)->whereNotIn('stage_id',[1,2])->firstOrFail();
+    $data = OrderProductStage::where('order_product_id', $order_product_id)->where('stage_id', $from_stage_id)->first();
     return $data;
 }
 function getNextStage($order_product_id,$sequence){
@@ -19,7 +26,7 @@ function getNextStage($order_product_id,$sequence){
     return $data;
 }
 function getFirstStage($order_product_id){
-    $data = ProductStage::where('master_product_id', $order_product_id)->whereNotIn('stage_id',[1,2])->orderBy('id', 'asc')->first();
+    $data = ProductStage::where('master_product_id', $order_product_id)->whereNotIn('master_stage_id',[1,2])->orderBy('id', 'asc')->first();
     return $data;
 }
 function getCuttingSubStages(){
