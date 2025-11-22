@@ -168,7 +168,18 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <input type="radio" name="printing_stage_after" class="printing-radio" id="is_printing_${indexRow}" >
+                                                <label for="is_printing_${indexRow}">Printing</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <input type="radio" class="embroidery-radio" name="embroidery_stage_after" id="is_embroidery_${indexRow}" >
+                                                <label for="is_embroidery_${indexRow}">Embroidery</label>
+                                            </div>
+                                        </div>
                                         <div class="col-md-2">
                                         @if($key==0)
                                         <button type="button" class="btn btn-success add-stage"><i class="fa fa-plus"></i></button>
@@ -274,7 +285,9 @@ $(document).ready(function () {
     $('.select2').select2();
 
     // Add new stage row
+    let indexRow = 0;
     $(document).on('click', '.add-stage', function () {
+        indexRow++;
         let newRow = `
             <div class="stage-row row mb-2">
                 <div class="col-md-10">
@@ -285,6 +298,18 @@ $(document).ready(function () {
                                 <option value="{{ $stage->id }}">{{ $stage->name }}</option>
                             @endforeach
                         </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <input type="radio" name="printing_stage_after" class="printing-radio" id="is_printing_${indexRow}" >
+                        <label for="is_printing_${indexRow}">Printing</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <input type="radio" class="embroidery-radio" name="embroidery_stage_after" id="is_embroidery_${indexRow}" >
+                        <label for="is_embroidery_${indexRow}">Embroidery</label>
                     </div>
                 </div>
                 <div class="col-md-2">

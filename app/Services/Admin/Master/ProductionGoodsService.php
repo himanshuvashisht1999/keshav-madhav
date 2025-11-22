@@ -34,6 +34,8 @@ class ProductionGoodsService {
     }
 
     public function store(Request $request){
+        $printing_stage_after = $request->printing_stage_after ?? 3;
+        $embroidery_stage_after = $request->embroidery_stage_after ?? 3;
         $save_data = new ProductionGoods;
         $save_data->sku = $request->sku;
         $save_data->name_of_garment = $request->name_of_garment;
@@ -43,6 +45,8 @@ class ProductionGoodsService {
         $save_data->is_embroidery = $request->is_embroidery;
         $save_data->master_color_id = $request->master_color_id;
         $save_data->is_printing = $request->is_printing;
+        $save_data->printing_stage_after = $printing_stage_after;
+        $save_data->embroidery_stage_after = $embroidery_stage_after;
         $save_data->fabric_sku = '';
         $save_data->status = 0;
         $save_data->save();
@@ -58,6 +62,19 @@ class ProductionGoodsService {
             $save_stage->master_product_id = $save_data->id;
             $save_stage->master_stage_id = $single;
             $save_stage->save();
+
+            if($printing_stage_after == $single){
+                $save_stage = new ProductStage;
+                $save_stage->master_product_id = $save_data->id;
+                $save_stage->master_stage_id = 1;
+                $save_stage->save();
+            }
+            if($embroidery_stage_after == $single){
+                $save_stage = new ProductStage;
+                $save_stage->master_product_id = $save_data->id;
+                $save_stage->master_stage_id = 2;
+                $save_stage->save();
+            }
         }
         return true;
     }
