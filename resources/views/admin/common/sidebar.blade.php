@@ -1,7 +1,7 @@
 <?php
 $page_url = $_SERVER['REQUEST_URI'];
 $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
-$stage_data = App\Models\MasterProductStage::where('status', 1)->get();
+$stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
 ?>
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
