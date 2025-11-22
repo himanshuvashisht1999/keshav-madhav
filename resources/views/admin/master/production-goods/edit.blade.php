@@ -99,7 +99,9 @@
                                     @endif
                                 </div>
                             </div> 
-                            <div class="col-md-6">
+                            <input type="hidden" name="is_printing" value="{{$data->is_printing}}">
+                            <input type="hidden" name="is_embroidery" value="{{$data->is_embroidery}}">
+                            <!-- <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Is Printing</label>
                                     <select name="is_printing" class="form-control select2" style="width: 100%;">
@@ -116,25 +118,23 @@
                                         <option value="1" {{$data->is_printing == 1 ? 'selected' : ''}}>Yes</option>
                                     </select>
                                 </div>
-                            </div>
+                            </div> -->
                             
                             
+                           
+
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="garment_pattern">Garment Pattern</label>
-                                    <input list="garment_patterns" name="garment_pattern" id="garment_pattern"
-                                        class="form-control" placeholder="Select or type garment type"
-                                        value="{{$data->garment_pattern }}">
-
-                                    <datalist id="garment_patterns">
-                                        @foreach($garment_patterns as $single)
-                                            <option value="{{ $single->garment_pattern }}">
+                                    <label>Product Pattern</label>
+                                    <select name="garment_pattern" class="form-control select2" style="width: 100%;" id="garment_pattern">
+                                        <!-- <option value="">Select</option> -->
+                                        @foreach($garment_patterns as $single_data)
+                                        <option value="{{$single_data->sku}}" {{$data->garment_pattern == $single_data->sku ? 'selected' : ''}}>{{$single_data->sku}}</option>
                                         @endforeach
-                                    </datalist>
-
+                                    </select>
                                     @if ($errors->has('garment_pattern'))
                                         <span class="invalid-feedback d-block">
-                                            {{ $errors->first('garment_pattern') }}
+                                        {{ $errors->first('garment_pattern') }}
                                         </span>
                                     @endif
                                 </div>
