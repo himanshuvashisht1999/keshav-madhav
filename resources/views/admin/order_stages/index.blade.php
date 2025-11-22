@@ -328,8 +328,6 @@ $(document).on('click', '.viewBtn', function() {
 });
 
 function clickToggle(checkbox){
-    // const checkbox = document.getElementById('toggleInput');
-    // alert(checkbox.checked);
     const sku = checkbox.id.replace('chk_', '');
     const numberInput = document.getElementById('input_' + sku);
 
