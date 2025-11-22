@@ -98,7 +98,9 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <input type="hidden" name="is_printing" value="1">
+                            <input type="hidden" name="is_embroidery" value="1">
+                            <!-- <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Is Printing</label>
                                     <select name="is_printing" class="form-control select2" style="width: 100%;">
@@ -115,29 +117,27 @@
                                         <option value="1">Yes</option>
                                     </select>
                                 </div>
-                            </div>
-                            
-                            
+                            </div> -->
+
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="garment_pattern">Product Pattern</label>
-                                    <input list="garment_patterns" name="garment_pattern" id="garment_pattern"
-                                        class="form-control" placeholder="Select or type garment type"
-                                        value="{{ old('garment_pattern') }}">
-
-                                    <datalist id="garment_patterns">
-                                        @foreach($garment_patterns as $single)
-                                            <option value="{{ $single->garment_pattern }}">
+                                    <label>Product Pattern</label>
+                                    <select name="garment_pattern" class="form-control select2" style="width: 100%;" id="garment_pattern">
+                                        <!-- <option value="">Select</option> -->
+                                        @foreach($garment_patterns as $single_data)
+                                        <option value="{{$single_data->sku}}" {{old('garment_pattern') == $single_data->sku ? 'selected' : ''}}>{{$single_data->sku}}</option>
                                         @endforeach
-                                    </datalist>
-
+                                    </select>
                                     @if ($errors->has('garment_pattern'))
                                         <span class="invalid-feedback d-block">
-                                            {{ $errors->first('garment_pattern') }}
+                                        {{ $errors->first('garment_pattern') }}
                                         </span>
                                     @endif
                                 </div>
                             </div>
+                            
+                            
+                           
 
                             
                             <div class="col-md-6">
@@ -238,8 +238,9 @@
     function generateSKU() {
         let type_of_garment = $("input[name='type_of_garment']").val().trim();
         let name_of_garment = $("input[name='name_of_garment']").val().trim();
-        let garment_pattern = $("input[name='garment_pattern']").val().trim();
         let master_size_id = $("select[name='master_size_id'] option:selected").text().trim();
+        let garment_pattern = $("select[name='garment_pattern'] option:selected").text().trim();
+
    
 
         // Remove special characters and uppercase
@@ -260,8 +261,8 @@
         // Name input
         $("input[name='type_of_garment']").on("input", generateSKU);
         $("input[name='name_of_garment']").on("input", generateSKU);
-        $("input[name='garment_pattern']").on("input", generateSKU);
-
+        $("select[name='garment_pattern']")
+            .on("change", generateSKU);
         // All select fields
         $("select[name='master_size_id']")
             .on("change", generateSKU);

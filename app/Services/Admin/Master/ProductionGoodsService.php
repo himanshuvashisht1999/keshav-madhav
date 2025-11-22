@@ -14,6 +14,7 @@ use App\Models\BillOfMaterial;
 use App\Models\MasterProductStage;
 use App\Models\ProductStage;
 use App\Http\DataTable\Admin\Master\ProductionGoodsDataTable as DataTable;
+use App\Models\MasterPattern;
 
 class ProductionGoodsService {
     public function __construct(
@@ -151,7 +152,7 @@ class ProductionGoodsService {
         return $data;
     }
     public function garment_patterns(){
-        $data = ProductionGoods::where('status',1)->select('garment_pattern')->distinct()->get();
+        $data = MasterPattern::where('status',1)->get();
         return $data;
     }
     public function product_stages(){

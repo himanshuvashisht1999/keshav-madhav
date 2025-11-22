@@ -25,7 +25,7 @@ class ProductionGoodsUpdateRequest extends FormRequest{
             'type_of_garment' => 'required',
             'garment_pattern' => 'required',
             'master_size_id' => 'required',
-            'fabric_sku' => 'required',
+            // 'fabric_sku' => 'required',
             // 'sku'    => 'required|unique:production_goods,sku,' . $request->id,
             // 'status' =>'required',
         ];
