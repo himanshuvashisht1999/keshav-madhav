@@ -133,6 +133,13 @@ $stage_data = App\Models\MasterProductStage::where('status', 1)->get();
                         </a>
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
+                                <a href="{{ route('admin.master.pattern.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/master/pattern') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Pattern</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a href="{{ route('admin.master.item.index') }}"
                                     class="{{ str_contains($page_url, 'admin/master/item') ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>

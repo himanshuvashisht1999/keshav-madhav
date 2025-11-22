@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\GeneralSettingsController as AdminGeneralSettingsController;
 use App\Http\Controllers\Admin\Master\VendorController as AdminVendorController;
 use App\Http\Controllers\Admin\Master\ItemController as AdminItemController;
+use App\Http\Controllers\Admin\Master\PatternController as AdminPatternController;
 use App\Http\Controllers\Admin\Master\ItemAttributesController as AdminItemAttributesController;
 use App\Http\Controllers\Admin\Master\FabricDyeController as AdminFabricDyeController;
 use App\Http\Controllers\Admin\Master\FabricGsmController as AdminFabricGsmController;
@@ -172,7 +173,16 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/update',[AdminVendorController::class,'update'])->name('update');
             Route::get('/delete',[AdminVendorController::class,'delete'])->name('delete');
         });
-
+        Route::prefix('master/pattern')->name('master.pattern.')->group(function () {
+            Route::get('/index',[AdminPatternController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminPatternController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminPatternController::class,'create'])->name('create');
+            Route::post('/store',[AdminPatternController::class,'store'])->name('store');
+            Route::get('/edit',[AdminPatternController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminPatternController::class,'update'])->name('update');
+            Route::get('/delete',[AdminPatternController::class,'delete'])->name('delete');
+        });
+        
         Route::prefix('master/item')->name('master.item.')->group(function () {
             Route::get('/index',[AdminItemController::class,'index'])->name('index');
             Route::get('/indexList',[AdminItemController::class,'indexList'])->name('indexList');
