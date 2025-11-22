@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Edit Sub Stage ({{$stage_data->name}})</h1>
+                    <h1>Edit Stage Units ({{$stage_data->name}})</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Edit Sub Stage</li>
+                        <li class="breadcrumb-item active">Edit Stage Units</li>
                     </ol>
                 </div> 
             </div>
@@ -24,7 +24,7 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Edit Sub Stage</h3>
+                    <h3 class="card-title">Edit Stage Units</h3>
                 </div>
                 <form action="{{route('admin.master.product-sub-stage.update')}}" method="post" enctype="multipart/form-data">
                     @csrf
