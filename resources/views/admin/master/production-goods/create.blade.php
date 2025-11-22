@@ -172,7 +172,7 @@
                                 <label>Production Stages (in order)</label>
                                 <div id="stages-container">
                                     <div class="stage-row row mb-2">
-                                        <div class="col-md-10">
+                                        <div class="col-md-4">
                                             <div class="form-group">
                                                 <select name="product_stage_id[]" class="form-control select2 stage-select" style="width: 100%;" required>
                                                     <option value="">Select Stage</option>
@@ -180,6 +180,18 @@
                                                         <option value="{{ $stage->id }}">{{ $stage->name }}</option>
                                                     @endforeach
                                                 </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <input type="radio" name="printing_stage_after" class="printing-radio"   id="is_printing">
+                                                <label for="is_printing">Printing</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <input type="radio" name="embroidery_stage_after" id="is_embroidery" class="embroidery-radio"  >
+                                                <label for="is_embroidery">Embroidery</label>
                                             </div>
                                         </div>
                                         <div class="col-md-2">
@@ -317,10 +329,12 @@ $(document).ready(function () {
     $('.select2').select2();
 
     // Add new stage row
+    let indexRow = 0;
     $(document).on('click', '.add-stage', function () {
+        indexRow++;
         let newRow = `
             <div class="stage-row row mb-2">
-                <div class="col-md-10">
+                <div class="col-md-4">
                     <div class="form-group">
                         <select name="product_stage_id[]" class="form-control select2 stage-select" style="width: 100%;" required>
                             <option value="">Select Stage</option>
@@ -328,6 +342,18 @@ $(document).ready(function () {
                                 <option value="{{ $stage->id }}">{{ $stage->name }}</option>
                             @endforeach
                         </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <input type="radio" name="printing_stage_after" class="printing-radio" id="is_printing_${indexRow}" >
+                        <label for="is_printing_${indexRow}">Printing</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <input type="radio" class="embroidery-radio" name="embroidery_stage_after" id="is_embroidery_${indexRow}" >
+                        <label for="is_embroidery_${indexRow}">Embroidery</label>
                     </div>
                 </div>
                 <div class="col-md-2">
@@ -342,6 +368,37 @@ $(document).ready(function () {
     // Remove stage row
     $(document).on('click', '.remove-stage', function () {
         $(this).closest('.stage-row').remove();
+    });
+
+    // $(document).on('change', '.stage-select', function () {
+    //     let id = $(this).val();                // selected stage id
+    //     let index = $(this).data('index');     // row index
+
+    //     // Set value in both radio buttons
+    //     $(`#is_printing_${index}`).val(id);
+    //     $(`#is_embroidery_${index}`).val(id);
+    // });
+
+    // $(document).on('click', '.printing-radio, .embroidery-radio', function () {
+    //     let index = $(this).data('index');
+    //     let stageId = $(`select[data-index="${index}"]`).val();
+    //     $(this).val(stageId);
+    // });
+
+    $(document).on('click', '.printing-radio, .embroidery-radio', function () {
+        let row = $(this).closest('.stage-row'); 
+        let stageId = row.find('.stage-select').val();  // correct stage value
+
+        $(this).val(stageId);
+    });
+
+    $(document).on('change', '.stage-select', function () {
+        let stageId = $(this).val();
+        let row = $(this).closest('.stage-row'); // <-- correct row
+
+        // ONLY this row's radio values update
+        row.find('.printing-radio').val(stageId);
+        row.find('.embroidery-radio').val(stageId);
     });
 });
 </script>
