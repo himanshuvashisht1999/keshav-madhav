@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Products</h1>
+                    <h1>Manage Products Specification</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Products</li>
+                        <li class="breadcrumb-item active">Manage Products Specification</li>
                     </ol>
                 </div>
             </div>
@@ -106,7 +106,7 @@
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Product',
+                    text: 'Add Product Specification',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
                         window.location.href = "{{ route('admin.master.production-goods.create') }}";

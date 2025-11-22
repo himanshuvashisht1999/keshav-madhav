@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Products</h1>
+                    <h1>Products Specification</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Edit Product</li>
+                        <li class="breadcrumb-item active">Edit Product Specification</li>
                     </ol>
                 </div>
             </div>
@@ -24,7 +24,7 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Edit Product</h3>
+                    <h3 class="card-title">Edit Product Specification</h3>
                 </div>
                 <form action="{{route('admin.master.production-goods.update')}}" method="post" enctype="multipart/form-data">
                     @csrf
@@ -157,8 +157,8 @@
                                 <label>Production Stages (in order)</label>
                                 <div id="stages-container">
                                     @foreach($data->product_stages as $key=>$single_stage)
-                                    <div class="stage-row row mb-2">
-                                        <div class="col-md-10">
+                                    <div class="stage-row row mb-2" data-printing="{{ $data->printing_stage_after ?? '' }}"     data-embroidery="{{ $data->embroidery_stage_after ?? '' }}" >
+                                        <div class="col-md-4">
                                             <div class="form-group">
                                                 <select name="product_stage_id[]" class="form-control select2 stage-select" style="width: 100%;" required>
                                                     <option value="">Select Stage</option>
@@ -170,14 +170,14 @@
                                         </div>
                                         <div class="col-md-3">
                                             <div class="form-group">
-                                                <input type="radio" name="printing_stage_after" class="printing-radio" id="is_printing_${indexRow}" >
-                                                <label for="is_printing_${indexRow}">Printing</label>
+                                                <input type="radio" name="printing_stage_after" class="printing-radio" id="is_printing_{{$key}}" >
+                                                <label for="is_printing_{{$key}}">Printing</label>
                                             </div>
                                         </div>
                                         <div class="col-md-3">
                                             <div class="form-group">
-                                                <input type="radio" class="embroidery-radio" name="embroidery_stage_after" id="is_embroidery_${indexRow}" >
-                                                <label for="is_embroidery_${indexRow}">Embroidery</label>
+                                                <input type="radio" class="embroidery-radio" name="embroidery_stage_after" id="is_embroidery_{{$key}}" >
+                                                <label for="is_embroidery_{{$key}}">Embroidery</label>
                                             </div>
                                         </div>
                                         <div class="col-md-2">
@@ -325,6 +325,47 @@ $(document).ready(function () {
     $(document).on('click', '.remove-stage', function () {
         $(this).closest('.stage-row').remove();
     });
+
+
+    $(document).on('click', '.printing-radio, .embroidery-radio', function () {
+        let row = $(this).closest('.stage-row'); 
+        let stageId = row.find('.stage-select').val();  // correct stage value
+
+        $(this).val(stageId);
+    });
+
+    $(document).on('change', '.stage-select', function () {
+        let stageId = $(this).val();
+        let row = $(this).closest('.stage-row'); // <-- correct row
+
+        // ONLY this row's radio values update
+        row.find('.printing-radio').val(stageId);
+        row.find('.embroidery-radio').val(stageId);
+    });
+
+    // after edit load then selected radio button 
+    $(document).ready(function () {
+        $('.stage-row').each(function () {
+            let row = $(this);
+            let stageId = row.find('.stage-select').val();
+
+            row.find('.printing-radio').val(stageId);
+            row.find('.embroidery-radio').val(stageId);
+
+            // match saved value
+            let savedPrint = row.data('printing');
+            let savedEmb = row.data('embroidery');
+            console.log()
+            if (savedPrint == stageId) {
+                row.find('.printing-radio').prop('checked', true);
+            }
+
+            if (savedEmb == stageId) {
+                row.find('.embroidery-radio').prop('checked', true);
+            }
+        });
+    });
+
 });
 </script>
 

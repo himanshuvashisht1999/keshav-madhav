@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Sub Stage ({{$stage_data->name}})</h1>
+                    <h1>Manage Stage Units ({{$stage_data->name}})</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Sub Stage</li>
+                        <li class="breadcrumb-item active">Manage Stage Units</li>
                     </ol>
                 </div>
             </div>
@@ -53,7 +53,7 @@
                     </tr>
                   <tr>
                     <th>ID</th>
-                    <th>Sub Stage</th>
+                    <th>Stage Units</th>
                     <th>SKU</th>
                     
                     <th>Action</th>
@@ -106,7 +106,7 @@
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Sub Stage',
+                    text: 'Add Stage Units',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
                         window.location.href = "{{ route('admin.master.product-sub-stage.create', ['stage_id' => $stage_data->id]) }}";

@@ -34,8 +34,9 @@ class ProductionGoodsService {
     }
 
     public function store(Request $request){
-        $printing_stage_after = $request->printing_stage_after ?? 3;
-        $embroidery_stage_after = $request->embroidery_stage_after ?? 3;
+        
+        $printing_stage_after = $request->printing_stage_after ?? NULL;
+        $embroidery_stage_after = $request->embroidery_stage_after ?? NULL;
         $save_data = new ProductionGoods;
         $save_data->sku = $request->sku;
         $save_data->name_of_garment = $request->name_of_garment;
@@ -50,13 +51,7 @@ class ProductionGoodsService {
         $save_data->fabric_sku = '';
         $save_data->status = 0;
         $save_data->save();
-        // foreach($request->fabric_sku as $key=>$single){
-        //     $save_boe = new BillOfMaterial;
-        //     $save_boe->product_id = $save_data->id;
-        //     $save_boe->fabric_sku = $single;
-        //     $save_boe->meter = $request->fabric_meter[$key];
-        //     $save_boe->save();
-        // }
+        
         foreach($request->product_stage_id as $key=>$single){
             $save_stage = new ProductStage;
             $save_stage->master_product_id = $save_data->id;
@@ -84,6 +79,8 @@ class ProductionGoodsService {
         return $data;
     }
     public function update(Request $request){
+        $printing_stage_after = $request->printing_stage_after ?? NULL;
+        $embroidery_stage_after = $request->embroidery_stage_after ?? NULL;
         $update_data = ProductionGoods::find($request->id);
         $update_data->name_of_garment = $request->name_of_garment;
         $update_data->type_of_garment = $request->type_of_garment;
@@ -91,27 +88,12 @@ class ProductionGoodsService {
         $update_data->garment_pattern = $request->garment_pattern;
         $update_data->master_color_id = $request->master_color_id;
         $update_data->master_color_id = $request->master_color_id;
+        $update_data->printing_stage_after = $printing_stage_after;
+        $update_data->embroidery_stage_after = $embroidery_stage_after;
         $update_data->is_printing = $request->is_printing;
         $update_data->fabric_sku = '';
         $update_data->save();
-        // BillOfMaterial::where('product_id', $request->id)
-        //           ->whereNotIn('fabric_sku', $request->fabric_sku)->update([
-        //             'status' => 0
-        //           ]);
-        // foreach($request->fabric_sku as $key=>$single){
-        //     $old_data = BillOfMaterial::where('product_id',$request->id)->where('fabric_sku',$single)->first();
-        //     if($old_data){
-        //         $save_boe = BillOfMaterial::where('product_id',$request->id)->where('fabric_sku',$single)->first();
-        //     }else{
-        //         $save_boe = new BillOfMaterial;
-        //     }
-            
-        //     $save_boe->product_id = $request->id;
-        //     $save_boe->fabric_sku = $single;
-        //     $save_boe->meter = $request->fabric_meter[$key];
-        //     $save_boe->status = 1;
-        //     $save_boe->save();
-        // }
+
 
         ProductStage::where('master_product_id', $request->id)
                   ->whereNotIn('master_stage_id', $request->product_stage_id)->update([
