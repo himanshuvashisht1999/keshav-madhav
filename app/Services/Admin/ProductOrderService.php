@@ -136,7 +136,7 @@ class ProductOrderService {
                             $save_order_product_stage->pending_qty = 0;
                             $save_order_product_stage->status = 0;  // 0-pending
                         }
-                        $save_order_product_stage->save();
+                        $save_order_product_stage->save();  
                         $sequence_value++;
 
                         // if($single_stage->master_stage_id == $product_data->printing_stage_after){
@@ -422,7 +422,7 @@ class ProductOrderService {
 
                 $sku_for_embroidery= "{$orderProduct->order->sku}/{$order_product_number}/EMBROIDERY/{$stageCount}";
                 $OrderStageTransaction = OrderStageTransaction::create([
-                    'sku' => $sku_for_printing,
+                    'sku' => $sku_for_embroidery,
                     'order_product_id' => $order_product_id,
                     'from_stage_id' => $from_stage_id,
                     'to_stage_id' => 2,
@@ -435,7 +435,7 @@ class ProductOrderService {
                     'sub_stage_id' => 0,
                 ]);
 
-                $order_product_stage_update = OrderProductStage::where('order_product_id',$order_product_id)->where('stage_id',1)->update([
+                $order_product_stage_update = OrderProductStage::where('order_product_id',$order_product_id)->where('stage_id',2)->update([
                     'total_qty' => $quantity,
                     'pending_qty' => $quantity
                 ]);
