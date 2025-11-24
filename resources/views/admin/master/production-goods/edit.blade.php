@@ -156,7 +156,7 @@
                             <div class="col-md-12">
                                 <label>Production Stages (in order)</label>
                                 <div id="stages-container">
-                                    @foreach($data->product_stages as $key=>$single_stage)
+                                    @foreach($data->product_stages->whereNotIn('master_stage_id',[1,2]) as $key=>$single_stage)
                                     <div class="stage-row row mb-2" data-printing="{{ $data->printing_stage_after ?? '' }}"     data-embroidery="{{ $data->embroidery_stage_after ?? '' }}" >
                                         <div class="col-md-4">
                                             <div class="form-group">
@@ -290,7 +290,7 @@ $(document).ready(function () {
         indexRow++;
         let newRow = `
             <div class="stage-row row mb-2">
-                <div class="col-md-10">
+                <div class="col-md-4">
                     <div class="form-group">
                         <select name="product_stage_id[]" class="form-control select2 stage-select" style="width: 100%;" required>
                             <option value="">Select Stage</option>

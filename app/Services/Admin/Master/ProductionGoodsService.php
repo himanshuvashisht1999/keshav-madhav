@@ -34,7 +34,6 @@ class ProductionGoodsService {
     }
 
     public function store(Request $request){
-        
         $printing_stage_after = $request->printing_stage_after ?? NULL;
         $embroidery_stage_after = $request->embroidery_stage_after ?? NULL;
         $save_data = new ProductionGoods;
@@ -81,6 +80,7 @@ class ProductionGoodsService {
     public function update(Request $request){
         $printing_stage_after = $request->printing_stage_after ?? NULL;
         $embroidery_stage_after = $request->embroidery_stage_after ?? NULL;
+        
         $update_data = ProductionGoods::find($request->id);
         $update_data->name_of_garment = $request->name_of_garment;
         $update_data->type_of_garment = $request->type_of_garment;
