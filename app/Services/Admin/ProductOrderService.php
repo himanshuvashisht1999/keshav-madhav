@@ -257,7 +257,8 @@ class ProductOrderService {
             }
 
             // Get next stage
-            if($from_stage_id == 0 || $from_stage_id == 1){
+            // if($from_stage_id == 0 || $from_stage_id == 1 || $from_stage_id == 2){
+            if( $from_stage_id == 1 || $from_stage_id == 2){
                 $nextStage = '';
             }else{
                 $nextStage = getNextStage($order_product_id,$currentStage->sequence);
