@@ -122,7 +122,8 @@ class OrderStagesDataTable  {
                 //     ->orderBy('id', 'desc')
                 //     ->first();
                 // $lastStageId = $latestStage->master_stage_id ?? 0;
-                
+                $isParcialCheck = getParcialCheck($queue->order_product_id, $queue->to_stage_id);
+                $disabled = ($isParcialCheck) ? 'disabled style="pointer-events:none; opacity:0.6;"' : '';
                 
                 // When work still in progress
                 // if ($queue->remaining_quantity > 0 && $lastStageId != $queue->to_stage_id) {
@@ -136,7 +137,9 @@ class OrderStagesDataTable  {
                                 data-total_remaining_qty="'.$queue->remaining_quantity.'"
                                 data-lot_no="'.$queue->lot_no.'"
                                 data-toggle="modal" 
-                                data-target="#viewModal">
+                                data-target="#viewModal"
+                                '.$disabled.'
+                                >
                             <i class="fas fa-exchange-alt"></i> Transfer
                         </button>';
                 }

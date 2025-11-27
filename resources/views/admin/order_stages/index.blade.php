@@ -308,18 +308,20 @@ $(document).on('click', '.viewBtn', function() {
             } else {
                 $('#sub_stage').html('<option value="">No sub stages found</option>');
             }
-           
-            if (response.status && response.items_details.length > 0) {
-                let item_list = '';
-                response.items_details.forEach(function(items) {
-                    item_list += ` <div class="form-group mb-3">
-                                    <input type="checkbox" onclick="clickToggle(this)" id="chk_${items.item_sku}">
-                                    <label class="small mb-1" for="chk_${items.item_sku}"><strong>${items.item_sku}</strong></label>
-                                    <input type="number" style="display:none;"  name="items[${items.item_sku}]" class="form-control form-control-sm" id="input_${items.item_sku}" min="1" max="${items.pending_quantity}" value="${items.pending_quantity}" step="1">
-                                </div>`;
-                });
-                $('#item-list').html(item_list);
-            } 
+            
+            if (!(from_stage_id == 1 || from_stage_id == 2)){
+                if ( response.status && response.items_details.length > 0) {
+                    let item_list = '';
+                    response.items_details.forEach(function(items) {
+                        item_list += ` <div class="form-group mb-3">
+                                        <input type="checkbox" onclick="clickToggle(this)" id="chk_${items.item_sku}">
+                                        <label class="small mb-1" for="chk_${items.item_sku}"><strong>${items.item_sku}</strong></label>
+                                        <input type="number" style="display:none;"  name="items[${items.item_sku}]" class="form-control form-control-sm" id="input_${items.item_sku}" min="1" max="${items.pending_quantity}" value="${items.pending_quantity}" step="1" disabled >
+                                    </div>`;
+                    });
+                    $('#item-list').html(item_list);
+                } 
+            }
         },
         error: function() {
             $('#sub_stage').html('<option value="">Error fetching data</option>');
