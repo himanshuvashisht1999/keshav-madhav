@@ -48,6 +48,7 @@
                         <td>
                             <input type="date" class="form-control" name="delivery_date" id="delivery_date" autocomplete="off">
                         </td>
+                        <td> </td>
                     </tr>
                     <tr>
                         <th>ID</th>
@@ -55,7 +56,7 @@
                         <th>Purchase Order Date</th>
                         <th>Vendor</th>
                         <th>Expected Delivery Date</th>
-                       
+                        <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -104,6 +105,7 @@
                 {data: 'date', name: 'date'},
                 {data: 'vendor_id', name: 'vendor_id'},
                 {data: 'delivery_date', name: 'delivery_date'},
+                {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
             buttons: [
