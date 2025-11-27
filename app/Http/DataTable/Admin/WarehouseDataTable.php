@@ -7,6 +7,7 @@ use App\Models\Fabric;
 use App\Models\Order;
 use App\Models\OrderMain;
 use App\Models\WarehouseDetail;
+use App\Models\OrderProduct;
 use App\Models\MasterWarehouseBlock;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -160,21 +161,18 @@ class WarehouseDataTable  {
                 if ($request->has('from_stage_id') && $request->filled('from_stage_id')) {
                     $query->where('from_stage_id', $request->get('from_stage_id'));
                 }
-                if ($request->has('sub_stage_id') && !empty($request->sub_stage_id)) {
-                    $query->where('sub_stage_id', $request->get('sub_stage_id'));
+                if ($request->has('master_warehouse_block_id') && !empty($request->master_warehouse_block_id)) {
+                    $query->where('master_warehouse_block_id', $request->get('master_warehouse_block_id'));
                 }
                 if ($request->has('created_at') && !empty($request->created_at)) {
                     $query->where('created_at', 'like', "%{$request->get('created_at')}%");
                 }
-                if ($request->has('updated_at') && !empty($request->updated_at)) {
-                    $query->where('updated_at', 'like', "%{$request->get('updated_at')}%");
-                }
                 
             }) 
 
-            ->editColumn('sub_stage_id', function ($queue) {
-				$sub_stage_id= $queue->sub_stage_id;
-                $order_product_data = MasterWarehouseBlock::where('id',$sub_stage_id)->first();
+            ->editColumn('master_warehouse_block_id', function ($queue) {
+				$master_warehouse_block_id= $queue->master_warehouse_block_id;
+                $order_product_data = MasterWarehouseBlock::where('id',$master_warehouse_block_id)->first();
                 return $order_product_data->name ?? '';
             })
             ->editColumn('order_no', function ($queue) {

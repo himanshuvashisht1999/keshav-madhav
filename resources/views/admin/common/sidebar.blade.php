@@ -173,7 +173,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                         <ul class="nav nav-treeview">
                                 <li class="nav-item">
                                 <a href="{{ route('admin.warehouse.indexOrder') }}"
-                                    class="{{ str_contains($page_url, 'admin/warehouse') ? 'nav-link active' : 'nav-link' }}"
+                                    class="{{ str_contains($page_url, 'admin/warehouse/index') ? 'nav-link active' : 'nav-link' }}"
                                     style="position:static;">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Orders</p>
