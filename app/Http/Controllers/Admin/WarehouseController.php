@@ -34,5 +34,19 @@ class WarehouseController extends Controller {
         $response['data'] = $this->service->produce($request);
         return view('admin.warehouse.produce',$response);
     }
+    public function productStatusHoverData(Request $request){
+        $response['data'] = $this->service->productStatusHoverData($request);
+        return response()->json($response);
+    }
+
+    public function listing(){ 
+        $response['product_stage'] = $this->service->product_stage();
+        $response['master_blocks'] = $this->service->master_blocks();
+        return view('admin.warehouse.listing',$response);
+    }
+
+    public function indexListListing(Request $request){
+        return $this->service->indexListListing($request);
+    }
 
 }
