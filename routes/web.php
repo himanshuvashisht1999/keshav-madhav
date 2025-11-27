@@ -139,6 +139,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
         });
 
         Route::prefix('/production-order')->name('product_order.')->group(function () {
+
+            Route::get('/index-order',[AdminProductOrderController::class,'indexOrder'])->name('indexOrder');
+            Route::get('/indexListOrder',[AdminProductOrderController::class,'indexListOrder'])->name('indexListOrder');
+
             Route::get('/index',[AdminProductOrderController::class,'index'])->name('index');
             Route::get('/indexList',[AdminProductOrderController::class,'indexList'])->name('indexList');
             

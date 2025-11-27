@@ -28,5 +28,8 @@ class Order extends Model
     public function customer(){
         return $this->hasOne('App\Models\MasterCustomer','id','master_customer_id');
     }
+    public function product(){
+        return $this->hasOne('App\Models\OrderProduct','order_id','id');
+    }
     
 }

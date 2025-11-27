@@ -16,12 +16,20 @@ class ProductOrderController extends Controller {
     public function __construct(Service $service) {
         $this->service = $service;
     }
-    public function index(){
+    public function index(Request $request){
         $response['customers'] = $this->service->customers();
+        $response['order_main_id'] = $request->id ?? 0;
         return view('admin.product_order.index',$response);
     } 
     public function indexList(Request $request){
         return $this->service->indexList($request);
+    }
+    public function indexOrder(){
+        $response['customers'] = $this->service->customers();
+        return view('admin.product_order.index-order',$response);
+    } 
+    public function indexListOrder(Request $request){
+        return $this->service->indexListOrder($request);
     }
     public function create(){
         $response['products'] = $this->service->products();

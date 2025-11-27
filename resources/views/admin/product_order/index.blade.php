@@ -43,21 +43,12 @@
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
                         <td>
-                            <select name="master_customer_id" id="master_customer_id" class="form-control select2" style="width: 100%;">
-                                <option value="">All</option>
-                                @foreach($customers as $customer)
-                                <option value="{{$customer->id}}">{{$customer->name}}</option>
-                                @endforeach
-                            </select>
-                        </td>
-                        
-                       
-                        <td>
-                            <input type="date" class="form-control" name="created_at" id="created_at" autocomplete="off">
+                            <input type="text" class="form-control" name="product_sku" id="product_sku" autocomplete="off">
                         </td>
                         <td>
-                            <input type="date" class="form-control" name="expected_delivery_date" id="expected_delivery_date" autocomplete="off">
+                            <input type="text" class="form-control" name="quantity" id="quantity" autocomplete="off">
                         </td>
+                                            
                         <td>
                             <select id="status" class="form-control form-control-sm">
                                 <option value="">All</option>
@@ -72,9 +63,8 @@
                     <tr>
                         <th>ID</th>
                         <th>Order ID</th>
-                        <th>Customer</th>
-                        <th>Order Date</th>
-                        <th>Estimated Delivery Date</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -161,13 +151,12 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.product_order.indexList') !!}',
+                url: '{!! route('admin.product_order.indexList',['order_main_id' => $order_main_id]) !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.sku = $('#sku').val();
-                    d.master_customer_id = $('#master_customer_id').val();
-                    d.created_at = $('#created_at').val();
-                    d.expected_delivery_date = $('#expected_delivery_date').val();
+                    d.product_sku = $('#product_sku').val();
+                    d.quantity = $('#quantity').val();
                     d.status = $('#status').val();
                   
                 },
@@ -176,9 +165,8 @@
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'sku', name: 'sku'},
-                {data: 'master_customer_id', name: 'master_customer_id'},                
-                {data: 'created_at', name: 'created_at'},                
-                {data: 'expected_delivery_date', name: 'expected_delivery_date'},                
+                {data: 'product_sku', name: 'product_sku'},                
+                {data: 'quantity', name: 'quantity'},                
                 {data: 'status', name: 'status'},                
                 {data: 'action', name: 'action', searchable: false}
             ],
@@ -199,22 +187,16 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#master_customer_id').on('change', function (e) {
+        $('#product_sku').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
-        $('#expected_delivery_date').on('change', function (e) {
+
+        $('#quantity').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
-        $('#created_at').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#created_at').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+
         $('#status').on('change', function (e) {
             oTable.draw();
             e.preventDefault();

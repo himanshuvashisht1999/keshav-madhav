@@ -126,7 +126,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ route('admin.product_order.index') }}"
+                        <a href="{{ route('admin.product_order.indexOrder') }}"
                             class="{{ str_contains($page_url, 'admin/production-order') ? 'nav-link active' : 'nav-link' }}"
                             style="position:static;">
                             <i class="nav-icon fas fa-industry"></i>
