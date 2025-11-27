@@ -21,5 +21,9 @@ class OrderMain extends Model
         'created_at',
         'updated_at'
     ];
+
+    public function customer(){
+        return $this->hasOne('App\Models\MasterCustomer','id','master_customer_id');
+    }
     
 }

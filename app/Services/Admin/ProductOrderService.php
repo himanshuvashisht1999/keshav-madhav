@@ -42,6 +42,10 @@ class ProductOrderService {
        
         return $this->datatable->indexList($request);
     }
+    public function indexListOrder(Request $request){
+       
+        return $this->datatable->indexListOrder($request);
+    }
 
     public function store(Request $request)
     {
