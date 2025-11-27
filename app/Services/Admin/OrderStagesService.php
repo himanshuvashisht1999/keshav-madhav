@@ -17,6 +17,7 @@ use App\Models\MasterCustomer;
 use App\Models\MasterProductStage;
 use App\Models\MasterProductSubStage;
 use App\Models\OrderProductItem;
+use App\Models\MasterWarehouseBlock;
 
 use App\Http\DataTable\Admin\OrderStagesDataTable as DataTable;
 use Illuminate\Support\Facades\DB;
@@ -51,7 +52,11 @@ class OrderStagesService {
 
         $currentStage = getCurrentStage($order_product_id,$from_stage_id);
         $nextStage = getNextStage($order_product_id,$currentStage->sequence);
-        $data = MasterProductSubStage::where('master_product_stage_id',$nextStage->stage_id)->get();
+        if($nextStage){
+            $data = MasterProductSubStage::where('master_product_stage_id',$nextStage->stage_id)->get();
+        }else{
+            $data = MasterWarehouseBlock::where('status',1)->get();
+        }
         return $data;
     }
 
@@ -65,8 +70,14 @@ class OrderStagesService {
     public function nextProductStage($order_product_id,$from_stage_id){
         $currentStage = getCurrentStage($order_product_id,$from_stage_id);
         $nextStage = getNextStage($order_product_id,$currentStage->sequence);
-        $res =  MasterProductStage::find($nextStage->stage_id);
-        return $res['name'] ?? '';
+        if($nextStage){
+            $res =  MasterProductStage::find($nextStage->stage_id);
+            $name = $res['name'] ?? '';
+        }else{
+            $name = 'Warehouse';
+        }
+        
+        return $name;
     }
 
     public function getLotNo(){
