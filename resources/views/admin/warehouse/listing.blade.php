@@ -37,7 +37,7 @@
                                     <th>From Stage</th>
                                     <th>Block</th>
                                     <th>Qty</th>
-                                    <th>Status</th>
+                                    <!-- <th>Status</th> -->
                                     <th>Received</th>
                                     <!-- <th>Action</th> -->
                                 </tr>
@@ -56,7 +56,7 @@
                                         </select>
                                     </td>
                                     <td>
-                                        <select id="sub_stage_id" class="form-control form-control-sm">
+                                        <select id="master_warehouse_block_id" class="form-control form-control-sm">
                                             <option value="">All</option>
                                             @foreach($master_blocks as $stage)
                                                 <option value="{{ $stage->id }}">{{ $stage->name }}</option>
@@ -66,6 +66,7 @@
                                     <td><input type="text" class="form-control form-control-sm" id="quantity" placeholder="Qty"></td>
 
                                     <td><input type="date" class="form-control form-control-sm" id="created_at"></td>
+                                    <!-- <td></td> -->
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -92,7 +93,7 @@ $(function () {
                 d.sku = $('#sku').val();
                 d.order_product_id = $('#order_product_id').val();
                 d.from_stage_id = $('#from_stage_id').val();
-                d.sub_stage_id = $('#sub_stage_id').val();
+                d.master_warehouse_block_id = $('#master_warehouse_block_id').val();
                 d.lot_no = $('#lot_no').val();
                 d.quantity = $('#quantity').val();
                 d.created_at = $('#created_at').val();
@@ -104,10 +105,10 @@ $(function () {
             { data: 'order_product_id', name: 'order_product_id', width: '12%' },
             { data: 'lot_no', name: 'lot_no' },
             { data: 'from_stage_id', name: 'from_stage_id', width: '10%' },
-            { data: 'sub_stage_id', name: 'sub_stage_id' },
+            { data: 'master_warehouse_block_id', name: 'master_warehouse_block_id' },
             { data: 'quantity', name: 'quantity', width: '7%' },
             { data: 'created_at', name: 'created_at', width: '12%' },
-            { data: 'action', name: 'action', width: '10%', orderable: false, searchable: false }
+            // { data: 'action', name: 'action', width: '10%', orderable: false, searchable: false }
         ]
     });
 
@@ -134,7 +135,7 @@ $(function () {
             e.preventDefault();
         });
 
-        $('#sub_stage_id').on('change', function (e) {
+        $('#master_warehouse_block_id').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
@@ -164,6 +165,6 @@ $(function () {
         });        
 
 });
-
+</script>
 
 @endsection
