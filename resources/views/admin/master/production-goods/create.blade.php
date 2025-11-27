@@ -32,29 +32,29 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="type_of_garment">Product Type</label>
-                                    <input list="garment_types" name="type_of_garment" id="type_of_garment"
-                                        class="form-control" placeholder="Select or type garment type"
-                                        value="{{ old('type_of_garment') }}">
-
-                                    <datalist id="garment_types">
-                                        @foreach($garment_types as $garment)
-                                            <option value="{{ $garment->type_of_garment }}">
+                                    <label for="exampleInputEmail1">Product Type</label>
+                                    <select name="type_of_garment" id="type_of_garment" class="form-control" required>
+                                        <option value="">Select Product type</option>
+                                        
+                                        @foreach($product_types as $product)
+                                            <option value="{{ $product->sku }}"
+                                                {{ old('type_of_garment') == $product->sku ? 'selected' : '' }}>
+                                                {{ $product->name }}
+                                            </option>
                                         @endforeach
-                                    </datalist> 
-
-                                    @if ($errors->has('type_of_garment'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('type_of_garment') }}
-                                        </span>
-                                    @endif
+                                    </select>
                                 </div>
+                                @if ($errors->has('type_of_garment'))
+                                    <span class="invalid-feedback d-block">
+                                        {{ $errors->first('type_of_garment') }}
+                                    </span>
+                                @endif
                             </div>
                             
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Product Name</label>
-                                    <input type="text" name="name_of_garment" class="form-control" placeholder="Enter name of garment" value="{{old('name_of_garment')}}">
+                                    <input type="text" name="name_of_garment" class="form-control" placeholder="Enter name of product" value="{{old('name_of_garment')}}">
                                     @if ($errors->has('name_of_garment'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('name_of_garment') }}
@@ -85,7 +85,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Product Color</label>
-                                    <select name="master_color_id" class="form-control select2" style="width: 100%;">
+                                    <select name="master_color_id" id="master_color_id" class="form-control select2" style="width: 100%;">
                                         <!-- <option value="">Select</option> -->
                                         @foreach($colors as $single_data)
                                         <option value="{{$single_data->id}}" {{old('master_color_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
@@ -248,8 +248,9 @@
 </div>
 <script>
     function generateSKU() {
-        let type_of_garment = $("input[name='type_of_garment']").val().trim();
+        let type_of_garment = $("select[name='type_of_garment'] option:selected").text().trim();
         let name_of_garment = $("input[name='name_of_garment']").val().trim();
+         let product_color = $("select[name='master_color_id'] option:selected").text().trim();
         let master_size_id = $("select[name='master_size_id'] option:selected").text().trim();
         let garment_pattern = $("select[name='garment_pattern'] option:selected").text().trim();
 
@@ -258,10 +259,11 @@
         // Remove special characters and uppercase
         type_of_garment = type_of_garment.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
         name_of_garment = name_of_garment.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        product_color = product_color.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
         garment_pattern = garment_pattern.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
         master_size_id = master_size_id.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
-        let sku = type_of_garment + '-' + name_of_garment + '-' + garment_pattern + '-' + master_size_id;
+        let sku = type_of_garment + '-' + name_of_garment + '-' + garment_pattern + '-' + product_color + '-' + master_size_id;
 
         let skuInput = $("#sku");
         if (!skuInput.data('edited') || skuInput.val() === "") {
@@ -271,9 +273,11 @@
 
     $(document).ready(function() {
         // Name input
-        $("input[name='type_of_garment']").on("input", generateSKU);
+        $("select[name='type_of_garment']").on("change", generateSKU);
         $("input[name='name_of_garment']").on("input", generateSKU);
         $("select[name='garment_pattern']")
+            .on("change", generateSKU);
+        $("select[name='master_color_id']")
             .on("change", generateSKU);
         // All select fields
         $("select[name='master_size_id']")

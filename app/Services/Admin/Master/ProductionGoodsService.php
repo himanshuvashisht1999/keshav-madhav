@@ -11,6 +11,7 @@ use App\Models\MasterMaterial;
 use App\Models\MasterSizeMeasurement;
 use App\Models\Fabric;
 use App\Models\BillOfMaterial;
+use App\Models\MasterProductType;
 use App\Models\MasterProductStage;
 use App\Models\ProductStage;
 use App\Http\DataTable\Admin\Master\ProductionGoodsDataTable as DataTable;
@@ -146,8 +147,8 @@ class ProductionGoodsService {
         $data = \App\Models\ItemAttributeValue::where('status',1)->get();
         return $data;
     }
-    public function garment_types(){
-        $data = ProductionGoods::where('status',1)->select('type_of_garment')->distinct()->get();
+    public function product_types(){
+        $data = MasterProductType::where('status',1)->get();
         return $data;
     }
     public function garment_patterns(){

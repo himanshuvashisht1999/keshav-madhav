@@ -33,17 +33,17 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="type_of_garment">Product Type</label>
-                                    <input list="garment_types" name="type_of_garment" id="type_of_garment"
-                                        class="form-control" placeholder="Select or type garment type"
-                                        value="{{$data->type_of_garment}}">
-
-                                    <datalist id="garment_types">
-                                        @foreach($garment_types as $garment)
-                                            <option value="{{ $garment->type_of_garment }}">
+                                    <label for="exampleInputEmail1">Product Type</label>
+                                    <select name="type_of_garment" id="type_of_garment" class="form-control" required>
+                                        <option value="">Select Product type</option>
+                                        
+                                        @foreach($product_types as $product)
+                                            <option value="{{ $product->sku }}"
+                                                {{ $data->type_of_garment == $product->sku ? 'selected' : '' }}>
+                                                {{ $product->name }}
+                                            </option>
                                         @endforeach
-                                    </datalist>
-
+                                    </select>
                                     @if ($errors->has('type_of_garment'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('type_of_garment') }}
