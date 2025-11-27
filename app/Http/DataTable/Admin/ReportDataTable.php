@@ -97,8 +97,13 @@ class ReportDataTable  {
             ->editColumn('vendor_id', function ($queue) {
 				return $queue?->vendor->name;
             })
-            
-            ->rawColumns(['status','vendor_id'])
+            ->addColumn('action', function ($queue) {
+                $parameter= $queue->id;
+                return '
+                <a href="' . route('admin.stock.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
+                ';
+            })
+            ->rawColumns(['status','vendor_id', 'action'])
             ->make(true);
     }
 
