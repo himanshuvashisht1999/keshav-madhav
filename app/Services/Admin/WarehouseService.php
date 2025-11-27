@@ -21,6 +21,8 @@ use App\Models\OrderProductItem;
 use App\Models\OrderProductItemTransaction;
 use App\Models\ItemStock;
 use App\Models\WarehouseDetail;
+use App\Models\MasterProductStage;
+use App\Models\MasterWarehouseBlock;
 
 
 use App\Http\DataTable\Admin\WarehouseDataTable as DataTable;
@@ -46,6 +48,10 @@ class WarehouseService {
     public function indexListOrder(Request $request){
        
         return $this->datatable->indexListOrder($request);
+    }
+    public function indexListListing(Request $request){
+       
+        return $this->datatable->indexListListing($request);
     }
 
     
@@ -98,6 +104,18 @@ class WarehouseService {
         $data = getCuttingSubStages();
         return $data;
     }
+    // public function stage_data(Request $request){
+    //     $data = MasterProductStage::with('sub_stages')->where('id',$request->stage_id)->first();
+    //     return $data;
+    // }
     
+    public function product_stage(){
+        $data = MasterProductStage::where('status',1)->get();
+        return $data;
+    }
+    public function master_blocks(){
+        $data = MasterWarehouseBlock::where('status',1)->get();
+        return $data;
+    }
 
 }

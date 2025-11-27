@@ -25,5 +25,13 @@ class WarehouseDetail extends Model
         'created_at',
         'updated_at'
     ];
+
+    public function from_stage(){
+        return $this->hasOne('App\Models\MasterProductStage','id','from_stage_id');
+    }
+    public function orderProduct()
+    {
+        return $this->belongsTo(OrderProduct::class, 'order_product_id');
+    }
     
 }

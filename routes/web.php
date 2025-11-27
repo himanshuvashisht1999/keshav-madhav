@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\ItemStockController as AdminItemStockController;
 
 /// order
 use App\Http\Controllers\Admin\ProductOrderController as AdminProductOrderController;
+use App\Http\Controllers\Admin\WarehouseController as AdminWarehouseController;
 
 ///// Order Stages
 use App\Http\Controllers\Admin\OrderStagesController as AdminOrderStagesController;
@@ -158,6 +159,21 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/issue-fabric-post',[AdminProductOrderController::class,'issueFabricPost'])->name('issueFabricPost');
             Route::get('/issue-slip',[AdminProductOrderController::class,'issueSlip'])->name('issueSlip');
             Route::get('/status-hover-data',[AdminProductOrderController::class,'productStatusHoverData'])->name('statusHoverData');
+            
+        });
+
+        Route::prefix('/warehouse')->name('warehouse.')->group(function () {
+
+            Route::get('/index-order',[AdminWarehouseController::class,'indexOrder'])->name('indexOrder');
+            Route::get('/indexListOrder',[AdminWarehouseController::class,'indexListOrder'])->name('indexListOrder');
+            Route::get('/index',[AdminWarehouseController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminWarehouseController::class,'indexList'])->name('indexList');
+            Route::get('/view',[AdminWarehouseController::class,'view'])->name('view');
+            Route::get('/produce',[AdminWarehouseController::class,'produce'])->name('produce');
+            Route::get('/status-hover-data',[AdminWarehouseController::class,'productStatusHoverData'])->name('statusHoverData');
+
+            Route::get('/listing',[AdminWarehouseController::class,'listing'])->name('listing');
+            Route::get('/indexListListing',[AdminWarehouseController::class,'indexListListing'])->name('indexListListing');
             
         });
 

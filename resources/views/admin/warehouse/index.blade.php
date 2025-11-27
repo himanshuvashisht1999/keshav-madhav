@@ -222,7 +222,6 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.warehouse.delete', ['id' => '']) }}" + id;
             }
         });
     }

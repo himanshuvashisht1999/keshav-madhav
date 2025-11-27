@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Fabric;
 use App\Models\Order;
 use App\Models\OrderMain;
+use App\Models\WarehouseDetail;
+use App\Models\MasterWarehouseBlock;
 use Yajra\DataTables\Facades\DataTables;
 
 class WarehouseDataTable  {
@@ -62,7 +64,7 @@ class WarehouseDataTable  {
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;
                 
-                $view = '<a href="' . route('admin.product_order.produce',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
+                $view = '<a href="' . route('admin.warehouse.produce',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
                 $status = '<a href="javascript:void(0);" data-id="'.$parameter.'" data-order_sku="'.$queue->sku.'" title="Status" class="statusLink" style="margin-left: 8px;"><i class="fas fa-chart-line text-muted"></i> </a>';
                 
                 return $view . ' ' . (($queue->status != 1) ? $status : '');
@@ -121,12 +123,91 @@ class WarehouseDataTable  {
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;
                 
-                $view = '<a href="' . route('admin.product_order.index',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
+                $view = '<a href="' . route('admin.warehouse.index',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
                 
                 return $view;
             })
             
             ->rawColumns(['action','master_customer_id','created_at','status'])
+            ->make(true);
+    }
+
+
+    public function indexListListing($request){
+        $queue = WarehouseDetail::query();
+        
+        return DataTables::of($queue)->addIndexColumn()
+            ->filter(function ($query) use ($request) {
+                $query->orderBy('id','desc');
+
+                if ($request->has('sku') && !empty($request->sku)) {
+                    $query->where('sku', 'like', "%{$request->get('sku')}%");
+                }
+
+                //  Filter by order_product_id (product_sku in OrderProduct)
+                if ($request->has('order_product_id') && !empty($request->order_product_id)) {
+                    $query->whereHas('orderProduct', function ($q) use ($request) {
+                        $q->where('product_sku', 'like', '%' . $request->get('order_product_id') . '%');
+                    });
+                }
+                if ($request->has('lot_no') && !empty($request->lot_no)) {
+                    $query->where('lot_no', 'like', "%{$request->get('lot_no')}%");
+                }
+                if ($request->has('quantity') && !empty($request->quantity)) {
+                    $query->where('quantity', $request->get('quantity'));
+                }
+
+                if ($request->has('from_stage_id') && $request->filled('from_stage_id')) {
+                    $query->where('from_stage_id', $request->get('from_stage_id'));
+                }
+                if ($request->has('sub_stage_id') && !empty($request->sub_stage_id)) {
+                    $query->where('sub_stage_id', $request->get('sub_stage_id'));
+                }
+                if ($request->has('created_at') && !empty($request->created_at)) {
+                    $query->where('created_at', 'like', "%{$request->get('created_at')}%");
+                }
+                if ($request->has('updated_at') && !empty($request->updated_at)) {
+                    $query->where('updated_at', 'like', "%{$request->get('updated_at')}%");
+                }
+                
+            }) 
+
+            ->editColumn('sub_stage_id', function ($queue) {
+				$sub_stage_id= $queue->sub_stage_id;
+                $order_product_data = MasterWarehouseBlock::where('id',$sub_stage_id)->first();
+                return $order_product_data->name ?? '';
+            })
+            ->editColumn('order_no', function ($queue) {
+				$order_product_id= $queue->order_product_id;
+                $order_product_data = OrderProduct::with('order')->where('id',$order_product_id)->first();
+                return $order_product_data->order->sku;
+            })
+            ->editColumn('order_product_id', function ($queue) {
+				$order_product_id= $queue->order_product_id;
+                $order_product_data = OrderProduct::where('id',$order_product_id)->first();
+                return $order_product_data->product_sku;
+            })
+            ->editColumn('from_stage_id', function ($queue) {
+				$from_stage_id= $queue->from_stage_id;
+                if($from_stage_id == 0){
+                    return 'Stock';
+                }else{
+                    return $queue->from_stage?->name;
+                }
+                
+            })
+         
+           
+            ->editColumn('created_at', function ($queue) {
+                return $queue->created_at ? getformatDateTime($queue->created_at) : '-';
+            })
+            
+            ->addColumn('action', function ($queue) {
+                return '';
+            })
+
+            
+            ->rawColumns(['action','status','order_no','order_product_id','from_stage_id','created_at'])
             ->make(true);
     }
 }

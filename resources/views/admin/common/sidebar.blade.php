@@ -159,6 +159,40 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             @endforeach
                         </ul>
                     </li>
+
+                    <li class="{{ (str_contains($page_url, 'admin/warehouse') || str_contains($page_url, 'admin/warehouse')) ? 'nav-item menu-open' : 'nav-item' }}">
+                        <a href="#"
+                            class="{{ (str_contains($page_url, 'admin/warehouse') || str_contains($page_url, 'admin/item-receipt')) ? 'nav-link active' : 'nav-link' }}">
+                            <i class="nav-icon fas fa-receipt"></i>
+                            <p>
+                                Warehouse
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                       
+                        <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                <a href="{{ route('admin.warehouse.indexOrder') }}"
+                                    class="{{ str_contains($page_url, 'admin/warehouse') ? 'nav-link active' : 'nav-link' }}"
+                                    style="position:static;">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Orders</p>
+                                </a>
+                            </li>
+                        </ul>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{{ route('admin.warehouse.listing') }}"
+                                    class="{{ str_contains($page_url, 'admin/warehouse/listing') ? 'nav-link active' : 'nav-link' }}"
+                                    style="position:static;">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Listing</p>
+                                </a>
+                            </li>
+                        </ul>
+                        
+                    </li>
+
                     <!-- Master Settings (Dropdown) -->
                     <li class="{{ str_contains($page_url, 'admin/master') ? 'nav-item menu-open' : 'nav-item' }}">
                         <a href="#"
