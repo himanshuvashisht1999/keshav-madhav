@@ -38,6 +38,8 @@ use App\Http\Controllers\Admin\Master\MasterDesignController as AdminMasterDesig
 use App\Http\Controllers\Admin\Master\MasterMaterialController as AdminMasterMaterialController;
 use App\Http\Controllers\Admin\Master\MasterProductStageController as AdminMasterProductStageController;
 use App\Http\Controllers\Admin\Master\CustomerController as AdminCustomerController;
+use App\Http\Controllers\Admin\Master\MasterProductTypeController as AdminMasterProductTypeController;
+use App\Http\Controllers\Admin\Master\MasterWarehouseBlocksController as AdminMasterWarehouseBlocksController;
 
 ///// Reports
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
@@ -330,6 +332,27 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/update',[AdminMasterColorController::class,'update'])->name('update');
             Route::get('/delete',[AdminMasterColorController::class,'delete'])->name('delete');
         });
+
+        Route::prefix('master/product-types')->name('master.product-types.')->group(function () {
+            Route::get('/index',[AdminMasterProductTypeController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminMasterProductTypeController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminMasterProductTypeController::class,'create'])->name('create');
+            Route::post('/store',[AdminMasterProductTypeController::class,'store'])->name('store');
+            Route::get('/edit',[AdminMasterProductTypeController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminMasterProductTypeController::class,'update'])->name('update');
+            Route::get('/delete',[AdminMasterProductTypeController::class,'delete'])->name('delete');
+        });
+
+        Route::prefix('master/warehouse-blocks')->name('master.warehouse-blocks.')->group(function () {
+            Route::get('/index',[AdminMasterWarehouseBlocksController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminMasterWarehouseBlocksController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminMasterWarehouseBlocksController::class,'create'])->name('create');
+            Route::post('/store',[AdminMasterWarehouseBlocksController::class,'store'])->name('store');
+            Route::get('/edit',[AdminMasterWarehouseBlocksController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminMasterWarehouseBlocksController::class,'update'])->name('update');
+            Route::get('/delete',[AdminMasterWarehouseBlocksController::class,'delete'])->name('delete');
+        });
+
         Route::prefix('master/designs')->name('master.designs.')->group(function () {
             Route::get('/index',[AdminMasterDesignController::class,'index'])->name('index');
             Route::get('/indexList',[AdminMasterDesignController::class,'indexList'])->name('indexList');

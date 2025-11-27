@@ -252,6 +252,20 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <p>Product Color</p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.master.product-types.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/master/product-types') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Product Types</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.master.warehouse-blocks.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/master/warehouse-blocks') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Warehouse Blocks</p>
+                                </a>
+                            </li>
                             <!-- <li class="nav-item">
                                 <a href="{{ route('admin.master.designs.index') }}"
                                     class="{{ str_contains($page_url, 'admin/master/designs') ? 'nav-link active' : 'nav-link' }}">
