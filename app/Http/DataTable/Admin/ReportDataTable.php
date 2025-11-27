@@ -100,7 +100,7 @@ class ReportDataTable  {
             ->addColumn('action', function ($queue) {
                 $parameter= $queue->id;
                 return '
-                <a href="' . route('admin.stock.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
+                <a href="' . route('admin.reports.excel-purchase-order-report',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fa fa-download text-muted"></i></a>
                 ';
             })
             ->rawColumns(['status','vendor_id', 'action'])

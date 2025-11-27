@@ -184,6 +184,65 @@ class ReportController extends Controller
         return response()->download($filePath)->deleteFileAfterSend(true);
     }
 
+    public function excelPurchaseOrderSingle(Request $request)
+    {   
+        
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('A1', 'SKU');
+        $sheet->setCellValue('B1', 'Purchase Order Date');
+        $sheet->setCellValue('C1', 'Vendor');
+        $sheet->setCellValue('D1', 'Expected Delivery Date');
+
+        $filters = $request->all();
+        
+        // Base query
+        $query = purchaseOrder::query();
+
+        // Filter conditions 
+        if (!empty($filters['sku'])) {
+            $query->where('sku', 'like', '%' . $filters['sku'] . '%');
+        }
+
+        if (!empty($filters['vendor_id'])) {
+            $query->where('vendor_id', $filters['vendor_id']);
+        }
+        
+        if (!empty($filters['date'])) {
+            $query->where('date', $filters('date'));
+        }
+    
+        if (!empty($filters['delivery_date'])) {
+            $query->where('delivery_date', $filters('delivery_date'));
+        }
+        $query->orderBy('id','desc');
+        
+
+        // Filtered result
+        $purchaseOrders = $query->get();
+
+        if (!$purchaseOrders->isEmpty()) {
+            
+            $row = 2;
+            foreach ($purchaseOrders as $purchaseOrder) {
+                
+                $sheet->setCellValue('A' . $row, $purchaseOrder['sku']);
+                $sheet->setCellValue('B' . $row, getformatDate($purchaseOrder['date']));
+                $sheet->setCellValue('C' . $row, $purchaseOrder['vendor']?->name);
+                $sheet->setCellValue('D' . $row, getformatDate($purchaseOrder['delivery_date']));
+                $row++;
+            }
+        }
+        // Save file
+        $filePath = storage_path('app/public/purchase_order_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx');
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($filePath);
+
+        // Return file as download
+        return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
     public function generateEachPurchaseOrderExcel(Request $request)
     {
         $spreadsheet = new Spreadsheet();
