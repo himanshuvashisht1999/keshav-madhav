@@ -20,6 +20,7 @@ use App\Models\ProductionGoodsItem;
 use App\Models\OrderProductItem;
 use App\Models\OrderProductItemTransaction;
 use App\Models\ItemStock;
+use App\Models\WarehouseDetail;
 
 
 use App\Http\DataTable\Admin\ProductOrderDataTable as DataTable;
@@ -382,6 +383,16 @@ class ProductOrderService {
                     ]);
 
                 }
+
+                $save_warehouse_data = new WarehouseDetail;
+                $save_warehouse_data->order_product_id = $order_product_id;
+                $save_warehouse_data->from_stage_id = $from_stage_id;
+                $save_warehouse_data->master_warehouse_block_id = $request->sub_stage;
+                $save_warehouse_data->lot_no = $request->lot_no;
+                $save_warehouse_data->quantity = $quantity;
+                $save_warehouse_data->remarks = $remarks;
+                $save_warehouse_data->status = 1;
+                $save_warehouse_data->save();
                 
             }
 
