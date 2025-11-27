@@ -104,15 +104,29 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-6 col-md-2 mb-2">
+                                        {{-- <div class="col-6 col-md-2 mb-2">
                                             <div class="form-check">
                                                 <input type="checkbox" class="form-check-input"
                                                     name="old_is_embroidery[{{ $part->id }}]"
                                                     {{ $part->is_embroidery ? 'checked' : '' }}>
                                                 <label class="form-check-label">Embroidery</label>
+                                                <a href="{{ asset('assets/pattern-img/' . $part->parts_img) }}" target="_blank" >View</a>
+                                            </div>
+                                        </div> --}}
+                                        <div class="col-6 col-md-2 mb-2">
+                                            <div class="form-check d-flex align-items-center justify-content-between">
+                                                
+                                                <div>
+                                                    <input type="checkbox" class="form-check-input"
+                                                        name="old_is_embroidery[{{ $part->id }}]"
+                                                        {{ $part->is_embroidery ? 'checked' : '' }}>
+                                                    <label class="form-check-label">Embroidery</label>
+                                                </div>
+
+                                                <a href="{{ asset('assets/pattern-img/' . $part->parts_img) }}" target="_blank">View</a>
+
                                             </div>
                                         </div>
-
                                         <div class="col-12 col-md-2 mb-2">
                                             <input type="file" name="old_part_img[{{ $part->id }}]" 
                                                 class="form-control"

@@ -58,9 +58,11 @@ class PatternService {
                             $image = $request->file('part_img')[$key];
                             $extImage = $image->getClientOriginalExtension();
                             $parts_img = strtolower($request->sku."-parts-".$parts_sku."-".time().".".$extImage);
+                            $parts_img = str_replace('/', '', $parts_img);
                             $destinationPath = public_path().'/assets/pattern-img';
                             $image->move($destinationPath, $parts_img);
                         }
+                        
                         $save_part_data = new MasterPatternPart;
                         $save_part_data->name = $request->part_name[$key];
                         $save_part_data->sku = $parts_sku;
@@ -139,7 +141,7 @@ class PatternService {
                                 $ext  = $file->getClientOriginalExtension();
 
                                 $fileName = strtolower($request->sku . "-parts-" . time() . "." . $ext);
-
+                                $fileName = str_replace('/', '', $fileName);
                                 $file->move(public_path("assets/pattern-img"), $fileName);
 
                                 $updateData['parts_img'] = $fileName;
@@ -169,6 +171,7 @@ class PatternService {
                         $image = $request->file('part_img')[$key];
                         $extImage = $image->getClientOriginalExtension();
                         $parts_img = strtolower($request->sku."-parts-".$parts_sku."-".time().".".$extImage);
+                        $parts_img = str_replace('/', '', $parts_img);
                         $destinationPath = public_path().'/assets/pattern-img';
                         $image->move($destinationPath, $parts_img);
                     }
