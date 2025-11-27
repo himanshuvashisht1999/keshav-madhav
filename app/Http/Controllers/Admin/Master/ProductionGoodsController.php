@@ -28,7 +28,8 @@ class ProductionGoodsController extends Controller {
     public function create(){
         $response['sizes'] = $this->service->sizes();
         $response['fabrics'] = $this->service->fabrics();
-        $response['garment_types'] = $this->service->garment_types();
+        $response['product_types'] = $this->service->product_types();
+        // dd($response['garment_types']);
         $response['garment_patterns'] = $this->service->garment_patterns();
         $response['colors'] = $this->service->colors();
         $response['product_stages'] = $this->service->product_stages();
@@ -46,7 +47,7 @@ class ProductionGoodsController extends Controller {
         $response['data'] = $this->service->edit($request);
         $response['sizes'] = $this->service->sizes();
         $response['fabrics'] = $this->service->fabrics();
-        $response['garment_types'] = $this->service->garment_types();
+        $response['product_types'] = $this->service->product_types();
         $response['garment_patterns'] = $this->service->garment_patterns();
         $response['colors'] = $this->service->colors();
         $response['product_stages'] = $this->service->product_stages();
