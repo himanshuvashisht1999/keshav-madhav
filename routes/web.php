@@ -413,6 +413,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/purchase-order',[AdminReportController::class,'purchaseOrder'])->name('purchaseOrder');
             Route::get('/purchase-order-list',[AdminReportController::class,'purchaseOrderList'])->name('purchaseOrderList');
             Route::post('/purchase-order-excel',[AdminReportController::class,'generatePurchaseOrderExcel'])->name('purchaseOrderExcel');
+            Route::get('/excel-purchase-order-report',[AdminReportController::class,'excelPurchaseOrderSingle'])->name('excel-purchase-order-report');
 
             Route::get('/fabric-stock-sku',[AdminReportController::class,'fabricStockSku'])->name('fabricStockSku');
             Route::get('/fabric-stock',[AdminReportController::class,'fabricStock'])->name('fabricStock');
