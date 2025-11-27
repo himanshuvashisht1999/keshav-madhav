@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Product Types</h1>
+                    <h1>Warehouse Blocks</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Edit Product Type</li>
+                        <li class="breadcrumb-item active">Edit Warehouse Block</li>
                     </ol>
                 </div>
             </div>
@@ -24,9 +24,9 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Edit Product Type</h3>
+                    <h3 class="card-title">Edit Warehouse Block</h3>
                 </div>
-                <form action="{{route('admin.master.product-types.update')}}" method="post" enctype="multipart/form-data">
+                <form action="{{route('admin.master.warehouse-blocks.update')}}" method="post" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="id" value="{{$data->id}}">
                     <div class="card-body">
