@@ -55,9 +55,14 @@ class ReportDataTable  {
             ->editColumn('vendor_id', function ($queue) {
 				return $queue?->vendor->name;
             })
+            ->addColumn('action', function ($queue) {
+                $parameter= $queue->id;
+                return '
+                <a href="' . route('admin.reports.excel-purchase-order-report',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fa fa-download"></i></a>
+                ';
+            })
             
-            
-            ->rawColumns(['status','vendor_id'])
+            ->rawColumns(['status','vendor_id', 'action'])
             ->make(true);
     }
 
@@ -100,7 +105,7 @@ class ReportDataTable  {
             ->addColumn('action', function ($queue) {
                 $parameter= $queue->id;
                 return '
-                <a href="' . route('admin.reports.excel-purchase-order-report',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fa fa-download text-muted"></i></a>
+                <a href="' . route('admin.reports.excel-purchase-order-report',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fa fa-download"></i></a>
                 ';
             })
             ->rawColumns(['status','vendor_id', 'action'])

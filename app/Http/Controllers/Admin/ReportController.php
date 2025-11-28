@@ -17,7 +17,8 @@ use App\Models\{
     Stock,
     Fabric,
     Order,
-    OrderStageTransaction
+    OrderStageTransaction,
+    PurchaseOrderItem
 };
 use Illuminate\Support\Facades\DB;
 
@@ -186,61 +187,49 @@ class ReportController extends Controller
 
     public function excelPurchaseOrderSingle(Request $request)
     {   
-        
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
+        try {
+            if ($request->id){
+                // $purchaseOrders = PurchaseOrder::with('items')->find($request->id);
+                // dd($purchaseOrders);
+                $spreadsheet = new Spreadsheet();
+                $sheet = $spreadsheet->getActiveSheet();
 
-        $sheet->setCellValue('A1', 'SKU');
-        $sheet->setCellValue('B1', 'Purchase Order Date');
-        $sheet->setCellValue('C1', 'Vendor');
-        $sheet->setCellValue('D1', 'Expected Delivery Date');
-
-        $filters = $request->all();
-        
-        // Base query
-        $query = purchaseOrder::query();
-
-        // Filter conditions 
-        if (!empty($filters['sku'])) {
-            $query->where('sku', 'like', '%' . $filters['sku'] . '%');
-        }
-
-        if (!empty($filters['vendor_id'])) {
-            $query->where('vendor_id', $filters['vendor_id']);
-        }
-        
-        if (!empty($filters['date'])) {
-            $query->where('date', $filters('date'));
-        }
-    
-        if (!empty($filters['delivery_date'])) {
-            $query->where('delivery_date', $filters('delivery_date'));
-        }
-        $query->orderBy('id','desc');
-        
-
-        // Filtered result
-        $purchaseOrders = $query->get();
-
-        if (!$purchaseOrders->isEmpty()) {
-            
-            $row = 2;
-            foreach ($purchaseOrders as $purchaseOrder) {
+                $sheet->setCellValue('A1', 'PO No');
+                $sheet->setCellValue('B1', 'Purchase Order Date');
+                $sheet->setCellValue('C1', 'Fabric SKU');
+                $sheet->setCellValue('D1', 'Meter');
+                $sheet->setCellValue('E1', 'Price');
+                $sheet->setCellValue('F1', 'Total Price');
                 
-                $sheet->setCellValue('A' . $row, $purchaseOrder['sku']);
-                $sheet->setCellValue('B' . $row, getformatDate($purchaseOrder['date']));
-                $sheet->setCellValue('C' . $row, $purchaseOrder['vendor']?->name);
-                $sheet->setCellValue('D' . $row, getformatDate($purchaseOrder['delivery_date']));
-                $row++;
-            }
-        }
-        // Save file
-        $filePath = storage_path('app/public/purchase_order_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx');
-        $writer = new Xlsx($spreadsheet);
-        $writer->save($filePath);
+                // Base query
+                
+                $purchaseOrders = PurchaseOrder::with('items')->find($request->id);
 
-        // Return file as download
-        return response()->download($filePath)->deleteFileAfterSend(true);
+                if (!$purchaseOrders->items->isEmpty()) {
+                    
+                    $row = 2;
+                    foreach ($purchaseOrders->items as $item) {
+                        
+                        $sheet->setCellValue('A' . $row, $purchaseOrders['sku']);
+                        $sheet->setCellValue('B' . $row, getformatDate($purchaseOrders['date']));
+                        $sheet->setCellValue('C' . $row, $item['fabric_sku']);
+                        $sheet->setCellValue('D' . $row, $item['meter']);
+                        $sheet->setCellValue('E' . $row, $item['price']);
+                        $sheet->setCellValue('F' . $row, $item['total_price']);
+                        $row++;
+                    }
+                }
+                // Save file
+                $filePath = storage_path('app/public/purchase_order_report_po-'. $purchaseOrders['sku']. '-' . now()->format('Y-m-d_H-i-s') . '.xlsx');
+                $writer = new Xlsx($spreadsheet);
+                $writer->save($filePath);
+
+                // Return file as download
+                return response()->download($filePath)->deleteFileAfterSend(true);
+            }
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 
     public function generateEachPurchaseOrderExcel(Request $request)

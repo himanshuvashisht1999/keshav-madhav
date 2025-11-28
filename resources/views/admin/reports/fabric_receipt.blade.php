@@ -69,7 +69,7 @@
                         <th>Date & Time</th>
                         <th>Packet</th>
                         <th>Received By</th>
-                        
+                        <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -122,7 +122,7 @@
                 {data: 'time', name: 'time'},
                 {data: 'roll', name: 'roll'},
                 {data: 'received_by', name: 'received_by'},
-                
+                {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
             buttons: [

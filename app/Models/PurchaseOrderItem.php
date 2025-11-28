@@ -28,6 +28,9 @@ class PurchaseOrderItem extends Model
         return $this->hasOne('App\Models\Fabric','id','fabric_id');
     }
 
-
+    public function purchaseOrder()
+    {
+        return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id', 'id');
+    }
     
 }
