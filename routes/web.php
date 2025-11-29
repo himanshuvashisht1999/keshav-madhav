@@ -174,6 +174,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
             Route::get('/listing',[AdminWarehouseController::class,'listing'])->name('listing');
             Route::get('/indexListListing',[AdminWarehouseController::class,'indexListListing'])->name('indexListListing');
+            Route::get('/packaging',[AdminWarehouseController::class,'packaging'])->name('packaging');
+            Route::post('/packaging-store',[AdminWarehouseController::class,'packagingStore'])->name('packagingStore');
+            Route::get('/packaging-show',[AdminWarehouseController::class,'packagingShow'])->name('packagingShow');
+            Route::get('/barcode-download',[AdminWarehouseController::class,'barcodeDownload'])->name('barcodeDownload');
+
             
         });
 

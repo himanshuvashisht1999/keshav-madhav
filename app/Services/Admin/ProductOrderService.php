@@ -98,6 +98,8 @@ class ProductOrderService {
                     // Save order product
                     $save_order_product = new OrderProduct;
                     $save_order_product->order_id = $save_data->id;
+                    $save_order_product->order_main_id = $save_data_main->id;
+                    $save_order_product->product_type_sku = $product_data->type_of_garment;
                     $save_order_product->product_sku = $single_data;
                     $save_order_product->quantity = $order_quantity;
                     $save_order_product->save();
@@ -387,6 +389,7 @@ class ProductOrderService {
                 $save_warehouse_data = new WarehouseDetail;
                 $save_warehouse_data->sku = $orderProduct->order->sku;
                 $save_warehouse_data->order_product_id = $order_product_id;
+                $save_warehouse_data->product_type_sku = $orderProduct->product_data->type_of_garment;
                 $save_warehouse_data->from_stage_id = $from_stage_id;
                 $save_warehouse_data->master_warehouse_block_id = $request->sub_stage;
                 $save_warehouse_data->lot_no = $request->lot_no;

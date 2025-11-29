@@ -16,8 +16,11 @@ class OrderProduct extends Model
         'project_id',
         'sku',
         'order_id',
+        'order_main_id',
         'product_sku',
+        'product_type_sku',
         'quantity',
+        'completed_quantity',
         'status',
         'created_at',
         'updated_at'
@@ -36,6 +39,9 @@ class OrderProduct extends Model
     }
     public function order(){
         return $this->hasOne('App\Models\Order','id','order_id');
+    }
+    public function product_data(){
+        return $this->hasOne('App\Models\ProductionGoods','sku','product_sku');
     }
 
     
