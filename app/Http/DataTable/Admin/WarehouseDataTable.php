@@ -101,12 +101,10 @@ class WarehouseDataTable  {
             }) 
          
             ->addColumn('status', function ($queue) {
-                if ($queue->status == 1) {
-                    return '<span class="badge badge-primary">In Progress</span>';
-                }elseif($queue->status == 3){
+                if($queue->status == 2){
                     return '<span class="badge badge-success">Completed</span>';
                 } else {
-                    return '<span class="badge badge-warning">In Progress</span>';
+                    return '<span class="badge badge-primary">In Progress</span>';
                 }
             })
             
@@ -123,9 +121,15 @@ class WarehouseDataTable  {
             
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;
-                
+                $package_box_show = package_box_show($parameter);
+
                 $view = '<a href="' . route('admin.warehouse.index',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
-                $packaging = '<a href="' . route('admin.warehouse.packaging',['order_id' => $parameter]) . '" class="ml-1" data-toggle="tooltip" data-placement="top" title="" data-original-title="Packaging"><i class="fas fa-box text-muted" title="Packaging"></i></a>';
+                if($package_box_show == 1){
+                    $packaging = '<a href="' . route('admin.warehouse.packaging',['order_id' => $parameter]) . '" class="ml-1" data-toggle="tooltip" data-placement="top" title="" data-original-title="Packaging"><i class="fas fa-box text-muted" title="Packaging"></i></a>';
+                }else{
+                    $packaging = '';
+                }
+                
                 
                 return $view.''.$packaging;
             })

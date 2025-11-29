@@ -17,7 +17,7 @@ class WarehouseController extends Controller {
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
-    public function indexOrder(){
+    public function indexOrder(){ 
         $response['customers'] = $this->service->customers();
         return view('admin.warehouse.index-order',$response);
     } 
@@ -49,6 +49,10 @@ class WarehouseController extends Controller {
         return $this->service->indexListListing($request);
     }
     public function packaging(Request $request){
+        $check_status = package_box_show($request->order_id);
+        if($check_status == 0){
+            return redirect()->back()->with('error', 'Request Failed');
+        }
         $response['order_data'] = $this->service->order_data($request->order_id);
         if($response['order_data']){
             $response['product_types'] = $this->service->product_types($request->order_id);

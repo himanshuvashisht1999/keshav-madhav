@@ -604,9 +604,9 @@ class ProductOrderService {
         $data = [];
         
         foreach ($products as $product_data) {
-            foreach ($product_data['order_stages'] as $order_stages) {
+            foreach ($product_data['order_stages'] as $key=>$order_stages) {
                 $stage_name = $order_stages['stage']['name'] ?? '';
-                $data[$order_stages['stage']['id']] = [
+                $data[$key+1] = [
                     'name' => $stage_name,
                     'total_qty' => $order_stages['total_qty'],
                     'completed_qty' => $order_stages['completed_qty'],

@@ -3,6 +3,7 @@ use App\Models\MasterProductSubStage;
 use App\Models\OrderProductStage;
 use App\Models\OrderStageTransaction;
 use App\Models\ProductStage;
+use App\Models\OrderMain;
 use Illuminate\Support\Facades\DB;
 
 function getformatDateTime($dateString)
@@ -97,6 +98,20 @@ function getParcialCheck($order_product_id, $to_stage_id)
         return false;
     }
     return true;
+}
+
+
+function package_box_show($order_main_id){
+    $status = 1;
+    $data  = OrderMain::with('order_products')->where('id',$order_main_id)->first();
+    $order_products = $data->order_products;
+    foreach($order_products as $order_product){
+        if($order_product->quantity != $order_product->completed_quantity){
+            $status = 0;
+        }
+    }
+    return $status;
+
 }
 
 
