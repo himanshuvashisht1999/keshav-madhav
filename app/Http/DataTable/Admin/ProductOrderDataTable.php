@@ -98,12 +98,10 @@ class ProductOrderDataTable  {
             }) 
          
             ->addColumn('status', function ($queue) {
-                if ($queue->status == 1) {
-                    return '<span class="badge badge-primary">In Progress</span>';
-                }elseif($queue->status == 3){
+                if($queue->status == 2){
                     return '<span class="badge badge-success">Completed</span>';
                 } else {
-                    return '<span class="badge badge-warning">In Progress</span>';
+                    return '<span class="badge badge-primary">In Progress</span>';
                 }
             })
             

@@ -28,6 +28,9 @@ class OrderMain extends Model
     public function orders(){
         return $this->hasMany('App\Models\Order','order_main_id','id');
     }
+    public function order_products(){
+        return $this->hasMany('App\Models\OrderProduct','order_main_id','id');
+    }
 
     
 }

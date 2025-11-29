@@ -90,9 +90,9 @@ class WarehouseService {
         $data = [];
         
         foreach ($products as $product_data) {
-            foreach ($product_data['order_stages'] as $order_stages) {
+            foreach ($product_data['order_stages'] as $key=>$order_stages) {
                 $stage_name = $order_stages['stage']['name'] ?? '';
-                $data[$order_stages['stage']['id']] = [
+                $data[$key+1] = [
                     'name' => $stage_name,
                     'total_qty' => $order_stages['total_qty'],
                     'completed_qty' => $order_stages['completed_qty'],
@@ -101,6 +101,7 @@ class WarehouseService {
                 ];
             }
         }  
+        // dd($data);
         return response()->json($data);
     }
 
@@ -283,6 +284,10 @@ class WarehouseService {
                     $wItem->save();
                 }
             }
+            ///////////// order main status update
+            $status_update = OrderMain::where('id', $order_main_id)->update([
+                'status' => 2,
+            ]);
 
             return [
                 'status'        => 1,

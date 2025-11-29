@@ -22,6 +22,7 @@
     <section class="content">
         <div class="container-fluid">
             <!-- SELECT2 EXAMPLE -->
+            @if($order_data->status == 1)
             <div class="card card-default">
                 <div class="card-header">
                     <h3 class="card-title">Create Packaging</h3>
@@ -85,6 +86,7 @@
                 </form>
             </div>
             {{-- PACKAGE LIST TABLE --}}
+            @else
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Existing Packages</h3>
@@ -138,6 +140,7 @@
                     @endif
                 </div>
             </div>
+            @endif
         </div>
     </section>
 </div>
