@@ -365,7 +365,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     >
                                     <!-- <i class="nav-icon fas fa-store"></i> -->
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Febric Purchase Order</p>
+                                    <p>Fabric Purchase Order</p>
                                 </a>
                             </li>
                             <li class="nav-item">

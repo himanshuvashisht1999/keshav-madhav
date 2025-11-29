@@ -286,10 +286,10 @@ class ReportDataTable  {
     }
 
     public function itemStockSkuList($request){
-        $queue = ItemAttributeValue::withSum('item_stocks as total_quantity', 'quantity');
+        $queue = ItemAttributeValue::withSum('item_stocks as total_quantity', 'quantity')->orderBy('total_quantity', 'asc');
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $query->orderBy('id','desc');
+                // $query->orderBy('id','desc');
                 
                 $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
                 if ($request->has('sku') && !empty($request->sku)) {
@@ -347,7 +347,7 @@ class ReportDataTable  {
     }
 
     public function fabricStockSkuList($request){
-        $queue = Fabric::withSum('stocks as total_meter', 'meter');
+        $queue = Fabric::withSum('stocks as total_meter', 'meter')->orderBy('total_meter', 'asc');
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id','desc');
