@@ -177,11 +177,11 @@ class ItemReceiptService {
                 if($purchase_order_item_data){
                     $save_data = new ItemReceiptDetail;
                     // $save_data->sku = $item_sku;
-                    $save_data->fabric_receipt_id = $request->id;
+                    $save_data->item_receipt_id = $request->id;
 
                     $save_data->purchase_order_id = $purchase_order_item_data->purchase_order_material_id;
                     $save_data->purchase_order_item_id = $purchase_order_item_data->id;
-                    $save_data->fabric_sku = $item_sku;
+                    $save_data->item_sku = $item_sku;
                     $save_data->box = 1;
                     $save_data->quantity = $quantity;
                     $save_data->batch_no = $single_data['batch'];

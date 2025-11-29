@@ -30,7 +30,7 @@ class ItemReceipt extends Model
         return $this->hasOne('App\Models\Vendor','id','vendor_id');
     }
     public function details(){
-        return $this->hasMany('App\Models\ItemReceiptDetail','fabric_receipt_id','id');
+        return $this->hasMany('App\Models\ItemReceiptDetail','item_receipt_id','id');
     }
     public function getShipmentPhotoAttribute($value)
     {

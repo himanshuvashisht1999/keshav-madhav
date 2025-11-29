@@ -416,6 +416,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/fabric-receipt-excel',[AdminReportController::class,'generateFabricReceiptExcel'])->name('fabricReceiptExcel');
             Route::get('/excel-fabric-receipt-report',[AdminReportController::class,'excelFabricReceiptSingle'])->name('excel-fabric-receipt-report');
 
+            Route::get('/item-receipt',[AdminReportController::class,'itemReceipt'])->name('itemReceipt');
+            Route::get('/item-receipt-list',[AdminReportController::class,'itemReceiptList'])->name('itemReceiptList');
+            Route::post('/item-receipt-excel',[AdminReportController::class,'generateItemReceiptExcel'])->name('itemReceiptExcel');
+            Route::get('/excel-item-receipt-report',[AdminReportController::class,'excelItemReceiptSingle'])->name('excel-item-receipt-report');
+
             Route::get('/purchase-order',[AdminReportController::class,'purchaseOrder'])->name('purchaseOrder');
             Route::get('/purchase-order-list',[AdminReportController::class,'purchaseOrderList'])->name('purchaseOrderList');
             Route::post('/purchase-order-excel',[AdminReportController::class,'generatePurchaseOrderExcel'])->name('purchaseOrderExcel');
