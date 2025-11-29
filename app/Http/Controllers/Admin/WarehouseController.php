@@ -48,5 +48,34 @@ class WarehouseController extends Controller {
     public function indexListListing(Request $request){
         return $this->service->indexListListing($request);
     }
+    public function packaging(Request $request){
+        $response['order_data'] = $this->service->order_data($request->order_id);
+        if($response['order_data']){
+            $response['product_types'] = $this->service->product_types($request->order_id);
+        }else{
+            return redirect()->back()->with('error', 'Order not found');
+        }
+        $response['package_data'] = $this->service->package_data($request->order_id);
+        return view('admin.warehouse.packaging',$response);
+    }
+
+    public function packagingStore(Request $request){
+        $save_data = $this->service->packagingStore($request);
+        if($save_data['status'] == 0){
+            return redirect()->back()->with('error', $save_data['message']);
+        }else{
+            return redirect()->route('admin.product_order.indexOrder')->withSuccess($save_data['message']);
+        }
+    }
+
+    public function packagingShow(Request $request){
+        
+        $response['package'] = $this->service->packagingShow($request->package_id);
+        return view('admin.warehouse.packaging_show',$response);
+    }
+    public function barcodeDownload(Request $request){
+        return $this->service->barcodeDownload($request->box_id);
+     
+    }
 
 }

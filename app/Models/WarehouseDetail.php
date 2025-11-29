@@ -20,7 +20,10 @@ class WarehouseDetail extends Model
         'master_warehouse_block_id',
         'lot_no',
         'quantity',
+        'original_qty',
+        'remaining_qty',
         'remarks',
+        'product_type_sku',
         'status',
         'created_at',
         'updated_at'

@@ -39,7 +39,7 @@ class ProductOrderController extends Controller {
     public function store(ProductOrderStoreRequest $request){
         $data = $this->service->store($request);
         if($data['status_code'] == 1){
-            return redirect()->route('admin.product_order.index')->withSuccess($data['message']);
+            return redirect()->route('admin.product_order.indexOrder')->withSuccess($data['message']);
         }else{
             return redirect()->back()->withError($data['message']);
         }

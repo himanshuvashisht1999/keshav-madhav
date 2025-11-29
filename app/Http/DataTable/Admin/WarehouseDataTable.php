@@ -125,8 +125,9 @@ class WarehouseDataTable  {
 				$parameter = $queue->id;
                 
                 $view = '<a href="' . route('admin.warehouse.index',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
+                $packaging = '<a href="' . route('admin.warehouse.packaging',['order_id' => $parameter]) . '" class="ml-1" data-toggle="tooltip" data-placement="top" title="" data-original-title="Packaging"><i class="fas fa-box text-muted" title="Packaging"></i></a>';
                 
-                return $view;
+                return $view.''.$packaging;
             })
             
             ->rawColumns(['action','master_customer_id','created_at','status'])

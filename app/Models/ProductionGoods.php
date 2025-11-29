@@ -15,6 +15,7 @@ class ProductionGoods extends Model
         'sub_company_id',
         'project_id',
         'sku',
+        'type_of_garment',
         'name_of_garment',
         'master_material_id',
         'master_color_id',
