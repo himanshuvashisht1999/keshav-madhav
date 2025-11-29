@@ -19,6 +19,10 @@ class ReportService {
         return $this->datatable->fabricReceiptList($request);
     }
 
+    public function itemReceiptList(Request $request){
+        return $this->datatable->itemReceiptList($request);
+    }
+
     public function purchaseOrderList(Request $request){
         return $this->datatable->purchaseOrderList($request);
     }

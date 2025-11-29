@@ -21,7 +21,8 @@ use App\Models\{
     Order,
     OrderStageTransaction,
     PurchaseOrderItem,
-    PurchaseOrderMaterial
+    PurchaseOrderMaterial,
+    ItemReceipt
 };
 use Illuminate\Support\Facades\DB;
 
@@ -56,6 +57,82 @@ class ReportController extends Controller
         return view('admin.reports.fabric_receipt',$response);
     }
 
+    public function itemReceipt()
+    {
+        $response['vendors'] = $this->service->vendors();
+        return view('admin.reports.item_receipt',$response);
+    }
+    
+    public function generateItemReceiptExcel(Request $request)
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('A1', 'SKU');
+        $sheet->setCellValue('B1', 'Vendor');
+        $sheet->setCellValue('C1', 'Truck Number');
+        $sheet->setCellValue('D1', 'Date & Time');
+        $sheet->setCellValue('E1', 'Packet');
+        $sheet->setCellValue('F1', 'Received By');
+
+        $filters = $request->all();
+
+        // Base query
+        $query = ItemReceipt::query();
+
+        // Filter conditions 
+        if (!empty($filters['sku'])) {
+            $query->where('sku', 'like', '%' . $filters['sku'] . '%');
+        }
+
+        if (!empty($filters['vendor_id'])) {
+            $query->where('vendor_id', $filters['vendor_id']);
+        }
+        if (!empty($filters['truck_number'])) {
+            $query->where('truck_number', 'like', '%' . $filters['truck_number'] . '%');
+        }
+        if (!empty($filters['time'])) {
+            $query->whereDate('created_at', $filters['time']);
+        }
+        if (!empty($filters['boc'])) {
+            $query->where('boc', 'like', '%' . $filters['boc'] . '%');
+        }
+        if (!empty($filters['received_by'])) {
+            $query->where('received_by', 'like', '%' . $filters['received_by'] . '%');
+        }
+        if (
+            !empty($filters['start_date']) && 
+            !empty($filters['end_date'])
+        ) {
+            $query->whereBetween(DB::raw('DATE(time)'), [$filters['start_date'], $filters['end_date']]);
+        }
+        $query->orderBy('id','desc');
+        $query->where('status',1);
+
+        // Filtered result
+        $itemReceipts = $query->get();
+
+        if (!$itemReceipts->isEmpty()) {
+        
+            $row = 2;
+            foreach ($itemReceipts as $itemReceipt) {
+                $sheet->setCellValue('A' . $row, $itemReceipt['sku']);
+                $sheet->setCellValue('B' . $row, $itemReceipt['vendor']?->name);
+                $sheet->setCellValue('C' . $row, $itemReceipt['truck_number']);
+                $sheet->setCellValue('D' . $row, getformatDateTime($itemReceipt['time']));
+                $sheet->setCellValue('E' . $row, $itemReceipt['box']);
+                $sheet->setCellValue('F' . $row, $itemReceipt['received_by']);
+                $row++;
+            }
+        }
+        // Save file
+        $filePath = storage_path('app/public/item_receipt_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx');
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($filePath);
+
+        // Return file as download
+        return response()->download($filePath)->deleteFileAfterSend(true);
+    }
     public function generateFabricReceiptExcel(Request $request)
     {
         $spreadsheet = new Spreadsheet();
@@ -128,6 +205,10 @@ class ReportController extends Controller
     }
     public function fabricReceiptList(Request $request){
         return $this->service->fabricReceiptList($request);
+    }
+
+    public function itemReceiptList(Request $request){
+        return $this->service->itemReceiptList($request);
     }
 
     public function purchaseOrder()
@@ -236,7 +317,7 @@ class ReportController extends Controller
                         
                         $sheet->setCellValue('A' . $row, $purchaseOrders['sku']);
                         $sheet->setCellValue('B' . $row, getformatDate($purchaseOrders['date']));
-                        $sheet->setCellValue('C' . $row, $item['fabric_sku']);
+                        $sheet->setCellValue('C' . $row, $item['item_sku']);
                         $sheet->setCellValue('D' . $row, $item['meter']);
                         $sheet->setCellValue('E' . $row, $item['price']);
                         $sheet->setCellValue('F' . $row, $item['total_price']);
@@ -371,6 +452,51 @@ class ReportController extends Controller
                 }
                 // Save file
                 $filePath = storage_path('app/public/item_purchase_order_report_po-'. $purchaseOrders['sku']. '-' . now()->format('Y-m-d_H-i-s') . '.xlsx');
+                $writer = new Xlsx($spreadsheet);
+                $writer->save($filePath);
+
+                // Return file as download
+                return response()->download($filePath)->deleteFileAfterSend(true);
+            }
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function excelItemReceiptSingle(Request $request)
+    {   
+        try {
+            if ($request->id){
+                // $itemReceipts = ItemReceipt::with('details')->find($request->id);
+                // dd($itemReceipts);
+                $spreadsheet = new Spreadsheet();
+                $sheet = $spreadsheet->getActiveSheet();
+
+                $sheet->setCellValue('A1', 'SKU');
+                $sheet->setCellValue('B1', 'Date & Time');
+                $sheet->setCellValue('C1', 'Item SKU');
+                $sheet->setCellValue('D1', 'Quantity (per Box)');
+                $sheet->setCellValue('E1', 'Batch No');
+                
+                // Base query
+                
+                $itemReceipts = ItemReceipt::with('details')->find($request->id);
+
+                if (!$itemReceipts->details->isEmpty()) {
+                    
+                    $row = 2;
+                    foreach ($itemReceipts->details as $item) {
+                        
+                        $sheet->setCellValue('A' . $row, $itemReceipts['sku']);
+                        $sheet->setCellValue('B' . $row, getformatDate($itemReceipts['time']));
+                        $sheet->setCellValue('C' . $row, $item['item_sku']);
+                        $sheet->setCellValue('D' . $row, $item['quantity']);
+                        $sheet->setCellValue('E' . $row, $item['batch_no']);
+                        $row++;
+                    }
+                }
+                // Save file
+                $filePath = storage_path('app/public/item_receipt_report_FR-'. $itemReceipts['sku']. '-' . now()->format('Y-m-d_H-i-s') . '.xlsx');
                 $writer = new Xlsx($spreadsheet);
                 $writer->save($filePath);
 

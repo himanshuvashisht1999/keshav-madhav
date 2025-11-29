@@ -387,6 +387,15 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a href="{{ route('admin.reports.itemReceipt') }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/reports/item-receipt') ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <!-- <i class="nav-icon fas fa-store"></i> -->
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Item Receipt</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a href="{{ route('admin.reports.fabricReceipt') }}"
                                     class="{{ str_contains(strtolower($page_url), 'admin/reports/fabric-receipt') ? 'nav-link active' : 'nav-link' }}"
                                     >

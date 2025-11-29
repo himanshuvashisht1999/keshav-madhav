@@ -13,6 +13,7 @@ use App\Models\Order;
 use App\Models\OrderStageTransaction;
 use App\Models\OrderProduct;
 use App\Models\PurchaseOrderMaterial;
+use App\Models\ItemReceipt;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 
@@ -71,6 +72,65 @@ class ReportDataTable  {
                 $parameter= $queue->id;
                 return '
                 <a href="' . route('admin.reports.excel-fabric-receipt-report',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fa fa-download"></i></a>
+                ';
+            })
+            
+            ->rawColumns(['status','vendor_id', 'action'])
+            ->make(true);
+    }
+
+    public function itemReceiptList($request){
+        $queue = ItemReceipt::query();
+
+        return DataTables::of($queue)->addIndexColumn()
+            ->filter(function ($query) use ($request) {
+                $query->orderBy('id','desc');
+                
+                $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
+                if ($request->has('sku') && !empty($request->sku)) {
+                    $query->where('sku', 'like', "%{$request->get('sku')}%");
+                }
+                
+                if ($request->has('vendor_id') && $request->filled('vendor_id')) {
+                    $query->where('vendor_id', $request->get('vendor_id'));
+                }
+                if ($request->has('truck_number') && !empty($request->truck_number)) {
+                    $query->where('truck_number', 'like', "%{$request->get('truck_number')}%");
+                }
+                if ($request->has('received_by') && !empty($request->received_by)) {
+                    $query->where('received_by', 'like', "%{$request->get('received_by')}%");
+                }
+                if ($request->has('time') && !empty($request->time)) {
+                    $query->where('time', 'like', "%{$request->get('time')}%");
+                }
+                if ($request->has('box') && !empty($request->box)) {
+                    $query->where('box', 'like', "%{$request->get('box')}%");
+                }
+
+                if ( 
+                    $request->has('start_date') && $request->filled('start_date') && 
+                    $request->has('end_date') && $request->filled('end_date')
+                ) {
+                    $query->whereBetween(DB::raw('DATE(time)'),
+                        [$request->get('start_date'), $request->get('end_date')]
+                    );
+                }
+                $query->where('status',1);
+            }) 
+            ->editColumn('time', function ($queue) {
+				return getformatDateTime($queue->time);
+            })
+            ->editColumn('status', function ($queue) {
+				$status= $queue->status;
+                return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
+            })
+            ->editColumn('vendor_id', function ($queue) {
+				return $queue?->vendor->name;
+            })
+            ->addColumn('action', function ($queue) {
+                $parameter= $queue->id;
+                return '
+                <a href="' . route('admin.reports.excel-item-receipt-report',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fa fa-download"></i></a>
                 ';
             })
             
@@ -237,6 +297,9 @@ class ReportDataTable  {
                 }
             
                 $query->where('status',1);
+            })
+            ->editColumn('total_quantity', function ($queue) {
+                return $queue->total_quantity ?? 0;
             })
             ->addColumn('action', function($row){
                 // Example: return button(s)

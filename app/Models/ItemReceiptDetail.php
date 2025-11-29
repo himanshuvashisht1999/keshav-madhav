@@ -15,10 +15,10 @@ class ItemReceiptDetail extends Model
         'sub_company_id',
         'project_id',
         'sku',
-        'fabric_receipt_id',
+        'item_receipt_id',
         'purchase_order_id',
         'purchase_order_item_id',
-        'fabric_sku',
+        'item_sku',
         'box',
         'quantity',
         'batch_no',
@@ -27,7 +27,7 @@ class ItemReceiptDetail extends Model
         'updated_at'
     ];
     public function item_receipt(){
-        return $this->hasOne('App\Models\ItemReceipt','id','fabric_receipt_id');
+        return $this->hasOne('App\Models\ItemReceipt','id','item_receipt_id');
     }
     public function purchase_order(){
         return $this->hasOne('App\Models\PurchaseOrderMaterial','id','purchase_order_id');

@@ -78,7 +78,7 @@
                                 <tr>
                                     <td>{{ $key + 1 }}</td>
                                     <td>{{ $detail->purchase_order->sku ?? '-' }}</td>
-                                    <td>{{ $detail->fabric_sku }}</td>
+                                    <td>{{ $detail->item_sku }}</td>
                                     <td>{{ $detail->box }}</td>
                                     <td>{{ $detail->quantity }}</td>
                                     <td>{{ $detail->batch_no }}</td>
