@@ -23,6 +23,15 @@ class ReportService {
         return $this->datatable->purchaseOrderList($request);
     }
 
+    public function itemPurchaseOrderList(Request $request){
+        return $this->datatable->itemPurchaseOrderList($request);
+    }
+    public function itemStockSkuList(Request $request){
+        return $this->datatable->itemStockSkuList($request);
+    }
+    public function itemStockList(Request $request){
+        return $this->datatable->itemStockList($request);
+    }
     public function fabricStockList(Request $request){
         return $this->datatable->fabricStockList($request);
     }
@@ -34,7 +43,7 @@ class ReportService {
         return $this->datatable->productionList($request);
     }
     
-    public function stagesList(){
+    public function stagesList(Request $request){
         return $this->datatable->stagesList($request);
     }
     public function vendors(){

@@ -8,8 +8,10 @@ use App\Services\Admin\{
     ReportService as Service,
     ProductOrderService,
     OrderStagesService,
+    ItemStockService,
     Master\ProductionGoodsService,
-    Master\FabricService
+    Master\FabricService,
+    Master\itemAttributeValueService
 };
 use App\Models\{
     FabricReceipt,
@@ -18,7 +20,8 @@ use App\Models\{
     Fabric,
     Order,
     OrderStageTransaction,
-    PurchaseOrderItem
+    PurchaseOrderItem,
+    PurchaseOrderMaterial
 };
 use Illuminate\Support\Facades\DB;
 
@@ -34,13 +37,18 @@ class ReportController extends Controller
         ProductOrderService $productOrderService, 
         OrderStagesService $orderStagesService, 
         ProductionGoodsService $productionGoodsService, 
-        FabricService $fabricService
+        FabricService $fabricService,
+        ItemStockService $itemStockService,
+        ItemAttributeValueService $itemAttributeValueService
     ) {
         $this->service = $service;
         $this->productOrderService = $productOrderService;
         $this->orderStagesService = $orderStagesService;
         $this->productionGoodsService = $productionGoodsService;
         $this->fabricService = $fabricService;
+        $this->itemStockService = $itemStockService;
+        $this->itemAttributeValueService = $itemAttributeValueService;
+
     }
     public function fabricReceipt()
     {
@@ -84,6 +92,12 @@ class ReportController extends Controller
         }
         if (!empty($filters['received_by'])) {
             $query->where('received_by', 'like', '%' . $filters['received_by'] . '%');
+        }
+        if (
+            !empty($filters['start_date']) && 
+            !empty($filters['end_date'])
+        ) {
+            $query->whereBetween(DB::raw('DATE(time)'), [$filters['start_date'], $filters['end_date']]);
         }
         $query->orderBy('id','desc');
         $query->where('status',1);
@@ -158,6 +172,16 @@ class ReportController extends Controller
         if (!empty($filters['delivery_date'])) {
             $query->where('delivery_date', $filters('delivery_date'));
         }
+        if (
+            !empty($filters['selected_field']) && 
+            !empty($filters['start_date']) && 
+            !empty($filters['end_date'])
+        ) {
+            $query->whereBetween(
+                $filters['selected_field'],
+                [$filters['start_date'], $filters['end_date']]
+            );
+        }
         $query->orderBy('id','desc');
         
 
@@ -177,7 +201,7 @@ class ReportController extends Controller
             }
         }
         // Save file
-        $filePath = storage_path('app/public/purchase_order_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx');
+        $filePath = storage_path('app/public/febric_purchase_order_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx');
         $writer = new Xlsx($spreadsheet);
         $writer->save($filePath);
 
@@ -220,7 +244,178 @@ class ReportController extends Controller
                     }
                 }
                 // Save file
-                $filePath = storage_path('app/public/purchase_order_report_po-'. $purchaseOrders['sku']. '-' . now()->format('Y-m-d_H-i-s') . '.xlsx');
+                $filePath = storage_path('app/public/febric_purchase_order_report_po-'. $purchaseOrders['sku']. '-' . now()->format('Y-m-d_H-i-s') . '.xlsx');
+                $writer = new Xlsx($spreadsheet);
+                $writer->save($filePath);
+
+                // Return file as download
+                return response()->download($filePath)->deleteFileAfterSend(true);
+            }
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function ItemPurchaseOrder()
+    {   
+        $response['vendors'] = $this->service->vendors();
+        return view('admin.reports.item_purchase_order', $response);
+    }
+
+    public function itemPurchaseOrderList(Request $request)
+    {
+        return $this->service->itemPurchaseOrderList($request);
+    }
+
+     public function itemGeneratePurchaseOrderExcel(Request $request)
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('A1', 'SKU');
+        $sheet->setCellValue('B1', 'Purchase Order Date');
+        $sheet->setCellValue('C1', 'Vendor');
+        $sheet->setCellValue('D1', 'Expected Delivery Date');
+
+        $filters = $request->all();
+
+        // Base query
+        $query = PurchaseOrderMaterial::query();
+
+        // Filter conditions 
+        if (!empty($filters['sku'])) {
+            $query->where('sku', 'like', '%' . $filters['sku'] . '%');
+        }
+
+        if (!empty($filters['vendor_id'])) {
+            $query->where('vendor_id', $filters['vendor_id']);
+        }
+        
+        if (!empty($filters['date'])) {
+            $query->where('date', $filters('date'));
+        }
+    
+        if (!empty($filters['delivery_date'])) {
+            $query->where('delivery_date', $filters('delivery_date'));
+        }
+        if (
+            !empty($filters['selected_field']) && 
+            !empty($filters['start_date']) && 
+            !empty($filters['end_date'])
+        ) {
+            $query->whereBetween(
+                $filters['selected_field'],
+                [$filters['start_date'], $filters['end_date']]
+            );
+        }
+        $query->orderBy('id','desc');
+        
+
+        // Filtered result
+        $purchaseOrders = $query->get();
+
+        if (!$purchaseOrders->isEmpty()) {
+            
+            $row = 2;
+            foreach ($purchaseOrders as $purchaseOrder) {
+                
+                $sheet->setCellValue('A' . $row, $purchaseOrder['sku']);
+                $sheet->setCellValue('B' . $row, getformatDate($purchaseOrder['date']));
+                $sheet->setCellValue('C' . $row, $purchaseOrder['vendor']?->name);
+                $sheet->setCellValue('D' . $row, getformatDate($purchaseOrder['delivery_date']));
+                $row++;
+            }
+        }
+        // Save file
+        $filePath = storage_path('app/public/item_purchase_order_report_' . now()->format('Y-m-d_H-i-s') . '.xlsx');
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($filePath);
+
+        // Return file as download
+        return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+    public function itemExcelPurchaseOrderSingle(Request $request)
+    {   
+        try {
+            if ($request->id){
+                // $purchaseOrders = PurchaseOrder::with('items')->find($request->id);
+                // dd($purchaseOrders);
+                $spreadsheet = new Spreadsheet();
+                $sheet = $spreadsheet->getActiveSheet();
+
+                $sheet->setCellValue('A1', 'PO No');
+                $sheet->setCellValue('B1', 'Purchase Order Date');
+                $sheet->setCellValue('C1', 'Item SKU');
+                $sheet->setCellValue('D1', 'Quantity');
+                $sheet->setCellValue('E1', 'Price');
+                $sheet->setCellValue('F1', 'Total Price');
+                
+                // Base query
+                
+                $purchaseOrders = PurchaseOrderMaterial::with('items')->find($request->id);
+
+                if (!$purchaseOrders->items->isEmpty()) {
+                    
+                    $row = 2;
+                    foreach ($purchaseOrders->items as $item) {
+                        
+                        $sheet->setCellValue('A' . $row, $purchaseOrders['sku']);
+                        $sheet->setCellValue('B' . $row, getformatDate($purchaseOrders['date']));
+                        $sheet->setCellValue('C' . $row, $item['item_attribute_value_sku']);
+                        $sheet->setCellValue('D' . $row, $item['quantity']);
+                        $sheet->setCellValue('E' . $row, $item['price']);
+                        $sheet->setCellValue('F' . $row, $item['total_price']);
+                        $row++;
+                    }
+                }
+                // Save file
+                $filePath = storage_path('app/public/item_purchase_order_report_po-'. $purchaseOrders['sku']. '-' . now()->format('Y-m-d_H-i-s') . '.xlsx');
+                $writer = new Xlsx($spreadsheet);
+                $writer->save($filePath);
+
+                // Return file as download
+                return response()->download($filePath)->deleteFileAfterSend(true);
+            }
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function excelFabricReceiptSingle(Request $request)
+    {   
+        try {
+            if ($request->id){
+                // $purchaseOrders = PurchaseOrder::with('items')->find($request->id);
+                // dd($purchaseOrders);
+                $spreadsheet = new Spreadsheet();
+                $sheet = $spreadsheet->getActiveSheet();
+
+                $sheet->setCellValue('A1', 'SKU');
+                $sheet->setCellValue('B1', 'Date & Time');
+                $sheet->setCellValue('C1', 'Fabric SKU');
+                $sheet->setCellValue('D1', 'Meter (per roll)');
+                $sheet->setCellValue('E1', 'Batch No');
+                
+                // Base query
+                
+                $fabricReceipts = FabricReceipt::with('details')->find($request->id);
+
+                if (!$fabricReceipts->details->isEmpty()) {
+                    
+                    $row = 2;
+                    foreach ($fabricReceipts->details as $item) {
+                        
+                        $sheet->setCellValue('A' . $row, $fabricReceipts['sku']);
+                        $sheet->setCellValue('B' . $row, getformatDate($fabricReceipts['time']));
+                        $sheet->setCellValue('C' . $row, $item['fabric_sku']);
+                        $sheet->setCellValue('D' . $row, $item['meter']);
+                        $sheet->setCellValue('E' . $row, $item['batch_no']);
+                        $row++;
+                    }
+                }
+                // Save file
+                $filePath = storage_path('app/public/fabric_receipt_report_FR-'. $fabricReceipts['sku']. '-' . now()->format('Y-m-d_H-i-s') . '.xlsx');
                 $writer = new Xlsx($spreadsheet);
                 $writer->save($filePath);
 
@@ -302,12 +497,32 @@ class ReportController extends Controller
         return view('admin.reports.fabric_stock_details', $response);
     }
 
+    public function itemStockDetails(Request $request)
+    {      
+        $response['items'] = $this->itemAttributeValueService->getItemAttributeValueById($request);
+        return view('admin.reports.item_stock_details', $response);
+    }
+
     public function fabricStockSku()
     {   
         $response['fabrics'] = $this->productionGoodsService->fabrics();
         return view('admin.reports.fabric_stock', $response);
     }
     
+    public function itemStockSku()
+    {   
+        $response['items'] = $this->itemStockService->items();
+        return view('admin.reports.item_stock', $response);
+    }
+
+    public function itemStockSkuList(Request $request)
+    {
+        return $this->service->itemStockSkuList($request);
+    }
+    public function itemStockList(Request $request)
+    {
+        return $this->service->itemStockList($request);
+    }
     public function fabricStockList(Request $request)
     {
         return $this->service->fabricStockList($request);
@@ -514,7 +729,7 @@ class ReportController extends Controller
         return view('admin.reports.stages', $response);
     }
     
-    public function stagesList()
+    public function stagesList(Request $request)
     {
         return $this->service->stagesList($request);
     }
@@ -571,6 +786,18 @@ class ReportController extends Controller
                 $query->where('remaining_quantity', '=', 0);
             }
         }
+
+        if (
+            !empty($filters['selected_field']) && 
+            !empty($filters['start_date']) && 
+            !empty($filters['end_date'])
+        ) {
+            $query->whereBetween(
+                $filters['selected_field'],
+                [$filters['start_date'], $filters['end_date']]
+            );
+        }
+        
         $query->where('to_stage_id',$filters['stage_id']);
         $query->orderBy('id','desc');
         

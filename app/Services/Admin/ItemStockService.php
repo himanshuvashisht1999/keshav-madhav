@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 
 
 use App\Models\ItemStock;
+use App\Models\Item;
 use App\Http\DataTable\Admin\ItemStockDataTable as DataTable;
 
 class ItemStockService
@@ -37,4 +38,10 @@ class ItemStockService
     public function itemIndexList(Request $request){
         return $this->datatable->itemIndexList($request);
     }
+    public function items(){
+        $data = Item::where('status',1)->get();
+        return $data;
+    }
+    
+    
 }
