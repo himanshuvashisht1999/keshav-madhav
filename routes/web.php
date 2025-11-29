@@ -414,11 +414,25 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/fabric-receipt',[AdminReportController::class,'fabricReceipt'])->name('fabricReceipt');
             Route::get('/fabric-receipt-list',[AdminReportController::class,'fabricReceiptList'])->name('fabricReceiptList');
             Route::post('/fabric-receipt-excel',[AdminReportController::class,'generateFabricReceiptExcel'])->name('fabricReceiptExcel');
+            Route::get('/excel-fabric-receipt-report',[AdminReportController::class,'excelFabricReceiptSingle'])->name('excel-fabric-receipt-report');
 
             Route::get('/purchase-order',[AdminReportController::class,'purchaseOrder'])->name('purchaseOrder');
             Route::get('/purchase-order-list',[AdminReportController::class,'purchaseOrderList'])->name('purchaseOrderList');
             Route::post('/purchase-order-excel',[AdminReportController::class,'generatePurchaseOrderExcel'])->name('purchaseOrderExcel');
             Route::get('/excel-purchase-order-report',[AdminReportController::class,'excelPurchaseOrderSingle'])->name('excel-purchase-order-report');
+
+            Route::get('/item-purchase-order',[AdminReportController::class,'itemPurchaseOrder'])->name('itemPurchaseOrder');
+            Route::get('/item-purchase-order-list',[AdminReportController::class,'itemPurchaseOrderList'])->name('itemPurchaseOrderList');
+            Route::post('/item-purchase-order-excel',[AdminReportController::class,'itemGeneratePurchaseOrderExcel'])->name('itemPurchaseOrderExcel');
+            Route::get('/item-excel-purchase-order-report',[AdminReportController::class,'itemExcelPurchaseOrderSingle'])->name('item-excel-purchase-order-report');
+
+            Route::get('/item-stock-sku',[AdminReportController::class,'itemStockSku'])->name('itemStockSku');
+            Route::get('/item-stock',[AdminReportController::class,'itemStock'])->name('itemStock');
+            Route::get('/item-stock-details',[AdminReportController::class,'itemStockDetails'])->name('itemStockDetails');
+            Route::get('/item-stock-list',[AdminReportController::class,'itemStockList'])->name('itemStockList');
+            Route::get('/item-stock-sku-list',[AdminReportController::class,'itemStockSkuList'])->name('itemStockSkuList');
+            Route::post('/item-stock-excel',[AdminReportController::class,'generateItemStockExcel'])->name('itemStockExcel');
+            Route::post('/item-stock-sku-excel',[AdminReportController::class,'generateItemStockSkuExcel'])->name('itemStockSkuExcel');
 
             Route::get('/fabric-stock-sku',[AdminReportController::class,'fabricStockSku'])->name('fabricStockSku');
             Route::get('/fabric-stock',[AdminReportController::class,'fabricStock'])->name('fabricStock');

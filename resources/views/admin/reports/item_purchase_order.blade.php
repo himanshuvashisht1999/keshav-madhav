@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Fabric Receipt Report</h1>
+                    <h1>Item Purchase Order Report</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Fabric Receipt Report</li>
+                        <li class="breadcrumb-item active">Item Purchase Order Report</li>
                     </ol>
                 </div>
             </div>
@@ -24,7 +24,6 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default ">
                 
-                
                 <div class="card-body table-responsive">
                 <table id="customers" class="table table-bordered table-hover">
                   <thead>
@@ -35,40 +34,28 @@
                         <td>
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
-                        
+                        <td>
+                            <input type="date" class="form-control" name="date" id="date" autocomplete="off">
+                        </td>
                         <td>
                             <select class="form-control" name="vendor_id" id="vendor_id" autocomplete="off">
                                 <option value="">ALL</option>
-                                @foreach($vendors as $single_data)  
+                                @foreach($vendors as $single_data)
                                     <option value="{{$single_data->id}}" >{{$single_data->name}}</option>
                                 @endforeach
                             </select>
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="truck_number" id="truck_number" autocomplete="off">
+                            <input type="date" class="form-control" name="delivery_date" id="delivery_date" autocomplete="off">
                         </td>
-                        
-                        <td>
-                            <input type="date" class="form-control" name="time" id="time" autocomplete="off">
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="roll" id="roll" autocomplete="off">
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="received_by" id="received_by" autocomplete="off">
-                        </td>
-                        
-                        
-                        
+                        <td> </td>
                     </tr>
                     <tr>
                         <th>ID</th>
-                        <th>SKU</th>
+                        <th>PO No.</th>
+                        <th>Purchase Order Date</th>
                         <th>Vendor</th>
-                        <th>Truck Number</th>
-                        <th>Date & Time</th>
-                        <th>Packet</th>
-                        <th>Received By</th>
+                        <th>Expected Delivery Date</th>
                         <th>Action</th>
                     </tr>
                   </thead>
@@ -101,16 +88,14 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.reports.fabricReceiptList') !!}',
+                url: '{!! route('admin.reports.itemPurchaseOrderList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.sku = $('#sku').val();
+                    d.date = $('#date').val();
                     d.vendor_id = $('#vendor_id').val();
-                    d.truck_number = $('#truck_number').val();
-                    d.time = $('#time').val();
-                    d.roll = $('#roll').val();
-                    d.received_by = $('#received_by').val();
-                    // d.selected_field = $('#selected_field').val();
+                    d.delivery_date = $('#delivery_date').val();
+                    d.selected_field = $('#selected_field').val();
                     d.start_date = $('#start_date').val();
                     d.end_date = $('#end_date').val();
                 },
@@ -119,11 +104,9 @@
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'sku', name: 'sku'},
+                {data: 'date', name: 'date'},
                 {data: 'vendor_id', name: 'vendor_id'},
-                {data: 'truck_number', name: 'truck_number'},
-                {data: 'time', name: 'time'},
-                {data: 'roll', name: 'roll'},
-                {data: 'received_by', name: 'received_by'},
+                {data: 'delivery_date', name: 'delivery_date'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
@@ -139,7 +122,8 @@
                         e.preventDefault();
                     }
                 }
-            ]
+            ],
+
         });
 
         $('#email-queue-search-form').on('submit', function (e) {
@@ -151,37 +135,43 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#sku').on('keyup', function (e) {
+
+        $('#date').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
-        
         $('#vendor_id').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
+        $('#delivery_date').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#sku').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        // $('#date_range').on('change', function (e) {
+        //     oTable.draw();
+        //     e.preventDefault();
+        // });
 
-        $('#truck_number').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#roll').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#received_by').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#time').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $("#customers_length").append(`<input type="text" id="report-range" name="date_range" style="width: 200px; max-width: 100%; margin-bottom: 5px;" placeholder="Select Date Range" autocomplete="off"> 
-            <input type="hidden" name="start_date" id="start_date">
-            <input type="hidden" name="end_date" id="end_date" >`);
+        // $('#selected_field').on('change', function (e) {
+        //     alert('fffd');
+        //     oTable.draw();
+        //     e.preventDefault();
+            
+        // });
+        //
+        $("#customers_length").append(`
+        <select id="selected_field" name="selected_field" class="form-control">
+            <option value="date">Purchase Order Date</option>
+            <option value="delivery_date">Expected Delivery Date</option>
+        </select>
+        <input type="text" id="report-range" name="date_range" style="width: 200px; max-width: 100%; margin-bottom: 5px;" placeholder="Select Date Range" autocomplete="off"> 
+        <input type="hidden" name="start_date" id="start_date">
+        <input type="hidden" name="end_date" id="end_date" >`);
 
         $('#report-range').daterangepicker({
             autoUpdateInput: false, // Don't fill input initially
@@ -220,10 +210,10 @@
             oTable.draw(); 
         });
 
-        // $('#selected_field').on('change', function (e) { 
-        //     oTable.draw(); 
-        //     e.preventDefault(); 
-        // });
+        $('#selected_field').on('change', function (e) { 
+            oTable.draw(); 
+            e.preventDefault(); 
+        });
 
         $(document).ready(function () {
             $('#generateExcel').on('click', function (e) {
@@ -234,10 +224,9 @@
                     id: $('#id').val(),
                     sku: $('#sku').val(),
                     vendor_id: $('#vendor_id').val(),
-                    truck_number: $('#truck_number').val(),
-                    time: $('#time').val(),
-                    roll: $('#roll').val(),
-                    received_by: $('#received_by').val(),
+                    time: $('#date').val(),
+                    delivery_date: $('#delivery_date').val(),
+                    selected_field: $('#selected_field').val(),
                     start_date: $('#start_date').val(),
                     end_date: $('#end_date').val(),
                     _token: '{{ csrf_token() }}'
@@ -245,7 +234,7 @@
 
                 // Create a hidden form for POST submission (so file download works)
                 var form = $('<form>', {
-                    action: '{{ route("admin.reports.fabricReceiptExcel") }}',
+                    action: '{{ route("admin.reports.itemPurchaseOrderExcel") }}',
                     method: 'POST',
                     target: '_blank'
                 }).append($.map(data, function(v, k) {
@@ -257,9 +246,16 @@
                 form.remove();
             });
         });
-
     });
 
+// date picker 
+
+
+$(function() {
+
+   
+
+});
 </script>
 
 @endsection

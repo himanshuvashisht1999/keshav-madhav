@@ -95,7 +95,9 @@
                     d.date = $('#date').val();
                     d.vendor_id = $('#vendor_id').val();
                     d.delivery_date = $('#delivery_date').val();
-                  
+                    d.selected_field = $('#selected_field').val();
+                    d.start_date = $('#start_date').val();
+                    d.end_date = $('#end_date').val();
                 },
                 orderable: false
             },
@@ -120,7 +122,7 @@
                         e.preventDefault();
                     }
                 }
-            ]
+            ],
 
         });
 
@@ -150,7 +152,69 @@
             oTable.draw();
             e.preventDefault();
         });
-        
+        // $('#date_range').on('change', function (e) {
+        //     oTable.draw();
+        //     e.preventDefault();
+        // });
+
+        // $('#selected_field').on('change', function (e) {
+        //     alert('fffd');
+        //     oTable.draw();
+        //     e.preventDefault();
+            
+        // });
+        //
+        $("#customers_length").append(`
+        <select id="selected_field" name="selected_field" class="form-control">
+            <option value="date">Purchase Order Date</option>
+            <option value="delivery_date">Expected Delivery Date</option>
+        </select>
+        <input type="text" id="report-range" name="date_range" style="width: 200px; max-width: 100%; margin-bottom: 5px;" placeholder="Select Date Range" autocomplete="off"> 
+        <input type="hidden" name="start_date" id="start_date">
+        <input type="hidden" name="end_date" id="end_date" >`);
+
+        $('#report-range').daterangepicker({
+            autoUpdateInput: false, // Don't fill input initially
+            opens: 'right',
+            locale: {
+                format: 'YYYY-MM-DD',
+                cancelLabel: 'Clear'
+            },
+            ranges: {
+                'Last 1 Month': [moment().subtract(1, 'month'), moment()],
+                'Last 3 Months': [moment().subtract(3, 'month'), moment()],
+                'Last 1 Year': [moment().subtract(1, 'year'), moment()],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'This Year': [moment().startOf('year'), moment().endOf('year')],
+            },
+
+            startDate: moment().subtract(1, 'month'),
+            endDate: moment(),
+
+        }, function(start, end) {
+            $('#start_date').val(start.format('YYYY-MM-DD'));
+            $('#end_date').val(end.format('YYYY-MM-DD'));
+        });
+
+        // Set value when user selects a range
+        $('#report-range').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MM-DD') + " to " + picker.endDate.format('YYYY-MM-DD'));
+            $('#start_date').val(picker.startDate.format('YYYY-MM-DD'));
+            $('#end_date').val(picker.endDate.format('YYYY-MM-DD'));
+            oTable.draw(); 
+        });
+
+        // Clear input when user clicks cancel
+        $('#report-range').on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+            oTable.draw(); 
+        });
+
+        $('#selected_field').on('change', function (e) { 
+            oTable.draw(); 
+            e.preventDefault(); 
+        });
+
         $(document).ready(function () {
             $('#generateExcel').on('click', function (e) {
                 e.preventDefault(); // prevent default behavior
@@ -162,6 +226,9 @@
                     vendor_id: $('#vendor_id').val(),
                     time: $('#date').val(),
                     delivery_date: $('#delivery_date').val(),
+                    selected_field: $('#selected_field').val(),
+                    start_date: $('#start_date').val(),
+                    end_date: $('#end_date').val(),
                     _token: '{{ csrf_token() }}'
                 };
 
@@ -181,6 +248,14 @@
         });
     });
 
+// date picker 
+
+
+$(function() {
+
+   
+
+});
 </script>
 
 @endsection
