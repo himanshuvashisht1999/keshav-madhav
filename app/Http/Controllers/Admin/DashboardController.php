@@ -87,5 +87,11 @@ class DashboardController extends Controller {
         curl_close($response);
 
     }
+
+    public function getDashboardData(Request $request){
+       
+        return $this->service->fabricStock($request);
+    }
+    
     
 }

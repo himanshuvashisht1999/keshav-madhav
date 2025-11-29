@@ -57,6 +57,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
         Route::get('/logout',[AdminLoginController::class,'logout'])->name('logout');
         Route::get('/dashboard',[AdminDashboardController::class,'dashboard'])->name('dashboard');
+        Route::get('/getDashboardData',[AdminDashboardController::class,'getDashboardData'])->name('getDashboardData');
 
         Route::prefix('/purchase-order')->name('purchase_order.')->group(function () {
             Route::get('/index',[AdminPurchaseOrderController::class,'index'])->name('index');
