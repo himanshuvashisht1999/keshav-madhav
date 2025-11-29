@@ -191,9 +191,13 @@
                 cancelLabel: 'Clear'
             },
             ranges: {
-                'Last 1 Month': [moment().subtract(1, 'month'), moment()],
-                'Last 3 Months': [moment().subtract(3, 'month'), moment()],
-                'Last 1 Year': [moment().subtract(1, 'year'), moment()],
+                'Today': [moment(), moment()],
+                'Yesterday': [moment().subtract(1, 'day'), moment().subtract(1, 'day')],
+                'This Week': [moment().startOf('week'), moment().endOf('week')],
+                'Last Week': [
+                    moment().subtract(1, 'week').startOf('week'),
+                    moment().subtract(1, 'week').endOf('week')
+                ],
                 'This Month': [moment().startOf('month'), moment().endOf('month')],
                 'This Year': [moment().startOf('year'), moment().endOf('year')],
             },
