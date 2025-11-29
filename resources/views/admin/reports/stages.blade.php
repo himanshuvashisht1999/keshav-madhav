@@ -39,7 +39,7 @@
                                     <th>Status</th>
                                     <th>Received</th>
                                     <th>Delivered</th>
-                                    
+                                                                        
                                 </tr>
                                 <tr class="bg-white">
                                     <td></td>
@@ -86,7 +86,7 @@ $(function () {
         searching: false,
         pageLength: 10,
         ajax: {
-            url: '{!! route('admin.order-stages.indexList',['stage_id' => $stage_data->id]) !!}',
+            url: '{!! route('admin.reports.stagesList',['stage_id' => $stage_data->id]) !!}',
             data: function (d) {
                 d.sku = $('#sku').val();
                 d.order_product_id = $('#order_product_id').val();
@@ -96,6 +96,9 @@ $(function () {
                 d.status = $('#status').val();
                 d.created_at = $('#created_at').val();
                 d.updated_at = $('#updated_at').val();
+                d.selected_field = $('#selected_field').val();
+                d.start_date = $('#start_date').val();
+                d.end_date = $('#end_date').val();
             }
         },
         columns: [
@@ -169,7 +172,58 @@ $(function () {
     $('#status').on('change', function (e) {
         oTable.draw();
         e.preventDefault();
-    });        
+    }); 
+    
+    $("#order_stage_length").append(`
+        <select id="selected_field" name="selected_field" class="form-control">
+            <option value="created_at">Received Date</option>
+            <option value="updated_at">Delivered Date</option>
+        </select>
+        <input type="text" id="report-range" name="date_range" style="width: 200px; max-width: 100%; margin-bottom: 5px;" placeholder="Select Date Range" autocomplete="off"> 
+        <input type="hidden" name="start_date" id="start_date">
+        <input type="hidden" name="end_date" id="end_date" >`);
+
+    $('#report-range').daterangepicker({
+        autoUpdateInput: false, // Don't fill input initially
+        opens: 'right',
+        locale: {
+            format: 'YYYY-MM-DD',
+            cancelLabel: 'Clear'
+        },
+        ranges: {
+            'Last 1 Month': [moment().subtract(1, 'month'), moment()],
+            'Last 3 Months': [moment().subtract(3, 'month'), moment()],
+            'Last 1 Year': [moment().subtract(1, 'year'), moment()],
+            'This Month': [moment().startOf('month'), moment().endOf('month')],
+            'This Year': [moment().startOf('year'), moment().endOf('year')],
+        },
+
+        startDate: moment().subtract(1, 'month'),
+        endDate: moment(),
+
+    }, function(start, end) {
+        $('#start_date').val(start.format('YYYY-MM-DD'));
+        $('#end_date').val(end.format('YYYY-MM-DD'));
+    });
+
+    // Set value when user selects a range
+    $('#report-range').on('apply.daterangepicker', function(ev, picker) {
+        $(this).val(picker.startDate.format('YYYY-MM-DD') + " to " + picker.endDate.format('YYYY-MM-DD'));
+        $('#start_date').val(picker.startDate.format('YYYY-MM-DD'));
+        $('#end_date').val(picker.endDate.format('YYYY-MM-DD'));
+        oTable.draw(); 
+    });
+
+    // Clear input when user clicks cancel
+    $('#report-range').on('cancel.daterangepicker', function(ev, picker) {
+        $(this).val('');
+        oTable.draw(); 
+    });
+
+    $('#selected_field').on('change', function (e) { 
+        oTable.draw(); 
+        e.preventDefault(); 
+    });
 
     $(document).ready(function () {
         $('#generateExcel').on('click', function (e) {
@@ -186,6 +240,9 @@ $(function () {
                 status: $('#status').val(),
                 created_at: $('#created_at').val(),
                 updated_at: $('#updated_at').val(),
+                selected_field: $('#selected_field').val(),
+                start_date: $('#start_date').val(),
+                end_date: $('#end_date').val(),
                 _token: '{{ csrf_token() }}'
             };
 

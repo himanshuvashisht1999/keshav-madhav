@@ -359,16 +359,33 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                         </a>
                         
                         <ul class="nav nav-treeview">
-                             <li class="nav-item">
+                            <li class="nav-item">
                                 <a href="{{ route('admin.reports.purchaseOrder') }}"
                                     class="{{ str_contains(strtolower($page_url), 'admin/reports/purchase-order')  ? 'nav-link active' : 'nav-link' }}"
                                     >
                                     <!-- <i class="nav-icon fas fa-store"></i> -->
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Purchase Order</p>
+                                    <p>Febric Purchase Order</p>
                                 </a>
                             </li>
-
+                            <li class="nav-item">
+                                <a href="{{ route('admin.reports.itemPurchaseOrder') }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/reports/item-purchase-order')  ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <!-- <i class="nav-icon fas fa-store"></i> -->
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Items Purchase Order</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.reports.itemStockSku') }}"
+                                    class="{{ (str_contains(strtolower($page_url), 'admin/reports/item-stock-sku') || str_contains(strtolower($page_url), 'admin/reports/item-stock-details')) ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <!-- <i class="nav-icon fas fa-store"></i> -->
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Item Stock</p>
+                                </a>
+                            </li>
                             <li class="nav-item">
                                 <a href="{{ route('admin.reports.fabricReceipt') }}"
                                     class="{{ str_contains(strtolower($page_url), 'admin/reports/fabric-receipt') ? 'nav-link active' : 'nav-link' }}"
