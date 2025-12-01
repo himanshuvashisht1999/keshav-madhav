@@ -238,7 +238,7 @@ class ProductOrderService {
         return $data;
     }
     public function products(){
-        $data = ProductionGoods::where('status',1)->get();
+        $data = ProductionGoods::where('status',1)->orderBy('sku','asc')->get();
         return $data;
     }
     public function transfer($request)
@@ -474,7 +474,7 @@ class ProductOrderService {
 
 
     public function customers(){
-        $data = MasterCustomer::where('status',1)->get();
+        $data = MasterCustomer::where('status',1)->orderBy('name','asc')->get();
         return $data;
     }
 

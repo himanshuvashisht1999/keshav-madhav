@@ -14,6 +14,7 @@ use App\Models\BillOfMaterial;
 use App\Models\MasterProductType;
 use App\Models\MasterProductStage;
 use App\Models\ProductStage;
+use App\Models\ItemAttributeValue;
 use App\Http\DataTable\Admin\Master\ProductionGoodsDataTable as DataTable;
 use App\Models\MasterPattern;
 
@@ -124,35 +125,35 @@ class ProductionGoodsService {
     }
 
     public function colors(){
-        $data = MasterColor::where('status',1)->get();
+        $data = MasterColor::where('status',1)->orderBy('sku','asc')->get();
         return $data;
     }
     public function sizes(){
-        $data = MasterSizeMeasurement::where('status',1)->get();
+        $data = MasterSizeMeasurement::where('status',1)->orderBy('sku','asc')->get();
         return $data;
     }
     public function designs(){
-        $data = MasterDesign::where('status',1)->get();
+        $data = MasterDesign::where('status',1)->orderBy('sku','asc')->get();
         return $data;
     }
     public function materials(){
-        $data = MasterMaterial::where('status',1)->get();
+        $data = MasterMaterial::where('status',1)->orderBy('sku','asc')->get();
         return $data;
     }
     public function fabrics(){
-        $data = Fabric::where('status',1)->get();
+        $data = Fabric::where('status',1)->orderBy('sku','asc')->get();
         return $data;
     }
     public function items(){
-        $data = \App\Models\ItemAttributeValue::where('status',1)->get();
+        $data = ItemAttributeValue::where('status',1)->orderBy('sku','asc')->get();
         return $data;
     }
     public function product_types(){
-        $data = MasterProductType::where('status',1)->get();
+        $data = MasterProductType::where('status',1)->orderBy('sku','asc')->get();
         return $data;
     }
     public function garment_patterns(){
-        $data = MasterPattern::where('status',1)->get();
+        $data = MasterPattern::where('status',1)->orderBy('sku','asc')->get();
         return $data;
     }
     public function product_stages(){

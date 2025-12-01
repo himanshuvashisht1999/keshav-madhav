@@ -106,7 +106,8 @@ function package_box_show($order_main_id){
     $data  = OrderMain::with('order_products')->where('id',$order_main_id)->first();
     $order_products = $data->order_products;
     foreach($order_products as $order_product){
-        if($order_product->quantity != $order_product->completed_quantity){
+        $last_stage_data = OrderProductStage::where('order_product_id',$order_product->id)->orderBy('id','desc')->first();
+        if($order_product->quantity != $last_stage_data->completed_qty){
             $status = 0;
         }
     }
