@@ -15,7 +15,7 @@ class FabricDataTable
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $query->orderBy('id','desc');
+                $query->orderBy('id','asc');
                 $query->orWhere('name', 'like', "%{$request->get('search')['value']}%");
                 if ($request->has('name') && !empty($request->name)) {
                     $query->where('name', 'like', "%{$request->get('name')}%");

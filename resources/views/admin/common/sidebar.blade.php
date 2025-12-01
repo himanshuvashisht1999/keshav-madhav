@@ -186,7 +186,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     class="{{ str_contains($page_url, 'admin/warehouse/listing') ? 'nav-link active' : 'nav-link' }}"
                                     style="position:static;">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Listing</p>
+                                    <p>Stock</p>
                                 </a>
                             </li>
                         </ul>
@@ -204,13 +204,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.pattern.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/pattern') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Pattern</p>
-                                </a>
-                            </li>
+                            
                             <li class="nav-item">
                                 <a href="{{ route('admin.master.item.index') }}"
                                     class="{{ str_contains($page_url, 'admin/master/item') ? 'nav-link active' : 'nav-link' }}">
@@ -263,13 +257,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                 </a>
                             </li>
 
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.vendor.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/vendors') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Vendors</p>
-                                </a>
-                            </li>
+                            
                             <li class="nav-item">
                                 <a href="{{ route('admin.master.size-measurement.index') }}"
                                     class="{{ str_contains($page_url, 'admin/master/size-measurement') ? 'nav-link active' : 'nav-link' }}">
@@ -293,13 +281,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <p>Product Types</p>
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.warehouse-blocks.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/warehouse-blocks') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Warehouse Blocks</p>
-                                </a>
-                            </li>
+                            
                             <!-- <li class="nav-item">
                                 <a href="{{ route('admin.master.designs.index') }}"
                                     class="{{ str_contains($page_url, 'admin/master/designs') ? 'nav-link active' : 'nav-link' }}">
@@ -318,7 +300,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                 <a href="{{ route('admin.master.product_stage.index') }}"
                                     class="{{ (str_contains($page_url, 'admin/master/product-stage') || str_contains($page_url, 'admin/master/product-sub-stage')) ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Production Stages</p>
+                                    <p>Product Stages</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.master.pattern.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/master/pattern') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Product Pattern</p>
                                 </a>
                             </li>
 
@@ -338,12 +327,27 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                 </a>
                             </li> -->
                             <li class="nav-item">
+                                <a href="{{ route('admin.master.vendor.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/master/vendors') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Vendors</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a href="{{ route('admin.master.customer.index') }}"
                                     class="{{ str_contains($page_url, 'admin/master/customers') ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Customers</p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.master.warehouse-blocks.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/master/warehouse-blocks') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Warehouse Blocks</p>
+                                </a>
+                            </li>
+                            
                         </ul>
                     </li>
                    
@@ -374,7 +378,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     >
                                     <!-- <i class="nav-icon fas fa-store"></i> -->
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Items Purchase Order</p>
+                                    <p>Item Purchase Order</p>
                                 </a>
                             </li>
                             <li class="nav-item">
