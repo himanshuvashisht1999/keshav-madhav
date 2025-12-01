@@ -186,7 +186,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     class="{{ str_contains($page_url, 'admin/warehouse/listing') ? 'nav-link active' : 'nav-link' }}"
                                     style="position:static;">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Listing</p>
+                                    <p>Stock</p>
                                 </a>
                             </li>
                         </ul>
@@ -195,22 +195,160 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
 
                     <!-- Master Settings (Dropdown) -->
                     <li class="{{ str_contains($page_url, 'admin/master') ? 'nav-item menu-open' : 'nav-item' }}">
-                        <a href="#"
-                            class="{{ str_contains($page_url, 'admin/master') ? 'nav-link active' : 'nav-link' }}">
+                        <a href="#" class="{{ str_contains($page_url, 'admin/master') ? 'nav-link active' : 'nav-link' }}">
                             <i class="nav-icon fas fa-cogs"></i>
                             <p>
                                 Masters
                                 <i class="right fas fa-angle-left"></i>
                             </p>
                         </a>
+
                         <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.pattern.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/pattern') ? 'nav-link active' : 'nav-link' }}">
+                            {{-- ================= FABRIC MASTER ================= --}}
+                            <li class="{{ (
+                                    str_contains($page_url, 'admin/master/fabric_dye') ||
+                                    str_contains($page_url, 'admin/master/fabric_composition') ||
+                                    str_contains($page_url, 'admin/master/fabric_gsm') ||
+                                    str_contains($page_url, 'admin/master/fabric_weave') ||
+                                    str_contains($page_url, 'admin/master/fabric_width') ||
+                                    ($page_url === '/admin/master/fabric' || str_starts_with($page_url, '/admin/master/fabric/'))
+                                ) ? 'nav-item menu-open' : 'nav-item' }}">
+                                <a href="#"
+                                    class="{{ (
+                                            str_contains($page_url, 'admin/master/fabric_dye') ||
+                                            str_contains($page_url, 'admin/master/fabric_composition') ||
+                                            str_contains($page_url, 'admin/master/fabric_gsm') ||
+                                            str_contains($page_url, 'admin/master/fabric_weave') ||
+                                            str_contains($page_url, 'admin/master/fabric_width') ||
+                                            ($page_url === '/admin/master/fabric' || str_starts_with($page_url, '/admin/master/fabric/'))
+                                        ) ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Pattern</p>
+                                    <p>
+                                        Fabric Master
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
                                 </a>
+
+                                <ul class="nav nav-treeview">
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.fabric_dye.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/master/fabric_dye') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <p>Dye</p>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.fabric_composition.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/master/fabric_composition') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <p>Composition</p>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.fabric_gsm.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/master/fabric_gsm') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <p>GSM</p>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.fabric_weave.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/master/fabric_weave') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <p>Weave</p>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.fabric_width.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/master/fabric_width') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <p>Width</p>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.fabric.index') }}"
+                                            class="{{ $page_url === '/admin/master/fabric' || str_starts_with($page_url, '/admin/master/fabric/') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <p>Fabric</p>
+                                        </a>
+                                    </li>
+                                </ul>
                             </li>
+
+                            {{-- ================= PRODUCT MASTER ================= --}}
+                            <li class="{{ (
+                                    str_contains($page_url, 'admin/master/colors') ||
+                                    str_contains($page_url, 'admin/master/product-types') ||
+                                    str_contains($page_url, 'admin/master/size-measurement') ||
+                                    str_contains($page_url, 'admin/master/product-stage') ||
+                                    str_contains($page_url, 'admin/master/product-sub-stage') ||
+                                    str_contains($page_url, 'admin/master/pattern')
+                                ) ? 'nav-item menu-open' : 'nav-item' }}">
+                                <a href="#"
+                                    class="{{ (
+                                            str_contains($page_url, 'admin/master/colors') ||
+                                            str_contains($page_url, 'admin/master/product-types') ||
+                                            str_contains($page_url, 'admin/master/size-measurement') ||
+                                            str_contains($page_url, 'admin/master/product-stage') ||
+                                            str_contains($page_url, 'admin/master/product-sub-stage') ||
+                                            str_contains($page_url, 'admin/master/pattern')
+                                        ) ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>
+                                        Product Master
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+
+                                <ul class="nav nav-treeview">
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.colors.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/master/colors') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <p>Color</p>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.product-types.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/master/product-types') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <p>Types</p>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.size-measurement.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/master/size-measurement') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <p>Size</p>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.product_stage.index') }}"
+                                            class="{{ (str_contains($page_url, 'admin/master/product-stage') || str_contains($page_url, 'admin/master/product-sub-stage')) ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <p>Stages</p>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.pattern.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/master/pattern') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <p>Pattern</p>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            {{-- ===== OTHER MASTERS (KEEP AS THEY ARE) ===== --}}
                             <li class="nav-item">
                                 <a href="{{ route('admin.master.item.index') }}"
                                     class="{{ str_contains($page_url, 'admin/master/item') ? 'nav-link active' : 'nav-link' }}">
@@ -218,48 +356,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <p>Items</p>
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.fabric_dye.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/fabric_dye') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Fabric Dye</p>
-                                </a>
-                            </li>
+
+                            
 
                             <li class="nav-item">
-                                <a href="{{ route('admin.master.fabric_composition.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/fabric_composition') ? 'nav-link active' : 'nav-link' }}">
+                                <a href="{{ route('admin.master.production-goods.index') }}"
+                                    class="{{ (str_contains($page_url, 'admin/master/product/') || str_contains($page_url, 'admin/master/production-goods-item/')) ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Fabric Composition</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.fabric_gsm.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/fabric_gsm') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Fabric GSM</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.fabric_weave.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/fabric_weave') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Fabric Weave</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.fabric_width.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/fabric_width') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Fabric Width</p>
-                                </a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.fabric.index') }}"
-                                    class="{{ $page_url === '/admin/master/fabric' || str_starts_with($page_url, '/admin/master/fabric/') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Fabric</p>
+                                    <p>Products</p>
                                 </a>
                             </li>
 
@@ -270,73 +374,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <p>Vendors</p>
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.size-measurement.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/size-measurement') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Product Size</p>
-                                </a>
-                            </li>
 
-
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.colors.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/colors') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Product Color</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.product-types.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/product-types') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Product Types</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.warehouse-blocks.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/warehouse-blocks') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Warehouse Blocks</p>
-                                </a>
-                            </li>
-                            <!-- <li class="nav-item">
-                                <a href="{{ route('admin.master.designs.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/designs') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Garment Designs</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.materials.index') }}"
-                                    class="{{ str_contains($page_url, 'admin/master/materials') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Garment Material</p>
-                                </a>
-                            </li> -->
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.product_stage.index') }}"
-                                    class="{{ (str_contains($page_url, 'admin/master/product-stage') || str_contains($page_url, 'admin/master/product-sub-stage')) ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Production Stages</p>
-                                </a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a href="{{ route('admin.master.production-goods.index') }}"
-                                    class="{{ (str_contains($page_url, 'admin/master/product/') || str_contains($page_url, 'admin/master/production-goods-item/')) ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Products</p>
-                                </a>
-                            </li>
-                            
-                            <!-- General Settings -->
-                            <!-- <li class="nav-item">
-                                <a href="{{ route('admin.settings.edit') }}" class="{{ str_contains($page_url, 'admin/master/setting') ? 'nav-link active' : 'nav-link' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>General Settings</p>
-                                </a>
-                            </li> -->
                             <li class="nav-item">
                                 <a href="{{ route('admin.master.customer.index') }}"
                                     class="{{ str_contains($page_url, 'admin/master/customers') ? 'nav-link active' : 'nav-link' }}">
@@ -344,8 +382,17 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <p>Customers</p>
                                 </a>
                             </li>
+
+                            <li class="nav-item">
+                                <a href="{{ route('admin.master.warehouse-blocks.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/master/warehouse-blocks') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Warehouse Blocks</p>
+                                </a>
+                            </li>
                         </ul>
                     </li>
+
                    
 
                     <li class="{{ str_contains($page_url, 'admin/reports') ? 'nav-item menu-open' : 'nav-item' }}">
@@ -374,7 +421,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     >
                                     <!-- <i class="nav-icon fas fa-store"></i> -->
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Items Purchase Order</p>
+                                    <p>Item Purchase Order</p>
                                 </a>
                             </li>
                             <li class="nav-item">
