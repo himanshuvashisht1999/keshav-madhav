@@ -35,7 +35,7 @@
                                     <th>Product SKU</th>
                                     <th>Lot No.</th>
                                     <th>From Stage</th>
-                                    <th>Unit </th>
+                                    <th>Unit</th>
                                     <th>Qty</th>
                                     <th>Remain</th>
                                     <th>Status</th>

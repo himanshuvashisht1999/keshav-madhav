@@ -158,7 +158,7 @@ class ReportDataTable  {
                 }
                 if ($request->has('delivery_date') && $request->filled('delivery_date')) {
                     $query->where('delivery_date', $request->get('delivery_date'));
-                }
+                } 
                 
                 if (
                     $request->has('selected_field') && $request->filled('selected_field') && 

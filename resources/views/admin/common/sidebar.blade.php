@@ -3,6 +3,31 @@ $page_url = $_SERVER['REQUEST_URI'];
 $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
 $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
 ?>
+<style>
+    /* Base links (Dashboard, Purchase, Stock, etc.) */
+    .main-sidebar .nav-sidebar > .nav-item > .nav-link {
+        padding-left: 18px;   /* default: ~12px, adjust as you like */
+    }
+
+    /* First level inside treeview (Fabric, Item under Purchase / Stock / Receipt / etc.) */
+    .main-sidebar .nav-treeview > .nav-item > .nav-link {
+        padding-left: 34px;   /* more indent than parent */
+        font-size: 0.92rem;   /* optional: slightly smaller */
+    }
+
+    /* Second-level (if you ever have nested inside nested) */
+    .main-sidebar .nav-treeview .nav-treeview > .nav-item > .nav-link {
+        padding-left: 46px;
+    }
+
+    /* Give the icons a bit of space from text */
+    .main-sidebar .nav-link .nav-icon,
+    .main-sidebar .nav-link i.far,
+    .main-sidebar .nav-link i.fas {
+        margin-right: 8px;
+    }
+</style>
+
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
     <a href="{{ route('admin.user.profileEdit') }}" class="brand-link">
@@ -233,7 +258,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <li class="nav-item">
                                         <a href="{{ route('admin.master.fabric_dye.index') }}"
                                             class="{{ str_contains($page_url, 'admin/master/fabric_dye') ? 'nav-link active' : 'nav-link' }}">
-                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <i class="fas fa-circle"></i>
                                             <p>Dye</p>
                                         </a>
                                     </li>
@@ -241,7 +266,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <li class="nav-item">
                                         <a href="{{ route('admin.master.fabric_composition.index') }}"
                                             class="{{ str_contains($page_url, 'admin/master/fabric_composition') ? 'nav-link active' : 'nav-link' }}">
-                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <i class="fas fa-circle"></i>
                                             <p>Composition</p>
                                         </a>
                                     </li>
@@ -249,7 +274,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <li class="nav-item">
                                         <a href="{{ route('admin.master.fabric_gsm.index') }}"
                                             class="{{ str_contains($page_url, 'admin/master/fabric_gsm') ? 'nav-link active' : 'nav-link' }}">
-                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <i class="fas fa-circle"></i>
                                             <p>GSM</p>
                                         </a>
                                     </li>
@@ -257,7 +282,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <li class="nav-item">
                                         <a href="{{ route('admin.master.fabric_weave.index') }}"
                                             class="{{ str_contains($page_url, 'admin/master/fabric_weave') ? 'nav-link active' : 'nav-link' }}">
-                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <i class="fas fa-circle"></i>
                                             <p>Weave</p>
                                         </a>
                                     </li>
@@ -265,7 +290,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <li class="nav-item">
                                         <a href="{{ route('admin.master.fabric_width.index') }}"
                                             class="{{ str_contains($page_url, 'admin/master/fabric_width') ? 'nav-link active' : 'nav-link' }}">
-                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <i class="fas fa-circle"></i>
                                             <p>Width</p>
                                         </a>
                                     </li>
@@ -273,7 +298,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <li class="nav-item">
                                         <a href="{{ route('admin.master.fabric.index') }}"
                                             class="{{ $page_url === '/admin/master/fabric' || str_starts_with($page_url, '/admin/master/fabric/') ? 'nav-link active' : 'nav-link' }}">
-                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <i class="fas fa-circle"></i>
                                             <p>Fabric</p>
                                         </a>
                                     </li>
@@ -309,7 +334,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <li class="nav-item">
                                         <a href="{{ route('admin.master.colors.index') }}"
                                             class="{{ str_contains($page_url, 'admin/master/colors') ? 'nav-link active' : 'nav-link' }}">
-                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <i class="fas fa-circle"></i>
                                             <p>Color</p>
                                         </a>
                                     </li>
@@ -317,7 +342,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <li class="nav-item">
                                         <a href="{{ route('admin.master.product-types.index') }}"
                                             class="{{ str_contains($page_url, 'admin/master/product-types') ? 'nav-link active' : 'nav-link' }}">
-                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <i class="fas fa-circle"></i>
                                             <p>Types</p>
                                         </a>
                                     </li>
@@ -325,7 +350,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <li class="nav-item">
                                         <a href="{{ route('admin.master.size-measurement.index') }}"
                                             class="{{ str_contains($page_url, 'admin/master/size-measurement') ? 'nav-link active' : 'nav-link' }}">
-                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <i class="fas fa-circle"></i>
                                             <p>Size</p>
                                         </a>
                                     </li>
@@ -333,7 +358,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <li class="nav-item">
                                         <a href="{{ route('admin.master.product_stage.index') }}"
                                             class="{{ (str_contains($page_url, 'admin/master/product-stage') || str_contains($page_url, 'admin/master/product-sub-stage')) ? 'nav-link active' : 'nav-link' }}">
-                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <i class="fas fa-circle"></i>
                                             <p>Stages</p>
                                         </a>
                                     </li>
@@ -341,7 +366,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <li class="nav-item">
                                         <a href="{{ route('admin.master.pattern.index') }}"
                                             class="{{ str_contains($page_url, 'admin/master/pattern') ? 'nav-link active' : 'nav-link' }}">
-                                            <i class="far fa-dot-circle nav-icon"></i>
+                                            <i class="fas fa-circle"></i>
                                             <p>Pattern</p>
                                         </a>
                                     </li>

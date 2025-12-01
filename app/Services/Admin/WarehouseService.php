@@ -97,7 +97,8 @@ class WarehouseService {
                     'total_qty' => $order_stages['total_qty'],
                     'completed_qty' => $order_stages['completed_qty'],
                     'pending_qty' => $order_stages['pending_qty'],
-                    'status' => $order_stages['status'],
+                    'status' => $order_stages['status'], 
+                    'stage_id' => $order_stages['stage_id'],
                 ];
             }
         }  
