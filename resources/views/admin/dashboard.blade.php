@@ -62,7 +62,7 @@
         </select>
     </div>
    
-    <div class="row g-4 col-sm-12">
+    <div class="row g-4 col-sm-12" style="display: none;">
         <div class="col-lg-6 col-md-6 ">
             <div class="card-report">
                 <h5 class="mb-3">Production</h5>
