@@ -17,7 +17,7 @@ class ProductionGoodsItemsDataTable  {
         
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $query->orderBy('id','desc');
+                $query->orderBy('id','asc');
                 $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
