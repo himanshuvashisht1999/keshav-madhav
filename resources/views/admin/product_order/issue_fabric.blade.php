@@ -24,7 +24,7 @@
                 <input type="hidden" name="order_product_id" value="{{ $data->id }}">
                 <div class="col-md-12">
                     <div class="form-group">
-                        <label>Select Sub Stage</label>
+                        <label>Select Unit</label>
                         <select name="sub_stage_id" class="form-control select2" style="width: 100%;" required>
                             @foreach($sub_stages_cutting as $single_data)
                             <option value="{{$single_data->id}}">{{$single_data->name}}</option>

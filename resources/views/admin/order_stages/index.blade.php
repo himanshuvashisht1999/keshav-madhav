@@ -35,7 +35,7 @@
                                     <th>Product SKU</th>
                                     <th>Lot No.</th>
                                     <th>From Stage</th>
-                                    <th>Sub Stage</th>
+                                    <th>Unit</th>
                                     <th>Qty</th>
                                     <th>Remain</th>
                                     <th>Status</th>
@@ -114,7 +114,7 @@
                         <input type="number" name="lot_no" class="form-control form-control-sm" id="lot_no_m" required min="1" step="1">
                     </div>
                     <div class="form-group mb-3">
-                        <label class="small mb-1"><strong>Select Sub Stage</strong></label>
+                        <label class="small mb-1"><strong>Select Unit</strong></label>
                         <select name="sub_stage" id="sub_stage" class="form-control">
                             <option value=""></option>
                         </select>
@@ -306,7 +306,7 @@ $(document).on('click', '.viewBtn', function() {
                 });
                 $('#sub_stage').html(options);
             } else {
-                $('#sub_stage').html('<option value="">No sub stages found</option>');
+                $('#sub_stage').html('<option value="">No units found</option>');
             }
             
             if (!(from_stage_id == 1 || from_stage_id == 2)){

@@ -29,14 +29,14 @@ class MasterProductSubStageStoreRequest extends FormRequest{
 
     public function messages(){
         return [
-    'name.required' => 'Sub Stage name is required',
-    'sku.required' => 'SKU is required',
+            'name.required' => 'Unit name is required',
+            'sku.required' => 'SKU is required',
         ];
     }
 
     public function attributes(){
         return [
-            'name' =>'Sub Stage Name',
+            'name' =>'Unit Name',
             'sku' =>'SKU',
         ];
     }
