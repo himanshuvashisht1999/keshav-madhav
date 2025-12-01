@@ -229,8 +229,8 @@
 
     
     $(document).ready(function() {
-
-       $(document).on('click', '.statusLink', function() {
+        const STAGE_ROUTE = "{{ route('admin.order-stages.index') }}";
+        $(document).on('click', '.statusLink', function() {
             let product_order_id = $(this).data('id');   // Get ID from data-id
             let order_sku = $(this).data('order_sku');   // Get ID from data-id    
                 // small delay to avoid too many calls
@@ -271,7 +271,7 @@
 
                     tableHtml += `
                         <tr>
-                        <td>${row.name}</td>
+                        <td><a target="_blank" href="${STAGE_ROUTE}?stage_id=${row.stage_id}">${row.name}</a></td>
                         <td>${row.total_qty}</td>
                         <td>${row.completed_qty}</td>
                         <td>${row.pending_qty}</td>

@@ -58,7 +58,7 @@ class StockDataTable  {
     public function fabricIndexList($request){
         $queue = Fabric::withSum('stocks as total_meter', 'meter');
         return DataTables::of($queue)->addIndexColumn()
-            ->filter(function ($query) use ($request) {
+            ->filter(function ($query) use ($request) { 
                 $query->orderBy('id','desc');
                 
                 $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");

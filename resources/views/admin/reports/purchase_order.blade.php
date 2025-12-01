@@ -1,5 +1,6 @@
 @extends('admin.layouts.app')
 @section('content')
+
 <div class="content-wrapper">
     <!-- Content Header (Page header) -->
     <section class="content-header">
@@ -169,7 +170,9 @@
             <option value="date">Purchase Order Date</option>
             <option value="delivery_date">Expected Delivery Date</option>
         </select>
-        <input type="text" id="report-range" name="date_range" style="width: 200px; max-width: 100%; margin-bottom: 5px;" placeholder="Select Date Range" autocomplete="off"> 
+        
+        <input type="text" id="report-range" name="date_range"  style="width: 200px; max-width: 100%; margin-bottom: 5px;" placeholder="Select Date Range" autocomplete="off"> 
+        
         <input type="hidden" name="start_date" id="start_date">
         <input type="hidden" name="end_date" id="end_date" >`);
 

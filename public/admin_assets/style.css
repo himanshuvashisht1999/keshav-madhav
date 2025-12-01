@@ -97,3 +97,6 @@ tr:hover {
 table.dataTable {
     width: 100% !important;
 }
+.daterangepicker.ltr.show-ranges.opensright.show-calendar{
+    padding: 10px;
+}
