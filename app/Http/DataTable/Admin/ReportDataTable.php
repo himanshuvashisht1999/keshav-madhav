@@ -7,9 +7,10 @@ use App\Models\FabricReceipt;
 use App\Models\PurchaseOrder;
 use App\Models\Fabric;
 use App\Models\Stock;
-use App\Models\ItemStock;
+use App\Models\ItemStock; 
 use App\Models\ItemAttributeValue;
 use App\Models\Order;
+use App\Models\OrderMain;
 use App\Models\OrderStageTransaction;
 use App\Models\OrderProduct;
 use App\Models\PurchaseOrderMaterial;
@@ -368,7 +369,7 @@ class ReportDataTable  {
     }
 
     public function productionList($request){
-        $queue = Order::query();
+        $queue = OrderMain::query();
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -395,11 +396,9 @@ class ReportDataTable  {
                 return $queue->expected_delivery_date ? getformatDate($queue->expected_delivery_date) : '-';
             })
             ->addColumn('status', function ($queue) {
-                if ($queue->status == 1) {
-                    return '<span class="badge badge-primary">Not Issued</span>';
-                }elseif($queue->status == 3){
+                if ($queue->status == 2) {
                     return '<span class="badge badge-success">Completed</span>';
-                } else {
+                }else {
                     return '<span class="badge badge-warning">In Progress</span>';
                 }
             })
@@ -411,8 +410,14 @@ class ReportDataTable  {
             ->editColumn('created_at', function ($queue) {
                 return $queue->created_at ? getformatDateTime($queue->created_at) : '-';
             })
+            ->addColumn('action', function ($queue) {
+                $parameter= $queue->id;
+                return '
+                <a href="' . route('admin.reports.generateProductionExcelSingle',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fa fa-download"></i></a>
+                ';
+            })
             
-            ->rawColumns(['master_customer_id','created_at','status'])
+            ->rawColumns(['master_customer_id','created_at','status','action'])
             ->make(true);
     }
 

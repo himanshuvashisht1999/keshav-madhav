@@ -451,6 +451,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/production',[AdminReportController::class,'production'])->name('production');
             Route::get('production-list',[AdminReportController::class,'productionList'])->name('productionList');
             Route::post('/production-excel',[AdminReportController::class,'generateProductionExcel'])->name('productionExcel');
+            Route::get('/production-excel-single',[AdminReportController::class,'generateProductionExcelSingle'])->name('generateProductionExcelSingle');
 
             Route::get('/stages',[AdminReportController::class,'stages'])->name('stages');
             Route::get('stages-list',[AdminReportController::class,'stagesList'])->name('stagesList');
