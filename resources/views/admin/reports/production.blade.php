@@ -54,11 +54,11 @@
                         <td>
                             <select id="status" class="form-control form-control-sm">
                                 <option value="">All</option>
-                                <option value="1">Not Issued</option>
-                                <option value="2">In Progress</option>
-                                <option value="3">Completed</option>
+                                <option value="1">In Progress</option>
+                                <option value="2">Completed</option>
                             </select>
                         </td>
+                        <!-- <td></td> -->
                     </tr>
                     <tr>
                         <th>ID</th>
@@ -67,6 +67,7 @@
                         <th>Order Date</th>
                         <th>Estimated Delivery Date</th>
                         <th>Status</th>
+                        <!-- <th>Action</th> -->
                     </tr>
                   </thead>
                   <tbody>
@@ -85,26 +86,6 @@
             </div>
         </div>
     </section>
-</div>
-
-<!-- Modal -->
-<div class="modal fade" id="tableModal" tabindex="-1" role="dialog" aria-labelledby="tableModalLabel" aria-hidden="true">
-   <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <h4 class="modal-title" id="tableModalLabel"></h4>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span>&times;</span>
-        </button>
-      </div>
-      
-      <div class="modal-body" id="tableContainer">
-        <!-- Table will be injected here -->
-      </div>
-
-    </div>
-  </div>
 </div>
 
 <script>
@@ -137,7 +118,8 @@
                 {data: 'master_customer_id', name: 'master_customer_id'},                
                 {data: 'created_at', name: 'created_at'},                
                 {data: 'expected_delivery_date', name: 'expected_delivery_date'},                
-                {data: 'status', name: 'status'}
+                {data: 'status', name: 'status'},
+                // {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
             buttons: [

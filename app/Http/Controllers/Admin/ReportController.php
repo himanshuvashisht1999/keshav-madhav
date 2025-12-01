@@ -22,7 +22,7 @@ use App\Models\{
     OrderStageTransaction,
     PurchaseOrderItem,
     PurchaseOrderMaterial,
-    ItemReceipt
+    ItemReceipt,OrderMain
 };
 use Illuminate\Support\Facades\DB;
 
@@ -764,7 +764,7 @@ class ReportController extends Controller
 
     public function production()
     {
-        // $response['products'] = $this->service->products();
+        // $response['products'] = $this->service->products(); 
         $response['customers'] = $this->productOrderService->customers();
         return view('admin.reports.production', $response);
     }
@@ -788,7 +788,7 @@ class ReportController extends Controller
         $filters = $request->all();
 
         // Base query
-        $query = Order::query();
+        $query = OrderMain::query();
 
         // Filter conditions 
         if (!empty($filters['sku'])) {
@@ -828,11 +828,9 @@ class ReportController extends Controller
                 $sheet->setCellValue('C' . $row, $order['created_at'] ? getformatDateTime($order['created_at']) : '-');
                 $sheet->setCellValue('D' . $row, getformatDate($order['expected_delivery_date']));
                 $statusText = '';
-                if ($order['status'] == 1) {
-                    $statusText = 'Not Issued';
-                } elseif ($order['status'] == 3) {
+                if ($order['status'] == 2) {
                     $statusText = 'Completed';
-                } else {
+                }else {
                     $statusText = 'In Progress';
                 }   
                 $sheet->setCellValue('E' . $row, $statusText);
@@ -847,6 +845,12 @@ class ReportController extends Controller
 
         // Return file as download
         return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+    public function generateProductionExcelSingle(Request $request){
+
+        return $this->service->generateProductionExcelSingle($request);
+        
     }
     public function stages(Request $request)
     {

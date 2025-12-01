@@ -6,11 +6,12 @@ use Illuminate\Support\Str;
 use Auth;
 use App\Models\Vendor;
 use App\Http\DataTable\Admin\ReportDataTable as DataTable;
-
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ReportService {
     public function __construct(
-        DataTable $datatable,
+        DataTable $datatable, 
     ) {
         $this->datatable= $datatable;
     }
@@ -53,6 +54,14 @@ class ReportService {
     public function vendors(){
         $data = Vendor::where('status',1)->get();
         return $data;
+    }
+
+    public function generateProductionExcelSingle(Request $request){
+        $order_main_id = $request->id;
+        $order_data = OrderMain::with('order_products.product_details')->where('id',$order_main_id)->first();
+
+        dd($order_data);
+
     }
 
 
