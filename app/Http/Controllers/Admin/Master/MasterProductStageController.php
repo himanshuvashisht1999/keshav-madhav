@@ -67,7 +67,7 @@ class MasterProductStageController extends Controller {
     }
     public function updateSubStage(MasterProductStageUpdateRequest $request){
         $data = $this->service->updateSubStage($request);
-        return redirect()->route('admin.master.product-sub-stage.index', ['stage_id' => $request->master_product_stage_id])->withSuccess('The production unit has been successfully updated.');
+        return redirect()->route('admin.master.product-sub-stage.index', ['stage_id' => $request->master_product_stage_id])->withSuccess('The stage unit has been successfully updated.');
     }
     public function createSubStage(Request $request){
         $stage_id = $request->stage_id ?? $request->query('stage_id');
@@ -76,7 +76,7 @@ class MasterProductStageController extends Controller {
     }
     public function storeSubStage (MasterProductSubStageStoreRequest $request){
         $data = $this->service->storeSubStage($request);
-        return redirect()->route('admin.master.product-sub-stage.index', ['stage_id' => $request->stage_id])-> withSuccess('The production unit has been successfully created.');
+        return redirect()->route('admin.master.product-sub-stage.index', ['stage_id' => $request->stage_id])-> withSuccess('The stage unit has been successfully created.');
     }
 
 }
