@@ -10,7 +10,6 @@
         flex-wrap: wrap;
         margin-bottom: 25px;
     }
-
     .dashboard-header h3 {
         font-size: 26px;
         font-weight: 700;
@@ -25,7 +24,6 @@
         height: 100%;
         box-shadow: 0 4px 12px rgba(0,0,0,0.06);
     }
-
     .card-report:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.1);
@@ -34,7 +32,7 @@
     /* Chart container */
     .chart-container {
         width: 100%;
-        height: 250px; /* fixed height for all charts */
+        height: 250px;
     }
 
     /* Responsive header */
@@ -53,7 +51,7 @@
 
     {{-- Header --}}
     <div class="dashboard-header">
-        <h3>Dashboard Overview</h3>
+        <h3>Dashboard</h3>
         <select id="mainFilter" class="form-control shadow border" style="max-width:220px;">
             <option value="all">All Time</option>
             <option value="today">Today</option>
@@ -63,33 +61,32 @@
             <option value="year">This Year</option>
         </select>
     </div>
-
-    {{-- Responsive Grid: 2 Charts per Row --}}
-    <div class="row">
-
-        
-        {{-- Total Orders --}}
-        {{-- <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+   
+    <div class="row g-4 col-sm-12">
+        <div class="col-lg-6 col-md-6 ">
             <div class="card-report">
-                <h5 class="mb-3">Total Orders</h5>
+                <h5 class="mb-3">Production</h5>
                 <div class="chart-container">
-                    <canvas id="orderChart"></canvas>
+                    <canvas id="productionChart"></canvas>
                 </div>
             </div>
-        </div> --}}
-
-        {{-- Stage Wise Status --}}
-        {{-- <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+        </div>
+        {{-- Add more charts here similarly --}}
+   
+        <div class="col-lg-6 col-md-6 ">
             <div class="card-report">
-                <h5 class="mb-3">Stage Wise Status</h5>
+                <h5 class="mb-3">Stages</h5>
                 <div class="chart-container">
-                    <canvas id="stageChart"></canvas>
+                    <canvas id="stagesChart"></canvas>
                 </div>
             </div>
-        </div> --}}
-
-        {{-- Fabric Chart --}}
-        <div class="col-lg-12 col-md-12 col-sm-12 mb-4">
+        </div>
+        {{-- Add more charts here similarly --}}
+    </div>
+     </br>
+    {{-- Responsive Grid: 2 charts per row --}}
+    <div class="row g-4 col-sm-12">
+        <div class="col-lg-12 col-md-12">
             <div class="card-report">
                 <h5 class="mb-3">Fabric Stock</h5>
                 <div class="chart-container">
@@ -97,181 +94,153 @@
                 </div>
             </div>
         </div>
-
-        {{-- Item Stock --}}
-        <div class="col-lg-12 col-md-12 col-sm-12 mb-4">
+    </div>
+    </br>
+    <div class="row g-4 col-sm-12">
+        <div class="col-lg-12 col-md-12">
             <div class="card-report">
                 <h5 class="mb-3">Item Stock</h5>
                 <div class="chart-container">
-                    <canvas id="itemStockChart"></canvas>
+                    <canvas id="itemChart"></canvas>
                 </div>
             </div>
         </div>
-
-        {{-- Warehouse Status --}}
-        {{-- <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
-            <div class="card-report">
-                <h5 class="mb-3">Warehouse Status</h5>
-                <div class="chart-container">
-                    <canvas id="warehouseChart"></canvas>
-                </div>
-            </div>
-        </div> --}}
-
-        {{-- Purchase Orders --}}
-        {{-- <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
-            <div class="card-report">
-                <h5 class="mb-3">Purchase Orders</h5>
-                <div class="chart-container">
-                    <canvas id="purchaseChart"></canvas>
-                </div>
-            </div>
-        </div> --}}
-
+        {{-- Add more charts here similarly --}}
     </div>
+    
 </div>
 
-{{-- Chart.js CDN --}}
+{{-- Chart.js & jQuery CDN --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-/* ----------------------------
-   SAMPLE DATA
----------------------------- */
-const sampleData = {
-    fabric: {
-        all: { labels: ['Polyester', 'Cotton', 'Nylon'], data: [1000, 1200, 800] },
-        month: { labels: ['Polyester', 'Cotton', 'Nylon'], data: [300, 200, 150] }
-    },
-    itemStock: {
-        all: { labels: ['Zip', 'Button', 'Belt', 'Tapes', 'Zip1', 'Button1', 'Belt1', 'Tapes1', 'Zip', 'Button2', 'Belt2', 'Tapes2', 'Zip3', 'Button3', 'Belt4', 'Tapes4'], data: [490, 244, 122, 133, 490, 244, 122, 133, 490, 244, 122, 133, 490, 244, 122, 133] },
-        month: { labels: ['Zip', 'Button', 'Belt', 'Tapes', 'Zip1', 'Button1', 'Belt1', 'Tapes1', 'Zip', 'Button2', 'Belt2', 'Tapes2', 'Zip3', 'Button3', 'Belt4', 'Tapes4'], data: [122, 1344, 322, 133, 122, 1344, 322, 133, 490, 244, 122, 133, 490, 244, 122, 133] }
-    },
-   //  totalOrders: {
-   //      all: { labels: ['Pending', 'Completed', 'In Progress'], data: [35, 120, 15] },
-   //      month: { labels: ['Pending', 'Completed', 'In Progress'], data: [12, 333, 43] }
-   //  },
-   //  stageWise: {
-   //      all: { labels: ['Cutting', 'Stitching', 'QC'], data: [10, 5, 2] }
-   //  },
-   //  warehouse: {
-   //      all: { labels: ['Pending', 'Completed', 'In Progress'], data: [12, 50, 8] }
-   //  },
-   //  purchases: {
-   //      all: { labels: ['Fabric PO', 'Item PO'], data: [22, 14] }
-   //  }
-};
+let charts = {}; // Store chart instances
 
-/* ----------------------------
-   FUNCTION TO CREATE CHARTS
----------------------------- */
-function createBarChart(ctx, labels, data, labelName) {
+// Generate vibrant colors dynamically
+function generateColors(num, color) {
+    // Create an array of length `num` with the same color
+    return Array(num).fill(color);
+}
+
+// Create bar chart
+function createBarChart(ctx, labels, data, labelName, hoverLabels = null, color = '#4caf50') {
     return new Chart(ctx, {
-         type: 'bar',
-         data: {
+        type: 'bar',
+        data: {
             labels: labels,
             datasets: [{
-               label: labelName,
-               data: data,
-               backgroundColor: generateColors(data.length),
-               borderRadius: 6,
-               barThickness: 30,       // fixed width for all bars
-               maxBarThickness: 40     // optional: max width if auto-scaling
+                label: labelName,   // completely hide label
+                data: data,
+                backgroundColor: generateColors(data.length, color),
+                borderRadius: 6,
+                barThickness: 30,
+                maxBarThickness: 40
             }]
-         },
-         options: {
+        },
+        options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }, // hide legend
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+
+                            // 1️⃣ If hoverLabels exists → show hover label + value
+                            if (hoverLabels && hoverLabels[context.dataIndex]) {
+                                return hoverLabels[context.dataIndex] + ': ' + context.raw;
+                            }
+
+                            // 2️⃣ Else show only labelName + value even if dataset label is empty
+                            return labelName + ': ' + context.raw;
+                        }
+                    }
+                }
+            },
             scales: {
-               x: {
-                     // prevent bars from stretching too much
-                     ticks: {
-                        autoSkip: false
-                     }
-               }
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }],
+                xAxes: [{
+                    ticks: {
+                        display: false   // ✔ Hide X axis labels
+                    },
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.7
+                }]
             }
-         }
-    });
-}
-
-/* ----------------------------
-   INITIALIZE CHARTS DYNAMICALLY
----------------------------- */
-const chartConfigs = {
-    fabricChart: { dataKey: 'fabric', labelName: 'Meters' },
-    itemStockChart: { dataKey: 'itemStock', labelName: 'Qty' },
-    // orderChart: { dataKey: 'totalOrders', labelName: 'Orders' },
-    // stageChart: { dataKey: 'stageWise', labelName: 'Lots' },
-    // warehouseChart: { dataKey: 'warehouse', labelName: 'Count' },
-    // purchaseChart: { dataKey: 'purchases', labelName: 'Count' }
-};
-
-const charts = {};
-
-// Initialize charts
-for (let id in chartConfigs) {
-    const config = chartConfigs[id];
-    const ctx = document.getElementById(id);
-    const data = sampleData[config.dataKey].all;
-    charts[id] = createBarChart(ctx, data.labels, data.data, config.labelName);
-}
-
-/* ----------------------------
-   DYNAMIC FILTER CHANGE EVENT
----------------------------- */
-document.getElementById("mainFilter").addEventListener("change", function () {
-    const filter = this.value;
-
-    for (let id in chartConfigs) {
-        const config = chartConfigs[id];
-        const chartData = sampleData[config.dataKey][filter] || sampleData[config.dataKey].all;
-
-        charts[id].destroy(); // Destroy old chart
-        const ctx = document.getElementById(id);
-        charts[id] = createBarChart(ctx, chartData.labels, chartData.data, config.labelName);
-    }
-});
-
-// Function to generate dynamic colors
-function generateColors(num) {
-   const colors = [];
-   const saturation = 70; // keep saturation high for vibrancy
-   const lightness = 50;  // medium lightness
-
-   for (let i = 0; i < num; i++) {
-      // evenly distribute hues around the color wheel
-      const hue = Math.round((360 / num) * i);
-      colors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
-   }
-   return colors;
-}
-
-
-$('#mainFilter').on('change', function () {
-    const filter = $(this).val(); // all or month
-    let apiUrl = "{{ route('admin.getDashboardData')}}";
-    // Optional: AJAX call to fetch data from server
-    $.ajax({
-        url: apiUrl,       // Your server endpoint
-        type: 'GET',
-        data: { filter: filter },    // send selected filter
-        dataType: 'json',
-        success: function(response) {
-            // Destroy old chart
-            fabricChart.destroy();
-
-            // Create new chart with fetched data
-            fabricChart = createBarChart(
-                document.getElementById('fabricChart'),
-                response.labels,
-                response.data,
-                'Meters'
-            );
-        },
-        error: function(err) {
-            console.error('Error fetching data', err);
         }
     });
+}
+
+
+// Fetch data from API and render charts
+function fetchDashboardData(filter = 'all') {
+    $.ajax({
+        url: "{{ route('admin.getDashboardData') }}",
+        type: 'GET',
+        data: { filter: filter },
+        dataType: 'json',
+        success: function(response) {
+
+            // Fabric Chart
+            if(charts.fabricChart) charts.fabricChart.destroy();
+            charts.fabricChart = createBarChart(
+                document.getElementById('fabricChart'),
+                response.fabricStock.labels,
+                response.fabricStock.data,
+                'in Meters',
+                response.fabricStock.hoverLabels,
+                '#FF9800'
+            );
+
+            if(charts.itemChart) charts.itemChart.destroy();
+            charts.itemChart = createBarChart(
+                document.getElementById('itemChart'),
+                response.itemStock.labels,
+                response.itemStock.data,
+                'in Quantity',
+                response.itemStock.hoverLabels,
+                '#2196F3'
+            );
+
+            if(charts.productionChart) charts.productionChart.destroy();
+            charts.productionChart = createBarChart(
+                document.getElementById('productionChart'),
+                response.itemStock.labels,
+                response.itemStock.data,
+                'in Quantity',
+                response.itemStock.hoverLabels,
+                '#9C27B0'
+            );
+
+            if(charts.stagesChart) charts.stagesChart.destroy();
+            charts.stagesChart = createBarChart(
+                document.getElementById('stagesChart'),
+                response.itemStock.labels,
+                response.itemStock.data,
+                'in Quantity',
+                response.itemStock.hoverLabels,
+                '#795548'
+            );
+            
+            // You can add more charts here similarly
+        },
+        error: function(err) {
+            console.error('Error fetching dashboard data', err);
+        }
+    });
+}
+
+// Initial load
+fetchDashboardData();
+
+// Filter change
+$('#mainFilter').on('change', function () {
+    fetchDashboardData($(this).val());
 });
 </script>
 

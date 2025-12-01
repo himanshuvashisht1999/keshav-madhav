@@ -88,10 +88,22 @@ class DashboardController extends Controller {
 
     }
 
-    public function getDashboardData(Request $request){
-       
-        return $this->service->fabricStock($request);
+    public function getDashboardData(Request $request)
+    {
+        $fabricStock = $this->service->fabricStock($request)->original;
+        $itemStock   = $this->service->itemStock($request)->original;
+
+        return response()->json([
+            'itemStock' => [
+                'labels' => $itemStock['labels'],   // Original SKUs for tooltip
+                'data'        => $itemStock['data']
+            ],
+            'fabricStock' => [
+                'labels' => $fabricStock['labels'], // Original SKUs for tooltip
+                'data'        => $fabricStock['data']
+            ]
+        ]);
     }
-    
+
     
 }
