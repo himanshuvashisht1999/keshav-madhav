@@ -9,7 +9,7 @@
             <h5 class="mb-0 text-primary">
                 <i class="fas fa-industry mr-1"></i> First Stage
             </h5>
-            <a href="{{ route('admin.product_order.index') }}" class="btn btn-sm btn-outline-secondary">
+            <a href="{{ route('admin.product_order.indexOrder') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="fas fa-arrow-left mr-1"></i> Back
             </a>
         </div>
