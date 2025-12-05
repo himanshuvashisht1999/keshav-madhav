@@ -159,19 +159,22 @@ function createBarChart(ctx, labels, data, labelName, hoverLabels = null, color 
                 }
             },
             scales: {
-                yAxes: [{
+                x: {
                     ticks: {
-                        beginAtZero: true
-                    }
-                }],
-                xAxes: [{
-                    ticks: {
-                        display: false   // ✔ Hide X axis labels
+                        display: false   // This hides X axis labels properly
                     },
-                    barPercentage: 0.6,
-                    categoryPercentage: 0.7
-                }]
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        display: true
+                    }
+                }
             }
+
         }
     });
 }

@@ -89,7 +89,6 @@ class ProductionGoodsService {
         $update_data->master_size_id = $request->master_size_id;
         $update_data->garment_pattern = $request->garment_pattern;
         $update_data->master_color_id = $request->master_color_id;
-        $update_data->master_color_id = $request->master_color_id;
         $update_data->printing_stage_after = $printing_stage_after;
         $update_data->embroidery_stage_after = $embroidery_stage_after;
         $update_data->is_printing = $request->is_printing;
@@ -97,23 +96,69 @@ class ProductionGoodsService {
         $update_data->save();
 
 
-        ProductStage::where('master_product_id', $request->id)
-                  ->whereNotIn('master_stage_id', $request->product_stage_id)->update([
-                    'status' => 0
-                  ]);
-        foreach($request->product_stage_id as $key=>$single){
-            $old_data = ProductStage::where('master_product_id',$request->id)->where('master_stage_id',$single)->first();
-            if($old_data){
-                $save_product_stage = ProductStage::where('master_product_id',$request->id)->where('master_stage_id',$single)->first();
-            }else{
-                $save_product_stage = new ProductStage;
-            }
+        // ProductStage::where('master_product_id', $request->id)->update([
+        //             'status' => 0
+        //           ]);
+                  
+        // foreach($request->product_stage_id as $key=>$single){
+        //     $old_data = ProductStage::where('master_product_id',$request->id)->orderby('id','asc')->first();
+        //     if($old_data){
+        //         $save_product_stage = ProductStage::where('master_product_id',$request->id)->where('master_stage_id',$single)->first();
+        //     }else{
+        //         $save_product_stage = new ProductStage;
+        //     }
             
-            $save_product_stage->master_product_id = $request->id;
-            $save_product_stage->master_stage_id = $single;
-            $save_product_stage->status = 1;
-            $save_product_stage->save();
+        //     $save_product_stage->master_product_id = $request->id;
+        //     $save_product_stage->master_stage_id = $single;
+        //     $save_product_stage->status = 1;
+        //     $save_product_stage->save();
+        // }
+
+        $newStages = $request->product_stage_id;   
+        $productId = $request->id;                
+
+        // 1. Get all old rows of this product
+        $oldRows = ProductStage::where('master_product_id', $productId)
+                    ->orderBy('id', 'asc')
+                    ->get();
+
+        // Count both
+        
+        $newCount = count($newStages);
+
+        $index = 0;
+        // 2. Update existing rows with new stage IDs
+        foreach ($oldRows as $row) {
+
+            if ($index < $newCount) {
+
+                // Update master_stage_id + activate
+                $row->master_stage_id = $newStages[$index];
+                $row->status = 1;
+                $row->save();
+
+            } else {
+
+                // Extra old rows → deactivate
+                $row->status = 0;
+                $row->save();
+            }
+
+            $index++;
         }
+
+        // 3. If new stages are more → insert remaining rows
+        while ($index < $newCount) {
+
+            ProductStage::create([
+                'master_product_id' => $productId,
+                'master_stage_id'   => $newStages[$index],
+                'status'            => 1
+            ]);
+
+            $index++;
+        }
+        
         return true;
     }
 

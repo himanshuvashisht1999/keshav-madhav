@@ -51,7 +51,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Estimated Delivery Date</label>
-                                    <input type="date" name="expected_delivery_date" class="form-control" value="{{old('expected_delivery_date')}}" min="{{ date('Y-m-d') }}">
+                                    <input type="date" name="expected_delivery_date" class="form-control" value="{{old('expected_delivery_date')}}" min="{{ date('Y-m-d') }}" required>
                                     @if ($errors->has('expected_delivery_date'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('expected_delivery_date') }}
@@ -107,18 +107,40 @@
 $(document).ready(function () {
     // Initialize Select2 for existing selects
     $('.select2').select2();
-
+    let products = @json($products);
     // Add new product row
     $(document).on('click', '.add-product', function () {
+         // Prevent add more rows than products
+        let totalProducts = products.length;
+        let totalRows = $("select[name='product_sku[]']").length;
+
+        if (totalRows >= totalProducts) {
+            alert("You cannot add more rows. No more SKUs available.");
+            return;
+        }
+
+        // Collect selected SKUs
+        let selectedValues = [];
+        $("select[name='product_sku[]']").each(function () {
+            if ($(this).val()) selectedValues.push($(this).val());
+        });
+
+        // Create filtered options
+        let options = `<option value="">Select Product SKU</option>`;
+        products.forEach(p => {
+            if (!selectedValues.includes(p.sku)) {
+                options += `<option value="${p.sku}">${p.sku}</option>`;
+            }
+        });
+
+
+
         let newRow = `
             <div class="product-row row mb-2">
                 <div class="col-md-6">
                     <div class="form-group">
                         <select name="product_sku[]" class="form-control select2 stage-select" style="width: 100%;" required>
-                            <option value="">Select Product SKU</option>
-                            @foreach($products as $product)
-                                <option value="{{ $product->sku }}">{{ $product->sku }}</option>
-                            @endforeach
+                            ${options}
                         </select>
                     </div>
                 </div>
@@ -134,12 +156,53 @@ $(document).ready(function () {
         `;
         $('#products-container').append(newRow);
         $('.select2').select2(); // re-init Select2 for new rows
+        refreshSKUOptions();
     });
 
-    // Remove stage row
+     // Delete Row
     $(document).on('click', '.remove-product', function () {
         $(this).closest('.product-row').remove();
+        refreshSKUOptions();
     });
+
+    // Select change event
+    $(document).on("change", "select[name='product_sku[]']", function () {
+        refreshSKUOptions();
+    });
+
+    // Hide duplicate SKUs from dropdowns
+    function refreshSKUOptions() {
+        let selected = [];
+
+        $("select[name='product_sku[]']").each(function () {
+            if ($(this).val()) selected.push($(this).val());
+        });
+
+        $("select[name='product_sku[]']").each(function () {
+            let current = $(this).val();
+            let select = $(this);
+
+            // REBUILD OPTIONS
+            let options = `<option value="">Select Product SKU</option>`;
+
+            products.forEach(p => {
+                if (!selected.includes(p.sku) || current === p.sku) {
+                    options += `<option value="${p.sku}">${p.sku}</option>`;
+                }
+            });
+
+            // SET new options
+            select.html(options);
+
+            // RESTORE selected value
+            if (current) select.val(current);
+
+            // REINIT SELECT2
+            select.trigger('change.select2');
+        });
+    }
+
+
 });
 </script>
 @endsection
