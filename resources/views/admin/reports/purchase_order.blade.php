@@ -166,15 +166,15 @@
         // });
         //
         $("#customers_length").append(`
-        <select id="selected_field" name="selected_field" class="form-control">
-            <option value="date">Purchase Order Date</option>
-            <option value="delivery_date">Expected Delivery Date</option>
-        </select>
-        
-        <input type="text" id="report-range" name="date_range"  style="width: 200px; max-width: 100%; margin-bottom: 5px;" placeholder="Select Date Range" autocomplete="off"> 
-        
-        <input type="hidden" name="start_date" id="start_date">
-        <input type="hidden" name="end_date" id="end_date" >`);
+            <select id="selected_field" name="selected_field" class="form-control">
+                <option value="date">Purchase Order Date</option>
+                <option value="delivery_date">Expected Delivery Date</option>
+            </select>
+            
+            <input type="text" id="report-range" name="date_range"  style="width: 200px; max-width: 100%; margin-bottom: 5px;" placeholder="Select Date Range" autocomplete="off"> 
+            
+            <input type="hidden" name="start_date" id="start_date">
+            <input type="hidden" name="end_date" id="end_date" >`);
 
         $('#report-range').daterangepicker({
             autoUpdateInput: false, // Don't fill input initially
