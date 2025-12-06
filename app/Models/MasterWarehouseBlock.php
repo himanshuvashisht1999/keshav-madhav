@@ -25,5 +25,8 @@ class MasterWarehouseBlock extends Model
     public function masterWarehouse(){
         return $this->belongsTo(MasterWarehouse::class, 'master_warehouse_id', 'id');
     }
-    
+    public function getMasterWarehouseWithRacks(){
+        return MasterWarehouseBlock::with('masterWarehouse')->where('status',1)->get();
+    }
+
 }

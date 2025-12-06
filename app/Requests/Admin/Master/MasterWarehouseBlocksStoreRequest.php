@@ -23,18 +23,21 @@ class MasterWarehouseBlocksStoreRequest extends FormRequest{
         return [
             'name' => 'required',
             'sku'    => 'required|unique:master_warehouse_blocks,sku',
+            'master_warehouse_id' => 'required',
             // 'status' =>'required',
         ];
     }
 
     public function messages(){
         return [
-
+            'master_warehouse_id.required' => 'The warehouse field is required.',
         ];
     }
 
     public function attributes(){
         return [
+            'master_warehouse_id' => 'warehouse',
         ];
     }
+
 }

@@ -48,8 +48,9 @@
                         <td>
                             <select id="master_warehouse_id" name="master_warehouse_id" class="form-control form-control-sm">
                                 <option value="">All</option>
-                                @foreach($master_warehouses as $master_warehouse)
-                                    <option value="{{$master_warehouse->id}}" {{old('master_warehouse_id') == $master_warehouse->id ? 'selected' : ''}}>{{$master_warehouse->name}}</option>
+                                
+                                @foreach($master_warehouses as $masterWarehouse)
+                                    <option value="{{$masterWarehouse->id}}" {{old('master_warehouse_id') == $masterWarehouse->id ? 'selected' : ''}}>{{$masterWarehouse->name}}</option>
                                 @endforeach
                             </select>
                         </td>

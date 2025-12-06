@@ -53,9 +53,23 @@
                                     @endif
                                 </div>
                             </div>
-
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="warehouse">Warehouse</label>
+                                    <select id="master_warehouse_id" name="master_warehouse_id" class="form-control">
+                                        <option value="">Select Warehouse</option>
+                                        @foreach($master_warehouses as $masterWarehouse)
+                                            <option value="{{$masterWarehouse->id}}" {{$data->master_warehouse_id == $masterWarehouse->id ? 'selected' : ''}}>{{$masterWarehouse->name}}</option>
+                                        @endforeach
+                                    </select>
+                                    @if ($errors->has('master_warehouse_id'))
+                                        <span class="invalid-feedback d-block">
+                                            {{ $errors->first('master_warehouse_id') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
                             
-                           
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">
                                     <button type="submit" class="btn btn-primary">Submit</button>

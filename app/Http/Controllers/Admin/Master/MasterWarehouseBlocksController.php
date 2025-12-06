@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Admin\Master;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\Master\MasterWarehouseBlocksService as Service;
+use App\Services\Admin\Master\MasterWarehouseService;
 use App\Requests\Admin\Master\MasterWarehouseBlocksStoreRequest;
 use App\Requests\Admin\Master\MasterWarehouseBlocksUpdateRequest;
 use IllumFabricWeaveControllerinate\Support\Facades\Crypt;
@@ -10,18 +11,20 @@ use Auth;
 
 class MasterWarehouseBlocksController extends Controller { 
     protected $service;
-    public function __construct(Service $service) {
+    public function __construct(Service $service, MasterWarehouseService $warehouseService) {
         $this->service = $service;
+        $this->warehouseService = $warehouseService;
     }
     public function index(){
-        $response['master_warehouses'] = $this->service->getMasterWarehouse();
+        $response['master_warehouses'] = $this->warehouseService->getMasterWarehouse();
         return view('admin.master.warehouse_blocks.index', $response);
     } 
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
     public function create(){
-        return view('admin.master.warehouse_blocks.create');
+        $response['master_warehouses'] = $this->warehouseService->getMasterWarehouse();
+        return view('admin.master.warehouse_blocks.create', $response);
     }
     public function store(MasterWarehouseBlocksStoreRequest $request){
         $data = $this->service->store($request);
@@ -33,6 +36,7 @@ class MasterWarehouseBlocksController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        $response['master_warehouses'] = $this->warehouseService->getMasterWarehouse();
         return view('admin.master.warehouse_blocks.edit',$response);
     }
     public function update(MasterWarehouseBlocksUpdateRequest $request){

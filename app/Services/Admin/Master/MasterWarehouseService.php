@@ -74,5 +74,7 @@ class MasterWarehouseService {
         ]);
         return $data;
     }
-
+    public function getMasterWarehouse(){
+        return MasterWarehouse::where('status',1)->get();
+    }
 }
