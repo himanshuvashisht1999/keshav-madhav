@@ -123,6 +123,25 @@ function package_box_show($order_main_id){
 
 }
 
+function total_packed_quantity($order_main_id){
+    $packaged_items = PackageBox::where('order_main_id',$order_main_id)->select('quantity')->get();
+    $total_packed_quantity = 0;
+    foreach($packaged_items as $single_data){
+        $total_packed_quantity = $total_packed_quantity + $single_data->quantity;
+    }
+    return $total_packed_quantity;
+
+}
+function total_ordered_quantity($order_main_id){
+    $total_quantity = 0;
+    $order_product_data = OrderProduct::where('order_main_id',$order_main_id)->select('quantity')->get();
+    foreach($order_product_data as $single_data){
+        $total_quantity = $total_quantity + $single_data->quantity;
+    }
+    return $total_quantity;
+}
+
+
 
 
 ?>
