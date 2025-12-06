@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Warehouse Racks</h1>
+                    <h1>Manage Warehouse</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Warehouse Racks</li>
+                        <li class="breadcrumb-item active">Manage Warehouse</li>
                     </ol>
                 </div>
             </div>
@@ -28,7 +28,7 @@
                         <h3 class="card-title">Manage Product Color</h3>
                     </div>
                     <div class="col-3 card-header">
-                        <a href="{{route('admin.master.warehouse-blocks.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Color</a>
+                        <a href="{{route('admin.master.warehouse.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Color</a>
                     </div>
                 </div> -->
                 
@@ -46,12 +46,7 @@
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
                         <td>
-                            <select id="master_warehouse_id" class="form-control form-control-sm">
-                                <option value="">All</option>
-                                @foreach($master_warehouses as $master_warehouse)
-                                    <option value="{{$master_warehouse->id}}" {{old('master_warehouse_id') == $master_warehouse->id ? 'selected' : ''}}>{{$master_warehouse->name}}</option>
-                                @endforeach
-                            </select>
+                            <input type="text" class="form-control" name="address" id="address" autocomplete="off">
                         </td>
                         
                         <td>
@@ -62,7 +57,7 @@
                     <th>ID</th>
                     <th>Name</th>
                     <th>SKU</th>
-                    <th>Warehouse</th>
+                    <th>Address</th>
                     <th>Action</th>
                   </tr>
                   </thead>
@@ -95,12 +90,13 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.master.warehouse-blocks.indexList') !!}',
+                url: '{!! route('admin.master.warehouse.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.name = $('#name').val();
                     d.sku = $('#sku').val();
-                    d.sku = $('#master_warehouse_id').val();
+                    d.address = $('#address').val();
+                  
                 },
                 orderable: false
             },
@@ -108,16 +104,16 @@
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'name', name: 'name'},
                 {data: 'sku', name: 'sku'},
-                {data: 'master_warehouse_id', name: 'master_warehouse_id'},
+                {data: 'address', name: 'address'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Warehouse Rack',
+                    text: 'Add Warehouse',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.master.warehouse-blocks.create') }}";
+                        window.location.href = "{{ route('admin.master.warehouse.create') }}";
                     }
                 }
             ]
@@ -141,10 +137,11 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#master_warehouse_id').on('keyup', function (e) {
+        $('#address').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
+
         
 
     });
@@ -165,7 +162,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.master.warehouse-blocks.delete', ['id' => '']) }}" + id;
+                window.location.href = "{{ route('admin.master.warehouse.delete', ['id' => '']) }}" + id;
             }
         });
     }

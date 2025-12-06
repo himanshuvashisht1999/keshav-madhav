@@ -4,16 +4,16 @@ namespace App\Services\Admin\Master;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Auth;
-use App\Models\MasterWarehouseBlock;
-use App\Http\DataTable\Admin\Master\MasterWarehouseBlocksDataTable as DataTable;
+use App\Models\MasterWarehouse;
+use App\Http\DataTable\Admin\Master\MasterWarehouseDataTable as DataTable;
 
-class MasterWarehouseBlocksService {
+class MasterWarehouseService {
     public function __construct(
         DataTable $datatable,
-        MasterWarehouseBlock $warehouse_blocks
+        MasterWarehouse $warehouse
     ) {
         $this->datatable= $datatable;
-        $this->warehouse_blocks = $warehouse_blocks;
+        $this->warehouse = $warehouse;
     }
 
     public function index(Request $request){
@@ -32,20 +32,21 @@ class MasterWarehouseBlocksService {
         //     $destinationPath = public_path().'/assets/services';
         //     $image->move($destinationPath, $imgName);
         // }
-        $save_data = new MasterWarehouseBlock;
+        $save_data = new MasterWarehouse;
         $save_data->name = $request->name;
         $save_data->sku = $request->sku;
+        $save_data->address = $request->address;
         $save_data->status = 1;
         $save_data->save();
         return true;
     }
 
     public function edit(Request $request){
-        $data = MasterWarehouseBlock::where('id',$request->id)->first();
+        $data = MasterWarehouse::where('id',$request->id)->first();
         return $data;
     }
     public function update(Request $request){
-        $update_data = MasterWarehouseBlock::find($request->id);
+        $update_data = MasterWarehouse::find($request->id);
         // if($request->file('image')){
         //     $oldImageName = $update_data->getRawOriginal('image');
         //     if ($oldImageName) {
@@ -62,19 +63,16 @@ class MasterWarehouseBlocksService {
         //     $update_data->image = $imgName;
         // }
         $update_data->name = $request->name;
-        // $update_data->sku = $request->sku;
+        $update_data->address = $request->address;
         $update_data->save();
         return true;
     }
 
     public function delete(Request $request){
-        $data = MasterWarehouseBlock::where('id',$request->id)->update([
+        $data = MasterWarehouse::where('id',$request->id)->update([
             'status' => 0,
         ]);
         return $data;
     }
 
-    public function getMasterWarehouse(){
-        return MasterWarehouseBlock::with('masterWarehouse')->where('status',1)->get();
-    }
 }

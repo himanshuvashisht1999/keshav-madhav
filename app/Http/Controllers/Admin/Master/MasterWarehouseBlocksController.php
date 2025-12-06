@@ -14,7 +14,8 @@ class MasterWarehouseBlocksController extends Controller {
         $this->service = $service;
     }
     public function index(){
-        return view('admin.master.warehouse_blocks.index');
+        $response['master_warehouses'] = $this->service->getMasterWarehouse();
+        return view('admin.master.warehouse_blocks.index', $response);
     } 
     public function indexList(Request $request){
         return $this->service->indexList($request);
