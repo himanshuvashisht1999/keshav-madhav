@@ -99,7 +99,8 @@ class WarehouseController extends Controller {
         if($save_data['status'] == 0){
             return redirect()->back()->with('error', $save_data['message']);
         }else{
-            return redirect()->route('admin.warehouse.indexOrder')->withSuccess($save_data['message']);
+            return redirect()->back()->withSuccess($save_data['message']);
+            // return redirect()->route('admin.warehouse.indexOrder')->withSuccess($save_data['message']);
         }
     }
 

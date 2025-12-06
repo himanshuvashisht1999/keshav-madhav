@@ -137,6 +137,8 @@
                                     <th style="width: 60px;">#</th>
                                     <th>Box ID</th>
                                     <th>Quantity in Box</th>
+                                    <th>Warehouse</th>
+                                    <th>Rack</th>
                                     <th>Barcode</th>
                                     <th>Items (Product SKU)</th>
                                 </tr>
@@ -159,6 +161,16 @@
                                         <td>
                                             <span class="badge badge-primary">
                                                 {{ $box->quantity }} items
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-primary">
+                                                {{ $box->warehouse?->name }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-primary">
+                                                {{ $box->rack?->name }}
                                             </span>
                                         </td>
 
