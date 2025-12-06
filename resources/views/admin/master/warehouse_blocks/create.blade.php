@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Warehouse Blocks</h1>
+                    <h1>Warehouse Racks</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Create Warehouse Block</li>
+                        <li class="breadcrumb-item active">Create Warehouse Rack</li>
                     </ol>
                 </div>
             </div>
@@ -24,7 +24,7 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Create Warehouse Block</h3>
+                    <h3 class="card-title">Create Warehouse Rack</h3>
                 </div>
                 <form action="{{route('admin.master.warehouse-blocks.store')}}" method="post" enctype="multipart/form-data">
                     @csrf

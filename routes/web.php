@@ -41,6 +41,7 @@ use App\Http\Controllers\Admin\Master\MasterProductStageController as AdminMaste
 use App\Http\Controllers\Admin\Master\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\Master\MasterProductTypeController as AdminMasterProductTypeController;
 use App\Http\Controllers\Admin\Master\MasterWarehouseBlocksController as AdminMasterWarehouseBlocksController;
+use App\Http\Controllers\Admin\Master\MasterWarehouseController as AdminMasterWarehouseController;
 
 ///// Reports
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
@@ -373,6 +374,16 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/edit',[AdminMasterWarehouseBlocksController::class,'edit'])->name('edit');
             Route::post('/update',[AdminMasterWarehouseBlocksController::class,'update'])->name('update');
             Route::get('/delete',[AdminMasterWarehouseBlocksController::class,'delete'])->name('delete');
+        });
+
+        Route::prefix('master/warehouse')->name('master.warehouse.')->group(function () {
+            Route::get('/index',[AdminMasterWarehouseController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminMasterWarehouseController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminMasterWarehouseController::class,'create'])->name('create');
+            Route::post('/store',[AdminMasterWarehouseController::class,'store'])->name('store');
+            Route::get('/edit',[AdminMasterWarehouseController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminMasterWarehouseController::class,'update'])->name('update');
+            Route::get('/delete',[AdminMasterWarehouseController::class,'delete'])->name('delete');
         });
 
         Route::prefix('master/designs')->name('master.designs.')->group(function () {

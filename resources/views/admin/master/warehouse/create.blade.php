@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Warehouse Rack</h1>
+                    <h1>Warehouse</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Edit Warehouse Rack</li>
+                        <li class="breadcrumb-item active">Create Warehouse</li>
                     </ol>
                 </div>
             </div>
@@ -24,17 +24,16 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Edit Warehouse Rack</h3>
+                    <h3 class="card-title">Create Warehouse</h3>
                 </div>
-                <form action="{{route('admin.master.warehouse-blocks.update')}}" method="post" enctype="multipart/form-data">
+                <form action="{{route('admin.master.warehouse.store')}}" method="post" enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="id" value="{{$data->id}}">
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Name</label>
-                                    <input type="text" name="name" class="form-control" placeholder="Enter name" value="{{$data->name}}">
+                                    <input type="text" name="name" class="form-control" placeholder="Enter name" value="{{old('name')}}">
                                     @if ($errors->has('name'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('name') }}
@@ -45,7 +44,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="sku">SKU</label>
-                                    <input type="text" name="sku" id="sku_n" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}" readonly>
+                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU">
                                     @if ($errors->has('sku'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('sku') }}
@@ -53,9 +52,17 @@
                                     @endif
                                 </div>
                             </div>
-
-                            
-                           
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">Address</label>
+                                    <input type="text" name="address" class="form-control" placeholder="Enter address" value="{{old('address')}}">
+                                    @if ($errors->has('address'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('address') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">
                                     <button type="submit" class="btn btn-primary">Submit</button>
@@ -74,7 +81,8 @@
         let name = document.querySelector("input[name='name']").value.trim();
         let part1 = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
         let part2 = Math.floor(1000 + Math.random() * 9000);
-        let sku = 'FABRIC-WEAVE-' + part1 + "-" + part2;
+        // let sku = 'FABRIC-WEAVE-' + part1 + "-" + part2;
+        let sku = part1;
         let skuInput = document.getElementById("sku");
         if (!skuInput.dataset.edited || skuInput.value === "") {
             skuInput.value = sku;

@@ -3,13 +3,13 @@
 namespace App\Http\DataTable\Admin\Master;
 
 use Illuminate\Http\Request;
-use App\Models\MasterWarehouseBlock;
+use App\Models\MasterWarehouse;
 use Yajra\DataTables\Facades\DataTables;
 
-class MasterWarehouseBlocksDataTable  {
+class MasterWarehouseDataTable  {
 
     public function indexList($request){
-        $queue = MasterWarehouseBlock::query();
+        $queue = MasterWarehouse::query();
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -21,10 +21,9 @@ class MasterWarehouseBlocksDataTable  {
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
-                if ($request->has('master_warehouse_id') && !empty($request->master_warehouse_id)) {
-                    $query->where('master_warehouse_id', 'like', "%{$request->get('master_warehouse_id')}%");
+                if ($request->has('address') && !empty($request->address)) {
+                    $query->where('address', 'like', "%{$request->get('address')}%");
                 }
-                
             }) 
          
             ->editColumn('status', function ($queue) {
@@ -34,7 +33,7 @@ class MasterWarehouseBlocksDataTable  {
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
                 return '
-                <a href="' . route('admin.master.warehouse-blocks.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                <a href="' . route('admin.master.warehouse.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
                 ';
             })
             
