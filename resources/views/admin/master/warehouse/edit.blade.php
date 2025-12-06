@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Warehouse Rack</h1>
+                    <h1>Warehouse</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Edit Warehouse Rack</li>
+                        <li class="breadcrumb-item active">Edit Warehouse</li>
                     </ol>
                 </div>
             </div>
@@ -24,9 +24,9 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Edit Warehouse Rack</h3>
+                    <h3 class="card-title">Edit Warehouse</h3>
                 </div>
-                <form action="{{route('admin.master.warehouse-blocks.update')}}" method="post" enctype="multipart/form-data">
+                <form action="{{route('admin.master.warehouse.update')}}" method="post" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="id" value="{{$data->id}}">
                     <div class="card-body">
@@ -53,9 +53,18 @@
                                     @endif
                                 </div>
                             </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="address">Address</label>
+                                    <input type="text" name="address" class="form-control" placeholder="Enter address" value="{{$data->address}}">
+                                    @if ($errors->has('address'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('address') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
 
-                            
-                           
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">
                                     <button type="submit" class="btn btn-primary">Submit</button>

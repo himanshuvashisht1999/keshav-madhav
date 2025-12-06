@@ -4,26 +4,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MasterWarehouseBlock extends Model
+class MasterWarehouse extends Model
 {
     use HasFactory;
-    protected $table= 'master_warehouse_blocks';
+    protected $table= 'master_warehouse';
     protected $fillable = [
         'id',
         'sno',
         'company_id',
         'sub_company_id',
-        'master_warehouse_id',
         'project_id',
         'sku',
         'name',
+        'address',
         'status',
         'created_at',
         'updated_at'
     ];
-
-    public function masterWarehouse(){
-        return $this->belongsTo(MasterWarehouse::class, 'master_warehouse_id', 'id');
-    }
     
 }
