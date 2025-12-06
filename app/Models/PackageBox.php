@@ -19,6 +19,8 @@ class PackageBox extends Model
         'order_main_id',
         'quantity',
         'description',
+        'warehouse_id',
+        'master_warehouse_block_id',
         'status',
         'created_at',
         'updated_at'

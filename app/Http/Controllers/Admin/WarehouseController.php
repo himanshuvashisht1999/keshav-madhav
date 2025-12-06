@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\WarehouseService as Service;
+use DB;
 
 class WarehouseController extends Controller { 
     protected $service;
@@ -75,9 +76,13 @@ class WarehouseController extends Controller {
         }
         $response['package_data'] = $this->service->package_data($request->order_id);
         $response['warehouses'] = $this->service->warehouse_data();
-      
-        return view('admin.warehouse.packaging',$response);
-    }
+        $orderProductIds = $response['order_data']->order_products->pluck('id');
+        $response['warehouse_quantities'] = \App\Models\WarehouseDetail::whereIn('order_product_id', $orderProductIds)
+            ->select('order_product_id', DB::raw('SUM(remaining_qty) as total_remaining'))
+            ->groupBy('order_product_id')
+            ->pluck('total_remaining', 'order_product_id'); 
+            return view('admin.warehouse.packaging',$response);
+        }
 
     public function getBlocks($warehouseId){
         $warehouse = $this->service->getBlocks($warehouseId);
