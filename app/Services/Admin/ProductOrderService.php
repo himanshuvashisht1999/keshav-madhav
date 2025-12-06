@@ -389,7 +389,6 @@ class ProductOrderService {
                 $save_warehouse_data = new WarehouseDetail;
                 $save_warehouse_data->sku = $orderProduct->order->sku;
                 $save_warehouse_data->order_product_id = $order_product_id;
-                $save_warehouse_data->product_type_sku = $orderProduct->product_data->type_of_garment;
                 $save_warehouse_data->from_stage_id = $from_stage_id;
                 $save_warehouse_data->master_warehouse_block_id = $request->sub_stage;
                 $save_warehouse_data->lot_no = $request->lot_no;

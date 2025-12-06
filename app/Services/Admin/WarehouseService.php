@@ -355,8 +355,8 @@ class WarehouseService {
         $data = Package::with('package_boxes.package_boxes_items')->where('order_main_id',$order_id)->get();
         return $data;
     }
-    public function packagingShow($package_id){
-        $data = Package::with('package_boxes.package_boxes_items')->where('id',$package_id)->first();
+    public function packagingShow($order_main_id){
+        $data = Package::with('package_boxes.package_boxes_items')->where('order_main_id',$order_main_id)->first();
         return $data;
     }
     public function barcodeDownload($boxId){

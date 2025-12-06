@@ -123,7 +123,7 @@ class WarehouseDataTable  {
 				$parameter = $queue->id;
                 $package_box_show = package_box_show($parameter);
 
-                $view = '<a href="' . route('admin.warehouse.index',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
+                $view = '<a href="' . route('admin.warehouse.packagingShow',['order_main_id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
                 if($package_box_show == 1){
                     $packaging = '<a href="' . route('admin.warehouse.packaging',['order_id' => $parameter]) . '" class="ml-1" data-toggle="tooltip" data-placement="top" title="" data-original-title="Packaging"><i class="fas fa-box text-muted" title="Packaging"></i></a>';
                 }else{
