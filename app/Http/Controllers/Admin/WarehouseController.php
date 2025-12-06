@@ -105,7 +105,7 @@ class WarehouseController extends Controller {
 
     public function packagingShow(Request $request){
         
-        $response['package'] = $this->service->packagingShow($request->package_id);
+        $response['package'] = $this->service->packagingShow($request->order_main_id);
         return view('admin.warehouse.packaging_show',$response);
     }
     public function barcodeDownload(Request $request){

@@ -72,15 +72,15 @@
             {{-- PACKAGE INFORMATION (UPPER STYLE VERSION) --}}
             <div class="row mb-3">
 
-                <div class="col-md-4">
+                <!-- <div class="col-md-4">
                     <div class="info-box bg-light shadow-sm">
                         <span class="info-box-icon bg-primary"><i class="fas fa-hashtag"></i></span>
                         <div class="info-box-content">
-                            <span class="info-box-text">Product Type SKU</span>
-                            <span class="info-box-number">{{ $package->product_type_sku }}</span>
+                            <span class="info-box-text">Order  SKU</span>
+                            <span class="info-box-number">{{ $package->sku }}</span>
                         </div>
                     </div>
-                </div>
+                </div> -->
 
                 <div class="col-md-4">
                     <div class="info-box bg-light shadow-sm">
@@ -102,7 +102,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-12 mt-2">
+                <!-- <div class="col-md-12 mt-2">
                     <div class="card shadow-sm border">
                         <div class="card-header bg-light">
                             <h3 class="card-title mb-0">
@@ -113,7 +113,7 @@
                             {{ $package->description ?: '-' }}
                         </div>
                     </div>
-                </div>
+                </div> -->
 
             </div>
 
