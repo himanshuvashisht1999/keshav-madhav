@@ -393,7 +393,8 @@ class ProductOrderService {
                 $save_warehouse_data->from_stage_id = $from_stage_id;
                 $save_warehouse_data->master_warehouse_block_id = $request->sub_stage;
                 $save_warehouse_data->lot_no = $request->lot_no;
-                $save_warehouse_data->quantity = $quantity;
+                $save_warehouse_data->original_qty = $quantity;
+                $save_warehouse_data->remaining_qty = $quantity;
                 $save_warehouse_data->remarks = $remarks;
                 $save_warehouse_data->status = 1;
                 $save_warehouse_data->save();

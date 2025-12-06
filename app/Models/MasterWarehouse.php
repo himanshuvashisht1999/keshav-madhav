@@ -21,5 +21,8 @@ class MasterWarehouse extends Model
         'created_at',
         'updated_at'
     ];
+    public function blocks(){
+        return $this->hasMany('App\Models\MasterWarehouseBlock','master_warehouse_id','id');
+    }
     
 }

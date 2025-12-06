@@ -48,6 +48,20 @@ class WarehouseController extends Controller {
     public function indexListListing(Request $request){
         return $this->service->indexListListing($request);
     }
+    // public function packaging(Request $request){
+    //     $check_status = package_box_show($request->order_id);
+    //     if($check_status == 0){
+    //         return redirect()->back()->with('error', 'Request Failed');
+    //     }
+    //     $response['order_data'] = $this->service->order_data($request->order_id);
+    //     if($response['order_data']){
+    //         $response['product_types'] = $this->service->product_types($request->order_id);
+    //     }else{
+    //         return redirect()->back()->with('error', 'Order not found');
+    //     }
+    //     $response['package_data'] = $this->service->package_data($request->order_id);
+    //     return view('admin.warehouse.packaging',$response);
+    // }
     public function packaging(Request $request){
         $check_status = package_box_show($request->order_id);
         if($check_status == 0){
@@ -60,7 +74,19 @@ class WarehouseController extends Controller {
             return redirect()->back()->with('error', 'Order not found');
         }
         $response['package_data'] = $this->service->package_data($request->order_id);
+        $response['warehouses'] = $this->service->warehouse_data();
+      
         return view('admin.warehouse.packaging',$response);
+    }
+
+    public function getBlocks($warehouseId){
+        $warehouse = $this->service->getBlocks($warehouseId);
+        return response()->json($warehouse->blocks->map(function ($block) {
+            return [
+                'id'   => $block->id,
+                'name' => $block->name,
+            ];
+        }));
     }
 
     public function packagingStore(Request $request){

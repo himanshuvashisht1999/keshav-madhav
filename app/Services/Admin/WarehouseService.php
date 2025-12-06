@@ -22,6 +22,7 @@ use App\Models\OrderProductItemTransaction;
 use App\Models\ItemStock;
 use App\Models\WarehouseDetail;
 use App\Models\MasterProductStage;
+use App\Models\MasterWarehouse;
 use App\Models\MasterWarehouseBlock;
 use App\Models\PackageBox;
 use App\Models\PackageBoxItem;
@@ -124,7 +125,7 @@ class WarehouseService {
         return $data;
     }
     public function order_data($order_id){
-        $data = OrderMain::with('orders.product')->where('id',$order_id)->first();
+        $data = OrderMain::with('order_products')->where('id',$order_id)->first();
         return $data;
     }
     public function product_types($order_id)
@@ -151,151 +152,80 @@ class WarehouseService {
         return DB::transaction(function () use ($request) {
 
             $order_main_id = $request->order_id;
-            $boxCapacity   = (int) $request->quantity; // how many items per box
+            $quantity   = (int) $request->quantity; // how many items per box
 
-            if ($boxCapacity <= 0) {
+            $order_main_data = OrderMain::with('order_products')->where('id',$order_main_id)->first();
+            $order_product_ids = OrderProduct::where('order_main_id',$order_main_id)->pluck('id');
+
+            if ($quantity <= 0) {
                 return [
                     'status'  => 0,
                     'message' => 'Quantity per box must be greater than 0.',
                 ];
             }
-
-            // 1. Get order product IDs
-            $order_product_ids = OrderProduct::where('product_type_sku', $request->product_type_sku)
-                ->where('order_main_id', $order_main_id)
-                ->pluck('id');
             
-            if ($order_product_ids->count() == 0) {
-                return [
-                    'status'  => 0,
-                    'message' => 'No Product Found.',
-                ];
+            
+            $package_save = Package::where('order_main_id',$order_main_id)->first();
+            if($package_save){}else{
+                $package_save = new Package;
             }
+            $package_save->order_main_id = $order_main_id;
+            $package_save->save();
 
-            // 2. Get warehouse rows (available stock)
-            $warehouse_data = WarehouseDetail::whereIn('order_product_id', $order_product_ids)
-                ->where('status', 1)
-                ->orderBy('id')
-                ->lockForUpdate() // lock rows so quantity is safe in concurrent requests
-                ->get();
-
-            if ($warehouse_data->isEmpty()) {
-                return [
-                    'status'  => 0,
-                    'message' => 'No Warehouse Product Found.',
-                ];
-            }
-
-            // 3. Total quantity in warehouse
-            $totalQty = $warehouse_data->sum('quantity'); // e.g. 100
-
-            if ($totalQty <= 0) {
-                return [
-                    'status'  => 0,
-                    'message' => 'Total warehouse quantity is zero.',
-                ];
-            }
-
-            // 4. How many boxes?
-            $numBoxes = (int) ceil($totalQty / $boxCapacity);
+            $save_package_box = new PackageBox;
+            $save_package_box->package_id = $package_save->id;
+            $save_package_box->order_main_id = $order_main_id;
+            $save_package_box->quantity = $quantity;
+            $save_package_box->description = $request->description;
+            $save_package_box->save();
 
 
-            ///////// save dta in package
-            $save_package = new Package;
-            $save_package->order_main_id    = $order_main_id;
-            $save_package->product_type_sku = $request->product_type_sku;
-            $save_package->quantity         = $request->quantity;
-            $save_package->description      = $request->description;
-            $save_package->save();
+            foreach($request->product_skus as $order_product_id){
+                $order_product_data = OrderProduct::where('id',$order_product_id)->first();
 
-            // Track per-warehouse remaining qty (in memory)
-            $warehouseItems = $warehouse_data->map(function ($item) {
-                $item->original_qty  = $item->quantity;
-                $item->remaining_qty = $item->quantity;
-                return $item;
-            });
-
-            $remainingTotal = $totalQty;
-            $createdBoxes   = 0;
-
-            // 5. Create boxes + box items
-            while ($remainingTotal > 0) {
-
-                $qtyInThisBox = min($boxCapacity, $remainingTotal);
-
-                // Create PackageBox
-                $packageBox = new PackageBox;
-                $packageBox->package_id    = $save_package->id;
-                $packageBox->order_main_id    = $order_main_id;
-                $packageBox->product_type_sku = $request->product_type_sku;
-                $packageBox->quantity         = $qtyInThisBox; // how many items inside this box
-                $packageBox->description      = $request->description;
-                $packageBox->save();
-
-                $createdBoxes++;
-
-                // Fill this box with items
-                for ($i = 0; $i < $qtyInThisBox; $i++) {
-
-                    // Get next warehouse row with remaining stock
-                    $usedWarehouse = null;
-
-                    foreach ($warehouseItems as $wItem) {
-                        if ($wItem->remaining_qty > 0) {
-                            $usedWarehouse = $wItem;
-                            break;
-                        }
-                    }
-
-                    if (!$usedWarehouse) {
-                        // Safety: should not happen if totalQty was correct
-                        break 2; // break outer while loop too
-                    }
-
-                    // Create PackageBoxItem
-                    $boxItem = new PackageBoxItem;
-                    $boxItem->package_box_id      = $packageBox->id;
-                    $boxItem->product_sku         = $usedWarehouse->orderProduct->product_sku;
-                    $boxItem->save();
-
-                    $orderProduct = OrderProduct::find($usedWarehouse->order_product_id);
-                    if ($orderProduct) {
-                        $orderProduct->completed_quantity += 1;  // increase by 1 per packaging item
-                        $orderProduct->save();
-                    }
-
-                    $usedWarehouse->remaining_qty--;
-                    $remainingTotal--;
+                if (!$order_product_data) {
+                    continue; // skip if not valid / doesn't belong to this order
                 }
-            }
 
-            // 6. Update WarehouseDetail rows with new quantities
-            foreach ($warehouseItems as $wItem) {
-                $consumed = $wItem->original_qty - $wItem->remaining_qty;
+                if($order_product_data){
+                    $save_box_item = new PackageBoxItem;
+                    $save_box_item->package_box_id = $save_package_box->id;
+                    $save_box_item->product_sku = $order_product_data->product_sku;
+                    $save_box_item->save();
+                    $update_ware_house_detail = WarehouseDetail::where('order_product_id',$order_product_data->id)->where('remaining_qty','>',0)->first();
+                    if($update_ware_house_detail){
 
-                if ($consumed > 0) {
-                    // Set new quantity
-                    $wItem->quantity = $wItem->remaining_qty;
+                        $old_remaining_quantity = $update_ware_house_detail->remaining_qty;
+                        $update_ware_house_detail->remaining_qty = $old_remaining_quantity - 1;
+                        $update_ware_house_detail->save();
 
-                    // If quantity goes to 0, mark as inactive
-                    if ($wItem->quantity <= 0) {
-                        $wItem->status = 0;
                     }
-
-                    $wItem->save();
                 }
+                
+                
             }
+                        
             ///////////// order main status update
-            $status_update = OrderMain::where('id', $order_main_id)->update([
-                'status' => 2,
-            ]);
+            $total_quantity = 0;
+            $order_product_data = OrderProduct::where('order_main_id',$order_main_id)->select('quantity')->get();
+            foreach($order_product_data as $single_data){
+                $total_quantity = $total_quantity + $single_data->quantity;
+            }
+            $packaged_items = PackageBox::where('order_main_id',$order_main_id)->select('quantity')->get();
+            $total_packed_quantity = 0;
+            foreach($packaged_items as $single_data){
+                $total_packed_quantity = $total_packed_quantity + $single_data->quantity;
+            }
+            if($total_packed_quantity == $total_quantity){
+                $status_update = OrderMain::where('id', $order_main_id)->update([
+                    'status' => 2,
+                ]);
+            }
+            
 
             return [
                 'status'        => 1,
-                'message'       => 'Packages created and warehouse updated successfully.',
-                'total_boxes'   => $createdBoxes,
-                'total_items'   => $totalQty,
-                'box_capacity'  => $boxCapacity,
+                'message'       => 'successfully packed products.',
             ];
         });
     }
@@ -326,6 +256,19 @@ class WarehouseService {
             ->setPaper('A6', 'portrait'); // Small Sticker Format
 
         return $pdf->download('barcode-' . $barcodeValue . '.pdf');
+    }
+
+    public function warehouse_data(){
+        $data = MasterWarehouse::with('blocks')->where('status',1)->get();
+        return $data;
+    }
+    public function getBlocks($warehouseId)
+    {
+        $warehouse = MasterWarehouse::with('blocks')
+            ->where('status', 1)
+            ->findOrFail($warehouseId);
+
+        return $warehouse;
     }
 
 }
