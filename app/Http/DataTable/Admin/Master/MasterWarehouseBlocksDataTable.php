@@ -31,6 +31,10 @@ class MasterWarehouseBlocksDataTable  {
 				$status= $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
             })
+            ->editColumn('master_warehouse_id', function ($queue) {
+				$master_warehouse_id= $queue->masterWarehouse->name;
+                return $master_warehouse_id;
+            })
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
                 return '

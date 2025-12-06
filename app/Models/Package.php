@@ -16,9 +16,6 @@ class Package extends Model
         'project_id',
         'sku',
         'order_main_id',
-        'product_type_sku',
-        'quantity',
-        'description',
         'status',
         'created_at',
         'updated_at'

@@ -190,7 +190,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             class="{{ (str_contains($page_url, 'admin/warehouse') || str_contains($page_url, 'admin/item-receipt')) ? 'nav-link active' : 'nav-link' }}">
                             <i class="nav-icon fas fa-receipt"></i>
                             <p>
-                                Warehouse
+                                Packaging 
                                 <i class="right fas fa-angle-left"></i>
                             </p>
                         </a>
@@ -201,7 +201,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     class="{{ str_contains($page_url, 'admin/warehouse/index') ? 'nav-link active' : 'nav-link' }}"
                                     style="position:static;">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Orders</p>
+                                    <p>Packaging</p>
                                 </a>
                             </li>
                         </ul>

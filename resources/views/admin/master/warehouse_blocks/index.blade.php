@@ -46,7 +46,7 @@
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
                         <td>
-                            <select id="master_warehouse_id" class="form-control form-control-sm">
+                            <select id="master_warehouse_id" name="master_warehouse_id" class="form-control form-control-sm">
                                 <option value="">All</option>
                                 @foreach($master_warehouses as $master_warehouse)
                                     <option value="{{$master_warehouse->id}}" {{old('master_warehouse_id') == $master_warehouse->id ? 'selected' : ''}}>{{$master_warehouse->name}}</option>
@@ -100,7 +100,7 @@
                     d.id = $('#id').val();
                     d.name = $('#name').val();
                     d.sku = $('#sku').val();
-                    d.sku = $('#master_warehouse_id').val();
+                    d.master_warehouse_id = $('#master_warehouse_id').val();
                 },
                 orderable: false
             },
@@ -141,7 +141,7 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#master_warehouse_id').on('keyup', function (e) {
+        $('#master_warehouse_id').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });

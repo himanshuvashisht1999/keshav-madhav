@@ -165,7 +165,7 @@ function createBarChart(ctx, labels, data, labelName, hoverLabels = null, color 
                     },
                     grid: {
                         display: false
-                    }
+                    },
                 },
                 y: {
                     beginAtZero: true,

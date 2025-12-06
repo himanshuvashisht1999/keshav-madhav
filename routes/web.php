@@ -180,6 +180,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/packaging-store',[AdminWarehouseController::class,'packagingStore'])->name('packagingStore');
             Route::get('/packaging-show',[AdminWarehouseController::class,'packagingShow'])->name('packagingShow');
             Route::get('/barcode-download',[AdminWarehouseController::class,'barcodeDownload'])->name('barcodeDownload');
+            Route::get('/{warehouse}/blocks',[AdminWarehouseController::class,'getBlocks'])->name('getBlocks');
 
             
         });

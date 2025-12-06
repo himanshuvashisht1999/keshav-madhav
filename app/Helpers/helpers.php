@@ -4,6 +4,8 @@ use App\Models\OrderProductStage;
 use App\Models\OrderStageTransaction;
 use App\Models\ProductStage;
 use App\Models\OrderMain;
+use App\Models\PackageBox;
+use App\Models\OrderProduct;
 use Illuminate\Support\Facades\DB;
 
 function getformatDateTime($dateString)
@@ -102,15 +104,21 @@ function getParcialCheck($order_product_id, $to_stage_id)
 
 
 function package_box_show($order_main_id){
-    $status = 1;
-    $data  = OrderMain::with('order_products')->where('id',$order_main_id)->first();
-    $order_products = $data->order_products;
-    foreach($order_products as $order_product){
-        $last_stage_data = OrderProductStage::where('order_product_id',$order_product->id)->orderBy('id','desc')->first();
-        if($order_product->quantity != $last_stage_data->completed_qty){
+        $status = 1;
+
+        $total_quantity = 0;
+        $order_product_data = OrderProduct::where('order_main_id',$order_main_id)->select('quantity')->get();
+        foreach($order_product_data as $single_data){
+            $total_quantity = $total_quantity + $single_data->quantity;
+        }
+        $packaged_items = PackageBox::where('order_main_id',$order_main_id)->select('quantity')->get();
+        $total_packed_quantity = 0;
+        foreach($packaged_items as $single_data){
+            $total_packed_quantity = $total_packed_quantity + $single_data->quantity;
+        }
+        if($total_packed_quantity == $total_quantity){
             $status = 0;
         }
-    }
     return $status;
 
 }

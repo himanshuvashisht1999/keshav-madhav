@@ -17,7 +17,6 @@ class PackageBox extends Model
         'sku',
         'package_id',
         'order_main_id',
-        'product_type_sku',
         'quantity',
         'description',
         'status',
