@@ -147,7 +147,7 @@ class WarehouseService {
         return $productTypeSku;
     }
 
-    public function packagingStore(Request $request)
+    public function packagingStoreOld(Request $request)
     {
         return DB::transaction(function () use ($request) {
 
@@ -229,6 +229,127 @@ class WarehouseService {
             ];
         });
     }
+    public function packagingStore(Request $request)
+    {
+
+        try {
+            DB::transaction(function () use ($request) {
+
+                $order_main_id = (int) $request->order_id;
+                $quantity      = (int) $request->quantity;
+
+                // Ensure quantity equals number of selected items
+                if ($quantity !== count($request->product_skus)) {
+                    throw new \Exception('Quantity per box must match number of selected products.');
+                }
+
+                // -------- PRE-CHECK: validate all products and stock BEFORE saving anything --------
+                $selectedProductIds = $request->product_skus;
+
+                foreach ($selectedProductIds as $order_product_id) {
+
+                    // Ensure product belongs to the same order
+                    $order_product = OrderProduct::where('order_main_id', $order_main_id)
+                        ->where('id', $order_product_id)
+                        ->first();
+
+                    if (!$order_product) {
+                        throw new \Exception('Invalid product selected for this order.');
+                    }
+
+                    // Ensure there is stock in warehouse_detail
+                    $warehouseDetail = WarehouseDetail::where('order_product_id', $order_product->id)
+                        ->where('remaining_qty', '>', 0)
+                        ->first();
+
+                    if (!$warehouseDetail) {
+                        throw new \Exception(
+                            'No remaining stock in warehouse for SKU: ' . $order_product->product_sku
+                        );
+                    }
+                }
+
+                // -------- If we reach here, all items have at least 1 remaining_qty --------
+
+                // Create / get package header
+                $package = Package::firstOrNew(['order_main_id' => $order_main_id]);
+                $package->order_main_id = $order_main_id;
+                $package->save();
+
+                // Create box
+                $box = new PackageBox;
+                $box->package_id              = $package->id;
+                $box->order_main_id           = $order_main_id;
+                $box->warehouse_id            = $request->warehouse_id ?? null;
+                $box->master_warehouse_block_id = $request->master_warehouse_block_id ?? null;
+                $box->quantity                = $quantity;
+                $box->description             = $request->description;
+                $box->save();
+
+                // Now actually create box items & decrement stock
+                foreach ($selectedProductIds as $order_product_id) {
+
+                    $order_product = OrderProduct::where('order_main_id', $order_main_id)
+                        ->where('id', $order_product_id)
+                        ->first();
+
+                    if (!$order_product) {
+                        // Already checked above, but just in case
+                        continue;
+                    }
+
+                    // Save box item
+                    $boxItem = new PackageBoxItem;
+                    $boxItem->package_box_id   = $box->id;
+                    $boxItem->product_sku      = $order_product->product_sku;
+                    $boxItem->save();
+
+                    // Decrement warehouse stock by 1
+                    $warehouseDetail = WarehouseDetail::where('order_product_id', $order_product->id)
+                        ->where('remaining_qty', '>', 0)
+                        ->lockForUpdate()           // avoid race condition
+                        ->first();
+
+                    if (!$warehouseDetail) {
+                        // This *shouldn't* happen after pre-check, but just to be safe
+                        throw new \Exception(
+                            'Stock changed while packing. No remaining stock for SKU: ' . $order_product->product_sku
+                        );
+                    }
+
+                    $warehouseDetail->remaining_qty -= 1;
+                    if ($warehouseDetail->remaining_qty < 0) {
+                        throw new \Exception(
+                            'Negative stock detected for SKU: ' . $order_product->product_sku
+                        );
+                    }
+                    $warehouseDetail->save();
+                }
+
+                // -------- Order main status update --------
+                $total_quantity = OrderProduct::where('order_main_id', $order_main_id)->sum('quantity');
+                $total_packed_quantity = PackageBox::where('order_main_id', $order_main_id)->sum('quantity');
+
+                if ($total_packed_quantity >= $total_quantity) {
+                    OrderMain::where('id', $order_main_id)->update(['status' => 2]); // Completed
+                }
+            });
+
+            // If transaction success
+            return [
+                    'status'  => 1,
+                    'message' => 'Successfully packed products.',
+            ];
+
+
+        } catch (\Throwable $e) {
+            return [
+                    'status'  => 0,
+                    'message' => $e->getMessage(),
+            ];
+        }
+    }
+
 
     public function package_data($order_id){
         $data = Package::with('package_boxes.package_boxes_items')->where('order_main_id',$order_id)->get();
@@ -270,5 +391,7 @@ class WarehouseService {
 
         return $warehouse;
     }
+
+    
 
 }

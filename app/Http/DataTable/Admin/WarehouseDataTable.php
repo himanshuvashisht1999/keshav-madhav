@@ -159,8 +159,8 @@ class WarehouseDataTable  {
                 if ($request->has('lot_no') && !empty($request->lot_no)) {
                     $query->where('lot_no', 'like', "%{$request->get('lot_no')}%");
                 }
-                if ($request->has('quantity') && !empty($request->quantity)) {
-                    $query->where('quantity', $request->get('quantity'));
+                if ($request->has('original_qty') && !empty($request->original_qty)) {
+                    $query->where('original_qty', $request->get('original_qty'));
                 }
 
                 if ($request->has('from_stage_id') && $request->filled('from_stage_id')) {

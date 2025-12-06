@@ -35,7 +35,7 @@
                                     <th>Product SKU</th>
                                     <th>Lot No.</th>
                                     <th>From Stage</th>
-                                    <th>Block</th>
+                                    <th>Rack</th>
                                     <th>Qty</th>
                                     <!-- <th>Status</th> -->
                                     <th>Received</th>
@@ -63,7 +63,7 @@
                                             @endforeach
                                         </select>
                                     </td>
-                                    <td><input type="text" class="form-control form-control-sm" id="quantity" placeholder="Qty"></td>
+                                    <td><input type="text" class="form-control form-control-sm" id="original_qty" placeholder="Qty"></td>
 
                                     <td><input type="date" class="form-control form-control-sm" id="created_at"></td>
                                     <!-- <td></td> -->
@@ -95,7 +95,7 @@ $(function () {
                 d.from_stage_id = $('#from_stage_id').val();
                 d.master_warehouse_block_id = $('#master_warehouse_block_id').val();
                 d.lot_no = $('#lot_no').val();
-                d.quantity = $('#quantity').val();
+                d.original_qty = $('#original_qty').val();
                 d.created_at = $('#created_at').val();
             }
         },
@@ -106,7 +106,7 @@ $(function () {
             { data: 'lot_no', name: 'lot_no' },
             { data: 'from_stage_id', name: 'from_stage_id', width: '10%' },
             { data: 'master_warehouse_block_id', name: 'master_warehouse_block_id' },
-            { data: 'quantity', name: 'quantity', width: '7%' },
+            { data: 'original_qty', name: 'original_qty', width: '7%' },
             { data: 'created_at', name: 'created_at', width: '12%' },
             // { data: 'action', name: 'action', width: '10%', orderable: false, searchable: false }
         ]
@@ -140,7 +140,7 @@ $(function () {
             e.preventDefault();
         });
 
-        $('#quantity').on('keyup', function (e) {
+        $('#original_qty').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
