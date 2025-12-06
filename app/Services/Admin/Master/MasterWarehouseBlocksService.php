@@ -5,6 +5,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Auth;
 use App\Models\MasterWarehouseBlock;
+use App\Requests\Admin\Master\MasterWarehouseBlocksStoreRequest;
+use App\Requests\Admin\Master\MasterWarehouseBlocksUpdateRequest;
 use App\Http\DataTable\Admin\Master\MasterWarehouseBlocksDataTable as DataTable;
 
 class MasterWarehouseBlocksService {
@@ -24,7 +26,7 @@ class MasterWarehouseBlocksService {
         return $this->datatable->indexList($request);
     }
 
-    public function store(Request $request){
+    public function store(MasterWarehouseBlocksStoreRequest $request){
         // if($request->file('image')){
         //     $image = $request->file('image');
         //     $extImage = $image->getClientOriginalExtension();
@@ -35,6 +37,7 @@ class MasterWarehouseBlocksService {
         $save_data = new MasterWarehouseBlock;
         $save_data->name = $request->name;
         $save_data->sku = $request->sku;
+        $save_data->master_warehouse_id = $request->master_warehouse_id;
         $save_data->status = 1;
         $save_data->save();
         return true;
@@ -44,7 +47,7 @@ class MasterWarehouseBlocksService {
         $data = MasterWarehouseBlock::where('id',$request->id)->first();
         return $data;
     }
-    public function update(Request $request){
+    public function update(MasterWarehouseBlocksUpdateRequest $request){
         $update_data = MasterWarehouseBlock::find($request->id);
         // if($request->file('image')){
         //     $oldImageName = $update_data->getRawOriginal('image');
@@ -62,6 +65,7 @@ class MasterWarehouseBlocksService {
         //     $update_data->image = $imgName;
         // }
         $update_data->name = $request->name;
+        $update_data->master_warehouse_id = $request->master_warehouse_id;
         // $update_data->sku = $request->sku;
         $update_data->save();
         return true;
@@ -74,7 +78,7 @@ class MasterWarehouseBlocksService {
         return $data;
     }
 
-    public function getMasterWarehouse(){
+    public function getMasterWarehouseWithRacks(){
         return MasterWarehouseBlock::with('masterWarehouse')->where('status',1)->get();
     }
 }
