@@ -32,5 +32,11 @@ class PackageBox extends Model
     public function package_boxes_items(){
         return $this->hasMany('App\Models\PackageBoxItem','package_box_id','id');
     }
+    public function warehouse(){
+        return $this->hasOne('App\Models\MasterWarehouse','id','warehouse_id');
+    }
+    public function rack(){
+        return $this->hasOne('App\Models\MasterWarehouseBlock','id','master_warehouse_block_id');
+    }
     
 }
