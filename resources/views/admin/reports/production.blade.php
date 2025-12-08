@@ -58,7 +58,7 @@
                                 <option value="2">Completed</option>
                             </select>
                         </td>
-                        <!-- <td></td> -->
+                        <td></td>
                     </tr>
                     <tr>
                         <th>ID</th>
@@ -67,7 +67,7 @@
                         <th>Order Date</th>
                         <th>Estimated Delivery Date</th>
                         <th>Status</th>
-                        <!-- <th>Action</th> -->
+                        <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -119,7 +119,7 @@
                 {data: 'created_at', name: 'created_at'},                
                 {data: 'expected_delivery_date', name: 'expected_delivery_date'},                
                 {data: 'status', name: 'status'},
-                // {data: 'action', name: 'action', searchable: false}
+                {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
             buttons: [

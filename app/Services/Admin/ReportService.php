@@ -8,6 +8,8 @@ use App\Models\Vendor;
 use App\Http\DataTable\Admin\ReportDataTable as DataTable;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use App\Models\OrderMain;
+use App\Models\Package;
 
 class ReportService {
     public function __construct(
@@ -58,10 +60,21 @@ class ReportService {
 
     public function generateProductionExcelSingle(Request $request){
         $order_main_id = $request->id;
-        $order_data = OrderMain::with('order_products.product_details')->where('id',$order_main_id)->first();
+        
 
-        dd($order_data);
+    }
 
+    public function productionDetail(Request $request){
+        $data = OrderMain::with([
+            'customer',                                   // MasterCustomer
+            'orders.products.product_details.product_detail_stocks',
+            'orders.products.order_stages.stage',
+            'orders.products.order_stage_trnsactions',
+            'packages.package_boxes.package_boxes_items',
+        ])->findOrFail($request->id);
+
+        return $data;
+        
     }
 
 

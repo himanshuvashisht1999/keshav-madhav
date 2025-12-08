@@ -852,6 +852,12 @@ class ReportController extends Controller
         return $this->service->generateProductionExcelSingle($request);
         
     }
+    public function productionDetail(Request $request){
+
+        $response['orderMain'] = $this->service->productionDetail($request);
+        return view('admin.reports.production_detail', $response);
+        
+    }
     public function stages(Request $request)
     {
         $response['product_stage'] = $this->orderStagesService->product_stage();

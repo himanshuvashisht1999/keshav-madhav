@@ -99,15 +99,19 @@ class WarehouseController extends Controller {
         if($save_data['status'] == 0){
             return redirect()->back()->with('error', $save_data['message']);
         }else{
-            return redirect()->back()->withSuccess($save_data['message']);
-            // return redirect()->route('admin.warehouse.indexOrder')->withSuccess($save_data['message']);
+            // return redirect()->back()->withSuccess($save_data['message']);
+            return redirect()->route('admin.warehouse.packagingShow',['order_main_id' => $request->order_id])->withSuccess($save_data['message']);
         }
     }
 
     public function packagingShow(Request $request){
         
         $response['package'] = $this->service->packagingShow($request->order_main_id);
-        return view('admin.warehouse.packaging_show',$response);
+        if(!$response['package']){
+            return redirect()->back()->with('error', 'No package found for this order');
+        }else{
+            return view('admin.warehouse.packaging_show',$response);
+        }
     }
     public function barcodeDownload(Request $request){
         return $this->service->barcodeDownload($request->box_id);
