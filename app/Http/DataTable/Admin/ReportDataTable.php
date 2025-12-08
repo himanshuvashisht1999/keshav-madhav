@@ -413,7 +413,9 @@ class ReportDataTable  {
             ->addColumn('action', function ($queue) {
                 $parameter= $queue->id;
                 return '
-                <a href="' . route('admin.reports.generateProductionExcelSingle',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fa fa-download"></i></a>
+                <!-- <a href="' . route('admin.reports.generateProductionExcelSingle',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Download"><i class="fa fa-download"></i></a>  --!>
+
+                <a href="' . route('admin.reports.productionDetail',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="View"><i class="fa fa-eye"></i></a>
                 ';
             })
             
