@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Products Specification</h1>
+                    <h1>Available Products</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Products Specification</li>
+                        <li class="breadcrumb-item active">Available Products</li>
                     </ol>
                 </div>
             </div>
@@ -39,14 +39,18 @@
                         <td>
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
+                        <td></td>
                         <td>
-                            <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
+                            <input type="text" class="form-control" name="design_number" id="design_number" autocomplete="off">
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" name="name_of_garment" id="name_of_garment" autocomplete="off">
                         </td>
                         <td>
                             <select class="form-control" name="status" id="status" autocomplete="off">
                                 <option value="">ALL</option>
                                 <option value="1">Published</option>
-                                <option value="0">Pending BOM</option>
+                                <option value="0">Pending</option>
                             </select>
                         </td>
                         <td>
@@ -55,7 +59,9 @@
                     </tr>
                   <tr>
                     <th>ID</th>
-                    <th>SKU</th>
+                    <th>Image</th>
+                    <th>Design Number</th>
+                    <th>Name</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
@@ -92,21 +98,24 @@
                 url: '{!! route('admin.master.production-goods.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
-                    d.sku = $('#sku').val();
+                    d.name_of_garment = $('#name_of_garment').val();
+                    d.design_number = $('#design_number').val();
                     d.status = $('#status').val();
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'sku', name: 'sku'},
+                {data: 'main_image', name: 'main_image', orderable: false, searchable: false},
+                {data: 'design_number', name: 'design_number'},
+                {data: 'name_of_garment', name: 'name_of_garment'},
                 {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Product Specification',
+                    text: 'Add New Product',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
                         window.location.href = "{{ route('admin.master.production-goods.create') }}";
@@ -125,7 +134,15 @@
             e.preventDefault();
         });
 
-        $('#sku').on('keyup', function (e) {
+        $('#name_of_garment').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#design_number').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#status').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });

@@ -14,6 +14,7 @@ use App\Models\BillOfMaterial;
 use App\Models\MasterProductType;
 use App\Models\MasterProductStage;
 use App\Models\ProductStage;
+use App\Models\ProductionGoodImage;
 use App\Models\ItemAttributeValue;
 use App\Http\DataTable\Admin\Master\ProductionGoodsDataTable as DataTable;
 use App\Models\MasterPattern;
@@ -36,42 +37,139 @@ class ProductionGoodsService {
     }
 
     public function store(Request $request){
-        $printing_stage_after = $request->printing_stage_after ?? 0;
+        $printing_stage_after   = $request->printing_stage_after ?? 0;
         $embroidery_stage_after = $request->embroidery_stage_after ?? 0;
+
         $save_data = new ProductionGoods;
-        $save_data->sku = $request->sku;
-        $save_data->name_of_garment = $request->name_of_garment;
-        $save_data->type_of_garment = $request->type_of_garment;
-        $save_data->master_size_id = $request->master_size_id;
-        $save_data->garment_pattern = $request->garment_pattern;
-        $save_data->is_embroidery = $request->is_embroidery;
-        $save_data->master_color_id = $request->master_color_id;
-        $save_data->is_printing = $request->is_printing;
+
+        $save_data->company_id       = $request->company_id;
+        $save_data->sku              = $request->sku;
+        $save_data->name_of_garment  = $request->name_of_garment;
+        $save_data->design_number    = $request->design_number;
+
+        // For General company these fields are required, for Royal they might be null
+        $save_data->type_of_garment  = $request->type_of_garment;    // null for Royal is okay if column is nullable
+        $save_data->master_size_id   = $request->master_size_id;
+        $save_data->garment_pattern  = $request->garment_pattern;
+        $save_data->master_color_id  = $request->master_color_id;
+
+        $save_data->is_printing          = $request->is_printing ?? 1;
+        $save_data->is_embroidery        = $request->is_embroidery ?? 1;
         $save_data->printing_stage_after = $printing_stage_after;
         $save_data->embroidery_stage_after = $embroidery_stage_after;
-        $save_data->fabric_sku = '';
-        $save_data->status = 0;
-        $save_data->save();
-        
-        foreach($request->product_stage_id as $key=>$single){
-            $save_stage = new ProductStage;
-            $save_stage->master_product_id = $save_data->id;
-            $save_stage->master_stage_id = $single;
-            $save_stage->save();
 
-            if($printing_stage_after == $single){
-                $save_stage = new ProductStage;
-                $save_stage->master_product_id = $save_data->id;
-                $save_stage->master_stage_id = 1;
-                $save_stage->save();
-            }
-            if($embroidery_stage_after == $single){
-                $save_stage = new ProductStage;
-                $save_stage->master_product_id = $save_data->id;
-                $save_stage->master_stage_id = 2;
-                $save_stage->save();
+        // If you don't really use this, you can drop this column later
+        $save_data->fabric_sku = '';
+
+        $save_data->status = 1;
+        $save_data->save();
+
+        /////////  save images
+        $imgName = NULL;
+        if($request->file('main_image')){
+            $image = $request->file('main_image');
+            $extImage = $image->getClientOriginalExtension();
+            $imgName = "product-".rand()."_".time().".".$extImage;
+            $destinationPath = public_path().'/assets/products';
+            $image->move($destinationPath, $imgName);
+        }
+
+        $save_main_image = new ProductionGoodImage;
+        $save_main_image->product_id = $save_data->id;
+        $save_main_image->is_main = 1;
+        $save_main_image->image = $imgName;
+        $save_main_image->status = 1;
+        $save_main_image->save();
+
+        if ($request->hasFile('other_images')) {
+            foreach ($request->file('other_images') as $key => $imageFile) {
+                if (!$imageFile) {
+                    continue;
+                }
+                // Generate file name
+                $extImage = $imageFile->getClientOriginalExtension();
+                $imgName  = "product-" . rand() . "_" . time() . "_$key." . $extImage;
+                // Move to folder
+                $destinationPath = public_path() . '/assets/products';
+                $imageFile->move($destinationPath, $imgName);
+
+                // Save record in DB
+                $save_other_image = new ProductionGoodImage;
+                $save_other_image->product_id = $save_data->id;
+                $save_other_image->is_main = 0;        // <-- Not main image
+                $save_other_image->image = $imgName;
+                $save_other_image->status = 1;
+                $save_other_image->save();
             }
         }
+
+
+
+        ////////// end images
+
+        /**
+         * PRODUCT STAGES
+         * - For General: user selected stages manually
+         * - For Royal: we auto-filled all stages via JS (even though UI is hidden)
+         */
+        if ($request->has('product_stage_id') && is_array($request->product_stage_id)) {
+            foreach ($request->product_stage_id as $single) {
+                if (!$single) {
+                    continue;
+                }
+
+                // Save the main stage
+                $save_stage = new ProductStage;
+                $save_stage->master_product_id = $save_data->id;
+                $save_stage->master_stage_id   = $single;
+                $save_stage->save();
+
+                // Insert Printing stage (id = 1) after selected stage
+                if ($printing_stage_after && $printing_stage_after == $single) {
+                    $printingStage = new ProductStage;
+                    $printingStage->master_product_id = $save_data->id;
+                    $printingStage->master_stage_id   = 1; // printing master id
+                    $printingStage->save();
+                }
+
+                // Insert Embroidery stage (id = 2) after selected stage
+                if ($embroidery_stage_after && $embroidery_stage_after == $single) {
+                    $embroideryStage = new ProductStage;
+                    $embroideryStage->master_product_id = $save_data->id;
+                    $embroideryStage->master_stage_id   = 2; // embroidery master id
+                    $embroideryStage->save();
+                }
+            }
+        }
+
+        /**
+         * BILL OF MATERIAL (FABRIC DETAILS)
+         * Fix: use index from foreach instead of $i and set product_id correctly.
+         */
+        if (!empty($request->fabric_sku) && is_array($request->fabric_sku)) {
+            foreach ($request->fabric_sku as $index => $fabricSku) {
+                if (!$fabricSku) {
+                    continue;
+                }
+
+                $meter = $request->fabric_meter[$index] ?? null;
+                if ($meter === null || $meter === '') {
+                    continue;
+                }
+
+                $save_data_product = new BillOfMaterial;
+                $save_data_product->product_id = $save_data->id;   // <-- FIXED
+                $save_data_product->fabric_sku = $fabricSku;       // <-- FIXED
+                $save_data_product->meter      = $meter;           // <-- FIXED
+                $save_data_product->status     = 1;
+                $save_data_product->save();
+            }
+        }
+
+        // You can return redirect/JSON as per your flow
+        // return redirect()->route('admin.master.production-goods.index')
+        //                  ->with('success', 'Production Goods created successfully.');
+
         return true;
     }
 
@@ -80,85 +178,230 @@ class ProductionGoodsService {
         return $data;
     }
     public function update(Request $request){
-        $printing_stage_after = $request->printing_stage_after ?? NULL;
-        $embroidery_stage_after = $request->embroidery_stage_after ?? NULL;
-        
-        $update_data = ProductionGoods::find($request->id);
+        $printing_stage_after   = $request->printing_stage_after ?? null;
+        $embroidery_stage_after = $request->embroidery_stage_after ?? null;
+
+        $update_data = ProductionGoods::findOrFail($request->id);
+
+        // Basic fields (common)
+        $update_data->company_id      = $request->company_id;     // from edit form
+        $update_data->design_number   = $request->design_number ?? $update_data->design_number;
         $update_data->name_of_garment = $request->name_of_garment;
+        // SKU we keep from DB or from request (readonly in form, but safe to assign)
+        $update_data->sku             = $request->sku ?? $update_data->sku;
+
+        // For General, these are required; for Royal they may be null (columns should be nullable)
         $update_data->type_of_garment = $request->type_of_garment;
-        $update_data->master_size_id = $request->master_size_id;
+        $update_data->master_size_id  = $request->master_size_id;
         $update_data->garment_pattern = $request->garment_pattern;
         $update_data->master_color_id = $request->master_color_id;
+
+        $update_data->is_printing          = $request->is_printing ?? 0;
+        $update_data->is_embroidery        = $request->is_embroidery ?? 0;
         $update_data->printing_stage_after = $printing_stage_after;
         $update_data->embroidery_stage_after = $embroidery_stage_after;
-        $update_data->is_printing = $request->is_printing;
+
+        // You’re not really using fabric_sku on product itself; keep it empty as in store()
         $update_data->fabric_sku = '';
         $update_data->save();
 
+        $productId = $update_data->id;
 
-        // ProductStage::where('master_product_id', $request->id)->update([
-        //             'status' => 0
-        //           ]);
-                  
-        // foreach($request->product_stage_id as $key=>$single){
-        //     $old_data = ProductStage::where('master_product_id',$request->id)->orderby('id','asc')->first();
-        //     if($old_data){
-        //         $save_product_stage = ProductStage::where('master_product_id',$request->id)->where('master_stage_id',$single)->first();
-        //     }else{
-        //         $save_product_stage = new ProductStage;
-        //     }
-            
-        //     $save_product_stage->master_product_id = $request->id;
-        //     $save_product_stage->master_stage_id = $single;
-        //     $save_product_stage->status = 1;
-        //     $save_product_stage->save();
-        // }
+        if ($request->file('main_image')) {
+            $image = $request->file('main_image');
 
-        $newStages = $request->product_stage_id;   
-        $productId = $request->id;                
+            // New file name
+            $extImage = $image->getClientOriginalExtension();
+            $imgName  = "product-" . rand() . "_" . time() . "." . $extImage;
 
-        // 1. Get all old rows of this product
-        $oldRows = ProductStage::where('master_product_id', $productId)
-                    ->orderBy('id', 'asc')
-                    ->get();
+            // Move to /public/assets/products
+            $destinationPath = public_path() . '/assets/products';
+            $image->move($destinationPath, $imgName);
 
-        // Count both
-        
-        $newCount = count($newStages);
+            // Find existing main image row (if any)
+            $oldMain = ProductionGoodImage::where('product_id', $productId)
+                ->where('is_main', 1)
+                ->first();
 
-        $index = 0;
-        // 2. Update existing rows with new stage IDs
-        foreach ($oldRows as $row) {
+            if ($oldMain) {
+                // OPTIONAL: delete old file from disk
+                // We need the raw value from DB, not the accessor URL
+                $oldFilename = $oldMain->getRawOriginal('image');
+                if ($oldFilename) {
+                    $oldPath = public_path('assets/products/' . $oldFilename);
+                    if (file_exists($oldPath)) {
+                        @unlink($oldPath);
+                    }
+                }
 
-            if ($index < $newCount) {
-
-                // Update master_stage_id + activate
-                $row->master_stage_id = $newStages[$index];
-                $row->status = 1;
-                $row->save();
-
+                // Update existing row
+                $oldMain->image  = $imgName;
+                $oldMain->status = 1;
+                $oldMain->save();
             } else {
+                // No main image yet → create new row
+                $save_main_image = new ProductionGoodImage;
+                $save_main_image->product_id = $productId;
+                $save_main_image->is_main    = 1;
+                $save_main_image->image      = $imgName;
+                $save_main_image->status     = 1;
+                $save_main_image->save();
+            }
+        }
 
-                // Extra old rows → deactivate
-                $row->status = 0;
-                $row->save();
+        if ($request->hasFile('other_images')) {
+            foreach ($request->file('other_images') as $key => $imageFile) {
+                if (!$imageFile) {
+                    continue;
+                }
+
+                $extImage = $imageFile->getClientOriginalExtension();
+                $imgName  = "product-" . rand() . "_" . time() . "_$key." . $extImage;
+
+                $destinationPath = public_path() . '/assets/products';
+                $imageFile->move($destinationPath, $imgName);
+
+                $save_other_image = new ProductionGoodImage;
+                $save_other_image->product_id = $productId;
+                $save_other_image->is_main    = 0;      // NOT main
+                $save_other_image->image      = $imgName;
+                $save_other_image->status     = 1;
+                $save_other_image->save();
+            }
+        }
+
+        if ($request->has('delete_image_ids') && is_array($request->delete_image_ids)) {
+            $idsToDelete = $request->delete_image_ids;
+
+            $images = ProductionGoodImage::where('product_id', $productId)
+                ->whereIn('id', $idsToDelete)
+                ->get();
+
+            foreach ($images as $img) {
+                // Get raw filename from DB (not the accessor URL)
+                $filename = $img->getRawOriginal('image');
+                if ($filename) {
+                    $path = public_path('assets/products/' . $filename);
+                    if (file_exists($path)) {
+                        @unlink($path);
+                    }
+                }
+
+                // Hard delete row (or set status=0 if you prefer soft delete)
+                $img->delete();
+                // or: $img->status = 0; $img->save();
+            }
+        }
+
+
+        if ($request->has('product_stage_id') && is_array($request->product_stage_id)) {
+
+            $newStages = $request->product_stage_id;
+
+            // Delete all old stage rows for this product and rebuild cleanly
+            ProductStage::where('master_product_id', $productId)->delete();
+
+            foreach ($newStages as $stageId) {
+                if (!$stageId) {
+                    continue;
+                }
+
+                // Base stage
+                ProductStage::create([
+                    'master_product_id' => $productId,
+                    'master_stage_id'   => $stageId,
+                    'status'            => 1,
+                ]);
+
+                // Insert Printing stage (assuming master_stage_id = 1) after selected
+                if ($printing_stage_after && $printing_stage_after == $stageId) {
+                    ProductStage::create([
+                        'master_product_id' => $productId,
+                        'master_stage_id'   => 1, // printing master ID
+                        'status'            => 1,
+                    ]);
+                }
+
+                // Insert Embroidery stage (assuming master_stage_id = 2) after selected
+                if ($embroidery_stage_after && $embroidery_stage_after == $stageId) {
+                    ProductStage::create([
+                        'master_product_id' => $productId,
+                        'master_stage_id'   => 2, // embroidery master ID
+                        'status'            => 1,
+                    ]);
+                }
+            }
+        }
+        // else: For Royal with hidden stages, keep existing ProductStage rows as-is.
+
+        /**
+         * === FABRIC / BILL OF MATERIAL (OPTIONAL) ===
+         * If you want edit page changes to save BOM as well:
+         */
+
+        if (!empty($request->fabric_sku) && is_array($request->fabric_sku)) {
+
+            // Get existing BOM rows keyed by ID
+            $existing = BillOfMaterial::where('product_id', $productId)
+                        ->get()
+                        ->keyBy('id');  // [id => BillOfMaterial]
+
+            foreach ($request->fabric_sku as $index => $fabricSku) {
+                $fabricSku = $fabricSku ?? '';
+
+                // Skip completely empty row
+                if ($fabricSku === '') {
+                    continue;
+                }
+
+                $meter = $request->fabric_meter[$index] ?? null;
+                if ($meter === null || $meter === '') {
+                    continue;
+                }
+
+                $bomId = $request->bom_id[$index] ?? null;
+
+                if ($bomId && isset($existing[$bomId])) {
+                    // ✅ UPDATE existing row
+                    $bom = $existing[$bomId];
+
+                    $bom->fabric_sku = $fabricSku;
+                    $bom->meter      = $meter;
+                    $bom->status     = 1;
+                    $bom->save();
+
+                    // Remove from $existing so we know it's been handled
+                    unset($existing[$bomId]);
+
+                } else {
+                    // ✅ CREATE new row
+                    BillOfMaterial::create([
+                        'product_id' => $productId,
+                        'fabric_sku' => $fabricSku,
+                        'meter'      => $meter,
+                        'status'     => 1,
+                    ]);
+                }
             }
 
-            $index++;
+            // ✅ Any BOM still in $existing were removed in the form → delete or deactivate
+            foreach ($existing as $leftover) {
+                // Hard delete:
+                // $leftover->delete();
+
+                // OR soft delete / deactivate:
+                $leftover->status = 0;
+                $leftover->save();
+            }
+
+        } else {
+            // No fabric rows submitted at all → consider clearing BOM
+            // BillOfMaterial::where('product_id', $productId)->delete();
+            // or:
+            // BillOfMaterial::where('product_id', $productId)->update(['status' => 0]);
         }
 
-        // 3. If new stages are more → insert remaining rows
-        while ($index < $newCount) {
-
-            ProductStage::create([
-                'master_product_id' => $productId,
-                'master_stage_id'   => $newStages[$index],
-                'status'            => 1
-            ]);
-
-            $index++;
-        }
-        
+        // You can redirect or return JSON; returning true works if it’s used via AJAX or internal.
         return true;
     }
 

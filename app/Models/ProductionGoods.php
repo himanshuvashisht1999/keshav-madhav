@@ -24,6 +24,7 @@ class ProductionGoods extends Model
         'fabric_sku',
         'is_printing',
         'is_embroidery',
+        'design_number',
         'status',
         'created_at',
         'updated_at'
@@ -45,6 +46,16 @@ class ProductionGoods extends Model
     }
     public function product_stages(){
         return $this->hasMany('App\Models\ProductStage','master_product_id','id')->where('status',1);
+    }
+
+    public function images()
+    {
+        return $this->hasMany(ProductionGoodImage::class, 'product_id');
+    }
+
+    public function mainImage()
+    {
+        return $this->hasOne(ProductionGoodImage::class, 'product_id')->where('is_main', 1);
     }
     
 }
