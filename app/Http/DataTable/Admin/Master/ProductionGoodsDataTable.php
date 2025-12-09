@@ -18,26 +18,29 @@ class ProductionGoodsDataTable  {
     }
 
     public function indexList($request){
-        $queue = ProductionGoods::query();
+        $queue = ProductionGoods::orderBy('id','desc');
         
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id','asc');
-                $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
-                if ($request->has('sku') && !empty($request->sku)) {
-                    $query->where('sku', 'like', "%{$request->get('sku')}%");
+                $query->orWhere('name_of_garment', 'like', "%{$request->get('search')['value']}%");
+                if ($request->has('name_of_garment') && !empty($request->name_of_garment)) {
+                    $query->where('name_of_garment', 'like', "%{$request->get('name_of_garment')}%");
+                }
+                if ($request->has('design_number') && !empty($request->design_number)) {
+                    $query->where('design_number', 'like', "%{$request->get('design_number')}%");
                 }
                 if ($request->has('fabric_sku') && !empty($request->fabric_sku)) {
                     $query->where('fabric_sku', 'like', "%{$request->get('fabric_sku')}%");
                 }  
-                if ($request->has('status') && !empty($request->status)) {
+                if ($request->has('status')) {
                     $query->where('status', $request->get('status'));
                 }                            
             }) 
            
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
-                return ($status == 1) ? '<span class="badge badge-xs badge-success">Published</span>' : '<span class="badge badge-xs badge-primary">Pending BOM</span>';
+                return ($status == 1) ? '<span class="badge badge-xs badge-success">Published</span>' : '<span class="badge badge-xs badge-primary">Pending</span>';
             })
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
@@ -46,8 +49,15 @@ class ProductionGoodsDataTable  {
                 <a href="' . route('admin.master.production-goods-item.create',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
                 ';
             })
+            ->addColumn('main_image', function ($queue) {
+                $img = $queue->mainImage; // relationship
+              
+                $src = $img ? $img->image : asset('assets/products/default-image.png');
+
+                return '<img src="'.$src.'" alt="Main Image" style="height:50px;width:auto;border-radius:4px;">';
+            })
             
-            ->rawColumns(['action', 'status'])
+            ->rawColumns(['action', 'status','main_image'])
             ->make(true);
     }
 }
