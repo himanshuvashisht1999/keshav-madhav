@@ -21,6 +21,10 @@ class StockDataTable  {
                     $query->where('id', 'like', "%{$request->get('id')}%");
                 }
                 
+                if ($request->has('sku') && !empty($request->sku)) {
+                    $query->where('sku', 'like', "%{$request->get('sku')}%");
+                }
+                
                 if ($request->has('date') && !empty($request->date)) {
                     $query->where('date', 'like', "%{$request->get('date')}%");
                 }
