@@ -57,5 +57,13 @@ class ProductionGoods extends Model
     {
         return $this->hasOne(ProductionGoodImage::class, 'product_id')->where('is_main', 1);
     }
+
+    public function getMainImgAttribute()
+    {
+        if ($this->mainImage) {
+            return $this->mainImage->image;
+        }
+        return null;
+    }
     
 }

@@ -53,6 +53,16 @@ class ProductionGoodsController extends Controller {
         $response['product_stages'] = $this->service->product_stages();
         return view('admin.master.production-goods.edit',$response);
     }
+    public function view(Request $request){
+        $response['data'] = $this->service->edit($request);
+        $response['sizes'] = $this->service->sizes();
+        $response['fabrics'] = $this->service->fabrics();
+        $response['product_types'] = $this->service->product_types();
+        $response['garment_patterns'] = $this->service->garment_patterns();
+        $response['colors'] = $this->service->colors();
+        $response['product_stages'] = $this->service->product_stages();
+        return view('admin.master.production-goods.view',$response);
+    }
     public function update(ProductionGoodsUpdateRequest $request){
         $data = $this->service->update($request);
         return redirect()->route('admin.master.production-goods.index')->withSuccess('The production goods has been successfully updated.');

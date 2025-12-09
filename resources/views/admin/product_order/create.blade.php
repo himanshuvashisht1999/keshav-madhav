@@ -65,18 +65,18 @@
                                     <div class="product-row row mb-2">
                                         <div class="col-md-3">
                                             <div class="form-group">
-                                                <label>Select Product Design Number</label>
+                                                <label>Select Design Number</label>
                                                 <select name="product_design_number[]" class="form-control select2 stage-select" style="width: 100%;" required>
                                                     <option value="">Select Design Number</option>
                                                     @foreach($products as $product)
-                                                        <option value="{{ $product->id }}">{{ $product->design_number }}</option>
+                                                        <option value="{{ $product->id }}" data-img="{{ $product->main_img }}">{{ $product->design_number }} - {{$product->name_of_garment}}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
                                         </div>
                                          <div class="col-md-3">
                                             <div class="form-group">
-                                                <label>Select Product Size</label>
+                                                <label>Select Size</label>
                                                 <select name="product_size[]" class="form-control select2 stage-select" style="width: 100%;" required>
                                                     <option value="">Select Size</option>
                                                     @foreach($product_size as $size)
@@ -87,7 +87,7 @@
                                         </div>
                                          <div class="col-md-3">
                                             <div class="form-group">
-                                                <label>Select Product Colour</label>
+                                                <label>Select Colour</label>
                                                 <select name="product_color[]" class="form-control select2 stage-select" style="width: 100%;" required>
                                                     <option value="">Select Colour</option>
                                                     @foreach($colours as $colour)
@@ -107,11 +107,7 @@
                                                 <button type="button" class="btn btn-success add-product"><i class="fa fa-plus"></i></button>
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
-                                            <img id="product-photo" 
-                                                src="" 
-                                                style="max-width:150px; max-height:150px;  border:1px solid #ccc; padding:5px;">
-                                        </div>
+                                        <div class="col-md-3 img-section"></div>
                                     </div>
                                     
                                 </div>
@@ -156,7 +152,7 @@
 
 
 <script>
-$(document).on('mouseover', '#product-photo', function () {
+$(document).on('click', '#product-photo', function () {
     let src = $(this).attr('src');
     $('#modal-photo').attr('src', src);
     $('#photoModal').modal('show');
@@ -179,33 +175,42 @@ $(document).ready(function () {
 
         // Collect selected SKUs
         let selectedValues = [];
+        console.log(selectedValues);
         $("select[name='product_design_number[]']").each(function () {
             if ($(this).val()) selectedValues.push($(this).val());
         });
 
         // Create filtered options
-        let options = `<option value="">Select Product SKU</option>`;
+        let options = `<option value="">Select Design Number</option>`;
+        
         products.forEach(p => {
-            if (!selectedValues.includes(p.sku)) {
-                options += `<option value="${p.sku}">${p.sku}</option>`;
+            
+            if (!selectedValues.includes(String(p.id))) {
+               let imgUrl = p.main_image ? p.main_image.image : '';
+
+                options += `
+                    <option value="${p.id}" data-img="${imgUrl}">
+                        ${p.design_number} - ${p.name_of_garment}
+                    </option>
+                `;
             }
         });
 
-        let newRow = `<br><div class="product-row row mb-2">
+        let newRow = `<div class="product-row row mb-2 mt-4">
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label>Select Product Design Number</label>
+                                <label>Select Design Number</label>
                                 <select name="product_design_number[]" class="form-control select2 stage-select" style="width: 100%;" required>
                                     <option value="">Select Design Number</option>
                                     @foreach($products as $product)
-                                        <option value="{{ $product->id }}">{{ $product->design_number }}</option>
+                                        ${options}
                                     @endforeach
                                 </select>
                             </div>
                         </div>
                             <div class="col-md-3">
                             <div class="form-group">
-                                <label>Select Product Size</label>
+                                <label>Select Size</label>
                                 <select name="product_size[]" class="form-control select2 stage-select" style="width: 100%;" required>
                                     <option value="">Select Size</option>
                                     @foreach($product_size as $size)
@@ -216,7 +221,7 @@ $(document).ready(function () {
                         </div>
                             <div class="col-md-3">
                             <div class="form-group">
-                                <label>Select Product Colour</label>
+                                <label>Select Colour</label>
                                 <select name="product_color[]" class="form-control select2 stage-select" style="width: 100%;" required>
                                     <option value="">Select Colour</option>
                                     @foreach($colours as $colour)
@@ -236,10 +241,7 @@ $(document).ready(function () {
                                 <button type="button" class="btn btn-danger remove-product"><i class="fa fa-minus"></i></button>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <img id="product-photo" src="http://127.0.0.1:8000/assets/products/product-316839018_1765260044.jpg" 
-                                style="max-width:150px; max-height:150px;  border:1px solid #ccc; padding:5px;">
-                        </div>
+                        <div class="col-md-3 img-section" > </div>
                     </div>
                    `;
         $('#products-container').append(newRow);
@@ -259,6 +261,20 @@ $(document).ready(function () {
         refreshSKUOptions();
     });
 
+    $(document).on("change", "select[name='product_design_number[]']", function() {
+       
+        let imgUrl = $(this).find(':selected').data('img');
+
+
+        // Append new image only if valid
+        if (imgUrl) {
+            $(this).closest('.product-row').find('.img-section').html(`
+                <img id="product-photo" 
+                    src="${imgUrl}" 
+                    style="max-width:150px; max-height:150px;  border:1px solid #ccc; padding:5px;">
+            `);
+        }
+    });
     // Hide duplicate SKUs from dropdowns
     function refreshSKUOptions() {
         let selected = [];
@@ -272,13 +288,21 @@ $(document).ready(function () {
             let select = $(this);
 
             // REBUILD OPTIONS
-            let options = `<option value="">Select Product SKU</option>`;
-
+            let options = `<option value="">Select Design Number</option>`;
+            
             products.forEach(p => {
-                if (!selected.includes(p.sku) || current === p.sku) {
-                    options += `<option value="${p.sku}">${p.sku}</option>`;
+                
+                if (!selected.includes(String(p.id)) || String(p.id) === String(current)) {
+                    let imgUrl = p.main_image ? p.main_image.image : '';
+
+                    options += `
+                        <option value="${p.id}" data-img="${imgUrl}">
+                            ${p.design_number} - ${p.name_of_garment}
+                        </option>
+                    `;
                 }
             });
+
 
             // SET new options
             select.html(options);
