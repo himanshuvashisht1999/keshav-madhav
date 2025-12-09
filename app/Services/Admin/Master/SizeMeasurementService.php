@@ -28,7 +28,9 @@ class SizeMeasurementService {
     public function store(Request $request){
 
         $save_data = new MasterSizeMeasurement;
+        $save_data->size_type = $request->size_type ?? 0;
         $save_data->size_selection = $request->size_selection;
+        // for size type set size_selection as to and measurement as from
         $save_data->measurement = $request->measurement;
         $save_data->sku = $request->sku;
         $save_data->status = $request->status;
@@ -42,6 +44,7 @@ class SizeMeasurementService {
     }
     public function update(Request $request){
         $update_data = MasterSizeMeasurement::find($request->id);
+        $update_data->size_type = $request->size_type ?? 0;
         $update_data->size_selection = $request->size_selection;
         $update_data->measurement = $request->measurement;
         $update_data->status = $request->status;
