@@ -333,6 +333,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/edit',[AdminProductionGoodsController::class,'edit'])->name('edit');
             Route::post('/update',[AdminProductionGoodsController::class,'update'])->name('update');
             Route::get('/delete',[AdminProductionGoodsController::class,'delete'])->name('delete');
+            Route::get('/view',[AdminProductionGoodsController::class,'view'])->name('view');
         });
 
         Route::prefix('master/production-goods-item')->name('master.production-goods-item.')->group(function () {

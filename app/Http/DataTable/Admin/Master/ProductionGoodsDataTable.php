@@ -33,7 +33,7 @@ class ProductionGoodsDataTable  {
                 if ($request->has('fabric_sku') && !empty($request->fabric_sku)) {
                     $query->where('fabric_sku', 'like', "%{$request->get('fabric_sku')}%");
                 }  
-                if ($request->has('status')) {
+                if ($request->has('status') && ($request->status != '')) {
                     $query->where('status', $request->get('status'));
                 }                            
             }) 
@@ -46,7 +46,7 @@ class ProductionGoodsDataTable  {
 				$parameter= $queue->id;
                 return '
                 <a href="' . route('admin.master.production-goods.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                <a href="' . route('admin.master.production-goods-item.create',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
+                <a href="' . route('admin.master.production-goods.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
                 ';
             })
             ->addColumn('main_image', function ($queue) {
