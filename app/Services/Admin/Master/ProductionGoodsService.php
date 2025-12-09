@@ -36,8 +36,8 @@ class ProductionGoodsService {
     }
 
     public function store(Request $request){
-        $printing_stage_after = $request->printing_stage_after ?? NULL;
-        $embroidery_stage_after = $request->embroidery_stage_after ?? NULL;
+        $printing_stage_after = $request->printing_stage_after ?? 0;
+        $embroidery_stage_after = $request->embroidery_stage_after ?? 0;
         $save_data = new ProductionGoods;
         $save_data->sku = $request->sku;
         $save_data->name_of_garment = $request->name_of_garment;

@@ -3,7 +3,7 @@
         'name' => 'laravel/laravel',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '00773e6f8ea1b8fb65db5592a0d67e0c97f35d8a',
+        'reference' => '9f471765cbd3bd592313efa6af1f5b1f6fbd5780',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -475,7 +475,7 @@
         'laravel/laravel' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '00773e6f8ea1b8fb65db5592a0d67e0c97f35d8a',
+            'reference' => '9f471765cbd3bd592313efa6af1f5b1f6fbd5780',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -645,6 +645,15 @@
             'replaced' => array(
                 0 => '*',
             ),
+        ),
+        'maatwebsite/excel' => array(
+            'pretty_version' => 'v1.1.5',
+            'version' => '1.1.5.0',
+            'reference' => '0c67aba8387726458d42461eae91a3415593bbc4',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../maatwebsite/excel',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'maennchen/zipstream-php' => array(
             'pretty_version' => '3.1.2',
@@ -828,6 +837,15 @@
             'provided' => array(
                 0 => '1.0',
             ),
+        ),
+        'phpoffice/phpexcel' => array(
+            'pretty_version' => '1.8.1',
+            'version' => '1.8.1.0',
+            'reference' => '372c7cbb695a6f6f1e62649381aeaa37e7e70b32',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../phpoffice/phpexcel',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'phpoffice/phpspreadsheet' => array(
             'pretty_version' => '5.3.0',
