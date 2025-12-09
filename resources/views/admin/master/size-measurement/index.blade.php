@@ -40,6 +40,13 @@
                         <td>
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
+                        <td> 
+                            <select name="size_type" id="size_type" class="form-control select2" style="width: 100%;">
+                                <option value="">All</option>
+                                <option value="0" >Set</option>
+                                <option value="1" >Individual</option>
+                            </select>
+                        </td>
                         <td>
                             <input type="text" class="form-control" name="size_selection" id="size_selection" autocomplete="off">
                         </td>
@@ -62,6 +69,7 @@
                     </tr>
                   <tr>
                     <th>ID</th>
+                    <th>Size Type</th>
                     <th>Size</th>
                     <th>Measurement</th>
                     <th>SKU</th>
@@ -105,11 +113,13 @@
                     d.measurement = $('#measurement').val();
                     d.sku = $('#sku').val();
 					d.status = $('#status').val();
+                    d.size_type = $('#size_type').val();
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
+                {data: 'size_type', name: 'size_type'},
                 {data: 'size_selection', name: 'size_selection'},
                 {data: 'measurement', name: 'measurement'},
                 {data: 'sku', name: 'sku'},
@@ -159,6 +169,10 @@
             e.preventDefault();
         });
 
+        $('#size_type').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
 
     });
 
