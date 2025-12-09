@@ -33,10 +33,14 @@ class ProductOrderController extends Controller {
     }
     public function create(){
         $response['products'] = $this->service->products();
+        // dd( $response['products']);
+        $response['product_size'] = $this->service->product_sizes();
+        $response['colours'] = $this->service->getColours();
         $response['customers'] = $this->service->customers();
         return view('admin.product_order.create',$response);
     }
     public function store(ProductOrderStoreRequest $request){
+        dd("store method called");
         $data = $this->service->store($request);
         if($data['status_code'] == 1){
             return redirect()->route('admin.product_order.indexOrder')->withSuccess($data['message']);
