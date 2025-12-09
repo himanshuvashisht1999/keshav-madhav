@@ -21,6 +21,7 @@ class SizeMeasurementUpdateRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
+            'size_type' => 'required',
             'size_selection' => 'required',
             'measurement' => 'required',
             'status' =>'required',

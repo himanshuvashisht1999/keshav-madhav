@@ -31,7 +31,44 @@
                     <input type="hidden" name="id" value="{{$data->id}}">
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Size Type</label>
+                                    <select name="size_type" id="size_type" class="form-control select2" style="width: 100%;">
+                                        <!-- <option value="">Select</option> -->
+                                        <option value="0" {{old('size_type') == '0' ? 'selected' : ''}}>Set</option>
+                                        <option value="1" {{old('size_type') == '1' ? 'selected' : ''}}>Individual</option>
+                                    </select>
+                                    @if ($errors->has('size_type'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('size_type') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>   
+                            <div class="col-md-4" >
+                                <div class="form-group">
+                                    <label id="label1" for="label1">To</label>
+                                    <input type="text" name="size_selection" class="form-control" placeholder="Enter start size" value="{{$data->size_selection}}">
+                                    @if ($errors->has('size_selection'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('size_selection') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-4" id="measurement_div">
+                                <div class="form-group">
+                                    <label id="label2" for="label2">From</label>
+                                    <input type="number" name="measurement" class="form-control" placeholder="Enter end size" step="1" min="1" value="{{$data->measurement}}">
+                                    @if ($errors->has('measurement'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('measurement') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            {{-- <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Size</label>
                                     <input type="text" name="size_selection" class="form-control" placeholder="Enter size selection" value="{{$data->size_selection}}">
@@ -52,7 +89,7 @@
                                         </span>
                                     @endif
                                 </div>
-                            </div>
+                            </div> --}}
                            
 
                             <div class="col-md-6">
@@ -70,7 +107,7 @@
                                     @endif
                                 </div>
                             </div>                            
-                            <div class="col-md-6">
+                            <div class="col-md-6" style="display: none">
                                 <div class="form-group">
                                     <label for="sku">SKU</label>
                                     <input type="text" name="sku" id="sku_n" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}" readonly>
@@ -94,6 +131,47 @@
         </div>
     </section>
 </div>
+<script>
+    $(document).ready(function () {
+        updateLabels();
+        $("#size_type").on("change", function () {
+            updateLabels();
+        });
 
+        function updateLabels() {
+            let type = $("#size_type").val(); // 0 = Set, 1 = Individual
+            if (type == "0") {
+                // Individual selected
+                $("#label1").text("To");
+                $("input[name='size_selection']").attr({
+                    "placeholder": "Enter start size",
+                    "type": "number",
+                    "step": "1",
+                    "min": "1"
+                });
+
+
+                $("#label2").text("From");
+                $("input[name='measurement']").attr("placeholder", "Enter end size");
+
+            } else {
+                // Set selected
+                $("#label1").text("Selection");
+                $("input[name='size_selection']")
+                .attr({
+                    "placeholder": "Enter size selection",
+                    "type": "text"
+                })
+                .removeAttr("step")
+                .removeAttr("min");
+
+                $("#label2").text("Measurement");
+                $("input[name='measurement']").attr("placeholder", "Enter measurement");
+
+            }
+        }
+
+    });
+</script>
 
 @endsection

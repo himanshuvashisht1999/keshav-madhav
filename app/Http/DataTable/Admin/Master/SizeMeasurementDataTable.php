@@ -32,9 +32,15 @@ class SizeMeasurementDataTable  {
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
+                if ($request->has('size_type') && $request->filled('size_type')) {
+                    $query->where('size_type', $request->get('size_type'));
+                }
                 
             }) 
-         
+            ->editColumn('size_type', function ($queue) {
+				$size_type= $queue->size_type;
+                return ($size_type == 0) ? 'Set' : 'Individual';
+            })
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
