@@ -33,6 +33,8 @@ class ProductOrderController extends Controller {
     }
     public function create(){
         $response['products'] = $this->service->products();
+        $response['product_size'] = $this->service->product_sizes();
+        $response['colours'] = $this->service->getColours();
         $response['customers'] = $this->service->customers();
         return view('admin.product_order.create',$response);
     }

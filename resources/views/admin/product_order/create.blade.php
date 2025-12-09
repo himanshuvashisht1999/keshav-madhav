@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Sales Order</h1>
+                    <h1>Corporate Order</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Create Sales Order</li>
+                        <li class="breadcrumb-item active">Create Corporate Order</li>
                     </ol>
                 </div>
             </div>
@@ -24,7 +24,7 @@
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title">Create Sales Order</h3>
+                    <h3 class="card-title">Create Corporate Order</h3>
                 </div>
                 <form action="{{route('admin.sales_order.store')}}" method="post" enctype="multipart/form-data">
                     @csrf
@@ -61,34 +61,61 @@
                             </div>
 
                             <div class="col-md-12">
-                                <label>Select Product Sku</label>
                                 <div id="products-container">
                                     <div class="product-row row mb-2">
-                                        <div class="col-md-6">
+                                        <div class="col-md-3">
                                             <div class="form-group">
-                                                <select name="product_sku[]" class="form-control select2 stage-select" style="width: 100%;" required>
-                                                    <option value="">Select Product SKU</option>
+                                                <label>Select Product Design Number</label>
+                                                <select name="product_design_number[]" class="form-control select2 stage-select" style="width: 100%;" required>
+                                                    <option value="">Select Design Number</option>
                                                     @foreach($products as $product)
-                                                        <option value="{{ $product->sku }}">{{ $product->sku }}</option>
+                                                        <option value="{{ $product->id }}">{{ $product->design_number }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-md-5">
+                                         <div class="col-md-3">
                                             <div class="form-group">
-                                                <input type="number" name="product_quantity[]" id="" class="form-control" placeholder="Quantity" min="1" step="1" required>
-                                                
+                                                <label>Select Product Size</label>
+                                                <select name="product_size[]" class="form-control select2 stage-select" style="width: 100%;" required>
+                                                    <option value="">Select Size</option>
+                                                    @foreach($product_size as $size)
+                                                        <option value="{{ $size->id }}">{{ $size->size_selection }} - {{ $size->measurement }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                         <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Select Product Colour</label>
+                                                <select name="product_color[]" class="form-control select2 stage-select" style="width: 100%;" required>
+                                                    <option value="">Select Colour</option>
+                                                    @foreach($colours as $colour)
+                                                        <option value="{{ $colour->id }}">{{ $colour->sku }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label>Quantity</label>
+                                                <input type="number" name="product_quantity[]" id="" class="form-control" placeholder="Quantity" min="1" step="1" required>                                               
                                             </div>
                                         </div>
                                         <div class="col-md-1">
-                                            <button type="button" class="btn btn-success add-product"><i class="fa fa-plus"></i></button>
+                                            <div class="form-group" style="margin-top:31px">
+                                                <button type="button" class="btn btn-success add-product"><i class="fa fa-plus"></i></button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <img id="product-photo" 
+                                                src="" 
+                                                style="max-width:150px; max-height:150px;  border:1px solid #ccc; padding:5px;">
                                         </div>
                                     </div>
+                                    
                                 </div>
                             </div>
-
-                            
-                            
                            
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">
@@ -103,7 +130,38 @@
         </div>
     </section>
 </div>
+
+<!-- Modal -->
+<div class="modal fade" id="photoModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content position-relative">
+
+        <!-- Custom Close Button -->
+        <button type="button" 
+                class="close position-absolute" 
+                style="top:10px; right:10px; font-size:30px; z-index:999;" 
+                data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+
+        <div class="modal-body text-center p-0">
+            <img id="modal-photo" src="" style="width:100%; height:auto;">
+        </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+
 <script>
+$(document).on('mouseover', '#product-photo', function () {
+    let src = $(this).attr('src');
+    $('#modal-photo').attr('src', src);
+    $('#photoModal').modal('show');
+});
+
 $(document).ready(function () {
     // Initialize Select2 for existing selects
     $('.select2').select2();
@@ -112,7 +170,7 @@ $(document).ready(function () {
     $(document).on('click', '.add-product', function () {
          // Prevent add more rows than products
         let totalProducts = products.length;
-        let totalRows = $("select[name='product_sku[]']").length;
+        let totalRows = $("select[name='product_design_number[]']").length;
 
         if (totalRows >= totalProducts) {
             alert("You cannot add more rows. No more SKUs available.");
@@ -121,7 +179,7 @@ $(document).ready(function () {
 
         // Collect selected SKUs
         let selectedValues = [];
-        $("select[name='product_sku[]']").each(function () {
+        $("select[name='product_design_number[]']").each(function () {
             if ($(this).val()) selectedValues.push($(this).val());
         });
 
@@ -133,27 +191,57 @@ $(document).ready(function () {
             }
         });
 
-
-
-        let newRow = `
-            <div class="product-row row mb-2">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <select name="product_sku[]" class="form-control select2 stage-select" style="width: 100%;" required>
-                            ${options}
-                        </select>
+        let newRow = `<br><div class="product-row row mb-2">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Select Product Design Number</label>
+                                <select name="product_design_number[]" class="form-control select2 stage-select" style="width: 100%;" required>
+                                    <option value="">Select Design Number</option>
+                                    @foreach($products as $product)
+                                        <option value="{{ $product->id }}">{{ $product->design_number }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                            <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Select Product Size</label>
+                                <select name="product_size[]" class="form-control select2 stage-select" style="width: 100%;" required>
+                                    <option value="">Select Size</option>
+                                    @foreach($product_size as $size)
+                                        <option value="{{ $size->id }}">{{ $size->size_selection }} - {{ $size->measurement }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                            <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Select Product Colour</label>
+                                <select name="product_color[]" class="form-control select2 stage-select" style="width: 100%;" required>
+                                    <option value="">Select Colour</option>
+                                    @foreach($colours as $colour)
+                                        <option value="{{ $colour->id }}">{{ $colour->sku }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Quantity</label>
+                                <input type="number" name="product_quantity[]" id="" class="form-control" placeholder="Quantity" min="1" step="1" required>                                               
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group" style="margin-top:31px">
+                                <button type="button" class="btn btn-danger remove-product"><i class="fa fa-minus"></i></button>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <img id="product-photo" src="http://127.0.0.1:8000/assets/products/product-316839018_1765260044.jpg" 
+                                style="max-width:150px; max-height:150px;  border:1px solid #ccc; padding:5px;">
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-5">
-                    <div class="form-group">
-                        <input type="number" name="product_quantity[]" id="" class="form-control" placeholder="Quantity" min="1" step="1" required>
-                    </div>
-                </div>
-                <div class="col-md-1">
-                    <button type="button" class="btn btn-danger remove-product"><i class="fa fa-minus"></i></button>
-                </div>
-            </div>
-        `;
+                   `;
         $('#products-container').append(newRow);
         $('.select2').select2(); // re-init Select2 for new rows
         refreshSKUOptions();
@@ -166,7 +254,8 @@ $(document).ready(function () {
     });
 
     // Select change event
-    $(document).on("change", "select[name='product_sku[]']", function () {
+    $(document).on("change", "select[name='product_design_number[]']", function () {
+        
         refreshSKUOptions();
     });
 
@@ -174,11 +263,11 @@ $(document).ready(function () {
     function refreshSKUOptions() {
         let selected = [];
 
-        $("select[name='product_sku[]']").each(function () {
+        $("select[name='product_design_number[]']").each(function () {
             if ($(this).val()) selected.push($(this).val());
         });
 
-        $("select[name='product_sku[]']").each(function () {
+        $("select[name='product_design_number[]']").each(function () {
             let current = $(this).val();
             let select = $(this);
 
@@ -200,6 +289,10 @@ $(document).ready(function () {
             // REINIT SELECT2
             select.trigger('change.select2');
         });
+    }
+
+    function getProductPhoto() {
+        
     }
 
 

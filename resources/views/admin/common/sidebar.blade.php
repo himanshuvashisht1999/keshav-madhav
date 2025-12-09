@@ -147,7 +147,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             class="{{ str_contains($page_url, 'admin/sales-order') ? 'nav-link active' : 'nav-link' }}"
                             style="position:static;">
                             <i class="nav-icon fas fa-shopping-cart"></i>
-                            <p>Sales Order</p>
+                            <p>Corporate Order</p>
                         </a>
                     </li>
                     <li class="nav-item">

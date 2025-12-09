@@ -21,6 +21,8 @@ use App\Models\OrderProductItem;
 use App\Models\OrderProductItemTransaction;
 use App\Models\ItemStock;
 use App\Models\WarehouseDetail;
+use App\Models\MasterSizeMeasurement;
+use App\Models\MasterColor;
 
 
 use App\Http\DataTable\Admin\ProductOrderDataTable as DataTable;
@@ -53,7 +55,7 @@ class ProductOrderService {
         DB::beginTransaction();
 
         try {
-
+            dd($request->all());
             $save_data_main = new OrderMain;
             $save_data_main->sku = '';
             $save_data_main->expected_delivery_date = $request->expected_delivery_date;
@@ -623,6 +625,14 @@ class ProductOrderService {
         $data = getCuttingSubStages();
         return $data;
     }
-    
 
+    function product_sizes(){
+        $data = MasterSizeMeasurement::where('status',1)->orderBy('id','asc')->get();
+        return $data;
+    }
+    
+    function getColours(){
+        $data = MasterColor::where('status',1)->orderBy('id','asc')->get();
+        return $data;
+    }
 }
