@@ -11,6 +11,8 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Models\OrderMain;
 use App\Models\Package;
 
+use App\Exports\ProductionDetailExport;
+use Maatwebsite\Excel\Facades\Excel;
 class ReportService {
     public function __construct(
         DataTable $datatable, 
@@ -58,19 +60,37 @@ class ReportService {
         return $data;
     }
 
-    public function generateProductionExcelSingle(Request $request){
+    public function generateProductionExcelSingle(Request $request)
+    {
         $order_main_id = $request->id;
-        
 
-    }
-
-    public function productionDetail(Request $request){
-        $data = OrderMain::with([
-            'customer',                                   // MasterCustomer
+        $orderMain = OrderMain::with([
+            'customer',
             'orders.products.product_details.product_detail_stocks',
             'orders.products.order_stages.stage',
             'orders.products.order_stage_trnsactions',
             'packages.package_boxes.package_boxes_items',
+        ])->findOrFail($order_main_id);
+
+        $fileName = 'production-detail-' . ($orderMain->sku ?? $orderMain->id) . '.xls';
+
+        // Render Blade view into HTML
+        $html = view('admin.reports.production_detail_excel', compact('orderMain'))->render();
+
+        return response($html)
+            ->header('Content-Type', 'application/vnd.ms-excel; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
+    }
+
+    public function productionDetail(Request $request){
+        $data = OrderMain::with([
+            'customer',
+            'orders.products.product_details.product_detail_stocks',
+            'orders.products.order_stages.stage',
+            'orders.products.order_stage_trnsactions',
+            'package.package_boxes.package_boxes_items',
         ])->findOrFail($request->id);
 
         return $data;

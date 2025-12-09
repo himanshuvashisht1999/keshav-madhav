@@ -36,5 +36,9 @@ class OrderMain extends Model
         return $this->hasMany(Package::class, 'order_main_id');
     }
 
+    public function package(){
+        return $this->hasOne('App\Models\Package','order_main_id','id');
+    }
+
     
 }
