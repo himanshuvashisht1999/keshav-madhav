@@ -4,10 +4,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MasterSizeMeasurement extends Model
+class MasterSize extends Model
 {
     use HasFactory;
-    protected $table= 'master_size_measurements';
+    protected $table= 'master_size';
     protected $fillable = [
         'id',
         'sno',
@@ -15,11 +15,7 @@ class MasterSizeMeasurement extends Model
         'sub_company_id',
         'project_id',
         'sku',
-        'name',
-        'size_group',
-        'size_selection_id',
-        'measurement',
-        'base_cloth_consumption',
+        'size',
         'status',
         'created_at',
         'updated_at'

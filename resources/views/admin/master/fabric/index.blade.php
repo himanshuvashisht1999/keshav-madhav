@@ -44,34 +44,16 @@
                                         <input type="text" class="form-control" name="name" id="name"
                                             autocomplete="off">
                                     </td>
+                                    
                                     <td>
-                                        <input type="text" class="form-control" name="sku" id="sku"
-                                            autocomplete="off">
-                                    </td>
-                                    <td>
-                                        <select class="form-control" name="dye_id" id="dye_id" autocomplete="off">
+                                        <select class="form-control" name="vendor_id" id="vendor_id" autocomplete="off">
                                             <option value="">ALL</option>
-                                            @foreach ($fab_dye_data as $single_data)
-                                                <option value="{{ $single_data->id }}">{{ $single_data->sku }}</option>
+                                            @foreach ($vendor_data as $single_data)
+                                                <option value="{{ $single_data->id }}" >{{ $single_data->name }}</option>
                                             @endforeach
                                         </select>
                                     </td>
-                                    <!-- <td>
-                                    <select class="form-control" name="width_id" id="width_id" autocomplete="off">
-                                        <option value="">ALL</option>
-                                        @foreach ($fab_width_data as $single_data)
-    <option value="{{ $single_data->id }}" >{{ $single_data->name }}</option>
-    @endforeach
-                                    </select>
-                                </td> -->
-                                    <td>
-                                        <select class="form-control" name="gsm_id" id="gsm_id" autocomplete="off">
-                                            <option value="">ALL</option>
-                                            @foreach ($fab_gsm_data as $single_data)
-                                                <option value="{{ $single_data->id }}">{{ $single_data->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
+                                    
                                     <td>
                                         <select class="form-control" name="composition_id" id="composition_id"
                                             autocomplete="off">
@@ -90,12 +72,9 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Name</th>
-                                    <th>SKU</th>
-                                    <th>Dye</th>
-                                    <th>GSM</th>
+                                    <th>Supplier Name</th>
                                     <th>Composition</th>
                                     <th>Image</th>
-
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -135,9 +114,9 @@
                     data: function(d) {
                         d.id = $('#id').val();
                         d.name = $('#name').val();
-                        d.sku = $('#sku').val();
-                        d.dye_id = $('#dye_id').val();
-                        d.gsm_id = $('#gsm_id').val();
+                        d.vendor_id = $('#vendor_id').val();
+                        // d.dye_id = $('#dye_id').val();
+                        // d.gsm_id = $('#gsm_id').val();
                         d.composition_id = $('#composition_id').val();
 
                     },
@@ -152,16 +131,8 @@
                         name: 'name'
                     },
                     {
-                        data: 'sku',
-                        name: 'sku'
-                    },
-                    {
-                        data: 'dye_id',
-                        name: 'dye_id'
-                    },
-                    {
-                        data: 'gsm_id',
-                        name: 'gsm_id'
+                        data: 'vendor_id',
+                        name: 'vendor_id'
                     },
                     {
                         data: 'composition_id',
@@ -203,19 +174,12 @@
                 oTable.draw();
                 e.preventDefault();
             });
-            $('#dye_id').on('change', function(e) {
-                oTable.draw();
-                e.preventDefault();
-            });
-            $('#gsm_id').on('change', function(e) {
-                oTable.draw();
-                e.preventDefault();
-            });
+           
             $('#composition_id').on('change', function(e) {
                 oTable.draw();
                 e.preventDefault();
             });
-            $('#sku').on('keyup', function(e) {
+            $('#vendor_id').on('change', function(e) {
                 oTable.draw();
                 e.preventDefault();
             });

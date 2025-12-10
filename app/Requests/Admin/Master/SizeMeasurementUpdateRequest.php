@@ -21,11 +21,10 @@ class SizeMeasurementUpdateRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'size_type' => 'required',
-            'size_selection' => 'required',
-            'measurement' => 'required',
+            'name' => 'required|unique:master_size_measurements,name,' . $request->id,
+            'size_group' => 'required',
             'status' =>'required',
-            'sku'    => 'required|unique:fabric_dye,sku,' . $request->id,
+            // 'sku'    => 'required|unique:master_size_measurements,sku,' . $request->id,
         ];
     }
 

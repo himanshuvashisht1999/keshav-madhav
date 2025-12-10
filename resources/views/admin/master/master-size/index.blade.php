@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Manage Size Group</h1>
+                    <h1>Manage Product Size</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Size Group</li>
+                        <li class="breadcrumb-item active">Manage Product Size</li>
                     </ol>
                 </div>
             </div>
@@ -28,7 +28,7 @@
                         <h3 class="card-title">Manage Product Size</h3>
                     </div>
                     <div class="col-3 card-header">
-                        <a href="{{route('admin.master.size-measurement.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Product Size</a>
+                        <a href="{{route('admin.master.size.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Product Size</a>
                     </div>
                 </div> -->
                 
@@ -40,12 +40,9 @@
                         <td>
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
+                       
                         <td>
-                            <input type="text" class="form-control" name="name" id="name" autocomplete="off">
-                        </td>
-                        
-                        <td>
-                            <input type="text" class="form-control" name="size_group" id="size_group" autocomplete="off">
+                            <input type="text" class="form-control" name="size" id="size" autocomplete="off">
                         </td>
                         <td>
                             <select class="form-control" name="status" id="status" autocomplete="off">
@@ -60,23 +57,12 @@
                     </tr>
                   <tr>
                     <th>ID</th>
-                    <th>Name</th>
-                    <th>Size Group</th>
+                    <th>Size</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
                   </thead>
-                  <tbody>
-                  <!-- <tr>
-                    <td>1</td>
-                    <td>wefds</td>
-                    <td>Win 95+</td>
-                    <td> 4</td>
-                    <td>X</td>
-                  </tr> -->
-                  
-                  </tbody>
-                  
+                  <tbody></tbody>
                 </table>
               </div>
             </div>
@@ -95,29 +81,27 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.master.size-measurement.indexList') !!}',
+                url: '{!! route('admin.master.size.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
-                    d.name = $('#name').val();
-                    d.size_group = $('#size_group').val();
+                    d.size = $('#size').val();
 					d.status = $('#status').val();
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'name', name: 'name'},
-                {data: 'size_group', name: 'size_group'},
+                {data: 'size', name: 'size'},
                 {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Size Group',
+                    text: 'Add Master Size',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.master.size-measurement.create') }}";
+                        window.location.href = "{{ route('admin.master.size.create') }}";
                     }
                 }
             ]
@@ -133,54 +117,21 @@
             e.preventDefault();
         });
 
-        $('#size_selection').on('keyup', function (e) {
+        $('#size').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
-
-        $('#measurement').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-       
 
         $('#status').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
-        
-        $('#sku').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#size_type').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
     });
 
     $(document).ready(function () {
         
     });
 
-    function deleteData(id){
-        Swal.fire({
-            title: "Are you sure?",
-            text: "You won't be able to revert this!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, delete it!"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.master.size-measurement.delete', ['id' => '']) }}" + id;
-            }
-        });
-    }
 </script>
 
 @endsection
