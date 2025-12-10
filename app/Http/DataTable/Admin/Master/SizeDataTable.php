@@ -3,34 +3,31 @@
 namespace App\Http\DataTable\Admin\Master;
 
 use Illuminate\Http\Request;
-use App\Models\MasterSizeMeasurement;
+use App\Models\MasterSize;
 use Yajra\DataTables\Facades\DataTables;
 
-class SizeMeasurementDataTable  {
+class SizeDataTable  {
 
-    public function __construct(MasterSizeMeasurement $master_size_measurement) {
-        $this->master_size_measurement = $master_size_measurement;
+    public function __construct(MasterSize $master_size) {
+        $this->master_size = $master_size;
     }
 
     public function indexList($request){
-        $queue = MasterSizeMeasurement::query();
+        $queue = MasterSize::query();
         
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id','asc');
-                
+
+                if ($request->has('size') && $request->filled('size')) {
+                    $query->where('size', 'like', "%" . $request->get('size') . "%");
+                }
                 if ($request->has('status') && $request->filled('status')) {
                     $query->where('status', $request->get('status'));
                 }
-                if ($request->has('name') && !empty($request->name)) {
-                    $query->where('name', 'like', "%{$request->get('name')}%");
-                }
-                if ($request->has('size_group') && !empty($request->size_group)) {
-                    $query->where('size_group', 'like', "%{$request->get('size_group')}%");
-                }
                 
             }) 
-            
+           
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
@@ -38,7 +35,7 @@ class SizeMeasurementDataTable  {
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
                 return '
-                <a href="' . route('admin.master.size-measurement.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                <a href="' . route('admin.master.size.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
                 ';
             })
             

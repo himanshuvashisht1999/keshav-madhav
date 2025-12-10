@@ -1,12 +1,56 @@
 @extends('admin.layouts.app')
 @section('content')
+
+<style>
+    .inner-wrap label {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        cursor: pointer;
+    }
+    .toggle-next {
+        border-radius: 6px;
+        background: #fff;
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .toggle-next:hover {
+        border-color: #007bff;
+    }
+
+
+    .ajax-link {
+        display: none;
+    }
+
+    .checkboxes {
+        display: none;
+        border: 1px solid #ccc;
+        border-top: 0;
+        position: absolute;
+        width: 100%;
+        background: #fff;
+        z-index: 99;
+        border-radius: 0 0 6px 6px;
+    }
+
+    .inner-wrap {
+        padding: 5px 10px;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+
+</style>
 <div class="content-wrapper">
     <!-- Content Header (Page header) -->
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Product Size</h1>
+                    <h1>Product Size Group</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
@@ -23,14 +67,23 @@
         <div class="container-fluid">
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
-                <div class="card-header">
-                    <h3 class="card-title">Create Product Size</h3>
-                </div>
                 <form action="{{route('admin.master.size-measurement.store')}}" method="post" enctype="multipart/form-data">
                     @csrf
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Size Name</label>
+                                    <input type="text" name="name" class="form-control" placeholder="Enter size name" value="{{old('name')}}">
+                                    
+                                    @if ($errors->has('name'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('name') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div> 
+                            {{-- <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Size Type</label>
                                     <select name="size_type" id="size_type" class="form-control select2" style="width: 100%;">
@@ -44,52 +97,37 @@
                                         </span>
                                     @endif
                                 </div>
-                            </div>   
-                            <div class="col-md-4" >
+                            </div>    --}}
+                            <div class="col-md-6">
                                 <div class="form-group">
-                                    <label id="label1" for="label1">To</label>
-                                    <input type="text" name="size_selection" class="form-control" placeholder="Enter start size" value="{{old('size selection')}}">
-                                    @if ($errors->has('size_selection'))
+                                    <label>Size Group</label>
+                                    <div class="wrapper" style="position: relative;">
+                                        
+                                        <!-- Button to open dropdown -->
+                                        <button type="button" class="form-control toggle-next">
+                                            Select Size group
+                                        </button>
+
+                                        <!-- Dropdown -->
+                                        <div class="checkboxes" id="sizesCheckboxes" >
+                                            <div class="inner-wrap">
+                                                @foreach ($sizes as $size_data)
+                                                <label>
+                                                    <input type="checkbox" name="size_group[]" value="{{$size_data->size}}" class="ckkBox val" />
+                                                    <span class="ml-1"> {{$size_data->size}}</span>
+                                                </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @if ($errors->has('size_group'))
                                         <span class="invalid-feedback d-block">
-                                        {{ $errors->first('size_selection') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="col-md-4" id="measurement_div">
-                                <div class="form-group">
-                                    <label id="label2" for="label2">From</label>
-                                    <input type="number" name="measurement" class="form-control" placeholder="Enter end size" step="1" min="1" value="{{old('measurement')}}">
-                                    @if ($errors->has('measurement'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('measurement') }}
+                                        {{ $errors->first('size_group') }}
                                         </span>
                                     @endif
                                 </div>
                             </div>
 
-                            {{-- <div class="col-md-4" >
-                                <div class="form-group">
-                                    <label id="label1" for="label1">Selection</label>
-                                    <input type="text" name="size_selection" class="form-control" placeholder="Enter size selection" value="{{old('size selection')}}">
-                                    @if ($errors->has('size_selection'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('size_selection') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="col-md-4" id="measurement_div">
-                                <div class="form-group">
-                                    <label id="label2" for="label2">Measurement</label>
-                                    <input type="number" name="measurement" class="form-control" placeholder="Enter measurement" step="1" min="1" value="{{old('measurement')}}">
-                                    @if ($errors->has('measurement'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('measurement') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div> --}}
 
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -106,7 +144,7 @@
                                     @endif
                                 </div>
                             </div>   
-                            <div class="col-md-6" style="display: none">
+                            {{-- <div class="col-md-6" style="display: none">
                                 <div class="form-group">
                                     <label for="sku">SKU</label>
                                     <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU">
@@ -116,7 +154,7 @@
                                         </span>
                                     @endif
                                 </div>
-                            </div>                         
+                            </div>                          --}}
                            
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">
@@ -132,78 +170,54 @@
     </section>
 </div>
 <script>
-    function generateSKU() {
-        // let size_type = document.querySelector("select[name='size_type'] option:checked").value.trim();
-        let size_selection = document.querySelector("input[name='size_selection']").value.trim();
-        let measurement = document.querySelector("input[name='measurement']").value.trim();
-        let part1 = size_selection.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        let part2 = measurement.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        let sku = part1 + "-" + part2;
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited || skuInput.value === "") {
-            skuInput.value = sku;
-        }
-    }
+    $(document).ready(function() {
+        $(function () {
 
-    document.querySelector("input[name='size_selection']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
+            // Toggle dropdown
+            $('.toggle-next').click(function () {
+                $(this).next('.checkboxes').slideToggle(200);
+            });
 
-    document.querySelector("input[name='measurement']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
+            // Checkbox logic
+            $('.ckkBox').change(function () {
+                updateSelectionText(this);
+            });
 
-    // Mark as manually edited when user types in SKU
-    document.getElementById("sku").addEventListener("input", function() {
-        this.dataset.edited = true;
-    });
-   
-    $(document).ready(function () {
-        updateLabels();
-        $("#size_type").on("change", function () {
-            updateLabels();
         });
 
-        function updateLabels() {
-            let type = $("#size_type").val(); // 0 = Set, 1 = Individual
-            if (type == "0") {
-                // Individual selected
-                $("#label1").text("To");
-                $("input[name='size_selection']").attr({
-                    "placeholder": "Enter start size",
-                    "type": "number",
-                    "step": "1",
-                    "min": "1"
-                });
+        // -------- Update button text --------
+        function updateSelectionText(elem) {
+            let wrapper = $(elem).closest('.wrapper');
+            let button = wrapper.find('.toggle-next');
 
+            let checked = wrapper.find('.val:checked');
 
-                $("#label2").text("From");
-                $("input[name='measurement']").attr("placeholder", "Enter end size");
-
-            } else {
-                // Set selected
-                $("#label1").text("Selection");
-                $("input[name='size_selection']")
-                .attr({
-                    "placeholder": "Enter size selection",
-                    "type": "text"
-                })
-                .removeAttr("step")
-                .removeAttr("min");
-
-                $("#label2").text("Measurement");
-                $("input[name='measurement']").attr("placeholder", "Enter measurement");
-
+            if (checked.length === 0) {
+                button.text("Select Categories");
+                return;
             }
+
+
+            let names = [];
+            checked.each(function () {
+                names.push($(this).next().text());
+            });
+
+            button.text(names.join(", "));
         }
+
+        $(document).mouseup(function (e) {
+            $(".wrapper").each(function () {
+                let dropdown = $(this).find('.checkboxes');
+                let button = $(this).find('.toggle-next');
+
+                if (!dropdown.is(e.target) && dropdown.has(e.target).length === 0 &&
+                    !button.is(e.target) && button.has(e.target).length === 0) {
+                    dropdown.slideUp(200);
+                }
+            });
+        });
 
     });
 </script>
-
 @endsection

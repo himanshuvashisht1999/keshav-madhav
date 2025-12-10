@@ -17,6 +17,7 @@ class Fabric extends Model
         'sub_company_id',
         'project_id',
         'sku',
+        'vendor_id',
         'name',
         'dye_id',
         'width_id',
@@ -52,6 +53,12 @@ class Fabric extends Model
     {
         return $this->hasOne('App\Models\FabricComposition', 'id', 'composition_id');
     }
+
+    public function fabric_vendor()
+    {
+        return $this->hasOne('App\Models\Vendor', 'id', 'vendor_id');
+    }
+
     public function fabric_dye()
     {
         return $this->hasOne('App\Models\FabricDye', 'id', 'dye_id');

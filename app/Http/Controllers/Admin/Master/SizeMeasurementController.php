@@ -3,6 +3,8 @@ namespace App\Http\Controllers\Admin\Master;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\Master\SizeMeasurementService as Service;
+use App\Services\Admin\Master\SizeService;
+
 use App\Requests\Admin\Master\SizeMeasurementStoreRequest;
 use App\Requests\Admin\Master\SizeMeasurementUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
@@ -10,8 +12,9 @@ use Auth;
 
 class SizeMeasurementController extends Controller { 
     protected $service;
-    public function __construct(Service $service) {
+    public function __construct(Service $service, SizeService $SizeService) {
         $this->service = $service;
+        $this->SizeService = $SizeService;
     }
     public function index(){
         return view('admin.master.size-measurement.index');
@@ -20,7 +23,8 @@ class SizeMeasurementController extends Controller {
         return $this->service->indexList($request);
     }
     public function create(){
-        return view('admin.master.size-measurement.create');
+        $response['sizes'] = $this->SizeService->getSizes();
+        return view('admin.master.size-measurement.create', $response);
     }
     public function store(SizeMeasurementStoreRequest $request){
         $data = $this->service->store($request);
@@ -32,6 +36,9 @@ class SizeMeasurementController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        $export_sizes = explode(',', $response['data']->size_group);
+        $response['selectedSizes'] = $export_sizes ?? [];
+        $response['sizes'] = $this->SizeService->getSizes();
         $response['size_selections'] = $this->service->size_selections();
         return view('admin.master.size-measurement.edit',$response);
     }

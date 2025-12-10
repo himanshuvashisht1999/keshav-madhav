@@ -28,11 +28,14 @@ class SizeMeasurementService {
     public function store(Request $request){
 
         $save_data = new MasterSizeMeasurement;
-        $save_data->size_type = $request->size_type ?? 0;
-        $save_data->size_selection = $request->size_selection;
-        // for size type set size_selection as to and measurement as from
-        $save_data->measurement = $request->measurement;
-        $save_data->sku = $request->sku;
+        $save_data->name = $request->name;
+        $save_data->size_group =  implode(',', $request->size_group);
+
+        // $save_data->size_type = $request->size_type ?? 0;
+        // $save_data->size_selection = $request->size_selection;
+        // // for size type set size_selection as to and measurement as from
+        // $save_data->measurement = $request->measurement;
+        $save_data->sku = strtoupper($request->name); // convert upper case
         $save_data->status = $request->status;
         $save_data->save();
         return true;
@@ -44,9 +47,9 @@ class SizeMeasurementService {
     }
     public function update(Request $request){
         $update_data = MasterSizeMeasurement::find($request->id);
-        $update_data->size_type = $request->size_type ?? 0;
-        $update_data->size_selection = $request->size_selection;
-        $update_data->measurement = $request->measurement;
+        $update_data->name = $request->name;
+        $update_data->size_group =  implode(',', $request->size_group);
+        $update_data->sku = strtoupper($request->name); // convert upper case
         $update_data->status = $request->status;
         $update_data->save();
         return true;

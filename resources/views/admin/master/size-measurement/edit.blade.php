@@ -1,5 +1,49 @@
 @extends('admin.layouts.app')
 @section('content')
+<style>
+    .inner-wrap label {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        cursor: pointer;
+    }
+    .toggle-next {
+        border-radius: 6px;
+        background: #fff;
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .toggle-next:hover {
+        border-color: #007bff;
+    }
+
+
+    .ajax-link {
+        display: none;
+    }
+
+    .checkboxes {
+        display: none;
+        border: 1px solid #ccc;
+        border-top: 0;
+        position: absolute;
+        width: 100%;
+        background: #fff;
+        z-index: 99;
+        border-radius: 0 0 6px 6px;
+    }
+
+    .inner-wrap {
+        padding: 5px 10px;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+
+</style>
+
 <div class="content-wrapper">
     <!-- Content Header (Page header) -->
     <section class="content-header">
@@ -31,67 +75,47 @@
                     <input type="hidden" name="id" value="{{$data->id}}">
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>Size Type</label>
-                                    <select name="size_type" id="size_type" class="form-control select2" style="width: 100%;">
-                                        <!-- <option value="">Select</option> -->
-                                        <option value="0" {{old('size_type') == '0' ? 'selected' : ''}}>Set</option>
-                                        <option value="1" {{old('size_type') == '1' ? 'selected' : ''}}>Individual</option>
-                                    </select>
-                                    @if ($errors->has('size_type'))
+                                    <label>Name</label>
+                                    <input type="text" name="name" class="form-control" placeholder="Enter size name" value="{{$data->name}}">
+                                    @if ($errors->has('name'))
                                         <span class="invalid-feedback d-block">
-                                        {{ $errors->first('size_type') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>   
-                            <div class="col-md-4" >
-                                <div class="form-group">
-                                    <label id="label1" for="label1">To</label>
-                                    <input type="text" name="size_selection" class="form-control" placeholder="Enter start size" value="{{$data->size_selection}}">
-                                    @if ($errors->has('size_selection'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('size_selection') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="col-md-4" id="measurement_div">
-                                <div class="form-group">
-                                    <label id="label2" for="label2">From</label>
-                                    <input type="number" name="measurement" class="form-control" placeholder="Enter end size" step="1" min="1" value="{{$data->measurement}}">
-                                    @if ($errors->has('measurement'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('measurement') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                            {{-- <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">Size</label>
-                                    <input type="text" name="size_selection" class="form-control" placeholder="Enter size selection" value="{{$data->size_selection}}">
-                                    @if ($errors->has('size_selection'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('size_selection') }}
+                                        {{ $errors->first('name') }}
                                         </span>
                                     @endif
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Measurement</label>
-                                    <input type="number" name="measurement" class="form-control" placeholder="Enter measurement" step="1" min="1" value="{{$data->measurement}}">
-                                    @if ($errors->has('measurement'))
+                                    <label>Size Group</label>
+                                    <div class="wrapper" style="position: relative;">
+                                        
+                                        <!-- Button to open dropdown -->
+                                        <button type="button" class="form-control toggle-next">
+                                            Select Size group
+                                        </button>
+
+                                        <!-- Dropdown -->
+                                        <div class="checkboxes" id="sizesCheckboxes" >
+                                            <div class="inner-wrap">
+                                                @foreach ($sizes as $size_data)
+                                                <label>
+                                                    <input type="checkbox" name="size_group[]" value="{{$size_data->size}}" class="ckkBox val"  @if( in_array($size_data->size, $selectedSizes)) checked @endif />
+                                                    <span class="ml-1"> {{$size_data->size}}</span>
+                                                </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @if ($errors->has('size_group'))
                                         <span class="invalid-feedback d-block">
-                                        {{ $errors->first('measurement') }}
+                                        {{ $errors->first('size_group') }}
                                         </span>
                                     @endif
                                 </div>
-                            </div> --}}
-                           
-
+                            </div>
+                            
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Status</label>
@@ -132,46 +156,70 @@
     </section>
 </div>
 <script>
-    $(document).ready(function () {
-        updateLabels();
-        $("#size_type").on("change", function () {
-            updateLabels();
-        });
+  $(document).ready(function() {
 
-        function updateLabels() {
-            let type = $("#size_type").val(); // 0 = Set, 1 = Individual
-            if (type == "0") {
-                // Individual selected
-                $("#label1").text("To");
-                $("input[name='size_selection']").attr({
-                    "placeholder": "Enter start size",
-                    "type": "number",
-                    "step": "1",
-                    "min": "1"
-                });
+    // Toggle dropdown
+    $('.toggle-next').click(function () {
+        $(this).next('.checkboxes').slideToggle(200);
+    });
 
+    // Checkbox logic
+    $('.ckkBox').change(function () {
+        updateSelectionText(this);
+    });
 
-                $("#label2").text("From");
-                $("input[name='measurement']").attr("placeholder", "Enter end size");
+    // Update button text function
+    function updateSelectionText(elem) {
+        let wrapper = $(elem).closest('.wrapper');
+        let button = wrapper.find('.toggle-next');
 
-            } else {
-                // Set selected
-                $("#label1").text("Selection");
-                $("input[name='size_selection']")
-                .attr({
-                    "placeholder": "Enter size selection",
-                    "type": "text"
-                })
-                .removeAttr("step")
-                .removeAttr("min");
+        let checked = wrapper.find('.val:checked');
 
-                $("#label2").text("Measurement");
-                $("input[name='measurement']").attr("placeholder", "Enter measurement");
-
-            }
+        if (checked.length === 0) {
+            button.text("Select Categories");
+            return;
         }
 
-    });
-</script>
+        let names = [];
+        checked.each(function () {
+            names.push($(this).next().text());
+        });
 
+        button.text(names.join(", "));
+    }
+
+    // ---- On Page Load: Update Selected values in button ----
+    $('.wrapper').each(function () {
+        let checked = $(this).find('.val:checked');
+        let button = $(this).find('.toggle-next');
+
+        if (checked.length === 0) {
+            button.text("Select Categories");
+            return;
+        }
+
+        let names = [];
+        checked.each(function () {
+            names.push($(this).next().text());
+        });
+
+        button.text(names.join(", "));
+    });
+
+    // Hide dropdown when clicking outside
+    $(document).mouseup(function (e) {
+        $(".wrapper").each(function () {
+            let dropdown = $(this).find('.checkboxes');
+            let button = $(this).find('.toggle-next');
+
+            if (!dropdown.is(e.target) && dropdown.has(e.target).length === 0 &&
+                !button.is(e.target) && button.has(e.target).length === 0) {
+                dropdown.slideUp(200);
+            }
+        });
+    });
+
+});
+
+</script>
 @endsection

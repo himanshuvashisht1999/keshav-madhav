@@ -20,27 +20,30 @@ class FabricDataTable
                 if ($request->has('name') && !empty($request->name)) {
                     $query->where('name', 'like', "%{$request->get('name')}%");
                 }
-                if ($request->has('sku') && !empty($request->sku)) {
-                    $query->where('sku', 'like', "%{$request->get('sku')}%");
-                }
-                if ($request->has('dye_id') && $request->filled('dye_id')) {
-                    // dd($request->get('dye_id'));
-                    $query->where('dye_id', $request->get('dye_id'));
-                }
-                if ($request->has('width_id') && $request->filled('width_id')) {
-                    $query->where('width_id', $request->get('width_id'));
-                }
-                if ($request->has('weave_type_id') && $request->filled('weave_type_id')) {
-                    $query->where('weave_type_id', $request->get('weave_type_id'));
-                }
-                if ($request->has('gsm_id') && $request->filled('gsm_id')) {
-                    $query->where('gsm_id', $request->get('gsm_id'));
-                }
+                // if ($request->has('sku') && !empty($request->sku)) {
+                //     $query->where('sku', 'like', "%{$request->get('sku')}%");
+                // }
+                // if ($request->has('dye_id') && $request->filled('dye_id')) {
+                //     // dd($request->get('dye_id'));
+                //     $query->where('dye_id', $request->get('dye_id'));
+                // }
+                // if ($request->has('width_id') && $request->filled('width_id')) {
+                //     $query->where('width_id', $request->get('width_id'));
+                // }
+                // if ($request->has('weave_type_id') && $request->filled('weave_type_id')) {
+                //     $query->where('weave_type_id', $request->get('weave_type_id'));
+                // }
+                // if ($request->has('gsm_id') && $request->filled('gsm_id')) {
+                //     $query->where('gsm_id', $request->get('gsm_id'));
+                // }
                 if ($request->has('composition_id') && $request->filled('composition_id')) {
                     $query->where('composition_id', $request->get('composition_id'));
                 }
                 if ($request->has('path') && $request->filled('path')) {
                     $query->where('path', $request->get('path'));
+                }
+                if ($request->has('vendor_id') && $request->filled('vendor_id')) {
+                    $query->where('vendor_id', $request->get('vendor_id'));
                 }
             })
 
@@ -48,14 +51,17 @@ class FabricDataTable
                 $status = $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
             })
-            ->editColumn('dye_id', function ($queue) {
-                return $queue?->fabric_dye->sku;
+            ->editColumn('vendor_id', function ($queue) {
+                return $queue?->fabric_vendor->name ?? 'N/A';
             })
-            ->editColumn('gsm_id', function ($queue) {
-                return $queue?->fabric_gsm->name;
-            })
+            // ->editColumn('dye_id', function ($queue) {
+            //     return $queue?->fabric_dye->sku;
+            // })
+            // ->editColumn('gsm_id', function ($queue) {
+            //     return $queue?->fabric_gsm->name;
+            // })
             ->editColumn('composition_id', function ($queue) {
-                return $queue?->fabric_composition->name;
+                return $queue?->fabric_composition->name ?? 'N/A';
             })
             ->editColumn('image', function ($queue) {
                 $image = $queue->image;
@@ -70,7 +76,7 @@ class FabricDataTable
                 ';
             })
 
-            ->rawColumns(['action', 'status', 'dye_id', 'gsm_id', 'composition_id', 'image'])
+            ->rawColumns(['action', 'status', 'vendor_id','composition_id', 'image'])
             ->make(true);
     }
 }
