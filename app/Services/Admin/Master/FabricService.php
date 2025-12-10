@@ -47,13 +47,14 @@ class FabricService
         }
         
         $save_data = new Fabric;
-        $save_data->sku = $request->sku;
+        $save_data->sku = strtoupper($request->name);
         $save_data->name = $request->name;
-        $save_data->dye_id = $request->dye_id;
-        $save_data->width_id = $request->width_id;
-        $save_data->weave_type_id = $request->weave_type_id;
-        $save_data->gsm_id = $request->gsm_id;
-        $save_data->composition_id = $request->composition_id;
+        $save_data->vendor_id = $request->vendor_id;
+        // $save_data->dye_id = $request->dye_id;
+        // $save_data->width_id = $request->width_id;
+        // $save_data->weave_type_id = $request->weave_type_id;
+        // $save_data->gsm_id = $request->gsm_id;
+        $save_data->composition_id = $request->composition_id ?? NULL;
         $save_data->image = $imgName;
         $save_data->status = 1;
         $save_data->save();
@@ -104,11 +105,13 @@ class FabricService
         }
 
         $update_data->name = $request->name;
-        $update_data->dye_id = $request->dye_id;
-        $update_data->width_id = $request->width_id;
-        $update_data->weave_type_id = $request->weave_type_id;
-        $update_data->gsm_id = $request->gsm_id;
-        $update_data->composition_id = $request->composition_id;
+        $update_data->sku = strtoupper($request->name);
+        $update_data->vender_id = $request->vendor_id;
+        // $update_data->dye_id = $request->dye_id;
+        // $update_data->width_id = $request->width_id;
+        // $update_data->weave_type_id = $request->weave_type_id;
+        // $update_data->gsm_id = $request->gsm_id;
+        $update_data->composition_id = $request->composition_id ?? NULL;
         $update_data->status = 1;
         $update_data->save();
 

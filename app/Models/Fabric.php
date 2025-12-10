@@ -53,6 +53,12 @@ class Fabric extends Model
     {
         return $this->hasOne('App\Models\FabricComposition', 'id', 'composition_id');
     }
+
+    public function fabric_vendor()
+    {
+        return $this->hasOne('App\Models\Vendor', 'id', 'vendor_id');
+    }
+
     public function fabric_dye()
     {
         return $this->hasOne('App\Models\FabricDye', 'id', 'dye_id');

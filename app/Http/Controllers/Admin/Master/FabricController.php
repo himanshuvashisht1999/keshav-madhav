@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Admin\Master;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\Master\FabricService as Service;
+use App\Services\Admin\FabricReceiptService;
 use App\Requests\Admin\Master\FabricStoreRequest;
 use App\Requests\Admin\Master\FabricUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
@@ -10,14 +11,15 @@ use Auth;
 
 class FabricController extends Controller { 
     protected $service;
-    public function __construct(Service $service) {
+    public function __construct(Service $service, FabricReceiptService $fabricReceiptService){ 
         $this->service = $service;
+        $this->fabricReceiptService = $fabricReceiptService;
     }
     public function index(){
-        $response['fab_dye_data'] = $this->service->fab_dye_data();
-        $response['fab_width_data'] = $this->service->fab_width_data();
-        $response['fab_weave_data'] = $this->service->fab_weave_data();
-        $response['fab_gsm_data'] = $this->service->fab_gsm_data();
+        $response['vendor_data'] = $this->fabricReceiptService->vendors();
+        // $response['fab_width_data'] = $this->service->fab_width_data();
+        // $response['fab_weave_data'] = $this->service->fab_weave_data();
+        // $response['fab_gsm_data'] = $this->service->fab_gsm_data();
         $response['fab_composition_data'] = $this->service->fab_composition_data();
       
         return view('admin.master.fabric.index',$response);
@@ -26,10 +28,11 @@ class FabricController extends Controller {
         return $this->service->indexList($request);
     }
     public function create(){
-        $response['fab_dye_data'] = $this->service->fab_dye_data();
-        $response['fab_width_data'] = $this->service->fab_width_data();
-        $response['fab_weave_data'] = $this->service->fab_weave_data();
-        $response['fab_gsm_data'] = $this->service->fab_gsm_data();
+        // $response['fab_dye_data'] = $this->service->fab_dye_data();
+        // $response['fab_width_data'] = $this->service->fab_width_data();
+        // $response['fab_weave_data'] = $this->service->fab_weave_data();
+        // $response['fab_gsm_data'] = $this->service->fab_gsm_data();
+        $response['vender_data'] = $this->fabricReceiptService->vendors();
         $response['fab_composition_data'] = $this->service->fab_composition_data();
         return view('admin.master.fabric.create',$response);
     }

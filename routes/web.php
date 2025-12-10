@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\StockController as AdminStockController;
 use App\Http\Controllers\Admin\Master\ProductionGoodsController as AdminProductionGoodsController;
 use App\Http\Controllers\Admin\Master\ProductionGoodsItemController as AdminProductionGoodsItemController;
 use App\Http\Controllers\Admin\Master\SizeMeasurementController as AdminSizeMeasurementController;
+use App\Http\Controllers\Admin\Master\SizeController as AdminSizeController;
 use App\Http\Controllers\Admin\PurchaseOrderMaterialController as AdminPurchaseOrderMaterialController;
 use App\Http\Controllers\Admin\ItemReceiptController as AdminItemReceiptController;
 use App\Http\Controllers\Admin\ItemStockController as AdminItemStockController;
@@ -297,6 +298,15 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/edit',[AdminSizeMeasurementController::class,'edit'])->name('edit');
             Route::post('/update',[AdminSizeMeasurementController::class,'update'])->name('update');
             Route::get('/delete',[AdminSizeMeasurementController::class,'delete'])->name('delete');
+        });
+
+        Route::prefix('master/size')->name('master.size.')->group(function () {
+            Route::get('/index',[AdminSizeController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminSizeController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminSizeController::class,'create'])->name('create');
+            Route::post('/store',[AdminSizeController::class,'store'])->name('store');
+            Route::get('/edit',[AdminSizeController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminSizeController::class,'update'])->name('update');
         });
 
         Route::prefix('master/product-stage')->name('master.product_stage.')->group(function () {
