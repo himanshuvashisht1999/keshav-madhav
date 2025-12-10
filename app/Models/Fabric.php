@@ -17,6 +17,7 @@ class Fabric extends Model
         'sub_company_id',
         'project_id',
         'sku',
+        'vendor_id',
         'name',
         'dye_id',
         'width_id',

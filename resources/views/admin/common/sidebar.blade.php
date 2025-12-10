@@ -102,14 +102,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                 </a>
                             </li>
                         </ul>
-                        <ul class="nav nav-treeview">
+                        <!-- <ul class="nav nav-treeview">
                             <li class="nav-item">
                                 <a href="{{route('admin.item_receipt.index')}}" class="nav-link {{ (request()->segment(2) == 'item-receipt') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Item</p>
                                 </a>
                             </li>
-                        </ul>
+                        </ul> -->
                         
                     </li>
                     <li class="{{ (str_contains($page_url, 'admin/stock') || str_contains($page_url, 'admin/item-stock')) ? 'nav-item menu-open' : 'nav-item' }}">
@@ -131,7 +131,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                 </a>
                             </li>
                         </ul>
-                        <ul class="nav nav-treeview">
+                        <!-- <ul class="nav nav-treeview">
                             <li class="nav-item">
                                <a href="{{ route('admin.item_stock.itemIndex') }}"
                                     class="{{ str_contains($page_url, 'admin/item-stock') ? 'nav-link active' : 'nav-link' }}"
@@ -140,7 +140,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <p>Item</p>
                                 </a>
                             </li>
-                        </ul>
+                        </ul> -->
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('admin.sales_order.create') }}"

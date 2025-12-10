@@ -25,7 +25,7 @@ class FabricReceiptStoreRequest extends FormRequest{
             'vendor_id' => 'required',
             'truck_number' => 'required',
             'time' => 'required',
-            'roll' => 'required',
+            //'roll' => 'required',
             'received_by' => 'required',
             'shipment_photo' => 'required',
             'challan_photo' => 'required',

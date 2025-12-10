@@ -10,15 +10,15 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Manage Fabric Receipt</h1>
+                <div class="col-sm-12">
+                    <h1 class="text-center">List of Fabric Receipts</h1>
                 </div>
-                <div class="col-sm-6">
+                <!-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
                         <li class="breadcrumb-item active">Manage Fabric Receipt</li>
                     </ol>
-                </div>
+                </div> -->
             </div>
         </div>
     </section>
@@ -82,7 +82,7 @@
                         <th>Vendor</th>
                         <th>Truck Number</th>
                         <th>Date & Time</th>
-                        <th>Packet</th>
+                        <th>Roll</th>
                         <th>Received By</th>
                         
                         <th>Action</th>

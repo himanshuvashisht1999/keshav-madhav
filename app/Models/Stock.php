@@ -17,6 +17,7 @@ class Stock extends Model
         'sku',
         'date',
         'goods_entry_number',
+        'master_product_sub_stage_id',
         'meter',
         'roll',
         'purchase_order_id',

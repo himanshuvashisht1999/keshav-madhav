@@ -70,7 +70,7 @@ class ProductOrderService {
 
 
             // Create main order
-            foreach ($request->product_design_number as $key => $single_data) {
+            foreach ($request->product_sku as $key => $single_data) {
                 $save_data = new Order;
                 $save_data->order_main_id = $save_data_main->id;
                 $save_data->sku = '';
@@ -92,7 +92,7 @@ class ProductOrderService {
 
                 // Loop through ordered products
             
-                $product_data = ProductionGoods::where('id', $single_data)->first();
+                $product_data = ProductionGoods::where('sku', $single_data)->first();
 
                 if ($product_data) {
                     $order_quantity = $request->product_quantity[$key];
