@@ -43,10 +43,11 @@ class FabricController extends Controller {
     
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
-        $response['fab_dye_data'] = $this->service->fab_dye_data();
-        $response['fab_width_data'] = $this->service->fab_width_data();
-        $response['fab_weave_data'] = $this->service->fab_weave_data();
-        $response['fab_gsm_data'] = $this->service->fab_gsm_data();
+        $response['vender_data'] = $this->fabricReceiptService->vendors();
+        // $response['fab_dye_data'] = $this->service->fab_dye_data();
+        // $response['fab_width_data'] = $this->service->fab_width_data();
+        // $response['fab_weave_data'] = $this->service->fab_weave_data();
+        // $response['fab_gsm_data'] = $this->service->fab_gsm_data();
         $response['fab_composition_data'] = $this->service->fab_composition_data();
         return view('admin.master.fabric.edit',$response);
     }

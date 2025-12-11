@@ -23,6 +23,7 @@ use App\Models\ItemStock;
 use App\Models\WarehouseDetail;
 use App\Models\MasterSizeMeasurement;
 use App\Models\MasterColor;
+use App\Models\CorporateOrderProduct;
 
 
 use App\Http\DataTable\Admin\ProductOrderDataTable as DataTable;
@@ -49,17 +50,26 @@ class ProductOrderService {
        
         return $this->datatable->indexListOrder($request);
     }
-
+    /// backup
     public function store(Request $request)
     {
         DB::beginTransaction();
-
+        // dd($request->all());
         try {
-            dd($request->all());
+            ////// corporate order photo upload
+            if($request->file('corporate_order_file')){
+                $image = $request->file('corporate_order_file');
+                $extImage = $image->getClientOriginalExtension();
+                $imgName = "corporate_order_file-".rand()."_".time().".".$extImage;
+                $destinationPath = public_path().'/assets/products';
+                $image->move($destinationPath, $imgName);
+            }
+
             $save_data_main = new OrderMain;
             $save_data_main->sku = '';
             $save_data_main->expected_delivery_date = $request->expected_delivery_date;
             $save_data_main->master_customer_id = $request->master_customer_id;
+            $save_data_main->corporate_order_file = $imgName ?? null;
             $save_data_main->status = 1;
             $save_data_main->save();
             $customer_data = MasterCustomer::where('id',$request->master_customer_id)->first();
@@ -70,7 +80,7 @@ class ProductOrderService {
 
 
             // Create main order
-            foreach ($request->product_sku as $key => $single_data) {
+            foreach ($request->designList as $key => $design_id) {
                 $save_data = new Order;
                 $save_data->order_main_id = $save_data_main->id;
                 $save_data->sku = '';
@@ -91,8 +101,7 @@ class ProductOrderService {
                 $return_data['status_code'] = 1;
 
                 // Loop through ordered products
-            
-                $product_data = ProductionGoods::where('sku', $single_data)->first();
+                $product_data = ProductionGoods::where('id', $design_id)->first();
 
                 if ($product_data) {
                     $order_quantity = $request->product_quantity[$key];
@@ -102,7 +111,7 @@ class ProductOrderService {
                     $save_order_product->order_id = $save_data->id;
                     $save_order_product->order_main_id = $save_data_main->id;
                     $save_order_product->product_type_sku = $product_data->type_of_garment;
-                    $save_order_product->product_sku = $single_data;
+                    $save_order_product->product_sku = $product_data->name_of_garment;
                     $save_order_product->quantity = $order_quantity;
                     $save_order_product->save();
 
@@ -115,7 +124,10 @@ class ProductOrderService {
                         // Save product detail
                         $save_order_detail = new OrderProductDetail;
                         $save_order_detail->order_product_id = $save_order_product->id;
-                        $save_order_detail->product_sku = $product_data->sku;
+                        $save_order_detail->product_sku = $product_data->name_of_garment;
+                        $save_order_detail->product_id = $design_id;  
+                        $save_order_detail->product_color_id = $request->colourList[$key];  
+                        $save_order_detail->product_size = $request->sizeList[$key];
                         $save_order_detail->fabric_sku = $fabric_sku;
                         $save_order_detail->meter = $fabric_meter;
                         $save_order_detail->order_quantity = $order_quantity;
@@ -206,6 +218,72 @@ class ProductOrderService {
             return $return_data;
         }
     }
+
+    // public function store(Request $request)
+    // {
+        
+    //     DB::beginTransaction();
+
+    //     try {
+    //         // dd($request->all());
+    //         $save_data_main = new OrderMain;
+    //         $save_data_main->sku = '';
+    //         $save_data_main->expected_delivery_date = $request->expected_delivery_date;
+    //         $save_data_main->master_customer_id = $request->master_customer_id;
+    //         $save_data_main->status = 1;
+    //         $save_data_main->save();
+    //         $customer_data = MasterCustomer::where('id',$request->master_customer_id)->first();
+    //         $firstThree = strtoupper(substr($customer_data->name, 0, 3));
+
+    //         $save_data_main->sku = $firstThree . "/". date('m/Y').'/' . $save_data_main->id;
+    //         $save_data_main->save();
+
+
+    //         // Create main order
+    //         foreach ($request->designList as $key => $design_id) {
+    //             $save_data = new Order;
+    //             $save_data->order_main_id = $save_data_main->id;
+    //             $save_data->sku = '';
+    //             $save_data->expected_delivery_date = $request->expected_delivery_date;
+    //             $save_data->master_customer_id = $request->master_customer_id;
+    //             $save_data->status = 1;
+    //             $save_data->save();
+    //             $customer_data = MasterCustomer::where('id',$request->master_customer_id)->first();
+    //             $firstThree = strtoupper(substr($customer_data->name, 0, 3));
+                
+    //             // Update SKU after save
+    //             // $save_data->sku = 'Production-' . $save_data->id;
+    //             $save_data->sku = $firstThree . "/". date('m/Y').'/' . $save_data->id;
+    //             $save_data->save();
+
+    //             // Default success response
+    //             $return_data['message'] = 'The sales order has been successfully created.';
+    //             $return_data['status_code'] = 1;
+
+    //             // Loop through ordered products
+    //             $save_data = new CorporateOrderProduct;
+    //             $save_data->order_main_id = $save_data_main->id;
+    //             $save_data->design_id = $design_id;
+    //             $save_data->product_size = $request->sizeList[$key];
+    //             $save_data->color_id = $request->colourList[$key];
+    //             $save_data->quantity = $request->qtyList[$key];
+    //             $save_data->status = 1;
+    //             $save_data->save();
+    //         }
+
+    //         // Commit everything if all successful
+    //         DB::commit();
+    //         return $return_data;
+
+    //     } catch (\Exception $e) {
+    //         //  Rollback everything on any error
+    //         DB::rollBack();
+
+    //         $return_data['message'] = $e->getMessage();
+    //         $return_data['status_code'] = 0;
+    //         return $return_data;
+    //     }
+    // }
 
     public function view(Request $request){
         $data = Order::with('products.product_details.product_detail_stocks','products.order_stages.stage','products.order_stage_trnsactions')->where('id',$request->id)->first();

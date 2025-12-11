@@ -106,7 +106,7 @@ class FabricService
 
         $update_data->name = $request->name;
         $update_data->sku = strtoupper($request->name);
-        $update_data->vender_id = $request->vendor_id;
+        $update_data->vendor_id = $request->vendor_id;
         // $update_data->dye_id = $request->dye_id;
         // $update_data->width_id = $request->width_id;
         // $update_data->weave_type_id = $request->weave_type_id;
