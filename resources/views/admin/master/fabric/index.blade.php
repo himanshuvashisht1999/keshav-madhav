@@ -41,6 +41,9 @@
                                         <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                                     </td>
                                     <td>
+
+                                    </td>
+                                    <td>
                                         <input type="text" class="form-control" name="name" id="name"
                                             autocomplete="off">
                                     </td>
@@ -64,17 +67,13 @@
                                         </select>
                                     </td>
 
-
-                                    <td>
-
-                                    </td>
                                 </tr>
                                 <tr>
                                     <th>ID</th>
+                                    <th>Image</th>
                                     <th>Name</th>
                                     <th>Supplier Name</th>
                                     <th>Composition</th>
-                                    <th>Image</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -95,6 +94,22 @@
             </div>
         </section>
     </div>
+
+    <!-- Image Preview Modal -->
+    <div class="modal fade" id="imgModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-body p-0 text-center">
+                    <img id="previewImg" src="" style="width:100%; height:auto; border-radius:6px;">
+                </div>
+
+                <button type="button" class="btn btn-danger"
+                    style="position:absolute; top:10px; right:10px;" 
+                    data-dismiss="modal">X</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         $(function() {
             var i = 1;
@@ -127,6 +142,10 @@
                         name: 'id'
                     },
                     {
+                        data: 'image',
+                        name: 'image'
+                    },
+                    {
                         data: 'name',
                         name: 'name'
                     },
@@ -138,10 +157,7 @@
                         data: 'composition_id',
                         name: 'composition_id'
                     },
-                    {
-                        data: 'image',
-                        name: 'image'
-                    },
+                    
                     {
                         data: 'action',
                         name: 'action',
@@ -207,5 +223,11 @@
                 }
             });
         }
+
+        $(document).on("click", ".fabric-img", function () {
+            let src = $(this).attr("src");
+            $("#previewImg").attr("src", src);
+            $("#imgModal").modal("show");
+        });
     </script>
 @endsection

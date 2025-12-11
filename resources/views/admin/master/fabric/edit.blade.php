@@ -31,7 +31,26 @@
                         <input type="hidden" name="id" value="{{ $data->id }}">
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-12">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="exampleInputEmail1">Supplier Name</label>
+                                        <select name="vendor_id" class="form-control select2" style="width: 100%;">
+                                            <option value="">Select Supplier</option>
+                                            @foreach ($vender_data as $single_data)
+                                                <option value="{{ $single_data->id }}"
+                                                    {{ $data->vendor_id == $single_data->id ? 'selected' : '' }}>
+                                                    {{ $single_data->sku }}</option>
+                                            @endforeach
+
+                                        </select>
+                                        @if ($errors->has('vendor_id'))
+                                            <span class="invalid-feedback d-block">
+                                                {{ $errors->first('vendor_id') }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="exampleInputEmail1">Fabric Name</label>
                                         <input type="text" name="name" class="form-control"
@@ -44,7 +63,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-6">
+                                {{-- <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Fabric Dye</label>
                                         <select name="dye_id" class="form-control select2" style="width: 100%;">
@@ -61,65 +80,9 @@
                                             </span>
                                         @endif
                                     </div>
-                                </div>
+                                </div> --}}
 
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Fabric Width</label>
-                                        <select name="width_id" class="form-control select2" style="width: 100%;">
-                                            @foreach ($fab_width_data as $single_data)
-                                                <option value="{{ $single_data->id }}"
-                                                    {{ $data->width_id == $single_data->id ? 'selected' : '' }}>
-                                                    {{ $single_data->sku }}</option>
-                                            @endforeach
-
-                                        </select>
-                                        @if ($errors->has('width_id'))
-                                            <span class="invalid-feedback d-block">
-                                                {{ $errors->first('width_id') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Fabric Weave Type</label>
-                                        <select name="weave_type_id" class="form-control select2" style="width: 100%;">
-                                            @foreach ($fab_weave_data as $single_data)
-                                                <option value="{{ $single_data->id }}"
-                                                    {{ $data->weave_type_id == $single_data->id ? 'selected' : '' }}>
-                                                    {{ $single_data->sku }}</option>
-                                            @endforeach
-
-                                        </select>
-                                        @if ($errors->has('weave_type_id'))
-                                            <span class="invalid-feedback d-block">
-                                                {{ $errors->first('weave_type_id') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Fabric GSM</label>
-                                        <select name="gsm_id" class="form-control select2" style="width: 100%;">
-                                            @foreach ($fab_gsm_data as $single_data)
-                                                <option value="{{ $single_data->id }}"
-                                                    {{ $data->gsm_id == $single_data->id ? 'selected' : '' }}>
-                                                    {{ $single_data->sku }}</option>
-                                            @endforeach
-
-                                        </select>
-                                        @if ($errors->has('gsm_id'))
-                                            <span class="invalid-feedback d-block">
-                                                {{ $errors->first('gsm_id') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-
+                                
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Fabric Composition</label>
@@ -139,7 +102,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-6">
+                                {{-- <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="sku">SKU</label>
                                         <input type="text" name="sku" id="sku_n" class="form-control"
@@ -150,9 +113,9 @@
                                             </span>
                                         @endif
                                     </div>
-                                </div>
+                                </div> --}}
 
-                                <div class="col-md-6 mt-2">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="exampleInputFile">Main Image</label>
                                         <div class="input-group">
@@ -169,7 +132,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6 mt-2">
+                                <div class="col-md-2">
                                     <img class="" src="{{$data->image}}" alt="Preview" id="image-preview" height="80px" width="80px">
                                 </div>
 
