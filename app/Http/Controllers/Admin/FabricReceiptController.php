@@ -23,6 +23,7 @@ class FabricReceiptController extends Controller {
     }
     public function create(){
         $response['vendors'] = $this->service->vendors();
+        $response['cutting_units'] = $this->service->cutting_units();
         return view('admin.fabric_receipt.create',$response);
     }
     public function store(FabricReceiptStoreRequest $request){
@@ -32,7 +33,8 @@ class FabricReceiptController extends Controller {
     public function detail(Request $request){
         $response['data'] = $this->service->view($request);
         $response['vendors'] = $this->service->vendors();
-        $response['fabrics'] = $this->service->fabrics();
+        //$response['fabrics'] = $this->service->fabrics();
+        $response['fabrics'] = $this->service->fabric_list_by_vendor($response['data']->vendor_id);
 
         $response['new_batch_no'] = $this->service->new_batch_no();
  

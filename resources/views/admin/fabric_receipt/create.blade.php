@@ -5,15 +5,15 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Fabric Receipt</h1>
+                <div class="col-sm-12">
+                    <h1 class="text-center">Add Fabric Shipment Receipt</h1>
                 </div>
-                <div class="col-sm-6">
+                <!-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
                         <li class="breadcrumb-item active">Create Fabric Receipt</li>
                     </ol>
-                </div>
+                </div> -->
             </div>
         </div>
     </section>
@@ -23,9 +23,9 @@
         <div class="container-fluid">
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
-                <div class="card-header">
+                <!-- <div class="card-header">
                     <h3 class="card-title">Create Fabric Receipt</h3>
-                </div>
+                </div> -->
                 <form action="{{route('admin.fabric_receipt.store')}}" method="post" enctype="multipart/form-data">
                     @csrf
                     <div class="card-body">
@@ -74,11 +74,28 @@
 
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="roll">Packets</label>
+                                    <label for="roll">Rolls (Optional)</label>
                                     <input type="number" name="roll" id="roll" class="form-control" placeholder="Enter packets" min="0" step="1">
                                     @if ($errors->has('roll'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('roll') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Cutting Master</label>
+                                    <select name="master_fabric_warehouse_id" class="form-control select2" style="width: 100%;">
+                                        @foreach($cutting_units as $single_data)
+                                        <option value="{{$single_data->id}}" {{old('master_fabric_warehouse_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->cutting_master_name}}</option>
+                                        @endforeach
+                                        
+                                    </select>
+                                    @if ($errors->has('master_fabric_warehouse_id'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('master_fabric_warehouse_id') }}
                                         </span>
                                     @endif
                                 </div>
@@ -95,7 +112,27 @@
                                     @endif
                                 </div>
                             </div>
+                                <!-- <div class="col-md-6">
+                                </div> -->
                             <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputFile">Shipment Photo</label>
+                                    <div class="input-group">
+                                        <div class="custom-file">
+                                            <input type="file" name="shipment_photo" class="custom-file-input" id="image-input" onchange="previewImage()"  accept=".jpg,.jpeg,.png">
+                                            <label class="custom-file-label" for="exampleInputFile">Choose file</label>
+                                        </div>
+                                        
+                                        @if ($errors->has('shipment_photo'))
+                                            <span class="invalid-feedback d-block">
+                                            {{ $errors->first('shipment_photo') }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <img class="" src="{{asset('images/image-placeholder.png')}}" alt="Preview" id="image-preview" height="80px" width="80px">
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -117,23 +154,7 @@
                             <div class="col-md-6">
                                 <img class="" src="{{asset('images/image-placeholder.png')}}" alt="Preview" id="image-preview-2" height="80px" width="80px">
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputFile">Shipment Photo</label>
-                                    <div class="input-group">
-                                        <div class="custom-file">
-                                            <input type="file" name="shipment_photo" class="custom-file-input" id="image-input" onchange="previewImage()"  accept=".jpg,.jpeg,.png">
-                                            <label class="custom-file-label" for="exampleInputFile">Choose file</label>
-                                        </div>
-                                        
-                                        @if ($errors->has('shipment_photo'))
-                                            <span class="invalid-feedback d-block">
-                                            {{ $errors->first('shipment_photo') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
+                            
                             <div class="col-md-6" style="display:none;">
                                 <div class="form-group">
                                     <label for="sku">SKU</label>
@@ -145,9 +166,7 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <img class="" src="{{asset('images/image-placeholder.png')}}" alt="Preview" id="image-preview" height="80px" width="80px">
-                            </div>
+                            
 
                             
 

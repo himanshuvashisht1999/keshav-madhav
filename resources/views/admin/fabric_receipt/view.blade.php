@@ -5,16 +5,16 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Fabric Receipt</h1>
+                <div class="col-sm-12">
+                    <h1 class="text-center">Fabric Shipment Details</h1>
                 </div>
-                <div class="col-sm-6">
+                <!-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
                         <li class="breadcrumb-item"><a href="{{ route('admin.fabric_receipt.index') }}">Fabric Receipts</a></li>
                         <li class="breadcrumb-item active">View Receipt</li>
                     </ol>
-                </div>
+                </div> -->
             </div>
         </div>
     </section>
@@ -32,9 +32,10 @@
                     <div class="row">   
                         <div class="col-md-4"><strong>SKU:</strong> {{ $data->sku }}</div>
                         <div class="col-md-4"><strong>Vendor:</strong> {{ $data->vendor->name ?? '-' }}</div>
+                        <div class="col-md-4"><strong>Cutting Master:</strong> {{ $data->cutting_master->cutting_master_name ?? '-' }}</div>
                         <div class="col-md-4"><strong>Truck Number:</strong> {{ $data->truck_number }}</div>
                         <div class="col-md-4"><strong>Date & Time:</strong> {{ getformatDateTime($data->time) }}</div>
-                        <div class="col-md-4"><strong>Packets:</strong> {{ $data->roll }}</div>
+                        <div class="col-md-4"><strong>Rolls:</strong> {{ $data->roll }}</div>
                         <div class="col-md-4"><strong>Received By:</strong> {{ $data->received_by }}</div>
                         <div class="col-md-4">
                             <strong>Challan Photo:</strong><br>
@@ -67,11 +68,11 @@
                             <tr>
                                 <th>#</th>
                                 <th>Purchase Order</th>
-                                <th>Fabric SKU</th>
+                                <th>Fabric</th>
                                 <!-- <th>Fabric Name</th> -->
-                                <th>Rolls</th>
+                                <th>Roll Number</th>
                                 <th>Meter (per roll)</th>
-                                <th>Batch No</th>
+                                <!-- <th>Batch No</th> -->
                             </tr>
                         </thead>
                         <tbody>
@@ -79,11 +80,11 @@
                                 <tr>
                                     <td>{{ $key + 1 }}</td>
                                     <td>{{ $detail->purchase_order->sku ?? '-' }}</td>
-                                    <td>{{ $detail->fabric_sku }}</td>
+                                    <td>{{ $detail->fabric->name }}</td>
                                     <!-- <td>{{ $detail->fabric->name ?? '-' }}</td> -->
-                                    <td>{{ $detail->roll }}</td>
+                                    <td>{{ $detail->roll_number }}</td>
                                     <td>{{ $detail->meter }}</td>
-                                    <td>{{ $detail->batch_no }}</td>
+                                    <!-- <td>{{ $detail->batch_no }}</td> -->
                                 </tr>
                             @empty
                                 <tr>

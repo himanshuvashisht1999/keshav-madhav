@@ -1,22 +1,17 @@
 @extends('admin.layouts.app')
 @section('content')
-<style>
-    #customers td:nth-child(3) {
-        min-width: 130px;
-    }
-</style>
 <div class="content-wrapper">
     <!-- Content Header (Page header) -->
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12">
-                    <h1 class="text-center">List of Fabrics Shipment</h1>
+                    <h1 class="text-center">List of Available Fabric Warehouse</h1>
                 </div>
                 <!-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Fabric Receipt</li>
+                        <li class="breadcrumb-item active">Manage Warehouse</li>
                     </ol>
                 </div> -->
             </div>
@@ -30,13 +25,12 @@
             <div class="card card-default ">
                  <!-- <div class="row" >
                     <div class="col-9 card-header">
-                        <h3 class="card-title">Manage Fabric Receipt</h3>
+                        <h3 class="card-title">Manage Product Color</h3>
                     </div>
                     <div class="col-3 card-header">
-                        <a href="{{route('admin.fabric_receipt.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Fabric Receipt</a>
+                        <a href="{{route('admin.master.warehouse.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Color</a>
                     </div>
                 </div> -->
-                
                 
                 <div class="card-body table-responsive">
                 <table id="customers" class="table table-bordered table-hover">
@@ -46,47 +40,26 @@
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="id" id="id" autocomplete="off">
-                        </td>
-                        
-                        <td>
-                            <select class="form-control select2" name="vendor_id" id="vendor_id" style="width: 100%;">
-                                <option value="">ALL</option>
-                                @foreach($vendors as $single_data)
-                                    <option value="{{$single_data->id}}" >{{$single_data->name}}</option>
-                                @endforeach
-                            </select>
+                            <input type="text" class="form-control" name="cutting_master_name" id="cutting_master_name" autocomplete="off">
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="truck_number" id="truck_number" autocomplete="off">
-                        </td>
-                        
-                        <td>
-                            <input type="date" class="form-control" name="time" id="time" autocomplete="off">
+                            <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="roll" id="roll" autocomplete="off">
+                            <input type="text" class="form-control" name="address" id="address" autocomplete="off">
                         </td>
-                        <td>
-                            <input type="text" class="form-control" name="received_by" id="received_by" autocomplete="off">
-                        </td>
-                        
                         
                         <td>
                        
                        </td>
                     </tr>
-                    <tr>
-                        <th>ID</th>
-                        <th>Shippment ID</th>
-                        <th>Vendor</th>
-                        <th>Truck Number</th>
-                        <th>Date & Time</th>
-                        <th>Roll</th>
-                        <th>Received By</th>
-                        
-                        <th>Action</th>
-                    </tr>
+                  <tr>
+                    <th>ID</th>
+                    <th>Cutting Master</th>
+                    <th>SKU</th>
+                    <th>Address</th>
+                    <th>Action</th>
+                  </tr>
                   </thead>
                   <tbody>
                   <!-- <tr>
@@ -117,37 +90,30 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.fabric_receipt.indexList') !!}',
+                url: '{!! route('admin.master.fabric_warehouse.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
-                    d.id = $('#id').val();
-                    d.vendor_id = $('#vendor_id').val();
-                    d.truck_number = $('#truck_number').val();
-                    d.time = $('#time').val();
-                    d.roll = $('#roll').val();
-                    d.received_by = $('#received_by').val();
+                    d.cutting_master_name = $('#cutting_master_name').val();
+                    d.sku = $('#sku').val();
+                    d.address = $('#address').val();
                   
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'id', name: 'id'},
-                {data: 'vendor_id', name: 'vendor_id'},
-                {data: 'truck_number', name: 'truck_number'},
-                {data: 'time', name: 'time'},
-                {data: 'roll', name: 'roll'},
-                {data: 'received_by', name: 'received_by'},
-                
+                {data: 'cutting_master_name', name: 'cutting_master_name'},
+                {data: 'sku', name: 'sku'},
+                {data: 'address', name: 'address'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Fabric Shipment',
+                    text: 'Add Fabric Warehouse',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.fabric_receipt.create') }}";
+                        window.location.href = "{{ route('admin.master.fabric_warehouse.create') }}";
                     }
                 }
             ]
@@ -162,35 +128,20 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#id').on('keyup', function (e) {
+
+        $('#cutting_master_name').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
-        
-        $('#vendor_id').on('change', function (e) {
+        $('#sku').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#address').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
 
-        $('#truck_number').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#roll').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#received_by').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#time').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        
         
 
     });
@@ -205,13 +156,13 @@
             text: "You won't be able to revert this!",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#53718dff",
+            confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
             confirmButtonText: "Yes, delete it!"
         }).then((result) => {
             if (result.isConfirmed) {
                 // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.fabric_receipt.delete', ['id' => '']) }}" + id;
+                window.location.href = "{{ route('admin.master.fabric_warehouse.delete', ['id' => '']) }}" + id;
             }
         });
     }

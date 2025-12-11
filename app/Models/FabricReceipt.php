@@ -22,12 +22,16 @@ class FabricReceipt extends Model
         'received_by',
         'shipment_photo',
         'challan_photo',
+        'master_fabric_warehouse_id',
         'status',
         'created_at',
         'updated_at'
     ];
     public function vendor(){
         return $this->hasOne('App\Models\Vendor','id','vendor_id');
+    }
+    public function cutting_master(){
+        return $this->hasOne('App\Models\MasterFabricWarehouse','id','master_fabric_warehouse_id');
     }
     public function details(){
         return $this->hasMany('App\Models\FabricReceiptDetail','fabric_receipt_id','id');
