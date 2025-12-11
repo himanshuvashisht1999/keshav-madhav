@@ -31,6 +31,7 @@
                                     <div class="form-group">
                                         <label for="exampleInputEmail1">Supplier Name</label>
                                         <select name="vendor_id" class="form-control select2" style="width: 100%;">
+                                            <option value="">Select Supplier</option>
                                             @foreach ($vender_data as $single_data)
                                                 <option value="{{ $single_data->id }}"
                                                     {{ old('vendor_id') == $single_data->id ? 'selected' : '' }}>

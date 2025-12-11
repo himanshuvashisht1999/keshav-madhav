@@ -40,7 +40,7 @@ class ProductOrderController extends Controller {
         return view('admin.product_order.create',$response);
     }
     public function store(ProductOrderStoreRequest $request){
-        dd("store method called");
+        
         $data = $this->service->store($request);
         if($data['status_code'] == 1){
             return redirect()->route('admin.product_order.indexOrder')->withSuccess($data['message']);

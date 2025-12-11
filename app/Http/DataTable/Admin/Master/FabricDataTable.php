@@ -63,11 +63,17 @@ class FabricDataTable
             ->editColumn('composition_id', function ($queue) {
                 return $queue?->fabric_composition->name ?? 'N/A';
             })
-            ->editColumn('image', function ($queue) {
-                $image = $queue->image;
-                return '<a href="'.$image.'" target="_blank">Image</a>';
-            })
+            // ->editColumn('image', function ($queue) {
+            //     $image = $queue->image;
+            //     return '<a href="'.$image.'" target="_blank">Image</a>';
+            // })
+            ->addColumn('image', function ($queue) {
+                $img = $queue->image; // relationship
+              
+                $src = $img ? $queue->image : asset('assets/products/default-image.png');
 
+                return '<img src="'.$src.'" class="img-thumbnail fabric-img" alt="Main Image" style="height:100px;width:100px;border-radius:4px;">';
+            })
 
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;

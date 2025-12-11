@@ -24,6 +24,15 @@ class ProductOrderStoreRequest extends FormRequest{
             // 'sku'    => 'required|unique:orders,sku',
             'expected_delivery_date' => 'required',
             'master_customer_id' => 'required',
+            'designList' => 'required|array|min:1',
+            'designList.*' => 'required|exists:production_goods,id',
+            'colourList' => 'required|array|min:1',
+            'colourList.*' => 'required',
+            'sizeList' => 'required|array|min:1',
+            'sizeList.*' => 'required',
+            'product_quantity' => 'required|array|min:1',
+            'product_quantity.*' => 'required|integer|min:1',
+            'corporate_order_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ];
     }
 

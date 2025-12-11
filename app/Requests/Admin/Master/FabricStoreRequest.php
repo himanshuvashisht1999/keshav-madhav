@@ -22,6 +22,7 @@ class FabricStoreRequest extends FormRequest{
         // dd($this);
         return [
             'name' => 'required',
+            'vendor_id' => 'required',
             // 'sku'    => 'required|unique:fabrics,sku',
             // 'dye_id' => 'required',
             // 'width_id' => 'required',

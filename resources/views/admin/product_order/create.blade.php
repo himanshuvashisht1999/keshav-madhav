@@ -18,113 +18,150 @@
         </div>
     </section>
 
-    <!-- Main content -->
+    <!-- MAIN SECTION -->
     <section class="content">
         <div class="container-fluid">
-            <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default">
-                <div class="card-header">
-                    <h3 class="card-title">Create Corporate Order</h3>
-                </div>
-                <form action="{{route('admin.sales_order.store')}}" method="post" enctype="multipart/form-data">
+
+            <div class="card p-3 shadow-sm">
+
+                <form action="{{ route('admin.sales_order.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <div class="card-body">
-                        <div class="row">
-                            
 
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Select Customer</label>
-                                    <select name="master_customer_id" class="form-control select2" style="width: 100%;">
-                                        @foreach($customers as $customer)
-                                        <option value="{{$customer->id}}" {{old('master_customer_id') == $customer->id ? 'selected' : ''}}>{{$customer->name}}</option>
-                                        @endforeach
-                                        
-                                    </select>
-                                    @if ($errors->has('master_customer_id'))
-                                        <span class="invalid-feedback d-block">
+                   <div class="row">
+
+                        <!-- LEFT -->
+                        <div class="col-md-6">
+
+                            <!-- Customer & Delivery -->
+                            <div class="card mb-3 p-3 border">
+                                <h5 class="mb-3">Customer & Delivery</h5>
+
+                                <label>Select Customer</label>
+                                <select name="master_customer_id" id="master_customer_id" class="form-control select2 mb-2" required>
+                                    @foreach($customers as $customer)
+                                        <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                                    @endforeach
+                                </select>
+                                @if ($errors->has('master_customer_id'))
+                                    <span class="invalid-feedback d-block">
                                         {{ $errors->first('master_customer_id') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">Estimated Delivery Date</label>
-                                    <input type="date" name="expected_delivery_date" class="form-control" value="{{old('expected_delivery_date')}}" min="{{ date('Y-m-d') }}" required>
-                                    @if ($errors->has('expected_delivery_date'))
-                                        <span class="invalid-feedback d-block">
+                                    </span>
+                                @endif
+                                <label>Estimated Delivery Date</label>
+                                <input type="date" name="expected_delivery_date" class="form-control"
+                                    min="{{ date('Y-m-d') }}" required>
+                                @if ($errors->has('expected_delivery_date'))
+                                    <span class="invalid-feedback d-block">
                                         {{ $errors->first('expected_delivery_date') }}
-                                        </span>
-                                    @endif
-                                </div>
+                                    </span>
+                                @endif
                             </div>
 
-                            <div class="col-md-12">
-                                <div id="products-container">
-                                    <div class="product-row row mb-2">
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>Select Design Number</label>
-                                                <select name="product_design_number[]" class="form-control select2 stage-select" style="width: 100%;" required>
-                                                    <option value="">Select Design Number</option>
-                                                    @foreach($products as $product)
-                                                        <option value="{{ $product->id }}" data-img="{{ $product->main_img }}">{{ $product->design_number }} - {{$product->name_of_garment}}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                         <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>Select Size</label>
-                                                <select name="product_size[]" class="form-control select2 stage-select" style="width: 100%;" required>
-                                                    <option value="">Select Size</option>
-                                                    @foreach($product_size as $size)
-                                                        <option value="{{ $size->id }}">{{ $size->size_selection }} - {{ $size->measurement }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                         <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label>Select Colour</label>
-                                                <select name="product_color[]" class="form-control select2 stage-select" style="width: 100%;" required>
-                                                    <option value="">Select Colour</option>
-                                                    @foreach($colours as $colour)
-                                                        <option value="{{ $colour->id }}">{{ $colour->sku }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <div class="form-group">
-                                                <label>Quantity</label>
-                                                <input type="number" name="product_quantity[]" id="" class="form-control" placeholder="Quantity" min="1" step="1" required>                                               
-                                            </div>
-                                        </div>
-                                        <div class="col-md-1">
-                                            <div class="form-group" style="margin-top:31px">
-                                                <button type="button" class="btn btn-success add-product"><i class="fa fa-plus"></i></button>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3 img-section"></div>
-                                    </div>
-                                    
+                            <!-- Add Product -->
+                            <div class="card p-3 border">
+                                <h5 class="mb-3">Add Product</h5>
+
+                                <div class="product-row">
+
+                                    <label>Design Number</label>
+                                    <select class="form-control select2 mb-2 design-input" name="design_id">
+                                        <option value="">Select</option>
+                                        @foreach($products as $product)
+                                            <option value="{{ $product->id }}" data-img="{{ $product->main_img }}">
+                                                {{ $product->design_number }} - {{ $product->name_of_garment }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @if ($errors->has('designList'))
+                                        <span class="invalid-feedback d-block">
+                                            {{ $errors->first('designList') }}
+                                        </span>
+                                    @endif
+                                    <label>Size</label>
+                                    <select class="form-control select2 mb-2 size-input" name="size_id">
+                                        <option value="">Select</option>
+                                        @foreach($product_size as $size)
+                                            <option value="{{ $size->id }}">{{ $size->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if ($errors->has('sizeList'))
+                                        <span class="invalid-feedback d-block">
+                                            {{ $errors->first('sizeList') }}
+                                        </span>
+                                    @endif
+                                    <label>Colour</label>
+                                    <select class="form-control select2 mb-2 colour-input" name="colour_id">
+                                        <option value="">Select</option>
+                                        @foreach($colours as $colour)
+                                            <option value="{{ $colour->id }}">{{ $colour->sku }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if ($errors->has('colourList'))
+                                        <span class="invalid-feedback d-block">
+                                            {{ $errors->first('colourList') }}
+                                        </span>
+                                    @endif
+                                    <label>Quantity</label>
+                                    <input type="number" class="form-control qty-input mb-3" min="1" name="qty">
+                                    @if ($errors->has('product_quantity'))
+                                        <span class="invalid-feedback d-block">
+                                            {{ $errors->first('product_quantity') }}
+                                        </span>
+                                    @endif
+                                    <button type="button" class="btn btn-primary btn-block add-product">
+                                        + Add Product
+                                    </button>
+
+                                    <div class="img-section text-center mt-3"></div>
+
                                 </div>
+
                             </div>
-                           
-                            <div class="col-md-12">
-                                <div class="mt-2" style="float:right">
-                                    <button type="submit" class="btn btn-primary">Submit</button>
-                                </div>
+
+                        </div>
+
+                        <!-- RIGHT -->
+                        <div class="col-md-6">
+                            <div class="card p-3 border shadow-sm">
+                                <h5>Upload File</h5>
+                                <input type="file" name="corporate_order_file" id="corporate_order_file" class="form-control mb-2">
+                                <img id="previewImg" class="w-100 mt-2" style="display:none; border-radius:6px;">
                             </div>
                         </div>
+
+                        <!-- FULL WIDTH SECTION -->
+                        <div class="col-md-12">
+                            <div class="card mt-3 p-3 border">
+                                <h5 class="mb-3">Added Products</h5>
+                                <table class="table table-bordered" id="productList">
+                                    <thead>
+                                        <tr>
+                                            <th>Image</th>
+                                            <th>Design</th>
+                                            <th>Size</th>
+                                            <th>Colour</th>
+                                            <th>Qty</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
                     </div>
-                    
+
+                    <div class="text-right mt-3">
+                        <button class="btn btn-success px-4">Submit Order</button>
+                    </div>
+
                 </form>
+
             </div>
+
         </div>
     </section>
+
 </div>
 
 <!-- Modal -->
@@ -152,174 +189,146 @@
 
 
 <script>
-$(document).on('click', '#product-photo', function () {
-    let src = $(this).attr('src');
-    $('#modal-photo').attr('src', src);
-    $('#photoModal').modal('show');
-});
-
 $(document).ready(function () {
-    // Initialize Select2 for existing selects
-    $('.select2').select2();
-    let products = @json($products);
-    // Add new product row
-    $(document).on('click', '.add-product', function () {
-         // Prevent add more rows than products
-        let totalProducts = products.length;
-        let totalRows = $("select[name='product_design_number[]']").length;
 
-        if (totalRows >= totalProducts) {
-            alert("You cannot add more rows. No more SKUs available.");
+    $('.select2').select2();
+
+    // File preview
+    // File preview (Image or PDF)
+    $("#corporate_order_file").on("change", function (e) {
+        let file = e.target.files[0];
+
+        if (!file) return;
+
+        let fileType = file.type;
+
+        // Reset preview box
+        $("#previewImg").hide().attr("src", "");
+        $("#previewPDF").remove();
+
+        // CASE 1 : If file is image
+        if (fileType.startsWith("image/")) {
+
+            let reader = new FileReader();
+            reader.onload = () => {
+                $("#previewImg")
+                    .attr("src", reader.result)
+                    .css({ "display": "block", "border-radius": "6px" })
+                    .show();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // CASE 2 : If file is PDF
+        else if (fileType === "application/pdf") {
+
+            let src = URL.createObjectURL(file);
+
+            // Create PDF viewer
+            let pdfViewer = `
+                <embed id="previewPDF" 
+                    src="${src}" 
+                    type="application/pdf" 
+                    width="100%" 
+                    height="600px" 
+                    style="border:1px solid #ccc; border-radius:6px;" />
+            `;
+
+            $("#corporate_order_file").after(pdfViewer);
+        }
+
+        else {
+            alert("Only Images or PDF files are allowed.");
+            $(this).val(""); // reset file input
+        }
+    });
+
+
+    // Show product image
+    $(document).on("change", ".design-input", function () {
+        let img = $(this).find(":selected").data("img");
+        $(this).closest(".product-row").find(".img-section").html(
+            img ? `<img src="${img}" style="max-width:150px;border:1px solid #ccc;">` : ''
+        );
+    });
+    // click image to enlarge
+    $(document).on("click", "img", function () {
+
+        // ignore logo or system icons if needed
+        if ($(this).hasClass("no-preview")) return;
+
+        let fullImage = $(this).attr("src");
+
+        if (!fullImage) return;
+
+        $("#modal-photo").attr("src", fullImage);
+        $("#photoModal").modal("show");
+    });
+
+
+    // Add product
+    $(document).on("click", ".add-product", function () {
+
+        let row = $(this).closest(".product-row");
+
+        let design = row.find(".design-input option:selected");
+        let size = row.find(".size-input option:selected");
+        let colour = row.find(".colour-input option:selected");
+        let qty = row.find(".qty-input").val();
+
+        if (!design.val() || !size.val() || !colour.val() || qty === "") {
+            // alert("Please select all fields");
             return;
         }
 
-        // Collect selected SKUs
-        let selectedValues = [];
-        console.log(selectedValues);
-        $("select[name='product_design_number[]']").each(function () {
-            if ($(this).val()) selectedValues.push($(this).val());
-        });
+        $("#productList tbody").append(`
+            <tr>
+                <td>
+                    <img src="${design.data('img')}" style="width:50px; height:50px; object-fit:cover; border-radius:4px; border:1px solid #ddd;">
+                    <input type="hidden" name="imageList[]" value="${design.data('img')}">
+                </td>
+                <td>${design.text()}
+                    <input type="hidden" name="designList[]" value="${design.val()}">
+                </td>
+                <td>${size.text()}
+                    <input type="hidden" name="sizeList[]" value="${size.val()}">
+                </td>
+                <td>${colour.text()}
+                    <input type="hidden" name="colourList[]" value="${colour.val()}">
+                </td>
+                <td>${qty}
+                    <input type="hidden" name="product_quantity[]" value="${qty}">
+                </td>
+                <td>
+                    <button class="btn btn-danger btn-sm remove-row">X</button>
+                </td>
+            </tr>
+        `);
 
-        // Create filtered options
-        let options = `<option value="">Select Design Number</option>`;
-        
-        products.forEach(p => {
-            
-            if (!selectedValues.includes(String(p.id))) {
-               let imgUrl = p.main_image ? p.main_image.image : '';
-
-                options += `
-                    <option value="${p.id}" data-img="${imgUrl}">
-                        ${p.design_number} - ${p.name_of_garment}
-                    </option>
-                `;
-            }
-        });
-
-        let newRow = `<div class="product-row row mb-2 mt-4">
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Select Design Number</label>
-                                <select name="product_design_number[]" class="form-control select2 stage-select" style="width: 100%;" required>
-                                    <option value="">Select Design Number</option>
-                                    @foreach($products as $product)
-                                        ${options}
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                            <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Select Size</label>
-                                <select name="product_size[]" class="form-control select2 stage-select" style="width: 100%;" required>
-                                    <option value="">Select Size</option>
-                                    @foreach($product_size as $size)
-                                        <option value="{{ $size->id }}">{{ $size->size_selection }} - {{ $size->measurement }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                            <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Select Colour</label>
-                                <select name="product_color[]" class="form-control select2 stage-select" style="width: 100%;" required>
-                                    <option value="">Select Colour</option>
-                                    @foreach($colours as $colour)
-                                        <option value="{{ $colour->id }}">{{ $colour->sku }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Quantity</label>
-                                <input type="number" name="product_quantity[]" id="" class="form-control" placeholder="Quantity" min="1" step="1" required>                                               
-                            </div>
-                        </div>
-                        <div class="col-md-1">
-                            <div class="form-group" style="margin-top:31px">
-                                <button type="button" class="btn btn-danger remove-product"><i class="fa fa-minus"></i></button>
-                            </div>
-                        </div>
-                        <div class="col-md-3 img-section" > </div>
-                    </div>
-                   `;
-        $('#products-container').append(newRow);
-        $('.select2').select2(); // re-init Select2 for new rows
-        refreshSKUOptions();
+        row.find("select").val("").trigger("change");
+        row.find(".qty-input").val("");
+        row.find(".img-section").html("");
     });
 
-     // Delete Row
-    $(document).on('click', '.remove-product', function () {
-        $(this).closest('.product-row').remove();
-        refreshSKUOptions();
+    // Remove row
+    $(document).on("click", ".remove-row", function () {
+        $(this).closest("tr").remove();
     });
 
-    // Select change event
-    $(document).on("change", "select[name='product_design_number[]']", function () {
-        
-        refreshSKUOptions();
-    });
+    // Validate before submit
+    $("form").on("submit", function (e) {
 
-    $(document).on("change", "select[name='product_design_number[]']", function() {
-       
-        let imgUrl = $(this).find(':selected').data('img');
+        let rowCount = $("#productList tbody tr").length;
 
-
-        // Append new image only if valid
-        if (imgUrl) {
-            $(this).closest('.product-row').find('.img-section').html(`
-                <img id="product-photo" 
-                    src="${imgUrl}" 
-                    style="max-width:150px; max-height:150px;  border:1px solid #ccc; padding:5px;">
-            `);
+        if (rowCount === 0) {
+            // alert("Please add at least one product before submitting.");
+            e.preventDefault();
+            return false;
         }
+
     });
-    // Hide duplicate SKUs from dropdowns
-    function refreshSKUOptions() {
-        let selected = [];
-
-        $("select[name='product_design_number[]']").each(function () {
-            if ($(this).val()) selected.push($(this).val());
-        });
-
-        $("select[name='product_design_number[]']").each(function () {
-            let current = $(this).val();
-            let select = $(this);
-
-            // REBUILD OPTIONS
-            let options = `<option value="">Select Design Number</option>`;
-            
-            products.forEach(p => {
-                
-                if (!selected.includes(String(p.id)) || String(p.id) === String(current)) {
-                    let imgUrl = p.main_image ? p.main_image.image : '';
-
-                    options += `
-                        <option value="${p.id}" data-img="${imgUrl}">
-                            ${p.design_number} - ${p.name_of_garment}
-                        </option>
-                    `;
-                }
-            });
-
-
-            // SET new options
-            select.html(options);
-
-            // RESTORE selected value
-            if (current) select.val(current);
-
-            // REINIT SELECT2
-            select.trigger('change.select2');
-        });
-    }
-
-    function getProductPhoto() {
-        
-    }
-
 
 });
 </script>
+
 @endsection
