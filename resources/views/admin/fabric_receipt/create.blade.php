@@ -6,7 +6,7 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12">
-                    <h1 class="text-center">Add Fabric Receipt</h1>
+                    <h1 class="text-center">Add Fabric Shipment Receipt</h1>
                 </div>
                 <!-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
@@ -87,15 +87,15 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Cutting Master</label>
-                                    <select name="master_product_sub_stage_id" class="form-control select2" style="width: 100%;">
+                                    <select name="master_fabric_warehouse_id" class="form-control select2" style="width: 100%;">
                                         @foreach($cutting_units as $single_data)
-                                        <option value="{{$single_data->id}}" {{old('master_product_sub_stage_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                        <option value="{{$single_data->id}}" {{old('master_fabric_warehouse_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->cutting_master_name}}</option>
                                         @endforeach
                                         
                                     </select>
-                                    @if ($errors->has('master_product_sub_stage_id'))
+                                    @if ($errors->has('master_fabric_warehouse_id'))
                                         <span class="invalid-feedback d-block">
-                                        {{ $errors->first('master_product_sub_stage_id') }}
+                                        {{ $errors->first('master_fabric_warehouse_id') }}
                                         </span>
                                     @endif
                                 </div>

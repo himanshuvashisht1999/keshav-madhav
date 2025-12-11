@@ -15,9 +15,9 @@ class FabricReceiptDataTable  {
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id','desc');
                 
-                $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
-                if ($request->has('sku') && !empty($request->sku)) {
-                    $query->where('sku', 'like', "%{$request->get('sku')}%");
+                $query->orWhere('id', 'like', "%{$request->get('search')['value']}%");
+                if ($request->has('id') && !empty($request->id)) {
+                    $query->where('id', 'like', "%{$request->get('id')}%");
                 }
                 
                 if ($request->has('vendor_id') && !empty($request->vendor_id)) {
@@ -41,6 +41,9 @@ class FabricReceiptDataTable  {
             }) 
             ->editColumn('time', function ($queue) {
                 return getformatDateTime($queue->time);
+            })
+            ->editColumn('id', function ($queue) {
+                return '#'.$queue->id;
             })
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;

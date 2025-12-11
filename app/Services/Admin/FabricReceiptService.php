@@ -13,6 +13,7 @@ use App\Models\Stock;
 use App\Models\StockExpend;
 use App\Models\MasterProductSubStage;
 use App\Models\PurchaseOrderItem;
+use App\Models\MasterFabricWarehouse;
 use App\Http\DataTable\Admin\FabricReceiptDataTable as DataTable;
 use Carbon\Carbon;
 use Endroid\QrCode\Builder\Builder;
@@ -60,7 +61,7 @@ class FabricReceiptService {
         $save_data->time = $request->time;
         $save_data->roll = $request->roll ?? 1;
         $save_data->received_by = $request->received_by;
-        $save_data->master_product_sub_stage_id = $request->master_product_sub_stage_id;
+        $save_data->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
         $save_data->shipment_photo = $imgName;
         $save_data->challan_photo = $imgName2;
         $save_data->status = 0;
@@ -121,7 +122,7 @@ class FabricReceiptService {
             'roll' => count($request->rolls),
         ]);
         $fab_rec_data = FabricReceipt::where('id',$request->id)->first();
-        $master_product_sub_stage_id = $fab_rec_data->master_product_sub_stage_id;
+        $master_fabric_warehouse_id = $fab_rec_data->master_fabric_warehouse_id;
 
         foreach($request->rolls as $single_data){
         
@@ -239,7 +240,7 @@ class FabricReceiptService {
                     $save_stock = new Stock;
                     $save_stock->sku = $fabric_sku;
                     $save_stock->fabric_id = $fabric_id;
-                    $save_stock->master_product_sub_stage_id = $master_product_sub_stage_id;
+                    $save_stock->master_fabric_warehouse_id = $master_fabric_warehouse_id;
                     $save_stock->date = Carbon::now()->format('Y-m-d');
                     $save_stock->goods_entry_number = $save_data->id;
                     $save_stock->meter = $meter;
@@ -287,7 +288,7 @@ class FabricReceiptService {
     }
 
     public function cutting_units(){
-        $data = MasterProductSubStage::where('master_product_stage_id',3)->get();
+        $data = MasterFabricWarehouse::where('status',1)->get();
         return $data;
     }
 

@@ -6,8 +6,8 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12 text-center">
-                    <h1 class="mb-0">Fabric Receipt Detail</h1>
-                    <small class="text-muted">Fill fabric details while viewing challan & fabric images</small>
+                    <h1 class="mb-0">Fabric Shipment Details</h1>
+                    <!-- <small class="text-muted">Fill fabric details while viewing challan & fabric images</small> -->
                 </div>
             </div>
         </div>
