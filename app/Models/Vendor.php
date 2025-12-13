@@ -24,5 +24,9 @@ class Vendor extends Model
         'created_at',
         'updated_at'
     ];
+
+    public function fabrics(){
+        return $this->hasMany('App\Models\Fabric','vendor_id','id');
+    }
     
 }

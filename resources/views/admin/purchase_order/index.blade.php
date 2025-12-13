@@ -85,6 +85,39 @@
         </div>
     </section>
 </div>
+
+<!-- Send Email Modal -->
+<div class="modal fade" id="sendEmailModal" tabindex="-1" aria-labelledby="sendEmailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <form id="sendEmailForm">
+        @csrf
+        <div class="modal-header">
+          <h5 class="modal-title" id="sendEmailModalLabel">Resend Purchase Order</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" name="id" id="emailPurchaseId" value="">
+
+          <div class="mb-2">
+            <label for="emailTo" class="form-label">Recipient Email</label>
+            <input type="email" name="email" id="emailTo" class="form-control" placeholder="email@example.com" required>
+          </div>
+
+          <div id="sendEmailError" class="text-danger small" style="display:none;"></div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Send</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
 <script>
     $(function () {
         var i = 1;
@@ -119,13 +152,13 @@
             ],
             dom: 'lBfrtip',
             buttons: [
-                {
-                    text: 'Add Purchase Order',
-                    className: 'btn-datatable',
-                    action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.purchase_order.create') }}";
-                    }
-                }
+                // {
+                //     text: 'Add Purchase Order',
+                //     className: 'btn-datatable',
+                //     action: function (e, dt, node, config) {
+                //         window.location.href = "{{ route('admin.purchase_order.create') }}";
+                //     }
+                // }
             ]
         });
 
@@ -179,6 +212,80 @@
             }
         });
     }
+</script>
+
+<script>
+    $(function() {
+    // open modal when send-email button clicked
+    $(document).on('click', '.btn-send-email', function(e) {
+        e.preventDefault();
+        var id = $(this).data('id');
+        $('#emailPurchaseId').val(id);
+        $('#emailTo').val(''); // clear previous
+        $('#sendEmailError').hide().text('');
+        // show modal (Bootstrap 4/5 safe)
+        $('#sendEmailModal').modal ? $('#sendEmailModal').modal('show') : $('#sendEmailModal').modal('show');
+    });
+
+    // submit send email form via AJAX
+    $('#sendEmailForm').on('submit', function(e) {
+        e.preventDefault();
+        var $btn = $(this).find('button[type="submit"]');
+        var id = $('#emailPurchaseId').val();
+        var email = $('#emailTo').val().trim();
+
+        if (!email) {
+            $('#sendEmailError').show().text('Please enter a recipient email.');
+            return;
+        }
+
+        $btn.prop('disabled', true).text('Sending...');
+
+        $.ajax({
+            url: '{{ route("admin.purchase_order.resend") }}', // create this POST route in web.php/controller
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                id: id,
+                email: email
+            },
+            success: function(response) {
+                // example success handling — adjust based on your JSON response
+                if (response.success) {
+                    // close modal
+                    $('#sendEmailModal').modal('hide');
+                    // show success (SweetAlert if you use it)
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Sent', response.message || 'Purchase order resent successfully.', 'success');
+                    } else {
+                        alert(response.message || 'Purchase order resent successfully.');
+                    }
+                    // reload datatable
+                    if ($.fn.DataTable && $('#customers').length) {
+                        $('#customers').DataTable().ajax.reload(null, false);
+                    }
+                } else {
+                    $('#sendEmailError').show().text(response.message || 'Failed to send email.');
+                }
+            },
+            error: function(xhr) {
+                var msg = 'Something went wrong.';
+                if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    // show first validation error
+                    var errors = xhr.responseJSON.errors;
+                    var first = Object.keys(errors)[0];
+                    msg = errors[first][0];
+                }
+                $('#sendEmailError').show().text(msg);
+            },
+            complete: function() {
+                $btn.prop('disabled', false).text('Send');
+            }
+        });
+    });
+});
+
 </script>
 
 @endsection

@@ -18,6 +18,7 @@ class PurchaseOrder extends Model
         'date',
         'vendor_id',
         'delivery_date',
+        'fabric_warehouse_id',
         'is_notify',
         'status',
         'created_at',
@@ -28,6 +29,9 @@ class PurchaseOrder extends Model
     }
     public function items(){
         return $this->hasMany('App\Models\PurchaseOrderItem','purchase_order_id','id');
+    }
+    public function fabric_warehouse(){
+        return $this->hasOne('App\Models\MasterFabricWarehouse','id','fabric_warehouse_id');
     }
 
 
