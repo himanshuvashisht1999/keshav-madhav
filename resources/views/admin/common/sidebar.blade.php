@@ -45,63 +45,111 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                 <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
                     data-accordion="false">
                     <!-- Dashboard -->
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a href="{{ route('admin.dashboard') }}"
-                            class="{{ str_contains($page_url, 'admin/dashboard') ? 'nav-link active' : 'nav-link' }}"
+                            class="{{ str_contains($page_url, 'admin/dashboard') ? 'nav-link active' : 'nav-link' }} border_class"
                             style="position:static;">
                             <i class="nav-icon fas fa-tachometer-alt"></i>
-                            <p>Dashboard</p>
+                            <p>DASHBOARD</p>
                         </a>
-                    </li>
-                    <!-- <li class="{{ (str_contains($page_url, 'admin/purchase-order') || str_contains($page_url, 'admin/purchase-order')) ? 'nav-item menu-open' : 'nav-item' }}">
+                    </li> -->
+                    <li class="{{ (str_contains($page_url, 'admin/purchase-order') || str_contains($page_url, 'admin/purchase-order')) ? 'nav-item menu-open' : 'nav-item' }} ">
                         <a href="#"
-                            class="{{ str_contains($page_url, 'admin/purchase-order') ? 'nav-link active' : 'nav-link' }}">
+                            class="{{ str_contains($page_url, 'admin/purchase-order') ? 'nav-link active' : 'nav-link' }} border_class" >
                             <i class="nav-icon fas fa-cube"></i>
                             <p>
-                                Purchase Order
+                                PURCHASE ORDER
                                 <i class="right fas fa-angle-left"></i>
                             </p>
                         </a>
-                       
+
                         <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                <a href="{{ route('admin.purchase_order.index') }}" class="{{ (str_contains($page_url, 'admin/purchase-order') && !str_contains($page_url, 'admin/purchase-order-material')) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
+                                <a href="{{ route('admin.purchase_order.estimation') }}" class="{{ (str_contains($page_url, 'admin/purchase-order/estimation')) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Fabric</p>
+                                    <p>Create PO For Fabric</p>
                                 </a>
                             </li>
                         </ul>
                        
                         <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                <a href="{{ route('admin.purchase_order.adjustment') }}" class="{{ (str_contains($page_url, 'admin/purchase-order/adjustment') ) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Adjust POs With Fabric Shipments</p>
+                                </a>
+                            </li>
+                        </ul>
+
+                        <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                <a href="{{ route('admin.purchase_order.index') }}" class="{{ (str_contains($page_url, 'admin/purchase-order/receipts') && !str_contains($page_url, 'admin/purchase-order-material')) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>PO Reports</p>
+                                </a>
+                            </li>
+                        </ul>
+                       
+                        <!-- <ul class="nav nav-treeview">
                             <li class="nav-item">
                                 <a href="{{ route('admin.purchase_order_material.index') }}" class="{{ str_contains($page_url, 'admin/purchase-order-material') ? 'nav-link active' : 'nav-link' }}" style="position:static;">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Items</p>
                                 </a>
                             </li>
-                        </ul>
-                    </li>      -->
-
-                    <li class="nav-item">
-                        <a href="{{ route('admin.purchase_order.index') }}"
-                            class="{{ str_contains($page_url, 'admin/purchase-order') ? 'nav-link active' : 'nav-link' }}"
-                            style="position:static;">
+                        </ul> -->
+                    </li> 
+                    
+                    <li class="{{ (str_contains($page_url, 'admin/fabric-receipt') || str_contains($page_url, 'admin/stock/fabricIndex')) ? 'nav-item menu-open' : 'nav-item' }} ">
+                        <a href="#"
+                            class="{{ str_contains($page_url, 'admin/fabric-receipt') || str_contains($page_url, 'admin/stock/fabricIndex') ? 'nav-link active' : 'nav-link' }} border_class" >
                             <i class="nav-icon fas fa-cube"></i>
-                            <p>Purchase Order</p>
+                            <p>
+                                FABRIC SHIPMENTS & STOCK
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
                         </a>
+
+                        <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                <a href="{{ route('admin.fabric_receipt.index') }}" class="{{ (str_contains($page_url, 'admin/fabric-receipt')) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Fabric Shipment Receipt</p>
+                                </a>
+                            </li>
+                        </ul>
+                       
+                        <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                <a href="{{ route('admin.stock.fabricIndex') }}" class="{{ (str_contains($page_url, 'admin/stock') ) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Stock Reports</p>
+                                </a>
+                            </li>
+                        </ul>
+                       
                     </li>
                     
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a href="{{ route('admin.fabric_receipt.index') }}"
-                            class="{{ str_contains($page_url, 'admin/fabric-receipt') ? 'nav-link active' : 'nav-link' }}"
+                            class="{{ str_contains($page_url, 'admin/fabric-receipt') ? 'nav-link active' : 'nav-link' }}  border_class"
                             style="position:static;">
                             <i class="nav-icon fas fa-receipt"></i>
-                            <p>Receiving Fabrics</p>
+                            <p>FABRIC SHIPMENTS & STOCK</p>
                         </a>
-                    </li>
+                    </li> -->
+
+                    <!-- <li class="nav-item">
+                        <a href="{{ route('admin.stock.fabricIndex') }}"
+                            class="{{ str_contains($page_url, 'admin/stock') ? 'nav-link active' : 'nav-link' }}"
+                            style="position:static;">
+                            <i class="fas fa-store nav-icon"></i>
+                            <p>Fabric Stock</p>
+                        </a>
+                    </li> -->
                 
                     
-                    <li class="{{ (str_contains($page_url, 'admin/stock') || str_contains($page_url, 'admin/item-stock')) ? 'nav-item menu-open' : 'nav-item' }}">
+                    <!-- <li class="{{ (str_contains($page_url, 'admin/stock') || str_contains($page_url, 'admin/item-stock')) ? 'nav-item menu-open' : 'nav-item' }}">
                         <a href="#"
                             class="{{ (str_contains($page_url, 'admin/stock') || str_contains($page_url, 'admin/item-stock')) ? 'nav-link active' : 'nav-link' }}">
                             <i class="fas fa-store nav-icon"></i>
@@ -119,7 +167,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <p>Fabric</p>
                                 </a>
                             </li>
-                        </ul>
+                        </ul> -->
                         <!-- <ul class="nav nav-treeview">
                             <li class="nav-item">
                                <a href="{{ route('admin.item_stock.itemIndex') }}"
@@ -133,7 +181,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('admin.sales_order.create') }}"
-                            class="{{ str_contains($page_url, 'admin/sales-order') ? 'nav-link active' : 'nav-link' }}"
+                            class="{{ str_contains($page_url, 'admin/sales-order') ? 'nav-link active' : 'nav-link' }} border_class"
                             style="position:static;">
                             <i class="nav-icon fas fa-shopping-cart"></i>
                             <p>Sales Order</p>
@@ -141,7 +189,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('admin.product_order.indexOrder') }}"
-                            class="{{ str_contains($page_url, 'admin/production-order') ? 'nav-link active' : 'nav-link' }}"
+                            class="{{ str_contains($page_url, 'admin/production-order') ? 'nav-link active' : 'nav-link' }} border_class"
                             style="position:static;">
                             <i class="nav-icon fas fa-industry"></i>
                             <p>List Sales Order</p>

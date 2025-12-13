@@ -100,3 +100,42 @@ table.dataTable {
 .daterangepicker.ltr.show-ranges.opensright.show-calendar{
     padding: 10px;
 }
+
+.sorting_disabled{
+    color: #007bff !important;
+}
+
+.content-header h1{
+    font-size: 1.8rem !important;
+    color: #007bff !important;
+}
+.table{
+    color:black !important;
+    font-size: 1rem !important;
+}
+.table td{
+    color: black;
+}
+.table td input{
+    color: black;
+}
+.table td select{
+    color: black;
+}
+.table span{
+    color: black;
+}
+.dataTables_length label{
+    color: black;
+}
+.dataTables_length label select{
+    color: black;
+}
+.nav-item{
+    font-weight: bold;
+}
+.border_class{
+    background : yellow;
+    margin-bottom: 10px !important;
+    color: black !important;
+}

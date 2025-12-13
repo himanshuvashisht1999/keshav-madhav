@@ -50,6 +50,9 @@ class PurchaseOrderDataTable  {
 				$parameter= $queue->id;
                 return '
                 <a href="' . route('admin.purchase_order.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
+                <button type="button" class="btn-send-email btn btn-sm btn-outline-primary" data-id="' . $parameter . '" title="Resend PO">
+                    <i class="fas fa-envelope"></i>
+                </button>
                 ';
             })
             
