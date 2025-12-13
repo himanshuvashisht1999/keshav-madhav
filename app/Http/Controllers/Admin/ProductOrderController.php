@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\ProductOrderService as Service;
+
 use App\Requests\Admin\ProductOrderStoreRequest;
 use App\Requests\Admin\ProductOrderUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
@@ -19,6 +20,7 @@ class ProductOrderController extends Controller {
     public function index(Request $request){
         $response['customers'] = $this->service->customers();
         $response['order_main_id'] = $request->id ?? 0;
+        $response['order_main'] = $this->service->orderMainDetails($request);
         return view('admin.product_order.index',$response);
     } 
     public function indexList(Request $request){
@@ -28,8 +30,18 @@ class ProductOrderController extends Controller {
         $response['customers'] = $this->service->customers();
         return view('admin.product_order.index-order',$response);
     } 
+    
     public function indexListOrder(Request $request){
         return $this->service->indexListOrder($request);
+    }
+    public function indexOrderSet(Request $request){
+        $response['order_main_id'] = $request->id ?? 0;
+        $response['order_main'] = $this->service->orderMainDetails($request);
+        return view('admin.product_order.index-order-set', $response);
+    } 
+    public function indexListOrderSet(Request $request){
+        $response['order_main_id'] = $request->id ?? 0;
+        return $this->service->indexListOrderSet($request);
     }
     public function create(){
         $response['products'] = $this->service->products();
@@ -133,6 +145,16 @@ class ProductOrderController extends Controller {
 
     public function productStatusHoverData(Request $request){
         $response['data'] = $this->service->productStatusHoverData($request);
+        return response()->json($response);
+    }
+
+    public function getCustomerSizes(Request $request){
+        $response = $this->service->getCustomerSizes($request);
+        return response()->json($response);
+    }
+
+    public function getCustomerDesign(Request $request){
+        $response = $this->service->getCustomerDesign($request);
         return response()->json($response);
     }
 

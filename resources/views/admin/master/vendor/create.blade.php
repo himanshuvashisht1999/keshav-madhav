@@ -81,6 +81,7 @@
                                 <div class="form-group">
                                     <label>Items</label>
                                     <select name="items[]" class="form-control select2" style="width: 100%;" multiple required>
+                                        <option value="0">Fabric</option>
                                         @foreach($items as $item)
                                         <option value="{{$item->id}}">{{$item->name}}</option>
                                         @endforeach

@@ -115,6 +115,7 @@
                                 <div class="form-group">
                                     <label>Items</label>
                                     <select name="items[]" class="form-control select2" style="width: 100%;" multiple>
+                                        <option value="0" @if(in_array(0, $selectedItems ?? [])) selected @endif>Fabric</option>
                                         @foreach($items as $item)
                                         <option value="{{$item->id}}" @if(in_array($item->id, $selectedItems ?? [])) selected @endif >{{$item->name}}</option>
                                         @endforeach

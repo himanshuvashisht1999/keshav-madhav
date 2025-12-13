@@ -5,15 +5,15 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Manage Size Group</h1>
+                <div class="col-sm-12">
+                    <h1 class="text-center">List of Product Size</h1>
                 </div>
-                <div class="col-sm-6">
+                {{-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
                         <li class="breadcrumb-item active">Manage Size Group</li>
                     </ol>
-                </div>
+                </div> --}}
             </div>
         </div>
     </section>
@@ -41,9 +41,25 @@
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
                         <td>
+                            <select name="customer_id" id="customer_id" class="form-control select2" style="width: 100%;">
+                                <option value="">All</option>
+                                @foreach ($customers as $customer)
+                                <option value="{{$customer->id}}" {{old('customer_id') == $customer->id ? 'selected' : ''}}>{{$customer->name}}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" name="design_number" id="design_number" autocomplete="off">
+                        </td>
+                        <td>
                             <input type="text" class="form-control" name="name" id="name" autocomplete="off">
                         </td>
-                        
+                        <td>
+                            <input type="text" class="form-control" name="set_size" id="set_size" autocomplete="off">
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" name="set_size" id="set_size" autocomplete="off">
+                        </td>
                         <td>
                             <input type="text" class="form-control" name="size_group" id="size_group" autocomplete="off">
                         </td>
@@ -60,7 +76,11 @@
                     </tr>
                   <tr>
                     <th>ID</th>
+                    <th>Company Name</th>
+                    <th>Design Number</th>
                     <th>Name</th>
+                    <th>Set Size</th>
+                    <th>No of Pcs (per Set)</th>
                     <th>Size Group</th>
                     <th>Status</th>
                     <th>Action</th>
@@ -99,6 +119,10 @@
                 data: function (d) {
                     d.id = $('#id').val();
                     d.name = $('#name').val();
+                    d.customer_id = $('#customer_id').val();
+                    d.design_id = $('#design_id').val();
+                    d.set_size = $('#set_size').val();
+                    d.no_of_pcs = $('#no_of_pcs').val();
                     d.size_group = $('#size_group').val();
 					d.status = $('#status').val();
                 },
@@ -106,7 +130,11 @@
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
+                {data: 'customer_id', name: 'customer_id'},
+                {data: 'design_number', name: 'design_number'},
                 {data: 'name', name: 'name'},
+                {data: 'set_size', name: 'set_size'},
+                {data: 'no_of_pcs', name: 'no_of_pcs'},
                 {data: 'size_group', name: 'size_group'},
                 {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', searchable: false}
@@ -114,7 +142,7 @@
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Size Group',
+                    text: 'Add Product Size',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
                         window.location.href = "{{ route('admin.master.size-measurement.create') }}";
@@ -153,8 +181,30 @@
             oTable.draw();
             e.preventDefault();
         });
-
+        $('#set_size').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#design_number').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#no_of_pcs').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        
         $('#size_type').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+
+        $('#size_group').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+
+        $('#customer_id').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });

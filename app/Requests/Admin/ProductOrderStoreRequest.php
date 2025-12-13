@@ -25,7 +25,7 @@ class ProductOrderStoreRequest extends FormRequest{
             'expected_delivery_date' => 'required',
             'master_customer_id' => 'required',
             'designList' => 'required|array|min:1',
-            'designList.*' => 'required|exists:production_goods,id',
+            'designList.*' => 'required',
             'colourList' => 'required|array|min:1',
             'colourList.*' => 'required',
             'sizeList' => 'required|array|min:1',

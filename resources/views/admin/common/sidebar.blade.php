@@ -136,7 +136,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             class="{{ str_contains($page_url, 'admin/sales-order') ? 'nav-link active' : 'nav-link' }}"
                             style="position:static;">
                             <i class="nav-icon fas fa-shopping-cart"></i>
-                            <p>Corporate Order</p>
+                            <p>Sales Order</p>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -144,9 +144,17 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             class="{{ str_contains($page_url, 'admin/production-order') ? 'nav-link active' : 'nav-link' }}"
                             style="position:static;">
                             <i class="nav-icon fas fa-industry"></i>
-                            <p>Production</p>
+                            <p>List Sales Order</p>
                         </a>
                     </li>
+                    {{-- <li class="nav-item">
+                        <a href="{{ route('admin.product_order.indexOrder') }}"
+                            class="{{ str_contains($page_url, 'admin/production-order') ? 'nav-link active' : 'nav-link' }}"
+                            style="position:static;">
+                            <i class="nav-icon fas fa-industry"></i>
+                            <p>Production</p>
+                        </a>
+                    </li> --}}
                     <li class="{{ str_contains($page_url, 'admin/order-stages') ? 'nav-item menu-open' : 'nav-item' }}">
                         <a href="#"
                             class="{{ str_contains($page_url, 'admin/order-stages') ? 'nav-link active' : 'nav-link' }}">

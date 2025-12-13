@@ -87,6 +87,7 @@
                                     <div class="form-group">
                                         <label>Fabric Composition</label>
                                         <select name="composition_id" class="form-control select2" style="width: 100%;">
+                                            <option value="0" {{ $data->composition_id == '' ? 'selected' : '' }}>N/A</option>
                                             @foreach ($fab_composition_data as $single_data)
                                                 <option value="{{ $single_data->id }}"
                                                     {{ $data->composition_id == $single_data->id ? 'selected' : '' }}>
