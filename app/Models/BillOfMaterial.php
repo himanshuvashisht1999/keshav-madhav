@@ -23,5 +23,9 @@ class BillOfMaterial extends Model
         'created_at',
         'updated_at'
     ];
+
+    public function fabric(){
+        return $this->hasOne('App\Models\Fabric','sku','fabric_sku');
+    }
    
 }

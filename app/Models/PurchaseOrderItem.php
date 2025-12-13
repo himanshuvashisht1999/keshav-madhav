@@ -18,6 +18,8 @@ class PurchaseOrderItem extends Model
         'purchase_order_id',
         'fabric_sku',
         'fabric_id',
+        'meter',
+        'remaining_quantity',
         'roll',
         'price',
         'status',

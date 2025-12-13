@@ -72,6 +72,18 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/delete',[AdminPurchaseOrderController::class,'delete'])->name('delete');
             Route::get('/view',[AdminPurchaseOrderController::class,'view'])->name('view');
 
+            Route::get('/estimation',[AdminPurchaseOrderController::class,'estimation'])->name('estimation');
+            Route::post('/estimation-store',[AdminPurchaseOrderController::class,'estimation_store'])->name('estimation_store');
+            Route::post('/resend',[AdminPurchaseOrderController::class,'resend'])->name('resend');
+
+            Route::get('/vendor_fabrics/{vendor}',[AdminPurchaseOrderController::class,'vendorFabrics'])->name('vendor_fabrics');
+
+            Route::get('/adjustment',[AdminPurchaseOrderController::class,'adjustment'])->name('adjustment');
+
+            Route::get('/adjustment-shipment',[AdminPurchaseOrderController::class,'adjustmentShipment'])->name('adjustmentShipment');
+            
+
+
         });
 
         Route::prefix('/purchase-order-material')->name('purchase_order_material.')->group(function () {
@@ -97,6 +109,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/detail',[AdminFabricReceiptController::class,'detail'])->name('detail');
             Route::post('/store-detail',[AdminFabricReceiptController::class,'storeDetail'])->name('storeDetail');
             Route::get('/purchase-order-items/{id}', [AdminFabricReceiptController::class, 'getPurchaseOrderItems'])->name('items');
+
+            Route::get('/vendor_fabrics/{vendor}',[AdminFabricReceiptController::class,'vendorFabrics'])->name('vendor_fabrics');
 
         });
 

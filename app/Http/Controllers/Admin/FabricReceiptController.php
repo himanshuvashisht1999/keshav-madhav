@@ -16,6 +16,7 @@ class FabricReceiptController extends Controller {
     }
     public function index(){
         $response['vendors'] = $this->service->vendors();
+        $response['cutting_units'] = $this->service->cutting_units();
         return view('admin.fabric_receipt.index',$response);
     } 
     public function indexList(Request $request){
@@ -24,7 +25,25 @@ class FabricReceiptController extends Controller {
     public function create(){
         $response['vendors'] = $this->service->vendors();
         $response['cutting_units'] = $this->service->cutting_units();
-        return view('admin.fabric_receipt.create',$response);
+        $vendor_id =  0;
+        $response['fabrics'] = $this->service->fabric_list_by_vendor($vendor_id);
+        return view('admin.fabric_receipt.create_new',$response);
+    }
+
+    public function vendorFabrics($vendor_id)
+    {
+        $fabrics = $this->service->fabric_list_by_vendor($vendor_id);
+
+        // return minimal JSON: id, name, sku (you used sku in JS)
+        $payload = $fabrics->map(function($f){
+            return [
+                'id' => $f->id,
+                'name' => $f->name,
+                'sku' => $f->sku ?? '',
+            ];
+        });
+
+        return response()->json($payload);
     }
     public function store(FabricReceiptStoreRequest $request){
         $data = $this->service->store($request);
@@ -40,7 +59,8 @@ class FabricReceiptController extends Controller {
  
         $request->merge(['vendor_id' => $response['data']->vendor_id]);
         $response['purchase_orders'] = $this->service->purchase_orders($request);
-        return view('admin.fabric_receipt.detail',$response);
+        return redirect()->route('admin.fabric_receipt.index')->withSuccess('The fabric receipt has been successfully created.');
+        //return view('admin.fabric_receipt.detail',$response);
     }
     public function getPurchaseOrderItems($id)
     {

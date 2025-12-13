@@ -51,7 +51,7 @@
 <div class="content-wrapper">
     <section class="content-header">
         <div class="container-fluid">
-            <h1 class="">Purchase Order</h1>
+            <h1 class="text-center">Fabric Purchase Order ({{ $data->sku }})</h1>
         </div>
     </section>
 
@@ -65,7 +65,8 @@
                         <h2>{{ $general_setting->website_name }}</h2>
                         <p class="mb-0">{{ $general_setting->address }}</p>
                         <p class="mb-0">{{ $general_setting->email }}</p>
-                        <p>Phone: {{ $general_setting->phone }}</p>
+                        <p class="mb-0">Phone: {{ $general_setting->phone }}</p>
+                        <p>Delivery Warehouse Address: {{ $data->fabric_warehouse->address }}</p>
                     </div>
                     <div class="col-md-6 text-right">
                         <img src="{{ $general_setting->logo }}" height="80" alt="Logo">
@@ -109,7 +110,7 @@
                             <tr>
                                 <td>{{ $index+1 }}</td>
                                 <!-- <td>{{ $item->sku }}</td> -->
-                                <td>{{ $item->fabric->sku }}</td>
+                                <td>{{ $item->fabric->name }}</td>
                                 <td>{{ $item->meter }}</td>
                                 <td>{{ number_format($item->price, 2) }}</td>
                                 <td>{{ number_format($total, 2) }}</td>
@@ -123,6 +124,15 @@
                         </tr>
                     </tfoot>
                 </table>
+
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <h5 class="text-primary"><b>Delivery Warehouse Address</b></h5>
+                        <div style="background:#f1f1f1; padding:12px; border-radius:6px;">
+                            {{ $data->fabric_warehouse->address }}
+                        </div>
+                    </div>
+                </div>
 
                 {{-- Footer --}}
                 <div class="row mt-5">

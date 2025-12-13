@@ -6,7 +6,7 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12">
-                    <h1 class="text-center">Fabric Shipment Details</h1>
+                    <h1 class="text-center">Fabric Shipment Details ({{ $data->shipment_id }})</h1>
                 </div>
                 <!-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
@@ -30,12 +30,12 @@
                 </div>
                 <div class="card-body">
                     <div class="row">   
-                        <div class="col-md-4"><strong>SKU:</strong> {{ $data->sku }}</div>
+                        <div class="col-md-4"><strong>Shipment Number:</strong> {{ $data->shipment_id }}</div>
                         <div class="col-md-4"><strong>Vendor:</strong> {{ $data->vendor->name ?? '-' }}</div>
                         <div class="col-md-4"><strong>Cutting Master:</strong> {{ $data->cutting_master->cutting_master_name ?? '-' }}</div>
-                        <div class="col-md-4"><strong>Truck Number:</strong> {{ $data->truck_number }}</div>
+                        <!-- <div class="col-md-4"><strong>Truck Number:</strong> {{ $data->truck_number }}</div> -->
                         <div class="col-md-4"><strong>Date & Time:</strong> {{ getformatDateTime($data->time) }}</div>
-                        <div class="col-md-4"><strong>Rolls:</strong> {{ $data->roll }}</div>
+                        <!-- <div class="col-md-4"><strong>Packets:</strong> {{ $data->roll }}</div> -->
                         <div class="col-md-4"><strong>Received By:</strong> {{ $data->received_by }}</div>
                         <div class="col-md-4">
                             <strong>Challan Photo:</strong><br>
@@ -45,14 +45,14 @@
                                 -
                             @endif
                         </div>
-                        <div class="col-md-4">
+                        <!-- <div class="col-md-4">
                             <strong>Shipment Photo:</strong><br>
                             @if($data->shipment_photo)
                                 <img src="{{$data->shipment_photo}}" alt="Shipment" height="100">
                             @else
                                 -
                             @endif
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>
@@ -67,11 +67,11 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Purchase Order</th>
+                                <!-- <th>Purchase Order</th> -->
                                 <th>Fabric</th>
                                 <!-- <th>Fabric Name</th> -->
                                 <th>Roll Number</th>
-                                <th>Meter (per roll)</th>
+                                <th>Meter</th>
                                 <!-- <th>Batch No</th> -->
                             </tr>
                         </thead>
@@ -79,7 +79,7 @@
                             @forelse($data->details as $key => $detail)
                                 <tr>
                                     <td>{{ $key + 1 }}</td>
-                                    <td>{{ $detail->purchase_order->sku ?? '-' }}</td>
+                                    <!-- <td>{{ $detail->purchase_order->sku ?? '-' }}</td> -->
                                     <td>{{ $detail->fabric->name }}</td>
                                     <!-- <td>{{ $detail->fabric->name ?? '-' }}</td> -->
                                     <td>{{ $detail->roll_number }}</td>

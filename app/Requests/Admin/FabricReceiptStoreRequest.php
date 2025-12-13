@@ -23,12 +23,12 @@ class FabricReceiptStoreRequest extends FormRequest{
         return [
             // 'sku'    => 'required|unique:fabric_receipts,sku',
             'vendor_id' => 'required',
-            'truck_number' => 'required',
+            // 'truck_number' => 'required',
             'time' => 'required',
             //'roll' => 'required',
-            'received_by' => 'required',
-            'shipment_photo' => 'required',
-            'challan_photo' => 'required',
+            // 'received_by' => 'required',
+            // 'shipment_photo' => 'required',
+            // 'challan_photo' => 'required',
         ];
     }
 

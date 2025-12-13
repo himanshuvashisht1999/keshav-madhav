@@ -5,14 +5,8 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Purchase Order</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Create Purchase Order</li>
-                    </ol>
+                <div class="col-sm-12 text-center">
+                    <h1>Create Purchase Order For Fabric</h1>
                 </div>
             </div>
         </div>
@@ -23,8 +17,11 @@
         <div class="container-fluid">
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
-                <div class="card-header">
+                <!-- <div class="card-header">
                     <h3 class="card-title">Create Purchase Order</h3>
+                </div> -->
+                <div class="card-header mb-1" style="background: blue;">
+                    <h3 class="" style="color:white;text-align:center !important;font-size: 1.1rem;font-weight: 600;margin: 0;">Purchase Order</h3>
                 </div>
                 <form action="{{route('admin.purchase_order.store')}}" method="post" enctype="multipart/form-data">
                     @csrf
@@ -47,7 +44,24 @@
                                     <label>Vendor</label>
                                     <select name="vendor_id" class="form-control select2" style="width: 100%;">
                                         @foreach($vendors as $single_data)
-                                        <option value="{{$single_data->id}}" {{old('vendor_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                        <option value="{{$single_data->id}}" {{$selected_vendor_id == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                        @endforeach
+                                        
+                                    </select>
+                                    @if ($errors->has('vendor_id'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('vendor_id') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Delivery Warehouse</label>
+                                    <select name="fabric_warehouse_id" class="form-control select2" style="width: 100%;">
+                                        @foreach($fabric_warehouses as $single_data)
+                                        <option value="{{$single_data->id}}">{{$single_data->cutting_master_name}}</option>
                                         @endforeach
                                         
                                     </select>
@@ -69,9 +83,9 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <!-- <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>Is Notify To Vendor</label>
+                                    <label>Notify Royal Jeans</label>
                                     <select name="is_notify" class="form-control select2" style="width: 100%;">
                                         <option value="1">Yes</option>
                                         <option value="0">No</option>
@@ -82,6 +96,13 @@
                                         {{ $errors->first('is_notify') }}
                                         </span>
                                     @endif
+
+                                    
+                                </div>
+                            </div> -->
+                            <div class="col-md-6">
+                                <div id="notify-note" style="display:none; margin-top:8px; padding:8px; border-left:4px solid #1f6feb; background:#f5f9ff; color:#333; border-radius:4px;">
+                                    Send copy of Challan & Transport details to royal jeans to royaljeans@gmail.com
                                 </div>
                             </div>
 
@@ -99,28 +120,32 @@
                                 </div>
                             </div>
 
+                            
+
 
                             <!-- Dynamic Fabric & Rolls Section -->
                             <div class="col-md-12">
-                                <label>Fabric & Prices</label>
+                                <div class="card-header mb-1" style="background: blue;">
+                                <h3 class="" style="color:white;text-align:center !important;font-size: 1.1rem;font-weight: 600;margin: 0;">Fabric & Prices</h3>
+                            </div>
                                 <div id="fabricRollContainer">
                                     <div class="row fabric-roll-row mb-2">
                                         <div class="col-md-4">
                                             <select name="fabrics[0][fabric_id]" class="form-control fabric-select select2" style="width:100%" required>
                                                 <option value="">Select Fabric</option>
-                                                @foreach($fabrics as $single_data)
-                                                <option value="{{$single_data->id}}" data-sku="{{$single_data->sku}}">{{$single_data->sku}}</option>
+                                                @foreach($vendors[0]->fabrics as $single_data)
+                                                <option value="{{$single_data->id}}" data-sku="{{$single_data->sku}}" {{$selected_fabric_id == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
                                                 @endforeach
                                             </select>
                                         </div>
                                         <div class="col-md-2">
-                                            <input type="number" name="fabrics[0][meter]" class="form-control meter-input" placeholder="Enter meters" step="0.01" min="0.01" required>
+                                            <input type="number" name="fabrics[0][meter]" class="form-control meter-input" placeholder="Enter meters" step="0.01" min="0.01"  required>
                                         </div>
                                         <div class="col-md-2">
-                                            <input type="number" name="fabrics[0][price]" class="form-control meter-input" placeholder="Enter Price (per meter)" step="0.01" min="0.01" required>
+                                            <input type="number" name="fabrics[0][price]" class="form-control meter-input" placeholder="Enter Price (per meter)" step="0.01" min="0.01">
                                         </div>
                                         <div class="col-md-3">
-                                            <input type="number" name="fabrics[0][total_price]" class="form-control meter-input" placeholder="Enter total price" value="0" readonly required>
+                                            <input type="number" name="fabrics[0][total_price]" class="form-control meter-input" placeholder="Enter total price" value="0" readonly>
                                         </div>
                                         
                                         <div class="col-md-4" style="display:none;">
@@ -133,6 +158,26 @@
                                 </div>
 
                             </div>
+
+                            <!-- Terms / Notify checkbox (place this after the #fabricRollContainer div) -->
+                            <div class="col-md-12 mt-2">
+                                {{-- ensure a value is always posted (0 when unchecked) --}}
+                                <input type="hidden" name="is_notify" value="0">
+
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_notify" id="is_notify"
+                                        value="1" {{ old('is_notify', (isset($selected_notify) ? $selected_notify : 0)) == 1 ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="is_notify" style="font-weight:500;">
+                                        Send copy of Challan &amp; Transport details to royal jeans to <strong>royaljeans@gmail.com</strong>
+                                    </label>
+                                </div>
+                                @if ($errors->has('is_notify'))
+                                    <span class="invalid-feedback d-block">
+                                        {{ $errors->first('is_notify') }}
+                                    </span>
+                                @endif
+                            </div>
+
                             
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">
@@ -246,7 +291,7 @@
                         <select name="fabrics[${index}][fabric_id]" class="form-control fabric-select select2" style="width:100%" required>
                             <option value="">Select Fabric</option>
                             @foreach($fabrics as $single_data)
-                            <option value="{{$single_data->id}}" data-sku="{{$single_data->sku}}">{{$single_data->sku}}</option>
+                            <option value="{{$single_data->id}}" data-sku="{{$single_data->sku}}">{{$single_data->name}}</option>
                             @endforeach
                         </select>
                     </div>
@@ -254,10 +299,10 @@
                         <input type="number" name="fabrics[${index}][meter]" class="form-control meter-input" placeholder="Enter meters" required>
                     </div>
                     <div class="col-md-2">
-                        <input type="number" name="fabrics[${index}][price]" class="form-control meter-input" placeholder="Enter Price (per meter)" required>
+                        <input type="number" name="fabrics[${index}][price]" class="form-control meter-input" placeholder="Enter Price (per meter)">
                     </div>
                     <div class="col-md-3">
-                        <input type="number" name="fabrics[${index}][total_price]" class="form-control meter-input" placeholder="Enter total price" value="0" readonly>
+                        <input type="number" name="fabrics[${index}][total_price]" class="form-control meter-input" placeholder="Enter total price" value="0">
                     </div>
                     <div class="col-md-4"  style="display:none;">
                         <input type="hidden" name="fabrics[${index}][sku]" class="form-control item-sku" placeholder="Auto SKU">
@@ -278,7 +323,92 @@
     });
 </script>
 
+<!-- <script>
+    function toggleNotifyNote() {
+    var val = $("select[name='is_notify']").val();
+    if (val === '1' || val === 1) {
+        $("#notify-note").slideDown(150);
+    } else {
+        $("#notify-note").slideUp(150);
+    }
+} 
 
+$(document).ready(function(){
+    // initialize visibility on page load
+    toggleNotifyNote();
+
+    // toggle on change
+    $(document).on('change', "select[name='is_notify']", function(){
+        toggleNotifyNote();
+    });
+});
+</script> -->
+<script>
+$(document).ready(function(){
+    // helper to build options HTML from fabrics array
+    function buildFabricOptions(fabrics) {
+        var html = '<option value="">Select Fabric</option>';
+        fabrics.forEach(function(f){
+            // escape values as necessary
+            html += '<option value="' + f.id + '" data-sku="' + (f.sku || '') + '">' + f.name + '</option>';
+        });
+        return html;
+    }
+
+    // when vendor changes, fetch fabrics and update each fabric-select
+    $(document).on('change', "select[name='vendor_id']", function() {
+        var vendorId = $(this).val();
+        if (!vendorId) return;
+
+        var url = "{{ route('admin.purchase_order.vendor_fabrics', ['vendor' => 'VENDOR_ID']) }}";
+        url = url.replace('VENDOR_ID', vendorId);
+
+        $.ajax({
+            url: url,
+            method: 'GET',
+            dataType: 'json'
+        }).done(function(data) {
+            // data is array of fabrics
+            var optionsHtml = buildFabricOptions(data);
+
+            // Update every fabric-select in the page
+            $('.fabric-select').each(function(){
+                var $sel = $(this);
+                // store old selected id to try to preserve selection if it exists for new vendor
+                var oldVal = $sel.val();
+
+                // Replace options
+                $sel.html(optionsHtml);
+
+                // If oldVal exists in new list, reselect it; otherwise set blank
+                if (oldVal) {
+                    var exists = $sel.find('option[value="' + oldVal + '"]').length;
+                    if (exists) {
+                        $sel.val(oldVal);
+                    } else {
+                        $sel.val(''); // clear selection
+                    }
+                } else {
+                    $sel.val('');
+                }
+
+                // If using select2, reinitialize or trigger update
+                if ($sel.hasClass('select2-hidden-accessible')) {
+                    $sel.trigger('change.select2'); // update select2
+                }
+                $sel.trigger('change'); // trigger change to update SKU/total
+            });
+
+        }).fail(function(xhr){
+            console.error('Failed to load fabrics for vendor', vendorId, xhr);
+            // optionally show an alert or toast to user
+        });
+    });
+
+    // optionally trigger once on page load, so the selects match the initial selected vendor
+    $("select[name='vendor_id']").trigger('change');
+});
+</script>
 
 
 @endsection

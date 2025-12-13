@@ -46,7 +46,16 @@
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="id" id="id" autocomplete="off">
+                            <input type="text" class="form-control" name="shipment_id" id="shipment_id" autocomplete="off">
+                        </td>
+
+                        <td>
+                            <select class="form-control select2" name="master_fabric_warehouse_id" id="master_fabric_warehouse_id" style="width: 100%;">
+                                <option value="">ALL</option>
+                                @foreach($cutting_units as $fabric_warehouse)
+                                    <option value="{{$fabric_warehouse->id}}" >{{$fabric_warehouse->cutting_master_name}}</option>
+                                @endforeach
+                            </select>
                         </td>
                         
                         <td>
@@ -57,9 +66,9 @@
                                 @endforeach
                             </select>
                         </td>
-                        <td>
+                        <!-- <td>
                             <input type="text" class="form-control" name="truck_number" id="truck_number" autocomplete="off">
-                        </td>
+                        </td> -->
                         
                         <td>
                             <input type="date" class="form-control" name="time" id="time" autocomplete="off">
@@ -78,11 +87,12 @@
                     </tr>
                     <tr>
                         <th>ID</th>
-                        <th>Shippment ID</th>
+                        <th>Shippment Number</th>
                         <th>Vendor</th>
-                        <th>Truck Number</th>
+                        <th>Cutting Master</th>
+                        <!-- <th>Truck Number</th> -->
                         <th>Date & Time</th>
-                        <th>Roll</th>
+                        <th>Packets</th>
                         <th>Received By</th>
                         
                         <th>Action</th>
@@ -120,10 +130,11 @@
                 url: '{!! route('admin.fabric_receipt.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
-                    d.id = $('#id').val();
+                    d.shipment_id = $('#shipment_id').val();
                     d.vendor_id = $('#vendor_id').val();
-                    d.truck_number = $('#truck_number').val();
+                    // d.truck_number = $('#truck_number').val();
                     d.time = $('#time').val();
+                    d.master_fabric_warehouse_id = $('#master_fabric_warehouse_id').val();
                     d.roll = $('#roll').val();
                     d.received_by = $('#received_by').val();
                   
@@ -132,9 +143,10 @@
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'id', name: 'id'},
+                {data: 'shipment_id', name: 'shipment_id'},
                 {data: 'vendor_id', name: 'vendor_id'},
-                {data: 'truck_number', name: 'truck_number'},
+                {data: 'master_fabric_warehouse_id', name: 'master_fabric_warehouse_id'},
+                // {data: 'truck_number', name: 'truck_number'},
                 {data: 'time', name: 'time'},
                 {data: 'roll', name: 'roll'},
                 {data: 'received_by', name: 'received_by'},
@@ -162,7 +174,7 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#id').on('keyup', function (e) {
+        $('#shipment_id').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
@@ -171,11 +183,15 @@
             oTable.draw();
             e.preventDefault();
         });
-
-        $('#truck_number').on('keyup', function (e) {
+        $('#master_fabric_warehouse_id').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
+
+        // $('#truck_number').on('keyup', function (e) {
+        //     oTable.draw();
+        //     e.preventDefault();
+        // });
 
         $('#roll').on('keyup', function (e) {
             oTable.draw();

@@ -15,6 +15,7 @@ class FabricReceipt extends Model
         'sub_company_id',
         'project_id',
         'sku',
+        'shipment_id',
         'vendor_id',
         'truck_number',
         'time',
