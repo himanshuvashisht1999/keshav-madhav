@@ -105,22 +105,38 @@
                     </thead>
                     <tbody>
                         @php $grandTotal = 0; @endphp
+
                         @foreach($data->items as $index => $item)
-                            @php $total = $item->meter * $item->price; $grandTotal += $total; @endphp
+
+                            @php
+                                $total = null;
+
+                                if ($item->price > 0) {
+                                    $total = $item->meter * $item->price;
+                                    $grandTotal += $total;
+                                }
+                            @endphp
+
                             <tr>
-                                <td>{{ $index+1 }}</td>
-                                <!-- <td>{{ $item->sku }}</td> -->
+                                <td>{{ $index + 1 }}</td>
                                 <td>{{ $item->fabric->name }}</td>
                                 <td>{{ $item->meter }}</td>
-                                <td>{{ number_format($item->price, 2) }}</td>
-                                <td>{{ number_format($total, 2) }}</td>
+
+                                <td>
+                                    {{ $item->price > 0 ? number_format($item->price, 2) : 'N/A' }}
+                                </td>
+
+                                <td>
+                                    {{ $total !== null ? number_format($total, 2) : 'N/A' }}
+                                </td>
                             </tr>
+
                         @endforeach
                     </tbody>
                     <tfoot>
                         <tr class="grand-total">
                             <td colspan="4" class="text-right">Grand Total</td>
-                            <td>{{ number_format($grandTotal, 2) }}</td>
+                            <td>{{ $grandTotal > 0 ? number_format($grandTotal, 2) : 'N/A' }}</td>
                         </tr>
                     </tfoot>
                 </table>

@@ -15,6 +15,7 @@ use App\Mail\PurchaseOrderMail;
 use App\Models\MasterFabricWarehouse;
 use Illuminate\Support\Facades\Mail;
 use App\Http\DataTable\Admin\PurchaseOrderDataTable as DataTable;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseOrderService {
     public function __construct(
@@ -42,7 +43,7 @@ class PurchaseOrderService {
             $query->where('purchase_order_items.fabric_id', $request->get('fabric_id'));
         }
 
-        $data = $query->select('purchase_orders.sku as purchase_order_sku','purchase_orders.created_at as po_date','purchase_orders.delivery_date as expected_delivery_date','purchase_order_items.fabric_sku','purchase_order_items.meter','purchase_order_items.id as purchase_order_item_id','purchase_orders.id as purchase_order_id','purchase_order_items.fabric_id','purchase_orders.vendor_id')->get();
+        $data = $query->select('purchase_orders.sku as purchase_order_sku','purchase_orders.created_at as po_date','purchase_orders.delivery_date as expected_delivery_date','purchase_order_items.fabric_sku','purchase_order_items.meter','purchase_order_items.remaining_quantity','purchase_order_items.id as purchase_order_item_id','purchase_orders.id as purchase_order_id','purchase_order_items.fabric_id','purchase_orders.vendor_id')->get();
         // dd($data);
         return $data;
 
@@ -51,7 +52,7 @@ class PurchaseOrderService {
     public function adjustmentShipment(Request $request){
         $fabric_id = $request->fabric_id;
         $vendor_id = $request->vendor_id;
-        $data = FabricReceiptDetail::join('fabric_receipts','fabric_receipts.id','fabric_receipt_details.fabric_receipt_id')->where('fabric_receipt_details.fabric_id',$fabric_id)->where('fabric_receipts.vendor_id',$vendor_id)->select('fabric_receipts.id','fabric_receipts.time as date_time','fabric_receipts.shipment_id as shipment_number','fabric_receipt_details.meter','fabric_receipt_details.id as fabric_receipt_detail_id')->get();
+        $data = FabricReceiptDetail::join('fabric_receipts','fabric_receipts.id','fabric_receipt_details.fabric_receipt_id')->where('fabric_receipt_details.fabric_id',$fabric_id)->where('fabric_receipts.vendor_id',$vendor_id)->select('fabric_receipts.id','fabric_receipts.time as date_time','fabric_receipts.shipment_id as shipment_number','fabric_receipt_details.meter','fabric_receipt_details.id as fabric_receipt_detail_id')->where('fabric_receipt_details.status',1)->get();
 
         return $data;
     }
@@ -62,7 +63,7 @@ class PurchaseOrderService {
         $save_data->date = $request->date;
         $save_data->vendor_id = $request->vendor_id;
         $save_data->delivery_date = $request->delivery_date;
-        $save_data->is_notify = $request->is_notify;
+        $save_data->is_notify = $request->is_notify ?? 0;
         $save_data->fabric_warehouse_id = $request->fabric_warehouse_id;
         $save_data->status = 1;
         $save_data->save();
@@ -152,6 +153,7 @@ class PurchaseOrderService {
         $data = GeneralSettings::where('status',1)->first();
         return $data;
     }
+    
     public function products(){
         $products = ProductionGoods::with('mainImage','bill_of_materials.fabric')->where('status',1)->get();
         $data = [];
@@ -186,6 +188,227 @@ class PurchaseOrderService {
         // }
         return true;
     }
+
+    public function adjustmentSubmit(Request $request)
+    {
+
+        DB::beginTransaction();
+
+        try {
+
+            // 🔒 Lock PO item row to avoid race conditions
+            $purchaseOrderItem = PurchaseOrderItem::lockForUpdate()
+                ->where('id', $request->purchase_order_item_id)
+                ->first();
+
+            if (!$purchaseOrderItem) {
+                $result['status'] = 0;
+                $result['message'] = 'Purchase order item not found';
+                return $result;
+               
+            }
+
+            $shipmentIds = $request->fabric_receipt_detail_id;
+
+            // Fetch shipment details (only unused)
+            $shipments = FabricReceiptDetail::whereIn('id', $shipmentIds)
+                ->where('status', '!=', 2) // not already adjusted
+                ->get();
+
+            if ($shipments->count() !== count($shipmentIds)) {
+                
+                $result['status'] = 0;
+                $result['message'] = 'One or more shipments are already adjusted';
+                return $result;
+            }
+
+            // 🔢 Total shipment quantity
+            $totalMeterRequest = $shipments->sum('meter');
+
+            $totalRemainingQty = $purchaseOrderItem->remaining_quantity;
+            $originalMeterQty  = $purchaseOrderItem->meter;
+
+            // ✅ Update shipment records
+            FabricReceiptDetail::whereIn('id', $shipmentIds)->update([
+                'status' => 2,
+                'purchase_order_id' => $purchaseOrderItem->purchase_order_id,
+                'purchase_order_item_id' => $purchaseOrderItem->id,
+            ]);
+
+            // ✅ Business logic: over-delivery handling
+            if ($totalMeterRequest >= $totalRemainingQty) {
+
+                // Extra quantity supplied by vendor
+                $extraReceived = $totalMeterRequest - $totalRemainingQty;
+
+                PurchaseOrderItem::where('id', $purchaseOrderItem->id)->update([
+                    'meter' => $originalMeterQty + $extraReceived,
+                    'remaining_quantity' => 0,
+                    'status' => 2, // closed
+                ]);
+
+            } else {
+
+                PurchaseOrderItem::where('id', $purchaseOrderItem->id)->update([
+                    'remaining_quantity' => $totalRemainingQty - $totalMeterRequest,
+                ]);
+            }
+
+            DB::commit();
+
+            $result['status'] = 1;
+            $result['message'] = 'Purchase order adjusted successfully';
+            return $result;
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            $result['status'] = 0;
+            $result['message'] = $e->getMessage();
+            return $result;
+        }
+    }
+
+    // public function adjustmentDynamic(){
+        
+    //     $fabric_receipt_details = FabricReceiptDetail::join('fabric_receipts','fabric_receipts.id','fabric_receipt_details.fabric_receipt_id')->where('fabric_receipt_details.status',1)->select('fabric_receipt_details.id as fabric_receipt_detail_id','fabric_receipts.vendor_id','fabric_receipt_details.fabric_id')->get();
+    //     foreach($fabric_receipt_details as $fabric_receipt_detail){
+    //         $purchase_order_detail = PurchaseOrderItem::join('purchase_orders','purchase_orders.id','purchase_order_items.purchase_order_id')->where('purchase_orders.vendor_id',$fabric_receipt_detail->vendor_id)->where('purchase_order_items.fabric_id',$fabric_receipt_detail->fabric_id)->get();
+
+            
+
+    //     }
+        
+    // }
+
+    public function adjustmentDynamic()
+    {
+        DB::beginTransaction();
+
+        try {
+
+            // 1️⃣ Get unassigned fabric receipt details
+            $receiptDetails = FabricReceiptDetail::join(
+                    'fabric_receipts',
+                    'fabric_receipts.id',
+                    '=',
+                    'fabric_receipt_details.fabric_receipt_id'
+                )
+                ->where('fabric_receipt_details.status', 1) // unassigned
+                ->select(
+                    'fabric_receipt_details.id as fabric_receipt_detail_id',
+                    'fabric_receipt_details.fabric_id',
+                    'fabric_receipt_details.meter',
+                    'fabric_receipts.vendor_id',
+                    'fabric_receipts.master_fabric_warehouse_id'
+                )
+                ->get();
+
+            if ($receiptDetails->isEmpty()) {
+                return [
+                    'status' => 0,
+                    'message' => 'No unassigned fabric receipts found'
+                ];
+            }
+
+            // 2️⃣ Group by vendor
+            $groupedByVendor = $receiptDetails->groupBy('vendor_id');
+
+            foreach ($groupedByVendor as $vendorId => $vendorRows) {
+
+                // 🔹 Group vendor receipts by fabric
+                $groupedByFabric = $vendorRows->groupBy('fabric_id');
+
+                foreach ($groupedByFabric as $fabricId => $fabricRows) {
+
+                    // 🔴 IMPORTANT CHECK
+                    // If an open PO item exists → skip auto creation
+                    $openPoExists = PurchaseOrderItem::join(
+                            'purchase_orders',
+                            'purchase_orders.id',
+                            '=',
+                            'purchase_order_items.purchase_order_id'
+                        )
+                        ->where('purchase_orders.vendor_id', $vendorId)
+                        ->where('purchase_order_items.fabric_id', $fabricId)
+                        ->where('purchase_order_items.remaining_quantity', '>', 0)
+                        ->where('purchase_order_items.status', 1)
+                        ->exists();
+
+                    if ($openPoExists) {
+                        // ❌ DO NOTHING → normal adjustment flow will handle
+                        continue;
+                    }
+
+                    // ✅ AUTO-CREATE PO (only when no PO exists)
+                    $warehouseId = $fabricRows->first()->master_fabric_warehouse_id;
+
+                    $purchaseOrder = new PurchaseOrder;
+                    $purchaseOrder->sku = '';
+                    $purchaseOrder->date = now()->format('Y-m-d');
+                    $purchaseOrder->vendor_id = $vendorId;
+                    $purchaseOrder->delivery_date = now()->format('Y-m-d');
+                    $purchaseOrder->is_notify = 1;
+                    $purchaseOrder->fabric_warehouse_id = $warehouseId;
+                    $purchaseOrder->status = 1;
+                    $purchaseOrder->save();
+
+                    // Generate SKU
+                    $date = \Carbon\Carbon::parse($purchaseOrder->date)->format('dmY');
+                    $sku = "PO/" . $date . "/" . $purchaseOrder->id;
+                    $purchaseOrder->update(['sku' => $sku]);
+
+                    // Fetch fabric
+                    $fabric = Fabric::find($fabricId);
+                    if (!$fabric) {
+                        continue;
+                    }
+
+                    $totalMeter = $fabricRows->sum('meter');
+
+                    // Create PO item
+                    $poItem = new PurchaseOrderItem;
+                    $poItem->purchase_order_id = $purchaseOrder->id;
+                    $poItem->fabric_sku = $fabric->sku;
+                    $poItem->fabric_id = $fabric->id;
+                    $poItem->meter = $totalMeter;
+                    $poItem->remaining_quantity = 0;
+                    $poItem->price = 0;
+                    $poItem->total_price = 0;
+                    $poItem->status = 2; // closed
+                    $poItem->save();
+
+                    // Assign receipts
+                    $receiptIds = $fabricRows->pluck('fabric_receipt_detail_id');
+
+                    FabricReceiptDetail::whereIn('id', $receiptIds)->update([
+                        'status' => 2,
+                        'purchase_order_id' => $purchaseOrder->id,
+                        'purchase_order_item_id' => $poItem->id,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return [
+                'status' => 1,
+                'message' => 'Auto adjustment completed successfully'
+            ];
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return [
+                'status' => 0,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+
     
 
 }

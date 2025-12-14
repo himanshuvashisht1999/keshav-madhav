@@ -1,13 +1,18 @@
 @extends('admin.layouts.app')
 
 @section('content')
+<style>
+    .po-selected {
+        background-color: #ffe6ea !important; /* light pink */
+    }
+</style>
 <div class="content-wrapper">
     <!-- Content Header (Page header) -->
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12">
-                    <h1 class="text-center">Adjust POs With Fabric Shipments</h1>
+                    <h1 class="text-center">Adjust Unassigned POs With Fabric Shipments</h1>
                 </div>
             </div>
         </div>
@@ -46,6 +51,8 @@
 
                             <button type="submit" class="btn btn-primary">Filter</button>
                             <a href="{{ route('admin.purchase_order.adjustment') }}" class="btn btn-outline-secondary ml-2">Reset</a>
+                            <a href="{{ route('admin.purchase_order.adjustmentDynamic') }}" class="btn btn-primary ml-2">Auto Generate PO</a>
+                            
                         </form>
                     </div>
 
@@ -62,6 +69,7 @@
                                     <th>Vendor</th>
                                     <th>Fabric SKU</th>
                                     <th class="text-right">Qty</th>
+                                    <th class="text-right">Remaining QTY</th>
                                     <th class="text-center">Action</th>
                                 </tr>
                             </thead>
@@ -73,6 +81,7 @@
                                         $expDelivery = data_get($item, 'expected_delivery_date');
                                         $fabricSku = data_get($item, 'fabric_sku');
                                         $meter = data_get($item, 'meter', 0);
+                                        $remaining_quantity = data_get($item, 'remaining_quantity', 0);
                                         $purchaseOrderItemId = data_get($item, 'purchase_order_item_id');
                                         $vendorId = data_get($item, 'vendor_id');
                                         $fabricId = data_get($item, 'fabric_id');
@@ -80,7 +89,7 @@
                                         $vendor_data = DB::table('vendors')->where('id',$vendorId)->first();
                                         $vendor_name = $vendor_data ? $vendor_data->name : '--';
                                     @endphp
-                                    <tr class="adjustment-row" data-item-id="{{ $purchaseOrderItemId }}">
+                                    <tr class="adjustment-row" data-item-id="{{ $purchaseOrderItemId }}" data-original-remaining="{{ $remaining_quantity }}">
                                         <td>{{ $purchaseOrderSku }}</td>
                                         <td>
                                             @if($poDate)
@@ -99,6 +108,7 @@
                                         <td class="vendor-cell" data-vendor-name="{{ $vendor_name }}">{{ $vendor_name }}</td>
                                         <td>{{ $fabricSku }}</td>
                                         <td class="text-right">{{ number_format($meter) }}</td>
+                                        <td class="text-right">{{ number_format($remaining_quantity) }}</td>
                                         <td class="text-center">
                                             <input type="checkbox"
                                                    class="select-row"
@@ -123,6 +133,74 @@
         </div>
     </section>
 </div>
+<script>
+    $('body').on('change', '.shipment-check', function () {
+
+    // selected PO row
+    var poRow = $('#adjustmentTable tbody tr:visible.adjustment-row');
+
+    if (!poRow.length) return;
+
+    var originalRemaining = parseFloat(poRow.data('original-remaining'));
+    var usedQty = 0;
+
+    // sum all checked shipment meters
+    $('.shipment-check:checked').each(function () {
+        usedQty += parseFloat($(this).data('meter'));
+    });
+
+    var newRemaining = originalRemaining - usedQty;
+
+    // update Remaining QTY cell (7th column)
+    var remainingCell = poRow.find('td:nth-child(7)');
+    remainingCell.text(newRemaining.toLocaleString());
+
+    // optional visual feedback
+    if (newRemaining < 0) {
+        remainingCell.css('color', 'red');
+    } else {
+        remainingCell.css('color', '');
+    }
+});
+</script>
+<script>
+    $(document).on('click', '.submit-adjustment', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var form = $(this).closest('form');
+
+    var purchaseOrderItemId = form.find('input[name="purchase_order_item_id"]').val();
+    var shipmentIds = [];
+
+    form.find('input[name="fabric_receipt_detail_id[]"]:checked').each(function () {
+        shipmentIds.push($(this).val());
+    });
+
+    if (shipmentIds.length === 0) {
+        alert('Please select at least one shipment.');
+        return;
+    }
+
+    $.ajax({
+        url: "{{ route('admin.purchase_order.adjustmentSubmit') }}",
+        method: "POST",
+        data: {
+            _token: "{{ csrf_token() }}",
+            purchase_order_item_id: purchaseOrderItemId,
+            fabric_receipt_detail_id: shipmentIds
+        },
+        success: function (res) {
+            alert(res.message || 'Adjustment saved successfully');
+            location.reload();
+        },
+        error: function (xhr) {
+            alert('Something went wrong. Check console.');
+            console.error(xhr.responseText);
+        }
+    });
+});
+
+</script>
 
 <!-- Inline script: define selectCheckbox globally and behavior -->
 <script>
@@ -136,55 +214,91 @@
 
 (function(){
     // helper: render shipments table html
-    function renderDetailsHtml(vendorName, poNo, shipments,fabricSku) {
-        var html = '<tr class="inline-details-row"><td colspan="7">';
+    function renderDetailsHtml(vendorName, poNo, shipments, fabricSku, purchaseOrderItemId,remainingQty) {
+        var html = '<tr class="inline-details-row"><td colspan="8">';
         html += '<div class="p-2" style="background:#fafafa;border-radius:6px;">';
-        html += '<div><strong>Vendor:</strong> ' + (vendorName || '--') 
-      + ' &nbsp; | &nbsp; <strong>Fabric:</strong> ' + (fabricSku || '--') 
-      + ' &nbsp; | &nbsp; <strong>PO:</strong> ' + (poNo || '--') 
-      + '</div>';
-        html += '<div class="mt-2"><strong>Shipments</strong></div>';
-        html += '<div class="table-responsive"><table class="table table-sm table-bordered mb-0">';
-        html += '<thead><tr><th>Shipment Number</th><th>Date</th><th>QTY</th></tr></thead><tbody>';
+
+        html += '<div class="mb-2"><strong>Vendor:</strong> ' + vendorName +
+            ' | <strong>Fabric:</strong> ' + fabricSku +
+            ' | <strong>PO:</strong> ' + poNo + '</div>';
+
+        html += '<form class="shipment-adjust-form">';
+        html += '<input type="hidden" name="purchase_order_item_id" value="' + purchaseOrderItemId + '">';
+
+        
+        html += '<div class="table-responsive">';
+        html += '<table class="table table-sm table-bordered">';
+        html += '<thead><tr>';
+        html += '<th>Shipment No</th><th>Date</th><th class="text-right">QTY</th><th class="text-center">Action</th>';
+        html += '</tr></thead><tbody>';
 
         if (!shipments || shipments.length === 0) {
-            html += '<tr><td colspan="3" class="text-center">No shipments found.</td></tr>';
+            html += '<tr><td colspan="4" class="text-center">No shipments found</td></tr>';
         } else {
             shipments.forEach(function(s){
                 var dateObj = s.date_time ? new Date(s.date_time.replace(' ', 'T')) : null;
+                var dateStr = dateObj ? dateObj.toLocaleDateString('en-GB') : '-';
 
-                var dateStr = dateObj
-                    ? dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-                    : '-';
                 html += '<tr>';
                 html += '<td>' + (s.shipment_number || '-') + '</td>';
                 html += '<td>' + dateStr + '</td>';
-                html += '<td class="text-right">' + (s.meter !== undefined ? Number(s.meter).toLocaleString() : '-') + '</td>';
+                html += '<td class="text-right">' + Number(s.meter).toLocaleString() + '</td>';
+                html += '<td class="text-center">';
+                html += '<input type="checkbox" class="shipment-check" ';
+                html += 'data-meter="' + s.meter + '" ';
+                html += 'name="fabric_receipt_detail_id[]" value="' + s.fabric_receipt_detail_id + '">';
+                html += '</td>';
                 html += '</tr>';
             });
         }
 
-        html += '</tbody></table></div>'; // end shipments table
-        html += '</div></td></tr>';
+        html += '</tbody></table></div>';
+
+        html += '<div class="text-right mt-2">';
+        html += '<button type="button" class="btn btn-sm btn-success submit-adjustment">Submit</button>';
+        html += '</div>';
+
+        html += '</form></div></td></tr>';
+
         return html;
     }
+
 
     // restore table state: show all rows, remove inline details rows, uncheck all checkboxes
     function restoreTable() {
         var tbody = document.querySelector('#adjustmentTable tbody');
         if (!tbody) return;
-        // remove inline details rows
-        var details = tbody.querySelectorAll('tr.inline-details-row');
-        details.forEach(function(d){ d.parentNode && d.parentNode.removeChild(d); });
 
-        // show all adjustment rows and uncheck checkboxes
-        var rows = tbody.querySelectorAll('tr');
+        // remove inline shipment rows
+        var details = tbody.querySelectorAll('tr.inline-details-row');
+        details.forEach(function(d){
+            d.parentNode && d.parentNode.removeChild(d);
+        });
+
+        // show all PO rows again + reset values
+        var rows = tbody.querySelectorAll('tr.adjustment-row');
         rows.forEach(function(r){
+
+            // 🔑 SHOW ROW AGAIN (THIS WAS MISSING)
             r.style.display = '';
-            var chk = r.querySelector('input.select-row[type="checkbox"]');
+
+            // reset remaining qty
+            var original = r.getAttribute('data-original-remaining');
+            if (original !== null) {
+                var cell = r.querySelector('td:nth-child(7)');
+                cell.innerText = Number(original).toLocaleString();
+                cell.style.color = '';
+            }
+
+            // remove pink highlight
+            r.classList.remove('po-selected');
+
+            // uncheck checkbox
+            var chk = r.querySelector('input.select-row');
             if (chk) chk.checked = false;
         });
     }
+
 
     // main function exposed globally for onclick to call
     window.selectCheckbox = function(el) {
@@ -194,7 +308,10 @@
             var vendorId = el.getAttribute('data-vendor-id');
             var po = el.getAttribute('data-po');
             var vendorName = el.getAttribute('data-vendor-name');
-
+            var purchaseOrderItemId = el.closest('tr').getAttribute('data-item-id');
+            var remainingQty = parseFloat(
+                el.closest('tr').querySelector('td:nth-child(7)').innerText.replace(/,/g, '')
+            );
             // console debug
             console.log('selectCheckbox called — fabric_id:', fabricId, 'vendor_id:', vendorId, 'po:', po, 'vendor_name:', vendorName);
 
@@ -207,6 +324,17 @@
                 // unchecked: restore table
                 restoreTable();
                 return;
+            }
+
+            var allPoRows = document.querySelectorAll('#adjustmentTable tbody tr.adjustment-row');
+            allPoRows.forEach(function(row){
+                row.classList.remove('po-selected');
+            });
+
+            // add highlight to selected row
+            var selectedRow = el.closest('tr.adjustment-row');
+            if (selectedRow) {
+                selectedRow.classList.add('po-selected');
             }
 
             // Checked: single-selection behavior
@@ -234,7 +362,7 @@
             var selRow = el.closest('tr');
             var loadingRow = document.createElement('tr');
             loadingRow.className = 'inline-details-row';
-            loadingRow.innerHTML = '<td colspan="7">Loading shipments...</td>';
+            loadingRow.innerHTML = '<td colspan="8">Loading shipments...</td>';
             selRow.parentNode.insertBefore(loadingRow, selRow.nextSibling);
 
             // AJAX request (uses jQuery if available, falls back to fetch)
@@ -251,7 +379,7 @@
                         // remove loading row and append details
                         loadingRow.parentNode && loadingRow.parentNode.removeChild(loadingRow);
                         var shipments = Array.isArray(res) ? res : [];
-                        var detailsHtml = renderDetailsHtml(vendorName, po, shipments,fabricSku);
+                        var detailsHtml = renderDetailsHtml(vendorName, po, shipments,fabricSku,purchaseOrderItemId,remainingQty);
                         selRow.insertAdjacentHTML('afterend', detailsHtml);
                     },
                     error: function(xhr, status, err){
@@ -260,7 +388,7 @@
                             loadingRow.parentNode.removeChild(loadingRow);
                             var errRow = document.createElement('tr');
                             errRow.className = 'inline-details-row';
-                            errRow.innerHTML = '<td colspan="7" class="text-danger">Error fetching shipments. Check console for details.</td>';
+                            errRow.innerHTML = '<td colspan="8" class="text-danger">Error fetching shipments. Check console for details.</td>';
                             selRow.parentNode.insertBefore(errRow, selRow.nextSibling);
                         }
                     }
@@ -273,7 +401,7 @@
                 .then(function(res){
                     loadingRow.parentNode && loadingRow.parentNode.removeChild(loadingRow);
                     var shipments = Array.isArray(res) ? res : [];
-                    var detailsHtml = renderDetailsHtml(vendorName, po, shipments,fabricSku);
+                    var detailsHtml = renderDetailsHtml(vendorName, po, shipments,fabricSku,purchaseOrderItemId,remainingQty);
                     selRow.insertAdjacentHTML('afterend', detailsHtml);
                 })
                 .catch(function(err){
@@ -282,7 +410,7 @@
                         loadingRow.parentNode.removeChild(loadingRow);
                         var errRow = document.createElement('tr');
                         errRow.className = 'inline-details-row';
-                        errRow.innerHTML = '<td colspan="7" class="text-danger">Error fetching shipments. Check console for details.</td>';
+                        errRow.innerHTML = '<td colspan="8" class="text-danger">Error fetching shipments. Check console for details.</td>';
                         selRow.parentNode.insertBefore(errRow, selRow.nextSibling);
                     }
                 });
@@ -325,4 +453,6 @@ $(function(){
     }
 });
 </script>
+
+
 @endpush

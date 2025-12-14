@@ -71,6 +71,15 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                 </a>
                             </li>
                         </ul>
+
+                        <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                <a href="{{ route('admin.purchase_order.index') }}" class="{{ (str_contains($page_url, 'admin/purchase-order/index') || str_contains($page_url, 'admin/purchase-order/view')) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Fabric POs</p>
+                                </a>
+                            </li>
+                        </ul>
                        
                         <ul class="nav nav-treeview">
                                 <li class="nav-item">
@@ -80,6 +89,8 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                 </a>
                             </li>
                         </ul>
+
+                        
 
                         <ul class="nav nav-treeview">
                                 <li class="nav-item">
