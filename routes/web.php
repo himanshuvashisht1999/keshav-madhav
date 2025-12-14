@@ -226,6 +226,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/indexList',[AdminOrderDigitalizationController::class,'indexList'])->name('indexList');
             Route::get('/create-slips-production',[AdminOrderDigitalizationController::class,'createSlipsProduction'])->name('create-slips-production');
             Route::post('/store',[AdminOrderDigitalizationController::class,'store'])->name('store');
+            Route::get('/create-rolls-assign',[AdminOrderDigitalizationController::class,'createRollsAssign'])->name('create-rolls-assign');
+
+            Route::get('/getRollsData',[AdminOrderDigitalizationController::class,'getRollsData'])->name('getRollsData');
+            
+            
             // Route::get('/download-receipt',[AdminOrderDigitalizationController::class,'downLoadReceipt'])->name('downLoadReceipt');
             // Route::get('/get-sub-stages/{order_product_id}/{from_stage_id}',[AdminOrderDigitalizationController::class,'getSubStages'])->name('getSubStages');
         });
