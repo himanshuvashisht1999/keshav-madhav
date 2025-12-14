@@ -45,6 +45,7 @@ use App\Http\Controllers\Admin\Master\MasterProductTypeController as AdminMaster
 use App\Http\Controllers\Admin\Master\MasterWarehouseBlocksController as AdminMasterWarehouseBlocksController;
 use App\Http\Controllers\Admin\Master\MasterWarehouseController as AdminMasterWarehouseController;
 use App\Http\Controllers\Admin\Master\MasterFabricWarehouseController as AdminMasterFabricWarehouseController;
+use App\Http\Controllers\Admin\Master\MasterStageUnitController as AdminMasterStageUnitController;
 
 ///// Reports
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
@@ -244,6 +245,16 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/edit',[AdminPatternController::class,'edit'])->name('edit');
             Route::post('/update',[AdminPatternController::class,'update'])->name('update');
             Route::get('/delete',[AdminPatternController::class,'delete'])->name('delete');
+        });
+
+         Route::prefix('master/stage/unit')->name('master.stage_unit.')->group(function () {
+            Route::get('/index',[AdminMasterStageUnitController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminMasterStageUnitController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminMasterStageUnitController::class,'create'])->name('create');
+            Route::post('/store',[AdminMasterStageUnitController::class,'store'])->name('store');
+            Route::get('/edit',[AdminMasterStageUnitController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminMasterStageUnitController::class,'update'])->name('update');
+            Route::get('/delete',[AdminMasterStageUnitController::class,'delete'])->name('delete');
         });
         
         Route::prefix('master/item')->name('master.item.')->group(function () {
