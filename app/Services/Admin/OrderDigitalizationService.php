@@ -10,6 +10,7 @@ use App\Models\ProductionGoods;
 use App\Models\MasterCustomer;
 use App\Models\OrderMain;
 use App\Models\OrderProductSet;
+use App\Models\Stock;
 use PDF;
 
 
@@ -203,4 +204,45 @@ class OrderDigitalizationService {
         return true;
     }
 
+    function orderMainForRollAssign(){
+        $results = OrderMain::where('status',1)->get();
+        $data = [];
+        if ($results){
+            foreach($results as $res){
+                $data[$res->id] = $res->sku;
+            }
+        }
+        return $data;
+    }
+
+    public function getFabricsData(){
+        $results = Stock::select(
+            'fabric_id',
+            'sku',
+            DB::raw('SUM(meter) as total_fabric')
+        )
+        ->groupBy('fabric_id', 'sku')
+        ->havingRaw('SUM(meter) != 0')
+        ->get();
+        $data = [];
+        foreach ($results as $res) {
+            $data[$res->fabric_id] = $res->sku." - (".$res->total_fabric.")";
+        }
+        return $data;
+    }
+
+    public function getRollsData(Request $request){
+        $results = Stock::select(
+            'id',
+            'roll_no',
+            'meter'
+        )
+        ->where('fabric_id', $request->fabric_id)
+        ->get();
+        $data = [];
+        foreach ($results as $res) {
+            $data[$res->id] = $res->roll_no ." - (".$res->meter." Meters)";
+        }
+        return $data;
+    }
 }
