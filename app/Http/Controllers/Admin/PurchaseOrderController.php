@@ -35,6 +35,26 @@ class PurchaseOrderController extends Controller {
         return $data;
     } 
 
+    public function adjustmentSubmit(Request $request){
+        $request->validate([
+            'purchase_order_item_id' => 'required|integer',
+            'fabric_receipt_detail_id' => 'required|array|min:1'
+        ]);
+        $result = $this->service->adjustmentSubmit($request);
+        if($result['status'] == 1){
+            return response()->json([
+                'status' => true,
+                'message' => 'PO adjusted successfully'
+            ]);
+        }else{
+            return response()->json([
+                'status' => false,
+                'message' => $result['message']
+            ]);
+        }
+        
+    }
+
     public function estimation(){
         $response['products'] = $this->service->products();
         return view('admin.purchase_order.estimation',$response);
@@ -42,6 +62,16 @@ class PurchaseOrderController extends Controller {
     // public function estimation_store(){
     //     return redirect()->route('admin.purchase_order.create');
     // }
+
+    public function adjustmentDynamic(){
+        $result = $this->service->adjustmentDynamic();
+        if($result['status'] == 1){
+            return redirect()->back()->with('success', $result['message']);
+        }else{
+            return redirect()->back()->with('error', $result['message']);
+        }
+
+    }
 
     public function create(Request $request){
         $vendor_id = $request->vendor_id ?? 1;

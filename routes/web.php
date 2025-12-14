@@ -81,6 +81,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/adjustment',[AdminPurchaseOrderController::class,'adjustment'])->name('adjustment');
 
             Route::get('/adjustment-shipment',[AdminPurchaseOrderController::class,'adjustmentShipment'])->name('adjustmentShipment');
+            Route::POST('/adjustment-submit',[AdminPurchaseOrderController::class,'adjustmentSubmit'])->name('adjustmentSubmit');
+
+            Route::get('/adjustment-dynamic',[AdminPurchaseOrderController::class,'adjustmentDynamic'])->name('adjustmentDynamic');
             
 
 
