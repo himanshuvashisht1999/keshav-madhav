@@ -6,14 +6,8 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12">
-                    <h1 class="text-center">Sales Orders</h1>
+                    <h1 class="text-center">Production Slips Digitalization</h1>
                 </div>
-                {{-- <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Create Stock Order</li>
-                    </ol>
-                </div> --}}
             </div>
         </div>
     </section>
@@ -24,7 +18,7 @@
 
             <div class="card p-3 shadow-sm">
 
-                <form action="{{ route('admin.sales_order.store') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.order_digitalization.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 
                    <div class="row">
@@ -34,11 +28,18 @@
 
                             <!-- Customer & Delivery -->
                             <div class="card mb-3 p-3 border">
-                                <h5 class="mb-3">Customer & Delivery</h5>
+                                <label>Date - 14/12/2025</label>
+                                <label>Lot No.</label>
+                                <input type="text" class="form-control qty-input mb-3" placeholder="Enter Lot No." name="lot_no" id="lot_no">
+                                @if ($errors->has('lot_no'))
+                                    <span class="invalid-feedback d-block">
+                                        {{ $errors->first('lot_no') }}
+                                    </span>
+                                @endif
 
-                                <label>Select Customer</label>
+                                <label>From -</label>
                                 <select name="master_customer_id" id="master_customer_id" class="form-control select2 mb-2" required>
-                                    <option value="">Select Customer </option>
+                                    <option value="">Select </option>
                                     @foreach($customers as $customer)
                                         <option value="{{ $customer->id }}">{{ $customer->name }}</option>
                                     @endforeach
@@ -48,9 +49,13 @@
                                         {{ $errors->first('master_customer_id') }}
                                     </span>
                                 @endif
-                                <label>Expected Delivery Date</label>
-                                <input type="date" name="expected_delivery_date" class="form-control"
-                                    min="{{ date('Y-m-d') }}" required>
+                                <label>To -</label>
+                                <select name="master_customer_id" id="master_customer_id" class="form-control select2 mb-2" required>
+                                    <option value="">Select </option>
+                                    @foreach($customers as $customer)
+                                        <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                                    @endforeach
+                                </select>
                                 @if ($errors->has('expected_delivery_date'))
                                     <span class="invalid-feedback d-block">
                                         {{ $errors->first('expected_delivery_date') }}
@@ -150,9 +155,13 @@
                         </div>
 
                     </div>
-
-                    <div class="text-right mt-3">
-                        <button class="btn btn-success px-4">Submit Order</button>
+                    <div class="row">
+                        <div class="col-6 text-left">
+                            <button class="btn btn-success px-4">Skip</button>
+                        </div>
+                        <div class="col-6 text-right">
+                            <button class="btn btn-success px-4">Submit Order</button>
+                        </div>
                     </div>
 
                 </form>
@@ -193,18 +202,14 @@ $(document).ready(function () {
 
     $('#design_id').on('change', function () {
        
-        let customer_id = $('#master_customer_id').val();
+        // let customer_id = $('#master_customer_id').val(1);
         let design_id = $(this).val();
-        if(customer_id === "" ){
-            alert('Please select customer first');
-            let design_id = $(this).val("");
-            return;
-        }
+        
         let apiUrl = "{{ route('admin.sales_order.getCustomerSizes') }}";
         $.ajax({
             url: apiUrl,   // Route
             type: 'GET',
-            data: { customer_id: customer_id , design_id: design_id },
+            data: { customer_id: 1 , design_id: design_id },
             success: function (response) {
                 $("#set_size").empty(); // clear select
 
