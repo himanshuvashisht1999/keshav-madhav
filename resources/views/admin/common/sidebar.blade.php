@@ -195,6 +195,35 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             <p>List Sales Order</p>
                         </a>
                     </li>
+                     <li class="{{ (str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/index-slip-production')) ? 'nav-item menu-open' : 'nav-item' }} ">
+                        <a href="#"
+                            class="{{ str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/index-slip-production') ? 'nav-link active' : 'nav-link' }} border_class" >
+                            <i class="nav-icon fas fa-cube"></i>
+                            <p>
+                                ORDER DIGITALIZATION
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+
+                        <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                <a href="{{ route('admin.order_digitalization.index-slip-production') }}" class="{{ (str_contains($page_url, 'admin/order_digitalization')) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Production Slips Digitalization</p>
+                                </a>
+                            </li>
+                        </ul>
+                       
+                        <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                <a href="{{ route('admin.stock.fabricIndex') }}" class="{{ (str_contains($page_url, 'admin/stock') ) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Stock Reports</p>
+                                </a>
+                            </li>
+                        </ul>
+                       
+                    </li>
                     {{-- <li class="nav-item">
                         <a href="{{ route('admin.product_order.indexOrder') }}"
                             class="{{ str_contains($page_url, 'admin/production-order') ? 'nav-link active' : 'nav-link' }}"

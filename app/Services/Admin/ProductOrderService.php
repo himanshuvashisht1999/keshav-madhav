@@ -25,7 +25,8 @@ use App\Models\MasterSizeMeasurement;
 use App\Models\MasterColor;
 use App\Models\CorporateOrderProduct;
 use App\Models\OrderProductSet;
-
+use App\Models\OrderCuttingStage;
+use PDF;
 
 
 use App\Http\DataTable\Admin\ProductOrderDataTable as DataTable;
@@ -930,4 +931,76 @@ class ProductOrderService {
         $data = OrderMain::with('customer')->where('id',$request->id)->first();
         return $data;
     }
+
+    public function assign_to(Request $request)
+    {
+        $user_id = auth()->id() ?? 0;
+
+        try {
+            DB::beginTransaction();
+
+            $orderSets_data = OrderProductSet::where('order_main_id', $request->order_main_id)->get();
+
+            if ($orderSets_data->isEmpty()) {
+                return [
+                    'status' => false,
+                    'message' => 'No product set found for this order'
+                ];
+            }
+
+            $savedCount = 0;
+
+            foreach ($orderSets_data as $data) {
+                $cutting = OrderCuttingStage::create([
+                    'sku' => $data->sku,
+                    'order_main_id' => $data->order_main_id,
+                    'set_product_id' => $data->id,
+                    'from_assign_id' => 0,
+                    'to_assign_id' => $request->master_cutting_id,
+                    'quantity' => $data->total_quantity ?? 0,
+                    'processed_by' => $user_id,
+                    'remarks' => $request->remarks ?? '',
+                    'delivery_time_allowed' => $request->delivery_time_allowed ?? 0,
+                    'status' => 0,
+                    'remaining_quantity' => $data->total_quantity ?? 0,
+                ]);
+
+                if ($cutting->wasRecentlyCreated) {
+                    $savedCount++;
+                }
+            }
+
+            DB::commit();
+
+            return [
+                'status' => true,
+                'message' => "{$savedCount} order sets assigned successfully"
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return [
+                'status' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    function checkAssign(Request $request){ 
+        return $exists = OrderCuttingStage::where('order_main_id', $request->id)->exists();        
+    }
+
+    // function downloadCuttingSlip(Request $request){ 
+    //     $data = [
+    //         'title' => 'Dummy Cutting Slip',
+    //         'date'  => date('d-m-Y'),
+    //     ];
+
+    //     $pdf = PDF::loadView('admin.product_order.download-cutting-slip', $data);
+
+    //     return $pdf->download('dummy.pdf');
+    
+    // }
+     
 }

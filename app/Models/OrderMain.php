@@ -40,5 +40,9 @@ class OrderMain extends Model
         return $this->hasOne('App\Models\Package','order_main_id','id');
     }
 
+    public function OrderProductSets()
+    {
+        return $this->hasMany('App\Models\OrderProductSet', 'order_main_id', 'id');
+    }
     
 }

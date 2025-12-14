@@ -160,11 +160,22 @@ class ProductOrderDataTable  {
                 }
                 
             }) 
-             ->addColumn('status', function ($queue) {
-                if($queue->status == 2){
-                    return '<span class="badge badge-success">Completed</span>';
+            ->addColumn('assign_to', function ($queue) {
+                $cutting_master_name = DB::table('order_cutting_stage as ocs')
+                    ->leftJoin('master_fabric_warehouse as cm', 'cm.id', '=', 'ocs.to_assign_id')
+                    ->where('ocs.order_main_id', $queue->order_main_id)
+                    ->value('cm.cutting_master_name');
+
+                return $cutting_master_name ?? '';
+            })
+            ->addColumn('status', function ($queue) {
+                $exists = DB::table('order_cutting_stage')
+                    ->where('order_main_id', $queue->order_main_id)
+                    ->exists(); 
+                if($exists == true){
+                    return '<span class="badge badge-success">Issued</span>';
                 } else {
-                    return '<span class="badge badge-primary">In Progress</span>';
+                    return '<span class="badge badge-primary">Not Issue</span>';
                 }
             })
             ->addColumn('total_qty', function ($queue) {
@@ -175,11 +186,11 @@ class ProductOrderDataTable  {
 				$parameter = $queue->id;
                 
                 $view = '<a href="' . route('admin.product_order.index',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
-                
+                $view = '';
                 return $view;
             })
             
-            ->rawColumns(['action','design_number', 'total_qty', 'status'])
+            ->rawColumns(['action','design_number','assign_to', 'total_qty', 'status'])
             ->make(true);
     }
 }

@@ -28,4 +28,9 @@ class OrderProductSet extends Model
         'created_at',
         'updated_at'
     ];
+
+    public function cuttingStages()
+    {
+        return $this->hasMany(OrderCuttingStage::class, 'set_product_id');
+    }
 }
