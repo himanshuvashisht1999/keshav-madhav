@@ -206,9 +206,9 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             <p>List Sales Order</p>
                         </a>
                     </li>
-                     <li class="{{ (str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/index-slip-production')) ? 'nav-item menu-open' : 'nav-item' }} ">
+                     <li class="{{ (str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/create-slips-production')) ? 'nav-item menu-open' : 'nav-item' }} ">
                         <a href="#"
-                            class="{{ str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/index-slip-production') ? 'nav-link active' : 'nav-link' }} border_class" >
+                            class="{{ str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/create-slips-production') ? 'nav-link active' : 'nav-link' }} border_class" >
                             <i class="nav-icon fas fa-cube"></i>
                             <p>
                                 ORDER DIGITALIZATION
@@ -218,7 +218,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
 
                         <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                <a href="{{ route('admin.order_digitalization.index-slip-production') }}" class="{{ (str_contains($page_url, 'admin/order_digitalization')) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
+                                <a href="{{ route('admin.order_digitalization.create-slips-production') }}" class="{{ (str_contains($page_url, 'admin/order_digitalization')) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Production Slips Digitalization</p>
                                 </a>

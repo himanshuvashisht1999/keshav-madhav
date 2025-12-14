@@ -223,6 +223,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
         Route::prefix('/order_digitalization')->name('order_digitalization.')->group(function () {
             Route::get('/index-slip-production',[AdminOrderDigitalizationController::class,'index_slip_production'])->name('index-slip-production');
             Route::get('/indexList',[AdminOrderDigitalizationController::class,'indexList'])->name('indexList');
+            Route::get('/create-slips-production',[AdminOrderDigitalizationController::class,'createSlipsProduction'])->name('create-slips-production');
+            Route::post('/store',[AdminOrderDigitalizationController::class,'store'])->name('store');
             // Route::get('/download-receipt',[AdminOrderDigitalizationController::class,'downLoadReceipt'])->name('downLoadReceipt');
             // Route::get('/get-sub-stages/{order_product_id}/{from_stage_id}',[AdminOrderDigitalizationController::class,'getSubStages'])->name('getSubStages');
         });

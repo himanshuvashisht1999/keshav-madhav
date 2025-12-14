@@ -58,8 +58,17 @@ class OrderDigitalizationController extends Controller {
         $response['colours'] = $this->service->getColours();
         $response['customers'] = $this->service->customers();
         return view('admin.product_order.create',$response);
+    } 
+    public function createSlipsProduction(){
+        $response['products'] = $this->productOrderService->products();
+        // // dd( $response['products']);
+        $response['product_size'] = $this->productOrderService->product_sizes();
+        $response['colours'] = $this->productOrderService->getColours();
+        $response['customers'] = $this->productOrderService->customers();
+        return view('admin.order_digitalization.create-slips-production',$response);
     }
     public function store(ProductOrderStoreRequest $request){
+        dd($request->all());
         
         $data = $this->service->store($request);
         if($data['status_code'] == 1){
