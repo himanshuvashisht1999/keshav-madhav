@@ -51,6 +51,8 @@ use App\Http\Controllers\Admin\Master\MasterStageUnitController as AdminMasterSt
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 ////// Website
 Route::get('/',[AdminLoginController::class,'login'])->name('web.homepage');
+Route::get('/upload-production-slip/{encryptedId}',[AdminLoginController::class,'uploadProductionSlip'])->name('uploadProductionSlip');
+Route::post('/submit-production-slip',[AdminLoginController::class,'submitProductionSlip'])->name('submitProductionSlip');
 
 
 ////////////  Admin Routes
@@ -254,14 +256,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/delete',[AdminPatternController::class,'delete'])->name('delete');
         });
 
-         Route::prefix('master/stage/unit')->name('master.stage_unit.')->group(function () {
+         Route::prefix('master/stage-unit')->name('master.stage_unit.')->group(function () {
             Route::get('/index',[AdminMasterStageUnitController::class,'index'])->name('index');
-            Route::get('/indexList',[AdminMasterStageUnitController::class,'indexList'])->name('indexList');
-            Route::get('/create',[AdminMasterStageUnitController::class,'create'])->name('create');
-            Route::post('/store',[AdminMasterStageUnitController::class,'store'])->name('store');
-            Route::get('/edit',[AdminMasterStageUnitController::class,'edit'])->name('edit');
+            Route::get('/stage_unit/{master_fabric_warehouse_id}',[AdminMasterStageUnitController::class,'stageUnit'])->name('stageUnit');
             Route::post('/update',[AdminMasterStageUnitController::class,'update'])->name('update');
-            Route::get('/delete',[AdminMasterStageUnitController::class,'delete'])->name('delete');
         });
         
         Route::prefix('master/item')->name('master.item.')->group(function () {
