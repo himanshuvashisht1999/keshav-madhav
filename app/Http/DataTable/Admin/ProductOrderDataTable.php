@@ -6,7 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\Fabric;
 use App\Models\Order;
 use App\Models\OrderMain;
+use App\Models\OrderProductSet;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\DB;
 
 class ProductOrderDataTable  {
 
@@ -115,16 +117,80 @@ class ProductOrderDataTable  {
             ->editColumn('expected_delivery_date', function ($queue) {
                 return getformatDate($queue->expected_delivery_date);
             })
+            ->addColumn('total_pcs', function ($queue) {
+                $total = DB::table('order_products_sets')
+                    ->where('order_main_id', $queue->id)
+                    ->sum('total_quantity');
+                return $total;
+            })
+            ->addColumn('action', function ($queue) {
+				$parameter = $queue->id;
+                
+                $view = '<a href="' . route('admin.product_order.indexOrderSet',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
+                
+                return $view;
+            })
+            
+            ->rawColumns(['action','master_customer_id', 'total_pcs', 'created_at','status'])
+            ->make(true);
+    }
+
+    public function indexListOrderSet($request){
+        // dd($request->all());
+        $queue = OrderProductSet::query()->where('order_main_id',$request->get('id'));
+
+        return DataTables::of($queue)->addIndexColumn()
+            ->filter(function ($query) use ($request) {
+                $query->orderBy('id','asc');
+                // $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
+                if ($request->has('sku') && !empty($request->sku)) {
+                    $query->where('sku', 'like', "%{$request->get('sku')}%");
+                }
+                if ($request->has('design_number') && !empty($request->design_number)) {
+                    $query->where('design_number', 'like', "%{$request->get('design_number')}%");
+                }
+                // if ($request->has('created_at') && !empty($request->created_at)) {
+                //     $query->where('created_at', 'like', "%{$request->get('created_at')}%");
+                // }
+                // if ($request->has('expected_delivery_date') && !empty($request->expected_delivery_date)) {
+                //     $query->where('expected_delivery_date', 'like', "%{$request->get('expected_delivery_date')}%");
+                // }
+                if ($request->has('status') && !empty($request->status)) {
+                    $query->where('status', $request->get('status'));
+                }
+                
+            }) 
+            ->addColumn('assign_to', function ($queue) {
+                $cutting_master_name = DB::table('order_cutting_stage as ocs')
+                    ->leftJoin('master_fabric_warehouse as cm', 'cm.id', '=', 'ocs.to_assign_id')
+                    ->where('ocs.order_main_id', $queue->order_main_id)
+                    ->value('cm.cutting_master_name');
+
+                return $cutting_master_name ?? '';
+            })
+            ->addColumn('status', function ($queue) {
+                $exists = DB::table('order_cutting_stage')
+                    ->where('order_main_id', $queue->order_main_id)
+                    ->exists(); 
+                if($exists == true){
+                    return '<span class="badge badge-success">Issued</span>';
+                } else {
+                    return '<span class="badge badge-primary">Not Issue</span>';
+                }
+            })
+            ->addColumn('total_qty', function ($queue) {
+                return $queue->set_quantity * $queue->no_of_pcs;
+            })
             
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;
                 
                 $view = '<a href="' . route('admin.product_order.index',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
-                
+                $view = '';
                 return $view;
             })
             
-            ->rawColumns(['action','master_customer_id','created_at','status'])
+            ->rawColumns(['action','design_number','assign_to', 'total_qty', 'status'])
             ->make(true);
     }
 }

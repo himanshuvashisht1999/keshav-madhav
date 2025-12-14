@@ -72,7 +72,7 @@ class FabricDataTable
               
                 $src = $img ? $queue->image : asset('assets/products/default-image.png');
 
-                return '<img src="'.$src.'" class="img-thumbnail fabric-img" alt="Main Image" style="height:100px;width:100px;border-radius:4px;">';
+                return '<img src="'.$src.'" class="img-thumbnail fabric-img" alt="Main Image" style="height:50px;width:50px;border-radius:4px;">';
             })
 
             ->addColumn('action', function ($queue) {

@@ -15,6 +15,8 @@ class MasterSizeMeasurement extends Model
         'sub_company_id',
         'project_id',
         'sku',
+        'corporate_company_id',
+        'design_id',
         'name',
         'size_group',
         'size_selection_id',
@@ -28,5 +30,9 @@ class MasterSizeMeasurement extends Model
     // public function type_master(){
     //     return $this->hasOne('App\Models\TypeMaster','id','type_master_id');
     // }
+
+    public function customer(){
+        return $this->hasOne('App\Models\MasterCustomer','id','corporate_company_id');
+    }
     
 }

@@ -19,6 +19,8 @@ class OrderProduct extends Model
         'order_main_id',
         'product_sku',
         'product_type_sku',
+        'size',
+        'color_id',
         'quantity',
         'completed_quantity',
         'status',

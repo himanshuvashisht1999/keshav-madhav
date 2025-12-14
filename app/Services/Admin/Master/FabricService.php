@@ -45,9 +45,16 @@ class FabricService
             $destinationPath = public_path().'/assets/fabric';
             $image->move($destinationPath, $imgName);
         }
-        
+        // Generate SKU based on vendor_id and name,  check sku name exists or not in table
+        $sku = strtoupper($request->name) . "-" .  $request->vendor_id;
+
+        // Check if SKU already exists
+        if (Fabric::where('sku', $sku)->exists()) {
+            return back()->with('error', 'SKU already exists. Please choose a different name.');
+        }
+
         $save_data = new Fabric;
-        $save_data->sku = strtoupper($request->name);
+        $save_data->sku = $sku;
         $save_data->name = $request->name;
         $save_data->vendor_id = $request->vendor_id;
         // $save_data->dye_id = $request->dye_id;
@@ -86,7 +93,17 @@ class FabricService
         return $data;
     }
     public function update(Request $request)
-    {
+    {   
+        // Generate SKU based on vendor_id and name,  check sku name exists or not in table
+        $sku =  strtoupper($request->name) . "-" .  $request->vendor_id;
+
+        // Check if SKU already exists
+        if (Fabric::where('id', '!=', $request->id)
+                ->where('sku', $sku)
+                ->exists()) {
+            return back()->with('error', 'SKU already exists. Please choose a different name.');
+        }
+
         $update_data = Fabric::find($request->id);
          if($request->file('image')){
             $oldImageName = $update_data->getRawOriginal('image');
@@ -105,7 +122,7 @@ class FabricService
         }
 
         $update_data->name = $request->name;
-        $update_data->sku = strtoupper($request->name);
+        $update_data->sku = $sku;
         $update_data->vendor_id = $request->vendor_id;
         // $update_data->dye_id = $request->dye_id;
         // $update_data->width_id = $request->width_id;

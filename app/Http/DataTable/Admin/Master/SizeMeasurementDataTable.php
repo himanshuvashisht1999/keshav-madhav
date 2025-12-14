@@ -19,18 +19,32 @@ class SizeMeasurementDataTable  {
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id','asc');
                 
-                if ($request->has('status') && $request->filled('status')) {
-                    $query->where('status', $request->get('status'));
+                if ($request->has('customer_id') && $request->filled('customer_id')) {
+                    $query->where('corporate_company_id', $request->get('customer_id'));
                 }
                 if ($request->has('name') && !empty($request->name)) {
                     $query->where('name', 'like', "%{$request->get('name')}%");
                 }
+                if ($request->has('design_number') && !empty($request->design_number)) {
+                    $query->where('design_number', 'like', "%{$request->get('design_number')}%");
+                }
+                if ($request->has('set_size') && !empty($request->set_size)) {
+                    $query->where('set_size', 'like', "%{$request->get('set_size')}%");
+                }
+                if ($request->has('no_of_pcs') && !empty($request->no_of_pcs)) {
+                    $query->where('no_of_pcs', 'like', "%{$request->get('no_of_pcs')}%");
+                }
                 if ($request->has('size_group') && !empty($request->size_group)) {
                     $query->where('size_group', 'like', "%{$request->get('size_group')}%");
                 }
+                if ($request->has('status') && $request->filled('status')) {
+                    $query->where('status', $request->get('status'));
+                }
                 
             }) 
-            
+            ->editColumn('customer_id', function ($queue) {
+                return $queue->customer ? $queue->customer->name : '';
+            })
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
@@ -42,7 +56,7 @@ class SizeMeasurementDataTable  {
                 ';
             })
             
-            ->rawColumns(['action', 'status'])
+            ->rawColumns(['action', 'customer_id', 'status'])
             ->make(true);
     }
 }

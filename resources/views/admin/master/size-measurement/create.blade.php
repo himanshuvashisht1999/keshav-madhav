@@ -49,15 +49,15 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Product Size Group</h1>
+                <div class="col-sm-12">
+                    <h1 class="text-center">Create Product Size - Master</h1>
                 </div>
-                <div class="col-sm-6">
+                {{-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
                         <li class="breadcrumb-item active">Create Product Size</li>
                     </ol>
-                </div>
+                </div> --}}
             </div>
         </div>
     </section>
@@ -67,22 +67,10 @@
         <div class="container-fluid">
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
-                <form action="{{route('admin.master.size-measurement.store')}}" method="post" enctype="multipart/form-data">
+                <form action="{{route('admin.master.size-measurement.store')}}" method="post" enctype="multipart/form-data" autocomplete="off">
                     @csrf
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Size Name</label>
-                                    <input type="text" name="name" class="form-control" placeholder="Enter size name" value="{{old('name')}}">
-                                    
-                                    @if ($errors->has('name'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('name') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div> 
                             {{-- <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Size Type</label>
@@ -98,7 +86,115 @@
                                     @endif
                                 </div>
                             </div>    --}}
+
                             <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Company Name</label>
+                                    <select name="customer_id" id="customer_id" class="form-control select2" style="width: 100%;">
+                                        <!-- <option value="">Select</option> -->
+                                        @foreach ($customers as $customer)
+                                        <option value="{{$customer->id}}" {{old('customer_id') == $customer->id ? 'selected' : ''}}>{{$customer->name}}</option>
+                                        @endforeach
+                                    </select>
+                                    @if ($errors->has('customer_id'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('customer_id') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>   
+                             
+                            <div class="col-md-6" id="div_design_number_input">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">Design Number</label>
+                                    <input type="text" name="design_number" id="design_number_input" class="form-control" placeholder="Enter design number" value="{{old('design_number')}}">
+                                    @if ($errors->has('design_number'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('design_number') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-6" id="div_design_number_select">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">Design Number</label>
+                                     <select class="form-control select2 mb-2 design-input" name="design_number" id="design_number_select" >
+                                        <option value="">Select</option>
+                                        @foreach($products as $product)
+                                            <option value="{{ $product->design_number }}" {{ old('design_number') == $product->design_number ? 'selected' : '' }}>
+                                                {{ $product->design_number }} - {{ $product->name_of_garment }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @if ($errors->has('design_number'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('design_number') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Name</label>
+                                    <input type="text" name="name" class="form-control" placeholder="Enter size name" value="{{old('name')}}">
+                                    
+                                    @if ($errors->has('name'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('name') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div> 
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">Set Size</label>
+                                    <input type="text" name="set_size" class="form-control" placeholder="Enter Set Size" value="{{old('set_size')}}">
+                                    @if ($errors->has('set_size'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('set_size') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">No of Pcs (per Set)</label>
+                                    <input type="text" name="no_of_pcs" class="form-control" placeholder="Enter No of Pcs" value="{{old('no_of_pcs')}}">
+                                    @if ($errors->has('no_of_pcs'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('no_of_pcs') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">Size Group</label>
+                                    <input type="text" name="size_group" class="form-control" placeholder="Enter Size Group" value="{{old('size_group')}}">
+                                    @if ($errors->has('size_group'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('size_group') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            {{-- <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Size Type</label>
+                                    <select name="size_type" id="size_type" class="form-control select2" style="width: 100%;">
+                                        <!-- <option value="">Select</option> -->
+                                        <option value="0" {{old('size_type') == '0' ? 'selected' : ''}}>Set</option>
+                                        <option value="1" {{old('size_type') == '1' ? 'selected' : ''}}>Individual</option>
+                                    </select>
+                                    @if ($errors->has('size_type'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('size_type') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>    --}}
+                            {{-- <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Size Group</label>
                                     <div class="wrapper" style="position: relative;">
@@ -126,7 +222,7 @@
                                         </span>
                                     @endif
                                 </div>
-                            </div>
+                            </div> --}}
 
 
                             <div class="col-md-6">
@@ -171,6 +267,24 @@
 </div>
 <script>
     $(document).ready(function() {
+        function toggleDesignInput() {
+            let customerId = $('#customer_id').val();
+            if (customerId == 1) {
+                $('#div_design_number_select').show();
+                $('#div_design_number_input').hide();
+            } else {
+                $('#div_design_number_select').hide();
+                $('#div_design_number_input').show();
+            }
+        }
+        // Initial toggle on page load
+        toggleDesignInput();
+
+        // customer change event to show designs select box
+        $('#customer_id').change(function() {
+            toggleDesignInput();
+        });
+
         $(function () {
 
             // Toggle dropdown

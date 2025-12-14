@@ -6,12 +6,14 @@ use App\Services\Admin\Master\ProductionGoodsService as Service;
 use App\Requests\Admin\Master\ProductionGoodsStoreRequest;
 use App\Requests\Admin\Master\ProductionGoodsUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
+use App\Services\Admin\ProductOrderService;
 use Auth;
 
 class ProductionGoodsController extends Controller { 
     protected $service;
-    public function __construct(Service $service) {
+    public function __construct(Service $service, ProductOrderService $ProductOrderService) {
         $this->service = $service;
+        $this->ProductOrderService = $ProductOrderService;
     }
     public function index(){
         $response['colors'] = $this->service->colors();
@@ -29,6 +31,7 @@ class ProductionGoodsController extends Controller {
         $response['sizes'] = $this->service->sizes();
         $response['fabrics'] = $this->service->fabrics();
         $response['product_types'] = $this->service->product_types();
+        $response['customers'] = $this->ProductOrderService->customers();
         // dd($response['garment_types']);
         $response['garment_patterns'] = $this->service->garment_patterns();
         $response['colors'] = $this->service->colors();
