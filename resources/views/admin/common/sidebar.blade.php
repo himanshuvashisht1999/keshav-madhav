@@ -499,6 +499,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <p>Fabric Warehouse</p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.master.stage_unit.index') }}"
+                                    class="{{ request()->path() === 'admin/master/stage-unit/index' ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Warehouse Units</p>
+                                </a>
+                            </li>
                             <!-- <li class="nav-item">
                                 <a href="{{ route('admin.master.warehouse.index') }}"
                                     class="{{ request()->path() === 'admin/master/warehouse/index' ? 'nav-link active' : 'nav-link' }}">
