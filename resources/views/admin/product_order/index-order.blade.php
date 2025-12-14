@@ -6,7 +6,7 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12">
-                    <h1 class="text-center">List of Available Production Order</h1>
+                    <h1 class="text-center">List of Sales Orders</h1>
                 </div>
                 {{-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
@@ -58,6 +58,7 @@
                         <td>
                             <input type="date" class="form-control" name="expected_delivery_date" id="expected_delivery_date" autocomplete="off">
                         </td>
+                        <td></td>
                         <td>
                             <select id="status" class="form-control form-control-sm">
                                 <option value="">All</option>
@@ -71,10 +72,11 @@
                     </tr>
                     <tr>
                         <th>ID</th>
-                        <th>Order ID</th>
+                        <th>Order No</th>
                         <th>Customer</th>
                         <th>Order Date</th>
-                        <th>Estimated Delivery Date</th>
+                        <th>Expected Delivery Date</th>
+                        <th>Total Pcs</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -126,7 +128,8 @@
                 {data: 'sku', name: 'sku'},
                 {data: 'master_customer_id', name: 'master_customer_id'},                
                 {data: 'created_at', name: 'created_at'},                
-                {data: 'expected_delivery_date', name: 'expected_delivery_date'},                
+                {data: 'expected_delivery_date', name: 'expected_delivery_date'},     
+                {data: 'total_pcs', name: 'total_pcs'},           
                 {data: 'status', name: 'status'},                
                 {data: 'action', name: 'action', searchable: false}
             ],

@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\Master\SizeController as AdminSizeController;
 use App\Http\Controllers\Admin\PurchaseOrderMaterialController as AdminPurchaseOrderMaterialController;
 use App\Http\Controllers\Admin\ItemReceiptController as AdminItemReceiptController;
 use App\Http\Controllers\Admin\ItemStockController as AdminItemStockController;
+use App\Http\Controllers\Admin\OrderDigitalizationController as AdminOrderDigitalizationController;
 
 /// order
 use App\Http\Controllers\Admin\ProductOrderController as AdminProductOrderController;
@@ -157,13 +158,18 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
         Route::prefix('/sales-order')->name('sales_order.')->group(function () {
             Route::get('/create',[AdminProductOrderController::class,'create'])->name('create');
             Route::post('/store',[AdminProductOrderController::class,'store'])->name('store');
+            Route::get('/getCustomerSizes',[AdminProductOrderController::class,'getCustomerSizes'])->name('getCustomerSizes');
+            Route::get('/getCustomerDesign',[AdminProductOrderController::class,'getCustomerDesign'])->name('getCustomerDesign');
         });
 
         Route::prefix('/production-order')->name('product_order.')->group(function () {
 
             Route::get('/index-order',[AdminProductOrderController::class,'indexOrder'])->name('indexOrder');
             Route::get('/indexListOrder',[AdminProductOrderController::class,'indexListOrder'])->name('indexListOrder');
-
+            
+            Route::get('/index-order-set',[AdminProductOrderController::class,'indexOrderSet'])->name('indexOrderSet');
+            Route::get('/indexListOrderSet',[AdminProductOrderController::class,'indexListOrderSet'])->name('indexListOrderSet');
+            
             Route::get('/index',[AdminProductOrderController::class,'index'])->name('index');
             Route::get('/indexList',[AdminProductOrderController::class,'indexList'])->name('indexList');
             
@@ -177,7 +183,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/issue-fabric-post',[AdminProductOrderController::class,'issueFabricPost'])->name('issueFabricPost');
             Route::get('/issue-slip',[AdminProductOrderController::class,'issueSlip'])->name('issueSlip');
             Route::get('/status-hover-data',[AdminProductOrderController::class,'productStatusHoverData'])->name('statusHoverData');
-            
+
+            Route::post('/assign_to',[AdminProductOrderController::class,'assign_to'])->name('assign_to');
+            Route::get('/download-cutting-slip',[AdminProductOrderController::class,'downloadCuttingSlip'])->name('downloadCuttingSlip');
+            // Route::get('/fabric_combined_receipt',[AdminProductOrderController::class,'fabric_combined_receipt'])->name('fabric_combined_receipt');
         });
 
         Route::prefix('/warehouse')->name('warehouse.')->group(function () {
@@ -208,7 +217,12 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/get-sub-stages/{order_product_id}/{from_stage_id}',[AdminOrderStagesController::class,'getSubStages'])->name('getSubStages');
         });
 
-        
+        Route::prefix('/order_digitalization')->name('order_digitalization.')->group(function () {
+            Route::get('/index-slip-production',[AdminOrderDigitalizationController::class,'index_slip_production'])->name('index-slip-production');
+            Route::get('/indexList',[AdminOrderDigitalizationController::class,'indexList'])->name('indexList');
+            // Route::get('/download-receipt',[AdminOrderDigitalizationController::class,'downLoadReceipt'])->name('downLoadReceipt');
+            // Route::get('/get-sub-stages/{order_product_id}/{from_stage_id}',[AdminOrderDigitalizationController::class,'getSubStages'])->name('getSubStages');
+        });
 
         Route::prefix('master/vendors')->name('master.vendor.')->group(function () {
             Route::get('/index',[AdminVendorController::class,'index'])->name('index');

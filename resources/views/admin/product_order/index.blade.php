@@ -6,8 +6,11 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12">
-                    <h1 class="text-center">List of Available Order Products</h1>
+                    <h1 class="text-center">Production Orders</h1>
                 </div>
+                {{-- <div class="col-sm-12">
+                    <h4 class="text-center">Order ID - ({{$order_main->sku}})</h4>
+                </div> --}}
                 {{-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
@@ -37,7 +40,7 @@
                   <thead>
                     <tr role="row" class="filter">
                         <td>
-                            <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
+                            {{-- <input type="hidden" class="form-control" name="id" id="id" value="{{$order_main->id}}" autocomplete="off"> --}}
                         </td>
                         <td>
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
@@ -62,8 +65,9 @@
                     </tr>
                     <tr>
                         <th>ID</th>
-                        <th>Order ID</th>
+                        <th>Product ID</th>
                         <th>Product</th>
+                        <th>Size</th>
                         <th>Quantity</th>
                         <th>Status</th>
                         <th>Action</th>

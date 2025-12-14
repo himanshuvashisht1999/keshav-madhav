@@ -24,5 +24,8 @@ class MasterFabricWarehouse extends Model
     public function blocks(){
         return $this->hasMany('App\Models\MasterWarehouseBlock','master_warehouse_id','id');
     }
-    
+    public function cuttingStages()
+    {
+        return $this->hasMany('App\Models\OrderCuttingStage', 'to_assign_id');
+    }
 }

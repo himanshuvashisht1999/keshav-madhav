@@ -35,6 +35,7 @@ class VendorService {
         // }
         $save_data = new Vendor;
         $save_data->name = $request->name;
+        ////// 0 for fabric //////
         $save_data->items = serialize($request->items);
         $save_data->phone = $request->phone;
         $save_data->email = $request->email;
@@ -69,6 +70,7 @@ class VendorService {
         //     $update_data->image = $imgName;
         // }
         $update_data->name = $request->name;
+        //////// 0 for fabric //////
         $update_data->items = serialize($request->items);
         $update_data->phone = $request->phone;
         $update_data->email = $request->email;
