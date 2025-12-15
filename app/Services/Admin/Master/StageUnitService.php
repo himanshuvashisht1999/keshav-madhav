@@ -34,15 +34,26 @@ class StageUnitService {
 
         foreach ($stages as $stage) {
             $unit = $units->get($stage->id);
-
-            $response[] = [
-                'id'            => $unit->id,
-                'encrypted_id'  => Crypt::encryptString($unit->id),
-                'master_stage_id' => $stage->id,
-                'stage_name'      => $stage->name,
-                'name'            => $unit->name ?? '',
-                'phone'           => $unit->phone ?? '',
-            ];
+            if($unit){
+                $response[] = [
+                    'id'            => $unit->id,
+                    'encrypted_id'  => Crypt::encryptString($unit->id),
+                    'master_stage_id' => $stage->id,
+                    'stage_name'      => $stage->name,
+                    'name'            => $unit->name ?? '',
+                    'phone'           => $unit->phone ?? '',
+                ];
+            }else{
+                $response[] = [
+                    'id'            => '',
+                    'encrypted_id'  => '',
+                    'master_stage_id' => $stage->id,
+                    'stage_name'      => $stage->name,
+                    'name'            => '',
+                    'phone'           =>  '',
+                ];
+            }
+            
         }
 
         return $response;

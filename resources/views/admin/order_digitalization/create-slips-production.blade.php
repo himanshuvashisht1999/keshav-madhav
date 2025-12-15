@@ -126,9 +126,10 @@
                         <!-- RIGHT -->
                         <div class="col-md-6">
                             <div class="card p-3 border shadow-sm">
-                                <h6>Upload Order File</h6>
-                                <input type="file" name="corporate_order_file" id="corporate_order_file" class="form-control mb-2">
-                                <img id="previewImg" class="w-100 mt-2" style="display:none; border-radius:6px;">
+                                <input type="hidden" name="slip_file" value="{{ $slip_img }}">
+                                <img src="{{ asset('assets/production_slips/'.$slip_img) }}"
+                                class="w-100 mt-2"
+                                style="border-radius:6px;">
                             </div>
                         </div>
 
