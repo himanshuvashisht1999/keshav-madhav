@@ -42,6 +42,7 @@ class OrderDigitalizationController extends Controller {
         $response['product_size'] = $this->productOrderService->product_sizes();
         $response['colours'] = $this->productOrderService->getColours();
         $response['customers'] = $this->productOrderService->customers();
+        $response['slip_img'] = 'production-slip-8640_1765712156.jpg';
         return view('admin.order_digitalization.create-slips-production',$response);
     }
 
@@ -49,15 +50,15 @@ class OrderDigitalizationController extends Controller {
         $response['order_no_data'] = $this->service->orderMainForRollAssign();
         $response['cutting_units'] = $this->fabricReceiptService->cutting_units();
         $response['fabrics'] = $this->service->getFabricsData();
+        $response['slip_img'] = 'production-slip-8640_1765712156.jpg';
         return view('admin.order_digitalization.create-rolls-assign', $response);
     }
     
-    public function store(ProductOrderStoreRequest $request){
-        dd($request->all());
+    public function store(Request $request){
         
         $data = $this->service->store($request);
         if($data['status_code'] == 1){
-            return redirect()->route('admin.product_order.indexOrder')->withSuccess($data['message']);
+            return redirect()->route('admin.order_digitalization.create-rolls-assign')->withSuccess($data['message']);
         }else{
             return redirect()->back()->withError($data['message']);
         }
@@ -69,7 +70,7 @@ class OrderDigitalizationController extends Controller {
         $response['products'] = $this->service->products();
         return view('admin.product_order.edit',$response);
     }
-    public function update(ProductOrderUpdateRequest $request){
+    public function update(Request $request){
         $data = $this->service->update($request);
         return redirect()->route('admin.product_order.index')->withSuccess('The product order has been successfully updated.');
     }

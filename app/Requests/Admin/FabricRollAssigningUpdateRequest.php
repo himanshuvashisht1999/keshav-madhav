@@ -4,7 +4,7 @@ namespace App\Requests\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Http\FormRequest;
 
-class ProductOrderUpdateRequest extends FormRequest{
+class FabricRollAssigningUpdateRequest extends FormRequest{
     /**
      * Determine if the user is authorized to make this request.
      *
