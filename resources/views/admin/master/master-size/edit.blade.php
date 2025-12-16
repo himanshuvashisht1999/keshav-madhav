@@ -5,15 +5,15 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Master Size</h1>
+                <div class="col-sm-12">
+                    <h1 class="text-center">Edit Standard Size</h1>
                 </div>
-                <div class="col-sm-6">
+                {{-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
                         <li class="breadcrumb-item active">Edit Master Size</li>
                     </ol>
-                </div>
+                </div> --}}
             </div>
         </div>
     </section>
@@ -34,8 +34,8 @@
                          
                             <div class="col-md-6" >
                                 <div class="form-group">
-                                    <label id="label1" for="label1">To</label>
-                                    <input type="text" name="size" class="form-control" placeholder="Enter start size" value="{{$data->size}}">
+                                    <label id="label1" for="label1">Standard Size</label>
+                                    <input type="text" name="size" class="form-control" placeholder="Enter Standard size" value="{{$data->size}}">
                                     @if ($errors->has('size'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('size') }}

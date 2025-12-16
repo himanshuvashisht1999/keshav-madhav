@@ -15,125 +15,151 @@
         <div class="container-fluid">
 
             <div class="card p-3 shadow-sm">
-                <form method="POST"
-                      action="{{ route('admin.order_digitalization.store') }}"
-                      enctype="multipart/form-data">
-                    @csrf
+                @if(!empty($slip_data))
+                    <form method="POST"
+                        action="{{ route('admin.order_digitalization.store') }}"
+                        enctype="multipart/form-data">
+                        @csrf
 
-                    <!-- SKIP FLAG -->
-                    <input type="hidden" name="skip_action" id="skip_action" value="0">
+                        <!-- SKIP FLAG -->
+                        <input type="hidden" name="skip_action" id="skip_action" value="0">
 
-                    <div class="row">
+                        <div class="row">
 
-                        <!-- LEFT -->
-                        <div class="col-md-6">
-                            <div class="card p-3 mb-3 border">
+                            <!-- LEFT -->
+                            <div class="col-md-6">
+                                <div class="card p-3 mb-3 border">
 
-                                <label>Date</label>
-                                <input type="text" class="form-control mb-2"
-                                       value="{{ date('d/m/Y') }}" readonly>
+                                    <label>Date - {{ getformatDateTime($slip_data['date_time']) }}</label>
+                                    <input type="hidden" id="slip_create_date_time" name="slip_create_date_time" value="{{ $slip_data['date_time'] }}">
 
-                                <label>Order No (Optional)</label>
-                                <input type="text" id="order_no" class="form-control mb-1">
-                                <small class="text-danger error" id="err_order_no"></small>
+                                    <label>Order No (Optional)</label>
+                                    <input type="text" id="order_no" name="order_no" class="form-control mb-2">
 
-                                <label>Lot No (Required)</label>
-                                <input type="text" id="lot_no" class="form-control mb-1">
-                                <small class="text-danger error" id="err_lot_no"></small>
+                                    <div class="lot-input-wrapper my-3 lot-inline">
+                                        <label class="lot-input-label">Lot No.</label>
+                                        <input type="text" name="lot_no" class="lot-input"
+                                            placeholder="Enter Lot Number"
+                                            required inputmode="numeric"
+                                            oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                                    </div>
 
-                                <label>From (Cutting Master)</label>
-                                <select id="cutting_unit" class="form-control select2 mb-1">
-                                    <option value="">Select Cutting Master</option>
-                                    @foreach($cutting_units as $unit)
-                                        <option value="{{ $unit->id }}">
-                                            {{ $unit->cutting_master_name }}
+                                    {{-- FROM --}}
+                                    {{-- <label>From</label>
+                                    <select class="form-control mb-2" id="from_stage" readonly>
+                                        <option>
+                                            {{ $slip_data['from_stage']['name'] }}
+                                            ({{ $slip_data['from_stage']['master_stage_name'] }})
                                         </option>
-                                    @endforeach
-                                </select>
-                                <small class="text-danger error" id="err_cutting_unit"></small>
+                                    </select>
+
+                                    {{-- FROM hidden --}}
+                                    {{-- <input type="hidden" id="from_stage_id" value="{{ $slip_data['from_stage']['master_stage_id'] }}">
+                                    <input type="hidden" id="from_stage_name" value="{{ $slip_data['from_stage']['master_stage_name'] }}">
+                                    <input type="hidden" id="from_unit_id" value="{{ $slip_data['from_stage']['id'] }}">
+                                    <input type="hidden" id="from_unit_name" value="{{ $slip_data['from_stage']['name'] }}">  --}}
+
+                                    {{-- TO --}}
+                                    <label>To</label>
+                                    <select id="to_master_unit" name="to_master_unit" class="form-control select2 mb-2">
+                                        <option value="">Select Stage</option>
+                                        @foreach($cutting_units as $unit)
+                                            <option data-unit-id="{{ $unit['id'] }}">
+                                                {{ $unit['cutting_master_name'] }} 
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <!-- ADD ROLL -->
+                                <div class="card p-3 border">
+                                    <h5>Add Roll</h5>
+
+                                    <label>Roll No</label>
+                                    <input type="text" id="roll_no" class="form-control mb-1">
+                                    <small class="text-danger error" id="err_roll_no"></small>
+
+                                    <label class="mt-2">Meter</label>
+                                    <input type="number" id="meter" class="form-control mb-1" step="0.01">
+                                    <small class="text-danger error" id="err_meter"></small>
+
+                                    <button type="button"
+                                            class="btn btn-primary mt-3 btn-block add-roll">
+                                        + Add Roll
+                                    </button>
+                                </div>
                             </div>
 
-                            <!-- ADD ROLL -->
-                            <div class="card p-3 border">
-                                <h5>Add Roll</h5>
+                            <!-- RIGHT -->
+                            <div class="col-md-6">
+                                <div class="card p-3 border">
+                                    <img src="{{ asset('assets/production_slips/'.$slip_data['slip_file']) }}"
+                                        class="img-fluid rounded">
+                                </div>
+                            </div>
 
-                                <label>Roll No</label>
-                                <input type="text" id="roll_no" class="form-control mb-1">
-                                <small class="text-danger error" id="err_roll_no"></small>
+                            <!-- TABLE -->
+                            <div class="col-md-12 mt-3">
+                                <div class="card p-3 border">
+                                    <h5>Added Rolls</h5>
+                                    <table class="table table-bordered" id="productList">
+                                        <thead>
+                                            <tr>
+                                                <th>Lot No</th>
+                                                <th>Order No</th>
+                                                <th>Cutting Master</th>
+                                                <th>Roll No</th>
+                                                <th>Meter</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
 
-                                <label class="mt-2">Meter</label>
-                                <input type="number" id="meter" class="form-control mb-1" step="0.01">
-                                <small class="text-danger error" id="err_meter"></small>
+                        </div>
 
-                                <button type="button"
-                                        class="btn btn-primary mt-3 btn-block add-roll">
-                                    + Add Roll
+                        <!-- BUTTONS -->
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <button type="button" id="skipBtn" class="btn btn-secondary">
+                                    Skip
+                                </button>
+                            </div>
+                            <div class="col-6 text-right">
+                                <button type="submit" class="btn btn-success">
+                                    Submit
                                 </button>
                             </div>
                         </div>
 
-                        <!-- RIGHT -->
-                        <div class="col-md-6">
-                            <div class="card p-3 border">
-                                <h6>Upload File (PDF / Image)</h6>
-
-                                {{-- <input type="file"
-                                       name="slip_file"
-                                       id="slip_file"
-                                       class="form-control mb-2"> --}}
-                                <input type="hidden" name="slip_file_id" value="{{ $slip_img->id }}">
-                                <input type="hidden" name="slip_file" value="{{ $slip_img->slip_file }}">
-                                <img src="{{ asset('assets/production_slips/'.$slip_img->slip_file) }}"
-                                class="w-100 mt-2"
-                                style="border-radius:6px;">
-
-                                <div id="pdfPreview" class="mt-2"></div>
-                            </div>
-                        </div>
-
-                        <!-- TABLE -->
-                        <div class="col-md-12 mt-3">
-                            <div class="card p-3 border">
-                                <h5>Added Rolls</h5>
-                                <table class="table table-bordered" id="productList">
-                                    <thead>
-                                        <tr>
-                                            <th>Lot No</th>
-                                            <th>Order No</th>
-                                            <th>Cutting Master</th>
-                                            <th>Roll No</th>
-                                            <th>Meter</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                        </div>
-
+                    </form>
+                @else
+                    <div class="alert alert-info text-center">
+                        No Production Slips Available for Digitalization
                     </div>
-
-                    <!-- BUTTONS -->
-                    <div class="row mt-3">
-                        <div class="col-6">
-                            <button type="button" id="skipBtn" class="btn btn-secondary">
-                                Skip
-                            </button>
-                        </div>
-                        <div class="col-6 text-right">
-                            <button type="submit" class="btn btn-success">
-                                Submit
-                            </button>
-                        </div>
-                    </div>
-
-                </form>
+                @endif
             </div>
 
         </div>
     </section>
 </div>
 
+<style>
+.size-toggle{display:flex;gap:10px}
+.size-btn{flex:1;padding:10px;border-radius:20px;border:2px solid #ccc;font-weight:700}
+.size-btn.active[data-type="set"]{background:#0d6efd;color:#fff}
+.size-btn.active[data-type="single"]{background:#198754;color:#fff}
+.size-box{padding:10px;border-radius:8px}
+.set-theme{border:3px solid #0d6efd}
+.single-theme{border:3px solid #198754}
+
+.lot-inline{display:flex;align-items:center;gap:15px}
+.lot-input-wrapper{background:#f8f9fa;border:2px solid #28a745;border-radius:10px;padding:10px}
+.lot-input-label{font-weight:900;font-size:18px}
+.lot-input{flex:1;padding:12px;font-size:20px;font-weight:700;border:2px dashed #28a745;border-radius:6px;text-align:center}
+</style>
 <!-- ================= JS ================= -->
 <script>
 $(document).ready(function () {

@@ -51,9 +51,9 @@
                         <td>
                             <input type="text" class="form-control" name="design_number" id="design_number" autocomplete="off">
                         </td>
-                        <td>
+                        {{-- <td>
                             <input type="text" class="form-control" name="name" id="name" autocomplete="off">
-                        </td>
+                        </td> --}}
                         <td>
                             <input type="text" class="form-control" name="set_size" id="set_size" autocomplete="off">
                         </td>
@@ -78,7 +78,7 @@
                     <th>ID</th>
                     <th>Company Name</th>
                     <th>Design Number</th>
-                    <th>Name</th>
+                    {{-- <th>Name</th> --}}
                     <th>Set Size</th>
                     <th>No of Pcs (per Set)</th>
                     <th>Size Group</th>
@@ -118,7 +118,7 @@
                 url: '{!! route('admin.master.size-measurement.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
-                    d.name = $('#name').val();
+                    // d.name = $('#name').val();
                     d.customer_id = $('#customer_id').val();
                     d.design_id = $('#design_id').val();
                     d.set_size = $('#set_size').val();
@@ -132,7 +132,7 @@
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'customer_id', name: 'customer_id'},
                 {data: 'design_number', name: 'design_number'},
-                {data: 'name', name: 'name'},
+                // {data: 'name', name: 'name'},
                 {data: 'set_size', name: 'set_size'},
                 {data: 'no_of_pcs', name: 'no_of_pcs'},
                 {data: 'size_group', name: 'size_group'},

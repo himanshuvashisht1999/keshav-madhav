@@ -427,6 +427,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     str_contains($page_url, 'admin/master/colors') ||
                                     str_contains($page_url, 'admin/master/product-types') ||
                                     str_contains($page_url, 'admin/master/size-measurement') ||
+                                    str_contains($page_url, 'admin/master/size') ||
                                     str_contains($page_url, 'admin/master/product-stage') ||
                                     str_contains($page_url, 'admin/master/product-sub-stage') ||
                                     str_contains($page_url, 'admin/master/pattern')
@@ -436,6 +437,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                             str_contains($page_url, 'admin/master/colors') ||
                                             str_contains($page_url, 'admin/master/product-types') ||
                                             str_contains($page_url, 'admin/master/size-measurement') ||
+                                            str_contains($page_url, 'admin/master/size') ||
                                             str_contains($page_url, 'admin/master/product-stage') ||
                                             str_contains($page_url, 'admin/master/product-sub-stage') ||
                                             str_contains($page_url, 'admin/master/pattern')
@@ -466,9 +468,17 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
 
                                     <li class="nav-item">
                                         <a href="{{ route('admin.master.size-measurement.index') }}"
-                                            class="{{ str_contains($page_url, 'admin/master/size-measurement') ? 'nav-link active' : 'nav-link' }}">
+                                        class="nav-link {{ request()->routeIs('admin.master.size-measurement.*') ? 'active' : '' }}">
                                             <i class="fas fa-circle"></i>
-                                            <p>Size</p>
+                                            <p>Size Group</p>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.size.index') }}"
+                                        class="nav-link {{ request()->routeIs('admin.master.size.*') ? 'active' : '' }}">
+                                            <i class="fas fa-circle"></i>
+                                            <p>Standard Size</p>
                                         </a>
                                     </li>
 
