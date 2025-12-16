@@ -5,10 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ProductionSlipDigitization extends Model
+class ProductionSlipDigitizationParts extends Model
 {
     use HasFactory;
-    protected $table = 'production_slip_digitization';
+    protected $table = 'production_slip_digitization_parts';
     protected $fillable = [
         'id',
         'sno',
@@ -16,11 +16,24 @@ class ProductionSlipDigitization extends Model
         'sub_company_id',
         'project_id',
         'sku',
+        'production_slip_digitization_id',
+        'slip_date_time',
         'from_stage_id',
+        'from_stage_name',
+        'from_unit_id',
+        'from_unit_name',
         'to_stage_id',
-        'stage_master_unit_id',
+        'to_stage_name',
+        'to_unit_id',
+        'slip_date_time',
+        'to_unit_name',
         'lot_no',
-        'slip_file',
+        'design_number',
+        'color_id',
+        'set_size',
+        'single_size',
+        'set_quantity',
+        'single_quantity',
         'remarks',
         'status',
         'created_at',
@@ -31,13 +44,4 @@ class ProductionSlipDigitization extends Model
     //     return $this->hasOne('App\Models\StageMasterUnit','id','stage_master_unit_id');
     // }
 
-    public function getUnitMaster()
-    {
-        return $this->belongsTo(
-            'App\Models\StageMasterUnit',
-            'stage_master_unit_id',
-            'id'
-        );
-    }
-   
 }

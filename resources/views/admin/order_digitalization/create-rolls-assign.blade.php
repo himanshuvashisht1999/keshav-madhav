@@ -81,8 +81,9 @@
                                        name="slip_file"
                                        id="slip_file"
                                        class="form-control mb-2"> --}}
-                                <input type="hidden" name="slip_file" value="{{ $slip_img }}">
-                                <img src="{{ asset('assets/production_slips/'.$slip_img) }}"
+                                <input type="hidden" name="slip_file_id" value="{{ $slip_img->id }}">
+                                <input type="hidden" name="slip_file" value="{{ $slip_img->slip_file }}">
+                                <img src="{{ asset('assets/production_slips/'.$slip_img->slip_file) }}"
                                 class="w-100 mt-2"
                                 style="border-radius:6px;">
 
