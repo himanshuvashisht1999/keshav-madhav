@@ -49,6 +49,10 @@ use App\Http\Controllers\Admin\Master\MasterStageUnitController as AdminMasterSt
 
 ///// Reports
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\PackingController as AdminPackingController;
+
+
+
 ////// Website
 Route::get('/',[AdminLoginController::class,'login'])->name('web.homepage');
 Route::get('/upload-production-slip/{encryptedId}',[AdminLoginController::class,'uploadProductionSlip'])->name('uploadProductionSlip');
@@ -193,6 +197,12 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/assign_to',[AdminProductOrderController::class,'assign_to'])->name('assign_to');
             Route::get('/download-cutting-slip',[AdminProductOrderController::class,'downloadCuttingSlip'])->name('downloadCuttingSlip');
             // Route::get('/fabric_combined_receipt',[AdminProductOrderController::class,'fabric_combined_receipt'])->name('fabric_combined_receipt');
+        });
+
+        Route::prefix('/packing')->name('packing.')->group(function () {
+
+            Route::get('/index',[AdminPackingController::class,'index'])->name('index');
+
         });
 
         Route::prefix('/warehouse')->name('warehouse.')->group(function () {
@@ -489,6 +499,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
         Route::prefix('master/settings')->name('settings.')->group(function () {
             Route::get('/edit',[AdminGeneralSettingsController::class,'edit'])->name('edit');
             Route::post('/update',[AdminGeneralSettingsController::class,'update'])->name('update');
+        });
+
+        Route::prefix('/report')->name('report.')->group(function () {
+            Route::get('/sales-order',[AdminReportController::class,'salesOrder'])->name('sales-order');
+
         });
 
         Route::prefix('/reports')->name('reports.')->group(function () {
