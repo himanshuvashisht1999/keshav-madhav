@@ -3,7 +3,7 @@
         'name' => 'laravel/laravel',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '9f471765cbd3bd592313efa6af1f5b1f6fbd5780',
+        'reference' => '5cb4348a0d9ce9f53b7e0421d16d58dcb93b7009',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -475,7 +475,7 @@
         'laravel/laravel' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '9f471765cbd3bd592313efa6af1f5b1f6fbd5780',
+            'reference' => '5cb4348a0d9ce9f53b7e0421d16d58dcb93b7009',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -927,6 +927,15 @@
             'install_path' => __DIR__ . '/../phpunit/phpunit',
             'aliases' => array(),
             'dev_requirement' => true,
+        ),
+        'picqer/php-barcode-generator' => array(
+            'pretty_version' => 'v3.2.3',
+            'version' => '3.2.3.0',
+            'reference' => 'fbb1de7454fcc8600133818bc1103abeb86479a4',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../picqer/php-barcode-generator',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'psr/clock' => array(
             'pretty_version' => '1.0.0',

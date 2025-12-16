@@ -75,8 +75,8 @@
 
         .btn {
             width: 100%;
-            padding: 12px;
-            font-size: 15px;
+            padding: 14px;
+            font-size: 16px;
             border-radius: 6px;
             border: none;
             cursor: pointer;
@@ -100,10 +100,10 @@
             display: none;
         }
 
-        .note {
-            font-size: 12px;
-            color: #666;
-            margin-top: 6px;
+        .btn-retake {
+            background: #ffc107;
+            color: #000;
+            display: none;
         }
     </style>
 </head>
@@ -114,12 +114,10 @@
 
         <h2>Take Photo & Upload</h2>
 
-        {{-- Success --}}
         @if(session('success'))
             <div class="alert-success">{{ session('success') }}</div>
         @endif
 
-        {{-- Error --}}
         @if(session('error'))
             <div class="alert-error">{{ session('error') }}</div>
         @endif
@@ -129,6 +127,7 @@
 
             <input type="hidden" name="stage_master_unit_id" value="{{ $stage_master_unit_id }}">
             <input type="hidden" name="photo_data" id="photoData">
+            <input type="hidden" name="type" value="2">
 
             <div class="camera-box">
                 <video id="video" autoplay playsinline></video>
@@ -142,16 +141,17 @@
             </button>
 
             <button type="button" class="btn btn-capture" id="captureBtn">
-                Take Picture
+                Take Photo
             </button>
 
             <button type="submit" class="btn btn-upload" id="uploadBtn">
                 Upload Photo
             </button>
 
-            <!-- <div class="note">
-                Mobile opens camera · Laptop opens webcam
-            </div> -->
+            <button type="button" class="btn btn-retake" id="retakeBtn">
+                Retake Photo
+            </button>
+
         </form>
     </div>
 </div>
@@ -163,54 +163,60 @@ function isMobile() {
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
+function openCamera() {
+
+    $('#openCameraBtn').hide();
+    $('#placeholder').hide();
+
+    // MOBILE
+    if (isMobile()) {
+        const input = $('<input>', {
+            type: 'file',
+            accept: 'image/*',
+            capture: 'environment'
+        });
+
+        input.on('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (ev) {
+                $('#preview').attr('src', ev.target.result).show();
+                $('#uploadBtn').show();
+                $('#retakeBtn').show();
+                $('#photoData').val(ev.target.result);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        input.trigger('click');
+        return;
+    }
+
+    // DESKTOP
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function (s) {
+            stream = s;
+            $('#video')[0].srcObject = stream;
+            $('#video').show();
+            $('#captureBtn').show();
+        })
+        .catch(() => alert('Camera permission denied'));
+}
+
 $(document).ready(function () {
 
-    // Auto-hide success message
     setTimeout(() => $('.alert-success').fadeOut(), 3000);
 
-    // OPEN CAMERA
+    // Open camera
     $('#openCameraBtn').on('click', function () {
-
-        $('#placeholder').hide();
-
-        // 📱 MOBILE: native camera
-        if (isMobile()) {
-            const input = $('<input>', {
-                type: 'file',
-                accept: 'image/*',
-                capture: 'environment'
-            });
-
-            input.on('change', function (e) {
-                const file = e.target.files[0];
-                const reader = new FileReader();
-
-                reader.onload = function (ev) {
-                    $('#preview').attr('src', ev.target.result).show();
-                    $('#uploadBtn').show();
-                    $('#photoData').val(ev.target.result);
-                };
-
-                reader.readAsDataURL(file);
-            });
-
-            input.trigger('click');
-            return;
-        }
-
-        // 💻 DESKTOP: webcam
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function (s) {
-                stream = s;
-                $('#video')[0].srcObject = stream;
-                $('#video').show();
-                $('#captureBtn').show();
-            })
-            .catch(() => alert('Camera permission denied'));
+        openCamera();
     });
 
-    // TAKE PICTURE (desktop webcam)
+    // Capture photo
     $('#captureBtn').on('click', function () {
+
         const video = $('#video')[0];
         const canvas = $('#canvas')[0];
 
@@ -220,16 +226,36 @@ $(document).ready(function () {
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
 
-        $('#preview').attr('src', dataUrl).show();
         $('#video').hide();
         $('#captureBtn').hide();
+
+        $('#preview').attr('src', dataUrl).show();
         $('#uploadBtn').show();
+        $('#retakeBtn').show();
         $('#photoData').val(dataUrl);
 
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
+            stream = null;
         }
     });
+
+    // RETAKE → DIRECT OPEN CAMERA
+    $('#retakeBtn').on('click', function () {
+
+        $('#preview').hide().attr('src', '');
+        $('#photoData').val('');
+        $('#uploadBtn').hide();
+        $('#retakeBtn').hide();
+
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+
+        openCamera(); // 🔥 direct reopen camera
+    });
+
 });
 </script>
 
