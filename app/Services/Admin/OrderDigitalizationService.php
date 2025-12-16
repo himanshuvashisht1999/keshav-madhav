@@ -11,6 +11,8 @@ use App\Models\Stock;
 use App\Models\FabricRollAssigning;
 use App\Models\ProductionSlipDigitization;
 use App\Models\ProductionSlipDigitizationParts;
+use App\Models\ProductionDigitizationSetsDetails;
+use App\Models\MasterSizeMeasurement;
 
 use PDF;
 
@@ -121,6 +123,40 @@ class OrderDigitalizationService {
                     $save_data_main->single_quantity = $request->individual_qty[$key] ?? NULL;
                     $save_data_main->status = 1;
                     $save_data_main->save();
+
+                    $insertedId = $save_data_main->id;
+
+                    if ($insertedId){
+                        if ($request->set_qty[$key] != NULL){
+                            
+                            $set_size_id = $request->set_size[$key];
+                            $size_group = MasterSizeMeasurement::where('id', $set_size_id)->where('status', 1)->value('size_group');
+                            if($size_group){
+                                $size_group_explode = explode(",", $size_group);
+                                foreach ($size_group_explode as $size) {
+                                    $save_sets_details = new ProductionDigitizationSetsDetails;
+                                    $save_sets_details->production_slip_digitization_parts_id = $insertedId;
+                                    $save_sets_details->set_size_id = $set_size_id;
+                                    $save_sets_details->set_qty =  $request->set_qty[$key];
+                                    $save_sets_details->size =  $size;
+                                    $save_sets_details->qauntity = $request->set_qty[$key];
+                                    $save_sets_details->status = 1;
+                                    $save_sets_details->save();
+                                }
+                            } 
+                        } else {
+                            /// individual size
+                            $save_sets_details = new ProductionDigitizationSetsDetails;
+                            $save_sets_details->production_slip_digitization_parts_id = $insertedId;
+                            $save_sets_details->set_size_id = NULL;
+                            $save_sets_details->set_qty =  NULL;
+                            $save_sets_details->size =  $request->individual_size[$key];
+                            $save_sets_details->qauntity = $request->individual_qty[$key];
+                            $save_sets_details->save();
+                        }
+                       
+                    }
+
                 }
             }
 
@@ -264,4 +300,59 @@ class OrderDigitalizationService {
         return $data; 
     }
     
+    public function getSlipDigitalization1()
+    {
+
+        $results = ProductionSlipDigitization::with([
+            'getUnitMaster.masterFabricWarehouse'
+            ])
+            ->where('status', 0)
+            ->orderBy('id', 'asc')
+            ->first();
+            
+        $data = [];
+        if ($results){
+            // $results = ProductionSlipDigitization::with('getUnitMaster')
+            //     ->where('status', 0)
+            //     ->orderBy('id', 'asc')
+            //     ->first();
+            // dd($results);
+            $results_units = StageMasterUnit::with('masterStage')->where('status', 1)->where('master_fabric_warehouse_id', $results->getUnitMaster->master_fabric_warehouse_id)
+                ->orderBy('id', 'asc')
+                ->get()->toArray();
+            $unit_master_data = [];
+            $from_stage = [];
+            if ($results_units){
+                foreach ($results_units as $unit_data) {
+                    $unit_master_data[] = [
+                        'id' => $unit_data['id'],
+                        'master_stage_id' => $unit_data['master_stage_id'],
+                        'name' => $unit_data['name'],
+                        'master_stage_name' => $unit_data['master_stage']['name'],
+
+                    ];
+                    if ($results['stage_master_unit_id'] == $unit_data['id']){
+                        $from_stage = [
+                            'id' => $unit_data['id'],
+                            'master_stage_id' => $unit_data['master_stage_id'],
+                            'name' => $unit_data['name'],
+                            'master_stage_name' => $unit_data['master_stage']['name'],
+                            'warehouse_id' => $results->getUnitMaster->masterFabricWarehouse->id,
+                            'warehouse' => $results->getUnitMaster->masterFabricWarehouse->cutting_master_name,
+                            'address' => $results->getUnitMaster->masterFabricWarehouse->address,
+                        ];
+                    }
+                }
+            }
+            $data = [
+                'id' => $results->id,
+                'slip_file' => $results->slip_file,
+                'from_stage' => $from_stage,
+                'unit_master_data' => $unit_master_data,
+                'date_time' => $results->created_at
+            ];
+        }
+
+        return $data; 
+    }
 }
