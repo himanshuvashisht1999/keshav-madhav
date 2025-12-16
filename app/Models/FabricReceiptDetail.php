@@ -22,6 +22,12 @@ class FabricReceiptDetail extends Model
         'fabric_id',
         'roll',
         'roll_number',
+        'master_fabric_warehouse_id',
+        'barcode',
+        'qrcode',
+        'qrcode_number',
+        'shipment_number',
+        'remaining_quantity',
         'meter',
         'status',
         'created_at',
@@ -39,6 +45,23 @@ class FabricReceiptDetail extends Model
     }
     public function fabric(){
         return $this->hasOne('App\Models\Fabric','sku','fabric_sku');
+    }
+
+    public function getQrcodeAttribute($value)
+    {
+        if ($value) {
+            return asset('assets/qrcodes/'. $value);
+        } else {
+            return asset('images/image-placeholder.png');
+        }
+    }
+    public function getBarcodeAttribute($value)
+    {
+        if ($value) {
+            return asset('assets/barcodes/'. $value);
+        } else {
+            return asset('images/image-placeholder.png');
+        }
     }
 
     

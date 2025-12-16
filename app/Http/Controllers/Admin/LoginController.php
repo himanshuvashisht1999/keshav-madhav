@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Crypt;
 use Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\StageMasterUnit;
+use App\Models\FabricRollAssigning;
 use App\Models\ProductionSlipDigitization;
 use Illuminate\Support\Facades\File;
 
@@ -84,12 +85,23 @@ class LoginController extends Controller {
             file_put_contents($destinationPath . '/' . $slip_file, $imageData);
         }
 
-        // 4️⃣ Save DB record
-        $save_data = new ProductionSlipDigitization;
-        $save_data->from_stage_id = $data->master_stage_id;
-        $save_data->stage_master_unit_id = $data->id;
-        $save_data->slip_file = $slip_file;
-        $save_data->save();
+        if($request->type == 1){
+
+            $save_data = new FabricRollAssigning;
+            $save_data->stage_master_unit_id = $data->id;
+            $save_data->slip_file = $slip_file;
+            $save_data->status = 0;
+            $save_data->save();
+
+        }else{
+            $save_data = new ProductionSlipDigitization;
+            $save_data->from_stage_id = $data->master_stage_id;
+            $save_data->stage_master_unit_id = $data->id;
+            $save_data->slip_file = $slip_file;
+            $save_data->status = 0;
+            $save_data->save();
+        }
+        
 
         return redirect()->back()->withSuccess('Production slip uploaded successfully.');
     }
