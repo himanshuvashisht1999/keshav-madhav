@@ -53,7 +53,7 @@ use App\Http\Controllers\Admin\ReportController as AdminReportController;
 Route::get('/',[AdminLoginController::class,'login'])->name('web.homepage');
 Route::get('/upload-production-slip/{encryptedId}',[AdminLoginController::class,'uploadProductionSlip'])->name('uploadProductionSlip');
 Route::post('/submit-production-slip',[AdminLoginController::class,'submitProductionSlip'])->name('submitProductionSlip');
-
+Route::get('/scan', [AdminFabricReceiptController::class, 'scan'])->name('scan');
 
 ////////////  Admin Routes
 Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {

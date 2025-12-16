@@ -18,6 +18,7 @@ use App\Http\DataTable\Admin\FabricReceiptDataTable as DataTable;
 use Carbon\Carbon;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
+use Picqer\Barcode\BarcodeGeneratorPNG;
 
 class FabricReceiptService {
     public function __construct(
@@ -83,26 +84,31 @@ class FabricReceiptService {
                 
                 $meter = $single_data['meter'];
                 $roll_number = $single_data['roll'];
+                ////////// work for barcode
+                $qrcode_number = $this->generateUniqueQrNumber();
 
-                $save_data_detail = new FabricReceiptDetail;
-                // $save_data->sku = $fabric_sku;
-                $save_data_detail->fabric_receipt_id = $save_data->id;
+                /// code for barcode
+                $barcodeGenerator = new BarcodeGeneratorPNG();
+                $barcodeData = $qrcode_number;
+                $barcodeFileName = $qrcode_number . '_barcode.png';
+                $barcodePath = public_path('assets/barcodes');
+                if (!file_exists($barcodePath)) {
+                    mkdir($barcodePath, 0777, true);
+                }
+                file_put_contents(
+                    $barcodePath . '/' . $barcodeFileName,
+                    $barcodeGenerator->getBarcode($barcodeData, $barcodeGenerator::TYPE_CODE_128, 3, 80)
+                );
 
-                $save_data_detail->purchase_order_id = 0;
-                $save_data_detail->purchase_order_item_id = 0;
-                $save_data_detail->fabric_sku = $fabric_sku;
-                $save_data_detail->fabric_id = $fabric_id;
-                $save_data_detail->roll = 1;
-                $save_data_detail->roll_number = $roll_number;
-                $save_data_detail->meter = $meter;
-                $save_data_detail->batch_no = '';
-                $save_data_detail->status = 1;
-                $save_data_detail->save();
 
-                ///// save data in stock
-                $total_roll = count($request->rolls);
-                $unique_number = $save_data_detail->id . '/' . $total_roll;
-                $fileName = $save_data_detail->id . '_' . $total_roll . '.png';
+
+                
+                $fileName = $qrcode_number . '.png';
+                $qrData = json_encode([
+                    'fabric_id'   => $fabric_id,
+                    'shipment_id' => $shipment_id,
+                    'roll_number' => $roll_number
+                ]);
 
                 $destinationPath = public_path('assets/qrcodes');
 
@@ -114,30 +120,53 @@ class FabricReceiptService {
                 // Generate QR Code with GD (no imagick)
                 $result = Builder::create()
                     ->writer(new PngWriter())
-                    ->data($unique_number)
+                    ->data($qrData)
                     ->size(300)
                     ->margin(10)
                     ->build();
 
-                // Save file
                 $result->saveToFile($destinationPath . '/' . $fileName);
 
-                $save_stock = new Stock;
-                $save_stock->sku = $fabric_sku;
-                $save_stock->fabric_id = $fabric_id;
-                $save_stock->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
-                $save_stock->date = Carbon::now()->format('Y-m-d');
-                $save_stock->goods_entry_number = $save_data_detail->id;
-                $save_stock->meter = $meter;
-                $save_stock->roll = count($request->rolls);
-                /// new col
-                $save_stock->roll_no = $single_data['roll'];
-                $save_stock->qrcode = $fileName;
-                $save_stock->unique_number = $unique_number;
-                $save_stock->batch_no = '';
+                ////end barcode
 
-                $save_stock->purchase_order_id = null;
-                $save_stock->save();
+                $save_data_detail = new FabricReceiptDetail;
+                $save_data_detail->fabric_receipt_id = $save_data->id;
+
+                $save_data_detail->purchase_order_id = 0;
+                $save_data_detail->purchase_order_item_id = 0;
+                $save_data_detail->fabric_sku = $fabric_sku;
+                $save_data_detail->fabric_id = $fabric_id;
+                $save_data_detail->roll = 1;
+                $save_data_detail->roll_number = $roll_number;
+                $save_data_detail->meter = $meter;
+                $save_data_detail->batch_no = '';
+                $save_data_detail->status = 1;
+                $save_data_detail->barcode = $barcodeFileName;
+                $save_data_detail->qrcode = $fileName;
+                $save_data_detail->qrcode_number = $qrcode_number;
+                $save_data_detail->remaining_quantity = $meter;
+                $save_data_detail->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
+                $save_data_detail->shipment_number = $shipment_id;
+                $save_data_detail->save();
+
+                
+
+                // $save_stock = new Stock;
+                // $save_stock->sku = $fabric_sku;
+                // $save_stock->fabric_id = $fabric_id;
+                // $save_stock->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
+                // $save_stock->date = Carbon::now()->format('Y-m-d');
+                // $save_stock->goods_entry_number = $save_data_detail->id;
+                // $save_stock->meter = $meter;
+                // $save_stock->roll = count($request->rolls);
+                // /// new col
+                // $save_stock->roll_no = $single_data['roll'];
+                // $save_stock->qrcode = $fileName;
+                // $save_stock->unique_number = $unique_number;
+                // $save_stock->batch_no = '';
+
+                // $save_stock->purchase_order_id = null;
+                // $save_stock->save();
 
             }
             
@@ -363,6 +392,42 @@ class FabricReceiptService {
     public function cutting_units(){
         $data = MasterFabricWarehouse::where('status',1)->get();
         return $data;
+    }
+
+    private function generateUniqueQrNumber()
+    {
+        do {
+            // Generate 16-digit numeric code
+            $qrcode_number = mt_rand(10000000, 99999999) . mt_rand(10000000, 99999999);
+
+            // Check DB
+            $exists = FabricReceiptDetail::where('qrcode_number', $qrcode_number)->exists();
+
+        } while ($exists);
+
+        return $qrcode_number;
+    }
+
+    public function scan(Request $request)
+    {
+        $code = $request->code;
+
+        if (!$code) {
+            abort(404, 'Invalid scan');
+        }
+
+        // Find by barcode / qrcode number
+        $detail = FabricReceiptDetail::with([
+            'fabric',
+            'fabric_receipt.vendor',
+            'fabric_receipt.cutting_master'
+        ])->where('qrcode_number', $code)->first();
+        if (!$detail) {
+            abort(404, 'Record not found');
+        }
+
+        return $detail;
+
     }
 
 }

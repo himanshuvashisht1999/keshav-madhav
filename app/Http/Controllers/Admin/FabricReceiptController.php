@@ -93,4 +93,10 @@ class FabricReceiptController extends Controller {
         return redirect()->route('admin.fabric_receipt.index')->withSuccess('The fabric receipt has been successfully deleted.'); 
     }
 
+    public function scan(Request $request){
+        $response['detail'] = $this->service->scan($request);
+        return view('admin.fabric_receipt.scan',$response);
+    }
+
+
 }
