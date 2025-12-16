@@ -215,6 +215,29 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             <p>Hand Slip Digitalization</p>
                         </a>
                     </li>
+                    <li class="{{ str_contains($page_url, 'admin/report') ? 'nav-item menu-open' : 'nav-item' }}">
+                        <a href="#"
+                            class="{{ str_contains($page_url, 'admin/report') ? 'nav-link active' : 'nav-link' }}">
+                            <i class="nav-icon fa fa-print" aria-hidden="true"></i>
+                            <p>
+                                Reports
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{{ route('admin.report.sales-order') }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/reports/sales-order')  ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <!-- <i class="nav-icon fas fa-store"></i> -->
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Sales Order</p>
+                                </a>
+                            </li>
+                            
+                        </ul>
+                    </li>
                      {{-- <li class="{{ (str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/create-slips-production')) ? 'nav-item menu-open' : 'nav-item' }} ">
                         <a href="#"
                             class="{{ str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/create-slips-production') ? 'nav-link active' : 'nav-link' }} border_class" >
@@ -252,7 +275,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             <p>Production</p>
                         </a>
                     </li> --}}
-                    <li class="{{ str_contains($page_url, 'admin/order-stages') ? 'nav-item menu-open' : 'nav-item' }}">
+                    <li class="{{ str_contains($page_url, 'admin/order-stages') ? 'nav-item menu-open' : 'nav-item' }}" style="display:none;">
                         <a href="#"
                             class="{{ str_contains($page_url, 'admin/order-stages') ? 'nav-link active' : 'nav-link' }}">
                             <i class="nav-icon fas fa-cube"></i>
@@ -279,7 +302,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                         </ul>
                     </li>
 
-                    <li class="{{ (str_contains($page_url, 'admin/warehouse') || str_contains($page_url, 'admin/warehouse')) ? 'nav-item menu-open' : 'nav-item' }}">
+                    <li class="{{ (str_contains($page_url, 'admin/warehouse') || str_contains($page_url, 'admin/warehouse')) ? 'nav-item menu-open' : 'nav-item' }}"  style="display:none;">
                         <a href="#"
                             class="{{ (str_contains($page_url, 'admin/warehouse') || str_contains($page_url, 'admin/item-receipt')) ? 'nav-link active' : 'nav-link' }}">
                             <i class="nav-icon fas fa-receipt"></i>
@@ -544,7 +567,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
 
                    
 
-                    <li class="{{ str_contains($page_url, 'admin/reports') ? 'nav-item menu-open' : 'nav-item' }}">
+                    <li class="{{ str_contains($page_url, 'admin/reports') ? 'nav-item menu-open' : 'nav-item' }}" style="display:none;">
                         <a href="#"
                             class="{{ str_contains($page_url, 'admin/reports') ? 'nav-link active' : 'nav-link' }}">
                             <i class="nav-icon fa fa-print" aria-hidden="true"></i>
