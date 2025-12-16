@@ -133,7 +133,7 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            {{-- <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Name</label>
                                     <input type="text" name="name" class="form-control" placeholder="Enter size name" value="{{$data->name}}">
@@ -155,7 +155,7 @@
                                         </span>
                                     @endif
                                 </div>
-                            </div> 
+                            </div>  --}}
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Set Size</label>
@@ -178,7 +178,7 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            {{-- <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Size Group</label>
                                     <input type="text" name="size_group" class="form-control" placeholder="Enter Size Group" value="{{$data->size_group}}">
@@ -188,8 +188,8 @@
                                         </span>
                                     @endif
                                 </div>
-                            </div>
-                            {{-- <div class="col-md-6">
+                            </div> --}}
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Size Group</label>
                                     <div class="wrapper" style="position: relative;">
@@ -217,7 +217,7 @@
                                         </span>
                                     @endif
                                 </div>
-                            </div> --}}
+                            </div>
                             
                             <div class="col-md-6">
                                 <div class="form-group">

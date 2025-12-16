@@ -40,7 +40,9 @@ class SizeMeasurementController extends Controller {
         return redirect()->route('admin.master.size-measurement.index')->withSuccess('The size measurement has been successfully deleted.'); 
     }
     public function edit(Request $request){
+        $response['sizes'] = $this->SizeService->getSizes();
         $response['data'] = $this->service->edit($request);
+        $response['selectedSizes'] = explode(",",$response['data']->size_group);
         $response['customers'] = $this->ProductOrderService->customers();
         $response['products'] = $this->ProductOrderService->products();
         return view('admin.master.size-measurement.edit',$response);

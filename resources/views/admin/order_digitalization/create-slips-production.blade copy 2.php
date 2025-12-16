@@ -192,12 +192,7 @@
                         <div class="row mt-3">
                             <div class="col-12 text-right">
                                 <input type="hidden" name="production_slip_digitization_id" value="{{ $slip_data['id'] }}">
-                                <input type="hidden" name="confirmation_remark" id="confirmation_remark">
-                                <input type="hidden" name="confirmation_remark" id="confirmation_remark">
-                                {{-- <button type="submit" class="btn btn-success">Submit</button> --}}
-                                <button type="button" class="btn btn-success" id="openConfirmModal">
-                                    Submit
-                                </button>
+                                <button type="submit" class="btn btn-success">Submit</button>
                             </div>
                         </div>
 
@@ -212,54 +207,6 @@
             </div>
         </div>
     </section>
-</div>
-<!-- CONFIRM SUBMIT MODAL -->
-<div class="modal fade" id="confirmSubmitModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">Delivery Time Allowed</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">
-                    &times;
-                </button>
-            </div>
-
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="font-weight-bold">
-                        Allowed Date & Time 
-                    </label>
-                    <input type="text"
-                           class="form-control"
-                           id="allowed_time"
-                           name="allowed_time"
-                           placeholder="Enter Allowed Time"
-                           required>
-
-                    <label class="font-weight-bold">
-                        Remarks
-                    </label>
-                    <input type="text"
-                           class="form-control"
-                           id="final_remark"
-                           name="final_remark"
-                           placeholder="Enter remark"
-                           >
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                    Cancel
-                </button>
-                <button type="button" class="btn btn-success" id="confirmFinalSubmit">
-                    Confirm & Submit
-                </button>
-            </div>
-
-        </div>
-    </div>
 </div>
 
 {{-- STYLES --}}
@@ -281,33 +228,6 @@
 {{-- JS --}}
 <script>
 $(function(){
-
-    $('#openConfirmModal').on('click', function(){
-        $('#confirmSubmitModal').modal('show');
-    });
-
-    // Final submit
-    $('#confirmFinalSubmit').on('click', function(){
-        if($('#productTable tbody tr').length === 0){
-            alert(' Please add at least one design before submitting.');
-            return;
-        } else {
-            let remark = $('#final_remark').val().trim();
-            let allowed_time = $('#allowed_time').val().trim();
-            if(allowed_time === ''){
-                alert('Please enter Allowed Date & Time');
-                return;
-            }
-
-            // copy modal input → hidden form input
-            $('#confirmation_remark').val(remark);
-            $('#allowed_time').val(allowed_time);
-
-            // submit form
-            $('#confirmSubmitModal').modal('hide');
-            $('#slip_digitalization form').submit();
-        }
-    });
 
     $('.select2').select2();
 

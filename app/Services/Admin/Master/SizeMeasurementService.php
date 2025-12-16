@@ -40,7 +40,7 @@ class SizeMeasurementService {
         $save_data->design_number = $request->design_number;
         $save_data->no_of_pcs = $request->no_of_pcs;
         $save_data->set_size = $request->set_size;
-        $save_data->size_group =  str_replace(' ', '', $request->size_group);
+        $save_data->size_group =  implode(',', $request->size_group);
 
         // $save_data->size_type = $request->size_type ?? 0;
         // $save_data->size_selection = $request->size_selection;
@@ -74,7 +74,9 @@ class SizeMeasurementService {
         $update_data->design_number = $request->design_number;
         $update_data->no_of_pcs = $request->no_of_pcs;
         $update_data->set_size = $request->set_size;
-        $update_data->size_group =  $request->size_group ? str_replace(' ', '', $request->size_group) : '';
+       
+        // $update_data->size_group =  $request->size_group ? str_replace(' ', '', $request->size_group) : '';
+        $update_data->size_group =   implode(',', $request->size_group);
         $update_data->sku = strtoupper($request->name); // convert upper case
         $update_data->status = $request->status;
         $update_data->save();
@@ -93,4 +95,8 @@ class SizeMeasurementService {
         return $data;
     }
 
+    public function getSelectedSizes(Request $request){
+        $data = MasterSizeMeasurement::where('status',1)->get();
+        return $data;
+    }
 }

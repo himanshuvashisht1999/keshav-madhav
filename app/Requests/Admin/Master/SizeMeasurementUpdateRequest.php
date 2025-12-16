@@ -22,8 +22,8 @@ class SizeMeasurementUpdateRequest extends FormRequest{
         // dd($this);
         return [
             'customer_id' => 'required',
-            'name' => 'required',
-            'design_number' => 'required',
+            // 'name' => 'required',
+            // 'design_number' => 'required',
             'no_of_pcs' => 'required',
             'set_size' => 'required',
             'size_group' => 'required',

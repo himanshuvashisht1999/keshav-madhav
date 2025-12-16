@@ -22,9 +22,9 @@ class SizeMeasurementDataTable  {
                 if ($request->has('customer_id') && $request->filled('customer_id')) {
                     $query->where('corporate_company_id', $request->get('customer_id'));
                 }
-                if ($request->has('name') && !empty($request->name)) {
-                    $query->where('name', 'like', "%{$request->get('name')}%");
-                }
+                // if ($request->has('name') && !empty($request->name)) {
+                //     $query->where('name', 'like', "%{$request->get('name')}%");
+                // }
                 if ($request->has('design_number') && !empty($request->design_number)) {
                     $query->where('design_number', 'like', "%{$request->get('design_number')}%");
                 }

@@ -5,7 +5,10 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-6">
+                <div class="col-sm-12">
+                    <h1 class="text-center">List of Standard Size</h1>
+                </div>
+                {{-- <div class="col-sm-6">
                     <h1>Manage Product Size</h1>
                 </div>
                 <div class="col-sm-6">
@@ -13,7 +16,7 @@
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
                         <li class="breadcrumb-item active">Manage Product Size</li>
                     </ol>
-                </div>
+                </div> --}}
             </div>
         </div>
     </section>

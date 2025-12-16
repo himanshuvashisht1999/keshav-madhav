@@ -25,7 +25,6 @@ class ProductionSlipDigitizationParts extends Model
         'to_stage_id',
         'to_stage_name',
         'to_unit_id',
-        'slip_date_time',
         'to_unit_name',
         'lot_no',
         'design_number',
