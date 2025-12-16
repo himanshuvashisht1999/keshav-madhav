@@ -42,7 +42,8 @@ class OrderDigitalizationController extends Controller {
         $response['product_size'] = $this->productOrderService->product_sizes();
         $response['colours'] = $this->productOrderService->getColours();
         $response['customers'] = $this->productOrderService->customers();
-        $response['slip_img'] = 'production-slip-8640_1765712156.jpg';
+        $response['slip_data'] = $this->service->getSlipDigitalization();
+        // dd($response['slip_data']);
         return view('admin.order_digitalization.create-slips-production',$response);
     }
 
@@ -56,9 +57,9 @@ class OrderDigitalizationController extends Controller {
     
     public function store(Request $request){
         
-        $data = $this->service->store($request);
+        $data = $this->service->storeProductionSlipDigitization($request);
         if($data['status_code'] == 1){
-            return redirect()->route('admin.order_digitalization.create-rolls-assign')->withSuccess($data['message']);
+            return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
         }else{
             return redirect()->back()->withError($data['message']);
         }

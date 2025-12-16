@@ -1,445 +1,323 @@
 @extends('admin.layouts.app')
+
 @section('content')
 <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+
+    {{-- HEADER --}}
     <section class="content-header">
         <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-12">
-                    <h1 class="text-center">Production Slips Digitalization</h1>
+
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1 class="mb-3">Production Slips Digitalization</h1>
                 </div>
             </div>
+
+            <div class="row">
+                <div class="col-12 text-right">
+                    <button type="button" class="btn btn-secondary mr-2">Skip</button>
+                    <button type="button" class="btn btn-primary mr-2">Rolls Digitalization</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDeleteSlip()">Delete</button>
+                </div>
+            </div>
+
+            <hr class="mt-3 mb-0">
         </div>
     </section>
 
-    <!-- MAIN SECTION -->
+    {{-- CONTENT --}}
     <section class="content">
         <div class="container-fluid">
-
             <div class="card p-3 shadow-sm">
 
-                <form action="{{ route('admin.order_digitalization.store') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
+            @if(!empty($slip_data))
+            <form method="POST" action="{{ route('admin.order_digitalization.store') }}">
+            @csrf
 
-                   <div class="row">
+            <div class="row">
 
-                        <!-- LEFT -->
-                        <div class="col-md-6">
+                {{-- LEFT --}}
+                <div class="col-md-6">
 
-                            <!-- Customer & Delivery -->
-                            <div class="card mb-3 p-3 border">
-                                <label>Date - 14/12/2025</label>
-                                <label>Lot No.</label>
-                                <input type="text" class="form-control qty-input mb-3" placeholder="Enter Lot No." name="lot_no" id="lot_no">
-                                @if ($errors->has('lot_no'))
-                                    <span class="invalid-feedback d-block">
-                                        {{ $errors->first('lot_no') }}
-                                    </span>
-                                @endif
-
-                                <label>From -</label>
-                                <select name="master_customer_id" id="master_customer_id" class="form-control select2 mb-2" required>
-                                    <option value="">Select </option>
-                                    @foreach($customers as $customer)
-                                        <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                                    @endforeach
-                                </select>
-                                @if ($errors->has('master_customer_id'))
-                                    <span class="invalid-feedback d-block">
-                                        {{ $errors->first('master_customer_id') }}
-                                    </span>
-                                @endif
-                                <label>To -</label>
-                                <select name="master_customer_id" id="master_customer_id" class="form-control select2 mb-2" required>
-                                    <option value="">Select </option>
-                                    @foreach($customers as $customer)
-                                        <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                                    @endforeach
-                                </select>
-                                @if ($errors->has('expected_delivery_date'))
-                                    <span class="invalid-feedback d-block">
-                                        {{ $errors->first('expected_delivery_date') }}
-                                    </span>
-                                @endif
-                            </div>
-
-                            <!-- Add Product -->
-                            <div class="card p-3 border">
-                                <h5 class="mb-3">Add Product</h5>
-
-                                <div class="product-row">
-
-                                    <label>Design Number (Royal Jeans)</label>
-                                    <select class="form-control select2 mb-2 design-input" name="design_id" id="design_id">
-                                        <option value="">Select</option>
-                                        @foreach($products as $product)
-                                            <option value="{{ $product->id }}" data-img="{{ $product->main_img }}">
-                                                {{ $product->design_number }} - {{ $product->name_of_garment }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @if ($errors->has('designList'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('designList') }}
-                                        </span>
-                                    @endif
-                                    <label>Set Size (Royal Jeans)</label>
-                                    <select class="form-control select2 mb-2 size-input" name="set_size" id="set_size">
-                                        
-                                    </select>
-                                    @if ($errors->has('sizeList'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('sizeList') }}
-                                        </span>
-                                    @endif
-                                    <label>Colour (Royal Jeans)</label>
-                                    <select class="form-control select2 mb-2 colour-input" name="colour_id">
-                                        <option value="">Select</option>
-                                        @foreach($colours as $colour)
-                                            <option value="{{ $colour->id }}">{{ $colour->sku }}</option>
-                                        @endforeach
-                                    </select>
-                                    @if ($errors->has('colourList'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('colourList') }}
-                                        </span>
-                                    @endif
-                                    <label>Set Quantity (Royal Jeans)</label>
-                                    <input type="number" class="form-control qty-input mb-3" min="1" name="qty">
-                                    @if ($errors->has('product_quantity'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('product_quantity') }}
-                                        </span>
-                                    @endif
-                                    <button type="button" class="btn btn-primary btn-block add-product">
-                                        + Add Product
-                                    </button>
-
-                                    <div class="img-section text-center mt-3"></div>
-
-                                </div>
-
-                            </div>
-
+                    <div class="card p-3 mb-3 border">
+                        <label>Date - {{ getformatDateTime($slip_data['date_time']) }}</label>
+                        <input type="hidden" id="slip_create_date_time" name="slip_create_date_time" value="{{ $slip_data['date_time'] }}">
+                        <label>Order No.</label>
+                        <input type="text" id="order_no" class="form-control mb-2">
+                        {{-- LOT NO --}}
+                        <div class="lot-input-wrapper my-3 lot-inline">
+                            <label class="lot-input-label">Lot No.</label>
+                            <input type="text" name="lot_no" class="lot-input"
+                                   placeholder="Enter Lot Number"
+                                   required inputmode="numeric"
+                                   oninput="this.value=this.value.replace(/[^0-9]/g,'')">
                         </div>
 
-                        <!-- RIGHT -->
-                        <div class="col-md-6">
-                            <div class="card p-3 border shadow-sm">
-                                <input type="hidden" name="slip_file" value="{{ $slip_img }}">
-                                <img src="{{ asset('assets/production_slips/'.$slip_img) }}"
-                                class="w-100 mt-2"
-                                style="border-radius:6px;">
-                            </div>
-                        </div>
+                        {{-- FROM --}}
+                        <label>From</label>
+                        <select class="form-control mb-2" id="from_stage" readonly>
+                            <option>
+                                {{ $slip_data['from_stage']['name'] }}
+                                ({{ $slip_data['from_stage']['master_stage_name'] }})
+                            </option>
+                        </select>
 
-                        <!-- FULL WIDTH SECTION -->
-                        <div class="col-md-12">
-                            <div class="card mt-3 p-3 border">
-                                <h5 class="mb-3">Added Products</h5>
-                                <table class="table table-bordered" id="productList">
-                                    <thead>
-                                        <tr>
-                                            {{-- <th>Image</th> --}}
-                                            <th>Design</th>
-                                            <th>Set Size</th>
-                                            <th>Colour</th>
-                                            <th>Set Quantity</th>
-                                            <th>Pcs per Set</th>
-                                            <th>Total Quantity</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                        </div>
+                        {{-- FROM hidden --}}
+                        <input type="hidden" id="from_stage_id" value="{{ $slip_data['from_stage']['master_stage_id'] }}">
+                        <input type="hidden" id="from_stage_name" value="{{ $slip_data['from_stage']['master_stage_name'] }}">
+                        <input type="hidden" id="from_unit_id" value="{{ $slip_data['from_stage']['id'] }}">
+                        <input type="hidden" id="from_unit_name" value="{{ $slip_data['from_stage']['name'] }}">
 
-                    </div>
-                    <div class="row">
-                        <div class="col-6 text-left">
-                            <button class="btn btn-success px-4">Skip</button>
-                        </div>
-                        <div class="col-6 text-right">
-                            <button class="btn btn-success px-4">Submit Order</button>
-                        </div>
+                        {{-- TO --}}
+                        <label>To</label>
+                        <select id="to_stage_main" class="form-control select2 mb-2">
+                            <option value="">Select Stage</option>
+                            @foreach($slip_data['unit_master_data'] as $unit)
+                                <option
+                                    data-unit-id="{{ $unit['id'] }}"
+                                    data-unit-name="{{ $unit['name'] }}"
+                                    data-stage-id="{{ $unit['master_stage_id'] }}"
+                                    data-stage-name="{{ $unit['master_stage_name'] }}">
+                                    {{ $unit['name'] }} ({{ $unit['master_stage_name'] }})
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
-                </form>
+                    {{-- ADD DESIGN --}}
+                    <div class="card p-3 border">
+                        <h5>Add Design Number</h5>
+
+                        <label>Design No.</label>
+                        <input type="text" id="design_input" class="form-control mb-2">
+
+                        <label>Colour</label>
+                        <select id="colour_id" class="form-control mb-3">
+                            <option value="">Select Colour</option>
+                            @foreach($colours as $colour)
+                                <option value="{{ $colour->id }}">{{ $colour->sku }}</option>
+                            @endforeach
+                        </select>
+
+                        <label class="fw-bold mb-2">Size Type</label>
+                        <input type="hidden" id="size_type" value="set">
+
+                        <div class="size-toggle mb-2">
+                            <button type="button" class="size-btn active" data-type="set" data-target="setBox">
+                                Set Size
+                            </button>
+                            <button type="button" class="size-btn" data-type="single" data-target="singleBox">
+                                Individual Size
+                            </button>
+                        </div>
+
+                        <div id="setBox" class="size-box set-theme">
+                            <label>Set Size</label>
+                            <input type="text" id="set_size" class="form-control mb-2">
+
+                            <label>Set Quantity</label>
+                            <input type="number" id="set_qty" class="form-control" min="1">
+                        </div>
+
+                        <div id="singleBox" class="size-box single-theme d-none">
+                            <label>Individual Size</label>
+                            <input type="text" id="single_size" class="form-control mb-2">
+
+                            <label>Individual Quantity</label>
+                            <input type="number" id="single_qty" class="form-control" min="1">
+                        </div>
+
+                        <button type="button" class="btn btn-primary addLot w-100 mt-3">
+                            + Add Design Number
+                        </button>
+                    </div>
+                </div>
+
+                {{-- RIGHT --}}
+                <div class="col-md-6">
+                    <div class="card p-3 border">
+                        <img src="{{ asset('assets/production_slips/'.$slip_data['slip_file']) }}"
+                             class="img-fluid rounded">
+                    </div>
+                </div>
+
+                {{-- TABLE --}}
+                <div class="col-md-12 mt-3">
+                    <div class="card p-3 border">
+                        <table class="table table-bordered" id="productTable">
+                            <thead>
+                                <tr>
+                                    <th>Lot</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Design</th>
+                                    <th>Colour</th>
+                                    <th>Size Type</th>
+                                    <th>Set Size</th>
+                                    <th>Set Qty</th>
+                                    <th>Individual Size</th>
+                                    <th>Individual Qty</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
 
             </div>
 
+            <div class="row mt-3">
+                <div class="col-12 text-right">
+                    <input type="hidden" name="production_slip_digitization_id" value="{{ $slip_data['id'] }}">
+                    <button type="submit" class="btn btn-success">Submit</button>
+                </div>
+            </div>
+
+            </form>
+            @else
+                <div class="alert alert-info text-center">
+                    No Production Slips Available for Digitalization
+                </div>
+            @endif
+
+            </div>
         </div>
     </section>
-
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="photoModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content position-relative">
+{{-- STYLES --}}
+<style>
+.size-toggle{display:flex;gap:10px}
+.size-btn{flex:1;padding:10px;border-radius:20px;border:2px solid #ccc;font-weight:700}
+.size-btn.active[data-type="set"]{background:#0d6efd;color:#fff}
+.size-btn.active[data-type="single"]{background:#198754;color:#fff}
+.size-box{padding:10px;border-radius:8px}
+.set-theme{border:3px solid #0d6efd}
+.single-theme{border:3px solid #198754}
 
-        <!-- Custom Close Button -->
-        <button type="button" 
-                class="close position-absolute" 
-                style="top:10px; right:10px; font-size:30px; z-index:999;" 
-                data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
+.lot-inline{display:flex;align-items:center;gap:15px}
+.lot-input-wrapper{background:#f8f9fa;border:2px solid #28a745;border-radius:10px;padding:10px}
+.lot-input-label{font-weight:900;font-size:18px}
+.lot-input{flex:1;padding:12px;font-size:20px;font-weight:700;border:2px dashed #28a745;border-radius:6px;text-align:center}
+</style>
 
-        <div class="modal-body text-center p-0">
-            <img id="modal-photo" src="" style="width:100%; height:auto;">
-        </div>
-
-    </div>
-  </div>
-</div>
-
-
-
-
+{{-- JS --}}
 <script>
-$(document).ready(function () {
-
-    $('#design_id').on('change', function () {
-       
-        // let customer_id = $('#master_customer_id').val(1);
-        let design_id = $(this).val();
-        
-        let apiUrl = "{{ route('admin.sales_order.getCustomerSizes') }}";
-        $.ajax({
-            url: apiUrl,   // Route
-            type: 'GET',
-            data: { customer_id: 1 , design_id: design_id },
-            success: function (response) {
-                $("#set_size").empty(); // clear select
-
-                $("#set_size").append('<option value="">Select Size</option>');
-               
-                $.each(response, function(index, size){
-                    let parts = size.split("&&");   // FIXED
-
-                    let sizeName = parts[0];        // "Large"
-                    let pcsPerSet = parts[1];       // "12"
-
-                    $("#set_size").append(`
-                        <option value="${sizeName}" data-pcs="${pcsPerSet}">
-                            ${sizeName}
-                        </option>
-                    `);
-                });
-
-                // Refresh select2
-                $("#set_size").trigger('change');
-            },
-            error: function(xhr){
-                console.log(xhr.responseText);
-            }
-        });
-
-    });
-
-    $('#master_customer_id').on('change', function () {
-        
-        let customer_id = $(this).val();
-
-        if(customer_id === ""){
-            return;
-        }
-        let apiUrl = "{{ route('admin.sales_order.getCustomerDesign') }}";
-        $.ajax({
-            url: apiUrl,   // Route
-            type: 'GET',
-            data: { customer_id: customer_id },
-            success: function (response) {
-                 $("#design_id").empty(); // clear select
-
-                $("#design_id").append('<option value="">Select Size</option>');
-               
-                $.each(response, function(index, size){
-                    $("#design_id").append(
-                        `<option value="${index}">${size}</option>`
-                    );
-                });
-
-                // Refresh select2
-                $("#design_id").trigger('change');
-            },
-            error: function(xhr){
-                console.log(xhr.responseText);
-            }
-        });
-
-    });
+$(function(){
 
     $('.select2').select2();
 
-    // File preview
-    // File preview (Image or PDF)
-    $("#corporate_order_file").on("change", function (e) {
-        let file = e.target.files[0];
-
-        if (!file) return;
-
-        let fileType = file.type;
-
-        // Reset preview box
-        $("#previewImg").hide().attr("src", "");
-        $("#previewPDF").remove();
-
-        // CASE 1 : If file is image
-        if (fileType.startsWith("image/")) {
-
-            let reader = new FileReader();
-            reader.onload = () => {
-                $("#previewImg")
-                    .attr("src", reader.result)
-                    .css({ "display": "block", "border-radius": "6px" })
-                    .show();
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // CASE 2 : If file is PDF
-        else if (fileType === "application/pdf") {
-
-            let src = URL.createObjectURL(file);
-
-            // Create PDF viewer
-            let pdfViewer = `
-                <embed id="previewPDF" 
-                    src="${src}" 
-                    type="application/pdf" 
-                    width="100%" 
-                    height="550px" 
-                    style="border:1px solid #ccc; border-radius:6px;" />
-            `;
-
-            $("#corporate_order_file").after(pdfViewer);
-        }
-
-        else {
-            alert("Only Images or PDF files are allowed.");
-            $(this).val(""); // reset file input
-        }
+    $('.size-btn').click(function(){
+        $('.size-btn').removeClass('active');
+        $(this).addClass('active');
+        $('#size_type').val($(this).data('type'));
+        $('.size-box').addClass('d-none');
+        $('#'+$(this).data('target')).removeClass('d-none');
     });
 
+    $('.addLot').click(function(){
 
-    // Show product image
-    $(document).on("change", ".design-input", function () {
-        let img = $(this).find(":selected").data("img");
-        $(this).closest(".product-row").find(".img-section").html(
-            img ? `<img src="${img}" style="max-width:150px;border:1px solid #ccc;">` : ''
-        );
-    });
-    // click image to enlarge
-    $(document).on("click", "img", function () {
+        let lotNo = $('input[name="lot_no"]').val();
 
-        // ignore logo or system icons if needed
-        if ($(this).hasClass("no-preview")) return;
+        let fromStageText = $('#from_stage option:selected').text();
+        let fromStageId   = $('#from_stage_id').val();
+        let fromStageName = $('#from_stage_name').val();
+        let fromUnitId    = $('#from_unit_id').val();
+        let fromUnitName  = $('#from_unit_name').val();
 
-        let fullImage = $(this).attr("src");
+        let $to = $('#to_stage_main option:selected');
+        let toUnitId    = $to.data('unit-id');
+        let toUnitName  = $to.data('unit-name');
+        let toStageId   = $to.data('stage-id');
+        let toStageName = $to.data('stage-name');
+        let toText      = $to.text();
 
-        if (!fullImage) return;
+        let design     = $('#design_input').val();
+        let colourText = $('#colour_id option:selected').text();
+        let colourVal  = $('#colour_id').val();
 
-        $("#modal-photo").attr("src", fullImage);
-        $("#photoModal").modal("show");
-    });
+        let type = $('#size_type').val();
+        let size = type==='set' ? $('#set_size').val() : $('#single_size').val();
+        let qty  = type==='set' ? $('#set_qty').val()  : $('#single_qty').val();
 
-
-    // Add product
-    $(document).on("click", ".add-product", function () {
-
-        let row = $(this).closest(".product-row");
-
-        let design = row.find(".design-input option:selected");
-        let size = row.find(".size-input option:selected");
-        let colour = row.find(".colour-input option:selected");
-        let qty = row.find(".qty-input").val();
-        let pcsPerSet = size.data('pcs') || 1;
-        let total_qty = qty * pcsPerSet; // Calculate total quantity
-
-        if (!design.val() || !size.val() || !colour.val() || qty === "") {
-            // alert("Please select all fields");
+        if(!lotNo || !toUnitId || !design || !colourVal || !size || !qty){
+            alert('Please fill all fields');
             return;
         }
 
-        // $("#productList tbody").append(`
-        //     <tr>
-        //         <td>
-        //             <img src="${design.data('img')}" style="width:50px; height:50px; object-fit:cover; border-radius:4px; border:1px solid #ddd;">
-        //             <input type="hidden" name="imageList[]" value="${design.data('img')}">
-        //         </td>
-        //         <td>${design.text()}
-        //             <input type="hidden" name="designList[]" value="${design.val()}">
-        //         </td>
-        //         <td>${size.text()}
-        //             <input type="hidden" name="sizeList[]" value="${size.val()}">
-        //         </td>
-        //         <td>${colour.text()}
-        //             <input type="hidden" name="colourList[]" value="${colour.val()}">
-        //         </td>
-        //         <td>${qty}
-        //             <input type="hidden" name="product_quantity[]" value="${qty}">
-        //         </td>
-        //         <td>${total_qty}
-        //             <input type="hidden" name="total_quantity[]" value="${total_qty}">
-        //         </td>
-        //         <td>
-        //             <button class="btn btn-danger btn-sm remove-row">X</button>
-        //         </td>
-        //     </tr>
-        // `);
+        let setSize = type==='set'?size:'-';
+        let setQty  = type==='set'?qty:'-';
+        let indSize = type==='single'?size:'-';
+        let indQty  = type==='single'?qty:'-';
 
-        $("#productList tbody").append(`
-            <tr>
-                <td>${design.text()}
-                    <input type="hidden" name="designList[]" value="${design.val()}">
-                </td>
-                <td>${size.text()}
-                    <input type="hidden" name="sizeList[]" value="${size.val()}">
-                </td>
-                <td>${colour.text()}
-                    <input type="hidden" name="colourList[]" value="${colour.val()}">
-                </td>
-                <td>${qty}
-                    <input type="hidden" name="product_quantity[]" value="${qty}">
-                </td>
-                <td>${pcsPerSet}
-                    <input type="hidden" name="pcs[]" value="${pcsPerSet}">
-                </td>
-                <td>${total_qty}
-                    <input type="hidden" name="total_quantity[]" value="${total_qty}">
-                </td>
-                <td>
-                    <button class="btn btn-danger btn-sm remove-row">X</button>
-                </td>
-            </tr>
+        $('#productTable tbody').append(`
+        <tr>
+            <td>${lotNo}<input type="hidden" name="lot_no_list[]" value="${lotNo}"></td>
+
+            <td>
+                ${fromStageText}
+                <input type="hidden" name="from_stage_id[]" value="${fromStageId}">
+                <input type="hidden" name="from_stage_name[]" value="${fromStageName}">
+                <input type="hidden" name="from_unit_id[]" value="${fromUnitId}">
+                <input type="hidden" name="from_unit_name[]" value="${fromUnitName}">
+            </td>
+
+            <td>
+                ${toText}
+                <input type="hidden" name="to_stage_id[]" value="${toStageId}">
+                <input type="hidden" name="to_stage_name[]" value="${toStageName}">
+                <input type="hidden" name="to_unit_id[]" value="${toUnitId}">
+                <input type="hidden" name="to_unit_name[]" value="${toUnitName}">
+            </td>
+
+            <td>${design}<input type="hidden" name="design[]" value="${design}"></td>
+            <td>${colourText}<input type="hidden" name="colour_id[]" value="${colourVal}"></td>
+            <td>${type}</td>
+            <!-- SET SIZE -->
+            <td>
+                ${type === 'set' ? size : '-'}
+                <input type="hidden" name="set_size[]" value="${type === 'set' ? size : ''}">
+            </td>
+
+            <!-- SET QTY -->
+            <td>
+                ${type === 'set' ? qty : '-'}
+                <input type="hidden" name="set_qty[]" value="${type === 'set' ? qty : ''}">
+            </td>
+
+            <!-- INDIVIDUAL SIZE -->
+            <td>
+                ${type === 'single' ? size : '-'}
+                <input type="hidden" name="individual_size[]" value="${type === 'single' ? size : ''}">
+            </td>
+
+            <!-- INDIVIDUAL QTY -->
+            <td>
+                ${type === 'single' ? qty : '-'}
+                <input type="hidden" name="individual_qty[]" value="${type === 'single' ? qty : ''}">
+            </td>
+
+            <td><button type="button" class="btn btn-danger btn-sm remove">X</button></td>
+        </tr>
         `);
-        row.find("select").val("").trigger("change");
-        row.find(".qty-input").val("");
-        row.find(".img-section").html("");
+        $('#set_size').val('');
+        $('#set_qty').val('');
+
+        $('#single_size').val('');
+        $('#single_qty').val('');
     });
 
-    // Remove row
-    $(document).on("click", ".remove-row", function () {
-        $(this).closest("tr").remove();
-    });
-
-    // Validate before submit
-    $("form").on("submit", function (e) {
-
-        let rowCount = $("#productList tbody tr").length;
-
-        if (rowCount === 0) {
-            // alert("Please add at least one product before submitting.");
-            e.preventDefault();
-            return false;
-        }
-
+    $(document).on('click','.remove',function(){
+        $(this).closest('tr').remove();
     });
 
 });
-</script>
 
+function confirmDeleteSlip(){
+    if(confirm('Are you sure you want to delete this slip?')){
+        alert('Delete confirmed');
+    }
+}
+</script>
 @endsection

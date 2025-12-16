@@ -206,7 +206,16 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             <p>List Sales Order</p>
                         </a>
                     </li>
-                     <li class="{{ (str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/create-slips-production')) ? 'nav-item menu-open' : 'nav-item' }} ">
+
+                    <li class="nav-item">
+                        <a href="{{ route('admin.order_digitalization.create-slips-production') }}"
+                            class="{{ str_contains($page_url, 'admin.order_digitalization.create-slips-production') ? 'nav-link active' : 'nav-link' }} border_class"
+                            style="position:static;">
+                            <i class="nav-icon fas fa-industry"></i>
+                            <p>Hand Slip Digitalization</p>
+                        </a>
+                    </li>
+                     {{-- <li class="{{ (str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/create-slips-production')) ? 'nav-item menu-open' : 'nav-item' }} ">
                         <a href="#"
                             class="{{ str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/create-slips-production') ? 'nav-link active' : 'nav-link' }} border_class" >
                             <i class="nav-icon fas fa-cube"></i>
@@ -234,7 +243,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             </li>
                         </ul>
                        
-                    </li>
+                    </li> --}}
                     {{-- <li class="nav-item">
                         <a href="{{ route('admin.product_order.indexOrder') }}"
                             class="{{ str_contains($page_url, 'admin/production-order') ? 'nav-link active' : 'nav-link' }}"
