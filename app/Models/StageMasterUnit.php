@@ -25,8 +25,13 @@ class StageMasterUnit extends Model
         'updated_at'
     ];
 
-    // public function fabric(){
-    //     return $this->hasOne('App\Models\Fabric','sku','fabric_sku');
-    // }
+    public function masterStage(){
+        return $this->hasOne('App\Models\MasterProductStage','id','master_stage_id');
+    }
+
+    public function masterFabricWarehouse()
+    {
+        return $this->belongsTo('App\Models\MasterFabricWarehouse', 'master_fabric_warehouse_id', 'id' );
+    }
    
 }
