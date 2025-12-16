@@ -35,7 +35,7 @@ class SizeMeasurementService {
             return back()->with('error', 'SKU already exists, please choose a different name.');
         }
         $save_data = new MasterSizeMeasurement;
-        $save_data->name = $request->name;
+        $save_data->name = $request->set_size;
         $save_data->corporate_company_id = $request->customer_id;
         $save_data->design_number = $request->design_number;
         $save_data->no_of_pcs = $request->no_of_pcs;
@@ -69,7 +69,7 @@ class SizeMeasurementService {
             return back()->with('error', 'SKU already exists, please choose a different name.');
         }
         $update_data = MasterSizeMeasurement::find($request->id);
-        $update_data->name = $request->name;
+        $update_data->name = $request->set_size;
         $update_data->corporate_company_id = $request->customer_id;
         $update_data->design_number = $request->design_number;
         $update_data->no_of_pcs = $request->no_of_pcs;

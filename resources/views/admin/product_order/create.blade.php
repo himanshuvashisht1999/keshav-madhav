@@ -80,7 +80,9 @@
                                     @endif
                                     <label>Set Size (Royal Jeans)</label>
                                     <select class="form-control select2 mb-2 size-input" name="set_size" id="set_size">
-                                        
+                                        {{-- @foreach($product_size as $size)
+                                            <option value="{{ $size->id }}">{{ $size->name }}</option>
+                                        @endforeach --}}
                                     </select>
                                     @if ($errors->has('sizeList'))
                                         <span class="invalid-feedback d-block">
