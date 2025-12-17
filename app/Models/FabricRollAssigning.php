@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class FabricRollAssigning extends Model
 {
     use HasFactory;
-    protected $table = 'fabric_roll_assigning';
+    protected $table = 'production_fabric_roll_assigning';
     protected $fillable = [
         'id',
         'sno',
@@ -22,6 +22,7 @@ class FabricRollAssigning extends Model
         'stage_master_unit_id',
         'roll_no',
         'meter',
+        'slip_create_date_time',
         'slip_file',
         'status',
         'created_at',

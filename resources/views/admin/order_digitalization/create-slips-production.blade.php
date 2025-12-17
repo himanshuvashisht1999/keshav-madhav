@@ -15,16 +15,44 @@
 
             <div class="row">
                 <div class="col-12 text-right">
-                    <form action="" method="post">
-                        <input type="hidden" name="skip" value="2">
-                        <input type="hidden" name="delete" value="3">
-                        <input type="hidden" name="rolls_assign" value="4">
-                    </form>
+                    @if(!empty($skip_slip_data))
+                     <form action="{{ route('admin.order_digitalization.add-skip-slip') }}"
+                            method="POST"
+                            class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-info mr-2">
+                                Add Skip slips for Digitalization (Available - {{$skip_slip_data}} Slips)
+                            </button>
+                        </form>
+                    @endif
                     <a href="{{ route('admin.order_digitalization.create-rolls-assign') }}" class="btn btn-primary mr-2">
                         Rolls Digitalization
                     </a>
-                    <button type="button" class="btn btn-secondary mr-2">Skip</button>
-                    <button type="button" class="btn btn-danger" onclick="confirmDeleteSlip()">Delete</button>
+                    @if(!empty($slip_data))
+
+                        <!-- SKIP FORM -->
+                        <form action="{{ route('admin.order_digitalization.skip') }}"
+                            method="POST"
+                            class="d-inline">
+                            @csrf
+                            <input type="hidden" name="production_slip_digitization_id" value="{{ $slip_data['id'] }}">
+                            <button type="submit" class="btn btn-secondary mr-2">
+                                Skip
+                            </button>
+                        </form>
+
+                        <!-- DELETE FORM -->
+                        <form action="{{ route('admin.order_digitalization.delete-slip') }}"
+                            method="POST"
+                            class="d-inline"
+                            onsubmit="return confirmDeleteSlip();">
+                            @csrf
+                            <input type="hidden" name="production_slip_digitization_id" value="{{ $slip_data['id'] }}">
+                            <button type="submit" class="btn btn-danger mr-2">
+                                Delete
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
 
@@ -39,7 +67,7 @@
 
                 @if(!empty($slip_data))
                     <div id="slip_digitalization" >
-                        <form method="POST" action="{{ route('admin.order_digitalization.store') }}">
+                        <form method="POST" action="{{ route('admin.order_digitalization.store-slip') }}">
                         @csrf
 
                         <div class="row">
@@ -51,7 +79,7 @@
                                     <label>Date - {{ getformatDateTime($slip_data['date_time']) }}</label>
                                     <input type="hidden" id="slip_create_date_time" name="slip_create_date_time" value="{{ $slip_data['date_time'] }}">
                                     <label>Order No.</label>
-                                    <input type="text" id="order_no" name="order_no" class="form-control mb-2">
+                                    <input type="text" id="order_no" name="order_no" class="form-control mb-2" required>
                                     {{-- LOT NO --}}
                                     <div class="lot-input-wrapper my-3 lot-inline">
                                         <label class="lot-input-label">Lot No.</label>
@@ -192,8 +220,10 @@
                         <div class="row mt-3">
                             <div class="col-12 text-right">
                                 <input type="hidden" name="production_slip_digitization_id" value="{{ $slip_data['id'] }}">
-                                <input type="hidden" name="confirmation_remark" id="confirmation_remark">
-                                <input type="hidden" name="confirmation_remark" id="confirmation_remark">
+                                <input type="hidden" id="remark" name="remark">
+                                <input type="hidden" id="hidden_allowed_time" name="allowed_time">
+                                <input type="hidden" id="hidden_time_type" name="time_type">
+                                <input type="hidden" id="hidden_allowed_till" name="allowed_till_datetime">
                                 {{-- <button type="submit" class="btn btn-success">Submit</button> --}}
                                 <button type="button" class="btn btn-success" id="openConfirmModal">
                                     Submit
@@ -218,37 +248,56 @@
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
 
+            <!-- HEADER -->
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">Delivery Time Allowed</h5>
+                <h5 class="modal-title">Process Time Allowed</h5>
                 <button type="button" class="close text-white" data-dismiss="modal">
                     &times;
                 </button>
             </div>
 
+            <!-- BODY -->
             <div class="modal-body">
+
+                <!-- TIME TYPE -->
                 <div class="form-group">
-                    <label class="font-weight-bold">
-                        Allowed Date & Time 
+                    <label class="font-weight-bold">Time Type</label>
+                    <select name="time_type" id="time_type" class="form-control">
+                        <option value="">Select Time Type</option>
+                        <option value="hourly">Hours</option>
+                        <option value="daily">Days</option>
+                    </select>
+                </div>
+
+                <!-- ALLOWED TIME -->
+                <div class="form-group">
+                    <label class="font-weight-bold" id="allowed_time_label">
+                        Allowed Time
                     </label>
-                    <input type="text"
+                    <input type="number"
                            class="form-control"
                            id="allowed_time"
                            name="allowed_time"
                            placeholder="Enter Allowed Time"
-                           required>
+                           min="1">
+                </div>
 
-                    <label class="font-weight-bold">
-                        Remarks
-                    </label>
+                <!-- REMARK -->
+                <div class="form-group">
+                    <label class="font-weight-bold">Remarks</label>
                     <input type="text"
                            class="form-control"
                            id="final_remark"
                            name="final_remark"
-                           placeholder="Enter remark"
-                           >
+                           placeholder="Enter remark (optional)">
                 </div>
+                <input type="hidden"
+                           class="form-control"
+                           id="till_allowed_time"
+                           name="till_allowed_time">
             </div>
 
+            <!-- FOOTER -->
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">
                     Cancel
@@ -261,6 +310,7 @@
         </div>
     </div>
 </div>
+
 
 {{-- STYLES --}}
 <style>
@@ -283,30 +333,56 @@
 $(function(){
 
     $('#openConfirmModal').on('click', function(){
+        if($('#productTable tbody tr').length === 0){
+            alert(' Please add at least one design before submitting.');
+            return;
+        }
+        if($('#from_stage_id').val() === 3 && $('#order_no').val() === ''){
+            alert('Order number is mandatory.');
+            return;
+        }
         $('#confirmSubmitModal').modal('show');
+    });
+
+    $('#time_type, #allowed_time').on('change keyup', function () {
+        calculateAllowedTill();
     });
 
     // Final submit
     $('#confirmFinalSubmit').on('click', function(){
-        if($('#productTable tbody tr').length === 0){
-            alert(' Please add at least one design before submitting.');
+        calculateAllowedTill();
+       // ✅ count only real data rows
+        let dataRowCount = $('#productTable tbody tr')
+            .not('#noDataRow')
+            .length;
+
+        if (dataRowCount === 0) {
+            alert('Please add at least one design before submitting.');
             return;
-        } else {
-            let remark = $('#final_remark').val().trim();
-            let allowed_time = $('#allowed_time').val().trim();
-            if(allowed_time === ''){
-                alert('Please enter Allowed Date & Time');
-                return;
-            }
-
-            // copy modal input → hidden form input
-            $('#confirmation_remark').val(remark);
-            $('#allowed_time').val(allowed_time);
-
-            // submit form
-            $('#confirmSubmitModal').modal('hide');
-            $('#slip_digitalization form').submit();
         }
+
+        let timeType     = $('#time_type').val();
+        let allowedTime  = $('#allowed_time').val();
+        let remark       = $('#final_remark').val().trim();
+
+        if (!timeType) {
+            alert('Please select Time Type (Hours / Days)');
+            return;
+        }
+
+        if (!allowedTime || allowedTime <= 0) {
+            alert('Please enter valid allowed time');
+            return;
+        }
+
+        // ✅ copy modal values to hidden form fields
+        $('#remark').val(remark);
+        $('#hidden_allowed_time').val(allowedTime);
+        $('#hidden_time_type').val(timeType);
+
+        // ✅ submit
+        $('#confirmSubmitModal').modal('hide');
+        $('#slip_digitalization form').submit();
     });
 
     $('.select2').select2();
@@ -404,7 +480,7 @@ $(function(){
             <td><button type="button" class="btn btn-danger btn-sm remove">X</button></td>
         </tr>
         `);
-        $('#set_size').val('');
+        $('#set_size').val(null).trigger('change');
         $('#set_qty').val('');
 
         $('#single_size').val('');
@@ -417,10 +493,40 @@ $(function(){
 
 });
 
-function confirmDeleteSlip(){
-    if(confirm('Are you sure you want to delete this slip?')){
-        alert('Delete confirmed');
-    }
+function confirmDeleteSlip() {
+    return confirm('Are you sure you want to delete this slip?');
 }
+
+function calculateAllowedTill() {
+    let type  = $('#time_type').val();
+    let value = parseInt($('#allowed_time').val());
+    if (!type || !value || value <= 0) {
+        $('#hidden_allowed_till').val('');
+        return;
+    }
+
+    let now = new Date();
+
+    if (type === 'hourly') {
+        now.setHours(now.getHours() + value);
+    }
+
+    if (type === 'daily') {
+        now.setDate(now.getDate() + value);
+    }
+
+    // format for backend: YYYY-MM-DD HH:mm:ss
+    let formatted =
+        now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0') + ' ' +
+        String(now.getHours()).padStart(2, '0') + ':' +
+        String(now.getMinutes()).padStart(2, '0') + ':00';
+
+    $('#hidden_allowed_till').val(formatted);
+    $('#till_allowed_time').val(formatted);
+    
+}
+
 </script>
 @endsection

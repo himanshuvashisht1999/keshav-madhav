@@ -35,42 +35,34 @@ class OrderDigitalizationService {
         return $this->datatable->indexList($request);
     }
    
-    public function store(Request $request)
+    public function storeRollsAssign(Request $request)
     {
         DB::beginTransaction();
-        dd($request);
+        // dd($request->all());
         try {
-        //    dd($request->all());
+           
             ////// corporate order photo upload
             if ($request->lot_no_list){
                 foreach ($request->lot_no_list as $key => $lot_no) {
                     $save_data_main = new FabricRollAssigning;
                     $save_data_main->sku = '';
                     $save_data_main->lot_no = $lot_no;
+                    $save_data_main->production_slip_digitization_id = $request->production_slip_digitization_id;
                     $save_data_main->order_no = $request->order_no_list[$key];
-                    $save_data_main->stage_master_unit_id = $request->to_stage[$key];
+                    $save_data_main->stage_master_unit_id = $request->cutting_unit_list[$key];
                     $save_data_main->roll_no = $request->roll_no_list[$key];
                     $save_data_main->meter = $request->meter_list[$key];
-                    $save_data_main->slip_file = $request->slip_file ?? '';
+                    $save_data_main->slip_create_date_time = $request->slip_create_date_time ?? NULL;
                     $save_data_main->status = 1;
                     $save_data_main->save();
                 }
             }
 
-            // if ($request->lot_no_list){
-            //     foreach ($request->lot_no_list as $key => $lot_no) {
-            //         $save_data_main = new FabricRollAssigning;
-            //         $save_data_main->sku = '';
-            //         $save_data_main->lot_no = $lot_no;
-            //         $save_data_main->order_no = $request->order_no_list[$key];
-            //         $save_data_main->stage_master_unit_id = $request->to_stage[$key];
-            //         $save_data_main->roll_no = $request->roll_no_list[$key];
-            //         $save_data_main->meter = $request->meter_list[$key];
-            //         $save_data_main->slip_file = $request->slip_file ?? '';
-            //         $save_data_main->status = 1;
-            //         $save_data_main->save();
-            //     }
-            // }
+            $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
+
+            $slip->update([
+                'status'  => 4
+            ]);
 
             // Commit everything if all successful
             DB::commit();
@@ -91,6 +83,7 @@ class OrderDigitalizationService {
 
     public function storeProductionSlipDigitization(Request $request)
     {
+
         DB::beginTransaction();
         try {
         //    dd($request->all());
@@ -121,6 +114,10 @@ class OrderDigitalizationService {
                     $save_data_main->set_quantity = $request->set_qty[$key] ?? NULL; 
                     $save_data_main->single_size = $request->individual_size[$key] ?? NULL;
                     $save_data_main->single_quantity = $request->individual_qty[$key] ?? NULL;
+                    $save_data_main->allowed_time = $request->allowed_time ?? '';
+                    $save_data_main->time_type = $request->time_type ?? '';
+                    $save_data_main->allowed_till_datetime = $request->allowed_till_datetime ?? NULL;
+                    $save_data_main->remarks = $request->remark ?? '';
                     $save_data_main->status = 1;
                     $save_data_main->save();
 
@@ -246,6 +243,7 @@ class OrderDigitalizationService {
 
     public function getSlipDigitalization()
     {
+        // defaults status 0 data get for Digitization
 
         $results = ProductionSlipDigitization::with([
             'getUnitMaster.masterFabricWarehouse'
@@ -300,59 +298,98 @@ class OrderDigitalizationService {
         return $data; 
     }
     
-    public function getSlipDigitalization1()
+    public function skip(Request $request)
     {
-
-        $results = ProductionSlipDigitization::with([
-            'getUnitMaster.masterFabricWarehouse'
-            ])
-            ->where('status', 0)
-            ->orderBy('id', 'asc')
-            ->first();
+        DB::beginTransaction();
+        try {
+        //    dd($request->all());
             
-        $data = [];
-        if ($results){
-            // $results = ProductionSlipDigitization::with('getUnitMaster')
-            //     ->where('status', 0)
-            //     ->orderBy('id', 'asc')
-            //     ->first();
-            // dd($results);
-            $results_units = StageMasterUnit::with('masterStage')->where('status', 1)->where('master_fabric_warehouse_id', $results->getUnitMaster->master_fabric_warehouse_id)
-                ->orderBy('id', 'asc')
-                ->get()->toArray();
-            $unit_master_data = [];
-            $from_stage = [];
-            if ($results_units){
-                foreach ($results_units as $unit_data) {
-                    $unit_master_data[] = [
-                        'id' => $unit_data['id'],
-                        'master_stage_id' => $unit_data['master_stage_id'],
-                        'name' => $unit_data['name'],
-                        'master_stage_name' => $unit_data['master_stage']['name'],
+            $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
 
-                    ];
-                    if ($results['stage_master_unit_id'] == $unit_data['id']){
-                        $from_stage = [
-                            'id' => $unit_data['id'],
-                            'master_stage_id' => $unit_data['master_stage_id'],
-                            'name' => $unit_data['name'],
-                            'master_stage_name' => $unit_data['master_stage']['name'],
-                            'warehouse_id' => $results->getUnitMaster->masterFabricWarehouse->id,
-                            'warehouse' => $results->getUnitMaster->masterFabricWarehouse->cutting_master_name,
-                            'address' => $results->getUnitMaster->masterFabricWarehouse->address,
-                        ];
-                    }
-                }
-            }
-            $data = [
-                'id' => $results->id,
-                'slip_file' => $results->slip_file,
-                'from_stage' => $from_stage,
-                'unit_master_data' => $unit_master_data,
-                'date_time' => $results->created_at
+            $slip->update([
+                'status'  => 2
+            ]);
+
+            // Commit everything if all successful
+            DB::commit();
+
+            return [
+                'status_code' => 1,
+                'message' => 'Slip Digitization skip successfully.'
             ];
-        }
 
-        return $data; 
+        } catch (\Exception $e) {
+            //  Rollback everything on any error
+            DB::rollBack();
+
+            $return_data['message'] = $e->getMessage();
+            $return_data['status_code'] = 0;
+            return $return_data;
+        }
     }
+
+    public function deleteSlip(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+        //    dd($request->all());
+            
+            $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
+
+            $slip->update([
+                'status'  => 3
+            ]);
+
+            // Commit everything if all successful
+            DB::commit();
+
+            return [
+                'status_code' => 1,
+                'message' => 'Slip Digitization Delete successfully.'
+            ];
+
+        } catch (\Exception $e) {
+            //  Rollback everything on any error
+            DB::rollBack();
+
+            $return_data['message'] = $e->getMessage();
+            $return_data['status_code'] = 0;
+            return $return_data;
+        }
+    }
+
+    public function addSkipSlips(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+        //    dd($request->all());
+            
+            ProductionSlipDigitization::where('status', 2)
+            ->update([
+                'status' => 0
+            ]);
+            // Commit everything if all successful
+            DB::commit();
+
+            return [
+                'status_code' => 1,
+                'message' => 'Skip Slip successfully add for Digitization.'
+            ];
+
+        } catch (\Exception $e) {
+            //  Rollback everything on any error
+            DB::rollBack();
+
+            $return_data['message'] = $e->getMessage();
+            $return_data['status_code'] = 0;
+            return $return_data;
+        }
+    }
+
+    public function getSkipSlips()
+    {
+        $count = ProductionSlipDigitization::where('status', 2)->count();
+        return $count;
+    }
+
 }
