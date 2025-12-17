@@ -44,14 +44,13 @@ class OrderDigitalizationController extends Controller {
         $response['colours'] = $this->productOrderService->getColours();
         $response['customers'] = $this->productOrderService->customers();
         $response['slip_data'] = $this->service->getSlipDigitalization();
-        /// roll assign 
-        $response['order_no_data'] = $this->service->orderMainForRollAssign();
-        $response['cutting_units'] = $this->fabricReceiptService->cutting_units();
-        $response['fabrics'] = $this->service->getFabricsData();
-        // $response['slip_data'] = $this->service->getSlipDigitalization();
+        $response['skip_slip_data'] = $this->service->getSkipSlips();
         // dd($response['slip_data']);
+        /// roll assign 
         return view('admin.order_digitalization.create-slips-production',$response);
     }
+
+
 
     public function createRollsAssign(){
         $response['order_no_data'] = $this->service->orderMainForRollAssign();
@@ -59,10 +58,11 @@ class OrderDigitalizationController extends Controller {
         // dd($response['cutting_units']);
         $response['fabrics'] = $this->service->getFabricsData();
         $response['slip_data'] = $this->service->getSlipDigitalization();
+        $response['skip_slip_data'] = $this->service->getSkipSlips();
         return view('admin.order_digitalization.create-rolls-assign', $response);
     }
     
-    public function store(Request $request){
+    public function storeProductionSlipDigitization(Request $request){
         $data = $this->service->storeProductionSlipDigitization($request);
         if($data['status_code'] == 1){
             return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
@@ -70,9 +70,35 @@ class OrderDigitalizationController extends Controller {
             return redirect()->back()->withError($data['message']);
         }
     }
+    public function storeRollsAssign(Request $request){
+        $data = $this->service->storeRollsAssign($request);
+        if($data['status_code'] == 1){
+            return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
+        }else{
+            return redirect()->back()->withError($data['message']);
+        }
+    }
 
-    public function skip_slip(Request $request){
-        $data = $this->service->storeSkip($request);
+    public function skip(Request $request){
+        $data = $this->service->skip($request);
+        if($data['status_code'] == 1){
+            return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
+        }else{
+            return redirect()->back()->withError($data['message']);
+        }
+    }
+
+    public function deleteSlip(Request $request){
+        $data = $this->service->deleteSlip($request);
+        if($data['status_code'] == 1){
+            return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
+        }else{
+            return redirect()->back()->withError($data['message']);
+        }
+    }
+
+    public function addSkipSlips(Request $request){
+        $data = $this->service->addSkipSlips($request);
         if($data['status_code'] == 1){
             return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
         }else{
