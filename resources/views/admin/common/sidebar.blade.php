@@ -206,15 +206,30 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             <p>List Sales Order</p>
                         </a>
                     </li>
-
                     <li class="nav-item">
+                        <a href="{{ route('admin.order_digitalization.create-slips-production') }}"
+                            class="{{ str_contains($page_url, 'admin/order_digitalization') ? 'nav-link active' : 'nav-link' }} border_class"
+                            style="position:static;">
+                            <i class="fas fa-file-signature"></i>
+                            <p>Hand Slip Digitalization</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.order_dispatch.create-dispatch') }}"
+                            class="{{ str_contains($page_url, 'admin/order_dispatch') ? 'nav-link active' : 'nav-link' }} border_class"
+                            style="position:static;">
+                            <i class="fas fa-dolly"></i>
+                            <p>Dispatch</p>
+                        </a>
+                    </li>
+                    {{-- <li class="nav-item">
                         <a href="{{ route('admin.order_digitalization.create-slips-production') }}"
                             class="{{ str_contains($page_url, 'admin.order_digitalization.create-slips-production') ? 'nav-link active' : 'nav-link' }} border_class"
                             style="position:static;">
                             <i class="nav-icon fas fa-industry"></i>
                             <p>Hand Slip Digitalization</p>
                         </a>
-                    </li>
+                    </li> --}}
                     <li class="{{ str_contains($page_url, 'admin/report') ? 'nav-item menu-open' : 'nav-item' }}">
                         <a href="#"
                             class="{{ str_contains($page_url, 'admin/report') ? 'nav-link active' : 'nav-link' }}">

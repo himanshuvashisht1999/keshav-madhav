@@ -50,8 +50,6 @@ class OrderDigitalizationController extends Controller {
         return view('admin.order_digitalization.create-slips-production',$response);
     }
 
-
-
     public function createRollsAssign(){
         $response['order_no_data'] = $this->service->orderMainForRollAssign();
         $response['cutting_units'] = $this->fabricReceiptService->cutting_units();

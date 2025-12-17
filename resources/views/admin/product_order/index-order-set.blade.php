@@ -48,7 +48,7 @@
                                 <input type="hidden" class="form-control" name="id" id="id" value="{{$order_main->id}}" autocomplete="off">
                             </td>
                             <td>
-                                <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
+                                <input type="text" class="form-control" name="bar_code" id="bar_code" autocomplete="off">
                             </td>
                             <td>
                                 <input type="text" class="form-control" name="design_number" id="design_number" autocomplete="off">
@@ -85,7 +85,7 @@
                         </tr>
                         <tr>
                             <th>ID</th>
-                            <th>Product order No. (per Set)</th>
+                            <th>Provided Bar Code</th>
                             <th>Design Number</th>
                             <th>Set Size</th>
                             <th>Colour</th>
@@ -120,7 +120,7 @@
                                 <form action="{{ route('admin.product_order.assign_to') }}" method="POST" enctype="multipart/form-data">
                                     @csrf
 
-                                <div class="row">
+                                    <div class="row">
                                         <div class="col-md-6">
                                         </div>
                                         <!-- LEFT -->
@@ -142,7 +142,7 @@
                                                         {{ $errors->first('master_cutting_id') }}
                                                     </span>
                                                 @endif
-                                                <label for="delivery_time_allowed">Delivery Time Allowed (in Days)</label>
+                                                {{-- <label for="delivery_time_allowed">Delivery Time Allowed (in Days)</label>
                                                 <input type="number" name="delivery_time_allowed" id="delivery_time_allowed" min='1' placeholder="Enter Delivery Time Allowed in days "  class="form-control">
                                                 <label for="remarks">Remarks</label>
                                                 <textarea id="remarks" name="remarks" class="form-control" rows="3" placeholder="Enter your remarks..."></textarea>
@@ -150,7 +150,46 @@
                                                     <span class="invalid-feedback d-block">
                                                         {{ $errors->first('remarks') }}
                                                     </span>
-                                                @endif
+                                                @endif --}}
+
+                                                <!-- TIME TYPE -->
+                                                <div class="form-group">
+                                                    <label class="font-weight-bold">Time Type</label>
+                                                    <select name="time_type" id="time_type" class="form-control" required>
+                                                        <option value="">Select Time Type</option>
+                                                        <option value="hours">Hours</option>
+                                                        <option value="days">Days</option>
+                                                    </select>
+                                                </div>
+
+                                                <!-- ALLOWED TIME -->
+                                                <div class="form-group">
+                                                    <label class="font-weight-bold" id="allowed_time_label">
+                                                        Allowed Time
+                                                    </label>
+                                                    <input type="number"
+                                                        class="form-control"
+                                                        id="allowed_time"
+                                                        name="allowed_time"
+                                                        placeholder="Enter Allowed Time"
+                                                        min="1" required>
+                                                </div>
+
+                                                <!-- REMARK -->
+                                                <div class="form-group">
+                                                    <label class="font-weight-bold">Remarks</label>
+                                                    <textarea
+                                                        class="form-control @error('final_remark') is-invalid @enderror"
+                                                        id="final_remark"
+                                                        name="final_remark"
+                                                        rows="3"
+                                                        placeholder="Enter remark (optional)"
+                                                    >{{ old('final_remark') }}</textarea>
+                                                </div>
+                                                <input type="hidden"
+                                                        class="form-control"
+                                                        id="till_allowed_time"
+                                                        name="till_allowed_time">
                                             </div>
 
                                         </div>
@@ -201,7 +240,7 @@
                 url: '{!! route('admin.product_order.indexListOrderSet') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
-                    d.sku = $('#sku').val();
+                    d.bar_code = $('#bar_code').val();
                     d.design_number = $('#design_number').val();
                     d.status = $('#status').val();
                   
@@ -210,7 +249,7 @@
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'sku', name: 'sku'},
+                {data: 'bar_code', name: 'bar_code'},
                 {data: 'design_number', name: 'design_number'},  
                 {data: 'set_size', name: 'set_size'},
                 {data: 'color_id', name: 'color_id'},
@@ -266,7 +305,7 @@
             e.preventDefault();
         });
 
-        $('#sku').on('keyup', function (e) {
+        $('#bar_code').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
@@ -280,7 +319,77 @@
             e.preventDefault();
         });
         
-        
+        $('#time_type, #allowed_time').on('change keyup', function () {
+            calculateAllowedTill();
+        });
+
+        // Final submit
+        $('#confirmFinalSubmit').on('click', function(){
+            calculateAllowedTill();
+        // ✅ count only real data rows
+            let dataRowCount = $('#productTable tbody tr')
+                .not('#noDataRow')
+                .length;
+
+            if (dataRowCount === 0) {
+                alert('Please add at least one design before submitting.');
+                return;
+            }
+
+            let timeType     = $('#time_type').val();
+            let allowedTime  = $('#allowed_time').val();
+            let remark       = $('#final_remark').val().trim();
+
+            if (!timeType) {
+                alert('Please select Time Type (Hours / Days)');
+                return;
+            }
+
+            if (!allowedTime || allowedTime <= 0) {
+                alert('Please enter valid allowed time');
+                return;
+            }
+
+            // ✅ copy modal values to hidden form fields
+            $('#remark').val(remark);
+            $('#hidden_allowed_time').val(allowedTime);
+            $('#hidden_time_type').val(timeType);
+
+            // ✅ submit
+            $('#confirmSubmitModal').modal('hide');
+            $('#slip_digitalization form').submit();
+        });
+
+        function calculateAllowedTill() {
+            let type  = $('#time_type').val();
+            let value = parseInt($('#allowed_time').val());
+            if (!type || !value || value <= 0) {
+                $('#hidden_allowed_till').val('');
+                return;
+            }
+
+            let now = new Date();
+
+            if (type === 'hours') {
+                now.setHours(now.getHours() + value);
+            }
+
+            if (type === 'days') {
+                now.setDate(now.getDate() + value);
+            }
+
+            // format for backend: YYYY-MM-DD HH:mm:ss
+            let formatted =
+                now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0') + ' ' +
+                String(now.getHours()).padStart(2, '0') + ':' +
+                String(now.getMinutes()).padStart(2, '0') + ':00';
+
+            $('#hidden_allowed_till').val(formatted);
+            $('#till_allowed_time').val(formatted);
+            
+        }
 
     });
 
