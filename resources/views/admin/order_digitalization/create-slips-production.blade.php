@@ -264,8 +264,8 @@
                     <label class="font-weight-bold">Time Type</label>
                     <select name="time_type" id="time_type" class="form-control">
                         <option value="">Select Time Type</option>
-                        <option value="hourly">Hours</option>
-                        <option value="daily">Days</option>
+                        <option value="hours">Hours</option>
+                        <option value="days">Days</option>
                     </select>
                 </div>
 
@@ -507,11 +507,11 @@ function calculateAllowedTill() {
 
     let now = new Date();
 
-    if (type === 'hourly') {
+    if (type === 'hours') {
         now.setHours(now.getHours() + value);
     }
 
-    if (type === 'daily') {
+    if (type === 'days') {
         now.setDate(now.getDate() + value);
     }
 
