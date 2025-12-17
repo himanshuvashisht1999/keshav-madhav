@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\PurchaseOrderMaterialController as AdminPurchaseO
 use App\Http\Controllers\Admin\ItemReceiptController as AdminItemReceiptController;
 use App\Http\Controllers\Admin\ItemStockController as AdminItemStockController;
 use App\Http\Controllers\Admin\OrderDigitalizationController as AdminOrderDigitalizationController;
+use App\Http\Controllers\Admin\OrderDispatchController as AdminOrderDispatchController;
 
 /// order
 use App\Http\Controllers\Admin\ProductOrderController as AdminProductOrderController;
@@ -251,6 +252,15 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             // Route::get('/get-sub-stages/{order_product_id}/{from_stage_id}',[AdminOrderDigitalizationController::class,'getSubStages'])->name('getSubStages');
         });
 
+        Route::prefix('/order_dispatch')->name('order_dispatch.')->group(function () {
+            Route::get('/index-slip-production',[AdminOrderDispatchController::class,'index_slip_production'])->name('index-slip-production');
+            Route::get('/indexList',[AdminOrderDispatchController::class,'indexList'])->name('indexList');
+            Route::get('/create-dispatch',[AdminOrderDispatchController::class,'createDispatch'])->name('create-dispatch');
+            Route::post('/store',[AdminOrderDispatchController::class,'store'])->name('store');
+            Route::get('/getCustomerOrders',[AdminOrderDispatchController::class,'getCustomerOrders'])->name('getCustomerOrders');
+            Route::get('/getOrdersDetails',[AdminOrderDispatchController::class,'getOrdersDetails'])->name('getOrdersDetails');
+
+        });
         Route::prefix('master/vendors')->name('master.vendor.')->group(function () {
             Route::get('/index',[AdminVendorController::class,'index'])->name('index');
             Route::get('/indexList',[AdminVendorController::class,'indexList'])->name('indexList');
