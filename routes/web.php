@@ -237,10 +237,14 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/index-slip-production',[AdminOrderDigitalizationController::class,'index_slip_production'])->name('index-slip-production');
             Route::get('/indexList',[AdminOrderDigitalizationController::class,'indexList'])->name('indexList');
             Route::get('/create-slips-production',[AdminOrderDigitalizationController::class,'createSlipsProduction'])->name('create-slips-production');
-            Route::post('/store',[AdminOrderDigitalizationController::class,'store'])->name('store');
+            Route::post('/store-rolls-assign',[AdminOrderDigitalizationController::class,'storeRollsAssign'])->name('store-rolls-assign');
+            Route::post('/store-slip',[AdminOrderDigitalizationController::class,'storeProductionSlipDigitization'])->name('store-slip');
             Route::get('/create-rolls-assign',[AdminOrderDigitalizationController::class,'createRollsAssign'])->name('create-rolls-assign');
 
             Route::get('/getRollsData',[AdminOrderDigitalizationController::class,'getRollsData'])->name('getRollsData');
+            Route::post('/skip',[AdminOrderDigitalizationController::class,'skip'])->name('skip');
+            Route::post('/delete-slip',[AdminOrderDigitalizationController::class,'deleteSlip'])->name('delete-slip');
+            Route::post('/add-skip-slip',[AdminOrderDigitalizationController::class,'addSkipSlips'])->name('add-skip-slip');
             
             
             // Route::get('/download-receipt',[AdminOrderDigitalizationController::class,'downLoadReceipt'])->name('downLoadReceipt');
