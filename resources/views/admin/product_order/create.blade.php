@@ -63,6 +63,20 @@
                                 <h5 class="mb-3">Add Product</h5>
 
                                 <div class="product-row">
+                                    <label for="bar_code">Provided Bar Code</label>
+
+                                    <input
+                                        type="text"
+                                        id="bar_code"
+                                        name="bar_code"
+                                        class="form-control bar_code-input mb-3 @error('bar_code') is-invalid @enderror"
+                                        placeholder="Enter bar code"
+                                    >
+                                    @error('bar_code')
+                                        <span class="invalid-feedback d-block">
+                                            {{ $message }}
+                                        </span>
+                                    @enderror
 
                                     <label>Design Number (Royal Jeans)</label>
                                     <select class="form-control select2 mb-2 design-input" name="design_id" id="design_id">
@@ -137,6 +151,7 @@
                                     <thead>
                                         <tr>
                                             {{-- <th>Image</th> --}}
+                                            <th>Provided Bar Code</th>
                                             <th>Design</th>
                                             <th>Set Size</th>
                                             <th>Colour</th>
@@ -347,11 +362,12 @@ $(document).ready(function () {
     $(document).on("click", ".add-product", function () {
 
         let row = $(this).closest(".product-row");
-
+        let bar_code = row.find(".bar_code-input").val();
         let design = row.find(".design-input option:selected");
         let size = row.find(".size-input option:selected");
         let colour = row.find(".colour-input option:selected");
         let qty = row.find(".qty-input").val();
+        
         let pcsPerSet = size.data('pcs') || 1;
         let total_qty = qty * pcsPerSet; // Calculate total quantity
 
@@ -389,6 +405,9 @@ $(document).ready(function () {
 
         $("#productList tbody").append(`
             <tr>
+                <td>${bar_code}
+                    <input type="hidden" name="bar_codeList[]" value="${bar_code}">
+                </td>
                 <td>${design.text()}
                     <input type="hidden" name="designList[]" value="${design.val()}">
                 </td>

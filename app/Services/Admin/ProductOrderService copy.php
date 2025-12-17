@@ -55,7 +55,7 @@ class ProductOrderService {
         DB::beginTransaction();
 
         try {
-            dd($request->all());
+            // dd($request->all());
             $save_data_main = new OrderMain;
             $save_data_main->sku = '';
             $save_data_main->expected_delivery_date = $request->expected_delivery_date;

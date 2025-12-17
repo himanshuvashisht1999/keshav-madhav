@@ -143,8 +143,8 @@ class ProductOrderDataTable  {
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id','asc');
                 // $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
-                if ($request->has('sku') && !empty($request->sku)) {
-                    $query->where('sku', 'like', "%{$request->get('sku')}%");
+                if ($request->has('bar_code') && !empty($request->bar_code)) {
+                    $query->where('bar_code', 'like', "%{$request->get('bar_code')}%");
                 }
                 if ($request->has('design_number') && !empty($request->design_number)) {
                     $query->where('design_number', 'like', "%{$request->get('design_number')}%");
@@ -160,6 +160,12 @@ class ProductOrderDataTable  {
                 }
                 
             }) 
+            ->addColumn('color_id', function ($queue) {
+                $name = DB::table('master_colors')->where('id', $queue->color_id)
+                    ->value('name');
+
+                return $name ?? '';
+            })
             ->addColumn('assign_to', function ($queue) {
                 $cutting_master_name = DB::table('order_cutting_stage as ocs')
                     ->leftJoin('master_fabric_warehouse as cm', 'cm.id', '=', 'ocs.to_assign_id')

@@ -283,6 +283,7 @@ class ProductOrderService {
                     $save_orderProductSet = new OrderProductSet;
                     $save_orderProductSet->order_main_id = $save_data_main->id;
                     $save_orderProductSet->sku = $save_data_main->sku. '/'. $i;
+                    $save_orderProductSet->bar_code = $request->bar_codeList[$key] ?? null;
                     $save_orderProductSet->design_number = $design_id ?? null;
                     $save_orderProductSet->set_size = $request->sizeList[$key];
                     $save_orderProductSet->color_id = $request->colourList[$key];
@@ -934,6 +935,7 @@ class ProductOrderService {
 
     public function assign_to(Request $request)
     {
+        // dd($request);
         $user_id = auth()->id() ?? 0;
 
         try {
@@ -959,10 +961,12 @@ class ProductOrderService {
                     'to_assign_id' => $request->master_cutting_id,
                     'quantity' => $data->total_quantity ?? 0,
                     'processed_by' => $user_id,
-                    'remarks' => $request->remarks ?? '',
-                    'delivery_time_allowed' => $request->delivery_time_allowed ?? 0,
-                    'status' => 0,
+                    'status' => 1,
                     'remaining_quantity' => $data->total_quantity ?? 0,
+                    'time_type' => $request->time_type ?? NULL,
+                    'allowed_time' => $request->allowed_time ?? null,
+                    'till_allowed_time' => $request->till_allowed_time ?? NULL,
+                    'remarks' => $request->final_remark ?? null,
                 ]);
 
                 if ($cutting->wasRecentlyCreated) {
