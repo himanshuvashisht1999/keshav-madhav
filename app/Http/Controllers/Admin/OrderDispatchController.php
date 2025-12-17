@@ -23,10 +23,13 @@ class OrderDispatchController extends Controller {
         return view('admin.order_dispatch.create-dispatch', $response);
     } 
     public function store(Request $request){
-        // $response['customers'] = $this->productOrderService->customers();
-        // $response['order_main_id'] = $request->id ?? 0;
-        // // $response['order_main'] = $this->productOrderService->orderMainDetails($request);
-        return view('admin.order_dispatch.create-dispatch');
+        $data = $this->service->store($request);
+        if($data['status_code'] == 1){
+            return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
+        }else{
+            return redirect()->back()->withError($data['message']);
+        }
+        // return view('admin.order_dispatch.create-dispatch');
     } 
 
     public function indexList(Request $request){
