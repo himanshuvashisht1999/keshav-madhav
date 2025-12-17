@@ -48,23 +48,58 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php $sr_no = 1; ?>
-                                @foreach($data as $single_data)
-                                <tr>
-                                    <td>{{$sr_no}}</td>
-                                    <td>{{$single_data['order_date']}}</td>
-                                    <td>{{$single_data['customer']}}</td>
-                                    <td>{{$single_data['order_no']}}</td>
-                                    <td>{{$single_data['total_pcs_in_order']}}</td>
-                                    <td>{{$single_data['lot_no']}}</td>
-                                    <td>100</td>
-                                    <td>Pending</td>
-                                    <td>No</td>
-                                    <td>Action</td>
-                                </tr>
-                                <?php $sr_no++ ?>
+                                @php $sr_no = 1; @endphp
+
+                                @foreach($data as $orderNo => $lots)
+                                    @php
+                                        $rowspan = count($lots);
+                                        $order = $lots->first();
+                                    @endphp
+
+                                    @foreach($lots as $index => $lot)
+                                        <tr class="{{ $index > 0 ? 'lot-row' : '' }}">
+
+                                            {{-- Sr No (ONLY ONCE PER ORDER) --}}
+                                            @if($index === 0)
+                                                <td rowspan="{{ $rowspan }}" class="order-cell">
+                                                    {{ $sr_no }}
+                                                </td>
+                                                <td rowspan="{{ $rowspan }}" class="order-cell">
+                                                    {{ \Carbon\Carbon::parse($order['order_date'])->format('d M Y') }}
+                                                </td>
+                                                <td rowspan="{{ $rowspan }}" class="order-cell">
+                                                    {{ $order['customer'] }}
+                                                </td>
+                                                <td rowspan="{{ $rowspan }}" class="order-cell">
+                                                    {{ $order['order_no'] }}
+                                                </td>
+                                                <td rowspan="{{ $rowspan }}" class="order-cell">
+                                                    {{ $order['total_pcs_in_order'] }}
+                                                </td>
+                                            @endif
+
+                                            {{-- Lot-level data --}}
+                                            <td>{{ $lot['lot_no'] }}</td>
+                                            <td>{{ $lot['pieces_in_lot'] }}</td>
+                                            <td>{{ $lot['stage_name'] }}</td>
+                                            <td>
+                                                <a href="javascript:void(0)"
+                                                class="delay-info text-decoration-none {{ $lot['isDelayed'] == 'Yes' ? 'text-danger' : 'text-success' }}"
+                                                data-lot="{{ $lot['lot_no'] }}"
+                                                data-allowed="{{ $lot['allowed_till_datetime'] }}"
+                                                data-current="{{ $lot['current_datetime'] }}"
+                                                data-status="{{ $lot['isDelayed'] }}">
+                                                    {{ $lot['isDelayed'] }}
+                                                </a>
+                                            </td>
+                                            <td>Action</td>
+                                        </tr>
+                                    @endforeach
+
+                                    @php $sr_no++; @endphp
                                 @endforeach
-                            </tbody>
+                                </tbody>
+
                         </table>
                     </div>
                 </div>
@@ -72,5 +107,78 @@
         </div>
     </section>
 </div>
+
+<div class="modal fade" id="delayModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Lot Delay Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <table class="table table-sm table-bordered mb-0">
+                    <tr>
+                        <th>Lot Number</th>
+                        <td id="modalLot"></td>
+                    </tr>
+                    <tr>
+                        <th>Allowed Till</th>
+                        <td id="modalAllowed"></td>
+                    </tr>
+                    <tr>
+                        <th>Current Time</th>
+                        <td id="modalCurrent"></td>
+                    </tr>
+                    <tr>
+                        <th>Status</th>
+                        <td id="modalStatus"></td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    function formatDateTime(dateTimeStr) {
+        if (!dateTimeStr) return '-';
+
+        const date = new Date(dateTimeStr.replace(' ', 'T'));
+
+        return date.toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
+
+    document.querySelectorAll('.delay-info').forEach(function (el) {
+        el.addEventListener('click', function () {
+
+            document.getElementById('modalLot').innerText = this.dataset.lot;
+            document.getElementById('modalAllowed').innerText =
+                formatDateTime(this.dataset.allowed);
+            document.getElementById('modalCurrent').innerText =
+                formatDateTime(this.dataset.current);
+
+            document.getElementById('modalStatus').innerHTML =
+                this.dataset.status === 'Yes'
+                    ? '<span class="badge bg-danger">Delayed</span>'
+                    : '<span class="badge bg-success">On Time</span>';
+
+            new bootstrap.Modal(document.getElementById('delayModal')).show();
+        });
+    });
+
+});
+</script>
+
 
 @endsection
