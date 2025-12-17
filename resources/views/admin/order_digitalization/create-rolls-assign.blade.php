@@ -61,7 +61,7 @@
 
             <div class="card p-3 shadow-sm">
                 @if(!empty($slip_data))
-                <form method="POST" action="{{ route('admin.order_digitalization.store-rolls-assign') }}">
+                <form method="POST" id="rollAssignForm" action="{{ route('admin.order_digitalization.store-rolls-assign') }}">
                     @csrf
 
                     <div class="row">
@@ -74,7 +74,7 @@
                                 <input type="hidden" name="slip_create_date_time"
                                        value="{{ $slip_data['date_time'] }}">
 
-                                <label>Order No (Optional)</label>
+                                <label>Order No.</label>
                                 <input type="text" id="order_no" class="form-control mb-2">
 
                                 <!-- LOT NO -->
@@ -188,16 +188,22 @@
 
 <script>
 $(function(){
-    $('#submit').on('click', function(){
-        if($('#productList tbody tr').length === 0){
-            alert(' Please add at least one design before submitting.');
-            return;
+    $('#rollAssignForm').on('submit', function (e) {
+
+        if ($('#productList tbody tr').not('#noDataRow').length === 0) {
+            alert('Please add at least one design before submitting.');
+            e.preventDefault();
+            return false;
         }
-        if($('#from_stage_id').val() === 3 && $('#order_no').val() === ''){
+
+        if ($.trim($('#order_no').val()) === '') {
             alert('Order number is mandatory.');
-            return;
+            $('#order_no').focus();
+            e.preventDefault();
+            return false;
         }
     });
+    
     $('.select2').select2();
     let isSkip = false;
 
