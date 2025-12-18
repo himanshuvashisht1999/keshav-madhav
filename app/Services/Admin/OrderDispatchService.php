@@ -24,6 +24,32 @@ class OrderDispatchService {
         return true;
     }
 
+    public function store(Request $request)
+    {
+
+        DB::beginTransaction();
+        try {
+           dd($request->all());
+            
+
+            // Commit everything if all successful
+            DB::commit();
+
+            return [
+                'status_code' => 1,
+                'message' => 'Production Slip Digitization successfully completed.'
+            ];
+
+        } catch (\Exception $e) {
+            //  Rollback everything on any error
+            DB::rollBack();
+
+            $return_data['message'] = $e->getMessage();
+            $return_data['status_code'] = 0;
+            return $return_data;
+        }
+    }
+
     function getCustomerOrders($request){
         $customer_id = $request->customer_id;
         $results = OrderMain::where('master_customer_id',$customer_id)->where('status',1)->orderBy('id','asc')->get()->toArray();
