@@ -2,164 +2,256 @@
 
 @section('content')
 <style>
-    h5{
-        color: #007bff !important;
+    .report-header{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:15px;
+    }
+    .report-header h3{ font-weight:600;margin:0; }
+    .report-meta{ font-size:14px;color:#6c757d; }
+
+    .report-card{
+        border-radius:12px;
+        box-shadow:0 4px 12px rgba(0,0,0,.08);
+    }
+
+    .table-report thead th{
+        background:#343a40;
+        color:#fff;
+        font-weight:600;
+        vertical-align:middle;
+        white-space:nowrap;
+    }
+
+    .order-cell{
+        background:#f8f9fa;
+        font-weight:600;
+        vertical-align:middle !important;
+    }
+
+    .badge-stage{
+        background:#e7f1ff;
+        color:#0d6efd;
+        font-weight:500;
+    }
+
+    .delay-link{
+        cursor:pointer;
+        font-weight:600;
     }
 </style>
+
 <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-3 text-start">
-                    <h5 class="">No. RJ 1</h5>
-                </div>
-                <div class="col-sm-6 text-center">
-                    <h1 class="text-center">Status of Sales Orders</h1>
-                </div>
-                <div class="col-sm-3 text-end">
-                    <h5 class="">Date : 12 Dec 2025 3:00 PM</h5>
-                </div>
-            </div>
+
+{{-- ================= HEADER ================= --}}
+<section class="content-header">
+<div class="container-fluid">
+    <div class="report-header">
+        <div>
+            <h3>Status of Sales Orders</h3>
+            <div class="report-meta">Report No : RJ 1</div>
         </div>
-    </section>
-
-    <!-- Main content -->
-    <section class="content">
-        <div class="container-fluid">
-            <div class="card card-default">
-                
-
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table id="adjustmentTable" class="table table-striped table-bordered" data-ajax-url="{{ route('admin.purchase_order.adjustmentShipment') }}">
-                            <thead>
-                                <tr>
-                                    <th>Sr No.</th>
-                                    <th>Date of Order</th>
-                                    <th>Customer</th>
-                                    <th>Order Number</th>
-                                    <th>No. of Pcs in order</th>
-                                    <th>Lot Numbers</th>
-                                    <th>No. of Pcs in each Lot</th>
-                                    <th>Status</th>
-                                    <th>Is it delayed?</th>                                
-                                    <th class="text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @php $sr_no = 1; @endphp
-
-                                @foreach($data as $orderNo => $lots)
-                                    @php
-                                        $rowspan = count($lots);
-                                        $order = $lots->first();
-                                    @endphp
-
-                                    @foreach($lots as $index => $lot)
-                                        <tr class="{{ $index > 0 ? 'lot-row' : '' }}">
-
-                                            {{-- Sr No (ONLY ONCE PER ORDER) --}}
-                                            @if($index === 0)
-                                                <td rowspan="{{ $rowspan }}" class="order-cell">
-                                                    {{ $sr_no }}
-                                                </td>
-                                                <td rowspan="{{ $rowspan }}" class="order-cell">
-                                                    {{ \Carbon\Carbon::parse($order['order_date'])->format('d M Y') }}
-                                                </td>
-                                                <td rowspan="{{ $rowspan }}" class="order-cell">
-                                                    {{ $order['customer'] }}
-                                                </td>
-                                                <td rowspan="{{ $rowspan }}" class="order-cell">
-                                                    {{ $order['order_no'] }}
-                                                </td>
-                                                <td rowspan="{{ $rowspan }}" class="order-cell">
-                                                    {{ $order['total_pcs_in_order'] }}
-                                                </td>
-                                            @endif
-
-                                            {{-- Lot-level data --}}
-                                            <td>{{ $lot['lot_no'] }}</td>
-                                            <td>{{ $lot['pieces_in_lot'] }}</td>
-                                            <td>{{ $lot['stage_name'] }}</td>
-                                            <td>
-                                                <a href="javascript:void(0)"
-                                                class="delay-info text-decoration-none {{ $lot['isDelayed'] == 'Yes' ? 'text-danger' : 'text-success' }}"
-                                                data-lot="{{ $lot['lot_no'] }}"
-                                                data-allowed="{{ $lot['allowed_till_datetime'] }}"
-                                                data-current="{{ $lot['current_datetime'] }}"
-                                                data-status="{{ $lot['isDelayed'] }}">
-                                                    {{ $lot['isDelayed'] }}
-                                                </a>
-                                            </td>
-                                            <td>Action</td>
-                                        </tr>
-                                    @endforeach
-
-                                    @php $sr_no++; @endphp
-                                @endforeach
-                                </tbody>
-
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-</div>
-
-<div class="modal fade" id="delayModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-
-            <div class="modal-header">
-                <h5 class="modal-title">Lot Delay Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-                <table class="table table-sm table-bordered mb-0">
-                    <tr>
-                        <th>Lot Number</th>
-                        <td id="modalLot"></td>
-                    </tr>
-                    <tr>
-                        <th>Allowed Till</th>
-                        <td id="modalAllowed"></td>
-                    </tr>
-                    <tr>
-                        <th>Current Time</th>
-                        <td id="modalCurrent"></td>
-                    </tr>
-                    <tr>
-                        <th>Status</th>
-                        <td id="modalStatus"></td>
-                    </tr>
-                </table>
-            </div>
-
+        <div class="report-meta">
+            Date : {{ now()->format('d M Y h:i A') }}
         </div>
     </div>
 </div>
+</section>
+
+<section class="content">
+<div class="container-fluid">
+
+{{-- ================= FILTERS ================= --}}
+<div class="card mb-3">
+<div class="card-body">
+<form method="GET" action="{{ route('admin.report.sales-order') }}">
+<div class="row g-2 align-items-end">
+
+    <div class="col-md-2">
+        <label>Order No</label>
+        <input type="text" name="order_no" class="form-control"
+               value="{{ request('order_no') }}">
+    </div>
+
+    <div class="col-md-2">
+        <label>Lot No</label>
+        <input type="text" name="lot_no" class="form-control"
+               value="{{ request('lot_no') }}">
+    </div>
+
+    <div class="col-md-2">
+        <label>Delay</label>
+        <select name="delay_status" class="form-control">
+            <option value="">All</option>
+            <option value="Yes" {{ request('delay_status')=='Yes'?'selected':'' }}>Delayed</option>
+            <option value="No" {{ request('delay_status')=='No'?'selected':'' }}>On Time</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <label>Date From</label>
+        <input type="date" name="date_from" class="form-control"
+               value="{{ request('date_from') }}">
+    </div>
+
+    <div class="col-md-2">
+        <label>Date To</label>
+        <input type="date" name="date_to" class="form-control"
+               value="{{ request('date_to') }}">
+    </div>
+
+    <div class="col-md-2">
+        <button class="btn btn-primary w-100">
+            <i class="fas fa-filter"></i> Apply
+        </button>
+    </div>
+
+</div>
+</form>
+</div>
+</div>
+
+{{-- ================= TABLE ================= --}}
+<div class="card report-card">
+<div class="card-body">
+<div class="table-responsive">
+
+<table class="table table-bordered table-report">
+<thead>
+<tr>
+    <th>#</th>
+    <th>Order Date</th>
+    <th>Customer</th>
+    <th>Order No</th>
+    <th>Total Pcs</th>
+    <th>Lot No</th>
+    <th>Pcs / Lot</th>
+    <th>Current Stage</th>
+    <th>Delay</th>
+</tr>
+</thead>
+
+<tbody>
+@php $sr = 1; @endphp
+
+@forelse($data as $orderNo => $lots)
+
+    @php
+        $rowspan = count($lots);
+        $order = $lots->first();
+    @endphp
+
+    @foreach($lots as $index => $lot)
+        <tr>
+
+            {{-- ORDER LEVEL --}}
+            @if($index === 0)
+                <td rowspan="{{ $rowspan }}" class="order-cell">{{ $sr }}</td>
+                <td rowspan="{{ $rowspan }}" class="order-cell">
+                    {{ \Carbon\Carbon::parse($order['order_date'])->format('d M Y') }}
+                </td>
+                <td rowspan="{{ $rowspan }}" class="order-cell">
+                    {{ $order['customer'] }}
+                </td>
+                <td rowspan="{{ $rowspan }}" class="order-cell">
+                    {{ $order['order_no'] }}
+                </td>
+                <td rowspan="{{ $rowspan }}" class="order-cell text-center">
+                    {{ $order['total_pcs_in_order'] }}
+                </td>
+            @endif
+
+            {{-- LOT LEVEL --}}
+            <td>{{ $lot['lot_no'] }}</td>
+            <td class="text-center">{{ $lot['pieces_in_lot'] }}</td>
+            <td>
+                <span class="badge badge-stage">
+                    {{ $lot['stage_name'] }}
+                </span>
+            </td>
+            <td>
+                <span class="delay-link {{ $lot['isDelayed']=='Yes' ? 'text-danger' : 'text-success' }}"
+                      data-lot="{{ $lot['lot_no'] }}"
+                      data-allowed="{{ $lot['allowed_till_datetime'] }}"
+                      data-current="{{ $lot['current_datetime'] }}"
+                      data-status="{{ $lot['isDelayed'] }}">
+                    {{ $lot['isDelayed'] }}
+                </span>
+            </td>
+        </tr>
+    @endforeach
+
+    @php $sr++; @endphp
+
+@empty
+<tr>
+    <td colspan="9" class="text-center text-muted">
+        No sales orders found
+    </td>
+</tr>
+@endforelse
+</tbody>
+
+</table>
+
+</div>
+</div>
+</div>
+
+</div>
+</section>
+</div>
+
+{{-- ================= DELAY MODAL ================= --}}
+<div class="modal fade" id="delayModal" tabindex="-1">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content">
+
+<div class="modal-header">
+    <h5 class="modal-title">Lot Delay Details</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+
+<div class="modal-body">
+<table class="table table-sm table-bordered mb-0">
+<tr>
+    <th>Lot Number</th>
+    <td id="modalLot"></td>
+</tr>
+<tr>
+    <th>Allowed Till</th>
+    <td id="modalAllowed"></td>
+</tr>
+<tr>
+    <th>Current Time</th>
+    <td id="modalCurrent"></td>
+</tr>
+<tr>
+    <th>Status</th>
+    <td id="modalStatus"></td>
+</tr>
+</table>
+</div>
+
+</div>
+</div>
+</div>
+
+{{-- ================= SCRIPT ================= --}}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
     function formatDateTime(dateTimeStr) {
         if (!dateTimeStr) return '-';
-
         const date = new Date(dateTimeStr.replace(' ', 'T'));
-
         return date.toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
+            day:'2-digit', month:'short', year:'numeric',
+            hour:'2-digit', minute:'2-digit', hour12:true
         });
     }
 
-    document.querySelectorAll('.delay-info').forEach(function (el) {
+    document.querySelectorAll('.delay-link').forEach(el => {
         el.addEventListener('click', function () {
 
             document.getElementById('modalLot').innerText = this.dataset.lot;
@@ -173,12 +265,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     ? '<span class="badge bg-danger">Delayed</span>'
                     : '<span class="badge bg-success">On Time</span>';
 
-            new bootstrap.Modal(document.getElementById('delayModal')).show();
+            new bootstrap.Modal(
+                document.getElementById('delayModal')
+            ).show();
         });
     });
 
 });
 </script>
-
 
 @endsection
