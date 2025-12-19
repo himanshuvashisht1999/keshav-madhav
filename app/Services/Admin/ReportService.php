@@ -9,6 +9,11 @@ use App\Models\OrderMain;
 use App\Models\ProductionSlipDigitizationParts;
 use App\Models\OrderProductSet;
 use App\Models\MasterSizeMeasurement;
+use App\Models\FabricReceipt;
+use App\Models\FabricReceiptDetail;
+use App\Models\Fabric;
+use App\Models\MasterFabricWarehouse;
+use App\Models\PurchaseOrder;
 use Carbon\Carbon;
 
 class ReportService {
@@ -42,66 +47,185 @@ class ReportService {
 //         dd($order_ids);
 //    }
 
-    public function salesOrder(Request $request){
-            
+    public function salesOrder(Request $request)
+{
+    $result = [];
 
-            $result = [];
+    $orders = OrderMain::with('customer')
+        ->when($request->filled('order_no'), function ($q) use ($request) {
+            $q->where('sku', 'like', '%' . $request->order_no . '%');
+        })
+        ->when($request->filled('customer_id'), function ($q) use ($request) {
+            $q->where('customer_id', $request->customer_id);
+        })
+        ->when($request->filled('date_from'), function ($q) use ($request) {
+            $q->whereDate('created_at', '>=', $request->date_from);
+        })
+        ->when($request->filled('date_to'), function ($q) use ($request) {
+            $q->whereDate('created_at', '<=', $request->date_to);
+        })
+        ->get();
 
-            $orders = OrderMain::with('customer')->get();
+    foreach ($orders as $order) {
 
-            foreach ($orders as $order) {
+        $lotNos = ProductionSlipDigitizationParts::where('from_stage_id', 3)
+            ->where('to_stage_id', 4)
+            ->where('order_no', $order->sku)
+            ->when($request->filled('lot_no'), function ($q) use ($request) {
+                $q->where('lot_no', 'like', '%' . $request->lot_no . '%');
+            })
+            ->distinct()
+            ->pluck('lot_no');
 
-                $lotNos = ProductionSlipDigitizationParts::where('from_stage_id', 3)
-                    ->where('to_stage_id', 4)
-                    ->where('order_no', $order->sku)
-                    ->distinct()
-                    ->pluck('lot_no');
-                $total_pcs_in_order = OrderProductSet::where('order_main_id',$order->id)->sum('total_quantity');
-                // dd($total_pcs_in_order);
-                foreach ($lotNos as $lot_no) {
+        $total_pcs_in_order = OrderProductSet::where('order_main_id', $order->id)
+            ->sum('total_quantity');
 
-                    $parts_data = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->get();
-                    $stage_name = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->orderBy('id','desc')->value('to_stage_name');
-                    $allowed_till_datetime = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->orderBy('id','desc')->value('allowed_till_datetime');
+        foreach ($lotNos as $lot_no) {
 
-                    $isDelayed = 'No';
-                    if ($allowed_till_datetime) {
-                        $allowedTime = Carbon::parse($allowed_till_datetime);
-                        $currentTime = Carbon::now();
+            $parts_data = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->get();
+            $stage_name = ProductionSlipDigitizationParts::where('lot_no', $lot_no)
+                ->orderBy('id', 'desc')->value('to_stage_name');
 
-                        if ($currentTime->greaterThan($allowedTime)) {
-                            $isDelayed = 'Yes';
-                        }
-                    }
+            $allowed_till_datetime = ProductionSlipDigitizationParts::where('lot_no', $lot_no)
+                ->orderBy('id', 'desc')->value('allowed_till_datetime');
 
-                    $pieces_in_lot = 0;
-                    foreach($parts_data as $single_part){
-                        $set_quantity = $single_part->set_quantity;
-                        $set_size_id = $single_part->set_size;
-                        $no_of_piece_in_size = MasterSizeMeasurement::where('id',$set_size_id)->value('no_of_pcs');
-                        $pieces_in_lot += $no_of_piece_in_size * $set_quantity;
+            $currentTime = Carbon::now();
+            $isDelayed = 'No';
 
-                    }
-                    $result[] = [
-                        'order_date'      => $order->created_at,
-                        'customer'        => $order->customer->name ?? '',
-                        'order_no'        => $order->sku,
-                        'lot_no'          => $lot_no,
-                        'total_pcs_in_order'    => $total_pcs_in_order, // calculate if needed
-                        'pieces_in_lot'   => $pieces_in_lot, // calculate if needed
-                        'stage_name'          => $stage_name ?? '',
-                        'isDelayed'          => $isDelayed ?? 'No',
-                        'allowed_till_datetime' => $allowed_till_datetime,
-                        'current_datetime'      => $currentTime->toDateTimeString(),
-
-                    ];
-                }
+            if ($allowed_till_datetime && $currentTime->greaterThan(Carbon::parse($allowed_till_datetime))) {
+                $isDelayed = 'Yes';
             }
 
-            // dd($result);
-            return collect($result)->groupBy('order_no');
+            if ($request->filled('delay_status') && $request->delay_status !== $isDelayed) {
+                continue;
+            }
 
+            $pieces_in_lot = 0;
+            foreach ($parts_data as $single_part) {
+                $no_of_pcs = MasterSizeMeasurement::where('id', $single_part->set_size)
+                    ->value('no_of_pcs');
+                $pieces_in_lot += $no_of_pcs * $single_part->set_quantity;
+            }
+
+            $result[] = [
+                'order_date'      => $order->created_at,
+                'customer'        => $order->customer->name ?? '',
+                'order_no'        => $order->sku,
+                'lot_no'          => $lot_no,
+                'total_pcs_in_order' => $total_pcs_in_order,
+                'pieces_in_lot'   => $pieces_in_lot,
+                'stage_name'      => $stage_name ?? '',
+                'isDelayed'       => $isDelayed,
+                'allowed_till_datetime' => $allowed_till_datetime,
+                'current_datetime' => $currentTime->toDateTimeString(),
+            ];
         }
+    }
+
+    return collect($result)->groupBy('order_no');
+}
+
+
+    public function stock(Request $request)
+    {
+        $query = FabricReceiptDetail::query()
+            ->selectRaw('
+                fabric_sku,
+                master_fabric_warehouse_id,
+                SUM(remaining_quantity) as total_remaining
+            ')
+            ->with('master_fabric_warehouse:id,cutting_master_name')
+            ->groupBy('fabric_sku', 'master_fabric_warehouse_id');
+
+        // Warehouse filter
+        if ($request->filled('warehouse_id')) {
+            $query->where('master_fabric_warehouse_id', $request->warehouse_id);
+        }
+
+        // Fabric filter
+        if ($request->filled('fabric_sku')) {
+            $query->where('fabric_sku', $request->fabric_sku);
+        }
+
+        // Remaining quantity range
+        if ($request->filled('meter_from')) {
+            $query->havingRaw('SUM(remaining_quantity) >= ?', [$request->meter_from]);
+        }
+
+        if ($request->filled('meter_to')) {
+            $query->havingRaw('SUM(remaining_quantity) <= ?', [$request->meter_to]);
+        }
+
+        return $query->get()->groupBy('fabric_sku');
+    }
+
+
+
+
+    public function fabricRollDetails($fabricSku, $warehouseId)
+    {
+        return FabricReceiptDetail::where('fabric_sku', $fabricSku)
+            ->where('master_fabric_warehouse_id', $warehouseId)
+            ->where('remaining_quantity', '>', 0)
+            ->orderBy('roll_number')
+            ->get([
+                'roll_number',
+                'remaining_quantity',
+                'qrcode_number',
+                'barcode',      // accessor gives full image URL
+                'qrcode'        // accessor gives full image URL
+            ]);
+    }
+
+
+
+
+
+    public function warehouses(){
+        $warehouses = MasterFabricWarehouse::orderBy('cutting_master_name')->get();
+        return $warehouses;
+    }
+    public function fabrics(){
+        $fabrics = Fabric::orderBy('sku')->get();
+        return $fabrics;
+    }
+
+    public function purchaseOrder(Request $request)
+    {
+        return PurchaseOrder::with([
+                'vendor',
+                'items'
+            ])
+            ->when($request->filled('sku'), function ($q) use ($request) {
+                $q->where('sku', 'like', '%' . $request->sku . '%');
+            })
+            ->when($request->filled('fabric_sku'), function ($q) use ($request) {
+                $q->whereHas('items', function ($i) use ($request) {
+                    $i->where('fabric_sku', $request->fabric_sku);
+                });
+            })
+            ->orderBy('date', 'desc')
+            ->get();
+    }
+
+    public function purchaseOrderItemReceipts($poItemId)
+    {
+        return FabricReceiptDetail::with('master_fabric_warehouse')
+            ->where('purchase_order_item_id', $poItemId)
+            ->where('status', 2) // adjusted
+            ->orderBy('id', 'asc')
+            ->get([
+                'id',
+                'roll_number',
+                'meter',
+                'barcode',
+                'qrcode_number',
+                'master_fabric_warehouse_id',
+                'created_at'
+            ]);
+    }
+
+
 
 
 }

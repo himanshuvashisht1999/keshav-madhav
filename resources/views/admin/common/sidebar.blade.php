@@ -243,11 +243,28 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
                                 <a href="{{ route('admin.report.sales-order') }}"
-                                    class="{{ str_contains(strtolower($page_url), 'admin/reports/sales-order')  ? 'nav-link active' : 'nav-link' }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/report/sales-order')  ? 'nav-link active' : 'nav-link' }}"
                                     >
                                     <!-- <i class="nav-icon fas fa-store"></i> -->
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Sales Order</p>
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a href="{{ route('admin.report.stock') }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/report/stock')  ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Stock</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.report.purchase_order') }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/report/purchase-order')  ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Purchase Order</p>
                                 </a>
                             </li>
                             

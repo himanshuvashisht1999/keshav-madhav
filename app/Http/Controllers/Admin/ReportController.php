@@ -22,5 +22,34 @@ class ReportController extends Controller
         $response['data'] = $this->service->salesOrder($request);
         return view('admin.report.sales_order',$response);
     }
+    public function stock(Request $request)
+    {
+        $response['data'] = $this->service->stock($request);
+        $response['warehouses'] = $this->service->warehouses();
+        $response['fabrics'] = $this->service->fabrics();
+        $response['filters'] = $request->all();
+        return view('admin.report.stock',$response);
+    }
+    public function fabricRollDetails(Request $request)
+    {
+        return $this->service->fabricRollDetails(
+            $request->fabric_sku,
+            $request->warehouse_id
+        );
+    }
+
+    public function purchaseOrder(Request $request)
+    {
+        $response['data'] = $this->service->purchaseOrder($request);
+        $response['fabrics'] = $this->service->fabrics();
+        $response['filters'] = $request->all();
+        return view('admin.report.purchase_order',$response);
+    }
+    public function purchaseOrderItemDetails(Request $request)
+    {
+        return $this->service->purchaseOrderItemReceipts(
+            $request->purchase_order_item_id
+        );
+    }
 
 }

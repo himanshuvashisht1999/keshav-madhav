@@ -46,6 +46,9 @@ class FabricReceiptDetail extends Model
     public function fabric(){
         return $this->hasOne('App\Models\Fabric','sku','fabric_sku');
     }
+    public function master_fabric_warehouse(){
+        return $this->hasOne('App\Models\MasterFabricWarehouse','id','master_fabric_warehouse_id');
+    }
 
     public function getQrcodeAttribute($value)
     {
