@@ -122,7 +122,7 @@
                                         <option value="">Select</option>
                                         @foreach($products as $product)
                                             <option value="{{ $product->design_number }}" {{ old('design_number') == $product->design_number ? 'selected' : '' }}>
-                                                {{ $product->design_number }} - {{ $product->name_of_garment }}
+                                                {{ $product->design_number }}
                                             </option>
                                         @endforeach
                                     </select>

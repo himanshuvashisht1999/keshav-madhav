@@ -77,22 +77,24 @@
                                             {{ $message }}
                                         </span>
                                     @enderror
-
-                                    <label>Design Number (Royal Jeans)</label>
+                                    <div class="col-md-12">
+                                        <label>Design Number (Royal Jeans)</label>
+                                        <a href="{{route('admin.master.production-goods.create')}}" target="_blank" style="float:right;">Create New +</a>
+                                    </div>
+                                    
                                     <select class="form-control select2 mb-2 design-input" name="design_id" id="design_id">
                                         <option value="">Select</option>
-                                        @foreach($products as $product)
-                                            <option value="{{ $product->id }}" data-img="{{ $product->main_img }}">
-                                                {{ $product->design_number }} - {{ $product->name_of_garment }}
-                                            </option>
-                                        @endforeach
+                                        
                                     </select>
                                     @if ($errors->has('designList'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('designList') }}
                                         </span>
                                     @endif
-                                    <label>Set Size (Royal Jeans)</label>
+                                    <div class="col-md-12">
+                                        <label>Set Size (Royal Jeans)</label>
+                                        <a href="{{route('admin.master.size-measurement.create')}}" target="_blank" style="float:right;">Create New +</a>
+                                    </div>
                                     <select class="form-control select2 mb-2 size-input" name="set_size" id="set_size">
                                         {{-- @foreach($product_size as $size)
                                             <option value="{{ $size->id }}">{{ $size->name }}</option>
@@ -103,7 +105,10 @@
                                             {{ $errors->first('sizeList') }}
                                         </span>
                                     @endif
-                                    <label>Colour (Royal Jeans)</label>
+                                    <div class="col-md-12">
+                                        <label>Colour (Royal Jeans)</label>
+                                        <a href="{{route('admin.master.colors.create')}}" target="_blank" style="float:right;">Create New +</a>
+                                    </div>
                                     <select class="form-control select2 mb-2 colour-input" name="colour_id">
                                         <option value="">Select</option>
                                         @foreach($colours as $colour)
