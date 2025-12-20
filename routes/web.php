@@ -258,6 +258,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/create-dispatch',[AdminOrderDispatchController::class,'createDispatch'])->name('create-dispatch');
             Route::post('/store',[AdminOrderDispatchController::class,'store'])->name('store');
             Route::get('/getCustomerOrders',[AdminOrderDispatchController::class,'getCustomerOrders'])->name('getCustomerOrders');
+            Route::get('/getCustomersBybarcode',[AdminOrderDispatchController::class,'getCustomersBybarcode'])->name('getCustomersBybarcode');
             Route::get('/getOrdersDetails',[AdminOrderDispatchController::class,'getOrdersDetails'])->name('getOrdersDetails');
 
         });

@@ -25,7 +25,7 @@ class OrderDispatchController extends Controller {
     public function store(Request $request){
         $data = $this->service->store($request);
         if($data['status_code'] == 1){
-            return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
+            return redirect()->route('admin.order_dispatch.create-dispatch')->withSuccess($data['message']);
         }else{
             return redirect()->back()->withError($data['message']);
         }
@@ -39,7 +39,10 @@ class OrderDispatchController extends Controller {
         $response['data'] = $this->service->getCustomerOrders($request);
         return response()->json($response);
     }
-
+    public function getCustomersBybarcode(Request $request){
+        $response['data'] = $this->service->getCustomersBybarcode($request);
+        return response()->json($response);
+    }
     public function getOrdersDetails(Request $request){
         $response['data'] = $this->service->getOrdersDetails($request);
         return response()->json($response);
