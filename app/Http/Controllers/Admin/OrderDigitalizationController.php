@@ -57,6 +57,7 @@ class OrderDigitalizationController extends Controller {
         $response['fabrics'] = $this->service->getFabricsData();
         $response['slip_data'] = $this->service->getSlipDigitalization();
         $response['skip_slip_data'] = $this->service->getSkipSlips();
+        // dd($response['slip_data']);
         return view('admin.order_digitalization.create-rolls-assign', $response);
     }
     

@@ -7,7 +7,7 @@
     <section class="content-header">
         <div class="row">
             <div class="col-12 text-center">
-                <h1 class="mb-3">Fabric Rolls Assigning</h1>
+                <h1 class="mb-3">Stage Wise Time Allocation</h1>
             </div>
         </div>
         <div class="row">
@@ -25,11 +25,6 @@
                 <a href="{{ route('admin.order_digitalization.create-slips-production') }}" class="btn btn-success mr-2">
                     Slips Digitalization
                 </a>
-                @if(!empty($slip_data['from_stage']['master_stage_id']))
-                <a href="{{ route('admin.order_digitalization.create-time-allocation') }}" class="btn btn-success mr-2">
-                    Stage Time Allocation
-                </a>
-                @endif
                 @if(!empty($slip_data))
 
                     <!-- SKIP FORM -->
