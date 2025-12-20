@@ -7,9 +7,9 @@
         justify-content:space-between;
         align-items:center;
         margin-bottom:15px;
+        color: #
     }
     .report-header h3{ font-weight:600;margin:0; }
-    .report-meta{ font-size:14px;color:#6c757d; }
 
     .report-card{
         border-radius:12px;
@@ -45,18 +45,21 @@
 <div class="content-wrapper">
 
 {{-- ================= HEADER ================= --}}
+
 <section class="content-header">
-<div class="container-fluid">
-    <div class="report-header">
-        <div>
-            <h3>Status of Sales Orders</h3>
-            <div class="report-meta">Report No : RJ 1</div>
-        </div>
-        <div class="report-meta">
-            Date : {{ now()->format('d M Y h:i A') }}
+    <div class="container-fluid">
+        <div class="report-header">
+            <div>
+                <div class="report-meta">Report No : RJ 1</div>
+            </div>
+            <div>
+                <h3>Sales Order</h3>
+            </div>
+            <div class="report-meta">
+                Date : {{ now()->format('d M Y h:i A') }}
+            </div>
         </div>
     </div>
-</div>
 </section>
 
 <section class="content">

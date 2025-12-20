@@ -522,6 +522,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/stock/roll-details', [AdminReportController::class, 'fabricRollDetails'])->name('stock.roll.details');
             Route::get('/purchase-order',[AdminReportController::class,'purchaseOrder'])->name('purchase_order');
             Route::get('/purchase-order/item-details',[AdminReportController::class, 'purchaseOrderItemDetails'])->name('purchase_order.item.details');
+            Route::get('/order-tracking-system',[AdminReportController::class,'orderTrackingSystem'])->name('orderTrackingSystem');
+            Route::get('/order-lot-tracking',[AdminReportController::class,'lotTrackingDetails'])->name('lotTrackingDetails');
+
 
 
         });

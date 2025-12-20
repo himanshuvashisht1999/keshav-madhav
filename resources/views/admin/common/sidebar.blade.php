@@ -235,7 +235,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             class="{{ str_contains($page_url, 'admin/report') ? 'nav-link active' : 'nav-link' }}">
                             <i class="nav-icon fa fa-print" aria-hidden="true"></i>
                             <p>
-                                Reports
+                                REPORTS
                                 <i class="right fas fa-angle-left"></i>
                             </p>
                         </a>
@@ -265,6 +265,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     >
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Purchase Order</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.report.orderTrackingSystem') }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/report/order-tracking-system')  ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Order Tracking</p>
                                 </a>
                             </li>
                             
