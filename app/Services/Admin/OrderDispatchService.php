@@ -53,31 +53,38 @@ class OrderDispatchService {
                     $detail->status       = 1;
                     $detail->save();
 
-                    // ✅ 3️⃣ LOCK product row (CRITICAL)
+                    // Step 1: barcode ke base par product dhundo
                     $setData = OrderProductSet::where('bar_code', $raw['barcode'])
                         ->lockForUpdate()
                         ->first();
-                    
+
+                    // Step 2: agar barcode se nahi mila
                     if (!$setData) {
-                        throw new \Exception('Invalid barcode: ' . $raw['barcode']);
+
+                        // Step 2A: koi aisa product dhundo jiska barcode NULL / empty ho
+                        $setData = OrderProductSet::whereNull('bar_code')
+                            ->lockForUpdate()
+                            ->first();
+
+                        if (!$setData) {
+                            throw new \Exception('Invalid barcode: ' . $raw['barcode']);
+                        }
+
+                        // ✅ Step 2B: barcode INSERT karo (sirf yahin)
+                        $setData->bar_code = $raw['barcode'];
+                        $setData->save();
                     }
 
+                    // Step 3: quantity validation
                     if ($setData->remain_set_quantity < $raw['qty']) {
                         throw new \Exception(
                             'Insufficient quantity for barcode ' . $raw['barcode']
                         );
                     }
-                    // dd($request->all(), $setData);
-                    // ✅ 4️⃣ Deduct quantities
-                    $setData->remain_set_quantity   -= $raw['qty'];
-                    $setData->remain_total_quantity -=
-                        ($raw['qty'] * $setData->no_of_pcs);
 
-                    // optional status
-                    if ($setData->remain_set_quantity == 0) {
-                        $setData->status = 2; // completed
-                    }
-
+                    // Step 4: quantity update
+                    $setData->remain_set_quantity -= $raw['qty'];
+                    $setData->remain_total_quantity -= ($raw['qty'] * $setData->no_of_pcs);
                     $setData->save();
                 }
             }

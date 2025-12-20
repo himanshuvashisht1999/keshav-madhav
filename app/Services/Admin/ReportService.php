@@ -391,6 +391,63 @@ class ReportService {
     {
         $lot_no = $request->lot_no;
 
+        // $cartons = OrderDispatchCarton::with([
+        //     'cartonsDetails:id,cartons_id,bar_code,set_quantity',
+        //     'orderMain:id,sku,master_customer_id,expected_delivery_date',
+        //     'orderMain.OrderProductSets:id,design_number,set_size,set_quantity,color_id',
+        //     'orderMain.OrderProductSets.colors:id,name',
+        //     'orderMain.OrderProductSets.sizeMeasurement'
+        // ])->get();
+        $result = [];
+
+        $orders = OrderMain::with('customer')
+            ->when($request->filled('order_no'), function ($q) use ($request) {
+                $q->where('sku', 'like', '%' . $request->order_no . '%');
+            })
+            ->when($request->filled('customer_id'), function ($q) use ($request) {
+                $q->where('customer_id', $request->customer_id);
+            })
+            ->orderBy('id','desc')->get();
+        $data = [];   
+
+        foreach ($orders as $order) {
+            $cartons = OrderDispatchCarton::with([
+                'cartonsDetails:id,cartons_id,bar_code,set_quantity'
+            ])->where('main_order_id', $order->id)->where('customer_id', $order->customer->id)->get();
+            
+
+            $cartons_data = $cartons_data_details = [];
+            $total_boxes = $total_cartons = 0;
+            foreach ($cartons as $carton) {
+                $total_cartons++;
+                foreach ($carton->cartonsDetails as $box) {
+                    $total_boxes += $box->set_quantity;
+                    $cartons_data_details[] = [
+                        'box_id'=> $box->id,
+                        'bar_code'=> $box->bar_code,
+                        'set_quantity'=> $box->set_quantity,
+                    ];
+                }
+
+                $cartons_data[] = [
+                    'carton_id'=> $carton->id,
+                    'created_at'=> $carton->created_at,
+                    'cartons_data_details' => $cartons_data_details
+                ];
+            }
+            $data[] = [
+                'order_main_id'=> $order->id,
+                'order_no'=> $order->sku,
+                'customer_id'=> $order->customer->id,
+                'customer_name'=> $order->customer->name,
+                'address'=> $order->customer->address,
+                'total_cartons' => $cartons_data,
+                'total_boxes' => $cartons_data,
+                'cartons_data' => $cartons_data
+            ];
+            
+        }
+        dd($data);
         $cartons = OrderDispatchCarton::with([
             'cartonsDetails:id,cartons_id,bar_code,set_quantity',
             'orderMain:id,sku,master_customer_id,expected_delivery_date',
@@ -398,7 +455,13 @@ class ReportService {
             'orderMain.OrderProductSets.colors:id,name',
             'orderMain.OrderProductSets.sizeMeasurement'
         ])->get();
-            dd($cartons);
+
+        $cartons = OrderDispatchCarton::with([
+            'cartonsDetails:id,cartons_id,bar_code,set_quantity'
+        ])->get();
+
+        $cartonsArray = $cartons->toArray();
+            dd($cartonsArray);
         return $data;
     }
 
