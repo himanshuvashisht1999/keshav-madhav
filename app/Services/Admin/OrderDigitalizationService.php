@@ -14,6 +14,8 @@ use App\Models\ProductionSlipDigitizationParts;
 use App\Models\ProductionDigitizationSetsDetails;
 use App\Models\MasterSizeMeasurement;
 use App\Models\FabricReceiptDetail;
+use App\Models\OrderStageWiseTimeTracking;
+use App\Models\MasterStageWiseTimeAllocation;
 
 use PDF;
 
@@ -189,6 +191,76 @@ class OrderDigitalizationService {
             return [
                 'status_code' => 1,
                 'message' => 'Production Slip Digitization successfully completed.'
+            ];
+
+        } catch (\Exception $e) {
+            //  Rollback everything on any error
+            DB::rollBack();
+
+            $return_data['message'] = $e->getMessage();
+            $return_data['status_code'] = 0;
+            return $return_data;
+        }
+    }
+
+    public function storeTimeAllocation(Request $request)
+    {
+
+        DB::beginTransaction();
+        try {
+        //    dd($request->all());
+            
+            $save_data_main = new OrderStageWiseTimeTracking;
+            $datetime = date(
+                        'Y-m-d H:i:s',
+                        strtotime($request->start_date_time)
+                    );
+            // $datetime ="2025-12-20 17:40:00";
+            // $expected_completed_at = $this->calculateExpectedCompletion($datetime, $days);
+            // dd($expected_completed_at);
+            $save_data_main->sku = '';
+            $save_data_main->lot_no = $request->lot_no;
+            $save_data_main->production_slip_digitization_id = $request->production_slip_digitization_id;
+            $save_data_main->start_date_time  = $datetime;
+            foreach ($request->stages as $stage_id => $days) {
+                $expected = $this->calculateExpectedCompletion($datetime, $days);
+                $save_data_main->{'stage_id_'.$stage_id} = $expected;
+                $datetime = $expected;
+            }
+            $save_data_main->status = 1;
+            $save_data_main->save();
+
+            ///// master stage wise time allocation  ///// 
+
+            $save_data_master = new MasterStageWiseTimeAllocation;
+           
+            // $datetime ="2025-12-20 17:40:00";
+            // $expected_completed_at = $this->calculateExpectedCompletion($datetime, $days);
+            // dd($expected_completed_at);
+            $save_data_master->sku = '';
+            $save_data_master->lot_no = $request->lot_no;
+            $save_data_master->production_slip_digitization_id = $request->production_slip_digitization_id;
+            $save_data_master->start_date_time  = $request->start_date_time;
+            foreach ($request->stages as $stage_id => $days) {
+                $save_data_master->{'stage_id_'.$stage_id} = $days;
+            }
+            $save_data_master->status = 1;
+            $save_data_master->save();
+
+            $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
+
+            $slip->update([
+                'lot_no'  => $request->lot_no,
+                'status'  => 5
+            ]);
+            $msg = 'Stage wise time allocation successfully completed.';
+            
+            // Commit everything if all successful
+            DB::commit();
+
+            return [
+                'status_code' => 1,
+                'message' => $msg
             ];
 
         } catch (\Exception $e) {
@@ -410,5 +482,81 @@ class OrderDigitalizationService {
         $count = ProductionSlipDigitization::where('status', 2)->count();
         return $count;
     }
+
+
+    function calculateExpectedCompletion($startDateTime, $days)
+    {
+        $WORK_START = 9;    // 9 AM
+        $WORK_END   = 19;   // 7 PM
+        $EVENING    = 17;   // 5 PM
+        $HOURS_PER_DAY = 10;
+        $HALF_DAY_HOURS = 5;
+
+        $current = new \DateTime($startDateTime);
+        $hour = (int)$current->format('H');
+
+        // 🔹 Align start time
+        if ($hour < $WORK_START) {
+            $current->setTime($WORK_START, 0);
+        } elseif ($hour >= $WORK_END) {
+            $current->modify('+1 day')->setTime($WORK_START, 0);
+        }
+
+        /* -------------------------
+        HALF DAY (0.5) LOGIC
+        --------------------------*/
+        if ($days == 0.5) {
+
+            $endOfDay = clone $current;
+            $endOfDay->setTime($WORK_END, 0);
+
+            // aaj kitne hours available hain
+            $availableToday =
+                ($endOfDay->getTimestamp() - $current->getTimestamp()) / 3600;
+
+            // ✅ Agar aaj 5 hours available hain
+            if ($availableToday >= $HALF_DAY_HOURS) {
+                $current->modify("+{$HALF_DAY_HOURS} hours");
+            }
+            // ❌ warna next day se count
+            else {
+                $current->modify('+1 day')->setTime($WORK_START, 0);
+                $current->modify("+{$HALF_DAY_HOURS} hours");
+            }
+
+            return $current->format('Y-m-d H:i:s');
+        }
+
+        /* -------------------------
+        FULL / MULTI DAY LOGIC
+        --------------------------*/
+        $remainingHours = $days * $HOURS_PER_DAY;
+
+        while ($remainingHours > 0) {
+
+            $endOfDay = clone $current;
+            $endOfDay->setTime($WORK_END, 0);
+
+            $availableToday =
+                ($endOfDay->getTimestamp() - $current->getTimestamp()) / 3600;
+
+            if ($availableToday <= 0) {
+                $current->modify('+1 day')->setTime($WORK_START, 0);
+                continue;
+            }
+
+            if ($remainingHours <= $availableToday) {
+                $minutes = (int) round($remainingHours * 60);
+                $current->modify("+{$minutes} minutes");
+                break;
+            }
+
+            $remainingHours -= $availableToday;
+            $current->modify('+1 day')->setTime($WORK_START, 0);
+        }
+
+        return $current->format('Y-m-d H:i:s');
+    }
+
 
 }

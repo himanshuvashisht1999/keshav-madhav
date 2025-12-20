@@ -241,6 +241,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/store-rolls-assign',[AdminOrderDigitalizationController::class,'storeRollsAssign'])->name('store-rolls-assign');
             Route::post('/store-slip',[AdminOrderDigitalizationController::class,'storeProductionSlipDigitization'])->name('store-slip');
             Route::get('/create-rolls-assign',[AdminOrderDigitalizationController::class,'createRollsAssign'])->name('create-rolls-assign');
+            Route::get('/create-time-allocation',[AdminOrderDigitalizationController::class,'createTimeAllocation'])->name('create-time-allocation');
+            Route::post('/store-time-allocation',[AdminOrderDigitalizationController::class,'storeTimeAllocation'])->name('store-time-allocation');
 
             Route::get('/getRollsData',[AdminOrderDigitalizationController::class,'getRollsData'])->name('getRollsData');
             Route::post('/skip',[AdminOrderDigitalizationController::class,'skip'])->name('skip');
@@ -525,7 +527,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/order-tracking-system',[AdminReportController::class,'orderTrackingSystem'])->name('orderTrackingSystem');
             Route::get('/order-lot-tracking',[AdminReportController::class,'lotTrackingDetails'])->name('lotTrackingDetails');
 
-
+            Route::get('/dispatch-order',[AdminReportController::class,'dispatchOrder'])->name('dispatch-order');
 
         });
 

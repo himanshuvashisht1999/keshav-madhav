@@ -195,7 +195,16 @@
 {{-- JS --}}
 <script>
 $(function () {
+    $('form').on('submit', function (e) {
 
+        // check if any carton card exists
+        if ($('#cartonList').children().length === 0) {
+            e.preventDefault(); // stop form submit
+            alert('Please add at least one carton before submitting dispatch.');
+            return false;
+        }
+
+    });
     let cartonCount = 1;
     let cartonBarcodes = {};
     let barcodeRows = {};

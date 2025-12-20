@@ -24,5 +24,12 @@ class OrderDispatchCarton extends Model
         'updated_at'
     ];
 
-    
+    public function cartonsDetails(){
+        return $this->hasMany('App\Models\OrderDispatchCartonsDetails','cartons_id','id');
+    }
+
+    public function orderMain()
+    {
+        return $this->belongsTo(OrderMain::class, 'main_order_id', 'id' );
+    }
 }
