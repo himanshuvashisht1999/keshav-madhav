@@ -27,7 +27,7 @@ class SizeMeasurementService {
 
     public function store(Request $request){
         // Generate SKU based on name,  check sku name exists or not in table
-        $raw_sku = $request->name."-". $request->customer_id."-". $request->design_number;
+        $raw_sku = $request->set_size."-". $request->customer_id."-". $request->design_number;
         $sku = strtoupper($raw_sku);
 
         // Check if SKU already exists
@@ -58,7 +58,7 @@ class SizeMeasurementService {
     }
     public function update(Request $request){
         // Generate SKU based on name,  check sku name exists or not in table
-        $raw_sku = $request->name."-". $request->customer_id."-". $request->design_number;
+        $raw_sku = $request->set_size."-". $request->customer_id."-". $request->design_number;
         $sku = strtoupper($raw_sku);
 
         // Check if SKU already exists
@@ -77,7 +77,7 @@ class SizeMeasurementService {
        
         // $update_data->size_group =  $request->size_group ? str_replace(' ', '', $request->size_group) : '';
         $update_data->size_group =   implode(',', $request->size_group);
-        $update_data->sku = strtoupper($request->name); // convert upper case
+        $update_data->sku = $sku; // convert upper case
         $update_data->status = $request->status;
         $update_data->save();
         return true;

@@ -55,5 +55,5 @@ class OrderCuttingStage extends Model
     {
         return $this->belongsTo('App\Models\MasterFabricWarehouse', 'to_assign_id');
     }
-    
+
 }

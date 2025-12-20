@@ -158,7 +158,7 @@
                 Assigned To : (Cutting Stage)
             </td>
             <td style="text-align:right; font-size:14px; font-weight:normal;">
-                Delivery Time Allowed : {{ $cuttingData[0]['delivery_time_allowed'] }} Days
+                Allowed Delivery Date : {{ $till_allowed_time ?? '' }}
             </td>
         </tr>
     </table>
@@ -191,11 +191,13 @@
         </tr>
     </thead>
     <tbody>
-        @php $grandTotal = 0; @endphp
-        @foreach($cuttingData as $index => $row)
+        @php $grandTotal = 0;
+            $i = 1;
+        @endphp
+        @foreach($cuttingData as $row)
             @php $grandTotal += $row['total_quantity']; @endphp
             <tr>
-                <td>{{ $index + 1 }}</td>
+                <td>{{ ($i++) }}</td>
                 <td>{{ $row['design_number'] }}</td>
                 <td>{{ $row['colour'] }}</td>
                 <td>{{ $row['set_size'] }}</td>

@@ -185,37 +185,60 @@ class ProductOrderController extends Controller {
             'created_at'  =>  $res->created_at->format('d-m-Y'),
             'slip_no' => $res->id 
         ];
+        // $results = OrderCuttingStage::with([
+        //     'productSet',
+        //     'cuttingMaster'
+        // ])->where('order_main_id', $request->id)
+        // ->get();
+
         $results = OrderCuttingStage::with([
-            'productSet',
-            'cuttingMaster'
+            'cuttingMaster',
+            'productSet.sizeMeasurement'
         ])->where('order_main_id', $request->id)
         ->get();
-        // dd($results);
+            // dd($results);
         $master_name = '';
         $cuttingData = [];
         foreach($results as $res1){
             $color_data = MasterColor::where('id', $res1->productSet->color_id,)
                 ->first();
             $master_name = $res1->cuttingMaster->cutting_master_name;
-            $cuttingData[] = [
-                'product_name' => $res1->sku,
-                'remarks'  =>  $res1->remarks,
-                'design_number' => $res1->productSet->design_number,
-                'cuttingMaster'  =>  $master_name,
-                'cutting_master_address' => $res1->cuttingMaster->address,
-                'colour'  =>  $color_data->name,
-                'set_size'  =>  $res1->productSet->set_size,
-                'no_of_pcs'  =>  $res1->productSet->no_of_pcs,
-                'set_quantity'  =>  $res1->productSet->set_quantity,
-                'total_quantity'  =>  $res1->productSet->total_quantity,
-                'delivery_time_allowed'  =>  $res1->delivery_time_allowed,
-                // 'created_at'  =>  $res1->productSet->created_at,
-            ];
+            $sizes = [$res1->productSet->set_size];
+            if (!empty($res1->productSet->sizeMeasurement->size_group)) {
+                $sizes = explode(',', $res1->productSet->sizeMeasurement->size_group);
+
+                foreach ($sizes as $size) {
+
+                    $key = $res1->productSet->design_number . "-" . $color_data->name . "-" . trim($size);
+
+                    // initialize if not exists
+                    if (!isset($cuttingData[$key])) {
+                        $cuttingData[$key] = [
+                            'product_name' => $res1->sku,
+                            'remarks'  => $res1->remarks,
+                            'design_number' => $res1->productSet->design_number,
+                            'cuttingMaster' => $master_name,
+                            'cutting_master_address' => $res1->cuttingMaster->address ?? '',
+                            'colour' => $color_data->name,
+                            'set_size' => trim($size),
+                            'no_of_pcs' => $res1->productSet->no_of_pcs,
+                            'set_quantity' => 0,
+                            'total_quantity' => 0,
+                        ];
+                    }
+
+                    // accumulate values
+                    $cuttingData[$key]['set_quantity'] += $res1->productSet->set_quantity;
+                    $cuttingData[$key]['total_quantity'] += $res1->productSet->total_quantity;
+                }
+            }
+            $till_allowed_time = date('Y-m-d h:i A', strtotime($res1['till_allowed_time']));
         }
         
         $data = [
             'mainOrder' => $mainOrder,
-            'cuttingData' => $cuttingData
+            'cuttingData' => $cuttingData,
+            'till_allowed_time' => $till_allowed_time
         ];
         // dd($data);
         $pdf = PDF::loadView('admin.product_order.download-cutting-slip', $data);

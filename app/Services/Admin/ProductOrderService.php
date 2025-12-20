@@ -290,6 +290,9 @@ class ProductOrderService {
                     $save_orderProductSet->set_quantity = $order_quantity;
                     $save_orderProductSet->no_of_pcs = $size_data->no_of_pcs;
                     $save_orderProductSet->total_quantity = $order_quantity * $size_data->no_of_pcs;
+                    $save_orderProductSet->remain_set_quantity =  $order_quantity;
+                    $save_orderProductSet->remain_total_quantity = $order_quantity * $size_data->no_of_pcs;
+                    $save_orderProductSet->corporate_order_file = $imgName ?? null;
                     $save_orderProductSet->status = 1;
                     $save_orderProductSet->save();
                 }     

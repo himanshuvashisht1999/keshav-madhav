@@ -18,12 +18,15 @@ class OrderProductSet extends Model
         'order_id',
         'order_main_id',
         'product_sku',
+        'bar_code',
         'design_number',
         'set_size',
         'color_id',
         'set_quantity',
         'no_of_pcs',
         'total_quantity',
+        'remain_set_quantity',
+        'remain_total_quantity',
         'status',
         'created_at',
         'updated_at'
@@ -37,5 +40,26 @@ class OrderProductSet extends Model
     public function colors()
     {
         return $this->hasOne(MasterColor::class, 'id', 'color_id');
+    }
+
+    public function sizeMeasurement()
+    {
+        return $this->hasOne(MasterSizeMeasurement::class, 'set_size', 'set_size')
+            ->join(
+                'order_products_sets',
+                'order_products_sets.set_size',
+                '=',
+                'master_size_measurements.set_size'
+            )
+            ->whereColumn(
+                'master_size_measurements.design_number',
+                'order_products_sets.design_number'
+            )
+            ->select('master_size_measurements.*');
+    }
+
+    public function orderMain()
+    {
+        return $this->belongsTo(OrderMain::class, 'order_main_id', 'id');
     }
 }
