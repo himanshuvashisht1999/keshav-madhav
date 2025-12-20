@@ -4,10 +4,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class OrderStageWiseTimeTracking extends Model
+class MasterStageWiseTimeAllocation extends Model
 {
     use HasFactory;
-    protected $table= 'order_stage_wise_time_tracking';
+    protected $table= 'master_stage_wise_time_allocation';
     protected $fillable = [
         'id',
         'sno',
