@@ -45,5 +45,34 @@ class ProductionSlipDigitizationParts extends Model
     // public function getUnitMaster(){
     //     return $this->hasOne('App\Models\StageMasterUnit','id','stage_master_unit_id');
     // }
+    // public function sizeMeasurement()
+    // {
+    //     return $this->belongsTo(
+    //         MasterSizeMeasurement::class,
+    //         'set_size',
+    //         'id'
+    //     )->whereColumn(
+    //         'master_size_measurements.design_number',
+    //         'production_slip_digitization_parts.design_number'
+    //     );
+    // }
+
+
+    public function masterSizes()
+    {
+        return $this->hasOne(MasterSizeMeasurement::class, 'id', 'set_size')
+            ->join(
+                'production_slip_digitization_parts',
+                'production_slip_digitization_parts.set_size',
+                '=',
+                'master_size_measurements.id'
+            )
+            ->whereColumn(
+                'master_size_measurements.design_number',
+                'production_slip_digitization_parts.design_number'
+            )
+            ->select('master_size_measurements.*');
+    }
+
 
 }

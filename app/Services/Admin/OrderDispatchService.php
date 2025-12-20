@@ -4,9 +4,10 @@ namespace App\Services\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Auth;
-use App\Models\Order;
-use App\Models\OrderMain;
+use App\Models\OrderDispatchCarton;
+use App\Models\OrderDispatchCartonsDetails;
 use App\Models\OrderProductSet;
+use App\Models\OrderMain;
 use PDF;
 
 
@@ -29,7 +30,57 @@ class OrderDispatchService {
 
         DB::beginTransaction();
         try {
-           dd($request->all());
+        //    dd($request->all());
+            foreach ($request->cartons as $carton) {
+
+                // ✅ 1️⃣ Create ONE carton
+                $dispatchCarton = new OrderDispatchCarton;
+                $dispatchCarton->customer_id   = $request->final_customer_id;
+                $dispatchCarton->main_order_id = $request->final_order_no;
+                $dispatchCarton->status        = 1;
+                $dispatchCarton->save();
+
+                // ✅ 2️⃣ Carton details
+                foreach ($carton as $carton_data) {
+
+                    $raw = json_decode($carton_data, true);
+
+                    // save carton detail
+                    $detail = new OrderDispatchCartonsDetails;
+                    $detail->cartons_id   = $dispatchCarton->id;
+                    $detail->bar_code     = $raw['barcode'];
+                    $detail->set_quantity = $raw['qty'];
+                    $detail->status       = 1;
+                    $detail->save();
+
+                    // ✅ 3️⃣ LOCK product row (CRITICAL)
+                    $setData = OrderProductSet::where('bar_code', $raw['barcode'])
+                        ->lockForUpdate()
+                        ->first();
+                    
+                    if (!$setData) {
+                        throw new \Exception('Invalid barcode: ' . $raw['barcode']);
+                    }
+
+                    if ($setData->remain_set_quantity < $raw['qty']) {
+                        throw new \Exception(
+                            'Insufficient quantity for barcode ' . $raw['barcode']
+                        );
+                    }
+                    // dd($request->all(), $setData);
+                    // ✅ 4️⃣ Deduct quantities
+                    $setData->remain_set_quantity   -= $raw['qty'];
+                    $setData->remain_total_quantity -=
+                        ($raw['qty'] * $setData->no_of_pcs);
+
+                    // optional status
+                    if ($setData->remain_set_quantity == 0) {
+                        $setData->status = 2; // completed
+                    }
+
+                    $setData->save();
+                }
+            }
             
 
             // Commit everything if all successful
@@ -37,7 +88,7 @@ class OrderDispatchService {
 
             return [
                 'status_code' => 1,
-                'message' => 'Production Slip Digitization successfully completed.'
+                'message' => 'Carton successfully Packed.'
             ];
 
         } catch (\Exception $e) {
@@ -66,10 +117,17 @@ class OrderDispatchService {
         return $data;
     }
 
-    function getOrdersDetails($request){
-        // $customer_id = $request->customer_id;
-        $order_main_id = $request->order_main_id;
-        $results = OrderProductSet::with('colors')->where('order_main_id',$order_main_id)->where('status',1)->orderBy('id','asc')->get()->toArray();
+    function getCustomersBybarcode($request){
+        $search_barcode = $request->search_barcode;
+        
+        $results = OrderProductSet::with([
+                'colors:id,name',
+                'orderMain:id,master_customer_id,sku'
+            ])->where('bar_code', $search_barcode)
+            ->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get()
+            ->toArray();
         $data = [];
         foreach($results as $val){
             $data[] = [
@@ -82,7 +140,48 @@ class OrderDispatchService {
                 'no_of_pcs'             => $val['no_of_pcs'],
                 'set_quantity'          => $val['set_quantity'],
                 'total_quantity'        => $val['total_quantity'],
+                'remain_set_quantity'   => $val['remain_set_quantity'],
+                'remain_total_quantity' => $val['remain_total_quantity'],
                 'created_at'            => $val['created_at'],
+                'slip_file'             => $val['corporate_order_file'],
+                'master_customer_id'    => $val['order_main']['master_customer_id'] ?? '',
+                'order_id'              => $val['order_main']['id'] ?? '',
+                'order_name'            => $val['order_main']['sku'] ?? '',
+            ];
+        }
+        return $data;
+    }
+
+    function getOrdersDetails($request){
+        // $customer_id = $request->customer_id;
+        $order_main_id = $request->order_main_id;
+        $results = OrderProductSet::with([
+                'colors:id,name',
+                'orderMain:id,master_customer_id,sku'
+            ])->where('order_main_id', $order_main_id)
+            ->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->get()
+            ->toArray();
+        $data = [];
+        foreach($results as $val){
+            $data[] = [
+                'id'                    => $val['id'],
+                'order_main_id'         => $val['order_main_id'],
+                'bar_code'              => $val['bar_code'] ?? '',
+                'design_number'         => $val['design_number'],
+                'set_size'              => $val['set_size'],
+                'color'                 => $val['colors']['name'] ?? '',
+                'no_of_pcs'             => $val['no_of_pcs'],
+                'set_quantity'          => $val['set_quantity'],
+                'total_quantity'        => $val['total_quantity'],
+                'remain_set_quantity'   => $val['remain_set_quantity'],
+                'remain_total_quantity' => $val['remain_total_quantity'],
+                'created_at'            => $val['created_at'],
+                'slip_file'             => $val['corporate_order_file'],
+                'master_customer_id'    => $val['order_main']['master_customer_id'] ?? '',
+                'order_id'              => $val['order_main']['id'] ?? '',
+                'order_name'            => $val['order_main']['sku'] ?? '',
             ];
         }
         return $data;

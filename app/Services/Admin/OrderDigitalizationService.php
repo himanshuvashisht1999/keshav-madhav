@@ -13,6 +13,7 @@ use App\Models\ProductionSlipDigitization;
 use App\Models\ProductionSlipDigitizationParts;
 use App\Models\ProductionDigitizationSetsDetails;
 use App\Models\MasterSizeMeasurement;
+use App\Models\FabricReceiptDetail;
 
 use PDF;
 
@@ -55,6 +56,24 @@ class OrderDigitalizationService {
                     $save_data_main->slip_create_date_time = $request->slip_create_date_time ?? NULL;
                     $save_data_main->status = 1;
                     $save_data_main->save();
+
+                    // update rolls
+                    // 2️⃣ Update fabric receipt (SAFE)
+                    $fabricReceiptDetail = FabricReceiptDetail::where(
+                        'roll_number',
+                        $request->roll_no_list[$key]
+                    )->lockForUpdate()->first();
+
+                    if (!$fabricReceiptDetail) {
+                        throw new \Exception('Roll not found: '.$request->roll_no_list[$key]);
+                    }
+
+                    if ($fabricReceiptDetail->remaining_quantity < $request->meter_list[$key]) {
+                        throw new \Exception('Insufficient meter for roll: '.$request->roll_no_list[$key]);
+                    }
+
+                    $fabricReceiptDetail->remaining_quantity -= $request->meter_list[$key];
+                    $fabricReceiptDetail->save();
                 }
             }
 
