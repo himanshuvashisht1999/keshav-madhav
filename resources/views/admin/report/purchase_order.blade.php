@@ -9,7 +9,6 @@
         margin-bottom:15px;
     }
     .report-header h3{ font-weight:600;margin:0; }
-    .report-meta{ font-size:14px;color:#6c757d; }
 
     .report-card{
         border-radius:12px;
@@ -42,20 +41,21 @@
 <div class="content-wrapper">
 
 {{-- ================= HEADER ================= --}}
+
 <section class="content-header">
-<div class="container-fluid">
-    <div class="report-header">
-        <div>
-            <h3>Purchase Order Report</h3>
+    <div class="container-fluid">
+        <div class="report-header">
+            <div>
+                <div class="report-meta">Report No : RJ 3</div>
+            </div>
+            <div>
+                <h3>Purchase Order Report</h3>
+            </div>
             <div class="report-meta">
-                Ordered vs Received vs Remaining (with Delay)
+                Date : {{ now()->format('d M Y h:i A') }}
             </div>
         </div>
-        <div class="report-meta">
-            Date : {{ now()->format('d M Y h:i A') }}
-        </div>
     </div>
-</div>
 </section>
 
 <section class="content">

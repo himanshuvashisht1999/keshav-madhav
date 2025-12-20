@@ -52,4 +52,23 @@ class ReportController extends Controller
         );
     }
 
+    public function orderTrackingSystem(Request $request)
+    {
+        $response['data'] = $this->service->orderTrackingSystem($request);
+        return view('admin.report.order_tracking',$response);
+    }
+
+    public function lotTrackingDetails(Request $request)
+    {
+        $lot_no = $request->lot_no;
+
+        $tracking = $this->service->lotTrackingDetails($request);
+
+        $currentStage = $tracking->last();
+        return response()->json([
+            'current_stage' => $currentStage?->stage_name,
+            'data' => $tracking
+        ]);
+    }
+
 }

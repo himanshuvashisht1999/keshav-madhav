@@ -2,6 +2,7 @@
 
 @section('content')
 <style>
+    
     .report-header{
         display:flex;
         justify-content:space-between;
@@ -12,10 +13,7 @@
         font-weight:600;
         margin:0;
     }
-    .report-meta{
-        font-size:14px;
-        color:#6c757d;
-    }
+
     .report-card{
         border-radius:12px;
         box-shadow:0 4px 12px rgba(0,0,0,.08);
@@ -40,18 +38,21 @@
 <div class="content-wrapper">
 
 {{-- HEADER --}}
+
 <section class="content-header">
-<div class="container-fluid">
-    <div class="report-header">
-        <div>
-            <h3>Fabric Stock Report</h3>
-            <div class="report-meta">Remaining Stock – Warehouse wise</div>
-        </div>
-        <div class="report-meta">
-            Date : {{ now()->format('d M Y h:i A') }}
+    <div class="container-fluid">
+        <div class="report-header">
+            <div>
+                <div class="report-meta">Report No : RJ 2</div>
+            </div>
+            <div>
+                <h3>Fabric Stock Report</h3>
+            </div>
+            <div class="report-meta">
+                Date : {{ now()->format('d M Y h:i A') }}
+            </div>
         </div>
     </div>
-</div>
 </section>
 
 <section class="content">
