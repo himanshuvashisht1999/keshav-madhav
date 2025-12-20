@@ -17,6 +17,7 @@ use App\Models\PurchaseOrder;
 use App\Models\OrderStageTracking;
 use App\Models\OrderStageWiseTimeTracking;
 use App\Models\MasterProductStage;
+use App\Models\OrderDispatchCarton;
 use Carbon\Carbon;
 
 class ReportService {
@@ -450,6 +451,20 @@ class ReportService {
             ->format('d M Y h:i A');
     }
 
+    public function dispatchOrder(Request $request)
+    {
+        $lot_no = $request->lot_no;
+
+        $cartons = OrderDispatchCarton::with([
+            'cartonsDetails:id,cartons_id,bar_code,set_quantity',
+            'orderMain:id,sku,master_customer_id,expected_delivery_date',
+            'orderMain.OrderProductSets:id,design_number,set_size,set_quantity,color_id',
+            'orderMain.OrderProductSets.colors:id,name',
+            'orderMain.OrderProductSets.sizeMeasurement'
+        ])->get();
+            dd($cartons);
+        return $data;
+    }
 
 
 

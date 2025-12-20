@@ -25,9 +25,14 @@
                             </button>
                         </form>
                     @endif
-                    <a href="{{ route('admin.order_digitalization.create-rolls-assign') }}" class="btn btn-primary mr-2">
-                        Rolls Digitalization
-                    </a>
+                    @if(!empty($slip_data['from_stage']['master_stage_id']) && $slip_data['from_stage']['master_stage_id'] == 3 )
+                        <a href="{{ route('admin.order_digitalization.create-rolls-assign') }}" class="btn btn-primary mr-2">
+                            Rolls Digitalization
+                        </a>
+                        <a href="{{ route('admin.order_digitalization.create-time-allocation') }}" class="btn btn-success mr-2">
+                            Stage Time Allocation
+                        </a>
+                    @endif
                     @if(!empty($slip_data))
 
                         <!-- SKIP FORM -->

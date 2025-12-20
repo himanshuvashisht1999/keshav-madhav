@@ -67,4 +67,10 @@ class ReportController extends Controller
         return response()->json($data);
     }
 
+    public function dispatchOrder(Request $request)
+    {
+        $response['data'] = $this->service->dispatchOrder($request);
+        return view('admin.report.dispatch_order',$response);
+    }
+
 }
