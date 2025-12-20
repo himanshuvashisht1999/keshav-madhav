@@ -7,7 +7,6 @@
         justify-content:space-between;
         align-items:center;
         margin-bottom:15px;
-        color: #
     }
     .report-header h3{ font-weight:600;margin:0; }
 
