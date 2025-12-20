@@ -46,7 +46,7 @@
     <div class="container-fluid">
         <div class="report-header">
             <div>
-                <div class="report-meta">Report No : RJ 3</div>
+                <div class="report-meta">Report No : RJ 5</div>
             </div>
             <div>
                 <h3>Dispatch Order Report</h3>
@@ -67,7 +67,7 @@
         <form method="GET" action="{{ route('admin.report.purchase_order') }}">
             <div class="row g-2 align-items-end">
 
-                <div class="col-md-3">
+                {{-- <div class="col-md-3">
                     <label class="form-label">PO Number</label>
                     <input type="text"
                            name="sku"
@@ -100,7 +100,7 @@
                        class="btn btn-outline-secondary w-100">
                         Reset
                     </a>
-                </div>
+                </div> --}}
 
             </div>
         </form>
@@ -116,15 +116,10 @@
 <thead>
 <tr>
     <th>#</th>
-    <th>Order Date</th>
-    <th>Supplier</th>
-    <th>PO Number</th>
-    <th>Fabric</th>
-    <th>Ordered</th>
-    <th>Received</th>
-    <th>Remaining</th>
-    <th>Status</th>
-    <th>Delayed</th>
+    <th>Order No</th>
+    <th>Customer</th>
+    <th>Total Cartons</th>
+    <th>Total Boxes</th>
     <th class="text-center">Action</th>
 </tr>
 </thead>
@@ -132,76 +127,28 @@
 <tbody>
 @php $sr = 1; @endphp
 
-@forelse($data as $po)
-
-    @php
-        $rowspan = $po->items->count();
-    @endphp
-
-    @foreach($po->items as $index => $item)
-
-        @php
-            $receivedQty = $item->meter - $item->remaining_quantity;
-            $isDelayed =
-                $item->remaining_quantity > 0 &&
-                \Carbon\Carbon::now()->gt(
-                    \Carbon\Carbon::parse($po->delivery_date)
-                );
-        @endphp
-
-        <tr class="{{ $isDelayed ? 'delayed-row' : '' }}">
-
-            {{-- ORDER LEVEL (ONLY ON FIRST ROW) --}}
-            @if($index === 0)
-                <td rowspan="{{ $rowspan }}" class="order-cell">{{ $sr }}</td>
-                <td rowspan="{{ $rowspan }}" class="order-cell">
-                    {{ \Carbon\Carbon::parse($po->date)->format('d M Y') }}
-                </td>
-                <td rowspan="{{ $rowspan }}" class="order-cell">
-                    {{ $po->vendor?->name ?? '-' }}
-                </td>
-                <td rowspan="{{ $rowspan }}" class="order-cell">
-                    {{ $po->sku }}
-                </td>
-            @endif
-
-            {{-- FABRIC LEVEL --}}
-            <td>{{ $item->fabric_sku }}</td>
-
-            <td class="text-end">{{ number_format($item->meter,2) }}</td>
-
-            <td class="text-end text-success">
-                {{ number_format($receivedQty,2) }}
-            </td>
-
-            <td class="text-end text-danger">
-                {{ number_format($item->remaining_quantity,2) }}
-            </td>
-
-            <td>
-                <span class="badge
-                    {{ $item->remaining_quantity == 0 ? 'bg-success' : 'bg-warning' }}">
-                    {{ $item->remaining_quantity == 0 ? 'Closed' : 'Open' }}
-                </span>
-            </td>
-
-            <td>
-                <span class="badge {{ $isDelayed ? 'bg-danger' : 'bg-success' }}">
-                    {{ $isDelayed ? 'Yes' : 'No' }}
-                </span>
-            </td>
-
-            <td class="text-center">
-                <button class="btn btn-sm btn-outline-primary expand-btn"
-                    onclick="openPoItemModal(
-                        '{{ $item->id }}',
-                        '{{ $po->sku }}',
-                        '{{ $item->fabric_sku }}'
-                    )">
-                    View
-                </button>
-            </td>
-        </tr>
+ @forelse($data as $orders)
+     <tr>
+        <td class="order-cell">
+                {{ $sr }}
+        </td>
+        <td class="order-cell">
+                {{ $orders['order_no'] }}
+        </td>
+        <td class="order-cell">
+            {{ $orders['customer_name'] }}
+        </td>
+        <td class="order-cell">
+            {{ $orders['total_cartons'] }}
+        </td>
+        <td class="order-cell">
+            {{ $orders['total_boxes'] }}
+        </td>
+        <td class="order-cell">
+            {{-- {{ $orders->customer_name }} --}}
+        </td>
+    </tr>
+    @foreach($orders['cartons'] as $index => $carton)
 
     @endforeach
 
@@ -227,34 +174,36 @@
 </div>
 
 {{-- ================= MODAL ================= --}}
-<div class="modal fade" id="poItemModal" tabindex="-1">
+{{-- <div class="modal fade" id="stockModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title">Purchase Order Item Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title">
+                    Stock Roll Details
+                </h5>
+                <!-- <button type="button" class="btn-close" data-bs-dismiss="modal"></button> -->
             </div>
 
             <div class="modal-body">
 
                 <div class="row mb-3">
-                    <div class="col-md-4">
-                        <strong>PO Number:</strong>
-                        <span id="modalPoNo"></span>
-                    </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <strong>Fabric:</strong>
-                        <span id="modalFabric"></span>
+                        <span id="modalFabricSku"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Warehouse:</strong>
+                        <span id="modalWarehouse"></span>
                     </div>
                 </div>
 
-                <div id="modalItemTable"></div>
+                <div id="modalStockTable"></div>
 
             </div>
         </div>
     </div>
-</div>
+</div> --}}
 
 {{-- ================= SCRIPT ================= --}}
 <script>
