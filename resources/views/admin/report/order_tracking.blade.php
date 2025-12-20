@@ -178,7 +178,8 @@
                                         {{ $order['total_pcs_in_order'] }}
                                     </td>
                                     <td rowspan="{{ $rowspan }}" class="order-cell text-center">
-                                        {{ $order['expected_delivery_date'] }}
+                                        {{ \Carbon\Carbon::parse($order['expected_delivery_date'])->format('d M Y') }}
+
                                     </td>
                                     @endif
 
@@ -190,21 +191,6 @@
                                         {{ $lot['pieces_in_lot'] }}
                                     </td>
 
-                                    <!-- <td>
-                                        <span class="badge badge-stage">
-                                            {{ $lot['stage_name'] }}
-                                        </span>
-                                    </td> -->
-                                    <!-- <td>
-                                        <span
-                                            class="delay-link {{ $lot['isDelayed']=='Yes' ? 'text-danger' : 'text-success' }}"
-                                            data-lot="{{ $lot['lot_no'] }}"
-                                            data-allowed="{{ $lot['allowed_till_datetime'] }}"
-                                            data-current="{{ $lot['current_datetime'] }}"
-                                            data-status="{{ $lot['isDelayed'] }}">
-                                            {{ $lot['isDelayed'] }}
-                                        </span>
-                                    </td> -->
                                     <td>
                                         <span
                                             class="view-lot {{ $lot['isDelayed']=='Yes' ? 'text-danger' : 'text-success' }}"

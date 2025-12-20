@@ -30,7 +30,8 @@ class LoginController extends Controller {
         $data = $this->service->postLogin($request); 
         
         if($data == 'success'){
-            return redirect()->route('admin.dashboard')->withSuccess('You have successfully logged in.');
+            // return redirect()->route('admin.dashboard')->withSuccess('You have successfully logged in.');
+            return redirect()->route('admin.product_order.indexOrder')->withSuccess('You have successfully logged in.');
         }else{
             return redirect()->back()->withError('Invalid email or password. Please try again.');
         }

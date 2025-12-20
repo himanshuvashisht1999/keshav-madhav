@@ -134,9 +134,9 @@ table.dataTable {
 .nav-item{
     font-weight: bold;
 }
-.border_class{
+/* .border_class{
     background : yellow;
     margin-bottom: 10px !important;
     color: black !important;
-}
+} */
 .report-meta{ font-size:18px;color:#000000; }
