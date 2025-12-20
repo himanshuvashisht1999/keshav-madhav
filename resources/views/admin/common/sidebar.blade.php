@@ -4,6 +4,40 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
 $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
 ?>
 <style>
+
+    /* ===============================
+   SIDEBAR BOX STYLE
+================================ */
+
+/* Normal (not selected) */
+.border_class{
+    background: #1f2933;          /* subtle dark box */
+    margin-bottom: 6px !important;
+    color: #e5e7eb !important;
+    border-radius: 8px;
+    border: 1px solid #2d3748;    /* soft border */
+    transition: all .2s ease;
+}
+
+/* Hover */
+.border_class:hover{
+    background: #374151;
+    border-color: #4b5563;
+    color: #ffffff !important;
+}
+
+/* Active / Selected */
+.border_class.active{
+    background: #2563eb;          /* clean blue */
+    border-color: #2563eb;
+    color: #ffffff !important;
+}
+
+/* Icons inside */
+.border_class i{
+    color: inherit !important;
+}
+
     /* Base links (Dashboard, Purchase, Stock, etc.) */
     .main-sidebar .nav-sidebar > .nav-item > .nav-link {
         padding-left: 18px;   /* default: ~12px, adjust as you like */
@@ -26,6 +60,38 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
     .main-sidebar .nav-link i.fas {
         margin-right: 8px;
     }
+
+    /* Make nav-link a flex container */
+.main-sidebar .nav-link {
+    display: flex;
+    align-items: flex-start;
+}
+
+/* Icon fixed width */
+.main-sidebar .nav-link .nav-icon,
+.main-sidebar .nav-link i {
+    width: 22px;              /* fixed icon space */
+    min-width: 22px;
+    text-align: center;
+    margin-top: 3px;          /* vertical alignment */
+}
+
+/* Text block */
+.main-sidebar .nav-link p {
+    margin: 0;
+    white-space: normal;      /* allow wrap */
+    line-height: 1.3;
+}
+
+/* Ensure wrapped lines align properly */
+.main-sidebar .nav-link p span,
+.main-sidebar .nav-link p {
+    display: block;
+}
+.fa-angle-left{
+    margin-right : 0px !important;
+        margin-top: 0px !important;
+}
 </style>
 
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
@@ -211,7 +277,8 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             class="{{ str_contains($page_url, 'admin/order_digitalization') ? 'nav-link active' : 'nav-link' }} border_class"
                             style="position:static;">
                             <i class="fas fa-file-signature"></i>
-                            <p>Hand Slip Digitalization</p>
+                            
+                            <p>HAND SLIP DIGITALIZATION</p>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -219,7 +286,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             class="{{ str_contains($page_url, 'admin/order_dispatch') ? 'nav-link active' : 'nav-link' }} border_class"
                             style="position:static;">
                             <i class="fas fa-dolly"></i>
-                            <p>Dispatch</p>
+                            <p>DISPATCH</p>
                         </a>
                     </li>
                     {{-- <li class="nav-item">
@@ -232,7 +299,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                     </li> --}}
                     <li class="{{ str_contains($page_url, 'admin/report') ? 'nav-item menu-open' : 'nav-item' }}">
                         <a href="#"
-                            class="{{ str_contains($page_url, 'admin/report') ? 'nav-link active' : 'nav-link' }}">
+                            class="{{ str_contains($page_url, 'admin/report') ? 'nav-link active' : 'nav-link' }} border_class">
                             <i class="nav-icon fa fa-print" aria-hidden="true"></i>
                             <p>
                                 REPORTS
@@ -384,10 +451,10 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
 
                     <!-- Master Settings (Dropdown) -->
                     <li class="{{ str_contains($page_url, 'admin/master') ? 'nav-item menu-open' : 'nav-item' }}">
-                        <a href="#" class="{{ str_contains($page_url, 'admin/master') ? 'nav-link active' : 'nav-link' }}">
+                        <a href="#" class="{{ str_contains($page_url, 'admin/master') ? 'nav-link active' : 'nav-link' }} border_class">
                             <i class="nav-icon fas fa-cogs"></i>
                             <p>
-                                Masters
+                                MASTERS
                                 <i class="right fas fa-angle-left"></i>
                             </p>
                         </a>
@@ -707,9 +774,9 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                     </li>
                     <!-- Logout -->
                     <li class="nav-item">
-                        <a href="{{ route('admin.logout') }}" class="nav-link" style="position:static;">
+                        <a href="{{ route('admin.logout') }}" class="nav-link border_class" style="position:static;">
                             <i class="nav-icon fas fa-sign-out-alt"></i>
-                            <p>Logout</p>
+                            <p>LOGOUT</p>
                         </a>
                     </li>
 
