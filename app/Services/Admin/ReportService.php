@@ -15,6 +15,8 @@ use App\Models\Fabric;
 use App\Models\MasterFabricWarehouse;
 use App\Models\PurchaseOrder;
 use App\Models\OrderStageTracking;
+use App\Models\OrderStageWiseTimeTracking;
+use App\Models\MasterProductStage;
 use Carbon\Carbon;
 
 class ReportService {
@@ -265,24 +267,19 @@ class ReportService {
             $allocated_pieces = 0;
 
             foreach ($lotNos as $lot_no) {
-                $expected_delivery_date = $this->calculateDynamicExpectedDelivery($order->expected_delivery_date,$lot_no);
+                $expected_delivery_date = $this->calculateExpectedDeliveryFromPlan($order->expected_delivery_date,$lot_no);
+
                 $parts_data = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->get();
 
                 $stage_name = ProductionSlipDigitizationParts::where('lot_no', $lot_no)
                     ->orderBy('id', 'desc')->value('to_stage_name');
 
-                $expected_time = OrderStageTracking::where('lot_no', $lot_no)
-                    ->orderBy('id', 'desc')->value('expected_time');
 
                 $allowed_till_datetime = ProductionSlipDigitizationParts::where('lot_no', $lot_no)
                     ->orderBy('id', 'desc')->value('allowed_till_datetime');
 
                 $currentTime = Carbon::now();
-                $isDelayed = 'No';
-
-                if ($allowed_till_datetime && $currentTime->greaterThan(Carbon::parse($allowed_till_datetime))) {
-                    $isDelayed = 'Yes';
-                }
+                $isDelayed = $this->calculateDelayFromPlan($lot_no);
 
                 if ($request->filled('delay_status') && $request->delay_status !== $isDelayed) {
                     continue;
@@ -310,7 +307,7 @@ class ReportService {
                     'allowed_till_datetime' => $allowed_till_datetime,
                     'current_datetime' => $currentTime->toDateTimeString(),
                     'expected_delivery_date' => $expected_delivery_date,
-                    'expected_time' => $expected_time,
+                    'expected_time' => $this->calculateFinalExpectedTimeFromPlan($lot_no),
                 ];
             }
 
@@ -339,51 +336,118 @@ class ReportService {
         return collect($result)->groupBy('order_no');
     }
 
-    public function lotTrackingDetails(Request $request)
+    private function getCurrentStageFromPlan($lotNo)
     {
-        $lot_no = $request->lot_no;
+        $row = OrderStageWiseTimeTracking::where('lot_no', $lotNo)->first();
 
-        $data = OrderStageTracking::where('lot_no', $lot_no)
-            ->orderBy('id', 'asc')
-            ->get();
-        return $data;
+        if (!$row) return null;
+
+        for ($i = 12; $i >= 1; $i--) {
+            $col = 'stage_id_' . $i;
+            if (!empty($row->$col)) {
+                $stage_name = MasterProductStage::where('id', $i)->value('name');
+                return [
+                    'stage_id' => $i,
+                    'expected_time' => $row->$col,
+                    'stage_name' => $stage_name
+                ];
+            }
+        }
+
+        return null;
+    }
+    private function calculateDelayFromPlan($lotNo)
+    {
+        $currentStage = $this->getCurrentStageFromPlan($lotNo);
+
+        if (!$currentStage) return 'No';
+
+        return Carbon::now()->greaterThan(
+            Carbon::parse($currentStage['expected_time'])
+        ) ? 'Yes' : 'No';
     }
 
-    private function calculateDynamicExpectedDelivery($orderExpectedDate, $lotNo)
+    private function calculateExpectedDeliveryFromPlan($orderExpectedDate, $lotNo)
     {
-        $stages = OrderStageTracking::where('lot_no', $lotNo)
-            ->orderBy('id', 'asc')
-            ->get();
+        $row = OrderStageWiseTimeTracking::where('lot_no', $lotNo)->first();
 
-        if ($stages->count() < 2) {
+        if (!$row || empty($row->stage_id_12)) {
             return $orderExpectedDate;
         }
 
-        $adjustmentDays = 0;
+        return Carbon::parse($row->stage_id_12)
+            ->format('Y-m-d');
+    }
+    public function lotTrackingDetails(Request $request)
+    {
+        $row = OrderStageWiseTimeTracking::where('lot_no', $request->lot_no)->first();
 
-        for ($i = 0; $i < $stages->count() - 1; $i++) {
+        if (!$row) {
 
-            $current = $stages[$i];
-            $next = $stages[$i + 1];
+            $data = [
+                'current_stage' => null,
+                'data' => []
+            ];
+            return $data;
+        }
 
-            if (!$current->expected_time) {
+        $data = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $col = 'stage_id_' . $i;
+            if (!empty($row->$col)) {
+                $stage_name = MasterProductStage::where('id', $i)->value('name');
+                $data[] = [
+                    'stage_id' => $i,
+                    'expected_time' => $row->$col,
+                    'expected_time' => Carbon::parse($row->$col)->format('d M Y h:i A'),
+                    'stage_name' => $stage_name
+                ];
+            }
+        }
+
+        $current = end($data);
+
+        $data = [
+            'current_stage' => 'Stage ' . ($current['stage_id'] ?? ''),
+            'data' => $data
+        ];
+        return $data;
+
+    }
+
+    private function calculateFinalExpectedTimeFromPlan($lotNo)
+    {
+        $row = OrderStageWiseTimeTracking::where('lot_no', $lotNo)->first();
+
+        if (!$row || empty($row->stage_id_12)) {
+            return null;
+        }
+
+        $maxDelayDays = 0;
+        $now = Carbon::now();
+
+        for ($i = 1; $i <= 12; $i++) {
+
+            $col = 'stage_id_' . $i;
+
+            if (empty($row->$col)) {
                 continue;
             }
 
-            $actualHours = Carbon::parse($current->created_at)
-                ->diffInHours(Carbon::parse($next->created_at));
+            $plannedTime = Carbon::parse($row->$col);
 
-            $expectedHours = (int) $current->expected_time;
+            // Stage should already be completed by now
+            if ($now->greaterThan($plannedTime)) {
 
-            $differenceHours = $actualHours - $expectedHours;
+                $delayDays = $plannedTime->diffInDays($now);
 
-            // Convert to days (rounded)
-            $adjustmentDays += round($differenceHours / 24);
+                $maxDelayDays = max($maxDelayDays, $delayDays);
+            }
         }
 
-        return Carbon::parse($orderExpectedDate)
-            ->addDays($adjustmentDays)
-            ->format('Y-m-d');
+        return Carbon::parse($row->stage_id_12)
+            ->addDays($maxDelayDays)
+            ->format('d M Y h:i A');
     }
 
 

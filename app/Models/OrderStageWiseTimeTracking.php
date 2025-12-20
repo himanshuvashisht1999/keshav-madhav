@@ -16,6 +16,7 @@ class OrderStageWiseTimeTracking extends Model
         'project_id',
         'sku',
         'lot_no',
+        'production_slip_digitization_id',
         'stage_id_1',
         'stage_id_2',
         'stage_id_3',

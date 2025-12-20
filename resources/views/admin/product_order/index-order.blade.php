@@ -23,14 +23,14 @@
         <div class="container-fluid">
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default ">
-                <!-- <div class="row" >
+                <div class="row" >
                     <div class="col-9 card-header">
-                        <h3 class="card-title">Manage Production Order</h3>
+                        <!-- <h3 class="card-title">Manage Production Order</h3> -->
                     </div>
                     <div class="col-3 card-header">
                         <a href="{{route('admin.sales_order.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Sales Order</a>
                     </div>
-                </div> -->
+                </div>
                 
                 <div class="card-body table-responsive">
                 <table id="customers" class="table table-bordered table-hover">

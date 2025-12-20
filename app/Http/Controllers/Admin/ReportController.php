@@ -62,13 +62,9 @@ class ReportController extends Controller
     {
         $lot_no = $request->lot_no;
 
-        $tracking = $this->service->lotTrackingDetails($request);
+        $data = $this->service->lotTrackingDetails($request);
 
-        $currentStage = $tracking->last();
-        return response()->json([
-            'current_stage' => $currentStage?->stage_name,
-            'data' => $tracking
-        ]);
+        return response()->json($data);
     }
 
 }

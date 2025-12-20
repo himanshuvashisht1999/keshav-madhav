@@ -900,14 +900,7 @@ class ProductOrderService {
         $design_id = $request->design_id;
         // $customer_id = $request->customer_id;
         $customer_id = 1;
-        $data = MasterSizeMeasurement::where('corporate_company_id',$customer_id)->where('design_number',$design_id)->where('status',1)->orderBy('id','asc')->get();
-        // $data = MasterSizeMeasurement::where('corporate_company_id', 1)
-        //     ->where('status', 1)
-        //     ->selectRaw('MIN(id) as id, name, no_of_pcs')
-        //     ->groupBy('name')
-        //     ->orderBy('name', 'asc')
-        //     ->get();
-        //     dd($data);
+        $data = MasterSizeMeasurement::where('design_number',$design_id)->where('status',1)->orderBy('id','asc')->get();
         $data_res = [];
         foreach($data as $size){
             $data_res[$size->id] = $size->name."&&".$size->no_of_pcs;
@@ -917,7 +910,8 @@ class ProductOrderService {
     function getCustomerDesign($request){
         // $customer_id = $request->customer_id;
         $customer_id = 1;
-        $data = MasterSizeMeasurement::where('corporate_company_id',$customer_id)->where('status',1)->orderBy('id','asc')->get();
+        // $data = MasterSizeMeasurement::where('corporate_company_id',$customer_id)->where('status',1)->orderBy('id','asc')->get();
+        $data = ProductionGoods::where('status',1)->orderBy('id','asc')->get();
         // dd($data);
         $data_res = [];
         foreach($data as $design){
