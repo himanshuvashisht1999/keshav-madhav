@@ -342,14 +342,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <p>Order Tracking</p>
                                 </a>
                             </li>
-                            <li class="nav-item">
+                            {{-- <li class="nav-item">
                                 <a href="{{ route('admin.report.dispatch-order') }}"
                                     class="{{ str_contains(strtolower($page_url), 'admin/report/dispatch-order')  ? 'nav-link active' : 'nav-link' }}"
                                     >
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Dispatch Order</p>
                                 </a>
-                            </li> 
+                            </li>  --}}
                         </ul>
                     </li>
                      {{-- <li class="{{ (str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/create-slips-production')) ? 'nav-item menu-open' : 'nav-item' }} ">

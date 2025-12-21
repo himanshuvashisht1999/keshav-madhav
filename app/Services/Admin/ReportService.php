@@ -453,16 +453,78 @@ class ReportService {
 
     public function dispatchOrder(Request $request)
     {
-        $lot_no = $request->lot_no;
+        $orders = OrderMain::with([
+                'customer:id,name,address',
+                'dispatchCartons.cartonsDetails:id,cartons_id,bar_code,set_quantity'
+            ])
+            ->when($request->filled('order_no'), function ($q) use ($request) {
+                $q->where('sku', 'like', '%' . $request->order_no . '%');
+            })
+            ->when($request->filled('customer_id'), function ($q) use ($request) {
+                $q->where('master_customer_id', $request->customer_id);
+            })
+            ->orderBy('id', 'desc')
+            ->get();
 
-        $cartons = OrderDispatchCarton::with([
-            'cartonsDetails:id,cartons_id,bar_code,set_quantity',
-            'orderMain:id,sku,master_customer_id,expected_delivery_date',
-            'orderMain.OrderProductSets:id,design_number,set_size,set_quantity,color_id',
-            'orderMain.OrderProductSets.colors:id,name',
-            'orderMain.OrderProductSets.sizeMeasurement'
-        ])->get();
-            dd($cartons);
+        $data = [];
+
+        foreach ($orders as $order) {
+
+            $total_cartons = 0;
+            $total_boxes = 0;
+            $cartons_data = [];
+
+            foreach ($order->dispatchCartons as $carton) {
+
+                $total_cartons++;
+                $cartons_data_details = []; // ✅ RESET HERE
+
+                foreach ($carton->cartonsDetails as $box) {
+                    $total_boxes += $box->set_quantity;
+
+                    $cartons_data_details[] = [
+                        'box_id'        => $box->id,
+                        'bar_code'      => $box->bar_code,
+                        'set_quantity'  => $box->set_quantity,
+                    ];
+                }
+
+                $cartons_data[] = [
+                    'carton_id' => $carton->id,
+                    'created_at'=> $carton->created_at ? $carton->created_at->format('d-m-Y h:i A') : null,
+                    'boxes'     => $cartons_data_details
+                ];
+            }
+
+            $data[] = [
+                'order_main_id' => $order->id,
+                'order_no'      => $order->sku,
+
+                'customer_id'   => optional($order->customer)->id,
+                'customer_name' => optional($order->customer)->name,
+                'address'       => optional($order->customer)->address,
+
+                'total_cartons' => $total_cartons,
+                'total_boxes'   => $total_boxes,
+                'cartons'       => $cartons_data
+            ];
+        }
+
+        // dd($data);
+        // $cartons = OrderDispatchCarton::with([
+        //     'cartonsDetails:id,cartons_id,bar_code,set_quantity',
+        //     'orderMain:id,sku,master_customer_id,expected_delivery_date',
+        //     'orderMain.OrderProductSets:id,design_number,set_size,set_quantity,color_id',
+        //     'orderMain.OrderProductSets.colors:id,name',
+        //     'orderMain.OrderProductSets.sizeMeasurement'
+        // ])->get();
+
+        // $cartons = OrderDispatchCarton::with([
+        //     'cartonsDetails:id,cartons_id,bar_code,set_quantity'
+        // ])->get();
+
+        // $cartonsArray = $cartons->toArray();
+        //     dd($cartonsArray);
         return $data;
     }
 
