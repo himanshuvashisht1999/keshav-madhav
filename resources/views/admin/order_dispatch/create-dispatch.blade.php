@@ -6,7 +6,7 @@
     {{-- HEADER --}}
     <section class="content-header">
         <div class="container-fluid text-center">
-            <h1 class="mb-3">Order Dispatch</h1>
+            <h1 class="mb-3">Packing in Carton</h1>
             <hr>
         </div>
     </section>
@@ -68,7 +68,21 @@
                     <div id="div_order_dispatch" class="row d-none">
 
                         {{-- LEFT --}}
-                        <div class="col-md-7">
+                        <div class="col-md-12 d-none" id="image_view">
+                            <div class="card p-3 border text-center">
+                                <img id="previewImg" class="w-100"
+                                    style="border-radius:6px; display:none;">
+                            </div>
+                        </div>
+                        <div class="col-md-12 text-right mb-2 d-none" id="docToggleWrapper">
+                            <button type="button"
+                                    id="toggleDocumentBtn"
+                                    class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye mr-1"></i> Show Document
+                            </button>
+                        </div>
+
+                        <div class="col-md-12">
 
                             <table class="table table-bordered table-hover">
                                 <thead>
@@ -135,12 +149,12 @@
                         </div>
 
                         {{-- RIGHT : IMAGE / PDF --}}
-                        <div class="col-md-5">
+                        {{-- <div class="col-md-5">
                             <div class="card p-3 border text-center">
                                 <img id="previewImg" class="w-100"
                                      style="border-radius:6px; display:none;">
                             </div>
-                        </div>
+                        </div> --}}
                     </div>
 
                     {{-- PACKED CARTONS --}}
@@ -194,6 +208,8 @@
 
 {{-- JS --}}
 <script>
+    let isDocVisible = false;
+    let hasDocument = false;
 $(function () {
     $('form').on('submit', function (e) {
 
@@ -258,6 +274,7 @@ $(function () {
 
         if (customer_id === ""){
             $('#div_order_dispatch').addClass('d-none');
+            resetDocumentUI();
             return;
         }
         $.get("{{ route('admin.order_dispatch.getCustomerOrders') }}",
@@ -449,25 +466,65 @@ $(function () {
         });
     }
 
-    function showOrderFile(file){
-        $('#previewImg').hide().attr('src','');
-        $('#previewPDF').remove();
+    function showOrderFile(file) {
 
-        if (file) {
-            let path = '/assets/products/' + file;
-            let ext = file.split('.').pop().toLowerCase();
-            if (['jpg','jpeg','png','webp'].includes(ext)) {
-                $('#previewImg').attr('src',path).show();
-            } else if (ext === 'pdf') {
-                $('#previewImg').after(`
-                    <embed id="previewPDF" src="${path}"
-                           type="application/pdf"
-                           width="100%" height="550px">
-                `);
-            }
+        resetDocumentUI();
+
+        if (!file) {
+            return; // no file = no button, no preview
+        }
+
+        hasDocument = true;
+        $('#docToggleWrapper').removeClass('d-none'); // show button
+
+        let path = '/assets/products/' + file;
+        let ext = file.split('.').pop().toLowerCase();
+
+        if (['jpg','jpeg','png','webp'].includes(ext)) {
+            $('#previewImg').attr('src', path).show();
+        } 
+        else if (ext === 'pdf') {
+            $('#previewImg').hide();
+            $('#image_view .card').append(`
+                <embed id="previewPDF"
+                    src="${path}"
+                    type="application/pdf"
+                    width="100%"
+                    height="550px">
+            `);
         }
     }
 
+
 });
+
+$('#toggleDocumentBtn').on('click', function () {
+
+    if (!hasDocument) return;
+
+    if (isDocVisible) {
+        $('#image_view').slideUp(200).addClass('d-none');
+        $(this).html('<i class="fas fa-eye mr-1"></i> Show Document');
+    } else {
+        $('#image_view').removeClass('d-none').slideDown(200);
+        $(this).html('<i class="fas fa-eye-slash mr-1"></i> Hide Document');
+    }
+
+    isDocVisible = !isDocVisible;
+});
+function resetDocumentUI() {
+
+    isDocVisible = false;
+    hasDocument = false;
+
+    $('#image_view').addClass('d-none').hide();
+    $('#previewImg').hide().attr('src', '');
+    $('#previewPDF').remove();
+
+    $('#docToggleWrapper').addClass('d-none');
+    $('#toggleDocumentBtn')
+        .html('<i class="fas fa-eye mr-1"></i> Show Document');
+}
+
 </script>
 @endsection

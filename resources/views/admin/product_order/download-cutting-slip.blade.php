@@ -167,11 +167,11 @@
 <table class="info">
     <tr>
         <td class="label">Cutting Master</td>
-        <td>{{ $cuttingData[0]['cuttingMaster'] ?? '' }}</td>
+        <td>{{ $cuttingMaster['cuttingMaster'] ?? '' }}</td>
     </tr>
     <tr>
         <td class="label">Address</td>
-        <td>{{ $cuttingData[0]['cutting_master_address'] ?? '' }}</td>
+        <td>{{ $cuttingMaster['cutting_master_address'] ?? '' }}</td>
     </tr>
 </table>
 
@@ -215,10 +215,10 @@
 </table>
 
 <!-- REMARKS -->
-@if(!empty($cuttingData[0]['remarks']))
+@if(!empty($cuttingMaster['remarks']))
 <div class="section-title">Remarks</div>
 <div class="">
-    {{ $cuttingData[0]['remarks'] }}
+    {{ $cuttingMaster['remarks'] }}
 </div>
 @endif
 

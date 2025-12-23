@@ -4,6 +4,7 @@ namespace App\Services\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Auth;
+use App\Models\CartonPackingSession;
 use App\Models\OrderDispatchCarton;
 use App\Models\OrderDispatchCartonsDetails;
 use App\Models\OrderProductSet;
@@ -11,7 +12,7 @@ use App\Models\OrderMain;
 use PDF;
 
 
-use App\Http\DataTable\Admin\OrderDigitalizationDataTable as DataTable;
+use App\Http\DataTable\Admin\OrderDispatchDataTable as DataTable;
 use Illuminate\Support\Facades\DB;
 
 class OrderDispatchService {
@@ -31,14 +32,30 @@ class OrderDispatchService {
         DB::beginTransaction();
         try {
         //    dd($request->all());
+            $sessionCarton = new CartonPackingSession();
+            $sessionCarton->customer_id   = $request->final_customer_id;
+            $sessionCarton->main_order_id = $request->final_order_no;
+            $sessionCarton->total_quantity = count($request->cartons);
+            $sessionCarton->status        = 1;
+            $sessionCarton->save();
+            $sessionCarton->carton_packing_session_no =
+                    date('d/m/Y') . '/' .
+                    $request->final_customer_id . '/' .
+                    $request->final_order_no . '/' .
+                    $sessionCarton->id;
+
+            $sessionCarton->save();
+
             foreach ($request->cartons as $carton) {
 
                 // ✅ 1️⃣ Create ONE carton
-                $dispatchCarton = new OrderDispatchCarton;
+                
+                $dispatchCarton = new OrderDispatchCarton();
+                $dispatchCarton->carton_packing_session_id   = $sessionCarton->id;
                 $dispatchCarton->customer_id   = $request->final_customer_id;
                 $dispatchCarton->main_order_id = $request->final_order_no;
                 $dispatchCarton->status        = 1;
-                $dispatchCarton->save();
+                $dispatchCarton->save(); //
 
                 // ✅ 2️⃣ Carton details
                 foreach ($carton as $carton_data) {
@@ -53,28 +70,28 @@ class OrderDispatchService {
                     $detail->status       = 1;
                     $detail->save();
 
-                    // Step 1: barcode ke base par product dhundo
+                    // Step 2: agar barcode se nahi mila
                     $setData = OrderProductSet::where('bar_code', $raw['barcode'])
+                        ->where('remain_set_quantity', '>', 0)   // 🔑 IMPORTANT
                         ->lockForUpdate()
                         ->first();
 
-                    // Step 2: agar barcode se nahi mila
                     if (!$setData) {
 
-                        // Step 2A: koi aisa product dhundo jiska barcode NULL / empty ho
+                        // NULL barcode wala available product lo
                         $setData = OrderProductSet::whereNull('bar_code')
+                            ->where('remain_set_quantity', '>', 0) // 🔑 IMPORTANT
                             ->lockForUpdate()
                             ->first();
 
                         if (!$setData) {
-                            throw new \Exception('Invalid barcode: ' . $raw['barcode']);
+                            throw new \Exception('Invalid or exhausted barcode: ' . $raw['barcode']);
                         }
 
-                        // ✅ Step 2B: barcode INSERT karo (sirf yahin)
+                        // barcode assign karo
                         $setData->bar_code = $raw['barcode'];
                         $setData->save();
                     }
-
                     // Step 3: quantity validation
                     if ($setData->remain_set_quantity < $raw['qty']) {
                         throw new \Exception(
@@ -94,6 +111,7 @@ class OrderDispatchService {
             DB::commit();
 
             return [
+                'id' => $sessionCarton->id,
                 'status_code' => 1,
                 'message' => 'Carton successfully Packed.'
             ];
@@ -107,6 +125,134 @@ class OrderDispatchService {
             return $return_data;
         }
     }
+
+    public function view(Request $request){
+
+        
+        $cartons_session = CartonPackingSession::with([
+            'orderMain.customer',
+            'orderMain.OrderProductSets.colors',
+            'orderMain.OrderProductSets.sizeMeasurement'
+        ])->where('id',$request->id)->first()->toArray();
+        if($cartons_session){
+            $cartons_session_data = [
+                'id' =>  $cartons_session['id'],
+                'carton_packing_session_no' =>  $cartons_session['carton_packing_session_no'],
+                'order_no' => $cartons_session['order_main']['sku'] ?? '',
+                'customer' => $cartons_session['order_main']['customer']['name'] ?? '',
+            ];
+        }
+
+        $cartons_data = OrderDispatchCarton::with([
+            'cartonsDetails',
+            'orderMain.OrderProductSets.colors',
+            'orderMain.OrderProductSets.sizeMeasurement'
+        ])->where('carton_packing_session_id',$request->id)->get()->toArray();
+        // dd($cartons_data);
+        $total_boxes_session = 0;
+        $cartonsDetails = []; 
+        foreach($cartons_data as $carton){
+            $total_boxes = 0;
+            $car_data = [];
+            foreach($carton['cartons_details'] as $val){
+                foreach($carton['order_main']['order_product_sets'] as $order_product_sets){
+                    if($val['bar_code'] == $order_product_sets['bar_code']){
+                        $car_data[$val['bar_code']] = [
+                            'bar_code'      => $order_product_sets['bar_code'],
+                            'design_number' => $order_product_sets['design_number'],
+                            'set_size'      => $order_product_sets['set_size'],
+                            'color'      => $order_product_sets['colors']['name'],
+                            'no_of_pcs'     => $order_product_sets['no_of_pcs'],
+                            'set_quantity'  => $val['set_quantity'],
+                        ];
+                    }
+                }
+                $total_boxes += $val['set_quantity'];
+                $total_boxes_session += $val['set_quantity'];
+            } 
+            
+            $cartonsDetails[$carton['id']] = [
+                'id' => $carton['id'],
+                'total_boxes' => $total_boxes,
+                'car_data' => $car_data,
+            ];
+        }
+        $cartons_session_data['total_cartons'] = count($cartons_data);
+        $cartons_session_data['total_boxes_session'] = $total_boxes_session;   
+        $data = [
+            'cartons_session_data' => $cartons_session_data,
+            'cartonsDetails' => $cartonsDetails,
+        ];
+        // dd($data);
+        return $data;
+    }
+
+    public function indexList(Request $request){
+        return $this->datatable->indexList($request);
+    }
+    
+    // public function packingDispatchOrder()
+    // {
+    //     $orders = OrderMain::with([
+    //             'customer:id,name,address',
+    //             'dispatchCartons.cartonsDetails:id,cartons_id,bar_code,set_quantity'
+    //         ])
+    //         ->when($request->filled('order_no'), function ($q) use ($request) {
+    //             $q->where('sku', 'like', '%' . $request->order_no . '%');
+    //         })
+    //         ->when($request->filled('customer_id'), function ($q) use ($request) {
+    //             $q->where('master_customer_id', $request->customer_id);
+    //         })
+    //         ->orderBy('id', 'desc')
+    //         ->get();
+
+    //     $data = [];
+
+    //     foreach ($orders as $order) {
+
+    //         $total_cartons = 0;
+    //         $total_boxes = 0;
+    //         $cartons_data = [];
+
+    //         foreach ($order->dispatchCartons as $carton) {
+
+    //             $total_cartons++;
+    //             $cartons_data_details = []; // ✅ RESET HERE
+
+    //             foreach ($carton->cartonsDetails as $box) {
+    //                 $total_boxes += $box->set_quantity;
+
+    //                 $cartons_data_details[] = [
+    //                     'box_id'        => $box->id,
+    //                     'bar_code'      => $box->bar_code,
+    //                     'set_quantity'  => $box->set_quantity,
+    //                 ];
+    //             }
+
+    //             $cartons_data[] = [
+    //                 'carton_id' => $carton->id,
+    //                 'created_at'=> $carton->created_at ? $carton->created_at->format('d-m-Y h:i A') : null,
+    //                 'boxes'     => $cartons_data_details
+    //             ];
+    //         }
+
+    //         $data[] = [
+    //             'order_main_id' => $order->id,
+    //             'order_no'      => $order->sku,
+
+    //             'customer_id'   => optional($order->customer)->id,
+    //             'customer_name' => optional($order->customer)->name,
+    //             'address'       => optional($order->customer)->address,
+
+    //             'total_cartons' => $total_cartons,
+    //             'total_boxes'   => $total_boxes,
+    //             'cartons'       => $cartons_data
+    //         ];
+    //     }
+
+    //     dd($data);
+    //     return $data;
+    // }
 
     function getCustomerOrders($request){
         $customer_id = $request->customer_id;
@@ -191,6 +337,13 @@ class OrderDispatchService {
                 'order_name'            => $val['order_main']['sku'] ?? '',
             ];
         }
+        return $data;
+    }
+    function getOrders(){
+        $data = OrderMain::where('status', 1)
+            ->orderBy('sku', 'asc')
+            ->get();
+        
         return $data;
     }
 }

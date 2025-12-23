@@ -25,15 +25,25 @@ class OrderDispatchController extends Controller {
     public function store(Request $request){
         $data = $this->service->store($request);
         if($data['status_code'] == 1){
-            return redirect()->route('admin.order_dispatch.create-dispatch')->withSuccess($data['message']);
+            return redirect()->route('admin.order_dispatch.view',['id' => $data['id']])->withSuccess($data['message']);
         }else{
             return redirect()->back()->withError($data['message']);
         }
         // return view('admin.order_dispatch.create-dispatch');
     } 
-
+    public function index(Request $request){
+        $response['customers'] = $this->productOrderService->customers();
+        $response['orders'] = $this->service->getOrders();
+        // dd($response['orders']);
+        return view('admin.order_dispatch.index',$response);
+    }
     public function indexList(Request $request){
         return $this->service->indexList($request);
+    }
+
+    public function view(Request $request){
+        $response['data'] = $this->service->view($request);
+        return view('admin.order_dispatch.view',$response);
     }
     public function getCustomerOrders(Request $request){
         $response['data'] = $this->service->getCustomerOrders($request);

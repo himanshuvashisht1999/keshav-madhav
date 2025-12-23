@@ -255,9 +255,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
         });
 
         Route::prefix('/order_dispatch')->name('order_dispatch.')->group(function () {
-            Route::get('/index-slip-production',[AdminOrderDispatchController::class,'index_slip_production'])->name('index-slip-production');
+            Route::get('/index',[AdminOrderDispatchController::class,'index'])->name('index');
             Route::get('/indexList',[AdminOrderDispatchController::class,'indexList'])->name('indexList');
             Route::get('/create-dispatch',[AdminOrderDispatchController::class,'createDispatch'])->name('create-dispatch');
+             Route::get('/view',[AdminOrderDispatchController::class,'view'])->name('view');
             Route::post('/store',[AdminOrderDispatchController::class,'store'])->name('store');
             Route::get('/getCustomerOrders',[AdminOrderDispatchController::class,'getCustomerOrders'])->name('getCustomerOrders');
             Route::get('/getCustomersBybarcode',[AdminOrderDispatchController::class,'getCustomersBybarcode'])->name('getCustomersBybarcode');
