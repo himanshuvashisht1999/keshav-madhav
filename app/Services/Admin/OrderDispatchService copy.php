@@ -51,6 +51,7 @@ class OrderDispatchService {
         }
     }
 
+    
     function getCustomerOrders($request){
         $customer_id = $request->customer_id;
         $results = OrderMain::where('master_customer_id',$customer_id)->where('status',1)->orderBy('id','asc')->get()->toArray();

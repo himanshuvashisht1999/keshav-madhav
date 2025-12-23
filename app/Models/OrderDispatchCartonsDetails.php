@@ -26,5 +26,14 @@ class OrderDispatchCartonsDetails extends Model
         'updated_at'
     ];
 
+    public function colors()
+    {
+        return $this->hasOne(MasterColor::class, 'id', 'color_id');
+    }
+
+    public function sizeMeasurement()
+    {
+        return $this->hasOne(MasterSizeMeasurement::class, 'id', 'set_size_id');
+    }
     
 }

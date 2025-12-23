@@ -3,19 +3,57 @@ namespace App\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\PackingService as Service;
+use App\Services\Admin\ProductOrderService;
 use Illuminate\Support\Facades\Crypt;
 use Auth;
 
 class PackingController extends Controller { 
     protected $service;
-    public function __construct(Service $service) {
+    public function __construct(Service $service, ProductOrderService $ProductOrderService) {
         $this->service = $service;
-
+        $this->productOrderService = $ProductOrderService;
     }
-    public function index(Request $request){
-        $response['lot_numbers'] = $this->service->lot_numbers();
-        dd($response['lot_numbers']);
-        return view('admin.packing.index',$response);
+    public function createDispatch(Request $request){
+        $response['customers'] = $this->productOrderService->customers();
+        // $response['order_main_id'] = $request->id ?? 0;
+        // // $response['order_main'] = $this->productOrderService->orderMainDetails($request);
+        return view('admin.carton_packing.create-packing', $response);
     } 
+    public function store(Request $request){
+        $data = $this->service->store($request);
+        if($data['status_code'] == 1){
+            return redirect()->route('admin.carton_packing.view',['id' => $data['id']])->withSuccess($data['message']);
+        }else{
+            return redirect()->back()->withError($data['message']);
+        }
+        // return view('admin.carton_packing.create-packing');
+    } 
+    public function index(Request $request){
+        $response['customers'] = $this->productOrderService->customers();
+        $response['orders'] = $this->service->getOrders();
+        // dd($response['orders']);
+        return view('admin.carton_packing.index',$response);
+    }
+    public function indexList(Request $request){
+        return $this->service->indexList($request);
+    }
 
+    public function view(Request $request){
+        $response['data'] = $this->service->view($request);
+        return view('admin.carton_packing.view',$response);
+    }
+    public function getCustomerOrders(Request $request){
+        $response['data'] = $this->service->getCustomerOrders($request);
+        return response()->json($response);
+    }
+    public function getCustomersBybarcode(Request $request){
+        $response['data'] = $this->service->getCustomersBybarcode($request);
+        return response()->json($response);
+    }
+    public function getOrdersDetails(Request $request){
+        $response['data'] = $this->service->getOrdersDetails($request);
+        return response()->json($response);
+    }
+    
+ 
 }

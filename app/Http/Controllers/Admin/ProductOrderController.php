@@ -197,12 +197,14 @@ class ProductOrderController extends Controller {
         ])->where('order_main_id', $request->id)
         ->get();
             // dd($results);
-        $master_name = '';
+        $master_name = $address = $remarks = '';
         $cuttingData = [];
         foreach($results as $res1){
             $color_data = MasterColor::where('id', $res1->productSet->color_id,)
                 ->first();
             $master_name = $res1->cuttingMaster->cutting_master_name;
+            $address = $res1->cuttingMaster->address ?? '';
+            $remarks = $res1->remarks ?? '';
             $sizes = [$res1->productSet->set_size];
             if (!empty($res1->productSet->sizeMeasurement->size_group)) {
                 $sizes = explode(',', $res1->productSet->sizeMeasurement->size_group);
@@ -215,10 +217,10 @@ class ProductOrderController extends Controller {
                     if (!isset($cuttingData[$key])) {
                         $cuttingData[$key] = [
                             'product_name' => $res1->sku,
-                            'remarks'  => $res1->remarks,
+                            'remarks'  => $remarks,
                             'design_number' => $res1->productSet->design_number,
                             'cuttingMaster' => $master_name,
-                            'cutting_master_address' => $res1->cuttingMaster->address ?? '',
+                            'cutting_master_address' => $address,
                             'colour' => $color_data->name,
                             'set_size' => trim($size),
                             'no_of_pcs' => $res1->productSet->no_of_pcs,
@@ -238,9 +240,14 @@ class ProductOrderController extends Controller {
         $data = [
             'mainOrder' => $mainOrder,
             'cuttingData' => $cuttingData,
-            'till_allowed_time' => $till_allowed_time
+            'till_allowed_time' => $till_allowed_time,
+            'cuttingMaster' => [
+                'cuttingMaster' => $master_name,
+                'cutting_master_address' => $address,
+                'remarks' => $remarks
+            ],
         ];
-        // dd($data);
+        
         $pdf = PDF::loadView('admin.product_order.download-cutting-slip', $data);
 
         return $pdf->download('Cutting_Slip_'. $res->id .'-'. $master_name .'.pdf');
