@@ -101,6 +101,12 @@
                         Reset
                     </a>
                 </div>
+                <div class="col-md-2">
+                    <a href="{{ route('admin.report.purchase_order.export', request()->query()) }}"
+                    class="btn btn-secondary w-100">
+                        <i class="fas fa-file-excel"></i> Export
+                    </a>
+                </div>
 
             </div>
         </form>

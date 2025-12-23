@@ -162,6 +162,7 @@ class PurchaseOrderService {
             $fabric_meter = $bom->meter ?? 2;
             $fabric_image = $bom && $bom->fabric ? $bom->fabric->image : null;
             $fabric_id = $bom && $bom->fabric ? $bom->fabric->id : null;
+            $fabric_name = $bom && $bom->fabric ? $bom->fabric->name : null;
             $vendor_id = $bom && $bom->fabric ? $bom->fabric->vendor_id : null;
 
             $data[] = [
@@ -174,6 +175,7 @@ class PurchaseOrderService {
                 'fabric_image'    => $fabric_image,
                 'vendor_id'    => $vendor_id,
                 'fabric_id'    => $fabric_id,
+                'fabric_name'    => $fabric_name,
             ];
         }
         return $data;

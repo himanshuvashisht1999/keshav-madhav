@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\FabricReceiptDetail;
 use App\Services\Admin\{
     ReportService as Service
 };
+
 
 class ReportController extends Controller
 {
@@ -22,6 +24,22 @@ class ReportController extends Controller
         $response['data'] = $this->service->salesOrder($request);
         return view('admin.report.sales_order',$response);
     }
+    public function salesOrderExport(Request $request)
+    {
+        // SAME data as screen
+        $data = $this->service->salesOrder($request);
+
+        return response()
+            ->view('admin.report.sales_order_export', [
+                'data' => $data,
+                'exportedAt' => now()
+            ])
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header(
+                'Content-Disposition',
+                'attachment; filename="sales-order-report-' . now()->format('d-m-Y_H-i') . '.xls"'
+            );
+    }
     public function stock(Request $request)
     {
         $response['data'] = $this->service->stock($request);
@@ -36,6 +54,40 @@ class ReportController extends Controller
             $request->fabric_sku,
             $request->warehouse_id
         );
+    } 
+    public function stockExport(Request $request)
+    {
+        // Same summary data as stock page
+        $data = $this->service->stock($request);
+
+        // Get ALL roll data for same filters
+        $rolls = FabricReceiptDetail::query()
+            ->where('remaining_quantity', '>', 0)
+            ->when($request->filled('warehouse_id'), function ($q) use ($request) {
+                $q->where('master_fabric_warehouse_id', $request->warehouse_id);
+            })
+            ->when($request->filled('fabric_sku'), function ($q) use ($request) {
+                $q->where('fabric_sku', $request->fabric_sku);
+            })
+            ->orderBy('fabric_sku')
+            ->orderBy('master_fabric_warehouse_id')
+            ->orderBy('roll_number')
+            ->get()
+            ->groupBy(function ($row) {
+                return $row->fabric_sku . '_' . $row->master_fabric_warehouse_id;
+            });
+
+        return response()
+            ->view('admin.report.stock_export', [
+                'data' => $data,
+                'rolls' => $rolls,
+                'exportedAt' => now()
+            ])
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header(
+                'Content-Disposition',
+                'attachment; filename="fabric-stock-report-' . now()->format('d-m-Y_H-i') . '.xls"'
+            );
     }
 
     public function purchaseOrder(Request $request)
@@ -51,6 +103,34 @@ class ReportController extends Controller
             $request->purchase_order_item_id
         );
     }
+    public function purchaseOrderExport(Request $request)
+    {
+        // Same filtered purchase orders
+        $orders = $this->service->purchaseOrder($request);
+
+        // Get ALL receipt (modal) data for these PO items
+        $receipts = FabricReceiptDetail::with('master_fabric_warehouse')
+            ->whereIn(
+                'purchase_order_item_id',
+                $orders->pluck('items')->flatten()->pluck('id')
+            )
+            ->where('status', 2)
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy('purchase_order_item_id');
+
+        return response()
+            ->view('admin.report.purchase_order_export', [
+                'orders' => $orders,
+                'receipts' => $receipts,
+                'exportedAt' => now()
+            ])
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header(
+                'Content-Disposition',
+                'attachment; filename="purchase-order-report-' . now()->format('d-m-Y_H-i') . '.xls"'
+            );
+    }
 
     public function orderTrackingSystem(Request $request)
     {
@@ -65,6 +145,22 @@ class ReportController extends Controller
         $data = $this->service->lotTrackingDetails($request);
 
         return response()->json($data);
+    }
+    public function orderTrackingExport(Request $request)
+    {
+        // SAME DATA as screen
+        $data = $this->service->orderTrackingSystem($request);
+
+        return response()
+            ->view('admin.report.order_tracking_export', [
+                'data' => $data,
+                'exportedAt' => now()
+            ])
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header(
+                'Content-Disposition',
+                'attachment; filename="order-tracking-report-' . now()->format('d-m-Y_H-i') . '.xls"'
+            );
     }
 
     public function dispatchOrder(Request $request)

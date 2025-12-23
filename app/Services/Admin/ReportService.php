@@ -131,7 +131,7 @@ class ReportService {
 
 
     public function stock(Request $request)
-    {
+    { 
         $query = FabricReceiptDetail::query()
             ->selectRaw('
                 fabric_sku,
@@ -166,19 +166,75 @@ class ReportService {
 
 
 
+    // public function fabricRollDetails($fabricSku, $warehouseId)
+    // {
+    //     return FabricReceiptDetail::where('fabric_sku', $fabricSku)
+    //         ->where('master_fabric_warehouse_id', $warehouseId)
+    //         ->where('remaining_quantity', '>', 0)
+    //         ->orderBy('roll_number')
+    //         ->get([
+    //             'roll_number',
+    //             'remaining_quantity',
+    //             'qrcode_number',
+    //             'barcode',      // accessor gives full image URL
+    //             'qrcode'        // accessor gives full image URL
+    //         ]);
+    // }
+
     public function fabricRollDetails($fabricSku, $warehouseId)
     {
-        return FabricReceiptDetail::where('fabric_sku', $fabricSku)
+        return FabricReceiptDetail::with([
+                'fabric_receipt',
+                'purchase_order'
+            ])
+            ->where('fabric_sku', $fabricSku)
             ->where('master_fabric_warehouse_id', $warehouseId)
             ->where('remaining_quantity', '>', 0)
+            ->orderBy('shipment_number')
             ->orderBy('roll_number')
-            ->get([
-                'roll_number',
-                'remaining_quantity',
-                'qrcode_number',
-                'barcode',      // accessor gives full image URL
-                'qrcode'        // accessor gives full image URL
-            ]);
+            ->get()
+            ->groupBy('shipment_number')
+            ->map(function ($rows, $shipmentNo) {
+
+                $first = $rows->first();
+
+                return [
+                    'shipment_number' => $shipmentNo,
+                    'po_number'       => $first->purchase_order?->sku ?? '-', // ✅ PO number
+                    'batch_no'        => $first->batch_no,
+                    'receipt_date'    => optional($first->fabric_receipt)->created_at?->format('d M Y'),
+                    'rolls' => $rows->map(function ($r) {
+                        return [
+                            'roll_number'        => $r->roll_number,
+                            'remaining_quantity' => $r->remaining_quantity,
+                            'qrcode_number'      => $r->qrcode_number,
+                        ];
+                    })->values()
+                ];
+            })->values();
+    }
+
+
+    public function stockRollDetailsByFilter(Request $request)
+    {
+        $query = FabricReceiptDetail::query()
+            ->where('remaining_quantity', '>', 0);
+
+        if ($request->filled('warehouse_id')) {
+            $query->where('master_fabric_warehouse_id', $request->warehouse_id);
+        }
+
+        if ($request->filled('fabric_sku')) {
+            $query->where('fabric_sku', $request->fabric_sku);
+        }
+
+        return $query
+            ->orderBy('fabric_sku')
+            ->orderBy('roll_number')
+            ->get()
+            ->groupBy(fn ($row) =>
+                $row->fabric_sku . '_' . $row->master_fabric_warehouse_id
+            );
     }
 
 
@@ -392,8 +448,11 @@ class ReportService {
             return $data;
         }
 
+        $stage_numeric_array = [3,2,1,4,5,6,7,8,9,10,11,12];
+
         $data = [];
-        for ($i = 1; $i <= 12; $i++) {
+        // for ($i = 1; $i <= 12; $i++) {
+        foreach ($stage_numeric_array as $i) {
             $col = 'stage_id_' . $i;
             if (!empty($row->$col)) {
                 $stage_name = MasterProductStage::where('id', $i)->value('name');

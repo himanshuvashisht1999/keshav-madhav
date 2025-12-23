@@ -103,10 +103,18 @@
                value="{{ request('date_to') }}">
     </div>
 
-    <div class="col-md-2">
-        <button class="btn btn-primary w-100">
-            <i class="fas fa-filter"></i> Apply
+    <div class="col-md-1">
+        <button class="btn btn-primary">
+            <!-- <i class="fas fa-filter"></i> -->
+            Filter
         </button>
+    </div>
+    <div class="col-md-1">
+        <a href="{{ route('admin.report.sales-order.export', request()->query()) }}"
+        class="btn btn-secondary">
+            <!-- <i class="fas fa-file-excel"></i> -->
+            Export
+        </a>
     </div>
 
 </div>
