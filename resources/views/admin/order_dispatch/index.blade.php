@@ -6,17 +6,8 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12">
-                    <h1 class="text-center">Production Slip Digitalization</h1>
+                    <h1 class="text-center">List Of Carton Packing</h1>
                 </div>
-                {{-- <div class="col-sm-12">
-                    <h4 class="text-center">Order ID - ({{$order_main->sku}})</h4>
-                </div> --}}
-                {{-- <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Production Order</li>
-                    </ol>
-                </div> --}}
             </div>
         </div>
     </section>
@@ -26,7 +17,14 @@
         <div class="container-fluid">
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default ">
-                
+                <div class="row" >
+                    <div class="col-9 card-header">
+                        <!-- <h3 class="card-title">Manage Production Order</h3> -->
+                    </div>
+                    <div class="col-3 card-header">
+                        <a href="{{route('admin.order_dispatch.create-dispatch')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Packing in Carton</a>
+                    </div>
+                </div>
                 
                 <div class="card-body table-responsive">
                 <table id="customers" class="table table-bordered table-hover">
@@ -36,31 +34,43 @@
                             {{-- <input type="hidden" class="form-control" name="id" id="id" value="{{$order_main->id}}" autocomplete="off"> --}}
                         </td>
                         <td>
-                            
+                            <input type="text" class="form-control" name="carton_packing_session_no" id="carton_packing_session_no" autocomplete="off"> 
                         </td>
                         <td>
-                            
+                            <select name="main_order_id" id="main_order_id" class="form-control select2" style="width: 100%;">
+                                <option value="">All</option>
+                                @foreach($orders as $order)
+                                <option value="{{$order->id}}">{{$order->sku}}</option>
+                                @endforeach
+                            </select>
                         </td>
                         <td>
-                            
+                            <select name="master_customer_id" id="master_customer_id" class="form-control select2" style="width: 100%;">
+                                <option value="">All</option>
+                                @foreach($customers as $customer)
+                                <option value="{{$customer->id}}">{{$customer->name}}</option>
+                                @endforeach
+                            </select>
                         </td>
                                             
                         <td>
-                            <select id="status" class="form-control form-control-sm">
+                           
+                        </td>
+
+                        <td> <select id="status" class="form-control form-control-sm">
                                 <option value="">All</option>
                                 <option value="1">Not Issued</option>
                                 <option value="2">In Progress</option>
                                 <option value="3">Completed</option>
                             </select>
                         </td>
-
-                        <td></td>
                     </tr>
                     <tr>
                         <th>ID</th>
-                        <th>Date</th>
-                        <th>From Stage </th>
-                        <th>Slip Photo</th>
+                        <th>Carton Packing Session No</th>
+                        <th>Order No</th>
+                        <th>Customer Name</th>
+                        <th>Total Cartons</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -83,25 +93,6 @@
     </section>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="tableModal" tabindex="-1" role="dialog" aria-labelledby="tableModalLabel" aria-hidden="true">
-   <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <h4 class="modal-title" id="tableModalLabel"></h4>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span>&times;</span>
-        </button>
-      </div>
-      
-      <div class="modal-body" id="tableContainer">
-        <!-- Table will be injected here -->
-      </div>
-
-    </div>
-  </div>
-</div>
 
 <style >
     #hoverBox {
@@ -147,18 +138,22 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.order_digitalization.indexList') !!}',
+                url: '{!! route('admin.order_dispatch.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
+                    d.carton_packing_session_no = $('#carton_packing_session_no').val();
+                    d.main_order_id = $('#main_order_id').val();
+                    d.master_customer_id = $('#master_customer_id').val();
                     d.status = $('#status').val();
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'date', name: 'date'},
-                {data: 'from_stage', name: 'from_stage'},                
-                {data: 'slip_photo', name: 'slip_photo'},                
+                {data: 'carton_packing_session_no', name: 'carton_packing_session_no'},
+                {data: 'main_order_id', name: 'main_order_id'},                
+                {data: 'master_customer_id', name: 'master_customer_id'}, 
+                {data: 'total_cartons', name: 'total_cartons'},               
                 {data: 'status', name: 'status'},                
                 {data: 'action', name: 'action', searchable: false}
             ],
@@ -175,16 +170,17 @@
             e.preventDefault();
         });
 
-        $('#sku').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#product_sku').on('keyup', function (e) {
+        $('#carton_packing_session_no').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
 
-        $('#quantity').on('keyup', function (e) {
+        $('#main_order_id').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+
+        $('#master_customer_id').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });

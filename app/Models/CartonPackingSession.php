@@ -4,10 +4,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class OrderDispatchCarton extends Model
+class CartonPackingSession extends Model
 {
     use HasFactory;
-    protected $table= 'order_dispatch_cartons';
+    protected $table= 'carton_packing_session';
     protected $fillable = [
         'id',
         'sno',
@@ -15,7 +15,7 @@ class OrderDispatchCarton extends Model
         'sub_company_id',
         'project_id',
         'sku',
-        'carton_packing_session_id',
+        'carton_packing_session_no',
         'customer_id',
         'main_order_id',
         'carton_details_id',
@@ -34,8 +34,4 @@ class OrderDispatchCarton extends Model
         return $this->belongsTo(OrderMain::class, 'main_order_id', 'id' );
     }
 
-    public function cartonsSession()
-    {
-        return $this->belongsTo(CartonPackingSession::class, 'carton_packing_session_id', 'id' );
-    }
 }
