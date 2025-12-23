@@ -43,7 +43,7 @@ class LoginController extends Controller {
 
     public function uploadProductionSlip($encryptedId){
         $stageMasterUnitId = Crypt::decryptString($encryptedId);
-        $data = StageMasterUnit::findOrFail($stageMasterUnitId);
+        $response['data'] = StageMasterUnit::findOrFail($stageMasterUnitId);
         $response['stage_master_unit_id'] = $encryptedId;
         return view('admin.upload_production_slip',$response);
     }

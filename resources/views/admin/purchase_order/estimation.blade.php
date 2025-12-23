@@ -36,7 +36,8 @@
                                         data-fabric_image="{{ $single_data['fabric_image'] ?? '' }}"
                                         data-fabric_meter="{{ $single_data['fabric_meter'] ?? 1 }}"
                                         data-vendor_id="{{ $single_data['vendor_id'] ?? '' }}"
-                                        data-fabric_id="{{ $single_data['fabric_id'] ?? '' }}">
+                                        data-fabric_id="{{ $single_data['fabric_id'] ?? '' }}"
+                                        data-fabric_name="{{ $single_data['fabric_name'] ?? '' }}">
                                         {{ $single_data['design_number'] }} ({{ $single_data['name_of_garment'] }})
                                     </option>
                                 @endforeach
@@ -66,6 +67,11 @@
                                 <h5 style="font-weight:600; margin-bottom:8px;">Estimated Fabric</h5>
 
                                 <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
+                                    <div style="margin-bottom:8px;">
+                                        <!-- <div style="font-size:13px; color:#000000;">Fabric Name</div> -->
+                                        <div id="est-fabric-name" style="font-weight:700; font-size:15px;">-</div>
+                                        <div id="est-extra" style="margin-top:8px; font-size:12px; color:#000000;"></div>
+                                    </div>
                                     <div>
                                         <div style="font-size:13px; color:#000000;">Total quantity</div>
                                         <div id="est-total-qty" style="font-weight:700; font-size:16px;">0</div>
@@ -82,7 +88,7 @@
                                     </div>
                                 </div>
 
-                                <div id="est-extra" style="margin-top:8px; font-size:12px; color:#000000;"></div>
+                                <!-- <div id="est-extra" style="margin-top:8px; font-size:12px; color:#000000;"></div> -->
                             </div>
 
                         </div>
@@ -90,7 +96,7 @@
                         
                         <!-- Submit -->
                         <div class="col-12 text-end mt-3">
-                            <button type="submit" style="float:right;" class="btn btn-primary">Order Fabric</button>
+                            <button type="submit" style="float:right;" class="btn btn-primary">Go To Fabric Order</button>
                         </div>
                     </div>
 
@@ -146,6 +152,8 @@
             var vendorId     = $selected.attr('data-vendor_id') || '';
             var fabricId     = $selected.attr('data-fabric_id') || '';
             var qty          = parseFloat($('#quantity').val()) || 0;
+            var fabricName = $selected.attr('data-fabric_name') || '-';
+            $('#est-fabric-name').text(fabricName);
 
             $('#product-image').attr('src', productImg || '{{ asset("images/image-placeholder.png") }}');
             $('#fabric-image').attr('src', fabricImg || '{{ asset("images/image-placeholder.png") }}');

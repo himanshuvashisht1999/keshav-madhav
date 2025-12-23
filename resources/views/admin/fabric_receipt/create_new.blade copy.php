@@ -96,10 +96,6 @@
                             <label for="received_by">Received By</label>
                             <input type="text" name="received_by" id="received_by" class="form-control" placeholder="Enter received by">
                         </div>
-                        <div class="col-md-6">
-                            <label for="total_roll">Total Roll</label>
-                            <input type="number" name="total_roll" id="total_roll" class="form-control" placeholder="Enter total roll" value="1">
-                        </div>
                     </div>
 
                     <div class="flex-row mt-3">
@@ -521,78 +517,7 @@ $(document).ready(function() {
         ocrResultBox.insertAdjacentHTML('beforeend', `<div><strong>Parsed ${parsed.length} items.</strong></div>`);
     }
 
-    $('#total_roll').on('change keyup', function () {
-        let total = parseInt($(this).val()) || 1;
-        console.log('----',total);
-        if (total < 1) total = 1;
-
-        let currentRows = $('#fabric-body tr').length;
-
-        // ADD rows if needed
-        if (total > currentRows) {
-            let toAdd = total - currentRows;
-            for (let i = 0; i < toAdd; i++) {
-                addRow();
-            }
-        }
-
-        // REMOVE extra rows if needed (from bottom)
-        if (total < currentRows) {
-            let toRemove = currentRows - total;
-            for (let i = 0; i < toRemove; i++) {
-                $('#fabric-body tr:last').remove();
-                rowCount--;
-            }
-        }
-    });
-
-    $(document).on('change', '.fabric-sku', function () {
-        let currentRow = parseInt($(this).closest('tr').data('row'));
-        let selectedFabric = $(this).val();
-
-        $('#fabric-body tr').each(function () {
-            let row = parseInt($(this).data('row'));
-            if (row > currentRow) {
-                $(this).find('.fabric-sku')
-                    .val(selectedFabric)
-                    .trigger('change.select2');
-            }
-        });
-    });
-
-    $(document).on('input', '.meter', function () {
-        let currentRow = parseInt($(this).closest('tr').data('row'));
-        let meterVal = $(this).val();
-
-        $('#fabric-body tr').each(function () {
-            let row = parseInt($(this).data('row'));
-            if (row > currentRow) {
-                $(this).find('.meter').val(meterVal);
-            }
-        });
-    });
-
-    $(document).on('input', 'input[name^="rolls"][name$="[roll]"]', function () {
-        let currentRow = parseInt($(this).closest('tr').data('row'));
-        let startRoll = parseInt($(this).val());
-
-        if (isNaN(startRoll)) return;
-
-        let nextRoll = startRoll + 1;
-
-        $('#fabric-body tr').each(function () {
-            let row = parseInt($(this).data('row'));
-            if (row > currentRow) {
-                $(this).find('input[name^="rolls"][name$="[roll]"]').val(nextRoll);
-                nextRoll++;
-            }
-        });
-    });
-
-
 });
-
-
 </script>
 
 

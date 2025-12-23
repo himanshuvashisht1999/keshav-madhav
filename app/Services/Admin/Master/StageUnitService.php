@@ -24,7 +24,7 @@ class StageUnitService {
 
     public function stageUnit($master_fabric_warehouse_id){
 
-        $stages = MasterProductStage::whereIn('status',[1,2])->get();
+        $stages = MasterProductStage::whereIn('status',[1,2])->orderBy('sequence','asc')->get();
 
         $units = StageMasterUnit::where('master_fabric_warehouse_id', $master_fabric_warehouse_id)
                     ->get()

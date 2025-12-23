@@ -521,12 +521,16 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
         Route::prefix('/report')->name('report.')->group(function () {
             Route::get('/sales-order',[AdminReportController::class,'salesOrder'])->name('sales-order');
+            Route::get('/sales-order/export', [AdminReportController::class, 'salesOrderExport'])->name('sales-order.export');
             Route::get('/stock',[AdminReportController::class,'stock'])->name('stock');
             Route::get('/stock/roll-details', [AdminReportController::class, 'fabricRollDetails'])->name('stock.roll.details');
+            Route::get('/stock/export', [AdminReportController::class, 'stockExport'])->name('stock.export');
             Route::get('/purchase-order',[AdminReportController::class,'purchaseOrder'])->name('purchase_order');
             Route::get('/purchase-order/item-details',[AdminReportController::class, 'purchaseOrderItemDetails'])->name('purchase_order.item.details');
+            Route::get('/purchase-order/export', [AdminReportController::class, 'purchaseOrderExport'])->name('purchase_order.export');
             Route::get('/order-tracking-system',[AdminReportController::class,'orderTrackingSystem'])->name('orderTrackingSystem');
             Route::get('/order-lot-tracking',[AdminReportController::class,'lotTrackingDetails'])->name('lotTrackingDetails');
+            Route::get('/order-tracking/export', [AdminReportController::class, 'orderTrackingExport'])->name('orderTracking.export');
 
             Route::get('/dispatch-order',[AdminReportController::class,'dispatchOrder'])->name('dispatch-order');
 

@@ -105,12 +105,56 @@
             color: #000;
             display: none;
         }
+
+        .unit-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .unit-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .unit-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: #555;
+        }
+
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
+
+        <div class="unit-details">
+            <div class="unit-title">{{ $data->name }}</div>
+
+            <div class="unit-row">
+                <span>📞 Phone</span>
+                <strong>{{ $data->phone ?? '-' }}</strong>
+            </div>
+
+            <div class="unit-row">
+                <span>🧵 Stage</span>
+                <strong>{{ $data->masterStage->name ?? '-' }}</strong>
+            </div>
+
+            <div class="unit-row">
+                <span>🏭 Warehouse</span>
+                <strong>{{ $data->masterFabricWarehouse->cutting_master_name ?? '-' }}</strong>
+            </div>
+        </div>
+
 
         <h2>Take Photo & Upload</h2>
 
