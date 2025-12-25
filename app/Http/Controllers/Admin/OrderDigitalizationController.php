@@ -82,7 +82,7 @@ class OrderDigitalizationController extends Controller {
     public function storeTimeAllocation(Request $request){
         $data = $this->service->storeTimeAllocation($request);
         if($data['status_code'] == 1){
-            return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
+            return redirect()->back()->withSuccess($data['message']);
         }else{
             return redirect()->back()->withError($data['message']);
         }
@@ -90,7 +90,7 @@ class OrderDigitalizationController extends Controller {
     public function storeRollsAssign(Request $request){
         $data = $this->service->storeRollsAssign($request);
         if($data['status_code'] == 1){
-            return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
+            return redirect()->back()->withSuccess($data['message']);
         }else{
             return redirect()->back()->withError($data['message']);
         }
@@ -140,5 +140,19 @@ class OrderDigitalizationController extends Controller {
     public function getRollsData(Request $request){
         $response = $this->service->getRollsData($request);
         return response()->json($response);
+    }
+
+    public function cuttingMaster(){
+        $response['cutting_slip'] = $this->service->cutting_slip();
+        if($response['cutting_slip']){
+            //// time allot
+            $response['stages'] = $this->service->stages($response['cutting_slip']->getUnitMaster?->master_fabric_warehouse_id);
+
+            //// rolls assign
+            $response['master_fabric_warehouse'] = $this->service->master_fabric_warehouse($response['cutting_slip']->getUnitMaster?->master_fabric_warehouse_id);
+        }
+
+
+        return view('admin.order_digitalization.cutting_master',$response);
     }
 }

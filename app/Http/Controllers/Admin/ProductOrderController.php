@@ -14,6 +14,7 @@ use App\Models\OrderProductDetailStock;
 use App\Models\OrderCuttingStage;
 use App\Models\OrderMain;
 use App\Models\MasterColor;
+use App\Models\OrderProductSet;
 
 
 
@@ -45,6 +46,8 @@ class ProductOrderController extends Controller {
         $response['order_main'] = $this->service->orderMainDetails($request);
         $response['check_assign'] = $this->service->checkAssign($request);
         $response['cutting_units'] = $this->fabricReceiptService->cutting_units();
+        $response['fabrics'] = $this->fabricReceiptService->fabrics();
+        $response['fittings'] = $this->service->fittings();
         return view('admin.product_order.index-order-set', $response);
     } 
     public function indexListOrderSet(Request $request){
@@ -168,7 +171,82 @@ class ProductOrderController extends Controller {
     
     public function assign_to(Request $request){
         $response = $this->service->assign_to($request);
-        return redirect()->route('admin.product_order.indexOrderSet',['id' => $request->order_main_id])->withSuccess($response['message']);
+        if($response['status'] == true){
+            return redirect()->back()->with('success', $response['message']);
+        }else{
+            return redirect()->back()->withError($response['message']);
+        }
+        
+        
+    }
+
+    public function indexOrderSetDownload(Request $request)
+    {
+        $data = OrderProductSet::with([
+            'order_cutting_stage.cutting_master',
+            'order_cutting_stage.fabric',
+            'orderMain.customer',
+            'colors',
+            'sizeMeasurement',
+            'order_cutting_stage.master_fitting',
+        ])->where('id', $request->id)->firstOrFail();
+
+        // ==============================
+        // HEADER DATA
+        // ==============================
+        $cmpoHeader = [
+            'cmpo_id'     => $data->id,
+            'date'        => $data->created_at->format('d-m-Y'),
+            'order_no'    => $data->orderMain->sku ?? '-',
+            'customer'    => $data->orderMain->customer->name ?? '-',
+            'design_no'   => $data->design_number ?? '-',
+            'color'       => $data->colors->name ?? '-',
+            'fabric'      => $data->order_cutting_stage->fabric->name ?? '-',
+            'cuttingMaster' => $data->order_cutting_stage->cutting_master->cutting_master_name ?? '-',
+            'cuttingMasterAddress' => $data->order_cutting_stage->cutting_master->address ?? '-',
+            'fitting' => $data->order_cutting_stage?->master_fitting->name ?? '-',
+            'remark' => $data->order_cutting_stage?->remarks ?? '-',
+        ];
+
+        // ==============================
+        // SIZE-WISE DATA (LIKE CUTTING SLIP)
+        // ==============================
+        $sizeData = [];
+
+        $sizes = [$data->set_size]; // fallback
+
+        if (!empty($data->sizeMeasurement->size_group)) {
+            $sizes = explode(',', $data->sizeMeasurement->size_group);
+        }
+
+        foreach ($sizes as $size) {
+            $size = trim($size);
+
+            if (!isset($sizeData[$size])) {
+                $sizeData[$size] = [
+                    'design_no' => $data->design_number,
+                    'color'     => $data->colors->name,
+                    'size'      => $size,
+                    'pcs'       => 0,
+                ];
+            }
+
+            // distribute quantity per size
+            $sizeData[$size]['pcs'] += $data->total_quantity;
+        }
+
+        // ==============================
+        // PDF
+        // ==============================
+        $pdf = Pdf::loadView(
+            'admin.product_order.cmpo_slip',
+            [
+                'header'   => $cmpoHeader,
+                'sizeData' => $sizeData,
+            ]
+        )->setPaper('a4', 'portrait');
+
+        return $pdf->download('CMPO-' . $data->id . '.pdf');
     }
 
     public function downloadCuttingSlip(Request $request){

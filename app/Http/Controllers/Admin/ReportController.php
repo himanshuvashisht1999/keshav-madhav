@@ -55,32 +55,75 @@ class ReportController extends Controller
             $request->warehouse_id
         );
     } 
+    // public function stockExport(Request $request)
+    // {
+    //     // Same summary data as stock page
+    //     $data = $this->service->stock($request);
+
+    //     // Get ALL roll data for same filters
+    //     $rolls = FabricReceiptDetail::query()
+    //         ->where('remaining_quantity', '>', 0)
+    //         ->when($request->filled('warehouse_id'), function ($q) use ($request) {
+    //             $q->where('master_fabric_warehouse_id', $request->warehouse_id);
+    //         })
+    //         ->when($request->filled('fabric_sku'), function ($q) use ($request) {
+    //             $q->where('fabric_sku', $request->fabric_sku);
+    //         })
+    //         ->orderBy('fabric_sku')
+    //         ->orderBy('master_fabric_warehouse_id')
+    //         ->orderBy('roll_number')
+    //         ->get()
+    //         ->groupBy(function ($row) {
+    //             return $row->fabric_sku . '_' . $row->master_fabric_warehouse_id;
+    //         });
+
+    //     return response()
+    //         ->view('admin.report.stock_export', [
+    //             'data' => $data,
+    //             'rolls' => $rolls,
+    //             'exportedAt' => now()
+    //         ])
+    //         ->header('Content-Type', 'application/vnd.ms-excel')
+    //         ->header(
+    //             'Content-Disposition',
+    //             'attachment; filename="fabric-stock-report-' . now()->format('d-m-Y_H-i') . '.xls"'
+    //         );
+    // }
+
     public function stockExport(Request $request)
     {
-        // Same summary data as stock page
+        // Summary data (same as UI)
         $data = $this->service->stock($request);
 
-        // Get ALL roll data for same filters
-        $rolls = FabricReceiptDetail::query()
+        // Roll-level data (same logic as fabricRollDetails)
+        $rolls = FabricReceiptDetail::with([
+                'fabric_receipt.vendor',
+                'purchase_order'
+            ])
             ->where('remaining_quantity', '>', 0)
+
             ->when($request->filled('warehouse_id'), function ($q) use ($request) {
                 $q->where('master_fabric_warehouse_id', $request->warehouse_id);
             })
             ->when($request->filled('fabric_sku'), function ($q) use ($request) {
                 $q->where('fabric_sku', $request->fabric_sku);
             })
+
             ->orderBy('fabric_sku')
             ->orderBy('master_fabric_warehouse_id')
+            ->orderBy('shipment_number')
             ->orderBy('roll_number')
             ->get()
+
+            // group same way as summary table
             ->groupBy(function ($row) {
                 return $row->fabric_sku . '_' . $row->master_fabric_warehouse_id;
             });
 
         return response()
             ->view('admin.report.stock_export', [
-                'data' => $data,
-                'rolls' => $rolls,
+                'data'       => $data,
+                'rolls'      => $rolls,
                 'exportedAt' => now()
             ])
             ->header('Content-Type', 'application/vnd.ms-excel')
@@ -89,6 +132,7 @@ class ReportController extends Controller
                 'attachment; filename="fabric-stock-report-' . now()->format('d-m-Y_H-i') . '.xls"'
             );
     }
+
 
     public function purchaseOrder(Request $request)
     {

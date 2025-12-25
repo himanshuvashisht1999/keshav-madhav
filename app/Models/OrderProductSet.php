@@ -36,6 +36,10 @@ class OrderProductSet extends Model
     {
         return $this->hasMany(OrderCuttingStage::class, 'set_product_id');
     }
+    public function order_cutting_stage()
+    {
+        return $this->hasOne(OrderCuttingStage::class, 'set_product_id');
+    }
 
     public function colors()
     {

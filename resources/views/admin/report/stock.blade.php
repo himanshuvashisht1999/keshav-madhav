@@ -214,88 +214,104 @@
 
             <div class="modal-body">
 
+                <!-- SUMMARY -->
                 <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Fabric:</strong>
+                    <div class="col-md-4">
+                        <strong>Fabric :</strong>
                         <span id="modalFabricSku"></span>
                     </div>
-                    <div class="col-md-6">
-                        <strong>Warehouse:</strong>
+                    <div class="col-md-4">
+                        <strong>Warehouse :</strong>
                         <span id="modalWarehouse"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Total Remaining :</strong>
+                        <span id="modalTotalQty" class="fw-bold"></span>
                     </div>
                 </div>
 
-                <div id="modalStockTable"></div>
+                <!-- TABLE -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Roll No</th>
+                                <th class="text-end">Remaining Qty</th>
+                                <th>Shipment No</th>
+                                <th>Supplier</th>
+                                <th>Date</th>
+                                <th>PO Number</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalStockTable">
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
             </div>
+
         </div>
     </div>
 </div>
 
 {{-- ================= SCRIPT ================= --}}
 <script>
-function openStockModal(fabricSku, warehouseId, cutting_master_name) {
+function openStockModal(fabricSku, warehouseId, cuttingMasterName) {
+
     document.getElementById('modalFabricSku').innerText = fabricSku;
-    document.getElementById('modalWarehouse').innerText = cutting_master_name ?? '';
-    document.getElementById('modalStockTable').innerHTML =
-        '<div class="text-center py-3">Loading...</div>';
+    document.getElementById('modalWarehouse').innerText = cuttingMasterName ?? '';
+    document.getElementById('modalTotalQty').innerText = '0';
+
+    document.getElementById('modalStockTable').innerHTML = `
+        <tr>
+            <td colspan="5" class="text-center text-muted">Loading...</td>
+        </tr>
+    `;
 
     fetch(`{{ route('admin.report.stock.roll.details') }}?fabric_sku=${fabricSku}&warehouse_id=${warehouseId}`)
         .then(res => res.json())
         .then(data => {
 
             if (!data.length) {
-                document.getElementById('modalStockTable').innerHTML =
-                    '<div class="text-center text-muted py-3">No stock available</div>';
+                document.getElementById('modalStockTable').innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No stock available</td>
+                    </tr>
+                `;
                 return;
             }
 
-            let html = '';
+            let rowsHtml = '';
+            let totalQty = 0;
 
             data.forEach(ship => {
-
-                html += `
-                    <div class="mb-3 p-2 border rounded bg-light">
-                        <div class="mb-2 fw-bold">
-                            Shipment: ${ship.shipment_number ?? '-'}
-                            | PO: ${ship.po_number ?? '-'}
-                            | Date: ${ship.receipt_date ?? '-'}
-                        </div>
-
-                        <table class="table table-bordered table-sm mb-0">
-                            <thead class="table-secondary">
-                                <tr>
-                                    <th>Roll No</th>
-                                    <th class="text-end">Remaining Qty</th>
-                                    <th>QR Code No</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
-
                 ship.rolls.forEach(r => {
-                    html += `
+
+                    totalQty += parseFloat(r.remaining_quantity ?? 0);
+
+                    rowsHtml += `
                         <tr>
                             <td>${r.roll_number ?? '-'}</td>
-                            <td class="text-end fw-bold">${r.remaining_quantity}</td>
-                            <td>${r.qrcode_number ?? '-'}</td>
+                            <td class="text-end fw-bold">${Number(r.remaining_quantity).toFixed(2)}</td>
+                            <td>${ship.shipment_number ?? '-'}</td>
+                            <td>${ship.supplier ?? '-'}</td>
+                            <td>${ship.receipt_date ?? '-'}</td>
+                            <td>${ship.po_number ?? '-'}</td>
                         </tr>
                     `;
                 });
-
-                html += `
-                            </tbody>
-                        </table>
-                    </div>
-                `;
             });
 
-            document.getElementById('modalStockTable').innerHTML = html;
+            document.getElementById('modalStockTable').innerHTML = rowsHtml;
+            document.getElementById('modalTotalQty').innerText = totalQty.toFixed(2);
         });
-
 
     new bootstrap.Modal(document.getElementById('stockModal')).show();
 }
 </script>
+
 
 @endsection

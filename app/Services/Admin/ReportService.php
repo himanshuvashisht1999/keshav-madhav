@@ -184,7 +184,7 @@ class ReportService {
     public function fabricRollDetails($fabricSku, $warehouseId)
     {
         return FabricReceiptDetail::with([
-                'fabric_receipt',
+                'fabric_receipt.vendor',
                 'purchase_order'
             ])
             ->where('fabric_sku', $fabricSku)
@@ -202,6 +202,7 @@ class ReportService {
                     'shipment_number' => $shipmentNo,
                     'po_number'       => $first->purchase_order?->sku ?? '-', // ✅ PO number
                     'batch_no'        => $first->batch_no,
+                    'supplier'        => $first->fabric_receipt->vendor->name,
                     'receipt_date'    => optional($first->fabric_receipt)->created_at?->format('d M Y'),
                     'rolls' => $rows->map(function ($r) {
                         return [

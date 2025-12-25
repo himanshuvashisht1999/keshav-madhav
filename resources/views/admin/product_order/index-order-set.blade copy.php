@@ -87,7 +87,7 @@
                             <th>ID</th>
                             <th>Provided Bar Code</th>
                             <th>Design Number</th>
-                            <th>Set Size <br>(Size Group)</th>
+                            <th>Set Size</th>
                             <th>Colour</th>
                             <th>Set Quantity</th>
                             <th>Pcs per Set</th>
@@ -152,7 +152,7 @@
                                                     </span>
                                                 @endif --}}
 
-                                                {{-- <!-- TIME TYPE -->
+                                                <!-- TIME TYPE -->
                                                 <div class="form-group">
                                                     <label class="font-weight-bold">Time Type</label>
                                                     <select name="time_type" id="time_type" class="form-control" required>
@@ -173,7 +173,7 @@
                                                         name="allowed_time"
                                                         placeholder="Enter Allowed Time"
                                                         min="1" required>
-                                                </div> --}}
+                                                </div>
 
                                                 <!-- REMARK -->
                                                 <div class="form-group">
@@ -209,6 +209,7 @@
                     </section>
                 @endif
             
+            </div>
         </div>
     </section>
 </div>
@@ -227,28 +228,6 @@
                 </div>
 
                 <div class="modal-body">
-
-                <div class="border rounded p-2 mb-3 bg-light">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <strong>Design No:</strong>
-                            <span id="modal_design_number"></span>
-                        </div>
-                        <div class="col-md-6">
-                            <strong>Set Size:</strong>
-                            <span id="modal_set_size"></span>
-                        </div>
-                        <div class="col-md-6 mt-2">
-                            <strong>Color:</strong>
-                            <span id="modal_color"></span>
-                        </div>
-                        <div class="col-md-6 mt-2">
-                            <strong>Total Qty:</strong>
-                            <span id="modal_total_qty"></span>
-                        </div>
-                    </div>
-                </div>
-
 
                     <input type="hidden" id="modal_order_set_id" name="order_product_set_id">
 
@@ -278,18 +257,6 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label>Fitting</label>
-                        <select name="master_fitting_id" class="form-control select2" required>
-                            <option value="">Select</option>
-                            @foreach($fittings as $fitting)
-                                <option value="{{ $fitting->id }}">
-                                    {{ $fitting->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
                     <!-- Remark -->
                     <div class="form-group">
                         <label>Remarks</label>
@@ -310,28 +277,25 @@
 <script>
     $(document).on('click', '.assign-btn', function () {
 
-        $('#modal_order_set_id').val($(this).data('id'));
+    let orderSetId = $(this).data('id');
 
-        $('#modal_design_number').text($(this).data('design'));
-        $('#modal_set_size').text($(this).data('set-size'));
-        $('#modal_color').text($(this).data('color'));
-        $('#modal_total_qty').text($(this).data('total'));
+    $('#modal_order_set_id').val(orderSetId);
 
-        $('#assignModal').modal('show');
-    });
+    $('#assignModal').modal('show');
+});
 </script>
 <script>
     $(function () {
         let buttonsConfig = [];
 
         @if ($check_assign == true)
-            // buttonsConfig.push({
-            //     text: 'Download Slip',
-            //     className: 'btn-datatable',
-            //     action: function () {
-            //         window.location.href = "{{ route('admin.product_order.downloadCuttingSlip', ['id' => $order_main->id]) }}";
-            //     }
-            // });
+            buttonsConfig.push({
+                text: 'Download Slip',
+                className: 'btn-datatable',
+                action: function () {
+                    window.location.href = "{{ route('admin.product_order.downloadCuttingSlip', ['id' => $order_main->id]) }}";
+                }
+            });
         @endif
         var i = 1;
         var oTable = $('#customers').DataTable({
@@ -430,72 +394,72 @@
         });
 
         // Final submit
-        // $('#confirmFinalSubmit').on('click', function(){
-        //     calculateAllowedTill();
-        //     // ✅ count only real data rows
-        //     let dataRowCount = $('#productTable tbody tr')
-        //         .not('#noDataRow')
-        //         .length;
+        $('#confirmFinalSubmit').on('click', function(){
+            calculateAllowedTill();
+        // ✅ count only real data rows
+            let dataRowCount = $('#productTable tbody tr')
+                .not('#noDataRow')
+                .length;
 
-        //     if (dataRowCount === 0) {
-        //         alert('Please add at least one design before submitting.');
-        //         return;
-        //     }
+            if (dataRowCount === 0) {
+                alert('Please add at least one design before submitting.');
+                return;
+            }
 
-        //     let timeType     = $('#time_type').val();
-        //     let allowedTime  = $('#allowed_time').val();
-        //     let remark       = $('#final_remark').val().trim();
+            let timeType     = $('#time_type').val();
+            let allowedTime  = $('#allowed_time').val();
+            let remark       = $('#final_remark').val().trim();
 
-        //     if (!timeType) {
-        //         alert('Please select Time Type (Hours / Days)');
-        //         return;
-        //     }
+            if (!timeType) {
+                alert('Please select Time Type (Hours / Days)');
+                return;
+            }
 
-        //     if (!allowedTime || allowedTime <= 0) {
-        //         alert('Please enter valid allowed time');
-        //         return;
-        //     }
+            if (!allowedTime || allowedTime <= 0) {
+                alert('Please enter valid allowed time');
+                return;
+            }
 
-        //     // ✅ copy modal values to hidden form fields
-        //     $('#remark').val(remark);
-        //     $('#hidden_allowed_time').val(allowedTime);
-        //     $('#hidden_time_type').val(timeType);
+            // ✅ copy modal values to hidden form fields
+            $('#remark').val(remark);
+            $('#hidden_allowed_time').val(allowedTime);
+            $('#hidden_time_type').val(timeType);
 
-        //     // ✅ submit
-        //     $('#confirmSubmitModal').modal('hide');
-        //     $('#slip_digitalization form').submit();
-        // });
+            // ✅ submit
+            $('#confirmSubmitModal').modal('hide');
+            $('#slip_digitalization form').submit();
+        });
 
-        // function calculateAllowedTill() {
-        //     let type  = $('#time_type').val();
-        //     let value = parseInt($('#allowed_time').val());
-        //     if (!type || !value || value <= 0) {
-        //         $('#hidden_allowed_till').val('');
-        //         return;
-        //     }
+        function calculateAllowedTill() {
+            let type  = $('#time_type').val();
+            let value = parseInt($('#allowed_time').val());
+            if (!type || !value || value <= 0) {
+                $('#hidden_allowed_till').val('');
+                return;
+            }
 
-        //     let now = new Date();
+            let now = new Date();
 
-        //     if (type === 'hours') {
-        //         now.setHours(now.getHours() + value);
-        //     }
+            if (type === 'hours') {
+                now.setHours(now.getHours() + value);
+            }
 
-        //     if (type === 'days') {
-        //         now.setDate(now.getDate() + value);
-        //     }
+            if (type === 'days') {
+                now.setDate(now.getDate() + value);
+            }
 
-        //     // format for backend: YYYY-MM-DD HH:mm:ss
-        //     let formatted =
-        //         now.getFullYear() + '-' +
-        //         String(now.getMonth() + 1).padStart(2, '0') + '-' +
-        //         String(now.getDate()).padStart(2, '0') + ' ' +
-        //         String(now.getHours()).padStart(2, '0') + ':' +
-        //         String(now.getMinutes()).padStart(2, '0') + ':00';
+            // format for backend: YYYY-MM-DD HH:mm:ss
+            let formatted =
+                now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0') + ' ' +
+                String(now.getHours()).padStart(2, '0') + ':' +
+                String(now.getMinutes()).padStart(2, '0') + ':00';
 
-        //     $('#hidden_allowed_till').val(formatted);
-        //     $('#till_allowed_time').val(formatted);
+            $('#hidden_allowed_till').val(formatted);
+            $('#till_allowed_time').val(formatted);
             
-        // }
+        }
 
     });
 
