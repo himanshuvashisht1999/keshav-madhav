@@ -276,7 +276,7 @@ class ProductOrderService {
                 $i++;
                 $order_quantity = $request->product_quantity[$key];
 
-                $size_data = $this->getSizeDetails($request->master_customer_id, $design_id);
+                $size_data = $this->getSizeDetails($request->sizeList[$key]);
                 $size_explode = explode(',',$size_data->size_group);
                 $product_data = ProductionGoods::where('design_number', $design_id)->first();
                 if ($product_data) {
@@ -337,45 +337,6 @@ class ProductOrderService {
                             $save_order_product->save();
                             // dd($request->all());
                            
-                            //// save order product stages
-                            
-                            // $product_stages = ProductStage::where('master_product_id',$product_data->id)->orderBy('id','asc')->where('status',1)->get();
-                            // $sequence_value = 1;
-                            // foreach($product_stages as $key=>$single_stage){
-                            //     $save_order_product_stage = new OrderProductStage;
-                            //     $save_order_product_stage->order_product_id = $save_order_product->id;
-                            //     $save_order_product_stage->stage_id = $single_stage->master_stage_id;
-                            //     $save_order_product_stage->sequence = $sequence_value;
-                            //     if($key == 0){
-                            //         $save_order_product_stage->total_qty = $order_quantity;
-                            //         $save_order_product_stage->completed_qty = 0;
-                            //         $save_order_product_stage->pending_qty = $order_quantity;
-                            //         $save_order_product_stage->status = 1;  // 1: In progress
-                            //     }else{
-                            //         $save_order_product_stage->total_qty = 0;
-                            //         $save_order_product_stage->completed_qty = 0;
-                            //         $save_order_product_stage->pending_qty = 0;
-                            //         $save_order_product_stage->status = 0;  // 0-pending
-                            //     }
-                            //     $save_order_product_stage->save();  
-                            //     $sequence_value++;
-
-                            // }
-
-                            // $product_items = ProductionGoodsItem::where('product_id',$product_data->id)->orderBy('id','asc')->where('status',1)->get();
-                            // foreach($product_items as $key=>$single_item){
-                            //     $total_qty = $single_item->quantity * $order_quantity;
-                            //     $save_order_product_items = new OrderProductItem;
-                            //     $save_order_product_items->order_product_id = $save_order_product->id;
-                            //     $save_order_product_items->item_sku = $single_item->item_attribute_value_sku;
-                            //     $save_order_product_items->quantity = $single_item->quantity;
-                            //     $save_order_product_items->order_quantity = $order_quantity;
-                            //     $save_order_product_items->total_item_quantity = $total_qty;
-                            //     $save_order_product_items->pending_quantity = $total_qty;
-                            //     $save_order_product_items->status = 0;
-                            //     $save_order_product_items->save();
-
-                            // }
 
                         }
                     }
@@ -398,71 +359,7 @@ class ProductOrderService {
         }
     }
 
-    // public function store(Request $request)
-    // {
-        
-    //     DB::beginTransaction();
-
-    //     try {
-    //         // dd($request->all());
-    //         $save_data_main = new OrderMain;
-    //         $save_data_main->sku = '';
-    //         $save_data_main->expected_delivery_date = $request->expected_delivery_date;
-    //         $save_data_main->master_customer_id = $request->master_customer_id;
-    //         $save_data_main->status = 1;
-    //         $save_data_main->save();
-    //         $customer_data = MasterCustomer::where('id',$request->master_customer_id)->first();
-    //         $firstThree = strtoupper(substr($customer_data->name, 0, 3));
-
-    //         $save_data_main->sku = $firstThree . "/". date('m/Y').'/' . $save_data_main->id;
-    //         $save_data_main->save();
-
-
-    //         // Create main order
-    //         foreach ($request->designList as $key => $design_id) {
-    //             $save_data = new Order;
-    //             $save_data->order_main_id = $save_data_main->id;
-    //             $save_data->sku = '';
-    //             $save_data->expected_delivery_date = $request->expected_delivery_date;
-    //             $save_data->master_customer_id = $request->master_customer_id;
-    //             $save_data->status = 1;
-    //             $save_data->save();
-    //             $customer_data = MasterCustomer::where('id',$request->master_customer_id)->first();
-    //             $firstThree = strtoupper(substr($customer_data->name, 0, 3));
-                
-    //             // Update SKU after save
-    //             // $save_data->sku = 'Production-' . $save_data->id;
-    //             $save_data->sku = $firstThree . "/". date('m/Y').'/' . $save_data->id;
-    //             $save_data->save();
-
-    //             // Default success response
-    //             $return_data['message'] = 'The sales order has been successfully created.';
-    //             $return_data['status_code'] = 1;
-
-    //             // Loop through ordered products
-    //             $save_data = new CorporateOrderProduct;
-    //             $save_data->order_main_id = $save_data_main->id;
-    //             $save_data->design_id = $design_id;
-    //             $save_data->product_size = $request->sizeList[$key];
-    //             $save_data->color_id = $request->colourList[$key];
-    //             $save_data->quantity = $request->qtyList[$key];
-    //             $save_data->status = 1;
-    //             $save_data->save();
-    //         }
-
-    //         // Commit everything if all successful
-    //         DB::commit();
-    //         return $return_data;
-
-    //     } catch (\Exception $e) {
-    //         //  Rollback everything on any error
-    //         DB::rollBack();
-
-    //         $return_data['message'] = $e->getMessage();
-    //         $return_data['status_code'] = 0;
-    //         return $return_data;
-    //     }
-    // }
+ 
 
     public function view(Request $request){
         $data = Order::with('products.product_details.product_detail_stocks','products.order_stages.stage','products.order_stage_trnsactions')->where('id',$request->id)->first();
@@ -903,7 +800,7 @@ class ProductOrderService {
         $data = MasterSizeMeasurement::where('design_number',$design_id)->where('status',1)->orderBy('id','asc')->get();
         $data_res = [];
         foreach($data as $size){
-            $data_res[$size->id] = $size->name."&&".$size->no_of_pcs;
+            $data_res[$size->id] = $size->name."&&".$size->no_of_pcs."&&".$size->size_group;
         }
         return $data_res;
     }
@@ -918,10 +815,11 @@ class ProductOrderService {
             $data_res[$design->design_number] = $design->design_number;
         }
         return $data_res;
+        
     }
-    function getSizeDetails($customer_id, $design_id){
+    function getSizeDetails($size_set_id){
         $customer_id = 1;
-        $data = MasterSizeMeasurement::where('corporate_company_id',$customer_id)->where('design_number',$design_id)->where('status',1)->orderBy('id','asc')->first();
+        $data = MasterSizeMeasurement::where('id',$size_set_id)->whereIn('status', [1, 2])->orderBy('id','asc')->first();
         return $data;
     }
 
@@ -992,16 +890,45 @@ class ProductOrderService {
         return $exists = OrderCuttingStage::where('order_main_id', $request->id)->exists();        
     }
 
-    // function downloadCuttingSlip(Request $request){ 
-    //     $data = [
-    //         'title' => 'Dummy Cutting Slip',
-    //         'date'  => date('d-m-Y'),
-    //     ];
+    function saveCustomSetSize($request){
+        $design_number  = $request->design_id ?? '';
+        $size_group     =    $request->finalGroup ?? '';
+        $set_size       =      $request->set_size_name ?? '';
+        $design_number = $request->design_id ?? '';
+        $no_of_pcs = count(explode(',', $request->finalGroup)) ?? 0 ;
+        
+        $exists = MasterSizeMeasurement::where('design_number', $design_number)
+            ->where('set_size', $set_size)
+            ->where('status', 2)
+            ->exists();
+        $new_size_set_id = '';
+        if(!$exists){
+            $save_data = new MasterSizeMeasurement;
+            $save_data->sku = '';
+            $save_data->corporate_company_id = 1;
+            $save_data->design_number = $design_number;
+            $save_data->set_size = $set_size;
+            $save_data->size_group = $size_group;
+            $save_data->no_of_pcs = $no_of_pcs;
+            $save_data->status = 2;
+            $save_data->save();
+            $new_size_set_id = $save_data->id;
+        } else {
+            $size_data = MasterSizeMeasurement::where('design_number', $design_number)
+            ->where('set_size', $set_size)
+            ->where('status', 2)->first();
+            $size_data->size_group = $size_group; 
+            $size_data->no_of_pcs = $no_of_pcs;
+            $size_data->save();
+            $new_size_set_id = $size_data->id;
+        }
 
-    //     $pdf = PDF::loadView('admin.product_order.download-cutting-slip', $data);
 
-    //     return $pdf->download('dummy.pdf');
-    
-    // }
+        $return_data['status_code'] = 1;
+        $return_data['new_size_group'] = $size_group;
+        $return_data['new_size_set_id'] = $new_size_set_id;
+        $return_data['no_of_pcs'] = $no_of_pcs;
+        return $return_data;
+    }
      
 }

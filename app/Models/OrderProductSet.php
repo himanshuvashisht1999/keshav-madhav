@@ -44,7 +44,7 @@ class OrderProductSet extends Model
 
     public function sizeMeasurement()
     {
-        return $this->hasOne(MasterSizeMeasurement::class, 'set_size', 'set_size')
+        return $this->hasOne(MasterSizeMeasurement::class, 'id', 'set_size')
             ->join(
                 'order_products_sets',
                 'order_products_sets.set_size',

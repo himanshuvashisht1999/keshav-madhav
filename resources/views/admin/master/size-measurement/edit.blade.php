@@ -77,11 +77,11 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>Company Name</label>
+                                    <label>Customer Name</label>
                                     <select name="customer_id" id="customer_id" class="form-control select2" style="width: 100%;">
                                         <!-- <option value="">Select</option> -->
                                         @foreach ($customers as $customer)
-                                        <option value="{{$customer->id}}" {{$data->customer_id == $customer->id ? 'selected' : ''}}>{{$customer->name}}</option>
+                                        <option value="{{$customer->id}}" {{$data->corporate_company_id == $customer->id ? 'selected' : ''}}>{{$customer->name}}</option>
                                         @endforeach
                                     </select>
                                     @if ($errors->has('customer_id'))
@@ -107,7 +107,7 @@
                              <div class="col-md-6" id="div_design_number_input">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Design Number</label>
-                                    <input type="text" name="design_number" id="design_number_input" class="form-control" placeholder="Enter design number" value="{{$data->design_number}}">
+                                    <input type="text" name="design_number_input" id="design_number_input" class="form-control" placeholder="Enter design number" value="{{$data->design_number}}">
                                     @if ($errors->has('design_number'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('design_number') }}

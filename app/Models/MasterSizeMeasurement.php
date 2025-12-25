@@ -18,6 +18,8 @@ class MasterSizeMeasurement extends Model
         'corporate_company_id',
         'design_id',
         'name',
+        'set_size',
+        'no_of_pcs',
         'size_group',
         'size_selection_id',
         'measurement',

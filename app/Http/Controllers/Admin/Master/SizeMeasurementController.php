@@ -44,6 +44,7 @@ class SizeMeasurementController extends Controller {
         $response['data'] = $this->service->edit($request);
         $response['selectedSizes'] = explode(",",$response['data']->size_group);
         $response['customers'] = $this->ProductOrderService->customers();
+        // dd($response['data'], $response['customers']);
         $response['products'] = $this->ProductOrderService->products();
         return view('admin.master.size-measurement.edit',$response);
     }
