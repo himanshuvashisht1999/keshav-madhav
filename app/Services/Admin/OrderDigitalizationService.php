@@ -17,6 +17,7 @@ use App\Models\FabricReceiptDetail;
 use App\Models\OrderStageWiseTimeTracking;
 use App\Models\MasterStageWiseTimeAllocation;
 use App\Models\masterFabricWarehouse;
+use App\Models\ProductionGoods;
 
 use PDF;
 
@@ -573,14 +574,26 @@ class OrderDigitalizationService {
 
     /////////////////  cutting master 
 
-    public function cutting_slip()
+    public function cutting_slip(Request $request)
     {
-        $results = ProductionSlipDigitization::with([
-            'getUnitMaster.masterFabricWarehouse'
-            ])
-            ->where('status', 0)
-            ->orderBy('id', 'asc')
-            ->first();
+        if($request->is_skip == 1){
+            $results = ProductionSlipDigitization::with([
+                'getUnitMaster.masterFabricWarehouse'
+                ])
+                ->where('status', 2)
+                ->where('from_stage_id', 3)
+                ->orderBy('id', 'asc')
+                ->first();
+        }else{
+            $results = ProductionSlipDigitization::with([
+                'getUnitMaster.masterFabricWarehouse'
+                ])
+                ->where('status', 0)
+                ->where('from_stage_id', 3)
+                ->orderBy('id', 'asc')
+                ->first();
+        }
+        
             
         
         return $results;
@@ -593,6 +606,16 @@ class OrderDigitalizationService {
         $data = masterFabricWarehouse::where('id',$master_fabric_warehouse_id)->first();
         return $data;
     }
+    public function designs(){
+        $data = ProductionGoods::where('status',1)->get();
+        return $data;
+    }
+
+    public function stage_unit_data($master_fabric_warehouse_id,$master_stage_id){
+        $data = StageMasterUnit::where('master_fabric_warehouse_id',$master_fabric_warehouse_id)->where('master_stage_id',$master_stage_id)->first();
+        return $data;
+    }
+
 
 
 }
