@@ -80,7 +80,7 @@ class OrderDispatchService {
 
                         // NULL barcode wala available product lo
                         $setData = OrderProductSet::whereNull('bar_code')
-                            ->where('remain_set_quantity', '>', 0) // 🔑 IMPORTANT
+                            ->where('remain_set_quantity', '>', 0) // IMPORTANT
                             ->lockForUpdate()
                             ->first();
 

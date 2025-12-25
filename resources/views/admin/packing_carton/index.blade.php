@@ -22,7 +22,7 @@
                         <!-- <h3 class="card-title">Manage Production Order</h3> -->
                     </div>
                     <div class="col-3 card-header">
-                        <a href="{{route('admin.order_dispatch.create-dispatch')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Packing in Carton</a>
+                        <a href="{{route('admin.packing-carton.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Packing in Carton</a>
                     </div>
                 </div>
                 
@@ -138,7 +138,7 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.order_dispatch.indexList') !!}',
+                url: '{!! route('admin.packing-carton.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.carton_packing_session_no = $('#carton_packing_session_no').val();

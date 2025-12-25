@@ -59,6 +59,9 @@
                             <td>
                                 
                             </td>
+                            <td>
+                                
+                            </td>
                             
                             <td>
                                 
@@ -87,7 +90,8 @@
                             <th>ID</th>
                             <th>Provided Bar Code</th>
                             <th>Design Number</th>
-                            <th>Set Size <br>(Size Group)</th>
+                            <th>Set Size</th>
+                            <th>Size Group</th>
                             <th>Colour</th>
                             <th>Set Quantity</th>
                             <th>Pcs per Set</th>
@@ -100,7 +104,7 @@
                     <tbody></tbody>
                     <tfoot>
                         <tr>
-                            <th colspan="5" class="text-right">Total Set :</th>
+                            <th colspan="6" class="text-right">Total Set :</th>
                             <th id="set_qty_total"></th>          <!-- Set Quantity Total -->
                             <th>Total Quantity</th>
                             <th id="total_qty_total"></th>        <!-- Total Quantity Total -->
@@ -111,7 +115,7 @@
                 </table>
             </div>
             <div>
-                @if ($check_assign == false)
+                @if (false)
                     <section class="content">
                         <div class="container-fluid">
 
@@ -358,6 +362,7 @@
                 {data: 'bar_code', name: 'bar_code'},
                 {data: 'design_number', name: 'design_number'},  
                 {data: 'set_size', name: 'set_size'},
+                {data: 'size_group', name: 'size_group'},
                 {data: 'color_id', name: 'color_id'},
                 {data: 'set_quantity', name: 'set_quantity'},
                 {data: 'no_of_pcs', name: 'no_of_pcs'},  
@@ -380,7 +385,7 @@
 
                 // Total SET QUANTITY (column index 5)
                 let setQtyTotal = api
-                    .column(5, { page: 'current' })
+                    .column(6, { page: 'current' })
                     .data()
                     .reduce(function (a, b) {
                         return intVal(a) + intVal(b);
@@ -388,7 +393,7 @@
 
                 // Total TOTAL QUANTITY (column index 7)
                 let totalQtyTotal = api
-                    .column(7, { page: 'current' })
+                    .column(8, { page: 'current' })
                     .data()
                     .reduce(function (a, b) {
                         return intVal(a) + intVal(b);

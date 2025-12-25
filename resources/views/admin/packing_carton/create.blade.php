@@ -16,7 +16,7 @@
         <div class="container-fluid">
             <div class="card p-3 shadow-sm">
 
-                <form method="POST" action="{{ route('admin.order_dispatch.store') }}">
+                <form method="POST" action="{{ route('admin.packing-carton.store') }}">
                     @csrf
 
                     {{-- CUSTOMER & ORDER --}}
@@ -172,7 +172,7 @@
                         <div class="col-12 text-right">
                             <input type="hidden" name="final_customer_id" id="final_customer_id">
                             <input type="hidden" name="final_order_no" id="final_order_no">
-                            <button class="btn btn-success">Submit Dispatch</button>
+                            <button class="btn btn-success">Submit </button>
                         </div>
                     </div>
 
@@ -244,7 +244,7 @@ $(function () {
             barcodeRows = {};
             nullBarcodeRows = [];
             $('#orderTableBody').empty();
-            $.get("{{ route('admin.order_dispatch.getCustomersBybarcode') }}",
+            $.get("{{ route('admin.packing-carton.getCustomersBybarcode') }}",
             { search_barcode: search_barcode },
             function (res) {
                 $('#div_order_dispatch,#packed_cartons').removeClass('d-none');
@@ -278,7 +278,7 @@ $(function () {
             resetDocumentUI();
             return;
         }
-        $.get("{{ route('admin.order_dispatch.getCustomerOrders') }}",
+        $.get("{{ route('admin.packing-carton.getCustomerOrders') }}",
         { customer_id: customer_id },
         function (res) {
             $('#order_no').html('<option value="">Select Order No</option>');
@@ -303,7 +303,7 @@ $(function () {
         nullBarcodeRows = [];
         $('#orderTableBody').empty();
 
-        $.get("{{ route('admin.order_dispatch.getOrdersDetails') }}", {
+        $.get("{{ route('admin.packing-carton.getOrdersDetails') }}", {
             customer_id: $('#master_customer_id').val(),
             order_main_id: $(this).val()
         }, function (res) {

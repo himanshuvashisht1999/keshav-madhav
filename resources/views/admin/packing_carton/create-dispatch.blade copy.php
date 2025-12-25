@@ -16,7 +16,7 @@
         <div class="container-fluid">
             <div class="card p-3 shadow-sm">
 
-                <form method="POST" action="{{ route('admin.order_dispatch.store') }}">
+                <form method="POST" action="{{ route('admin.packing_carton.store') }}">
                     @csrf
 
                     {{-- CUSTOMER & ORDER --}}
@@ -201,7 +201,7 @@ $(function () {
         let customer_id = $(this).val();
         if (!customer_id) return;
 
-        $.get("{{ route('admin.order_dispatch.getCustomerOrders') }}",
+        $.get("{{ route('admin.packing_carton.getCustomerOrders') }}",
             { customer_id }, function (res) {
 
             $('#order_no').empty()
@@ -249,7 +249,7 @@ $(function () {
             }
         }
 
-        $.get("{{ route('admin.order_dispatch.getOrdersDetails') }}", {
+        $.get("{{ route('admin.packing_carton.getOrdersDetails') }}", {
             customer_id: $('#master_customer_id').val(),
             order_main_id: order_id
         }, function (res) {
