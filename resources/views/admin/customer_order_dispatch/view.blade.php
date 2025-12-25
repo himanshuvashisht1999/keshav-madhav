@@ -11,7 +11,7 @@
                     <h1 class="mb-0">Packing Carton Details</h1>
                 </div>
                 <div class="col-sm-6 text-right">
-                    <a href="{{ route('admin.order_dispatch.index') }}" class="btn btn-secondary">
+                    <a href="{{ route('admin.packing_carton.index') }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left mr-1"></i> Back
                     </a>
                 </div>

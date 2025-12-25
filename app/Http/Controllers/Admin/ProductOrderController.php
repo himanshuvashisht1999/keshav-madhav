@@ -190,7 +190,7 @@ class ProductOrderController extends Controller {
             'sizeMeasurement',
             'order_cutting_stage.master_fitting',
         ])->where('id', $request->id)->firstOrFail();
-
+        // dd($data);
         // ==============================
         // HEADER DATA
         // ==============================

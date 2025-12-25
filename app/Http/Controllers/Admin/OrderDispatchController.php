@@ -16,26 +16,26 @@ class OrderDispatchController extends Controller {
         $this->service = $service;
         $this->productOrderService = $ProductOrderService;
     }
-    public function createDispatch(Request $request){
+    public function create(Request $request){
         $response['customers'] = $this->productOrderService->customers();
         // $response['order_main_id'] = $request->id ?? 0;
         // // $response['order_main'] = $this->productOrderService->orderMainDetails($request);
-        return view('admin.order_dispatch.create-dispatch', $response);
+        return view('admin.packing_carton.create', $response);
     } 
     public function store(Request $request){
         $data = $this->service->store($request);
         if($data['status_code'] == 1){
-            return redirect()->route('admin.order_dispatch.view',['id' => $data['id']])->withSuccess($data['message']);
+            return redirect()->route('admin.packing-carton.view',['id' => $data['id']])->withSuccess($data['message']);
         }else{
             return redirect()->back()->withError($data['message']);
         }
-        // return view('admin.order_dispatch.create-dispatch');
+        // return view('admin.packing_carton.create-dispatch');
     } 
     public function index(Request $request){
         $response['customers'] = $this->productOrderService->customers();
         $response['orders'] = $this->service->getOrders();
         // dd($response['orders']);
-        return view('admin.order_dispatch.index',$response);
+        return view('admin.packing_carton.index',$response);
     }
     public function indexList(Request $request){
         return $this->service->indexList($request);
@@ -43,7 +43,8 @@ class OrderDispatchController extends Controller {
 
     public function view(Request $request){
         $response['data'] = $this->service->view($request);
-        return view('admin.order_dispatch.view',$response);
+        // dd($response['data']);
+        return view('admin.packing_carton.view',$response);
     }
     public function getCustomerOrders(Request $request){
         $response['data'] = $this->service->getCustomerOrders($request);

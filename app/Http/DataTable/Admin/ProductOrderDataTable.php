@@ -166,7 +166,15 @@ class ProductOrderDataTable  {
                     ->select('set_size', 'size_group')
                     ->first();
 
-                return $set_size->set_size."\n(".$set_size->size_group.")" ?? '';
+                return $set_size->set_size ?? '';
+            })
+            ->addColumn('size_group', function ($queue) {
+                $set_size = DB::table('master_size_measurements')
+                    ->where('id', $queue->set_size)
+                    ->select('set_size', 'size_group')
+                    ->first();
+
+                return $set_size->size_group ?? '';
             })
             ->addColumn('color_id', function ($queue) {
                 $name = DB::table('master_colors')->where('id', $queue->color_id)
@@ -185,14 +193,20 @@ class ProductOrderDataTable  {
                 if ($assign) { 
                     return '<span class="badge badge-success">'.$assign->cutting_master_name.'</span>';
                 }
-
+                $color = DB::table('master_colors')->where('id', $queue->color_id)
+                    ->value('name');
+                $set_size = DB::table('master_size_measurements')
+                    ->where('id', $queue->set_size)
+                    ->select('set_size', 'size_group')
+                    ->first();
                 return '
                     <button 
                         class="btn btn-sm btn-primary assign-btn"
                         data-id="'.$queue->id.'"
                         data-design="'.$queue->design_number.'"
-                        data-set-size="'.$queue->set_size.'"
-                        data-color="'.$queue->color_id.'"
+                        data-set-size="'.$set_size->set_size.'"
+                        data-set-size-group="'.$set_size->size_group.'"
+                        data-color="'.$color.'"
                         data-total="'.$queue->set_quantity * $queue->no_of_pcs.'">
                         Assign
                     </button>';
@@ -230,7 +244,7 @@ class ProductOrderDataTable  {
                 return $view;
             })
             
-            ->rawColumns(['action','design_number', 'size_set','assign_to', 'total_qty', 'status'])
+            ->rawColumns(['action','design_number', 'size_set','size_group','assign_to', 'total_qty', 'status'])
             ->make(true);
     }
 }

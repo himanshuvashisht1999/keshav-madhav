@@ -292,8 +292,8 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                     </li>
                     
                     <li class="nav-item">
-                        <a href="{{ route('admin.order_dispatch.index') }}"
-                            class="{{ str_contains($page_url, 'admin/order_dispatch') ? 'nav-link active' : 'nav-link' }} border_class"
+                        <a href="{{ route('admin.packing-carton.index') }}"
+                            class="{{ str_contains($page_url, 'admin/packing-carton') ? 'nav-link active' : 'nav-link' }} border_class"
                             style="position:static;">
                             <i class="fas fa-dolly"></i>
                             <p>PACKING IN CARTON</p>
