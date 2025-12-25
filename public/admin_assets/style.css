@@ -140,3 +140,10 @@ table.dataTable {
     color: black !important;
 } */
 .report-meta{ font-size:18px;color:#000000; }
+
+.badge-success{
+    color: #ffffff !important;
+}
+.badge.badge-primary{
+    color: #fff !important;
+}

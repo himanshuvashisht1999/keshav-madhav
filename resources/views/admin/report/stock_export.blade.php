@@ -6,7 +6,7 @@
             </th>
         </tr>
         <tr>
-            <td colspan="6">
+            <td colspan="9">
                 Exported At: {{ $exportedAt->format('d M Y h:i A') }}
             </td>
         </tr>
@@ -16,7 +16,11 @@
             <th>Total Remaining</th>
             <th>Roll No</th>
             <th>Roll Remaining</th>
-            <th>QR / Barcode No</th>
+            <!-- <th>QR / Barcode No</th> -->
+            <th>Shipment No</th>
+            <th>Supplier</th>
+            <th>Date</th>
+            <th>PO Number</th>
         </tr>
     </thead>
 
@@ -37,7 +41,13 @@
 
                         <td>{{ $roll->roll_number }}</td>
                         <td>{{ $roll->remaining_quantity }}</td>
-                        <td>{{ $roll->qrcode_number }}</td>
+                        <!-- <td>{{ $roll->qrcode_number }}</td> -->
+                        <td>{{ $roll->shipment_number ?? '-' }}</td>
+                        <td>{{ $roll->fabric_receipt->vendor->name ?? '-' }}</td>
+                        <td>
+                            {{ optional($roll->fabric_receipt)->created_at?->format('d-m-Y') ?? '-' }}
+                        </td>
+                        <td>{{ $roll->purchase_order?->sku ?? '-' }}</td>
                     </tr>
                 @endforeach
 

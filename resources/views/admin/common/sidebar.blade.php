@@ -273,6 +273,15 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{{ route('admin.order_digitalization.cutting-master') }}"
+                            class="{{ str_contains($page_url, 'admin/order_digitalization/cutting-master') ? 'nav-link active' : 'nav-link' }} border_class"
+                            style="position:static;">
+                            <i class="fas fa-file-signature"></i>
+                            
+                            <p>Cutting Master Slip</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{{ route('admin.order_digitalization.create-slips-production') }}"
                             class="{{ str_contains($page_url, 'admin/order_digitalization') ? 'nav-link active' : 'nav-link' }} border_class"
                             style="position:static;">
@@ -281,6 +290,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             <p>HAND SLIP DIGITALIZATION</p>
                         </a>
                     </li>
+                    
                     <li class="nav-item">
                         <a href="{{ route('admin.order_dispatch.index') }}"
                             class="{{ str_contains($page_url, 'admin/order_dispatch') ? 'nav-link active' : 'nav-link' }} border_class"

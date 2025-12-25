@@ -180,6 +180,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             
             Route::get('/index-order-set',[AdminProductOrderController::class,'indexOrderSet'])->name('indexOrderSet');
             Route::get('/indexListOrderSet',[AdminProductOrderController::class,'indexListOrderSet'])->name('indexListOrderSet');
+            Route::get('/index-order-set-download',[AdminProductOrderController::class,'indexOrderSetDownload'])->name('indexOrderSetDownload');
             
             Route::get('/index',[AdminProductOrderController::class,'index'])->name('index');
             Route::get('/indexList',[AdminProductOrderController::class,'indexList'])->name('indexList');
@@ -252,6 +253,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             
             // Route::get('/download-receipt',[AdminOrderDigitalizationController::class,'downLoadReceipt'])->name('downLoadReceipt');
             // Route::get('/get-sub-stages/{order_product_id}/{from_stage_id}',[AdminOrderDigitalizationController::class,'getSubStages'])->name('getSubStages');
+
+            ////////new cutting 
+            Route::get('/cutting-master',[AdminOrderDigitalizationController::class,'cuttingMaster'])->name('cutting-master');
         });
 
         Route::prefix('/order_dispatch')->name('order_dispatch.')->group(function () {

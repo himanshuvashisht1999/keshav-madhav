@@ -10,11 +10,13 @@
         align-items:flex-start;
     }
     .left-col {
-        flex: 1 1 65%;
+        flex: 0 0 60%;
+        max-width: 60%;
     }
+
     .right-col {
-        flex: 0 0 34%;
-        max-width: 34%;
+        flex: 0 0 40%;
+        max-width: 40%;
     }
 
     .image-preview-box {
@@ -50,6 +52,23 @@
         .flex-row { flex-direction: column; }
         .right-col { max-width:100%; width:100%; }
     }
+
+    .zoom-container {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-height: 420px;
+    border-radius: 4px;
+    cursor: crosshair;
+}
+
+.zoom-container img {
+    width: 100%;
+    height: auto;
+    transition: transform 0.1s ease-out;
+    transform-origin: center center;
+}
+
 </style>
 
 <div class="content-wrapper">
@@ -96,7 +115,7 @@
                             <label for="received_by">Received By</label>
                             <input type="text" name="received_by" id="received_by" class="form-control" placeholder="Enter received by">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 mt-2">
                             <label for="total_roll">Total Roll</label>
                             <input type="number" name="total_roll" id="total_roll" class="form-control" placeholder="Enter total roll" value="1">
                         </div>
@@ -152,7 +171,12 @@
                             <label for="challan_photo">Challan Photo (upload)</label>
                             <div class="image-preview-box">
                                 <input type="file" accept="image/*" id="challan-input" name="challan_photo" class="form-control mb-2" />
-                                <img id="challan-preview" src="{{ asset('images/image-placeholder.png') }}" alt="Challan preview" />
+                                <!-- <img id="challan-preview" src="{{ asset('images/image-placeholder.png') }}" alt="Challan preview" onclick="openChallanModal(this.src)" style="cursor:pointer;" /> -->
+                                <div class="zoom-container">
+                                    <img id="challan-preview"
+                                        src="{{ asset('images/image-placeholder.png') }}"
+                                        alt="Challan preview" onclick="openChallanModal(this.src)">
+                                </div>
                                 <div class="ocr-progress" id="ocr-progress" style="display:none;">
                                     <div class="spinner-border spinner-border-sm" role="status"></div>
                                     <small id="ocr-status" style="margin-left:8px;">Scanning image...</small>
@@ -173,6 +197,31 @@
             </div>
         </div>
     </section>
+</div>
+<!-- Challan Image Preview Modal -->
+<div class="modal fade" id="challanPreviewModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Challan Preview</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body text-center" style="overflow:auto;">
+                <img id="challan-modal-image"
+                     src=""
+                     style="max-width:100%; transform:scale(1); transition:transform .2s;">
+            </div>
+
+            <div class="modal-footer justify-content-center">
+                <button class="btn btn-secondary btn-sm" onclick="zoomOutChallan()">−</button>
+                <button class="btn btn-secondary btn-sm" onclick="resetZoomChallan()">Reset</button>
+                <button class="btn btn-secondary btn-sm" onclick="zoomInChallan()">+</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Combined script: vendor-change, add/remove rows, select2 init, challan preview + OCR -->
@@ -572,22 +621,22 @@ $(document).ready(function() {
         });
     });
 
-    $(document).on('input', 'input[name^="rolls"][name$="[roll]"]', function () {
-        let currentRow = parseInt($(this).closest('tr').data('row'));
-        let startRoll = parseInt($(this).val());
+    // $(document).on('input', 'input[name^="rolls"][name$="[roll]"]', function () {
+    //     let currentRow = parseInt($(this).closest('tr').data('row'));
+    //     let startRoll = parseInt($(this).val());
 
-        if (isNaN(startRoll)) return;
+    //     if (isNaN(startRoll)) return;
 
-        let nextRoll = startRoll + 1;
+    //     let nextRoll = startRoll + 1;
 
-        $('#fabric-body tr').each(function () {
-            let row = parseInt($(this).data('row'));
-            if (row > currentRow) {
-                $(this).find('input[name^="rolls"][name$="[roll]"]').val(nextRoll);
-                nextRoll++;
-            }
-        });
-    });
+    //     $('#fabric-body tr').each(function () {
+    //         let row = parseInt($(this).data('row'));
+    //         if (row > currentRow) {
+    //             $(this).find('input[name^="rolls"][name$="[roll]"]').val(nextRoll);
+    //             nextRoll++;
+    //         }
+    //     });
+    // });
 
 
 });
@@ -595,5 +644,65 @@ $(document).ready(function() {
 
 </script>
 
+<script>
+    let challanZoom = 1;
+
+    function openChallanModal(src) {
+        if (!src || src.includes('image-placeholder')) return;
+
+        challanZoom = 1;
+        const img = document.getElementById('challan-modal-image');
+        img.src = src;
+        img.style.transform = 'scale(1)';
+
+        $('#challanPreviewModal').modal('show');
+    }
+
+    function zoomInChallan() {
+        challanZoom += 0.2;
+        applyChallanZoom();
+    }
+
+    function zoomOutChallan() {
+        if (challanZoom > 0.4) {
+            challanZoom -= 0.2;
+            applyChallanZoom();
+        }
+    }
+
+    function resetZoomChallan() {
+        challanZoom = 1;
+        applyChallanZoom();
+    }
+
+    function applyChallanZoom() {
+        document.getElementById('challan-modal-image')
+            .style.transform = `scale(${challanZoom})`;
+    }
+
+    
+</script>
+<script>
+    const zoomContainer = document.querySelector('.zoom-container');
+    const zoomImage = document.getElementById('challan-preview');
+
+    if (zoomContainer && zoomImage) {
+
+        zoomContainer.addEventListener('mousemove', function (e) {
+            const rect = zoomContainer.getBoundingClientRect();
+
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+            zoomImage.style.transformOrigin = `${x}% ${y}%`;
+            zoomImage.style.transform = 'scale(2.5)';
+        });
+
+        zoomContainer.addEventListener('mouseleave', function () {
+            zoomImage.style.transformOrigin = 'center center';
+            zoomImage.style.transform = 'scale(1)';
+        });
+    }
+</script>
 
 @endsection

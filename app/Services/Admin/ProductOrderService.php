@@ -20,12 +20,14 @@ use App\Models\ProductionGoodsItem;
 use App\Models\OrderProductItem;
 use App\Models\OrderProductItemTransaction;
 use App\Models\ItemStock;
+use App\Models\OrderProductDesign;
 use App\Models\WarehouseDetail;
 use App\Models\MasterSizeMeasurement;
 use App\Models\MasterColor;
 use App\Models\CorporateOrderProduct;
 use App\Models\OrderProductSet;
 use App\Models\OrderCuttingStage;
+use App\Models\MasterProductFitting;
 use PDF;
 
 
@@ -930,52 +932,103 @@ class ProductOrderService {
         return $data;
     }
 
+    // public function assign_to(Request $request)
+    // {
+    //     // dd($request);
+    //     $user_id = auth()->id() ?? 0;
+
+    //     try {
+    //         DB::beginTransaction();
+
+    //         $orderSets_data = OrderProductSet::where('order_main_id', $request->order_main_id)->get();
+
+    //         if ($orderSets_data->isEmpty()) {
+    //             return [
+    //                 'status' => false,
+    //                 'message' => 'No product set found for this order'
+    //             ];
+    //         }
+
+    //         $savedCount = 0;
+
+    //         foreach ($orderSets_data as $data) {
+    //             $cutting = OrderCuttingStage::create([
+    //                 'sku' => $data->sku,
+    //                 'order_main_id' => $data->order_main_id,
+    //                 'set_product_id' => $data->id,
+    //                 'from_assign_id' => 0,
+    //                 'to_assign_id' => $request->master_cutting_id,
+    //                 'quantity' => $data->total_quantity ?? 0,
+    //                 'processed_by' => $user_id,
+    //                 'status' => 1,
+    //                 'remaining_quantity' => $data->total_quantity ?? 0,
+    //                 'time_type' => $request->time_type ?? NULL,
+    //                 'allowed_time' => $request->allowed_time ?? null,
+    //                 'till_allowed_time' => $request->till_allowed_time ?? NULL,
+    //                 'remarks' => $request->final_remark ?? null,
+    //             ]);
+
+    //             if ($cutting->wasRecentlyCreated) {
+    //                 $savedCount++;
+    //             }
+    //         }
+
+    //         DB::commit();
+
+    //         return [
+    //             'status' => true,
+    //             'message' => "{$savedCount} order sets assigned successfully"
+    //         ];
+
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+
+    //         return [
+    //             'status' => false,
+    //             'message' => $e->getMessage()
+    //         ];
+    //     }
+    // }
     public function assign_to(Request $request)
     {
-        // dd($request);
         $user_id = auth()->id() ?? 0;
 
         try {
             DB::beginTransaction();
 
-            $orderSets_data = OrderProductSet::where('order_main_id', $request->order_main_id)->get();
+            $data = OrderProductSet::where('id', $request->order_product_set_id)->first();
+            $cutting = OrderCuttingStage::create([
+                'sku' => $data->sku,
+                'order_main_id' => $data->order_main_id,
+                'set_product_id' => $data->id,
+                'from_assign_id' => 0,
+                'to_assign_id' => $request->master_cutting_id,
+                'fabric_id' => $request->fabric_id,
+                'quantity' => $data->total_quantity ?? 0,
+                'master_fitting_id' => $request->master_fitting_id,
+                'processed_by' => $user_id,
+                'status' => 1,
+                'remaining_quantity' => $data->total_quantity ?? 0,
+                'time_type' => $request->time_type ?? NULL,
+                'allowed_time' => $request->allowed_time ?? null,
+                'till_allowed_time' => $request->till_allowed_time ?? NULL,
+                'remarks' => $request->remark ?? null,
+            ]);
 
-            if ($orderSets_data->isEmpty()) {
-                return [
-                    'status' => false,
-                    'message' => 'No product set found for this order'
-                ];
-            }
-
-            $savedCount = 0;
-
-            foreach ($orderSets_data as $data) {
-                $cutting = OrderCuttingStage::create([
-                    'sku' => $data->sku,
-                    'order_main_id' => $data->order_main_id,
-                    'set_product_id' => $data->id,
-                    'from_assign_id' => 0,
-                    'to_assign_id' => $request->master_cutting_id,
-                    'quantity' => $data->total_quantity ?? 0,
-                    'processed_by' => $user_id,
-                    'status' => 1,
-                    'remaining_quantity' => $data->total_quantity ?? 0,
-                    'time_type' => $request->time_type ?? NULL,
-                    'allowed_time' => $request->allowed_time ?? null,
-                    'till_allowed_time' => $request->till_allowed_time ?? NULL,
-                    'remarks' => $request->final_remark ?? null,
-                ]);
-
-                if ($cutting->wasRecentlyCreated) {
-                    $savedCount++;
-                }
-            }
+            $fitting_data = MasterProductFitting::where('id',$request->master_fitting_id)->first();
+            $design_number_new = $data->design_number.' ('.$fitting_data?->name.')';
+            $save_data = new OrderProductDesign;
+            $save_data->order_main_id = $data->order_main_id;
+            $save_data->order_products_set_id = $request->order_product_set_id;
+            $save_data->order_cutting_stage_id = $cutting->id;
+            $save_data->design_number = $design_number_new;
+            $save_data->save();
 
             DB::commit();
 
             return [
                 'status' => true,
-                'message' => "{$savedCount} order sets assigned successfully"
+                'message' => "order sets assigned successfully"
             ];
 
         } catch (\Exception $e) {
@@ -987,6 +1040,13 @@ class ProductOrderService {
             ];
         }
     }
+
+    public function fittings(){
+        $data = MasterProductFitting::where('status',1)->get();
+        return $data;
+    }
+
+
 
     function checkAssign(Request $request){ 
         return $exists = OrderCuttingStage::where('order_main_id', $request->id)->exists();        

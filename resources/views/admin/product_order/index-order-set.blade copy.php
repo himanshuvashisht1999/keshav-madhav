@@ -110,7 +110,106 @@
                     </tfoot>
                 </table>
             </div>
+            <div>
+                @if ($check_assign == false)
+                    <section class="content">
+                        <div class="container-fluid">
+
+                            <div class="card p-3 shadow-sm">
+
+                                <form action="{{ route('admin.product_order.assign_to') }}" method="POST" enctype="multipart/form-data">
+                                    @csrf
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                        </div>
+                                        <!-- LEFT -->
+                                        <div class="col-md-6">
+
+                                            <!-- Customer & Delivery -->
+                                            <div class="card mb-3 p-3 border">
+                                                <h3 class="mb-3 assign-to" >Assign to Cutting Master</h3>
+
+                                                <label>Select Cutting Master</label>
+                                                <select name="master_cutting_id" id="master_cutting_id" class="form-control select2 mb-2" required>
+                                                    <option value="">Select Cutting Master </option>
+                                                    @foreach($cutting_units as $cutting_unit)
+                                                        <option value="{{ $cutting_unit->id }}">{{ $cutting_unit->cutting_master_name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                @if ($errors->has('master_cutting_id'))
+                                                    <span class="invalid-feedback d-block">
+                                                        {{ $errors->first('master_cutting_id') }}
+                                                    </span>
+                                                @endif
+                                                {{-- <label for="delivery_time_allowed">Delivery Time Allowed (in Days)</label>
+                                                <input type="number" name="delivery_time_allowed" id="delivery_time_allowed" min='1' placeholder="Enter Delivery Time Allowed in days "  class="form-control">
+                                                <label for="remarks">Remarks</label>
+                                                <textarea id="remarks" name="remarks" class="form-control" rows="3" placeholder="Enter your remarks..."></textarea>
+                                                @if ($errors->has('remarks'))
+                                                    <span class="invalid-feedback d-block">
+                                                        {{ $errors->first('remarks') }}
+                                                    </span>
+                                                @endif --}}
+
+                                                <!-- TIME TYPE -->
+                                                <div class="form-group">
+                                                    <label class="font-weight-bold">Time Type</label>
+                                                    <select name="time_type" id="time_type" class="form-control" required>
+                                                        <option value="">Select Time Type</option>
+                                                        <option value="hours">Hours</option>
+                                                        <option value="days">Days</option>
+                                                    </select>
+                                                </div>
+
+                                                <!-- ALLOWED TIME -->
+                                                <div class="form-group">
+                                                    <label class="font-weight-bold" id="allowed_time_label">
+                                                        Allowed Time
+                                                    </label>
+                                                    <input type="number"
+                                                        class="form-control"
+                                                        id="allowed_time"
+                                                        name="allowed_time"
+                                                        placeholder="Enter Allowed Time"
+                                                        min="1" required>
+                                                </div>
+
+                                                <!-- REMARK -->
+                                                <div class="form-group">
+                                                    <label class="font-weight-bold">Remarks</label>
+                                                    <textarea
+                                                        class="form-control @error('final_remark') is-invalid @enderror"
+                                                        id="final_remark"
+                                                        name="final_remark"
+                                                        rows="3"
+                                                        placeholder="Enter remark (optional)"
+                                                    >{{ old('final_remark') }}</textarea>
+                                                </div>
+                                                <input type="hidden"
+                                                        class="form-control"
+                                                        id="till_allowed_time"
+                                                        name="till_allowed_time">
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div class="text-right mt-3">
+                                        <input type="hidden" id="order_main_id" name="order_main_id" value="{{$order_main->id}}">
+                                        <button class="btn btn-success px-4">Assign</button>
+                                    </div>
+
+                                </form>
+
+                            </div>
+
+                        </div>
+                    </section>
+                @endif
             
+            </div>
         </div>
     </section>
 </div>
@@ -129,28 +228,6 @@
                 </div>
 
                 <div class="modal-body">
-
-                <div class="border rounded p-2 mb-3 bg-light">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <strong>Design No:</strong>
-                            <span id="modal_design_number"></span>
-                        </div>
-                        <div class="col-md-6">
-                            <strong>Set Size:</strong>
-                            <span id="modal_set_size"></span>
-                        </div>
-                        <div class="col-md-6 mt-2">
-                            <strong>Color:</strong>
-                            <span id="modal_color"></span>
-                        </div>
-                        <div class="col-md-6 mt-2">
-                            <strong>Total Qty:</strong>
-                            <span id="modal_total_qty"></span>
-                        </div>
-                    </div>
-                </div>
-
 
                     <input type="hidden" id="modal_order_set_id" name="order_product_set_id">
 
@@ -180,18 +257,6 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label>Fitting</label>
-                        <select name="master_fitting_id" class="form-control select2" required>
-                            <option value="">Select</option>
-                            @foreach($fittings as $fitting)
-                                <option value="{{ $fitting->id }}">
-                                    {{ $fitting->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
                     <!-- Remark -->
                     <div class="form-group">
                         <label>Remarks</label>
@@ -212,28 +277,25 @@
 <script>
     $(document).on('click', '.assign-btn', function () {
 
-        $('#modal_order_set_id').val($(this).data('id'));
+    let orderSetId = $(this).data('id');
 
-        $('#modal_design_number').text($(this).data('design'));
-        $('#modal_set_size').text($(this).data('set-size'));
-        $('#modal_color').text($(this).data('color'));
-        $('#modal_total_qty').text($(this).data('total'));
+    $('#modal_order_set_id').val(orderSetId);
 
-        $('#assignModal').modal('show');
-    });
+    $('#assignModal').modal('show');
+});
 </script>
 <script>
     $(function () {
         let buttonsConfig = [];
 
         @if ($check_assign == true)
-            // buttonsConfig.push({
-            //     text: 'Download Slip',
-            //     className: 'btn-datatable',
-            //     action: function () {
-            //         window.location.href = "{{ route('admin.product_order.downloadCuttingSlip', ['id' => $order_main->id]) }}";
-            //     }
-            // });
+            buttonsConfig.push({
+                text: 'Download Slip',
+                className: 'btn-datatable',
+                action: function () {
+                    window.location.href = "{{ route('admin.product_order.downloadCuttingSlip', ['id' => $order_main->id]) }}";
+                }
+            });
         @endif
         var i = 1;
         var oTable = $('#customers').DataTable({
