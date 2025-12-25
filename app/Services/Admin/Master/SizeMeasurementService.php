@@ -26,6 +26,8 @@ class SizeMeasurementService {
     }
 
     public function store(Request $request){
+
+        // dd($request);
         // Generate SKU based on name,  check sku name exists or not in table
         $raw_sku = $request->set_size."-". $request->customer_id."-". $request->design_number;
         $sku = strtoupper($raw_sku);
@@ -37,7 +39,7 @@ class SizeMeasurementService {
         $save_data = new MasterSizeMeasurement;
         $save_data->name = $request->set_size;
         $save_data->corporate_company_id = $request->customer_id;
-        $save_data->design_number = $request->design_number;
+        $save_data->design_number = $request->design_number_input != '' ? $request->design_number_input : $request->design_number;
         $save_data->no_of_pcs = $request->no_of_pcs;
         $save_data->set_size = $request->set_size;
         $save_data->size_group =  implode(',', $request->size_group);

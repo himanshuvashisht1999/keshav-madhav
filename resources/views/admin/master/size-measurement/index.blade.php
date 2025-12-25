@@ -58,7 +58,7 @@
                             <input type="text" class="form-control" name="set_size" id="set_size" autocomplete="off">
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="set_size" id="set_size" autocomplete="off">
+                            <input type="text" class="form-control" name="no_of_pcs" id="no_of_pcs" autocomplete="off">
                         </td>
                         <td>
                             <input type="text" class="form-control" name="size_group" id="size_group" autocomplete="off">
@@ -76,7 +76,7 @@
                     </tr>
                   <tr>
                     <th>ID</th>
-                    <th>Company Name</th>
+                    <th>Customer Name</th>
                     <th>Design Number</th>
                     {{-- <th>Name</th> --}}
                     <th>Set Size</th>

@@ -318,7 +318,7 @@ class ProductOrderController extends Controller {
         $data = [
             'mainOrder' => $mainOrder,
             'cuttingData' => $cuttingData,
-            'till_allowed_time' => $till_allowed_time,
+            'till_allowed_time' => $till_allowed_time ?? '',
             'cuttingMaster' => [
                 'cuttingMaster' => $master_name,
                 'cutting_master_address' => $address,
@@ -329,5 +329,10 @@ class ProductOrderController extends Controller {
         $pdf = PDF::loadView('admin.product_order.download-cutting-slip', $data);
 
         return $pdf->download('Cutting_Slip_'. $res->id .'-'. $master_name .'.pdf');
+    }
+
+    public function saveCustomSetSize(Request $request){
+        $response = $this->service->saveCustomSetSize($request);
+        return response()->json($response);
     }
 }

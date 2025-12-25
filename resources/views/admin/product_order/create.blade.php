@@ -92,7 +92,7 @@
                                         </span>
                                     @endif
                                     <div class="col-md-12">
-                                        <label>Set Size (Royal Jeans)</label>
+                                        <label>Name of the Set Size (Royal Jeans)</label>
                                         <a href="{{route('admin.master.size-measurement.create')}}" target="_blank" style="float:right;">Create New +</a>
                                     </div>
                                     <select class="form-control select2 mb-2 size-input" name="set_size" id="set_size">
@@ -100,6 +100,75 @@
                                             <option value="{{ $size->id }}">{{ $size->name }}</option>
                                         @endforeach --}}
                                     </select>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label id="custom_size_set_show" ></label>
+
+                                        <div id="custom_size_set" class="d-none">
+                                            <label class="open-label" onclick="openModal()">Create Custom Size Set</label>
+                                        </div>
+                                    </div>
+                                    {{-- <div class="modal" id="sizeModal">
+                                        <div class="modal-content login-style">
+
+                                            <!-- Header -->
+                                            <div class="modal-header login-header">
+                                                <h4>Create Custom Size Set</h4>
+                                                <span class="close" onclick="closeModal()">×</span>
+                                            </div>
+
+                                            <!-- Body -->
+                                            <div class="modal-body">
+                                                <div id="sizeList" class="size-list">
+
+                                                </div>
+
+                                                <div class="output">
+                                                    <span>Size Group</span>
+                                                    <strong id="groupText">—</strong>
+                                                </div>
+
+                                            </div>
+
+                                            <!-- Footer -->
+                                            <div class="modal-footer login-footer">
+                                                <button class="save-btn" onclick="saveGroup()">Save</button>
+                                            </div>
+
+                                        </div>
+                                    </div> --}}
+                                    <!-- Custom Size Modal -->
+                                    <div class="modal" id="sizeModal">
+                                        <div class="modal-content login-style">
+
+                                            <!-- Header -->
+                                            <div class="modal-header login-header">
+                                                <h4>Create Custom Size Set</h4>
+                                                <span class="close" onclick="closeModal()">×</span>
+                                            </div>
+
+                                            <!-- Body -->
+                                            <div class="modal-body">
+                                                <div class="output">
+                                                    <span>Size Name :</span>
+                                                    <span id="size_name"></span>
+                                                </div>
+                                                <div id="sizeList"></div>
+
+                                                <div class="output">
+                                                    <span>Size Group:</span>
+                                                    <strong id="groupText">—</strong>
+                                                </div>
+                                            </div>
+
+                                            <!-- Footer -->
+                                            <div class="modal-footer login-footer">
+                                                <button type="button" class="save-btn" onclick="saveGroup()">Save</button>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+
                                     @if ($errors->has('sizeList'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('sizeList') }}
@@ -208,7 +277,170 @@
 </div>
 
 
+<style>
+   
+    /* Button */
+    .open-btn {
+        padding: 10px 18px;
+        background: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 15px;
+    }
 
+    /* Modal Overlay */
+    .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Modal Box */
+    .modal-content {
+        background: #fff;
+        width: 420px;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0,0,0,.2);
+        animation: scaleIn .2s ease;
+    }
+
+    @keyframes scaleIn {
+        from { transform: scale(.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .close {
+        font-size: 20px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    select {
+        width: 100%;
+        padding: 8px;
+        margin-top: 10px;
+    }
+
+    .size-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        padding: 6px 10px;
+        background: #eef2f7;
+        border-radius: 5px;
+    }
+
+    .counter button {
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: #28a745;
+        color: #fff;
+        font-size: 16px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .counter span {
+        margin: 0 8px;
+        font-weight: bold;
+    }
+
+    .output {
+        margin-top: 15px;
+        font-weight: bold;
+    }
+
+    .modal-footer {
+        text-align: right;
+        margin-top: 15px;
+    }
+
+    .save-btn {
+        background: #007bff;
+        color: #fff;
+        padding: 8px 14px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .open-label{
+        cursor: pointer;
+        color: #007bff;
+        font-weight: 600;
+        text-decoration: underline;
+        display: inline-block;
+    }
+    .open-label:hover{
+        color: #0056b3;
+    }
+
+
+    .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .modal-content {
+        background: #fff;
+        width: 420px;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    .size-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        padding: 6px 10px;
+        background: #eef2f7;
+        border-radius: 5px;
+    }
+
+    .counter button {
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: #28a745;
+        color: #fff;
+        font-size: 16px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .counter span {
+        margin: 0 8px;
+        font-weight: bold;
+    }
+
+    .open-label {
+        cursor: pointer;
+        color: #007bff;
+        font-weight: 600;
+        text-decoration: underline;
+    }
+
+</style>
 
 <script>
 $(document).ready(function () {
@@ -236,10 +468,10 @@ $(document).ready(function () {
                     let parts = size.split("&&");   // FIXED
 
                     let sizeName = parts[0];        // "Large"
-                    let pcsPerSet = parts[1];       // "12"
-
+                    let pcsPerSet = parts[1] ?? '';       // "12"
+                    let setGroup = parts[2] ?? '';
                     $("#set_size").append(`
-                        <option value="${sizeName}" data-pcs="${pcsPerSet}">
+                        <option value="${index}" data-pcs="${pcsPerSet}" data-set-group="${setGroup}">
                             ${sizeName}
                         </option>
                     `);
@@ -372,10 +604,14 @@ $(document).ready(function () {
         let size = row.find(".size-input option:selected");
         let colour = row.find(".colour-input option:selected");
         let qty = row.find(".qty-input").val();
-        
-        let pcsPerSet = size.data('pcs') || 1;
+        let no_of_pcs_hidden = row.find('#no_of_pcs_hidden').val();
+        let pcsPerSet = no_of_pcs_hidden ? no_of_pcs_hidden : (size.data('pcs') || 1);
         let total_qty = qty * pcsPerSet; // Calculate total quantity
+        
+        let hidden_set_size_id = row.find('#size_set_hidden').val();
 
+        let size_set_id = hidden_set_size_id ? hidden_set_size_id : size.val();
+        
         if (!design.val() || !size.val() || !colour.val() || qty === "") {
             // alert("Please select all fields");
             return;
@@ -417,7 +653,7 @@ $(document).ready(function () {
                     <input type="hidden" name="designList[]" value="${design.val()}">
                 </td>
                 <td>${size.text()}
-                    <input type="hidden" name="sizeList[]" value="${size.val()}">
+                    <input type="hidden" name="sizeList[]" value="${size_set_id}">
                 </td>
                 <td>${colour.text()}
                     <input type="hidden" name="colourList[]" value="${colour.val()}">
@@ -460,6 +696,189 @@ $(document).ready(function () {
     });
 
 });
+
+
+
+/////// custom size set
+    $(document).ready(function () {
+    
+        /* --------------------
+        Open modal on set_size change
+        -------------------- */
+        $('#set_size').on('change', function () {
+
+            let option = $(this).find(':selected');
+            let setGroup = option.data('set-group');
+            let setSizeName = $('#set_size option:selected').text();
+            if (!setGroup) {
+                return;
+            }
+            
+            $('#size_name').text(setSizeName); 
+            $('#custom_size_set').removeClass('d-none'); 
+            currentSetSizeOption = option; // save reference
+            loadSizeGroup(setGroup);
+        });
+
+
+    });
+        let sizeCounts = {};
+    let currentSetSizeOption = null;
+    /* --------------------
+   Modal open / close
+-------------------- */
+function openModal() {
+    document.getElementById('sizeModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('sizeModal').style.display = 'none';
+}
+
+/* --------------------
+   Load size group from data-set-group
+   Example: "18,19,20"
+-------------------- */
+function loadSizeGroup(group) {
+
+    sizeCounts = {};
+
+    if (group) {
+        group.toString().split(',').forEach(size => {
+            sizeCounts[size] = 1; // initial count = 1
+        });
+    }
+
+    renderSizes();
+}
+
+/* --------------------
+   + / - buttons
+-------------------- */
+function changeCount(size, change) {
+
+    sizeCounts[size] += change;
+
+    // minimum 1 allowed
+    if (sizeCounts[size] < 0) {
+        sizeCounts[size] = 0;
+        return;
+    }
+
+    renderSizes();
+}
+
+/* --------------------
+   Render UI + final string
+-------------------- */
+function renderSizes() {
+
+    let list = document.getElementById('sizeList');
+    list.innerHTML = '';
+
+    let group = [];
+
+    Object.keys(sizeCounts)
+        .sort((a, b) => a - b)
+        .forEach(size => {
+
+            let count = sizeCounts[size];
+
+            for (let i = 0; i < count; i++) {
+                group.push(size);
+            }
+
+            list.innerHTML += `
+                <div class="size-row">
+                    <strong>${size}</strong>
+                    <div class="counter">
+                        <button type="button" onclick="changeCount('${size}', -1)">−</button>
+                        <span>${count}</span>
+                        <button type="button" onclick="changeCount('${size}', 1)">+</button>
+                    </div>
+                </div>
+            `;
+        });
+
+    document.getElementById('groupText').innerText = group.join(',');
+}
+
+/* --------------------
+   Save edited group back to option
+-------------------- */
+function saveGroup() {
+
+    let finalGroup = document.getElementById('groupText').innerText;
+    
+    let option = $('#set_size').find(':selected');
+    let setGroup = option.data('set-group');
+    
+    if (setGroup == finalGroup) {
+        closeModal();
+        return;
+    }
+        
+    if (currentSetSizeOption) {
+        currentSetSizeOption.attr('data-set-group', finalGroup);
+    }
+    
+    closeModal();
+    const CSRF_TOKEN = "{{ csrf_token() }}";
+    let customer_id = $('#master_customer_id').val();
+    let set_size = $('#set_size option:selected').text();
+    let set_size_id = $('#set_size').val();
+    let design_id = $('#design_id').val();
+    if(customer_id === "" || finalGroup === ''){
+        return;
+    }
+    let apiUrl = "{{ route('admin.sales_order.saveCustomSetSize') }}";
+    $.ajax({
+        url: apiUrl,   // Route
+        type: 'POST',
+        data: { 
+            _token          :   CSRF_TOKEN,
+            customer_id     :   customer_id,
+            set_size_id     :   set_size_id, 
+            set_size_name   :   set_size,
+            finalGroup      :   finalGroup,  
+            design_id       :   design_id, 
+        },
+        success: function (response) {
+            if(response.new_size_group){
+                $('#custom_size_set_show').text("New Size Set ("+ response.new_size_group + ")");
+                // check hidden input exist or not
+                if ($('#size_set_hidden').length === 0) {
+
+                    // create hidden input if not exists
+                    $('#custom_size_set_show').after(`
+                        <input type="hidden" 
+                            id="size_set_hidden" 
+                            name="size_set_hidden" 
+                            value="${response.new_size_set_id}">
+                    `);
+
+                    $('#custom_size_set_show').after(`
+                        <input type="hidden" 
+                            id="no_of_pcs_hidden" 
+                            name="no_of_pcs_hidden" 
+                            value="${response.no_of_pcs}">
+                    `);
+                    
+
+                } else {
+                    // update value if exists
+                    $('#size_set_hidden').val(response.new_size_set_id);
+                    $('#no_of_pcs_hidden').val(response.no_of_pcs);
+                }
+            }
+        },
+        error: function(xhr){
+            console.log(xhr.responseText);
+        }
+    });
+}
+        
+
 </script>
 
 @endsection

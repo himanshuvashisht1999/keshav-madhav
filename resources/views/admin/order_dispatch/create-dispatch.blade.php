@@ -90,7 +90,8 @@
                                         <th>#</th>
                                         <th>Bar Code</th>
                                         <th>Design</th>
-                                        <th>Size</th>
+                                        <th>Set Size</th>
+                                        <th>Size Group</th>
                                         <th>Color</th>
                                         <th>Pcs</th>
                                         <th>Set Qty</th>
@@ -448,6 +449,7 @@ $(function () {
                     <td>${bc || ''}</td>
                     <td>${r.design_number}</td>
                     <td>${r.set_size}</td>
+                    <td>${r.size_group}</td>
                     <td>${r.color}</td>
                     <td class="pcs">${r.no_of_pcs}</td>
                     <td>${r.set_quantity}</td>

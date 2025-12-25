@@ -87,7 +87,7 @@
                             <th>ID</th>
                             <th>Provided Bar Code</th>
                             <th>Design Number</th>
-                            <th>Set Size</th>
+                            <th>Set Size <br>(Size Group)</th>
                             <th>Colour</th>
                             <th>Set Quantity</th>
                             <th>Pcs per Set</th>
@@ -110,6 +110,104 @@
                     </tfoot>
                 </table>
             </div>
+            <div>
+                @if ($check_assign == false)
+                    <section class="content">
+                        <div class="container-fluid">
+
+                            <div class="card p-3 shadow-sm">
+
+                                <form action="{{ route('admin.product_order.assign_to') }}" method="POST" enctype="multipart/form-data">
+                                    @csrf
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                        </div>
+                                        <!-- LEFT -->
+                                        <div class="col-md-6">
+
+                                            <!-- Customer & Delivery -->
+                                            <div class="card mb-3 p-3 border">
+                                                <h3 class="mb-3 assign-to" >Assign to Cutting Master</h3>
+
+                                                <label>Select Cutting Master</label>
+                                                <select name="master_cutting_id" id="master_cutting_id" class="form-control select2 mb-2" required>
+                                                    <option value="">Select Cutting Master </option>
+                                                    @foreach($cutting_units as $cutting_unit)
+                                                        <option value="{{ $cutting_unit->id }}">{{ $cutting_unit->cutting_master_name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                @if ($errors->has('master_cutting_id'))
+                                                    <span class="invalid-feedback d-block">
+                                                        {{ $errors->first('master_cutting_id') }}
+                                                    </span>
+                                                @endif
+                                                {{-- <label for="delivery_time_allowed">Delivery Time Allowed (in Days)</label>
+                                                <input type="number" name="delivery_time_allowed" id="delivery_time_allowed" min='1' placeholder="Enter Delivery Time Allowed in days "  class="form-control">
+                                                <label for="remarks">Remarks</label>
+                                                <textarea id="remarks" name="remarks" class="form-control" rows="3" placeholder="Enter your remarks..."></textarea>
+                                                @if ($errors->has('remarks'))
+                                                    <span class="invalid-feedback d-block">
+                                                        {{ $errors->first('remarks') }}
+                                                    </span>
+                                                @endif --}}
+
+                                                {{-- <!-- TIME TYPE -->
+                                                <div class="form-group">
+                                                    <label class="font-weight-bold">Time Type</label>
+                                                    <select name="time_type" id="time_type" class="form-control" required>
+                                                        <option value="">Select Time Type</option>
+                                                        <option value="hours">Hours</option>
+                                                        <option value="days">Days</option>
+                                                    </select>
+                                                </div>
+
+                                                <!-- ALLOWED TIME -->
+                                                <div class="form-group">
+                                                    <label class="font-weight-bold" id="allowed_time_label">
+                                                        Allowed Time
+                                                    </label>
+                                                    <input type="number"
+                                                        class="form-control"
+                                                        id="allowed_time"
+                                                        name="allowed_time"
+                                                        placeholder="Enter Allowed Time"
+                                                        min="1" required>
+                                                </div> --}}
+
+                                                <!-- REMARK -->
+                                                <div class="form-group">
+                                                    <label class="font-weight-bold">Remarks</label>
+                                                    <textarea
+                                                        class="form-control @error('final_remark') is-invalid @enderror"
+                                                        id="final_remark"
+                                                        name="final_remark"
+                                                        rows="3"
+                                                        placeholder="Enter remark (optional)"
+                                                    >{{ old('final_remark') }}</textarea>
+                                                </div>
+                                                <input type="hidden"
+                                                        class="form-control"
+                                                        id="till_allowed_time"
+                                                        name="till_allowed_time">
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div class="text-right mt-3">
+                                        <input type="hidden" id="order_main_id" name="order_main_id" value="{{$order_main->id}}">
+                                        <button class="btn btn-success px-4">Assign</button>
+                                    </div>
+
+                                </form>
+
+                            </div>
+
+                        </div>
+                    </section>
+                @endif
             
         </div>
     </section>
@@ -332,72 +430,72 @@
         });
 
         // Final submit
-        $('#confirmFinalSubmit').on('click', function(){
-            calculateAllowedTill();
-        // ✅ count only real data rows
-            let dataRowCount = $('#productTable tbody tr')
-                .not('#noDataRow')
-                .length;
+        // $('#confirmFinalSubmit').on('click', function(){
+        //     calculateAllowedTill();
+        //     // ✅ count only real data rows
+        //     let dataRowCount = $('#productTable tbody tr')
+        //         .not('#noDataRow')
+        //         .length;
 
-            if (dataRowCount === 0) {
-                alert('Please add at least one design before submitting.');
-                return;
-            }
+        //     if (dataRowCount === 0) {
+        //         alert('Please add at least one design before submitting.');
+        //         return;
+        //     }
 
-            let timeType     = $('#time_type').val();
-            let allowedTime  = $('#allowed_time').val();
-            let remark       = $('#final_remark').val().trim();
+        //     let timeType     = $('#time_type').val();
+        //     let allowedTime  = $('#allowed_time').val();
+        //     let remark       = $('#final_remark').val().trim();
 
-            if (!timeType) {
-                alert('Please select Time Type (Hours / Days)');
-                return;
-            }
+        //     if (!timeType) {
+        //         alert('Please select Time Type (Hours / Days)');
+        //         return;
+        //     }
 
-            if (!allowedTime || allowedTime <= 0) {
-                alert('Please enter valid allowed time');
-                return;
-            }
+        //     if (!allowedTime || allowedTime <= 0) {
+        //         alert('Please enter valid allowed time');
+        //         return;
+        //     }
 
-            // ✅ copy modal values to hidden form fields
-            $('#remark').val(remark);
-            $('#hidden_allowed_time').val(allowedTime);
-            $('#hidden_time_type').val(timeType);
+        //     // ✅ copy modal values to hidden form fields
+        //     $('#remark').val(remark);
+        //     $('#hidden_allowed_time').val(allowedTime);
+        //     $('#hidden_time_type').val(timeType);
 
-            // ✅ submit
-            $('#confirmSubmitModal').modal('hide');
-            $('#slip_digitalization form').submit();
-        });
+        //     // ✅ submit
+        //     $('#confirmSubmitModal').modal('hide');
+        //     $('#slip_digitalization form').submit();
+        // });
 
-        function calculateAllowedTill() {
-            let type  = $('#time_type').val();
-            let value = parseInt($('#allowed_time').val());
-            if (!type || !value || value <= 0) {
-                $('#hidden_allowed_till').val('');
-                return;
-            }
+        // function calculateAllowedTill() {
+        //     let type  = $('#time_type').val();
+        //     let value = parseInt($('#allowed_time').val());
+        //     if (!type || !value || value <= 0) {
+        //         $('#hidden_allowed_till').val('');
+        //         return;
+        //     }
 
-            let now = new Date();
+        //     let now = new Date();
 
-            if (type === 'hours') {
-                now.setHours(now.getHours() + value);
-            }
+        //     if (type === 'hours') {
+        //         now.setHours(now.getHours() + value);
+        //     }
 
-            if (type === 'days') {
-                now.setDate(now.getDate() + value);
-            }
+        //     if (type === 'days') {
+        //         now.setDate(now.getDate() + value);
+        //     }
 
-            // format for backend: YYYY-MM-DD HH:mm:ss
-            let formatted =
-                now.getFullYear() + '-' +
-                String(now.getMonth() + 1).padStart(2, '0') + '-' +
-                String(now.getDate()).padStart(2, '0') + ' ' +
-                String(now.getHours()).padStart(2, '0') + ':' +
-                String(now.getMinutes()).padStart(2, '0') + ':00';
+        //     // format for backend: YYYY-MM-DD HH:mm:ss
+        //     let formatted =
+        //         now.getFullYear() + '-' +
+        //         String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        //         String(now.getDate()).padStart(2, '0') + ' ' +
+        //         String(now.getHours()).padStart(2, '0') + ':' +
+        //         String(now.getMinutes()).padStart(2, '0') + ':00';
 
-            $('#hidden_allowed_till').val(formatted);
-            $('#till_allowed_time').val(formatted);
+        //     $('#hidden_allowed_till').val(formatted);
+        //     $('#till_allowed_time').val(formatted);
             
-        }
+        // }
 
     });
 

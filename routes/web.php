@@ -171,6 +171,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/store',[AdminProductOrderController::class,'store'])->name('store');
             Route::get('/getCustomerSizes',[AdminProductOrderController::class,'getCustomerSizes'])->name('getCustomerSizes');
             Route::get('/getCustomerDesign',[AdminProductOrderController::class,'getCustomerDesign'])->name('getCustomerDesign');
+            Route::post('/saveCustomSetSize',[AdminProductOrderController::class,'saveCustomSetSize'])->name('saveCustomSetSize');
         });
 
         Route::prefix('/production-order')->name('product_order.')->group(function () {
