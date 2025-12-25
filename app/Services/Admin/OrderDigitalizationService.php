@@ -345,25 +345,36 @@ class OrderDigitalizationService {
             
         $data = [];
         if ($results){
-            // $results = ProductionSlipDigitization::with('getUnitMaster')
-            //     ->where('status', 0)
-            //     ->orderBy('id', 'asc')
-            //     ->first();
+            
+            // $results_units = StageMasterUnit::with('masterStage')->where('status', 1)->where('master_fabric_warehouse_id', $results->getUnitMaster->master_fabric_warehouse_id)
+            //     ->orderBy('sequence', 'asc')
+            //     ->get()->toArray();
             // dd($results);
-            $results_units = StageMasterUnit::with('masterStage')->where('status', 1)->where('master_fabric_warehouse_id', $results->getUnitMaster->master_fabric_warehouse_id)
-                ->orderBy('id', 'asc')
-                ->get()->toArray();
+            $results_units = StageMasterUnit::with('masterStage')
+                ->join('master_product_stages as master_stages', 'master_stages.id', '=', 'stage_master_units.master_stage_id')
+                ->where('stage_master_units.status', 1)
+                ->where(
+                    'stage_master_units.master_fabric_warehouse_id',
+                    $results->getUnitMaster->master_fabric_warehouse_id
+                )
+                ->orderBy('master_stages.sequence', 'asc')
+                ->select('stage_master_units.*', 'master_stages.sequence')
+                ->get()
+                ->toArray();
             $unit_master_data = [];
             $from_stage = [];
             if ($results_units){
                 foreach ($results_units as $unit_data) {
-                    $unit_master_data[] = [
-                        'id' => $unit_data['id'],
-                        'master_stage_id' => $unit_data['master_stage_id'],
-                        'name' => $unit_data['name'],
-                        'master_stage_name' => $unit_data['master_stage']['name'],
 
-                    ];
+                    if($results->from_stage_id != $unit_data['master_stage_id']){
+                        $unit_master_data[] = [
+                            'id' => $unit_data['id'],
+                            'master_stage_id' => $unit_data['master_stage_id'],
+                            'name' => $unit_data['name'],
+                            'master_stage_name' => $unit_data['master_stage']['name'],
+
+                        ];
+                    }
                     if ($results['stage_master_unit_id'] == $unit_data['id']){
                         $from_stage = [
                             'id' => $unit_data['id'],
@@ -377,6 +388,7 @@ class OrderDigitalizationService {
                     }
                 }
             }
+            // dd($results_units);
             $data = [
                 'id' => $results->id,
                 'slip_file' => $results->slip_file,

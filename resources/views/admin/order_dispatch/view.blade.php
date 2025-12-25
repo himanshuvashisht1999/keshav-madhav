@@ -126,6 +126,7 @@
                                                     <th>Bar Code</th>
                                                     <th>Design No</th>
                                                     <th>Size Set</th>
+                                                    <th>Size Group</th>
                                                     <th>Colour</th>
                                                     <th>No of Pcs (per Set)</th>
                                                     <th>No of Boxes</th>
@@ -137,6 +138,7 @@
                                                     <td>{{$box['bar_code']}}</td>
                                                     <td>{{$box['design_number']}}</td>
                                                     <td>{{$box['set_size']}}</td>
+                                                    <td>{{$box['size_group']}}</td>
                                                     <td>{{$box['color']}}</td>
                                                     <td>{{$box['no_of_pcs']}}</td>
                                                     <td>{{$box['set_quantity']}}</td>

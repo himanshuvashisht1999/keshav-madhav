@@ -159,7 +159,7 @@
                                             
                                             <option value="">Select</option>
                                             @foreach($product_size as $set_size)
-                                                <option value="{{ $set_size->id }}">
+                                                <option value="{{ $set_size->id }}" data-no-of-pcs="{{ $set_size->no_of_pcs }}">
                                                     {{ $set_size->set_size }}
                                                 </option>
                                             @endforeach
@@ -212,6 +212,7 @@
                                                 <th>Set Qty</th>
                                                 <th>Individual Size</th>
                                                 <th>Individual Qty</th>
+                                                <th>Total Qty</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
@@ -249,7 +250,7 @@
     </section>
 </div>
 <!-- CONFIRM SUBMIT MODAL -->
-<div class="modal fade" id="confirmSubmitModal" tabindex="-1" role="dialog">
+{{-- <div class="modal fade" id="confirmSubmitModal" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
 
@@ -314,7 +315,7 @@
 
         </div>
     </div>
-</div>
+</div> --}}
 
 
 {{-- STYLES --}}
@@ -346,7 +347,8 @@ $(function(){
             alert('Order number is mandatory.');
             return;
         }
-        $('#confirmSubmitModal').modal('show');
+        $('#slip_digitalization form').submit();
+        // $('#confirmSubmitModal').modal('show');
     });
 
     $('#time_type, #allowed_time').on('change keyup', function () {
@@ -424,6 +426,8 @@ $(function(){
         let type = $('#size_type').val();
         let size = type==='set' ? $('#set_size').val() : $('#single_size').val();
         let qty  = type==='set' ? $('#set_qty').val()  : $('#single_qty').val();
+        let pcs  = type==='set' ? $('#set_size').find(':selected').data('no-of-pcs') : 1;
+        let total_qty = qty * pcs;
         let set_sizeText = $('#set_size option:selected').text();
         if(!lotNo || !toUnitId || !design || !colourVal || !size || !qty){
             alert('Please fill all fields');
@@ -481,7 +485,9 @@ $(function(){
                 ${type === 'single' ? qty : '-'}
                 <input type="hidden" name="individual_qty[]" value="${type === 'single' ? qty : ''}">
             </td>
-
+             <td>
+                ${ total_qty }
+            </td>
             <td><button type="button" class="btn btn-danger btn-sm remove">X</button></td>
         </tr>
         `);

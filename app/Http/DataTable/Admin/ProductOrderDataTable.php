@@ -160,6 +160,14 @@ class ProductOrderDataTable  {
                 }
                 
             }) 
+            ->addColumn('set_size', function ($queue) {
+                $set_size = DB::table('master_size_measurements')
+                    ->where('id', $queue->set_size)
+                    ->select('set_size', 'size_group')
+                    ->first();
+
+                return $set_size->set_size."\n(".$set_size->size_group.")" ?? '';
+            })
             ->addColumn('color_id', function ($queue) {
                 $name = DB::table('master_colors')->where('id', $queue->color_id)
                     ->value('name');
@@ -196,7 +204,7 @@ class ProductOrderDataTable  {
                 return $view;
             })
             
-            ->rawColumns(['action','design_number','assign_to', 'total_qty', 'status'])
+            ->rawColumns(['action','design_number', 'size_set','assign_to', 'total_qty', 'status'])
             ->make(true);
     }
 }

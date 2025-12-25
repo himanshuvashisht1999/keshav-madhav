@@ -160,8 +160,9 @@ class OrderDispatchService {
                         $car_data[$val['bar_code']] = [
                             'bar_code'      => $order_product_sets['bar_code'],
                             'design_number' => $order_product_sets['design_number'],
-                            'set_size'      => $order_product_sets['set_size'],
-                            'color'      => $order_product_sets['colors']['name'],
+                            'set_size'      => $order_product_sets['size_measurement']['set_size'],
+                            'size_group'    => $order_product_sets['size_measurement']['size_group'],
+                            'color'         => $order_product_sets['colors']['name'],
                             'no_of_pcs'     => $order_product_sets['no_of_pcs'],
                             'set_quantity'  => $val['set_quantity'],
                         ];
@@ -275,6 +276,7 @@ class OrderDispatchService {
         
         $results = OrderProductSet::with([
                 'colors:id,name',
+                'sizeMeasurement',
                 'orderMain:id,master_customer_id,sku'
             ])->where('bar_code', $search_barcode)
             ->where('status', 1)
@@ -288,7 +290,8 @@ class OrderDispatchService {
                 'order_main_id'         => $val['order_main_id'],
                 'bar_code'              => $val['bar_code'] ?? '',
                 'design_number'         => $val['design_number'],
-                'set_size'              => $val['set_size'],
+                'set_size'              => $val['size_measurement']['set_size'],
+                'size_group'            => $val['size_measurement']['size_group'],
                 'color'                 => $val['colors']['name'] ?? '',
                 'no_of_pcs'             => $val['no_of_pcs'],
                 'set_quantity'          => $val['set_quantity'],
@@ -310,6 +313,7 @@ class OrderDispatchService {
         $order_main_id = $request->order_main_id;
         $results = OrderProductSet::with([
                 'colors:id,name',
+                'sizeMeasurement',
                 'orderMain:id,master_customer_id,sku'
             ])->where('order_main_id', $order_main_id)
             ->where('status', 1)
@@ -323,7 +327,8 @@ class OrderDispatchService {
                 'order_main_id'         => $val['order_main_id'],
                 'bar_code'              => $val['bar_code'] ?? '',
                 'design_number'         => $val['design_number'],
-                'set_size'              => $val['set_size'],
+                'set_size'              => $val['size_measurement']['set_size'],
+                'size_group'            => $val['size_measurement']['size_group'],
                 'color'                 => $val['colors']['name'] ?? '',
                 'no_of_pcs'             => $val['no_of_pcs'],
                 'set_quantity'          => $val['set_quantity'],

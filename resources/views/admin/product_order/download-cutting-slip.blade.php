@@ -158,7 +158,7 @@
                 Assigned To : (Cutting Stage)
             </td>
             <td style="text-align:right; font-size:14px; font-weight:normal;">
-                Allowed Delivery Date : {{ $till_allowed_time ?? '' }}
+                {{-- Allowed Delivery Date : {{ $till_allowed_time ?? '' }} --}}
             </td>
         </tr>
     </table>
