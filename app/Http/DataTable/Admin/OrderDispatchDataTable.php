@@ -7,62 +7,74 @@ use App\Models\Fabric;
 use App\Models\Order;
 use App\Models\OrderMain;
 use App\Models\OrderProductSet;
-use App\Models\OrderDispatchCarton;
+use App\Models\PackingCarton;
 use App\Models\CartonPackingSession;
+use App\Models\OrderDispatch;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 
 class OrderDispatchDataTable  {
 
     public function indexList($request){
-        $queue = CartonPackingSession::with([
-            'orderMain.customer'
+        $queue = OrderDispatch::with([
+            'dispatchDetails',
+            'orderMain.customer',
+            'orderMain.dispatchCartons'
         ]);
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id','desc');
-                if ($request->has('carton_packing_session_no') && !empty($request->carton_packing_session_no)) {
-                    $query->where('carton_packing_session_no', 'like', "%{$request->get('carton_packing_session_no')}%");
+                if ($request->has('order_dispatch_no') && !empty($request->order_dispatch_no)) {
+                    $query->where('sku', 'like', '%' . $request->order_dispatch_no . '%');
                 }
-                if ($request->has('main_order_id') && $request->filled('main_order_id')) {
-                    $query->where('main_order_id', $request->get('main_order_id'));
+                if ($request->filled('main_order_id')) {
+                    $query->whereHas('orderMain', function ($q) use ($request) {
+                        $q->where('sku', 'like', '%' . $request->main_order_id . '%');
+                    });
                 }
-                if ($request->has('master_customer_id') && $request->filled('master_customer_id')) {
-                    $query->where('customer_id', $request->get('master_customer_id'));
+
+                if ($request->has('customer_id') && $request->filled('customer_id')) {
+                    $query->where('customer_id', $request->get('customer_id'));
                 }
             }) 
-            
+            ->editColumn('order_dispatch_no', function ($queue) {
+                // dd($queue->orderMain->sku);
+				return $queue->sku ?? '';
+            })
             ->editColumn('main_order_id', function ($queue) {
                 // dd($queue->orderMain->sku);
 				return $queue->orderMain->sku ?? '';
             })
-            ->editColumn('master_customer_id', function ($queue) {
+            ->editColumn('customer_id', function ($queue) {
 				return $queue->orderMain->customer->name ?? '';
                 
             })
-            ->editColumn('total_cartons', function ($queue) {
-				return $queue->total_quantity ?? 0; 
+            ->editColumn('dispatch_address', function ($queue) {
+				return $queue->orderMain->customer->address ?? '';
+                
+            })
+            ->editColumn('dispatch_date', function ($queue) {
+				return date('d-m-Y h:i A', strtotime( $queue->dispatch_date )) ?? '';
+                
             })
             ->addColumn('status', function ($queue) {
                 if ($queue->status == 1) {
-                    return '<span class="badge badge-primary">Not Issued</span>';
-                }elseif($queue->status == 3){
-                    return '<span class="badge badge-success">Completed</span>';
-                } else {
-                    return '<span class="badge badge-warning">In Progress</span>';
-                }
+                    return '<span class="badge badge-primary">Partial</span>';
+                }elseif($queue->status == 2){
+                    return '<span class="badge badge-success">Complete</span>';
+                } 
             })
 
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;
                 
-                $view = '<a href="' . route('admin.packing-carton.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
+                $view = '<a href="' . route('admin.order-dispatch.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
                 $status = '<a href="javascript:void(0);" data-id="'.$parameter.'" data-order_sku="'.$queue->sku.'" title="Status" class="statusLink" style="margin-left: 8px;"><i class="fas fa-chart-line text-muted"></i> </a>';
                 
                 return $view . ' ' . (($queue->status != 1) ? $status : '');
             })
             
-            ->rawColumns(['action','main_order_id', 'master_customer_id', 'total_cartons', 'status'])
+            ->rawColumns(['action','main_order_id', 'customer_id', 'status'])
             ->make(true);
     }
 }

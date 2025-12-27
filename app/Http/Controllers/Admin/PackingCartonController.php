@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Services\Admin\OrderDispatchService as Service;
+use App\Services\Admin\PackingCartonService as Service;
 use App\Services\Admin\ProductOrderService;
 use Illuminate\Support\Facades\Crypt;
 use Auth;
@@ -10,7 +10,7 @@ use PDF;
 
 
 
-class OrderDispatchController extends Controller { 
+class PackingCartonController extends Controller { 
     protected $service;
     public function __construct(Service $service, ProductOrderService $ProductOrderService) {
         $this->service = $service;
@@ -18,22 +18,24 @@ class OrderDispatchController extends Controller {
     }
     public function create(Request $request){
         $response['customers'] = $this->productOrderService->customers();
-        // dd($response);
-        return view('admin.order_dispatch.create', $response);
+        // $response['order_main_id'] = $request->id ?? 0;
+        // // $response['order_main'] = $this->productOrderService->orderMainDetails($request);
+        return view('admin.packing_carton.create', $response);
     } 
     public function store(Request $request){
         $data = $this->service->store($request);
         if($data['status_code'] == 1){
-            return redirect()->route('admin.order-dispatch.index')->withSuccess($data['message']);
+            return redirect()->route('admin.packing-carton.view',['id' => $data['id']])->withSuccess($data['message']);
         }else{
             return redirect()->back()->withError($data['message']);
         }
-        // return view('admin.order_dispatch.create-dispatch');
+        // return view('admin.packing_carton.create-dispatch');
     } 
     public function index(Request $request){
         $response['customers'] = $this->productOrderService->customers();
-        // dd($response);
-        return view('admin.order_dispatch.index', $response);
+        $response['orders'] = $this->service->getOrders();
+        // dd($response['orders']);
+        return view('admin.packing_carton.index',$response);
     }
     public function indexList(Request $request){
         return $this->service->indexList($request);
@@ -42,16 +44,20 @@ class OrderDispatchController extends Controller {
     public function view(Request $request){
         $response['data'] = $this->service->view($request);
         // dd($response['data']);
-        return view('admin.order_dispatch.view',$response);
+        return view('admin.packing_carton.view',$response);
+    }
+    public function getCustomerOrders(Request $request){
+        $response['data'] = $this->service->getCustomerOrders($request);
+        return response()->json($response);
+    }
+    public function getCustomersBybarcode(Request $request){
+        $response['data'] = $this->service->getCustomersBybarcode($request);
+        return response()->json($response);
+    }
+    public function getOrdersDetails(Request $request){
+        $response['data'] = $this->service->getOrdersDetails($request);
+        return response()->json($response);
     }
     
-    public function getOrderPackingData(Request $request){
-        $response['data'] = $this->service->getOrderPackingData($request);
-        return response()->json($response);
-    }
-
-    public function getOrdersByCustomer(Request $request){
-        $response['data'] = $this->service->getOrdersByCustomer($request);
-        return response()->json($response);
-    }
+ 
 }

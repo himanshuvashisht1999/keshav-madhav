@@ -4,10 +4,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class OrderDispatchCartonsDetails extends Model
+class PackingCartonsDetails extends Model
 {
     use HasFactory;
-    protected $table= 'order_dispatch_cartons_details';
+    protected $table= 'packing_cartons_details';
     protected $fillable = [
         'id',
         'sno',

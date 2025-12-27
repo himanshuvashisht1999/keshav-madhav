@@ -8,12 +8,15 @@
         <div class="container-fluid">
             <div class="row mb-2 align-items-center">
                 <div class="col-sm-6">
-                    <h1 class="mb-0">Packing Carton Details</h1>
+                    <h1 class="mb-0">Order Dispatch Details</h1>
                 </div>
                 <div class="col-sm-6 text-right">
-                    <a href="{{ route('admin.packing_carton.index') }}" class="btn btn-secondary">
+                    <a href="{{ route('admin.order-dispatch.index') }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left mr-1"></i> Back
                     </a>
+                </div>
+                <div class="col-sm-6">
+                    <h6 class="mb-0">Dispatch Date : {{$data['order_dispatch_data']['dispatch_date'] ?? ''}}</h6>
                 </div>
             </div>
         </div>
@@ -34,8 +37,8 @@
                                     <i class="fas fa-boxes"></i>
                                 </span>
                                 <div class="info-box-content">
-                                    <span class="info-box-text">Carton Packing Session No</span>
-                                    <span class="info-box-number">{{$data['cartons_session_data']['carton_packing_session_no'] ?? ''}}</span>
+                                    <span class="info-box-text">Order Dispatch No</span>
+                                    <span class="info-box-number">{{$data['order_dispatch_data']['order_dispatch_no'] ?? ''}}</span>
                                 </div>
                             </div>
                         </div>
@@ -47,7 +50,7 @@
                                 </span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">Order No</span>
-                                    <span class="info-box-number">{{$data['cartons_session_data']['order_no'] ?? ''}}</span>
+                                    <span class="info-box-number">{{$data['order_dispatch_data']['order_no'] ?? ''}}</span>
                                 </div>
                             </div>
                         </div>
@@ -59,7 +62,7 @@
                                 </span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">Customer Name</span>
-                                    <span class="info-box-number">{{$data['cartons_session_data']['customer'] ?? ''}}</span>
+                                    <span class="info-box-number">{{$data['order_dispatch_data']['customer'] ?? ''}}</span>
                                 </div>
                             </div>
                         </div>
@@ -70,8 +73,8 @@
                                     <i class="fas fa-cubes"></i>
                                 </span>
                                 <div class="info-box-content">
-                                    <span class="info-box-text">Total Cartons</span>
-                                    <span class="info-box-number">{{$data['cartons_session_data']['total_cartons'] ?? '0'}}</span>
+                                    <span class="info-box-text">Total Cartons / Boxes</span>
+                                    <span class="info-box-number">{{$data['order_dispatch_data']['total_cartons'] ?? '0'}} / {{$data['order_dispatch_data']['total_boxes_dispatch'] ?? '0'}}</span>
                                 </div>
                             </div>
                         </div>

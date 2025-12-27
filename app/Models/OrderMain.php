@@ -47,7 +47,7 @@ class OrderMain extends Model
 
     public function dispatchCartons()
     {
-        return $this->hasMany(OrderDispatchCarton::class, 'main_order_id', 'id');
+        return $this->hasMany(PackingCarton::class, 'main_order_id', 'id');
     }
     
 }

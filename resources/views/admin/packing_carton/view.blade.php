@@ -52,7 +52,7 @@
                             </div>
                         </div>
 
-                        <div class="col-md-3 col-sm-6 mb-2">
+                        <div class="col-md-4 col-sm-6 mb-2">
                             <div class="info-box bg-light">
                                 <span class="info-box-icon bg-success">
                                     <i class="fas fa-user-tie"></i>
@@ -64,7 +64,7 @@
                             </div>
                         </div>
 
-                        <div class="col-md-3 col-sm-6 mb-2">
+                        <div class="col-md-2 col-sm-6 mb-2">
                             <div class="info-box bg-light">
                                 <span class="info-box-icon bg-warning">
                                     <i class="fas fa-cubes"></i>
