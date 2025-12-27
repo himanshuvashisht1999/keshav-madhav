@@ -17,7 +17,7 @@ use App\Models\PurchaseOrder;
 use App\Models\OrderStageTracking;
 use App\Models\OrderStageWiseTimeTracking;
 use App\Models\MasterProductStage;
-use App\Models\OrderDispatchCarton;
+use App\Models\PackingCarton;
 use Carbon\Carbon;
 
 class ReportService {

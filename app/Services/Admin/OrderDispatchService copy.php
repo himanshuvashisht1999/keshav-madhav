@@ -11,7 +11,7 @@ use App\Models\ProductionSlipDigitizationParts;
 use PDF;
 
 
-use App\Http\DataTable\Admin\OrderDigitalizationDataTable as DataTable;
+use App\Http\DataTable\Admin\OrderDispatchDataTable as DataTable;
 use Illuminate\Support\Facades\DB;
 
 class OrderDispatchService {

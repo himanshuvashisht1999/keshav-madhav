@@ -6,7 +6,7 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12">
-                    <h1 class="text-center">Order Dispatch</h1>
+                    <h1 class="text-center">List of Order Dispatch</h1>
                 </div>
             </div>
         </div>
@@ -22,7 +22,7 @@
                         <!-- <h3 class="card-title">Manage Production Order</h3> -->
                     </div>
                     <div class="col-3 card-header">
-                        <a href="{{route('admin.packing_carton.create-dispatch')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Packing in Carton</a>
+                        <a href="{{route('admin.order-dispatch.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Create Order Dispatch</a>
                     </div>
                 </div>
                 
@@ -34,18 +34,13 @@
                             {{-- <input type="hidden" class="form-control" name="id" id="id" value="{{$order_main->id}}" autocomplete="off"> --}}
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="carton_packing_session_no" id="carton_packing_session_no" autocomplete="off"> 
+                            <input type="text" class="form-control" name="order_dispatch_no" id="order_dispatch_no" autocomplete="off"> 
                         </td>
                         <td>
-                            <select name="main_order_id" id="main_order_id" class="form-control select2" style="width: 100%;">
-                                <option value="">All</option>
-                                @foreach($orders as $order)
-                                <option value="{{$order->id}}">{{$order->sku}}</option>
-                                @endforeach
-                            </select>
+                           <input type="text" class="form-control" name="main_order_id" id="main_order_id" autocomplete="off"> 
                         </td>
                         <td>
-                            <select name="master_customer_id" id="master_customer_id" class="form-control select2" style="width: 100%;">
+                            <select name="customer_id" id="customer_id" class="form-control select2" style="width: 100%;">
                                 <option value="">All</option>
                                 @foreach($customers as $customer)
                                 <option value="{{$customer->id}}">{{$customer->name}}</option>
@@ -56,43 +51,50 @@
                         <td>
                            
                         </td>
-
+                        <td>
+                           
+                        </td>
+                        {{-- <td>
+                           
+                        </td>
+                        <td>
+                           
+                        </td> --}}
+                        <td>
+                           
+                        </td>
+                        
                         <td> <select id="status" class="form-control form-control-sm">
                                 <option value="">All</option>
-                                <option value="1">Not Issued</option>
-                                <option value="2">In Progress</option>
-                                <option value="3">Completed</option>
+                                <option value="1">Partial</option>
+                                <option value="2">Complete</option>
                             </select>
+                        </td>
+                        <td>
+                           
                         </td>
                     </tr>
                     <tr>
                         <th>ID</th>
-                        <th>Carton Packing Session No</th>
+                        <th>Order Dispatch No</th>
                         <th>Order No</th>
                         <th>Customer Name</th>
                         <th>Total Cartons</th>
+                        {{-- <th>Total Boxes</th>
+                        <th>Total Qty</th> --}}
+                        <th>Dispatch Address</th>
+                        <th>Dispatch Date</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
                   </thead>
-                  <tbody>
-                  <!-- <tr>
-                    <td>1</td>
-                    <td>wefds</td>
-                    <td>Win 95+</td>
-                    <td> 4</td>
-                    <td>X</td>
-                  </tr> -->
-                  
-                  </tbody>
-                  
+                  <tbody></tbody>
                 </table>
               </div>
             </div>
         </div>
     </section>
 </div>
-
 
 <style >
     #hoverBox {
@@ -138,22 +140,24 @@
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             "pageLength":25,
             ajax: {
-                url: '{!! route('admin.packing_carton.indexList') !!}',
+                url: '{!! route('admin.order-dispatch.indexList') !!}',
                 data: function (d) {
                     d.id = $('#id').val();
-                    d.carton_packing_session_no = $('#carton_packing_session_no').val();
+                    d.order_dispatch_no = $('#order_dispatch_no').val();
                     d.main_order_id = $('#main_order_id').val();
-                    d.master_customer_id = $('#master_customer_id').val();
+                    d.customer_id = $('#customer_id').val();  
                     d.status = $('#status').val();
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'carton_packing_session_no', name: 'carton_packing_session_no'},
+                {data: 'order_dispatch_no', name: 'order_dispatch_no'},
                 {data: 'main_order_id', name: 'main_order_id'},                
-                {data: 'master_customer_id', name: 'master_customer_id'}, 
-                {data: 'total_cartons', name: 'total_cartons'},               
+                {data: 'customer_id', name: 'customer_id'}, 
+                {data: 'total_quantity', name: 'total_quantity'},  
+                {data: 'dispatch_address', name: 'dispatch_address'}, 
+                {data: 'dispatch_date', name: 'dispatch_date'},              
                 {data: 'status', name: 'status'},                
                 {data: 'action', name: 'action', searchable: false}
             ],
@@ -170,17 +174,17 @@
             e.preventDefault();
         });
 
-        $('#carton_packing_session_no').on('keyup', function (e) {
+        $('#order_dispatch_no').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
 
-        $('#main_order_id').on('change', function (e) {
+        $('#main_order_id').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
 
-        $('#master_customer_id').on('change', function (e) {
+        $('#customer_id').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });

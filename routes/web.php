@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\ItemReceiptController as AdminItemReceiptControll
 use App\Http\Controllers\Admin\ItemStockController as AdminItemStockController;
 use App\Http\Controllers\Admin\OrderDigitalizationController as AdminOrderDigitalizationController;
 use App\Http\Controllers\Admin\OrderDispatchController as AdminOrderDispatchController;
+use App\Http\Controllers\Admin\PackingCartonController as AdminPackingCartonController;
 
 /// order
 use App\Http\Controllers\Admin\ProductOrderController as AdminProductOrderController;
@@ -260,15 +261,25 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
         });
 
         Route::prefix('/packing-carton')->name('packing-carton.')->group(function () {
+            Route::get('/index',[AdminPackingCartonController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminPackingCartonController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminPackingCartonController::class,'create'])->name('create');
+            Route::get('/view',[AdminPackingCartonController::class,'view'])->name('view');
+            Route::post('/store',[AdminPackingCartonController::class,'store'])->name('store');
+            Route::get('/getCustomerOrders',[AdminPackingCartonController::class,'getCustomerOrders'])->name('getCustomerOrders');
+            Route::get('/getCustomersBybarcode',[AdminPackingCartonController::class,'getCustomersBybarcode'])->name('getCustomersBybarcode');
+            Route::get('/getOrdersDetails',[AdminPackingCartonController::class,'getOrdersDetails'])->name('getOrdersDetails');
+
+        });
+
+         Route::prefix('/order-dispatch')->name('order-dispatch.')->group(function () {
             Route::get('/index',[AdminOrderDispatchController::class,'index'])->name('index');
             Route::get('/indexList',[AdminOrderDispatchController::class,'indexList'])->name('indexList');
             Route::get('/create',[AdminOrderDispatchController::class,'create'])->name('create');
-             Route::get('/view',[AdminOrderDispatchController::class,'view'])->name('view');
+            Route::get('/view',[AdminOrderDispatchController::class,'view'])->name('view');
             Route::post('/store',[AdminOrderDispatchController::class,'store'])->name('store');
-            Route::get('/getCustomerOrders',[AdminOrderDispatchController::class,'getCustomerOrders'])->name('getCustomerOrders');
-            Route::get('/getCustomersBybarcode',[AdminOrderDispatchController::class,'getCustomersBybarcode'])->name('getCustomersBybarcode');
-            Route::get('/getOrdersDetails',[AdminOrderDispatchController::class,'getOrdersDetails'])->name('getOrdersDetails');
-
+            Route::get('/getOrderPackingData',[AdminOrderDispatchController::class,'getOrderPackingData'])->name('getOrderPackingData');
+            Route::get('/getOrdersByCustomer',[AdminOrderDispatchController::class,'getOrdersByCustomer'])->name('getOrdersByCustomer');
         });
         Route::prefix('master/vendors')->name('master.vendor.')->group(function () {
             Route::get('/index',[AdminVendorController::class,'index'])->name('index');

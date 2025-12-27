@@ -4,10 +4,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class OrderDispatchCarton extends Model
+class PackingCarton extends Model
 {
     use HasFactory;
-    protected $table= 'order_dispatch_cartons';
+    protected $table= 'packing_cartons';
     protected $fillable = [
         'id',
         'sno',
@@ -26,7 +26,7 @@ class OrderDispatchCarton extends Model
     ];
 
     public function cartonsDetails(){
-        return $this->hasMany('App\Models\OrderDispatchCartonsDetails','cartons_id','id');
+        return $this->hasMany('App\Models\PackingCartonsDetails','cartons_id','id');
     }
 
     public function orderMain()
