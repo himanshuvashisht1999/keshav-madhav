@@ -283,7 +283,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('admin.order_digitalization.create-slips-production') }}"
-                            class="{{ str_contains($page_url, 'admin/order_digitalization') ? 'nav-link active' : 'nav-link' }} border_class"
+                            class="{{ str_contains($page_url, 'admin/order_digitalization/create-slips-production') ? 'nav-link active' : 'nav-link' }} border_class"
                             style="position:static;">
                             <i class="fas fa-file-signature"></i>
                             

@@ -342,6 +342,7 @@ class OrderDigitalizationService {
             'getUnitMaster.masterFabricWarehouse'
             ])
             ->where('status', 0)
+            ->whereNot('from_stage_id', 3)
             ->orderBy('id', 'asc')
             ->first();
             
@@ -493,7 +494,7 @@ class OrderDigitalizationService {
 
     public function getSkipSlips()
     {
-        $count = ProductionSlipDigitization::where('status', 2)->count();
+        $count = ProductionSlipDigitization::where('status', 2)->whereNot('from_stage_id', 3)->count();
         return $count;
     }
 
