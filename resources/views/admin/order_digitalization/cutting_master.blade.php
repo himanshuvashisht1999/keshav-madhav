@@ -43,6 +43,32 @@
     padding: 3px 8px;
 }
 </style>
+<style>
+    /* default look */
+.action-btn {
+    color: #fff;
+    border: none;
+}
+
+/* individual colors */
+.btn-rolls { background:#6f42c1; }        /* Purple */
+.btn-time { background:#20c997; }         /* Teal/Green */
+.btn-stitching { background:#fd7e14; }    /* Orange */
+.btn-printing { background:#17a2b8; }     /* Cyan */
+.btn-emb { background:#e83e8c; }          /* Pink */
+
+/* highlight when active */
+.action-btn.active {
+    box-shadow: 0 0 0 3px rgba(0,0,0,.08);
+    filter: brightness(1.05);
+}
+
+/* hover */
+.action-btn:hover {
+    filter: brightness(1.1);
+}
+
+</style>
 
 <div class="content-wrapper">
 
@@ -55,19 +81,23 @@
 
             {{-- ACTION BUTTONS --}}
             <div class="action-btn-group mb-3">
-                <button class="btn btn-outline-primary action-btn active" data-target="rolls">
+                <button class="btn action-btn btn-rolls active" data-target="rolls">
                     Rolls Allot
                 </button>
-                <button class="btn btn-outline-primary action-btn" data-target="time">
+
+                <button class="btn action-btn btn-time" data-target="time">
                     Time Allocation
                 </button>
-                <button class="btn btn-outline-primary action-btn" data-target="stitching">
+
+                <button class="btn action-btn btn-stitching" data-target="stitching">
                     Send to Stitching
                 </button>
-                <button class="btn btn-outline-primary action-btn" data-target="printing">
+
+                <button class="btn action-btn btn-printing" data-target="printing">
                     Send to Printing
                 </button>
-                <button class="btn btn-outline-primary action-btn" data-target="embroidery">
+
+                <button class="btn action-btn btn-emb" data-target="embroidery">
                     Send to Embroidery
                 </button>
                 @if(request('is_skip') == 1)
@@ -103,14 +133,14 @@
                             {{-- ROLLS ALLOT FORM --}}
                             <div class="form-section active" id="form-rolls">
 
-                                <h5 class="card-title mb-3">Fabric Rolls Assigning</h5>
+                                <!-- <h5 class="card-title mb-3">Fabric Rolls Assigning</h5> -->
 
                                 <form method="POST"
                                     id="rollAssignForm"
                                     action="{{ route('admin.order_digitalization.store-rolls-assign') }}">
                                     @csrf
 
-                                    <label>Date - {{ getformatDateTime($cutting_slip->created_at) }}</label>
+                                    <!-- <label>(Date - {{ getformatDateTime($cutting_slip->created_at) }})</label> -->
 
                                     <input type="hidden"
                                         name="slip_create_date_time"
@@ -129,7 +159,7 @@
                                     <small class="text-danger" id="err_lot_no"></small>
 
                                     {{-- CUTTING MASTER --}}
-                                    <label>Cutting Master ({{$master_fabric_warehouse->cutting_master_name}})</label>
+                                    <!-- <label>Cutting Master ({{$master_fabric_warehouse->cutting_master_name}})</label> -->
                                     <input type="hidden" name="to_master_unit" value="{{$master_fabric_warehouse->id}}">
                                     
 
@@ -192,13 +222,13 @@
 
                             {{-- TIME ALLOCATION FORM --}}
                             <div class="form-section" id="form-time">
-                                <h5 class="card-title mb-3">Stage Wise Time Allocation</h5>
+                                <!-- <h5 class="card-title mb-3">Stage Wise Time Allocation</h5> -->
 
                                 <form method="POST"
                                     action="{{ route('admin.order_digitalization.store-time-allocation') }}">
                                     @csrf
 
-                                    <label>Date - {{ getformatDateTime($cutting_slip->created_at) }}</label>
+                                    <!-- <label>(Date - {{ getformatDateTime($cutting_slip->created_at) }})</label> -->
 
                                     <input type="hidden"
                                         name="slip_create_date_time"
@@ -265,12 +295,11 @@
                             {{-- STITCHING FORM --}}
                             <div class="form-section" id="form-stitching">
 
-                                <h5 class="card-title mb-3">Send to Stitching</h5>
 
                                 <form method="POST" id="stitchingForm" action="{{ route('admin.order_digitalization.store-slip') }}">
                                     @csrf
 
-                                    <label>Date - {{ getformatDateTime($cutting_slip->created_at) }}</label>
+                                    
                                     <input type="hidden" name="slip_create_date_time" value="{{ $cutting_slip->created_at }}">
 
                                     {{-- ORDER NO --}}
@@ -378,12 +407,12 @@
                             {{-- PRINTING FORM --}}
                             <div class="form-section" id="form-printing">
 
-                                <h5 class="card-title mb-3">Send to Printing</h5>
+                                <!-- <h5 class="card-title mb-3">Send to Printing</h5> -->
 
                                 <form method="POST" id="printingForm" action="{{ route('admin.order_digitalization.store-slip') }}">
                                     @csrf
 
-                                    <label>Date - {{ getformatDateTime($cutting_slip->created_at) }}</label>
+                                    <!-- <label>(Date - {{ getformatDateTime($cutting_slip->created_at) }})</label> -->
                                     <input type="hidden" name="slip_create_date_time" value="{{ $cutting_slip->created_at }}">
 
                                     {{-- FROM --}}
@@ -477,12 +506,12 @@
 
                             <div class="form-section" id="form-embroidery">
 
-                                <h5 class="card-title mb-3">Send to Embroidery</h5>
+                                <!-- <h5 class="card-title mb-3">Send to Embroidery</h5> -->
 
                                 <form method="POST" id="embroideryForm" action="{{ route('admin.order_digitalization.store-slip') }}">
                                     @csrf
 
-                                    <label>Date - {{ getformatDateTime($cutting_slip->created_at) }}</label>
+                                    <!-- <label>(Date - {{ getformatDateTime($cutting_slip->created_at) }})</label> -->
                                     <input type="hidden" name="slip_create_date_time" value="{{ $cutting_slip->created_at }}">
 
                                     {{-- FROM --}}

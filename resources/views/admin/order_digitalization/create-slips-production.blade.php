@@ -26,12 +26,12 @@
                         </form>
                     @endif
                     @if(!empty($slip_data['from_stage']['master_stage_id']) && $slip_data['from_stage']['master_stage_id'] == 3 )
-                        <a href="{{ route('admin.order_digitalization.create-rolls-assign') }}" class="btn btn-primary mr-2">
+                        <!-- <a href="{{ route('admin.order_digitalization.create-rolls-assign') }}" class="btn btn-primary mr-2">
                             Rolls Digitalization
                         </a>
                         <a href="{{ route('admin.order_digitalization.create-time-allocation') }}" class="btn btn-success mr-2">
                             Stage Time Allocation
-                        </a>
+                        </a> -->
                     @endif
                     @if(!empty($slip_data))
 
@@ -83,8 +83,8 @@
                                 <div class="card p-3 mb-3 border">
                                     <label>Date - {{ getformatDateTime($slip_data['date_time']) }}</label>
                                     <input type="hidden" id="slip_create_date_time" name="slip_create_date_time" value="{{ $slip_data['date_time'] }}">
-                                    <label>Order No.</label>
-                                    <input type="text" id="order_no" name="order_no" class="form-control mb-2" required>
+                                    <!-- <label>Order No.</label>
+                                    <input type="text" id="order_no" name="order_no" class="form-control mb-2" required> -->
                                     {{-- LOT NO --}}
                                     <div class="lot-input-wrapper my-3 lot-inline">
                                         <label class="lot-input-label">Lot No.</label>
@@ -130,7 +130,12 @@
                                     <h5>Add Design Number</h5>
 
                                     <label>Design No.</label>
-                                    <input type="text" id="design_input" class="form-control mb-2">
+                                    <select id="design_input" class="form-control mb-2 select2">
+                                            <option value="">Select Design</option>
+                                            @foreach($products as $d)
+                                                <option value="{{ $d->design_number }}">{{ $d->design_number }}</option>
+                                            @endforeach
+                                        </select>
 
                                     <label>Colour</label>
                                     <select id="colour_id" class="form-control mb-3">
@@ -140,17 +145,17 @@
                                         @endforeach
                                     </select>
 
-                                    <label class="fw-bold mb-2">Size Type</label>
+                                    <!-- <label class="fw-bold mb-2">Size Type</label> -->
                                     <input type="hidden" id="size_type" value="set">
 
-                                    <div class="size-toggle mb-2">
+                                    <!-- <div class="size-toggle mb-2">
                                         <button type="button" class="size-btn active" data-type="set" data-target="setBox">
                                             Set Size
                                         </button>
                                         <button type="button" class="size-btn" data-type="single" data-target="singleBox">
                                             Individual Size
                                         </button>
-                                    </div>
+                                    </div> -->
 
                                     <div id="setBox" class="size-box set-theme">
                                         <label>Set Size</label>
@@ -194,6 +199,8 @@
                                     <img src="{{ asset('assets/production_slips/'.$slip_data['slip_file']) }}"
                                         class="img-fluid rounded">
                                 </div>
+
+                                
                             </div>
 
                             {{-- TABLE --}}
@@ -210,8 +217,8 @@
                                                 <th>Size Type</th>
                                                 <th>Set Size</th>
                                                 <th>Set Qty</th>
-                                                <th>Individual Size</th>
-                                                <th>Individual Qty</th>
+                                                <!-- <th>Individual Size</th>
+                                                <th>Individual Qty</th> -->
                                                 <th>Total Qty</th>
                                                 <th>Action</th>
                                             </tr>
@@ -475,16 +482,7 @@ $(function(){
             </td>
 
             <!-- INDIVIDUAL SIZE -->
-            <td>
-                ${type === 'single' ? size : '-'}
-                <input type="hidden" name="individual_size[]" value="${type === 'single' ? size : ''}">
-            </td>
-
-            <!-- INDIVIDUAL QTY -->
-            <td>
-                ${type === 'single' ? qty : '-'}
-                <input type="hidden" name="individual_qty[]" value="${type === 'single' ? qty : ''}">
-            </td>
+            
              <td>
                 ${ total_qty }
             </td>
