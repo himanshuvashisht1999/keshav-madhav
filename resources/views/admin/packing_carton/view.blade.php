@@ -103,7 +103,7 @@
                             <tr class="main-row">
                                 <td><strong>{{$index++;}}</strong></td>
                                 <td>
-                                    <span class="badge badge-info px-3 py-2">{{$carton['id']}}</span>
+                                    <span class="badge badge-primary px-3 py-2">Carton- {{$carton['id']}}</span>
                                 </td>
                                 <td>
                                     <span class="badge badge-success px-3 py-2">{{$carton['total_boxes']}} Boxes</span>
