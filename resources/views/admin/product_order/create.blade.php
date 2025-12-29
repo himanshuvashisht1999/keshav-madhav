@@ -672,9 +672,14 @@ $(document).ready(function () {
                 </td>
             </tr>
         `);
+
         row.find("select").val("").trigger("change");
         row.find(".qty-input").val("");
+        $("#bar_code").val("");
         row.find(".img-section").html("");
+        $("#custom_size_set_show").html("");
+        $("#no_of_pcs_hidden").val("");
+        $("#size_set_hidden").val("");
     });
 
     // Remove row
