@@ -53,7 +53,7 @@ class OrderProductSet extends Model
                 'order_products_sets',
                 'order_products_sets.set_size',
                 '=',
-                'master_size_measurements.set_size'
+                'master_size_measurements.id'
             )
             ->whereColumn(
                 'master_size_measurements.design_number',

@@ -617,6 +617,19 @@ class OrderDigitalizationService {
         return $data;
     }
 
+    public function roll_numbers(){
+        $data = FabricReceiptDetail::whereNot('status',0)->pluck('roll_number');
+        return $data;
+    }
+    public function order_numbers(){
+        $data = OrderMain::whereNot('status',0)->pluck('sku');
+        return $data;
+    }
+    function product_sizes(){
+        $data = MasterSizeMeasurement::whereIn('status',[1,2])->orderBy('id','asc')->get();
+        return $data;
+    }
+
 
 
 }

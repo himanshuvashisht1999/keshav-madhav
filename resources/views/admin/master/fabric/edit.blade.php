@@ -34,12 +34,13 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="exampleInputEmail1">Supplier Name</label>
+                                        <a href="{{route('admin.master.vendor.create')}}" target="_blank" style="float:right;">Create New +</a>
                                         <select name="vendor_id" class="form-control select2" style="width: 100%;">
                                             <option value="">Select Supplier</option>
                                             @foreach ($vender_data as $single_data)
                                                 <option value="{{ $single_data->id }}"
                                                     {{ $data->vendor_id == $single_data->id ? 'selected' : '' }}>
-                                                    {{ $single_data->sku }}</option>
+                                                    {{ $single_data->name }}</option>
                                             @endforeach
 
                                         </select>
