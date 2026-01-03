@@ -123,6 +123,9 @@ class ProductOrderDataTable  {
                     ->sum('total_quantity');
                 return $total;
             })
+            ->addColumn('total_amount', function ($queue) {
+                return number_format($queue->total_amount, 2) ?? '0.00';
+            })
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;
                 
@@ -210,6 +213,9 @@ class ProductOrderDataTable  {
                         data-total="'.$queue->set_quantity * $queue->no_of_pcs.'">
                         Assign
                     </button>';
+            })
+            ->addColumn('total_amount', function ($queue) {
+                return number_format($queue->total_amount, 2) ?? '0.00';
             })
             ->addColumn('status', function ($queue) {
 

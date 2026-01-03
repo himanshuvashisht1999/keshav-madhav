@@ -85,6 +85,9 @@
                             </td>
 
                             <td></td>
+                            {{-- <td></td>
+                            <td></td> --}}
+                            <td></td>
                         </tr>
                         <tr>
                             <th>ID</th>
@@ -96,6 +99,9 @@
                             <th>Set Quantity</th>
                             <th>Pcs per Set</th>
                             <th>Total Quantity</th>
+                            {{-- <th>Basic Amount</th>
+                            <th>GST (%)</th> --}}
+                            <th>Total Amount</th>
                             <th>Status</th>
                             <th>Assign To</th>
                             <th>Action</th>
@@ -110,6 +116,10 @@
                             <th id="total_qty_total"></th>        <!-- Total Quantity Total -->
                             <th></th>
                             <th></th>
+                            <th></th>
+                            <th></th>
+                            {{-- <th></th>
+                            <th></th> --}}
                         </tr>
                     </tfoot>
                 </table>
@@ -366,7 +376,10 @@
                 {data: 'color_id', name: 'color_id'},
                 {data: 'set_quantity', name: 'set_quantity'},
                 {data: 'no_of_pcs', name: 'no_of_pcs'},  
-                {data: 'total_qty', name: 'Quantity'},                         
+                {data: 'total_qty', name: 'Quantity'}, 
+                // {data: 'basic_amount', name: 'basic_amount'},
+                // {data: 'gst', name: 'gst'}, 
+                {data: 'total_amount', name: 'total_amount'},                        
                 {data: 'status', name: 'status'}, 
                 {data: 'assign_to', name: 'assign_to'},                 
                 {data: 'action', name: 'action', searchable: false}

@@ -78,6 +78,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Customer Name</label>
+                                    <a href="{{route('admin.master.customer.create')}}" target="_blank" style="float:right;">Create New +</a>
                                     <select name="customer_id" id="customer_id" class="form-control select2" style="width: 100%;">
                                         <!-- <option value="">Select</option> -->
                                         @foreach ($customers as $customer)
@@ -107,6 +108,7 @@
                              <div class="col-md-6" id="div_design_number_input">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Design Number</label>
+                                    <a href="{{route('admin.master.production-goods.create')}}" target="_blank" style="float:right;">Create New +</a>
                                     <input type="text" name="design_number_input" id="design_number_input" class="form-control" placeholder="Enter design number" value="{{$data->design_number}}">
                                     @if ($errors->has('design_number'))
                                         <span class="invalid-feedback d-block">
@@ -118,6 +120,7 @@
                             <div class="col-md-6" id="div_design_number_select">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Design Number</label>
+                                    <a href="{{route('admin.master.production-goods.create')}}" target="_blank" style="float:right;">Create New +</a>
                                      <select class="form-control select2 mb-2 design-input" name="design_number" id="design_number_select" >
                                         <option value="">Select</option>
                                         @foreach($products as $product)
@@ -158,7 +161,8 @@
                             </div>  --}}
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Set Size</label>
+                                    <label for="exampleInputEmail1">Set Size Name</label>
+                                    
                                     <input type="text" name="set_size" class="form-control" placeholder="Enter Set Size" value="{{$data->set_size}}">
                                     @if ($errors->has('set_size'))
                                         <span class="invalid-feedback d-block">
@@ -170,7 +174,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">No of Pcs (per Set)</label>
-                                    <input type="text" name="no_of_pcs" class="form-control" placeholder="Enter No of Pcs" value="{{$data->no_of_pcs}}">
+                                    <input type="text" name="no_of_pcs" id="no_of_pcs" class="form-control" placeholder="Enter No of Pcs" value="{{$data->no_of_pcs}}" readonly>
                                     @if ($errors->has('no_of_pcs'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('no_of_pcs') }}
@@ -192,6 +196,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Size Group</label>
+                                    <a href="{{route('admin.master.size.create')}}" target="_blank" style="float:right;">Create New +</a>
                                     <div class="wrapper" style="position: relative;">
                                         
                                         <!-- Button to open dropdown -->
@@ -341,6 +346,12 @@
             }
         });
     });
+
+    $(document).on('change', '.ckkBox', function () {
+        let count = $('.ckkBox:checked').length;
+        $('#no_of_pcs').val(count);
+    });
+
 
 });
 

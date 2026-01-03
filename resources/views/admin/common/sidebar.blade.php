@@ -558,6 +558,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             {{-- ================= PRODUCT MASTER ================= --}}
                             <li class="{{ (
                                     str_contains($page_url, 'admin/master/colors') ||
+                                    str_contains($page_url, 'admin/master/fitting') ||
                                     str_contains($page_url, 'admin/master/product-types') ||
                                     str_contains($page_url, 'admin/master/size-measurement') ||
                                     str_contains($page_url, 'admin/master/size') ||
@@ -568,6 +569,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                 <a href="#"
                                     class="{{ (
                                             str_contains($page_url, 'admin/master/colors') ||
+                                            str_contains($page_url, 'admin/master/fitting') ||
                                             str_contains($page_url, 'admin/master/product-types') ||
                                             str_contains($page_url, 'admin/master/size-measurement') ||
                                             str_contains($page_url, 'admin/master/size') ||
@@ -588,6 +590,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                             class="{{ str_contains($page_url, 'admin/master/colors') ? 'nav-link active' : 'nav-link' }}">
                                             <i class="fas fa-circle"></i>
                                             <p>Color</p>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.fitting.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/master/fitting') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="fas fa-circle"></i>
+                                            <p>Fitting</p>
                                         </a>
                                     </li>
 

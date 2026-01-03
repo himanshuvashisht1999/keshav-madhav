@@ -39,6 +39,7 @@ use App\Http\Controllers\Admin\OrderStagesController as AdminOrderStagesControll
 
 ////new master
 use App\Http\Controllers\Admin\Master\MasterColorController as AdminMasterColorController;
+use App\Http\Controllers\Admin\Master\MasterFittingController as AdminMasterFittingController;
 use App\Http\Controllers\Admin\Master\MasterDesignController as AdminMasterDesignController;
 use App\Http\Controllers\Admin\Master\MasterMaterialController as AdminMasterMaterialController;
 use App\Http\Controllers\Admin\Master\MasterProductStageController as AdminMasterProductStageController;
@@ -458,6 +459,15 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/edit',[AdminMasterColorController::class,'edit'])->name('edit');
             Route::post('/update',[AdminMasterColorController::class,'update'])->name('update');
             Route::get('/delete',[AdminMasterColorController::class,'delete'])->name('delete');
+        });
+        Route::prefix('master/fitting')->name('master.fitting.')->group(function () {
+            Route::get('/index',[AdminMasterFittingController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminMasterFittingController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminMasterFittingController::class,'create'])->name('create');
+            Route::post('/store',[AdminMasterFittingController::class,'store'])->name('store');
+            Route::get('/edit',[AdminMasterFittingController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminMasterFittingController::class,'update'])->name('update');
+            Route::get('/delete',[AdminMasterFittingController::class,'delete'])->name('delete');
         });
 
         Route::prefix('master/product-types')->name('master.product-types.')->group(function () {

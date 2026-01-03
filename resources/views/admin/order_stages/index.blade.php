@@ -182,64 +182,63 @@ $(function () {
     });
 
     $('#email-queue-search-form').on('submit', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+        oTable.draw();
+        e.preventDefault();
+    });
 
-        $('#id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+    $('#id').on('keyup', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
 
-        $('#sku').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#order_product_id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#from_stage_id').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+    $('#sku').on('keyup', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
+    $('#order_product_id').on('keyup', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
+    $('#from_stage_id').on('change', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
 
-        $('#sub_stage_id').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+    $('#sub_stage_id').on('change', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
 
-        $('#quantity').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#lot_no').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        })
-        $('#remaining_quantity').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        
-        $('#order_product_id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-       
-        $('#created_at').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#updated_at').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#status').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });        
-
+    $('#quantity').on('keyup', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
+    $('#lot_no').on('keyup', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    })
+    $('#remaining_quantity').on('keyup', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
+    
+    $('#order_product_id').on('keyup', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
+    
+    $('#created_at').on('change', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
+    $('#updated_at').on('change', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });
+    $('#status').on('change', function (e) {
+        oTable.draw();
+        e.preventDefault();
+    });        
 });
 
 // Modal Handling

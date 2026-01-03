@@ -165,7 +165,7 @@
                                             <option value="">Select</option>
                                             @foreach($product_size as $set_size)
                                                 <option value="{{ $set_size->id }}" data-no-of-pcs="{{ $set_size->no_of_pcs }}">
-                                                    {{ $set_size->set_size }}
+                                                    {{ $set_size->set_size }} ({{ $set_size->size_group }})
                                                 </option>
                                             @endforeach
                                         </select>

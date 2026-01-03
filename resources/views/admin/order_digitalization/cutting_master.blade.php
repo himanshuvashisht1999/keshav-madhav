@@ -168,7 +168,15 @@
                                         <h6>Add Roll</h6>
 
                                         <label>Roll No</label>
-                                        <input type="text" id="roll_no" class="form-control mb-1">
+                                        <select id="roll_no" class="form-control mb-2 select2">
+                                            <option value="">Select Roll No</option>
+                                            @foreach($roll_numbers as $roll_number)
+                                                <option value="{{ $roll_number }}">
+                                                    {{ $roll_number}}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        {{-- <input type="text" id="roll_no" class="form-control mb-1"> --}}
                                         <small class="text-danger" id="err_roll_no"></small>
 
                                         <label class="mt-2">Meter</label>
@@ -305,7 +313,15 @@
                                     {{-- ORDER NO --}}
                                     <div class="form-group mt-2">
                                         <label>Order No *</label>
-                                        <input type="text" id="st_order_no" name="order_no" class="form-control" required>
+                                        {{-- <input type="text" id="st_order_no" name="order_no" class="form-control" required> --}}
+                                        <select id="st_order_no" name="order_no" class="form-control select2" required>
+                                            <option value="">Select Order</option>
+                                            @foreach($order_numbers as $order_number)
+                                                <option value="{{ $order_number }}">
+                                                    {{ $order_number}}
+                                                </option>
+                                            @endforeach
+                                        </select>
                                     </div>
 
                                     {{-- FROM --}}
@@ -357,7 +373,7 @@
                                             <option value="">Select Set</option>
                                             @foreach($product_size as $ps)
                                                 <option value="{{ $ps->id }}" data-no-of-pcs="{{ $ps->no_of_pcs }}">
-                                                    {{ $ps->set_size }}
+                                                    {{ $ps->set_size }} ({{ $ps->size_group }})
                                                 </option>
                                             @endforeach
                                         </select>
@@ -460,7 +476,7 @@
                                             <option value="">Select</option>
                                             @foreach($product_size as $ps)
                                                 <option value="{{ $ps->id }}" data-no-of-pcs="{{ $ps->no_of_pcs }}">
-                                                    {{ $ps->set_size }}
+                                                    {{ $ps->set_size }} ({{ $ps->size_group }})
                                                 </option>
                                             @endforeach
                                         </select>
@@ -558,7 +574,7 @@
                                             <option value="">Select</option>
                                             @foreach($product_size as $ps)
                                                 <option value="{{ $ps->id }}" data-no-of-pcs="{{ $ps->no_of_pcs }}">
-                                                    {{ $ps->set_size }}
+                                                    {{ $ps->set_size }} ({{ $ps->size_group }})
                                                 </option>
                                             @endforeach
                                         </select>
