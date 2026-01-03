@@ -206,6 +206,7 @@ class ProductOrderController extends Controller {
             'cuttingMasterAddress' => $data->order_cutting_stage->cutting_master->address ?? '-',
             'fitting' => $data->order_cutting_stage?->master_fitting->name ?? '-',
             'remark' => $data->order_cutting_stage?->remarks ?? '-',
+            'total_pcs' => $data->total_quantity ?? '0',
         ];
 
         // ==============================
@@ -233,7 +234,7 @@ class ProductOrderController extends Controller {
             }
 
             // distribute quantity per size
-            $sizeData[$size]['pcs'] += $data->total_quantity;
+            $sizeData[$size]['pcs'] += $data->set_quantity;
         }
 
         // ==============================

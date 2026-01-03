@@ -17,6 +17,7 @@ class OrderMain extends Model
         'sku',
         'expected_delivery_date',
         'master_customer_id',
+        'total_amount',
         'status',
         'created_at',
         'updated_at'

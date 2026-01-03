@@ -27,6 +27,9 @@ class OrderProductSet extends Model
         'total_quantity',
         'remain_set_quantity',
         'remain_total_quantity',
+        'basic_amount',
+        'gst',
+        'total_amount',
         'status',
         'created_at',
         'updated_at'
