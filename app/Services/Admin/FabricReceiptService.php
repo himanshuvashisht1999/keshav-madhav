@@ -56,7 +56,7 @@ class FabricReceiptService {
             $image->move($destinationPath, $imgName2);
         }
         $save_data = new FabricReceipt;
-        $save_data->sku = '';
+        $save_data->sku = ''; 
         $save_data->vendor_id = $request->vendor_id;
         $save_data->truck_number = $request->truck_number ?? '';
         $save_data->time = $request->time;
