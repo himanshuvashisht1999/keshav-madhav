@@ -5,18 +5,6 @@ use App\Http\Controllers\Controller;
 use App\Services\Admin\OrderDigitalizationService as Service;
 use App\Services\Admin\ProductOrderService;
 use App\Services\Admin\FabricReceiptService;
-use App\Requests\Admin\OrderDigitalizationStoreRequest;
-use App\Requests\Admin\OrderDigitalizationUpdateRequest;
-use Illuminate\Support\Facades\Crypt;
-use Auth;
-use PDF;
-use App\Models\OrderProduct;
-use App\Models\OrderProductDetailStock;
-use App\Models\OrderCuttingStage;
-use App\Models\OrderMain;
-use App\Models\MasterColor;
-
-
 
 class OrderDigitalizationController extends Controller { 
     protected $service;
@@ -39,7 +27,7 @@ class OrderDigitalizationController extends Controller {
     public function createSlipsProduction(){
         $response['products'] = $this->productOrderService->products();
         // // dd( $response['products']);
-        $response['product_size'] = $this->productOrderService->product_sizes();
+        $response['product_size'] = $this->service->product_sizes();
         // dd($response['product_size']);
         $response['colours'] = $this->productOrderService->getColours();
         $response['customers'] = $this->productOrderService->customers();
@@ -154,7 +142,7 @@ class OrderDigitalizationController extends Controller {
             $response['master_fabric_warehouse'] = $this->service->master_fabric_warehouse($response['cutting_slip']->getUnitMaster?->master_fabric_warehouse_id);
 
            
-            $response['product_size'] = $this->productOrderService->product_sizes();
+            $response['product_size'] = $this->service->product_sizes();
             $response['colours'] = $this->productOrderService->getColours();
             $response['designs'] = $this->service->designs();
 
@@ -164,6 +152,8 @@ class OrderDigitalizationController extends Controller {
             $response['printing_to_data'] = $this->service->stage_unit_data($master_fabric_warehouse_id,1);
             $response['embroidery_to_data'] = $this->service->stage_unit_data($master_fabric_warehouse_id,2);
             $response['cutting_data'] = $this->service->stage_unit_data($master_fabric_warehouse_id,3);
+            $response['roll_numbers'] = $this->service->roll_numbers();
+            $response['order_numbers'] = $this->service->order_numbers();
 
         }
 

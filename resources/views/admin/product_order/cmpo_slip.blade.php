@@ -133,7 +133,10 @@
     </thead>
 
     <tbody>
+        {{-- @php $totalPcs = 0; @endphp --}}
+
         @foreach($sizeData as $row)
+            {{-- @php $totalPcs += $row['pcs']; @endphp --}}
             <tr>
                 <td>{{ $loop->iteration }}</td>
                 <td>{{ $row['design_no'] }} ({{ $header['fitting'] }})</td>
@@ -143,7 +146,15 @@
             </tr>
         @endforeach
     </tbody>
+
+    <tfoot>
+        <tr>
+            <th colspan="4" style="text-align:right;">Total</th>
+            <th>{{ $header['total_pcs'] }}</th>
+        </tr>
+    </tfoot>
 </table>
+
 
 <!-- ===================== SIGNATURE SECTION ===================== -->
 <table class="signature-table" width="100%">

@@ -206,6 +206,7 @@ class ProductOrderController extends Controller {
             'cuttingMasterAddress' => $data->order_cutting_stage->cutting_master->address ?? '-',
             'fitting' => $data->order_cutting_stage?->master_fitting->name ?? '-',
             'remark' => $data->order_cutting_stage?->remarks ?? '-',
+            'total_pcs' => $data->total_quantity ?? '0',
         ];
 
         // ==============================
@@ -214,10 +215,11 @@ class ProductOrderController extends Controller {
         $sizeData = [];
 
         $sizes = [$data->set_size]; // fallback
-
+        
         if (!empty($data->sizeMeasurement->size_group)) {
             $sizes = explode(',', $data->sizeMeasurement->size_group);
         }
+        // dd($data);
 
         foreach ($sizes as $size) {
             $size = trim($size);
@@ -232,7 +234,7 @@ class ProductOrderController extends Controller {
             }
 
             // distribute quantity per size
-            $sizeData[$size]['pcs'] += $data->total_quantity;
+            $sizeData[$size]['pcs'] += $data->set_quantity;
         }
 
         // ==============================
@@ -278,7 +280,7 @@ class ProductOrderController extends Controller {
         $master_name = $address = $remarks = '';
         $cuttingData = [];
         foreach($results as $res1){
-            $color_data = MasterColor::where('id', $res1->productSet->color_id,)
+            $color_data = MasterColor::where('id', $res1->productSet->color_id)
                 ->first();
             $master_name = $res1->cuttingMaster->cutting_master_name;
             $address = $res1->cuttingMaster->address ?? '';

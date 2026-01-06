@@ -56,6 +56,15 @@
                                         {{ $errors->first('expected_delivery_date') }}
                                     </span>
                                 @endif
+
+                                <label>GST (in %)</label>
+                                <input type="number" id="gst_percentage" name="gst_percentage" class="form-control"
+                                    min="0" step="0.01" >
+                                @if ($errors->has('gst_percentage'))
+                                    <span class="invalid-feedback d-block">
+                                        {{ $errors->first('gst_percentage') }}
+                                    </span>
+                                @endif
                             </div>
 
                             <!-- Add Product -->
@@ -196,6 +205,14 @@
                                             {{ $errors->first('product_quantity') }}
                                         </span>
                                     @endif
+
+                                    <label>Basic Amount (Royal Jeans)</label>
+                                    <input type="number" class="form-control qty-input mb-3" min="1" id="rate" name="rate">
+                                    @if ($errors->has('product_rate'))
+                                        <span class="invalid-feedback d-block">
+                                            {{ $errors->first('product_rate') }}
+                                        </span>
+                                    @endif
                                     <button type="button" class="btn btn-primary btn-block add-product">
                                         + Add Product
                                     </button>
@@ -232,10 +249,28 @@
                                             <th>Set Quantity</th>
                                             <th>Pcs per Set</th>
                                             <th>Total Quantity</th>
+                                            <th>Basic Amount</th>
+                                            <th>GST (%)</th>
+                                            <th>Total Amount</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <!-- Total Amount ke pehle ke columns -->
+                                            <th colspan="9" class="text-right">Grand Total</th>
+
+                                            <!-- Total Amount column -->
+                                            <th class="text-right">
+                                                <strong id="grand_total_text">0.00</strong>
+                                                <input type="hidden" name="grand_total" id="grand_total">
+                                            </th>
+
+                                            <!-- Action column -->
+                                            <th></th>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
                         </div>
@@ -611,6 +646,9 @@ $(document).ready(function () {
         let hidden_set_size_id = row.find('#size_set_hidden').val();
 
         let size_set_id = hidden_set_size_id ? hidden_set_size_id : size.val();
+        let gst_percentage = $("#gst_percentage").val() ? $("#gst_percentage").val() : 0;
+        let rate = parseFloat(row.find("input[name='rate']").val());
+        let total_amount = rate + (rate * gst_percentage / 100);
         
         if (!design.val() || !size.val() || !colour.val() || qty === "") {
             // alert("Please select all fields");
@@ -667,6 +705,15 @@ $(document).ready(function () {
                 <td>${total_qty}
                     <input type="hidden" name="total_quantity[]" value="${total_qty}">
                 </td>
+                <td>${rate}
+                    <input type="hidden" name="rate[]" value="${rate}">
+                </td>
+                <td>${gst_percentage}
+                    <input type="hidden" name="gst_percentage[]" value="${gst_percentage}">
+                </td>
+                <td>${total_amount}
+                    <input type="hidden" name="total_amount[]" value="${total_amount}">
+                </td>
                 <td>
                     <button class="btn btn-danger btn-sm remove-row">X</button>
                 </td>
@@ -675,16 +722,21 @@ $(document).ready(function () {
 
         row.find("select").val("").trigger("change");
         row.find(".qty-input").val("");
+        row.find("#rate").val("");
         $("#bar_code").val("");
         row.find(".img-section").html("");
         $("#custom_size_set_show").html("");
         $("#no_of_pcs_hidden").val("");
         $("#size_set_hidden").val("");
+        
+        calculateGrandTotal();
+        
     });
 
     // Remove row
     $(document).on("click", ".remove-row", function () {
         $(this).closest("tr").remove();
+        calculateGrandTotal();
     });
 
     // Validate before submit
@@ -882,7 +934,24 @@ function saveGroup() {
         }
     });
 }
-        
+    
+function calculateGrandTotal() {
+
+    let grandTotal = 0;
+
+    $("#productList tbody tr").each(function () {
+
+        let rowTotal = parseFloat(
+            $(this).find("input[name='total_amount[]']").val() || 0
+        );
+
+        grandTotal += rowTotal;
+    });
+
+    $("#grand_total_text").text(grandTotal.toFixed(2));
+    $("#grand_total").val(grandTotal.toFixed(2));
+}
+
 
 </script>
 

@@ -18,6 +18,8 @@ use App\Models\OrderStageTracking;
 use App\Models\OrderStageWiseTimeTracking;
 use App\Models\MasterProductStage;
 use App\Models\PackingCarton;
+use App\Models\MasterCustomer;
+use App\Models\OrderDispatch;
 use Carbon\Carbon;
 
 class ReportService {
@@ -86,7 +88,8 @@ class ReportService {
 
             foreach ($lotNos as $lot_no) {
 
-                $parts_data = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->get();
+                //$parts_data = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->get();
+                $parts_data = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->where('from_stage_id',3)->where('to_stage_id',4)->get();
                 $stage_name = ProductionSlipDigitizationParts::where('lot_no', $lot_no)
                     ->orderBy('id', 'desc')->value('to_stage_name');
 
@@ -327,7 +330,7 @@ class ReportService {
             foreach ($lotNos as $lot_no) {
                 $expected_delivery_date = $this->calculateExpectedDeliveryFromPlan($order->expected_delivery_date,$lot_no);
 
-                $parts_data = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->get();
+                
 
                 $stage_name = ProductionSlipDigitizationParts::where('lot_no', $lot_no)
                     ->orderBy('id', 'desc')->value('to_stage_name');
@@ -344,6 +347,7 @@ class ReportService {
                 }
 
                 // 3️⃣ Calculate pieces in this lot
+                $parts_data = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->where('from_stage_id',3)->where('to_stage_id',4)->get();
                 $pieces_in_lot = 0;
                 foreach ($parts_data as $single_part) {
                     $no_of_pcs = MasterSizeMeasurement::where('id', $single_part->set_size)
@@ -511,7 +515,7 @@ class ReportService {
             ->format('d M Y h:i A');
     }
 
-    public function dispatchOrder(Request $request)
+    public function dispatchOrder1(Request $request)
     {
         $orders = OrderMain::with([
                 'customer:id,name,address',
@@ -555,7 +559,9 @@ class ReportService {
                     'boxes'     => $cartons_data_details
                 ];
             }
-
+            if (empty($cartons_data)) {
+                continue; // Skip orders with no cartons
+            }
             $data[] = [
                 'order_main_id' => $order->id,
                 'order_no'      => $order->sku,
@@ -568,9 +574,93 @@ class ReportService {
                 'total_boxes'   => $total_boxes,
                 'cartons'       => $cartons_data
             ];
+            // dd($order);
         }
 
-        dd($data);
+        // dd($data);
+        return $data;
+    }
+
+    public function dispatchOrder(Request $request)
+    {   
+        $results = OrderDispatch::with([
+            'dispatchDetails:id,order_dispatch_id,carton_packing_id',
+            'orderMain.customer',
+            'orderMain.OrderProductSets.colors',
+            'orderMain.OrderProductSets.sizeMeasurement'
+        ])        
+        ->when($request->filled('order_no'), function ($q) use ($request) {
+            $q->where('sku', 'like', '%' . $request->order_no . '%');
+        })
+        ->when($request->filled('customer_id'), function ($q) use ($request) {
+            $q->where('customer_id', $request->customer_id);
+        })
+        ->orderBy('id', 'desc')
+        ->get()->toArray();
+        $data = [];
+        foreach($results as $order_dispatch){
+            if($order_dispatch){
+                $order_dispatch_data = [
+                    'id' =>  $order_dispatch['id'],
+                    'order_dispatch_no' =>  $order_dispatch['sku'],
+                    'order_no' => $order_dispatch['order_main']['sku'] ?? '',
+                    'customer' => $order_dispatch['order_main']['customer']['name'] ?? '',
+                    'dispatch_date' => date("d-m-Y h:i A", strtotime($order_dispatch['dispatch_date'])) ?? '',
+                ];
+            }
+            $dispatch_carton_ids = [];
+            foreach ($order_dispatch['dispatch_details'] as $v) {
+            $dispatch_carton_ids[] = $v['carton_packing_id'];
+            }
+
+            $cartons_data = PackingCarton::with([
+                'cartonsDetails',
+                'orderMain.OrderProductSets.colors',
+                'orderMain.OrderProductSets.sizeMeasurement'
+            ])->whereIn('id',$dispatch_carton_ids)->get()->toArray();
+            
+            $total_boxes_session = 0;
+            $cartonsDetails = []; 
+            foreach($cartons_data as $carton){
+                $total_boxes = 0;
+                $car_data = [];
+                foreach($carton['cartons_details'] as $val){
+                    foreach($carton['order_main']['order_product_sets'] as $order_product_sets){
+                        if($val['bar_code'] == $order_product_sets['bar_code']){
+                            $car_data[$val['bar_code']] = [
+                                'bar_code'      => $order_product_sets['bar_code'],
+                                'design_number' => $order_product_sets['design_number'],
+                                'set_size'      => $order_product_sets['size_measurement']['set_size'],
+                                'size_group'    => $order_product_sets['size_measurement']['size_group'],
+                                'color'         => $order_product_sets['colors']['name'],
+                                'no_of_pcs'     => $order_product_sets['no_of_pcs'],
+                                'set_quantity'  => $val['set_quantity'],
+                            ];
+                        }
+                    }
+                    $total_boxes += $val['set_quantity'];
+                    $total_boxes_session += $val['set_quantity'];
+                } 
+                
+                $cartonsDetails[$carton['id']] = [
+                    'id' => $carton['id'],
+                    'total_boxes' => $total_boxes,
+                    'car_data' => $car_data,
+                ];
+            }
+            $order_dispatch_data['total_cartons'] = count($cartons_data);
+            $order_dispatch_data['total_boxes_dispatch'] = $total_boxes_session;   
+            $data[] = [
+                'order_dispatch_data' => $order_dispatch_data,
+                'cartonsDetails' => $cartonsDetails,
+            ];
+        }
+        // dd($data);
+        return $data;
+    }
+
+    public function customers(){
+        $data = MasterCustomer::where('status',1)->orderBy('name','asc')->get();
         return $data;
     }
 

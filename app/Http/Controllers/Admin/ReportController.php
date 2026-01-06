@@ -141,6 +141,7 @@ class ReportController extends Controller
         $response['filters'] = $request->all();
         return view('admin.report.purchase_order',$response);
     }
+
     public function purchaseOrderItemDetails(Request $request)
     {
         return $this->service->purchaseOrderItemReceipts(
@@ -208,7 +209,8 @@ class ReportController extends Controller
     }
 
     public function dispatchOrder(Request $request)
-    {
+    {   
+        $response['customers'] = $this->service->customers();   
         $response['data'] = $this->service->dispatchOrder($request);
         return view('admin.report.dispatch_order',$response);
     }

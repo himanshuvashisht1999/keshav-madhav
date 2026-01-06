@@ -1,6 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
+
 <style>
     .report-header{
         display:flex;
@@ -8,252 +9,259 @@
         align-items:center;
         margin-bottom:15px;
     }
-    .report-header h3{ font-weight:600;margin:0; }
-
+    .report-header h3{
+        font-weight:600;
+        margin:0;
+    }
     .report-card{
         border-radius:12px;
         box-shadow:0 4px 12px rgba(0,0,0,.08);
     }
-
     .table-report thead th{
         background:#343a40;
         color:#fff;
         font-weight:600;
         white-space:nowrap;
-        vertical-align:middle;
     }
-
     .order-cell{
         background:#f8f9fa;
         font-weight:600;
         vertical-align:middle !important;
     }
-
-    .delayed-row{
-        background:#fff4f4;
-    }
-
-    .expand-btn{
-        font-size:13px;
-    }
 </style>
 
 <div class="content-wrapper">
 
-{{-- ================= HEADER ================= --}}
-
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="report-header">
-            <div>
-                <div class="report-meta">Report No : RJ 5</div>
-            </div>
-            <div>
+    {{-- ================= HEADER ================= --}}
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="report-header">
+                <div>Report No : RJ-5</div>
                 <h3>Dispatch Order Report</h3>
-            </div>
-            <div class="report-meta">
-                Date : {{ now()->format('d M Y h:i A') }}
+                <div>Date : {{ now()->format('d M Y h:i A') }}</div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<section class="content">
-<div class="container-fluid">
+    <section class="content">
+        <div class="container-fluid">
 
-{{-- ================= FILTERS ================= --}}
-<div class="card mb-3">
-    <div class="card-body">
-        <form method="GET" action="{{ route('admin.report.purchase_order') }}">
-            <div class="row g-2 align-items-end">
+            <div class="card report-card">
+                <div class="card-body">
+                    {{-- ================= FILTER ================= --}}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <form method="GET" action="{{ route('admin.report.dispatch-order') }}">
+                                <div class="row g-2 align-items-end">
 
-                {{-- <div class="col-md-3">
-                    <label class="form-label">PO Number</label>
-                    <input type="text"
-                           name="sku"
-                           class="form-control"
-                           placeholder="PO/..."
-                           value="{{ $filters['sku'] ?? '' }}">
+                                    <div class="col-md-3">
+                                        <label>Order No</label>
+                                        <input type="text"
+                                            name="order_no"
+                                            class="form-control"
+                                            value="{{ request('order_no') }}">
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label>Customer</label>
+                                        <select name="customer_id" class="form-control">
+                                            <option value="">All</option>
+                                            @foreach($customers as $customer)
+                                                <option value="{{ $customer->id }}"
+                                                    {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
+                                                    {{ $customer->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <button class="btn btn-primary">Filter</button>
+                                    </div>
+
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {{-- ================= TABLE ================= --}}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-report">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Dispatch No</th>
+                                    <th>Order No</th>
+                                    <th>Customer</th>
+                                    <th>Total Cartons</th>
+                                    <th>Total Boxes</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @php $sr = 1; @endphp
+
+                                @forelse($data as $row)
+                                    <tr>
+                                        <td class="order-cell">{{ $sr }}</td>
+                                        <td class="order-cell">
+                                            {{ $row['order_dispatch_data']['order_dispatch_no'] }}
+                                        </td>
+                                        <td class="order-cell">
+                                            {{ $row['order_dispatch_data']['order_no'] }}
+                                        </td>
+                                        <td class="order-cell">
+                                            {{ $row['order_dispatch_data']['customer'] }}
+                                        </td>
+                                        <td class="order-cell">
+                                            {{ $row['order_dispatch_data']['total_cartons'] }}
+                                        </td>
+                                        <td class="order-cell">
+                                            {{ $row['order_dispatch_data']['total_boxes_dispatch'] }}
+                                        </td>
+                                        <td class="order-cell text-center">
+                                            <button
+                                                class="btn btn-sm btn-primary view-cartons"
+                                                data-order='@json($row)'>
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    @php $sr++; @endphp
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">
+                                            No records found
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
                 </div>
-
-                <div class="col-md-3">
-                    <label class="form-label">Fabric SKU</label>
-                    <select name="fabric_sku" class="form-control">
-                        <option value="">All Fabrics</option>
-                        @foreach($fabrics as $fabric)
-                            <option value="{{ $fabric->sku }}"
-                                {{ ($filters['fabric_sku'] ?? '') == $fabric->sku ? 'selected' : '' }}>
-                                {{ $fabric->sku }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-md-2">
-                    <button class="btn btn-primary w-100">
-                        <i class="fas fa-filter"></i> Apply
-                    </button>
-                </div>
-
-                <div class="col-md-2">
-                    <a href="{{ route('admin.report.purchase_order') }}"
-                       class="btn btn-outline-secondary w-100">
-                        Reset
-                    </a>
-                </div> --}}
-
             </div>
-        </form>
-    </div>
-</div>
 
-{{-- ================= TABLE ================= --}}
-<div class="card report-card">
-<div class="card-body">
-<div class="table-responsive">
-
-<table class="table table-bordered table-report">
-<thead>
-<tr>
-    <th>#</th>
-    <th>Order No</th>
-    <th>Customer</th>
-    <th>Total Cartons</th>
-    <th>Total Boxes</th>
-    <th class="text-center">Action</th>
-</tr>
-</thead>
-
-<tbody>
-@php $sr = 1; @endphp
-
- @forelse($data as $orders)
-     <tr>
-        <td class="order-cell">
-                {{ $sr }}
-        </td>
-        <td class="order-cell">
-                {{ $orders['order_no'] }}
-        </td>
-        <td class="order-cell">
-            {{ $orders['customer_name'] }}
-        </td>
-        <td class="order-cell">
-            {{ $orders['total_cartons'] }}
-        </td>
-        <td class="order-cell">
-            {{ $orders['total_boxes'] }}
-        </td>
-        <td class="order-cell">
-            {{-- {{ $orders->customer_name }} --}}
-        </td>
-    </tr>
-    @foreach($orders['cartons'] as $index => $carton)
-
-    @endforeach
-
-    @php $sr++; @endphp
-
-@empty
-<tr>
-    <td colspan="11" class="text-center text-muted">
-        No purchase orders found
-    </td>
-</tr>
-@endforelse
-</tbody>
-
-</table>
-
-</div>
-</div>
-</div>
-
-</div>
-</section>
+        </div>
+    </section>
 </div>
 
 {{-- ================= MODAL ================= --}}
-{{-- <div class="modal fade" id="stockModal" tabindex="-1">
+<div class="modal fade" id="cartonModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title">
-                    Stock Roll Details
-                </h5>
-                <!-- <button type="button" class="btn-close" data-bs-dismiss="modal"></button> -->
+                <h5 class="modal-title">Carton Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Fabric:</strong>
-                        <span id="modalFabricSku"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Warehouse:</strong>
-                        <span id="modalWarehouse"></span>
-                    </div>
+                <div class="mb-3">
+                    <strong>Dispatch No :</strong>
+                    <span id="modalDispatchNo"></span><br>
+
+                    <strong>Order No :</strong>
+                    <span id="modalOrderNo"></span><br>
+
+                    <strong>Customer :</strong>
+                    <span id="modalCustomer"></span>
                 </div>
 
-                <div id="modalStockTable"></div>
+                <div id="cartonModalBody"></div>
 
             </div>
         </div>
     </div>
-</div> --}}
+</div>
 
 {{-- ================= SCRIPT ================= --}}
 <script>
-function openPoItemModal(poItemId, poNo, fabricSku)
-{
-    document.getElementById('modalPoNo').innerText = poNo;
-    document.getElementById('modalFabric').innerText = fabricSku;
-    document.getElementById('modalItemTable').innerHTML =
-        '<div class="text-center py-3">Loading...</div>';
+document.addEventListener('DOMContentLoaded', function () {
 
-    fetch(`{{ route('admin.report.purchase_order.item.details') }}?purchase_order_item_id=${poItemId}`)
-        .then(res => res.json())
-        .then(data => {
+    document.querySelectorAll('.view-cartons').forEach(btn => {
+        btn.addEventListener('click', function () {
 
-            let html = `
-                <table class="table table-bordered table-sm">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Receipt Date</th>
-                            <th>Warehouse</th>
-                            <th>Roll No</th>
-                            <th>Received Qty</th>
-                            <th>Barcode</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+            const data = JSON.parse(this.dataset.order);
 
-            data.forEach(r => {
+            const order = data.order_dispatch_data;
+            const cartons = data.cartonsDetails;
+
+            document.getElementById('modalDispatchNo').innerText = order.order_dispatch_no;
+            document.getElementById('modalOrderNo').innerText = order.order_no;
+            document.getElementById('modalCustomer').innerText = order.customer;
+
+            let html = '';
+
+            Object.values(cartons).forEach(carton => {
+
                 html += `
-                    <tr>
-                        <td>${new Date(r.created_at).toLocaleDateString()}</td>
-                        <td>${r.master_fabric_warehouse?.cutting_master_name ?? '-'}</td>
-                        <td>${r.roll_number ?? '-'}</td>
-                        <td><strong>${r.meter}</strong></td>
-                        <td>
-                            <img src="${r.barcode}"
-                                 style="height:40px;cursor:pointer"
-                                 onclick="window.open(this.src,'_blank')">
-                        </td>
-                    </tr>
+                <div class="card mb-3">
+                    <div class="card-header bg-dark text-white">
+                        Carton ID : ${carton.id}
+                        <span class="float-end">
+                            Total Boxes : ${carton.total_boxes}
+                        </span>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <table class="table table-bordered table-sm mb-0">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>Barcode</th>
+                                    <th>Design No</th>
+                                    <th>Set Size</th>
+                                    <th>Size Group</th>
+                                    <th>Color</th>
+                                    <th>No of PCS</th>
+                                    <th>Set Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                const boxes = carton.car_data || {};
+
+                if (Object.keys(boxes).length === 0) {
+                    html += `
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">
+                                No box data
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    Object.values(boxes).forEach(box => {
+                        html += `
+                        <tr>
+                            <td>${box.bar_code}</td>
+                            <td>${box.design_number}</td>
+                            <td>${box.set_size}</td>
+                            <td>${box.size_group}</td>
+                            <td>${box.color}</td>
+                            <td>${box.no_of_pcs}</td>
+                            <td><strong>${box.set_quantity}</strong></td>
+                        </tr>
+                        `;
+                    });
+                }
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 `;
             });
 
-            html += '</tbody></table>';
-            document.getElementById('modalItemTable').innerHTML = html;
-        });
+            document.getElementById('cartonModalBody').innerHTML = html;
 
-    new bootstrap.Modal(document.getElementById('poItemModal')).show();
-}
+            new bootstrap.Modal(document.getElementById('cartonModal')).show();
+        });
+    });
+
+});
 </script>
 
 @endsection
