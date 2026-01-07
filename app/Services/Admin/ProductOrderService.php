@@ -262,7 +262,7 @@ class ProductOrderService {
             $save_data_main->expected_delivery_date = $request->expected_delivery_date;
             $save_data_main->master_customer_id = $request->master_customer_id;
             $save_data_main->corporate_order_file = $imgName ?? null;
-            $save_data_main->total_amount = $request->grand_total ?? 0;
+            // $save_data_main->total_amount = $request->grand_total ?? 0;
             $save_data_main->status = 1;
             $save_data_main->save();
             $customer_data = MasterCustomer::where('id',$request->master_customer_id)->first();
@@ -295,9 +295,9 @@ class ProductOrderService {
                     $save_orderProductSet->total_quantity = $order_quantity * $size_data->no_of_pcs;
                     $save_orderProductSet->remain_set_quantity =  $order_quantity;
                     $save_orderProductSet->remain_total_quantity = $order_quantity * $size_data->no_of_pcs;
-                    $save_orderProductSet->basic_amount = $request->rate[$key] ;
-                    $save_orderProductSet->gst = $request->gst_percentage[$key] ?? 0;
-                    $save_orderProductSet->total_amount = $request->total_amount[$key];
+                    // $save_orderProductSet->basic_amount = $request->rate[$key] ;
+                    // $save_orderProductSet->gst = $request->gst_percentage[$key] ?? 0;
+                    // $save_orderProductSet->total_amount = $request->total_amount[$key];
                     $save_orderProductSet->corporate_order_file = $imgName ?? null;
                     $save_orderProductSet->status = 1;
                     $save_orderProductSet->save();

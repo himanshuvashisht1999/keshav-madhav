@@ -123,9 +123,9 @@ class ProductOrderDataTable  {
                     ->sum('total_quantity');
                 return $total;
             })
-            ->addColumn('total_amount', function ($queue) {
-                return number_format($queue->total_amount, 2) ?? '0.00';
-            })
+            // ->addColumn('total_amount', function ($queue) {
+            //     return number_format($queue->total_amount, 2) ?? '0.00';
+            // })
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;
                 
@@ -214,9 +214,9 @@ class ProductOrderDataTable  {
                         Assign
                     </button>';
             })
-            ->addColumn('total_amount', function ($queue) {
-                return number_format($queue->total_amount, 2) ?? '0.00';
-            })
+            // ->addColumn('total_amount', function ($queue) {
+            //     return number_format($queue->total_amount, 2) ?? '0.00';
+            // })
             ->addColumn('status', function ($queue) {
 
                 $exists = DB::table('order_cutting_stage')
