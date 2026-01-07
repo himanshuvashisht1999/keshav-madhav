@@ -108,13 +108,59 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="datetime">Date & Time</label>
-                            <input type="datetime-local" name="time" id="datetime" class="form-control" value="{{ now()->setTimezone('Asia/Kolkata')->format('Y-m-d\TH:i') }}">
+                            <!-- <input type="datetime-local" name="time" id="datetime" class="form-control" value="{{ now()->setTimezone('Asia/Kolkata')->format('Y-m-d\TH:i') }}"> -->
+
+                            <input type="text"
+                                id="datetime"
+                                class="form-control"
+                                placeholder="Select date & time">
+
+                            <input type="hidden"
+                                name="time"
+                                id="datetime_hidden">
                         </div>
 
                         <div class="col-md-6">
                             <label for="received_by">Received By</label>
                             <input type="text" name="received_by" id="received_by" class="form-control" placeholder="Enter received by">
                         </div>
+
+                        <div class="col-md-3 mt-2">
+                            <label>Amount</label>
+                            <input type="number" step="0.01"
+                                name="amount"
+                                id="amount"
+                                class="form-control"
+                                placeholder="Enter amount">
+                        </div>
+
+                        <div class="col-md-3 mt-2">
+                            <label>GST %</label>
+                            <input type="number" step="0.01"
+                                name="gst_percentage"
+                                id="gst_percentage"
+                                class="form-control"
+                                placeholder="GST %">
+                        </div>
+
+                        <div class="col-md-3 mt-2">
+                            <label>GST Amount</label>
+                            <input type="number" step="0.01"
+                                name="gst_amount"
+                                id="gst_amount"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-md-3 mt-2">
+                            <label>Total Amount</label>
+                            <input type="number" step="0.01"
+                                name="total_amount"
+                                id="total_amount"
+                                class="form-control"
+                                readonly>
+                        </div>
+
                         <div class="col-md-6 mt-2">
                             <label for="total_roll">Total Roll</label>
                             <input type="number" name="total_roll" id="total_roll" class="form-control" placeholder="Enter total roll" value="1">
@@ -161,6 +207,8 @@
                                 <button type="button" class="btn btn-primary btn-sm" id="add-row">+ Add More</button>
                                 <!-- <button type="button" class="btn btn-outline-secondary btn-sm" id="clear-filled">Clear Auto-Fill</button> -->
                             </div>
+                            
+
 
                             <div class="mt-3 text-right">
                                 <button type="submit" class="btn btn-success">Submit</button>
@@ -703,6 +751,39 @@ $(document).ready(function() {
             zoomImage.style.transform = 'scale(1)';
         });
     }
+</script>
+<script>
+function calculateGST() {
+    let amount = parseFloat($('#amount').val()) || 0;
+    let gst = parseFloat($('#gst_percentage').val()) || 0;
+
+    let gstAmount = (amount * gst) / 100;
+    let total = amount + gstAmount;
+
+    $('#gst_amount').val(gstAmount.toFixed(2));
+    $('#total_amount').val(total.toFixed(2));
+}
+
+$(document).on('input', '#amount, #gst_percentage', calculateGST);
+</script>
+<script>
+flatpickr("#datetime", {
+    enableTime: true,
+    dateFormat: "d M Y, h:i K",      // what user sees (example: 7 Jan 2025, 10:30 AM)
+    altInput: false,
+    time_24hr: false,
+    defaultDate: "{{ now()->setTimezone('Asia/Kolkata')->format('Y-m-d H:i') }}",
+
+    onChange: function(selectedDates, dateStr, instance) {
+        // store ISO format for DB
+        const formatted = flatpickr.formatDate(selectedDates[0], "Y-m-d H:i");
+        document.getElementById("datetime_hidden").value = formatted;
+    }
+});
+
+// set hidden field on load
+document.getElementById("datetime_hidden").value =
+    flatpickr.formatDate(new Date("{{ now()->setTimezone('Asia/Kolkata')->format('Y-m-d H:i') }}"), "Y-m-d H:i");
 </script>
 
 @endsection

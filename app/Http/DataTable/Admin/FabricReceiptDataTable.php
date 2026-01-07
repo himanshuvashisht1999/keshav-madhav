@@ -42,6 +42,9 @@ class FabricReceiptDataTable  {
                 if ($request->has('roll') && !empty($request->roll)) {
                     $query->where('roll', 'like', "%{$request->get('roll')}%");
                 }
+                if ($request->has('total_amount') && !empty($request->total_amount)) {
+                    $query->where('total_amount', 'like', "%{$request->get('total_amount')}%");
+                }
                 $query->where('status',1);
                                 
                 

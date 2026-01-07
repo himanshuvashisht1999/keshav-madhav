@@ -13,7 +13,7 @@ class MasterStageUnitController extends Controller {
     protected $service;
     public function __construct(Service $service) {
         $this->service = $service;
-    }
+    } 
     public function index(){
         $response['master_warehouse_fabrics'] = $this->service->master_warehouse_fabrics();
         $response['master_stages'] = $this->service->master_stages();

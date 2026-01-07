@@ -60,8 +60,12 @@ class FabricReceiptService {
         $save_data->vendor_id = $request->vendor_id;
         $save_data->truck_number = $request->truck_number ?? '';
         $save_data->time = $request->time;
-        $save_data->roll = $request->roll ?? 1;
+        $save_data->roll = count($request->rolls);
         $save_data->received_by = $request->received_by ?? '';
+        $save_data->amount = $request->amount ?? 0.00;
+        $save_data->gst_amount = $request->gst_amount ?? 0.00;
+        $save_data->gst_percentage = $request->gst_percentage ?? 1;
+        $save_data->total_amount = $request->total_amount ?? 0.00;
         $save_data->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
         $save_data->shipment_photo = $imgName;
         $save_data->challan_photo = $imgName2;
@@ -100,9 +104,6 @@ class FabricReceiptService {
                     $barcodeGenerator->getBarcode($barcodeData, $barcodeGenerator::TYPE_CODE_128, 3, 80)
                 );
 
-
-
-                
                 $fileName = $qrcode_number . '.png';
                 $qrData = json_encode([
                     'fabric_id'   => $fabric_id,

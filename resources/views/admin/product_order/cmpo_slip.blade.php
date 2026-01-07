@@ -164,10 +164,10 @@
             <strong>Prepared By</strong>
         </td>
 
-        <td>
+        <!-- <td>
             _______________________<br>
             <strong>Cutting Master</strong>
-        </td>
+        </td> -->
 
         <td>
             _______________________<br>

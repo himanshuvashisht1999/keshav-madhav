@@ -28,7 +28,7 @@ class FabricReceiptController extends Controller {
         $vendor_id =  0;
         $response['fabrics'] = $this->service->fabric_list_by_vendor($vendor_id);
         return view('admin.fabric_receipt.create_new',$response);
-    }
+    } 
 
     public function vendorFabrics($vendor_id)
     {

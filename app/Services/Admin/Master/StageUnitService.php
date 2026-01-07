@@ -22,62 +22,83 @@ class StageUnitService {
         return $data;
     }
 
-    public function stageUnit($master_fabric_warehouse_id){
-
-        $stages = MasterProductStage::whereIn('status',[1,2])->orderBy('sequence','asc')->get();
+    public function stageUnit($master_fabric_warehouse_id)
+    {
+        $stages = MasterProductStage::whereIn('status',[1,2])
+                    ->orderBy('sequence','asc')
+                    ->get();
 
         $units = StageMasterUnit::where('master_fabric_warehouse_id', $master_fabric_warehouse_id)
                     ->get()
-                    ->keyBy('master_stage_id');
+                    ->groupBy('master_stage_id');
 
         $response = [];
 
         foreach ($stages as $stage) {
-            $unit = $units->get($stage->id);
-            if($unit){
+
+            if ($units->has($stage->id)) {
+
+                foreach ($units[$stage->id] as $unit) {
+                    $response[] = [
+                        'id'               => $unit->id,
+                        'encrypted_id'     => Crypt::encryptString($unit->id),
+                        'master_stage_id'  => $stage->id,
+                        'stage_name'       => $stage->name,
+                        'name'             => $unit->name,
+                        'phone'            => $unit->phone,
+                    ];
+                }
+
+            } else {
+
+                // ⛔ placeholder row (DO NOT SAVE THIS)
                 $response[] = [
-                    'id'            => $unit->id,
-                    'encrypted_id'  => Crypt::encryptString($unit->id),
-                    'master_stage_id' => $stage->id,
-                    'stage_name'      => $stage->name,
-                    'name'            => $unit->name ?? '',
-                    'phone'           => $unit->phone ?? '',
-                ];
-            }else{
-                $response[] = [
-                    'id'            => '',
-                    'encrypted_id'  => '',
-                    'master_stage_id' => $stage->id,
-                    'stage_name'      => $stage->name,
-                    'name'            => '',
-                    'phone'           =>  '',
+                    'id'               => '',
+                    'encrypted_id'     => '',
+                    'master_stage_id'  => $stage->id,
+                    'stage_name'       => $stage->name,
+                    'name'             => '',
+                    'phone'            => '',
                 ];
             }
-            
         }
 
         return $response;
     }
 
-    public function update(Request $request){
+
+
+
+
+    public function update(Request $request)
+    {
+        $warehouseId = $request->warehouse_id;
+
         foreach ($request->rows as $row) {
+
+            // skip blank/invalid rows
+            if (empty($row['master_stage_id'])) {
+                continue;
+            }
+
             StageMasterUnit::updateOrCreate(
                 [
-                    'master_fabric_warehouse_id' => $row['master_fabric_warehouse_id'],
-                    'master_stage_id'            => $row['master_stage_id'],
+                    'id' => $row['id'] ?? null,
                 ],
                 [
-                    'name'   => $row['name'],
-                    'phone'  => $row['phone'],
-                    'status' => 1,
+                    'master_fabric_warehouse_id' => $warehouseId,
+                    'master_stage_id'            => $row['master_stage_id'],
+                    'name'                       => $row['name'] ?? '',
+                    'phone'                      => $row['phone'] ?? '',
+                    'status'                     => 1,
                 ]
             );
         }
 
-
-        return true;
-
+        return redirect()->back()->with('success', 'Stage units saved successfully');
     }
+
+
 
     
 

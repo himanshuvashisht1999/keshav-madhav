@@ -50,6 +50,15 @@
                         </td>
 
                         <td>
+                            <select class="form-control select2" name="vendor_id" id="vendor_id" style="width: 100%;">
+                                <option value="">ALL</option>
+                                @foreach($vendors as $single_data)
+                                    <option value="{{$single_data->id}}" >{{$single_data->name}}</option>
+                                @endforeach
+                            </select>
+                        </td>
+
+                        <td>
                             <select class="form-control select2" name="master_fabric_warehouse_id" id="master_fabric_warehouse_id" style="width: 100%;">
                                 <option value="">ALL</option>
                                 @foreach($cutting_units as $fabric_warehouse)
@@ -58,14 +67,7 @@
                             </select>
                         </td>
                         
-                        <td>
-                            <select class="form-control select2" name="vendor_id" id="vendor_id" style="width: 100%;">
-                                <option value="">ALL</option>
-                                @foreach($vendors as $single_data)
-                                    <option value="{{$single_data->id}}" >{{$single_data->name}}</option>
-                                @endforeach
-                            </select>
-                        </td>
+                        
                         <!-- <td>
                             <input type="text" class="form-control" name="truck_number" id="truck_number" autocomplete="off">
                         </td> -->
@@ -77,7 +79,7 @@
                             <input type="text" class="form-control" name="roll" id="roll" autocomplete="off">
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="received_by" id="received_by" autocomplete="off">
+                            <input type="text" class="form-control" name="total_amount" id="total_amount" autocomplete="off">
                         </td>
                         
                         
@@ -89,11 +91,11 @@
                         <th>ID</th>
                         <th>Shippment Number</th>
                         <th>Vendor</th>
-                        <th>Cutting Master</th>
+                        <th>Warehouse</th>
                         <!-- <th>Truck Number</th> -->
                         <th>Date & Time</th>
-                        <th>Packets</th>
-                        <th>Received By</th>
+                        <th>Rolls</th>
+                        <th>Total Amount</th>
                         
                         <th>Action</th>
                     </tr>
@@ -136,7 +138,7 @@
                     d.time = $('#time').val();
                     d.master_fabric_warehouse_id = $('#master_fabric_warehouse_id').val();
                     d.roll = $('#roll').val();
-                    d.received_by = $('#received_by').val();
+                    d.total_amount = $('#total_amount').val();
                   
                 },
                 orderable: false
@@ -149,7 +151,7 @@
                 // {data: 'truck_number', name: 'truck_number'},
                 {data: 'time', name: 'time'},
                 {data: 'roll', name: 'roll'},
-                {data: 'received_by', name: 'received_by'},
+                {data: 'total_amount', name: 'total_amount'},
                 
                 {data: 'action', name: 'action', searchable: false}
             ],
@@ -197,7 +199,7 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#received_by').on('keyup', function (e) {
+        $('#total_amount').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
