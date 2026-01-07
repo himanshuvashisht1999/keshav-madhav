@@ -29,7 +29,7 @@ class FabricUpdateRequest extends FormRequest{
             // 'width_id' => 'required',
             // 'weave_type_id' => 'required',
             // 'gsm_id' => 'required',
-            'composition_id' => 'required',
+            // 'composition_id' => 'required',
             // 'status' =>'required',
         ];
     }

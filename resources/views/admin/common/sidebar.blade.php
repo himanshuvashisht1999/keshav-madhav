@@ -564,7 +564,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     str_contains($page_url, 'admin/master/size') ||
                                     str_contains($page_url, 'admin/master/product-stage') ||
                                     str_contains($page_url, 'admin/master/product-sub-stage') ||
-                                    str_contains($page_url, 'admin/master/pattern')
+                                    str_contains($page_url, 'admin/master/design-pattern')
                                 ) ? 'nav-item menu-open' : 'nav-item' }}">
                                 <a href="#"
                                     class="{{ (
@@ -575,7 +575,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                             str_contains($page_url, 'admin/master/size') ||
                                             str_contains($page_url, 'admin/master/product-stage') ||
                                             str_contains($page_url, 'admin/master/product-sub-stage') ||
-                                            str_contains($page_url, 'admin/master/pattern')
+                                            str_contains($page_url, 'admin/master/design-pattern')
                                         ) ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>
@@ -633,13 +633,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                         </a>
                                     </li>
 
-                                    <!-- <li class="nav-item">
-                                        <a href="{{ route('admin.master.pattern.index') }}"
-                                            class="{{ str_contains($page_url, 'admin/master/pattern') ? 'nav-link active' : 'nav-link' }}">
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.master.design-pattern.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/master/design-pattern') ? 'nav-link active' : 'nav-link' }}">
                                             <i class="fas fa-circle"></i>
-                                            <p>Pattern</p>
+                                            <p>Design Pattern</p>
                                         </a>
-                                    </li> -->
+                                    </li>
                                 </ul>
                             </li>
 

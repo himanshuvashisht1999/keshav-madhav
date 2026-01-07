@@ -23,11 +23,11 @@ class CustomerUpdateRequest extends FormRequest{
         $id = $request->id;
         return [
             'name' => 'required',
-            'phone'  => 'required|digits:10',
+            // 'phone'  => 'required|digits:10',
             // 'email' => 'required',
-            'email'  => 'required|email|unique:master_customers,email,' . $request->id,
+            // 'email'  => 'required|email|unique:master_customers,email,' . $request->id,
             // 'image' => 'required',
-            'status' =>'required',
+            // 'status' =>'required',
         ];
     }
 

@@ -24,12 +24,12 @@ class SizeMeasurementStoreRequest extends FormRequest{
             'customer_id' => 'required',
             // 'name' => 'required',
             // 'design_number' => 'required',
-            'no_of_pcs' => 'required',
-            'set_size' => 'required',
-            'size_group' => 'required',
+            // 'no_of_pcs' => 'required',
+            // 'set_size' => 'required',
+            // 'size_group' => 'required',
             // 'sku' => 'required|unique:master_size_measurements,sku',
             // 'size_group' => 'required',
-            'status' =>'required',
+            // 'status' =>'required',
             // 'sku'    => 'required|unique:fabric_dye,sku',
         ];
     }
