@@ -24,10 +24,10 @@ class SizeMeasurementUpdateRequest extends FormRequest{
             'customer_id' => 'required',
             // 'name' => 'required',
             // 'design_number' => 'required',
-            'no_of_pcs' => 'required',
-            'set_size' => 'required',
-            'size_group' => 'required',
-            'status' =>'required',
+            // 'no_of_pcs' => 'required',
+            // 'set_size' => 'required',
+            // 'size_group' => 'required',
+            // 'status' =>'required',
             // 'sku'    => 'required|unique:master_size_measurements,sku,' . $request->id,
         ];
     }
