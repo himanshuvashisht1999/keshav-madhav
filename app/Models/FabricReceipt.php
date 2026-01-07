@@ -24,6 +24,10 @@ class FabricReceipt extends Model
         'shipment_photo',
         'challan_photo',
         'master_fabric_warehouse_id',
+        'amount',
+        'gst_amount',
+        'gst_percentage',
+        'total_amount',
         'status',
         'created_at',
         'updated_at'

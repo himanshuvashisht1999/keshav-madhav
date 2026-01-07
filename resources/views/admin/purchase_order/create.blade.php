@@ -31,8 +31,16 @@
                             {{-- PO Date --}}
                             <div class="col-md-6">
                                 <label>Purchase Order Date</label>
-                                <input type="date" name="date" class="form-control"
-                                       value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
+
+                                <input type="text"
+                                    id="po_date"
+                                    class="form-control"
+                                    placeholder="Select PO Date">
+
+                                <input type="hidden"
+                                    name="date"
+                                    id="po_date_hidden"
+                                    value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
                             </div>
 
                             {{-- Vendor --}}
@@ -61,7 +69,15 @@
                             {{-- Delivery Date --}}
                             <div class="col-md-6 mt-2">
                                 <label>Expected Delivery Date</label>
-                                <input type="date" name="delivery_date" class="form-control" required>
+
+                                <input type="text"
+                                    id="delivery_date"
+                                    class="form-control"
+                                    placeholder="Select Expected Delivery Date">
+
+                                <input type="hidden"
+                                    name="delivery_date"
+                                    id="delivery_date_hidden">
                             </div>
 
                             {{-- Hidden SKU --}}
@@ -230,6 +246,25 @@ $(document).ready(function(){
         row.find('[name*="[total_price]"]').val((meter * price).toFixed(2));
     });
 
+});
+</script>
+<script>
+flatpickr("#po_date", {
+    dateFormat: "d M Y",
+    defaultDate: "{{ \Carbon\Carbon::now()->format('Y-m-d') }}",
+    onChange: function(selectedDates) {
+        document.getElementById("po_date_hidden").value =
+            flatpickr.formatDate(selectedDates[0], "Y-m-d");
+    }
+});
+
+flatpickr("#delivery_date", {
+    dateFormat: "d M Y",
+    minDate: "today",
+    onChange: function(selectedDates) {
+        document.getElementById("delivery_date_hidden").value =
+            flatpickr.formatDate(selectedDates[0], "Y-m-d");
+    }
 });
 </script>
 

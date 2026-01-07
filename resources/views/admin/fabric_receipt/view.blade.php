@@ -27,42 +27,88 @@
                 </div>
 
                 <div class="card-body">
+
+                    {{-- Summary Cards --}}
+                    <div class="row text-center mb-3">
+
+                        <div class="col-md-3 mb-2">
+                            <div class="border rounded p-2 bg-light">
+                                <small class="text-muted d-block">Amount</small>
+                                <h5 class="mb-0">
+                                    ₹ {{ number_format($data->amount ?? 0, 2) }}
+                                </h5>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 mb-2">
+                            <div class="border rounded p-2 bg-light">
+                                <small class="text-muted d-block">GST</small>
+                                <h5 class="mb-0 text-warning">
+                                    {{ $data->gst_percentage ?? 0 }}%
+                                    (₹ {{ number_format($data->gst_amount ?? 0, 2) }})
+                                </h5>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 mb-2">
+                            <div class="border rounded p-2 bg-light">
+                                <small class="text-muted d-block">Total Amount</small>
+                                <h5 class="mb-0 text-success font-weight-bold">
+                                    ₹ {{ number_format($data->total_amount ?? 0, 2) }}
+                                </h5>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 mb-2">
+                            <div class="border rounded p-2 bg-light">
+                                <small class="text-muted d-block">Total Rolls</small>
+                                <h5 class="mb-0">
+                                    {{ $data->details->count() }}
+                                </h5>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <hr>
+
+                    {{-- Detailed Info --}}
                     <div class="row">
 
                         <div class="col-md-4 mb-2">
-                            <strong>Shipment Number:</strong>
+                            <strong>Shipment Number:</strong><br>
                             {{ $data->shipment_id }}
                         </div>
 
                         <div class="col-md-4 mb-2">
-                            <strong>Vendor:</strong>
+                            <strong>Vendor:</strong><br>
                             {{ $data->vendor->name ?? '-' }}
                         </div>
 
                         <div class="col-md-4 mb-2">
-                            <strong>Cutting Master:</strong>
+                            <strong>Warehouse:</strong><br>
                             {{ $data->cutting_master->cutting_master_name ?? '-' }}
                         </div>
 
                         <div class="col-md-4 mb-2">
-                            <strong>Date & Time:</strong>
-                            {{ getformatDateTime($data->time) }}
+                            <strong>Date & Time:</strong><br>
+                            {{ \Carbon\Carbon::parse($data->time)->format('j M Y, h:i A') }}
                         </div>
 
                         <div class="col-md-4 mb-2">
-                            <strong>Received By:</strong>
+                            <strong>Received By:</strong><br>
                             {{ $data->received_by ?? '-' }}
                         </div>
 
                         <div class="col-md-4 mb-2">
                             <strong>Challan Photo:</strong><br>
+
                             @if($data->challan_photo)
                                 <img
                                     src="{{ $data->challan_photo }}"
-                                    height="100"
-                                    class="border rounded"
-                                    alt="Challan Photo"
-                                >
+                                    height="110"
+                                    class="border rounded shadow-sm mt-1"
+                                    alt="Challan Photo">
                             @else
                                 -
                             @endif
@@ -79,6 +125,7 @@
                 </div>
 
                 <div class="card-body table-responsive">
+
                     <table class="table table-bordered table-striped text-center align-middle">
                         <thead class="thead-dark">
                             <tr>
@@ -86,7 +133,6 @@
                                 <th>Fabric</th>
                                 <th>Roll No</th>
                                 <th>Meter</th>
-                                <th>QR Number</th>
                                 <th>QR Code</th>
                                 <th>Barcode</th>
                             </tr>
@@ -97,41 +143,30 @@
                                 <tr>
                                     <td>{{ $key + 1 }}</td>
 
-                                    <td>
-                                        {{ $detail->fabric->name ?? '-' }}
-                                    </td>
+                                    <td>{{ $detail->fabric->name ?? '-' }}</td>
 
-                                    <td>
-                                        {{ $detail->roll_number }}
-                                    </td>
+                                    <td>{{ $detail->roll_number }}</td>
 
-                                    <td>
-                                        {{ $detail->meter }}
-                                    </td>
+                                    <td>{{ $detail->meter }}</td>
 
-                                    <td>
-                                        {{ $detail->qrcode_number }}
-                                    </td>
-
-                                    <!-- QR Code -->
                                     <td>
                                         <img
                                             src="{{ $detail->qrcode }}"
                                             width="80"
                                             height="80"
-                                            alt="QR Code"
-                                        >
+                                            class="border rounded"
+                                            alt="QR Code">
                                     </td>
 
-                                    <!-- Barcode -->
                                     <td>
                                         <div style="display:flex; flex-direction:column; align-items:center;">
                                             <img
                                                 src="{{ $detail->barcode }}"
                                                 width="160"
                                                 height="60"
-                                                alt="Barcode"
-                                            >
+                                                class="border rounded"
+                                                alt="Barcode">
+
                                             <small style="margin-top:4px; font-weight:600; letter-spacing:1px;">
                                                 {{ $detail->qrcode_number }}
                                             </small>
@@ -140,13 +175,15 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted">
+                                    <td colspan="6" class="text-center text-muted">
                                         No details found
                                     </td>
                                 </tr>
                             @endforelse
                         </tbody>
+
                     </table>
+
                 </div>
             </div>
 
