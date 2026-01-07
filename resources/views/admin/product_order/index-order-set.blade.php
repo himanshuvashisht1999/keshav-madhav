@@ -63,9 +63,9 @@
                                 
                             </td>
                             
-                            <td>
+                            {{-- <td>
                                 
-                            </td>
+                            </td> --}}
                             <td>
                             
                             </td>
@@ -101,7 +101,7 @@
                             <th>Total Quantity</th>
                             {{-- <th>Basic Amount</th>
                             <th>GST (%)</th> --}}
-                            <th>Total Amount</th>
+                            {{-- <th>Total Amount</th> --}}
                             <th>Status</th>
                             <th>Assign To</th>
                             <th>Action</th>
@@ -117,7 +117,7 @@
                             <th></th>
                             <th></th>
                             <th></th>
-                            <th></th>
+                            {{-- <th></th> --}}
                             {{-- <th></th>
                             <th></th> --}}
                         </tr>
@@ -379,7 +379,7 @@
                 {data: 'total_qty', name: 'Quantity'}, 
                 // {data: 'basic_amount', name: 'basic_amount'},
                 // {data: 'gst', name: 'gst'}, 
-                {data: 'total_amount', name: 'total_amount'},                        
+                // {data: 'total_amount', name: 'total_amount'},                        
                 {data: 'status', name: 'status'}, 
                 {data: 'assign_to', name: 'assign_to'},                 
                 {data: 'action', name: 'action', searchable: false}
