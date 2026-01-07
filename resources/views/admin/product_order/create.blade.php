@@ -110,6 +110,7 @@
                                         @endforeach --}}
                                     </select>
                                     <div class="d-flex justify-content-between align-items-center">
+                                        <input type="hidden" name="size_radio" id="size_radio">
                                         <label id="custom_size_set_show" ></label>
 
                                         <div id="custom_size_set" class="d-none">
@@ -168,7 +169,6 @@
                                                     <strong id="groupText">—</strong>
                                                 </div>
                                             </div>
-
                                             <!-- Footer -->
                                             <div class="modal-footer login-footer">
                                                 <button type="button" class="save-btn" onclick="saveGroup()">Save</button>
@@ -850,7 +850,29 @@ function renderSizes() {
         });
 
     document.getElementById('groupText').innerText = group.join(',');
+    let sizeRatio = getSizeRatio(group.join(','));
+    const groupTextElement = document.getElementById('size_radio');
+    groupTextElement.value = sizeRatio;
 }
+
+function getSizeRatio(sizeString) {
+
+    let sizes = sizeString.split(','); 
+
+    let countMap = {};
+
+    sizes.forEach(size => {
+        countMap[size] = (countMap[size] || 0) + 1;
+    });
+
+    // size ke order me ratio chahiye
+    let ratio = Object.keys(countMap)
+        .sort((a, b) => a - b)
+        .map(size => countMap[size]);
+
+    return ratio.join(',');
+}
+
 
 /* --------------------
    Save edited group back to option

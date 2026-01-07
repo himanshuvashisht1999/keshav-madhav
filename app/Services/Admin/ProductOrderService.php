@@ -28,6 +28,7 @@ use App\Models\CorporateOrderProduct;
 use App\Models\OrderProductSet;
 use App\Models\OrderCuttingStage;
 use App\Models\MasterProductFitting;
+use App\Models\StageMasterUnit;
 use PDF;
 
 
@@ -994,5 +995,10 @@ class ProductOrderService {
         $return_data['no_of_pcs'] = $no_of_pcs;
         return $return_data;
     }
-     
+
+    function getCuttingUnit(Request $request){ 
+        dd($request);
+        $data = StageMasterUnit::where('status',1)->get();
+        return $data;
+    }
 }

@@ -23,7 +23,7 @@ class MasterFabricWarehouseStoreRequest extends FormRequest{
         return [
             'cutting_master_name' => 'required',
             'sku'    => 'required|unique:master_fabric_warehouse,sku',
-            'address' => 'required',
+            // 'address' => 'required',
             // 'status' =>'required',
         ];
     }

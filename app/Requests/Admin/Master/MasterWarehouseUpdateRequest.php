@@ -23,7 +23,7 @@ class MasterWarehouseUpdateRequest extends FormRequest{
         return [
             'name' => 'required',
             'sku'    => 'required|unique:master_warehouse,sku,' . $request->id,
-            'address' => 'required',
+            // 'address' => 'required',
             // 'status' =>'required',
         ];
     }

@@ -23,7 +23,7 @@ class MasterWarehouseStoreRequest extends FormRequest{
         return [
             'name' => 'required',
             'sku'    => 'required|unique:master_warehouse,sku',
-            'address' => 'required',
+            // 'address' => 'required',
             // 'status' =>'required',
         ];
     }

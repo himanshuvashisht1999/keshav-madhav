@@ -22,7 +22,7 @@ class MasterFabricWarehouseUpdateRequest extends FormRequest{
         // dd($this);
         return [
             'cutting_master_name' => 'required',
-            'address' => 'required',
+            // 'address' => 'required',
             // 'status' =>'required',
         ];
     }

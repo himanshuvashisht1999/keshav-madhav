@@ -23,8 +23,8 @@ class VendorUpdateRequest extends FormRequest{
         $id = $request->id;
         return [
             'name' => 'required',
-            'phone' => 'required|unique:vendors,phone,' . $id,
-            'email' => 'required|unique:vendors,email,' . $id,
+            // 'phone' => 'required|unique:vendors,phone,' . $id,
+            // 'email' => 'required|unique:vendors,email,' . $id,
             // 'image' => 'required',
             'status' =>'required',
             'sku'    => 'required|unique:vendors,sku,' . $id,

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\GeneralSettingsController as AdminGeneralSettings
 use App\Http\Controllers\Admin\Master\VendorController as AdminVendorController;
 use App\Http\Controllers\Admin\Master\ItemController as AdminItemController;
 use App\Http\Controllers\Admin\Master\PatternController as AdminPatternController;
+use App\Http\Controllers\Admin\Master\DesignPatternController as AdminDesignPatternController;
 use App\Http\Controllers\Admin\Master\ItemAttributesController as AdminItemAttributesController;
 use App\Http\Controllers\Admin\Master\FabricDyeController as AdminFabricDyeController;
 use App\Http\Controllers\Admin\Master\FabricGsmController as AdminFabricGsmController;
@@ -202,6 +203,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/assign_to',[AdminProductOrderController::class,'assign_to'])->name('assign_to');
             Route::get('/download-cutting-slip',[AdminProductOrderController::class,'downloadCuttingSlip'])->name('downloadCuttingSlip');
             // Route::get('/fabric_combined_receipt',[AdminProductOrderController::class,'fabric_combined_receipt'])->name('fabric_combined_receipt');
+            Route::post('/getCuttingUnit',[AdminProductOrderController::class,'getCuttingUnit'])->name('getCuttingUnit');
         });
 
         Route::prefix('/packing')->name('packing.')->group(function () {
@@ -299,6 +301,16 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/edit',[AdminPatternController::class,'edit'])->name('edit');
             Route::post('/update',[AdminPatternController::class,'update'])->name('update');
             Route::get('/delete',[AdminPatternController::class,'delete'])->name('delete');
+        });
+
+        Route::prefix('master/design-pattern')->name('master.design-pattern.')->group(function () {
+            Route::get('/index',[AdminDesignPatternController::class,'index'])->name('index');
+            Route::get('/indexList',[AdminDesignPatternController::class,'indexList'])->name('indexList');
+            Route::get('/create',[AdminDesignPatternController::class,'create'])->name('create');
+            Route::post('/store',[AdminDesignPatternController::class,'store'])->name('store');
+            Route::get('/edit',[AdminDesignPatternController::class,'edit'])->name('edit');
+            Route::post('/update',[AdminDesignPatternController::class,'update'])->name('update');
+            Route::get('/delete',[AdminDesignPatternController::class,'delete'])->name('delete');
         });
 
          Route::prefix('master/stage-unit')->name('master.stage_unit.')->group(function () {
