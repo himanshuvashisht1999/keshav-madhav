@@ -50,7 +50,7 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12">
-                    <h1 class="text-center">Edit Product Size - Master</h1>
+                    <h1 class="text-center">Edit Size Group</h1>
                 </div>
                 {{-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
@@ -75,12 +75,11 @@
                     <input type="hidden" name="id" value="{{$data->id}}">
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
+                            <!-- <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Customer Name</label>
                                     <a href="{{route('admin.master.customer.create')}}" target="_blank" style="float:right;">Create New +</a>
                                     <select name="customer_id" id="customer_id" class="form-control select2" style="width: 100%;">
-                                        <!-- <option value="">Select</option> -->
                                         @foreach ($customers as $customer)
                                         <option value="{{$customer->id}}" {{$data->corporate_company_id == $customer->id ? 'selected' : ''}}>{{$customer->name}}</option>
                                         @endforeach
@@ -93,17 +92,6 @@
                                 </div>
                             </div>   
                              
-                            {{-- <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">Design Number</label>
-                                    <input type="text" name="design_number" class="form-control" placeholder="Enter design number" value="{{$data->design_number}}">
-                                    @if ($errors->has('design_number'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('design_number') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div> --}}
 
                              <div class="col-md-6" id="div_design_number_input">
                                 <div class="form-group">
@@ -135,7 +123,7 @@
                                         </span>
                                     @endif
                                 </div>
-                            </div>
+                            </div> -->
                             {{-- <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Name</label>

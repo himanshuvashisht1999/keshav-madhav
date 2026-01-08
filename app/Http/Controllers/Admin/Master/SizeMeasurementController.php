@@ -33,11 +33,11 @@ class SizeMeasurementController extends Controller {
     }
     public function store(SizeMeasurementStoreRequest $request){
         $data = $this->service->store($request);
-        return redirect()->route('admin.master.size-measurement.index')->withSuccess('The size measurement has been successfully created.');
+        return redirect()->route('admin.master.size-measurement.index')->withSuccess('The size group has been successfully created.');
     }
     public function delete(Request $request){
         $data = $this->service->delete($request);
-        return redirect()->route('admin.master.size-measurement.index')->withSuccess('The size measurement has been successfully deleted.'); 
+        return redirect()->route('admin.master.size-measurement.index')->withSuccess('The size group has been successfully deleted.'); 
     }
     public function edit(Request $request){
         $response['sizes'] = $this->SizeService->getSizes();
@@ -50,7 +50,7 @@ class SizeMeasurementController extends Controller {
     }
     public function update(SizeMeasurementUpdateRequest $request){
         $data = $this->service->update($request);
-        return redirect()->route('admin.master.size-measurement.index')->withSuccess('The size measurement has been successfully updated.');
+        return redirect()->route('admin.master.size-measurement.index')->withSuccess('The size group has been successfully updated.');
     }
 
 }

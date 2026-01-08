@@ -42,9 +42,9 @@
                         <td>
                             <input type="text" class="form-control" name="name" id="name" autocomplete="off">
                         </td>
-                        <td>
+                        <!-- <td>
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
-                        </td>
+                        </td> -->
 
                         
                         <td>
@@ -54,7 +54,7 @@
                   <tr>
                     <th>ID</th>
                     <th>Stage</th>
-                    <th>SKU</th>
+                    <!-- <th>SKU</th> -->
                     
                     <th>Action</th>
                   </tr>
@@ -92,7 +92,7 @@
                 data: function (d) {
                     d.id = $('#id').val();
                     d.name = $('#name').val();
-                    d.sku = $('#sku').val();
+                    // d.sku = $('#sku').val();
                   
                 },
                 orderable: false
@@ -100,18 +100,18 @@
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'name', name: 'name'},
-                {data: 'sku', name: 'sku'},
+                // {data: 'sku', name: 'sku'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
             buttons: [
-                {
-                    text: 'Add Production Stage',
-                    className: 'btn-datatable',
-                    action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.master.product_stage.create') }}";
-                    }
-                }
+                // {
+                //     text: 'Add Production Stage',
+                //     className: 'btn-datatable',
+                //     action: function (e, dt, node, config) {
+                //         window.location.href = "{{ route('admin.master.product_stage.create') }}";
+                //     }
+                // }
             ]
         });
 

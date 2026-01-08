@@ -6,7 +6,7 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12">
-                    <h1 class="text-center">List of Product Size</h1>
+                    <h1 class="text-center">List of Size Group</h1>
                 </div>
                 {{-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
@@ -40,7 +40,7 @@
                         <td>
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
-                        <td>
+                        <!-- <td>
                             <select name="customer_id" id="customer_id" class="form-control select2" style="width: 100%;">
                                 <option value="">All</option>
                                 @foreach ($customers as $customer)
@@ -50,7 +50,7 @@
                         </td>
                         <td>
                             <input type="text" class="form-control" name="design_number" id="design_number" autocomplete="off">
-                        </td>
+                        </td> -->
                         {{-- <td>
                             <input type="text" class="form-control" name="name" id="name" autocomplete="off">
                         </td> --}}
@@ -76,10 +76,10 @@
                     </tr>
                   <tr>
                     <th>ID</th>
-                    <th>Customer Name</th>
-                    <th>Design Number</th>
+                    <!-- <th>Customer Name</th>
+                    <th>Design Number</th> -->
                     {{-- <th>Name</th> --}}
-                    <th>Set Size</th>
+                    <th>Size Group</th>
                     <th>No of Pcs (per Set)</th>
                     <th>Size Group</th>
                     <th>Status</th>
@@ -119,8 +119,8 @@
                 data: function (d) {
                     d.id = $('#id').val();
                     // d.name = $('#name').val();
-                    d.customer_id = $('#customer_id').val();
-                    d.design_id = $('#design_id').val();
+                    // d.customer_id = $('#customer_id').val();
+                    // d.design_id = $('#design_id').val();
                     d.set_size = $('#set_size').val();
                     d.no_of_pcs = $('#no_of_pcs').val();
                     d.size_group = $('#size_group').val();
@@ -130,8 +130,8 @@
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'customer_id', name: 'customer_id'},
-                {data: 'design_number', name: 'design_number'},
+                // {data: 'customer_id', name: 'customer_id'},
+                // {data: 'design_number', name: 'design_number'},
                 // {data: 'name', name: 'name'},
                 {data: 'set_size', name: 'set_size'},
                 {data: 'no_of_pcs', name: 'no_of_pcs'},
@@ -142,7 +142,7 @@
             dom: 'lBfrtip',
             buttons: [
                 {
-                    text: 'Add Product Size',
+                    text: 'Add Size Group',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
                         window.location.href = "{{ route('admin.master.size-measurement.create') }}";

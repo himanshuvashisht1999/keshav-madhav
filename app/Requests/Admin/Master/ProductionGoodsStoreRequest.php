@@ -21,7 +21,7 @@ class ProductionGoodsStoreRequest extends FormRequest
             'design_number'    => 'required',
             'name_of_garment'  => 'required',
             // 'main_image'  => 'required',
-            'sku'              => 'required|unique:production_goods,sku',
+            // 'sku'              => 'required|unique:production_goods,sku',
         ];
 
         // If company is GENERAL → general fields are required

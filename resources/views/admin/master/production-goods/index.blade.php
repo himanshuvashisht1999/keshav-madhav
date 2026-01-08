@@ -39,7 +39,7 @@
                         <td>
                             <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
-                        <td></td>
+                        <!-- <td></td> -->
                         <td>
                             <input type="text" class="form-control" name="design_number" id="design_number" autocomplete="off">
                         </td>
@@ -59,7 +59,7 @@
                     </tr>
                   <tr>
                     <th>ID</th>
-                    <th>Image</th>
+                    <!-- <th>Image</th> -->
                     <th>Design Number</th>
                     <th>Name</th>
                     <th>Status</th>
@@ -106,7 +106,7 @@
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'main_image', name: 'main_image', orderable: false, searchable: false},
+                // {data: 'main_image', name: 'main_image', orderable: false, searchable: false},
                 {data: 'design_number', name: 'design_number'},
                 {data: 'name_of_garment', name: 'name_of_garment'},
                 {data: 'status', name: 'status'},
