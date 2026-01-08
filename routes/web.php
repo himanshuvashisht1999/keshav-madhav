@@ -261,6 +261,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
             ////////new cutting 
             Route::get('/cutting-master',[AdminOrderDigitalizationController::class,'cuttingMaster'])->name('cutting-master');
+
+            Route::get('/order-designs', [AdminOrderDigitalizationController::class, 'getDesigns'])->name('order-designs');
+            Route::get('/design-details', [AdminOrderDigitalizationController::class, 'getDesignDetails'])->name('design-details');
         });
 
         Route::prefix('/packing-carton')->name('packing-carton.')->group(function () {
