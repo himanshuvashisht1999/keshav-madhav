@@ -107,10 +107,10 @@
                         {{-- END GENERAL FIELDS --}}
 
                         {{-- SKU --}}
-                        <div class="col-md-6 mb-3">
+                        <!-- <div class="col-md-6 mb-3">
                             <label class="font-weight-bold d-block">SKU</label>
                             <p class="mb-0">{{ $data->sku }}</p>
-                        </div>
+                        </div> -->
 
                         {{-- STATUS --}}
                         <div class="col-md-6 mb-3">
@@ -148,7 +148,7 @@
                         </div>
 
                         {{-- OTHER IMAGES --}}
-                        <div class="col-md-8 mb-3">
+                        <div class="col-md-8 mb-3 d-none">
                             <label class="font-weight-bold d-block">Other Images</label>
 
                             <div class="d-flex flex-wrap" style="gap:12px;">
@@ -170,7 +170,7 @@
                     {{-- ============================= --}}
                     @if($data->company_id == 1)
 
-                        <div class="row">
+                        <div class="row d-none">
                             <div class="col-md-12">
 
                                 <label class="font-weight-bold d-block">Production Stages (in order)</label>
@@ -235,7 +235,7 @@
                     {{-- FABRIC DETAILS --}}
                     {{-- Visible for BOTH companies (you decide) --}}
                     {{-- ============================= --}}
-                    <div class="row">
+                    <div class="row d-none">
                         <div class="col-md-12">
 
                             <label class="font-weight-bold d-block">Fabric Details</label>

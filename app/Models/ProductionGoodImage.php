@@ -27,8 +27,8 @@ class ProductionGoodImage extends Model
     {
         if ($value) {
             return asset('assets/products/'. $value);
-        } else {
-            return asset('assets/products/default-image.png');
+        } else { 
+            return asset('images/image-placeholder.png');
         }
     }
 

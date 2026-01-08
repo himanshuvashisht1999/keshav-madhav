@@ -40,11 +40,11 @@ class ProductionGoodsController extends Controller {
     }
     public function store(ProductionGoodsStoreRequest $request){
         $data = $this->service->store($request);
-        return redirect()->route('admin.master.production-goods.index')->withSuccess('The production goods has been successfully created.');
+        return redirect()->route('admin.master.production-goods.index')->withSuccess('The product has been successfully created.');
     }
     public function delete(Request $request){
         $data = $this->service->delete($request);
-        return redirect()->route('admin.master.production-goods.index')->withSuccess('The production goods has been successfully deleted.'); 
+        return redirect()->route('admin.master.production-goods.index')->withSuccess('The product has been successfully deleted.'); 
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
@@ -68,7 +68,7 @@ class ProductionGoodsController extends Controller {
     }
     public function update(ProductionGoodsUpdateRequest $request){
         $data = $this->service->update($request);
-        return redirect()->route('admin.master.production-goods.index')->withSuccess('The production goods has been successfully updated.');
+        return redirect()->route('admin.master.production-goods.index')->withSuccess('The product has been successfully updated.');
     }
 
 }

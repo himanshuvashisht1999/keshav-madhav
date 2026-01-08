@@ -26,7 +26,7 @@ class ProductionGoodsUpdateRequest extends FormRequest
         $rules = [
             'design_number'    => 'required',
             'name_of_garment'  => 'required',
-            'sku'              => 'required|unique:production_goods,sku,' . $request->id,
+            // 'sku'              => 'required|unique:production_goods,sku,' . $request->id,
         ];
 
         // If company is GENERAL (1) → extra fields required

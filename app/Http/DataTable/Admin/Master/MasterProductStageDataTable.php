@@ -10,7 +10,7 @@ use Yajra\DataTables\Facades\DataTables;
 class MasterProductStageDataTable  {
 
     public function indexList($request){
-        $queue = MasterProductStage::orderBy('sequence','asc');
+        $queue = MasterProductStage::orderBy('sequence','asc')->whereIn('status',[1,2]);
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -22,7 +22,7 @@ class MasterProductStageDataTable  {
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
-                // $query->where('status',1);
+                $query->whereIn('status',[1,2]);
             }) 
          
             ->editColumn('status', function ($queue) {

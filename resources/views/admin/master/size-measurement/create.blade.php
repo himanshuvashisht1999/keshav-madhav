@@ -50,12 +50,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12">
-                    <h1 class="text-center">Create Product Size - Master</h1>
+                    <h1 class="text-center">Create Size Group</h1>
                 </div>
                 {{-- <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Create Product Size</li>
+                        <li class="breadcrumb-item active">Create Size Group</li>
                     </ol>
                 </div> --}}
             </div>
@@ -71,28 +71,12 @@
                     @csrf
                     <div class="card-body">
                         <div class="row">
-                            {{-- <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Size Type</label>
-                                    <select name="size_type" id="size_type" class="form-control select2" style="width: 100%;">
-                                        <!-- <option value="">Select</option> -->
-                                        <option value="0" {{old('size_type') == '0' ? 'selected' : ''}}>Set</option>
-                                        <option value="1" {{old('size_type') == '1' ? 'selected' : ''}}>Individual</option>
-                                    </select>
-                                    @if ($errors->has('size_type'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('size_type') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>    --}}
 
-                            <div class="col-md-6">
+                            <!-- <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Customer Name</label>
                                     <a href="{{route('admin.master.customer.create')}}" target="_blank" style="float:right;">Create New +</a>
                                     <select name="customer_id" id="customer_id" class="form-control select2" style="width: 100%;">
-                                        <!-- <option value="">Select</option> -->
                                         @foreach ($customers as $customer)
                                         <option value="{{$customer->id}}" {{old('customer_id') == $customer->id ? 'selected' : ''}}>{{$customer->name}}</option>
                                         @endforeach
@@ -103,9 +87,9 @@
                                         </span>
                                     @endif
                                 </div>
-                            </div>   
+                            </div>    -->
                              
-                            <div class="col-md-6" id="div_design_number_input">
+                            <!-- <div class="col-md-6" id="div_design_number_input">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Design Number</label>
                                     
@@ -135,20 +119,9 @@
                                         </span>
                                     @endif
                                 </div>
-                            </div>
+                            </div> -->
                             
-                            {{-- <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Name</label>
-                                    <input type="text" name="name" class="form-control" placeholder="Enter size name" value="{{old('name')}}">
-                                    
-                                    @if ($errors->has('name'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('name') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>  --}}
+                            
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Set Size Name</label>

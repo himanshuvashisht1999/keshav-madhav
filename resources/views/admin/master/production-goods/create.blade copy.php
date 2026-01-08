@@ -30,7 +30,41 @@
                     @csrf
                     <div class="card-body">
                         <div class="row">
+                            <!-- <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">Company</label>
+                                    <select name="company_id" id="company_id" class="form-control" required>                                        
+                                        <option value="2" selected>Royal Jeans</option>
+                                        <option value="1">General</option>
+                                    </select>
+                                </div>
+                                @if ($errors->has('company_id'))
+                                    <span class="invalid-feedback d-block">
+                                        {{ $errors->first('company_id') }}
+                                    </span>
+                                @endif
+                            </div> -->
                             <input type="hidden" name="company_id" value="2" id="company_id">
+                            <div class="col-md-6 general">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">Product Type</label>
+                                    <select name="type_of_garment" id="type_of_garment" class="form-control" required>
+                                        <!-- <option value="">Select Product type</option> -->
+                                        
+                                        @foreach($product_types as $product)
+                                            <option value="{{ $product->sku }}"
+                                                {{ old('type_of_garment') == $product->sku ? 'selected' : '' }}>
+                                                {{ $product->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @if ($errors->has('type_of_garment'))
+                                    <span class="invalid-feedback d-block">
+                                        {{ $errors->first('type_of_garment') }}
+                                    </span>
+                                @endif
+                            </div>
 
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -55,11 +89,77 @@
                                     @endif
                                 </div>
                             </div>
+                            
+
+                            
+                             
+                            <div class="col-md-6 general">
+                                <div class="form-group">
+                                    <label>Product Size</label>
+                                    <select name="master_size_id" class="form-control select2" style="width: 100%;">
+                                        <!-- <option value="">Select</option> -->
+                                        @foreach($sizes as $single_data)
+                                        <option value="{{$single_data->id}}" {{old('master_size_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->sku}}</option>
+                                        @endforeach
+                                    </select>
+                                    @if ($errors->has('master_size_id'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('master_size_id') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>  
+                            <div class="col-md-6 general">
+                                <div class="form-group">
+                                    <label>Product Color</label>
+                                    <select name="master_color_id" id="master_color_id" class="form-control select2" style="width: 100%;">
+                                        <!-- <option value="">Select</option> -->
+                                        @foreach($colors as $single_data)
+                                        <option value="{{$single_data->id}}" {{old('master_color_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                        @endforeach
+                                    </select>
+                                    @if ($errors->has('master_color_id'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('master_color_id') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
                             <input type="hidden" name="is_printing" value="1">
                             <input type="hidden" name="is_embroidery" value="1">
+
+                            <div class="col-md-6 general">
+                                <div class="form-group">
+                                    <label>Product Pattern</label>
+                                    <select name="garment_pattern" class="form-control select2" style="width: 100%;" id="garment_pattern">
+                                        <!-- <option value="">Select</option> -->
+                                        @foreach($garment_patterns as $single_data)
+                                        <option value="{{$single_data->sku}}" {{old('garment_pattern') == $single_data->sku ? 'selected' : ''}}>{{$single_data->sku}}</option>
+                                        @endforeach
+                                    </select>
+                                    @if ($errors->has('garment_pattern'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('garment_pattern') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
                             
+                            
+                           
+
                             <input type="hidden" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU" >
-                            
+                            <!-- <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="sku">SKU</label>
+                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU" >
+                                    @if ($errors->has('sku'))
+                                        <span class="invalid-feedback d-block">
+                                            {{ $errors->first('sku') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div> -->
 
                             {{-- Main Image --}}
                             <div class="col-md-6">
@@ -82,7 +182,95 @@
                                 </div>
 
                             </div>
-                                                                      
+
+                            {{-- Other Images --}}
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="other_images">Other Images</label>
+                                    <input type="file" name="other_images[]" id="other_images" class="form-control"
+                                        accept="image/*" multiple>
+
+                                    @if ($errors->has('other_images'))
+                                        <span class="invalid-feedback d-block">
+                                            {{ $errors->first('other_images') }}
+                                        </span>
+                                    @endif
+                                    @if ($errors->has('other_images.*'))
+                                        <span class="invalid-feedback d-block">
+                                            {{ $errors->first('other_images.*') }}
+                                        </span>
+                                    @endif
+
+                                    <div id="other_images_preview" class="mt-2 d-flex flex-wrap" style="gap:8px;"></div>
+                                </div>
+                            </div>
+
+
+
+                            <div class="col-md-12 stages-wrapper">
+                                <label>Production Stages (in order)</label>
+                                <div id="stages-container">
+                                    <div class="stage-row row mb-2">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <select name="product_stage_id[]" class="form-control select2 stage-select" style="width: 100%;" required>
+                                                    <option value="">Select Stage</option>
+                                                    @foreach($product_stages as $stage)
+                                                        <option value="{{ $stage->id }}">{{ $stage->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <input type="radio" name="printing_stage_after" class="printing-radio"   id="is_printing">
+                                                <label for="is_printing">Printing</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <input type="radio" name="embroidery_stage_after" id="is_embroidery" class="embroidery-radio"  >
+                                                <label for="is_embroidery">Embroidery</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="button" class="btn btn-success add-stage"><i class="fa fa-plus"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            
+
+                            <div class="col-md-12">
+                                <label>Fabric Details</label>
+                                <div id="fabric-container">
+                                    <div class="fabric-row row mb-2">
+                                        <div class="col-md-5">
+                                            <div class="form-group">
+                                                <select name="fabric_sku[]" class="form-control select2" style="width: 100%;">
+                                                    <option value="">Select Fabric</option>
+                                                    @foreach($fabrics as $single_data)
+                                                        <option value="{{$single_data->sku}}" {{ old('fabric_sku') == $single_data->sku ? 'selected' : '' }}>
+                                                            {{$single_data->sku}}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <input type="number" name="fabric_meter[]" class="form-control" placeholder="Enter meter" step="0.01" min="0">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="button" class="btn btn-success add-fabric"><i class="fa fa-plus"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                            </div>
+
+                                          
                            
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">

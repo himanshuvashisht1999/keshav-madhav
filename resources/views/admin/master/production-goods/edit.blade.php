@@ -31,43 +31,7 @@
                     <input type="hidden" name="id" value="{{$data->id}}">
                     <div class="card-body">
                         <div class="row">
-
-                            {{-- Company --}}
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="company_id">Company</label>
-                                    <select name="company_id" id="company_id" class="form-control" required>
-                                        <option value="2" {{ $data->company_id == 2 ? 'selected' : '' }}>Royal Jeans</option>
-                                        <option value="1" {{ $data->company_id == 1 ? 'selected' : '' }}>General</option>
-                                    </select>
-                                </div>
-                                @if ($errors->has('company_id'))
-                                    <span class="invalid-feedback d-block">
-                                        {{ $errors->first('company_id') }}
-                                    </span>
-                                @endif
-                            </div>
-
-                            {{-- Product Type (GENERAL only) --}}
-                            <div class="col-md-6 general">
-                                <div class="form-group">
-                                    <label for="type_of_garment">Product Type</label>
-                                    <select name="type_of_garment" id="type_of_garment" class="form-control">
-                                        <option value="">Select Product type</option>
-                                        @foreach($product_types as $product)
-                                            <option value="{{ $product->sku }}"
-                                                {{ $data->type_of_garment == $product->sku ? 'selected' : '' }}>
-                                                {{ $product->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @if ($errors->has('type_of_garment'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('type_of_garment') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
+                            <input type="hidden" name="company_id" id="company_id" value="2">
 
                             {{-- Design Number --}}
                             <div class="col-md-6">
@@ -97,80 +61,11 @@
                                 </div>
                             </div>
 
-                            {{-- Product Size (GENERAL) --}}
-                            <div class="col-md-6 general">
-                                <div class="form-group">
-                                    <label>Product Size</label>
-                                    <select name="master_size_id" class="form-control select2" style="width: 100%;">
-                                        @foreach($sizes as $single_data)
-                                            <option value="{{$single_data->id}}" {{$data->master_size_id == $single_data->id ? 'selected' : ''}}>
-                                                {{$single_data->sku}}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @if ($errors->has('master_size_id'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('master_size_id') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-
-                            {{-- Product Color (GENERAL) --}}
-                            <div class="col-md-6 general">
-                                <div class="form-group">
-                                    <label>Color</label>
-                                    <select name="master_color_id" class="form-control select2" style="width: 100%;">
-                                        @foreach($colors as $single_data)
-                                            <option value="{{$single_data->id}}" {{$data->master_color_id == $single_data->id ? 'selected' : ''}}>
-                                                {{$single_data->name}}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @if ($errors->has('master_color_id'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('master_color_id') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-
                             <input type="hidden" name="is_printing" value="{{$data->is_printing}}">
                             <input type="hidden" name="is_embroidery" value="{{$data->is_embroidery}}">
 
-                            {{-- Product Pattern (GENERAL) --}}
-                            <div class="col-md-6 general">
-                                <div class="form-group">
-                                    <label>Product Pattern</label>
-                                    <select name="garment_pattern" class="form-control select2" style="width: 100%;" id="garment_pattern">
-                                        @foreach($garment_patterns as $single_data)
-                                            <option value="{{$single_data->sku}}" {{$data->garment_pattern == $single_data->sku ? 'selected' : ''}}>
-                                                {{$single_data->sku}}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @if ($errors->has('garment_pattern'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('garment_pattern') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
+                           
                             <input type="hidden" name="sku" value="{{$data->sku}}">
-
-                            {{-- SKU --}}
-                            <!-- <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="sku">SKU</label>
-                                    <input type="text" name="sku" id="sku" class="form-control"
-                                           placeholder="Auto-generated SKU" value="{{$data->sku}}" readonly>
-                                    @if ($errors->has('sku'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('sku') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div> -->
 
                             {{-- Main Image (Edit) --}}
                             <div class="col-md-6">
@@ -184,152 +79,24 @@
                                         </span>
                                     @endif
 
-                                    {{-- NEW selected main image preview --}}
-                                    <div class="mt-2">
-                                        <img id="main_image_preview" src="#" alt="Main image preview"
-                                            class="img-thumbnail" style="max-height: 160px; display:none;">
-                                    </div>
-
-                                    {{-- OLD stored main image (under the preview) --}}
-                                    @php
-                                        $mainImage = optional($data->images->where('is_main', 1)->first());
-                                    @endphp
-                                    <div class="mt-2">
-                                        <!-- <label class="d-block mb-1">Current Main Image</label> -->
-                                        <img
-                                            src="{{ $mainImage ? $mainImage->image : asset('assets/products/default-image.png') }}"
-                                            alt="Current main image"
-                                            class="img-thumbnail"
-                                            style="max-height: 160px;">
-                                    </div>
+                                    
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                
 
-                            {{-- Other Images (Edit) --}}
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="other_images">Other Images</label>
-                                    <input type="file" name="other_images[]" id="other_images" class="form-control"
-                                        accept="image/*" multiple>
-
-                                    @if ($errors->has('other_images'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('other_images') }}
-                                        </span>
-                                    @endif
-                                    @if ($errors->has('other_images.*'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('other_images.*') }}
-                                        </span>
-                                    @endif
-
-                                    {{-- NEW selected other images preview --}}
-                                    <div id="other_images_preview" class="mt-2 d-flex flex-wrap" style="gap:8px;"></div>
-
-                                    {{-- OLD stored other images (under the preview) --}}
-                                    <div class="mt-2 d-flex flex-wrap" style="gap:8px;">
-                                        @foreach($data->images->where('is_main', 0) as $img)
-                                            <div class="existing-image-wrapper position-relative" style="display:inline-block;">
-                                                <img
-                                                    src="{{ $img->image }}"
-                                                    alt="Other image"
-                                                    class="img-thumbnail"
-                                                    style="max-height:120px; max-width:120px; object-fit:cover;">
-
-                                                {{-- Cross button to delete --}}
-                                                <button type="button"
-                                                        class="btn btn-sm btn-danger existing-image-delete-btn"
-                                                        data-id="{{ $img->id }}"
-                                                        style="position:absolute; top:2px; right:2px; padding:0 6px; line-height:1;">
-                                                    &times;
-                                                </button>
-                                            </div>
-                                        @endforeach
-
-                                        @if($data->images->where('is_main', 0)->isEmpty())
-                                            <span class="text-muted">No other images uploaded yet.</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-
-
-                            {{-- Production Stages (GENERAL visible, ROYAL hidden like create) --}}
-                            <div class="col-md-12 stages-wrapper">
-                                <label>Production Stages (in order)</label>
-                                <div id="stages-container">
-                                    @foreach($data->product_stages->whereNotIn('master_stage_id',[1,2]) as $key=>$single_stage)
-                                        <div class="stage-row row mb-2"
-                                             data-printing="{{ $data->printing_stage_after ?? '' }}"
-                                             data-embroidery="{{ $data->embroidery_stage_after ?? '' }}">
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <select name="product_stage_id[]" class="form-control select2 stage-select" style="width: 100%;" required>
-                                                        <option value="">Select Stage</option>
-                                                        @foreach($product_stages as $stage)
-                                                            <option value="{{ $stage->id }}" {{ $stage->id == $single_stage->master_stage_id ? 'selected' : '' }}>
-                                                                {{ $stage->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <input type="radio" name="printing_stage_after" class="printing-radio" id="is_printing_{{$key}}">
-                                                    <label for="is_printing_{{$key}}">Printing</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <input type="radio" class="embroidery-radio" name="embroidery_stage_after" id="is_embroidery_{{$key}}">
-                                                    <label for="is_embroidery_{{$key}}">Embroidery</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-2">
-                                                @if($key==0)
-                                                    <button type="button" class="btn btn-success add-stage"><i class="fa fa-plus"></i></button>
-                                                @else
-                                                    <button type="button" class="btn btn-danger remove-stage"><i class="fa fa-minus"></i></button>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            {{-- Fabric Details --}}
-                            <div class="col-md-12">
-                                <label>Fabric Details</label>
-                                <div id="fabric-container">
-                                    @foreach($data->bill_of_materials as $key=>$single_bom)
-                                        <div class="fabric-row row mb-2">
-                                            <input type="hidden" name="bom_id[]" value="{{ $single_bom->id }}">
-                                            <div class="col-md-5">
-                                                <div class="form-group">
-                                                    <select name="fabric_sku[]" class="form-control select2" style="width: 100%;" required>
-                                                        <option value="">Select Fabric</option>
-                                                        @foreach($fabrics as $single_data)
-                                                            <option value="{{$single_data->sku}}" {{ $single_bom->fabric_sku == $single_data->sku ? 'selected' : '' }}>
-                                                                {{$single_data->sku}}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-5">
-                                                <input type="number" name="fabric_meter[]" class="form-control" placeholder="Enter meter"
-                                                       step="0.01" min="0" value="{{$single_bom->meter}}" required>
-                                            </div>
-                                            <div class="col-md-2">
-                                                @if($key==0)
-                                                    <button type="button" class="btn btn-success add-fabric"><i class="fa fa-plus"></i></button>
-                                                @else
-                                                    <button type="button" class="btn btn-danger remove-fabric"><i class="fa fa-minus"></i></button>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @endforeach
+                                {{-- OLD stored main image (under the preview) --}}
+                                @php
+                                    $mainImage = optional($data->images->where('is_main', 1)->first());
+                                @endphp
+                                <div class="mt-2">
+                                    <!-- <label class="d-block mb-1">Current Main Image</label> -->
+                                    <img
+                                        src="{{ $mainImage ? $mainImage->image : asset('assets/products/default-image.png') }}"
+                                        alt="Current main image"
+                                        class="img-thumbnail"
+                                        id="main_image_preview"
+                                        style="max-height: 160px;">
                                 </div>
                             </div>
 
