@@ -56,12 +56,17 @@ class ProductOrderController extends Controller {
         return $this->service->indexListOrderSet($request);
     }
     public function create(){
-        $response['products'] = $this->service->products();
-        // dd( $response['products']);
-        $response['product_size'] = $this->service->product_sizes();
-        $response['colours'] = $this->service->getColours();
+        // $response['products'] = $this->service->products();
+        // $response['product_size'] = $this->service->product_sizes();
+        // $response['colours'] = $this->service->getColours();
         $response['customers'] = $this->service->customers();
         return view('admin.product_order.create',$response);
+    }
+    public function master_data(){
+        $response['products'] = $this->service->products();
+        $response['sizes'] = $this->service->product_sizes();
+        $response['colours'] = $this->service->getColours();
+        return response()->json($response);
     }
     public function store(ProductOrderStoreRequest $request){
         
