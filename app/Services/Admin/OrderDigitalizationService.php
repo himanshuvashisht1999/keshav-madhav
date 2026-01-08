@@ -18,6 +18,9 @@ use App\Models\OrderStageWiseTimeTracking;
 use App\Models\MasterStageWiseTimeAllocation;
 use App\Models\masterFabricWarehouse;
 use App\Models\ProductionGoods;
+use App\Models\OrderCuttingStage;
+
+
 
 use PDF;
 
@@ -625,11 +628,45 @@ class OrderDigitalizationService {
         $data = OrderMain::whereNot('status',0)->pluck('sku');
         return $data;
     }
+    public function cutting_master_orders($cutting_unit){
+        $data = OrderCuttingStage::with('')->where('to_assign_id',$cutting_unit)->whereNot('status',0)->get();
+        dd($data);
+        return $data;
+    }
     function product_sizes(){
         $data = MasterSizeMeasurement::whereIn('status',[1,2])->orderBy('id','asc')->get();
         return $data;
     }
 
+
+    public function getDesigns(Request $request)
+    {
+        $orderNo = $request->order_no;
+
+        $designs = OrderMain::with('OrderProductSets')
+            ->where('sku', $orderNo)->first();
+        dd($designs);
+        return response()->json($designs);
+    }
+
+    // Step 2: Design → Rolls + Size Groups
+    public function getDesignDetails(Request $request)
+    {
+        $orderNo = $request->order_no;
+        $design  = $request->design_no;
+
+        $rolls = FabricRoll::where('order_no', $orderNo)
+            ->where('design_number', $design)
+            ->select('roll_no', 'meter')
+            ->get();
+
+        $sizes = ProductSize::where('design_number', $design)->get();
+
+        return response()->json([
+            'rolls' => $rolls,
+            'sizes' => $sizes
+        ]);
+    }
 
 
 }

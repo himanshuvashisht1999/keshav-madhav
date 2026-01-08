@@ -155,8 +155,21 @@ class OrderDigitalizationController extends Controller {
             $response['roll_numbers'] = $this->service->roll_numbers();
             $response['order_numbers'] = $this->service->order_numbers();
 
+            $cutting_unit = $response['cutting_slip']->getUnitMaster?->id;
+            $response['cutting_master_orders'] = $this->service->cutting_master_orders($cutting_unit);
+            dd($response['cutting_master_orders']);
         }
 
         return view('admin.order_digitalization.cutting_master',$response);
+    }
+
+    public function getDesigns(Request $request){
+        $response = $this->service->getDesigns($request);
+        return response()->json($response);
+    }
+
+    public function getDesignDetails(Request $request){
+        $response = $this->service->getDesignDetails($request);
+        return response()->json($response);
     }
 }

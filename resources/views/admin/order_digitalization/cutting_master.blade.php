@@ -147,6 +147,18 @@
                                         value="{{ $cutting_slip->created_at }}">
 
                                     {{-- LOT --}}
+                                    <div class="card p-2 mt-3 border">
+                                        <label>Order No *</label>
+                                        <select id="select_order_no" name="select_order_no" class="form-control mb-2 select2">
+                                            <option value="">Select Order No</option>
+                                            @foreach($order_numbers as $order_number)
+                                                <option value="{{ $order_number }}">
+                                                    {{ $order_number}}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
                                     <div class="lot-input-wrapper my-3 lot-inline">
                                         <label class="lot-input-label">Lot No.</label>
                                         <input type="text"
@@ -165,22 +177,28 @@
 
                                     {{-- ADD ROLL --}}
                                     <div class="card p-2 mt-3 border">
+                                        <label>Design No</label>
+                                        <select id="design_id" class="form-control mb-2 select2">
+                                            <option value="">Select Design No</option>
+                                        </select>
+                                        <label>Fabric</label>
+                                        <select id="fabric" class="form-control mb-2 select2">
+                                            <option value="">Select Fabric</option>
+                                        </select>
+                                    </div>
+                                    <div class="card p-2 mt-3 border">
                                         <h6>Add Roll</h6>
-
                                         <label>Roll No</label>
                                         <select id="roll_no" class="form-control mb-2 select2">
                                             <option value="">Select Roll No</option>
-                                            @foreach($roll_numbers as $roll_number)
-                                                <option value="{{ $roll_number }}">
-                                                    {{ $roll_number}}
-                                                </option>
-                                            @endforeach
+                                            
                                         </select>
                                         {{-- <input type="text" id="roll_no" class="form-control mb-1"> --}}
                                         <small class="text-danger" id="err_roll_no"></small>
 
-                                        <label class="mt-2">Meter</label>
-                                        <input type="number" id="meter" class="form-control mb-1" step="0.01">
+                                        <label class="mt-2">Total Meter</label>
+                                        <input type="number" id="meter" class="form-control mb-1" step="0.01" readonly>
+                                        <div id="roll_cutting_details"></div>
                                         <small class="text-danger" id="err_meter"></small>
 
                                         <button type="button"
@@ -842,6 +860,33 @@ $(function () {
         $(this).closest('tr').remove();
     });
 
+
+    $(document).on('change','#select_order_no',function(){
+        let orderNo = $(this).val();
+        alert(orderNo);
+        $('#design_id').html('<option value="">Loading...</option>');
+        $('#roll_no').html('<option value="">Select Roll No</option>');
+        $('#size_group').html('<option value="">Select Size Group</option>');
+
+        if (!orderNo) return;
+
+        $.ajax({
+            url: "{{ route('admin.order_digitalization.order-designs') }}",
+            type: "GET",
+            data: { order_no: orderNo },
+            success: function (response) {
+                console.log(response);
+                // let options = '<option value="">Select Design No</option>';
+                // designs.forEach(function (design) {
+                //     options += `<option value="${design}">${design}</option>`;
+                // });
+
+                // $('#design_id').html(options);
+            }
+        });
+    });
+
+
 });
 
 </script>
@@ -920,71 +965,71 @@ $(function () {
 <script>
     $('#em_addRow').click(function(){
 
-    let lot = $('#em_lot_no').val();
-    let design = $('#em_design').val();
-    let colour = $('#em_colour_id').val();
-    let set = $('#em_set_size').val();
-    let qty = $('#em_set_qty').val();
-    let pcs = $('#em_set_size').find(':selected').data('no-of-pcs') ?? 1;
-    let total = qty * pcs;
+        let lot = $('#em_lot_no').val();
+        let design = $('#em_design').val();
+        let colour = $('#em_colour_id').val();
+        let set = $('#em_set_size').val();
+        let qty = $('#em_set_qty').val();
+        let pcs = $('#em_set_size').find(':selected').data('no-of-pcs') ?? 1;
+        let total = qty * pcs;
 
-    if(!lot || !design || !colour || !set || !qty){
-        alert('Please fill all fields.');
-        return;
-    }
+        if(!lot || !design || !colour || !set || !qty){
+            alert('Please fill all fields.');
+            return;
+        }
 
-    $('#em_table tbody').append(`
-        <tr>
+        $('#em_table tbody').append(`
+            <tr>
 
-            <td>${lot}
-                <input type="hidden" name="lot_no_list[]" value="${lot}">
-            </td>
+                <td>${lot}
+                    <input type="hidden" name="lot_no_list[]" value="${lot}">
+                </td>
 
-            <td>Cutting
-                <input type="hidden" name="from_stage_id[]" value="${$('#em_from_stage_id').val()}">
-                <input type="hidden" name="from_stage_name[]" value="${$('#em_from_stage_name').val()}">
-                <input type="hidden" name="from_unit_id[]" value="${$('#em_from_unit_id').val()}">
-                <input type="hidden" name="from_unit_name[]" value="${$('#em_from_unit_name').val()}">
-            </td>
+                <td>Cutting
+                    <input type="hidden" name="from_stage_id[]" value="${$('#em_from_stage_id').val()}">
+                    <input type="hidden" name="from_stage_name[]" value="${$('#em_from_stage_name').val()}">
+                    <input type="hidden" name="from_unit_id[]" value="${$('#em_from_unit_id').val()}">
+                    <input type="hidden" name="from_unit_name[]" value="${$('#em_from_unit_name').val()}">
+                </td>
 
-            <td>Embroidery
-                <input type="hidden" name="to_stage_id[]" value="${$('#em_to_stage_id').val()}">
-                <input type="hidden" name="to_stage_name[]" value="${$('#em_to_stage_name').val()}">
-                <input type="hidden" name="to_unit_id[]" value="${$('#em_to_unit_id').val()}">
-                <input type="hidden" name="to_unit_name[]" value="${$('#em_to_unit_name').val()}">
-            </td>
+                <td>Embroidery
+                    <input type="hidden" name="to_stage_id[]" value="${$('#em_to_stage_id').val()}">
+                    <input type="hidden" name="to_stage_name[]" value="${$('#em_to_stage_name').val()}">
+                    <input type="hidden" name="to_unit_id[]" value="${$('#em_to_unit_id').val()}">
+                    <input type="hidden" name="to_unit_name[]" value="${$('#em_to_unit_name').val()}">
+                </td>
 
-            <td>${$('#em_design option:selected').text()}
-                <input type="hidden" name="design[]" value="${design}">
-            </td>
+                <td>${$('#em_design option:selected').text()}
+                    <input type="hidden" name="design[]" value="${design}">
+                </td>
 
-            <td>${$('#em_colour_id option:selected').text()}
-                <input type="hidden" name="colour_id[]" value="${colour}">
-            </td>
+                <td>${$('#em_colour_id option:selected').text()}
+                    <input type="hidden" name="colour_id[]" value="${colour}">
+                </td>
 
-            <td>${$('#em_set_size option:selected').text()}
-                <input type="hidden" name="set_size[]" value="${set}">
-            </td>
+                <td>${$('#em_set_size option:selected').text()}
+                    <input type="hidden" name="set_size[]" value="${set}">
+                </td>
 
-            <td>${qty}
-                <input type="hidden" name="set_qty[]" value="${qty}">
-            </td>
+                <td>${qty}
+                    <input type="hidden" name="set_qty[]" value="${qty}">
+                </td>
 
-            <td>${total}
-                <input type="hidden" name="individual_size[]" value="">
-                <input type="hidden" name="individual_qty[]" value="">
-            </td>
+                <td>${total}
+                    <input type="hidden" name="individual_size[]" value="">
+                    <input type="hidden" name="individual_qty[]" value="">
+                </td>
 
-            <td><button type="button" class="btn btn-danger btn-sm remove">X</button></td>
+                <td><button type="button" class="btn btn-danger btn-sm remove">X</button></td>
 
-        </tr>
-    `);
+            </tr>
+        `);
 
-    $('#em_design').val('');
-    $('#em_colour_id').val('');
-    $('#em_set_size').val('');
-    $('#em_set_qty').val('');
-});
+        $('#em_design').val('');
+        $('#em_colour_id').val('');
+        $('#em_set_size').val('');
+        $('#em_set_qty').val('');
+    });
 
 </script>
 @endsection
