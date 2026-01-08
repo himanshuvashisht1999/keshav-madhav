@@ -30,6 +30,7 @@ use App\Models\OrderCuttingStage;
 use App\Models\MasterProductFitting;
 use App\Models\StageMasterUnit;
 use App\Models\MasterDesignPattern;
+use App\Models\Fabric;
 
 use PDF;
 
@@ -900,7 +901,7 @@ class ProductOrderService {
 
         try {
             DB::beginTransaction();
-
+            // dd($request->all());
             $data = OrderProductSet::where('id', $request->order_product_set_id)->first();
             $cutting = OrderCuttingStage::create([
                 'sku' => $data->sku,
@@ -908,7 +909,7 @@ class ProductOrderService {
                 'set_product_id' => $data->id,
                 'from_assign_id' => 0,
                 'to_assign_id' => $request->master_cutting_id,
-                'fabric_id' => $request->fabric_id,
+                'fabric_id' => $request->fabric_id ?? null,
                 'quantity' => $data->total_quantity ?? 0,
                 'master_fitting_id' => $request->master_fitting_id,
                 'master_pattern_id' => $request->master_pattern_id,
@@ -1029,6 +1030,14 @@ class ProductOrderService {
 
     public function getPatterns(){
         $data = MasterDesignPattern::where('status',1)->orderBy('id','asc')->get();
+        return $data;
+    }
+
+    public function fabrics(){
+        $data = Fabric::where('status', 1)
+            ->withSum('receiptDetails', 'remaining_quantity')
+            ->having('receipt_details_sum_remaining_quantity', '>', 0)
+            ->get(['id', 'fabric_name']);
         return $data;
     }
 

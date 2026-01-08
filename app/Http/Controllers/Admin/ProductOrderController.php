@@ -3,26 +3,24 @@ namespace App\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\ProductOrderService as Service;
-use App\Services\Admin\FabricReceiptService;
 use App\Requests\Admin\ProductOrderStoreRequest;
 use App\Requests\Admin\ProductOrderUpdateRequest;
-use Illuminate\Support\Facades\Crypt;
-use Auth;
-use PDF;
 use App\Models\OrderProduct;
 use App\Models\OrderProductDetailStock;
 use App\Models\OrderCuttingStage;
 use App\Models\OrderMain;
 use App\Models\MasterColor;
 use App\Models\OrderProductSet;
+use Illuminate\Support\Facades\Crypt;
+use Auth;
+use PDF;
 
 
 
 class ProductOrderController extends Controller { 
     protected $service;
-    public function __construct(Service $service, FabricReceiptService $fabricReceiptService) {
+    public function __construct(Service $service) {
         $this->service = $service;
-        $this->fabricReceiptService = $fabricReceiptService;
     }
     public function index(Request $request){
         $response['customers'] = $this->service->customers();
@@ -48,7 +46,8 @@ class ProductOrderController extends Controller {
         $response['cutting_units'] = $this->service->cutting_units();
         $response['patterns'] = $this->service->getPatterns();
         // dd($response['patterns']);
-        $response['fabrics'] = $this->fabricReceiptService->fabrics();
+        $response['fabrics'] = $this->service->fabrics();
+        // dd( $response['fabrics']);
         $response['fittings'] = $this->service->fittings();
         return view('admin.product_order.index-order-set', $response);
     } 
@@ -185,8 +184,9 @@ class ProductOrderController extends Controller {
     public function indexOrderSetDownload(Request $request)
     {
         $data = OrderProductSet::with([
-            'order_cutting_stage.cutting_master',
+            'order_cutting_stage.cutting_master.masterFabricWarehouse',
             'order_cutting_stage.fabric',
+            'order_cutting_stage.pattern',
             'orderMain.customer',
             'colors',
             'sizeMeasurement',
@@ -196,6 +196,7 @@ class ProductOrderController extends Controller {
         // ==============================
         // HEADER DATA
         // ==============================
+        // dd($data);
         $cmpoHeader = [
             'cmpo_id'     => $data->id,
             'date'        => $data->created_at->format('d-m-Y'),
@@ -204,8 +205,10 @@ class ProductOrderController extends Controller {
             'design_no'   => $data->design_number ?? '-',
             'color'       => $data->colors->name ?? '-',
             'fabric'      => $data->order_cutting_stage->fabric->name ?? '-',
-            'cuttingMaster' => $data->order_cutting_stage->cutting_master->cutting_master_name ?? '-',
-            'cuttingMasterAddress' => $data->order_cutting_stage->cutting_master->address ?? '-',
+            'pattern'     => $data->order_cutting_stage->pattern->name ?? '-',
+            'warehouse_name' => $data->order_cutting_stage->cutting_master->masterFabricWarehouse->cutting_master_name ?? '-',
+            'cuttingMaster' => $data->order_cutting_stage->cutting_master->name ?? '-',
+            'cuttingMasterAddress' => $data->order_cutting_stage->cutting_master->masterFabricWarehouse->address ?? '-',
             'fitting' => $data->order_cutting_stage?->master_fitting->name ?? '-',
             'remark' => $data->order_cutting_stage?->remarks ?? '-',
             'total_pcs' => $data->total_quantity ?? '0',
