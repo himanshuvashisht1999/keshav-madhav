@@ -22,6 +22,7 @@ class OrderCuttingStage extends Model
         'lot_no',
         'fabric_id',
         'master_fitting_id',
+        'master_pattern_id',    
         'quantity',
         'remaining_quantity',
         'till_allowed_time',
@@ -44,11 +45,17 @@ class OrderCuttingStage extends Model
     // {
     //     return $this->belongsTo(OrderProduct::class, 'order_product_id');
     // }
+    // public function warehouseDetails(){
+    //     return $this->hasOne('App\Models\MasterFabricWarehouse','id','to_assign_id');
+    // }
     public function cutting_master(){
-        return $this->hasOne('App\Models\MasterFabricWarehouse','id','to_assign_id');
+        return $this->hasOne('App\Models\StageMasterUnit','id','to_assign_id');
     }
     public function fabric(){
         return $this->hasOne('App\Models\Fabric','id','fabric_id');
+    }
+    public function pattern(){
+        return $this->hasOne('App\Models\MasterDesignPattern','id','master_pattern_id');
     }
     public function master_fitting(){
         return $this->hasOne('App\Models\MasterProductFitting','id','master_fitting_id');

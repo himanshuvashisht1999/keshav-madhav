@@ -73,4 +73,8 @@ class Fabric extends Model
         return $this->hasMany('App\Models\stock', 'sku', 'sku');
     }
 
+    public function receiptDetails()
+    {
+        return $this->hasMany('App\Models\FabricReceiptDetail', 'fabric_id', 'id');
+    }
 }

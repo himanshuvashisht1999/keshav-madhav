@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
 
@@ -70,116 +71,130 @@
 
 <body>
 
-<!-- ===================== TITLE ===================== -->
-<div class="title">
-    Cutting Master Production Order
-</div>
+    <!-- ===================== TITLE ===================== -->
+    <div class="title">
+        Cutting Master Production Order
+    </div>
 
-<!-- ===================== HEADER DETAILS ===================== -->
-<table class="meta-table">
-    <tr>
-        <td class="meta-label">CMPO No:</td>
-        <td>CMPO-{{ $header['cmpo_id'] }}</td>
-
-        <td class="meta-label">Date:</td>
-        <td>{{ $header['date'] }}</td>
-    </tr>
-
-    <tr>
-        <td class="meta-label">Sales Order No:</td>
-        <td>{{ $header['order_no'] }}</td>
-
-        <td class="meta-label">Customer:</td>
-        <td>{{ $header['customer'] }}</td>
-    </tr>
-
-    <tr>
-        <td class="meta-label">Fabric:</td>
-        <td>{{ $header['fabric'] }}</td>
-
-        <td class="meta-label">Fitting:</td>
-        <td>{{ $header['fitting'] }}</td>
-    </tr>
-
-    <tr>
-        <td class="meta-label">Cutting Master:</td>
-        <td>{{ $header['cuttingMaster'] }}</td>
-
-        <td class="meta-label">Address:</td>
-        <td>{{ $header['cuttingMasterAddress'] }}</td>
-    </tr>
-
-    <tr>
-        <td class="meta-label">Remark:</td>
-        <td colspan="3">{{ $header['remark'] }}</td>
-    </tr>
-</table>
-
-<!-- ===================== PRODUCT TABLE HEADING ===================== -->
-<div class="section-title">
-    Product & Quantity Details
-</div>
-
-<!-- ===================== PRODUCT TABLE ===================== -->
-<table class="data-table">
-    <thead>
+    <!-- ===================== HEADER DETAILS ===================== -->
+    <table class="meta-table">
         <tr>
-            <th style="width:6%;">#</th>
-            <th style="width:30%;">Design No</th>
-            <th style="width:20%;">Color</th>
-            <th style="width:20%;">Size</th>
-            <th style="width:14%;">PCS</th>
+            <td class="meta-label">CMPO No:</td>
+            <td>CMPO-{{ $header['cmpo_id'] }}</td>
+
+            <td class="meta-label">Date:</td>
+            <td>{{ $header['date'] }}</td>
         </tr>
-    </thead>
 
-    <tbody>
-        {{-- @php $totalPcs = 0; @endphp --}}
+        <tr>
+            <td class="meta-label">Sales Order No:</td>
+            <td>{{ $header['order_no'] }}</td>
 
-        @foreach($sizeData as $row)
-            {{-- @php $totalPcs += $row['pcs']; @endphp --}}
+            <td class="meta-label">Customer:</td>
+            <td>{{ $header['customer'] }}</td>
+        </tr>
+
+        <tr>
+            <td class="meta-label">Fabric:</td>
+            <td>{{ $header['fabric'] }}</td>
+
+            <td class="meta-label">Fitting:</td>
+            <td>{{ $header['fitting'] }}</td>
+        </tr>
+
+        <tr>
+            <td class="meta-label">Pattern:</td>
+            <td>{{ $header['pattern'] }}</td>
+
+            {{-- <td class="meta-label">Fitting:</td>
+        <td>{{ $header['fitting'] }}</td> --}}
+        </tr>
+        <br>
+        <tr>
+            <td class="meta-label">Warehouse:</td>
+            <td>{{ $header['warehouse_name'] }}</td>
+
+            <td class="meta-label">Cutting Master:</td>
+            <td>{{ $header['cuttingMaster'] }}</td>
+        </tr>
+        <tr>
+
+            <td class="meta-label">Address:</td>
+            <td>{{ $header['cuttingMasterAddress'] }}</td>
+        </tr>
+
+        <tr>
+            <td class="meta-label">Remark:</td>
+            <td colspan="3">{{ $header['remark'] }}</td>
+        </tr>
+    </table>
+
+    <!-- ===================== PRODUCT TABLE HEADING ===================== -->
+    <div class="section-title">
+        Product & Quantity Details
+    </div>
+
+    <!-- ===================== PRODUCT TABLE ===================== -->
+    <table class="data-table">
+        <thead>
             <tr>
-                <td>{{ $loop->iteration }}</td>
-                <td>{{ $row['design_no'] }} ({{ $header['fitting'] }})</td>
-                <td>{{ $row['color'] }}</td>
-                <td>{{ $row['size'] }}</td>
-                <td>{{ $row['pcs'] }}</td>
+                <th style="width:6%;">#</th>
+                <th style="width:30%;">Design No</th>
+                <th style="width:20%;">Color</th>
+                <th style="width:20%;">Size</th>
+                <th style="width:14%;">PCS</th>
             </tr>
-        @endforeach
-    </tbody>
+        </thead>
 
-    <tfoot>
+        <tbody>
+            {{-- @php $totalPcs = 0; @endphp --}}
+
+            @foreach ($sizeData as $row)
+                {{-- @php $totalPcs += $row['pcs']; @endphp --}}
+                <tr>
+                    <td>{{ $loop->iteration }}</td>
+                    <td>{{ $row['design_no'] }} ({{ $header['fitting'] }})</td>
+                    <td>{{ $row['color'] }}</td>
+                    <td>{{ $row['size'] }}</td>
+                    <td>{{ $row['pcs'] }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+
+        <tfoot>
+            <tr>
+                <th colspan="4" style="text-align:right;">Total</th>
+                <th>{{ $header['total_pcs'] }}</th>
+            </tr>
+        </tfoot>
+    </table>
+
+
+    <!-- ===================== SIGNATURE SECTION ===================== -->
+    <table class="signature-table" width="100%">
         <tr>
-            <th colspan="4" style="text-align:right;">Total</th>
-            <th>{{ $header['total_pcs'] }}</th>
-        </tr>
-    </tfoot>
-</table>
+            <td>
+                _______________________<br>
+                <strong>Prepared By</strong>
+            </td>
 
-
-<!-- ===================== SIGNATURE SECTION ===================== -->
-<table class="signature-table" width="100%">
-    <tr>
-        <td>
-            _______________________<br>
-            <strong>Prepared By</strong>
-        </td>
-
-        <!-- <td>
+            <!-- <td>
             _______________________<br>
             <strong>Cutting Master</strong>
         </td> -->
 
-        <td>
-            _______________________<br>
-            <strong>Authorized Sign</strong>
-        </td>
-    </tr>
-</table>
+            <td>
+                _______________________<br>
+                <strong>Authorized Sign</strong>
+            </td>
+        </tr>
+    </table>
 
-<!-- ===================== FOOTER NOTE ===================== -->
-<div class="footer-note">
-    This is a system generated sales order slip.
-</div>
+    <!-- ===================== FOOTER NOTE ===================== -->
+    <div class="footer-note">
+        This is a system generated sales order slip.
+    </div>
 
 </body>
+
 </html>
