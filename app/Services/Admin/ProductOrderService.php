@@ -285,13 +285,14 @@ class ProductOrderService {
 
                 $size_data = $this->getSizeDetails($request->sizeList[$key]);
                 $size_explode = explode(',',$size_data->size_group);
-                $product_data = ProductionGoods::where('design_number', $design_id)->first();
+                $product_data = ProductionGoods::where('id', $design_id)->first();
                 if ($product_data) {
                     $save_orderProductSet = new OrderProductSet;
                     $save_orderProductSet->order_main_id = $save_data_main->id;
                     $save_orderProductSet->sku = $save_data_main->sku. '/'. $i;
                     $save_orderProductSet->bar_code = $request->bar_codeList[$key] ?? null;
-                    $save_orderProductSet->design_number = $design_id ?? null;
+                    $save_orderProductSet->design_number = $product_data->design_number;
+                    $save_orderProductSet->production_goods_id = $product_data->id;
                     $save_orderProductSet->set_size = $request->sizeList[$key];
                     $save_orderProductSet->color_id = $request->colourList[$key];
                     $save_orderProductSet->set_quantity = $order_quantity;
@@ -299,9 +300,7 @@ class ProductOrderService {
                     $save_orderProductSet->total_quantity = $order_quantity * $size_data->no_of_pcs;
                     $save_orderProductSet->remain_set_quantity =  $order_quantity;
                     $save_orderProductSet->remain_total_quantity = $order_quantity * $size_data->no_of_pcs;
-                    // $save_orderProductSet->basic_amount = $request->rate[$key] ;
-                    // $save_orderProductSet->gst = $request->gst_percentage[$key] ?? 0;
-                    // $save_orderProductSet->total_amount = $request->total_amount[$key];
+                    
                     $save_orderProductSet->corporate_order_file = $imgName ?? null;
                     $save_orderProductSet->status = 1;
                     $save_orderProductSet->save();
@@ -330,7 +329,7 @@ class ProductOrderService {
                         $return_data['status_code'] = 1;
 
                         // Loop through ordered products
-                        $product_data = ProductionGoods::where('design_number', $design_id)->first();
+                        $product_data = ProductionGoods::where('id', $design_id)->first();
                         // dd($product_data);
                         if ($product_data) {
             
@@ -340,7 +339,7 @@ class ProductOrderService {
                             $save_order_product->order_main_id = $save_data_main->id;
                             $save_order_product->product_type_sku = $product_data->type_of_garment;
                             $save_order_product->product_sku = $product_data->name_of_garment;
-                            $save_order_product->design_number = $design_id ?? null;
+                            $save_order_product->design_number = $product_data->design_number;
                             $save_order_product->size = $single_size;
                             $save_order_product->color_id = $request->colourList[$key];
                             $save_order_product->quantity = $order_quantity;
@@ -362,7 +361,6 @@ class ProductOrderService {
         } catch (\Exception $e) {
             //  Rollback everything on any error
             DB::rollBack();
-
             $return_data['message'] = $e->getMessage();
             $return_data['status_code'] = 0;
             return $return_data;
@@ -404,7 +402,7 @@ class ProductOrderService {
         return $data;
     }
     public function products(){
-        $data = ProductionGoods::where('status',1)->orderBy('sku','asc')->get();
+        $data = ProductionGoods::where('status',1)->orderBy('id','desc')->get();
         return $data;
     }
     public function transfer($request)
@@ -793,7 +791,7 @@ class ProductOrderService {
         return $data;
     }
 
-    function product_sizes(){
+    function product_sizes(){ 
         $data = MasterSizeMeasurement::where('status',1)->orderBy('id','asc')->get();
         return $data;
     }
@@ -960,14 +958,11 @@ class ProductOrderService {
     }
 
     function saveCustomSetSize($request){
-        $design_number  = $request->design_id ?? '';
         $size_group     =    $request->finalGroup ?? '';
         $set_size       =      $request->set_size_name ?? '';
-        $design_number = $request->design_id ?? '';
         $no_of_pcs = count(explode(',', $request->finalGroup)) ?? 0 ;
         
-        $exists = MasterSizeMeasurement::where('design_number', $design_number)
-            ->where('set_size', $set_size)
+        $exists = MasterSizeMeasurement::where('set_size', $set_size)
             ->where('status', 2)
             ->exists();
         $new_size_set_id = '';
@@ -975,16 +970,15 @@ class ProductOrderService {
             $save_data = new MasterSizeMeasurement;
             $save_data->sku = '';
             $save_data->corporate_company_id = 1;
-            $save_data->design_number = $design_number;
             $save_data->set_size = $set_size;
+            $save_data->name = $set_size;
             $save_data->size_group = $size_group;
             $save_data->no_of_pcs = $no_of_pcs;
             $save_data->status = 2;
             $save_data->save();
             $new_size_set_id = $save_data->id;
         } else {
-            $size_data = MasterSizeMeasurement::where('design_number', $design_number)
-            ->where('set_size', $set_size)
+            $size_data = MasterSizeMeasurement::where('set_size', $set_size)
             ->where('status', 2)->first();
             $size_data->size_group = $size_group; 
             $size_data->no_of_pcs = $no_of_pcs;
