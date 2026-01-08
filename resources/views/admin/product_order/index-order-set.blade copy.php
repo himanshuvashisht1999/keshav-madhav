@@ -59,10 +59,13 @@
                             <td>
                                 
                             </td>
-                            
                             <td>
                                 
                             </td>
+                            
+                            {{-- <td>
+                                
+                            </td> --}}
                             <td>
                             
                             </td>
@@ -82,16 +85,23 @@
                             </td>
 
                             <td></td>
+                            {{-- <td></td>
+                            <td></td> --}}
+                            <td></td>
                         </tr>
                         <tr>
                             <th>ID</th>
                             <th>Provided Bar Code</th>
                             <th>Design Number</th>
                             <th>Set Size</th>
+                            <th>Size Group</th>
                             <th>Colour</th>
                             <th>Set Quantity</th>
                             <th>Pcs per Set</th>
                             <th>Total Quantity</th>
+                            {{-- <th>Basic Amount</th>
+                            <th>GST (%)</th> --}}
+                            {{-- <th>Total Amount</th> --}}
                             <th>Status</th>
                             <th>Assign To</th>
                             <th>Action</th>
@@ -100,18 +110,22 @@
                     <tbody></tbody>
                     <tfoot>
                         <tr>
-                            <th colspan="5" class="text-right">Total Set :</th>
+                            <th colspan="6" class="text-right">Total Set :</th>
                             <th id="set_qty_total"></th>          <!-- Set Quantity Total -->
                             <th>Total Quantity</th>
                             <th id="total_qty_total"></th>        <!-- Total Quantity Total -->
                             <th></th>
                             <th></th>
+                            <th></th>
+                            {{-- <th></th> --}}
+                            {{-- <th></th>
+                            <th></th> --}}
                         </tr>
                     </tfoot>
                 </table>
             </div>
             <div>
-                @if ($check_assign == false)
+                @if (false)
                     <section class="content">
                         <div class="container-fluid">
 
@@ -152,7 +166,7 @@
                                                     </span>
                                                 @endif --}}
 
-                                                <!-- TIME TYPE -->
+                                                {{-- <!-- TIME TYPE -->
                                                 <div class="form-group">
                                                     <label class="font-weight-bold">Time Type</label>
                                                     <select name="time_type" id="time_type" class="form-control" required>
@@ -173,7 +187,7 @@
                                                         name="allowed_time"
                                                         placeholder="Enter Allowed Time"
                                                         min="1" required>
-                                                </div>
+                                                </div> --}}
 
                                                 <!-- REMARK -->
                                                 <div class="form-group">
@@ -209,7 +223,6 @@
                     </section>
                 @endif
             
-            </div>
         </div>
     </section>
 </div>
@@ -229,12 +242,49 @@
 
                 <div class="modal-body">
 
+                <div class="border rounded p-2 mb-3 bg-light">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Design No:</strong>
+                            <span id="modal_design_number"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Set Size:</strong>
+                            <span id="modal_set_size"></span>
+                        </div>
+                        <div class="col-md-12">
+                            <strong>Set Size Group:</strong>
+                            <span id="modal_set_size_group"></span>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <strong>Color:</strong>
+                            <span id="modal_color"></span>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <strong>Total Qty:</strong>
+                            <span id="modal_total_qty"></span>
+                        </div>
+                    </div>
+                </div>
+
+
                     <input type="hidden" id="modal_order_set_id" name="order_product_set_id">
 
                     <!-- Cutting Master -->
-                    <div class="form-group">
-                        <label>Cutting Master</label>
+                    {{-- <div class="form-group">
+                        <label>Warehouse</label>
                         <select name="master_cutting_id" class="form-control select2" required>
+                            <option value="">Select</option>
+                            @foreach($cutting_units as $unit)
+                                <option value="{{ $unit->id }}">
+                                    {{ $unit->cutting_master_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div> --}}
+                    <div class="form-group">
+                        <label>Warehouse</label>
+                        <select name="warehouse_id" id="warehouse_id" class="form-control select2" required>
                             <option value="">Select</option>
                             @foreach($cutting_units as $unit)
                                 <option value="{{ $unit->id }}">
@@ -246,12 +296,19 @@
 
                     <!-- Fabric -->
                     <div class="form-group">
-                        <label>Fabric</label>
-                        <select name="fabric_id" class="form-control select2" required>
+                        <label>Cutting Master</label>
+                        <select name="cutting_unit_id" id="cutting_unit_id" class="form-control select2" required>
+                            
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fitting</label>
+                        <select name="master_fitting_id" class="form-control select2" required>
                             <option value="">Select</option>
-                            @foreach($fabrics as $fabric)
-                                <option value="{{ $fabric->id }}">
-                                    {{ $fabric->name }}
+                            @foreach($fittings as $fitting)
+                                <option value="{{ $fitting->id }}">
+                                    {{ $fitting->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -277,25 +334,29 @@
 <script>
     $(document).on('click', '.assign-btn', function () {
 
-    let orderSetId = $(this).data('id');
+        $('#modal_order_set_id').val($(this).data('id'));
 
-    $('#modal_order_set_id').val(orderSetId);
+        $('#modal_design_number').text($(this).data('design'));
+        $('#modal_set_size').text($(this).data('set-size'));
+        $('#modal_set_size_group').text($(this).data('set-size-group'));
+        $('#modal_color').text($(this).data('color'));
+        $('#modal_total_qty').text($(this).data('total'));
 
-    $('#assignModal').modal('show');
-});
+        $('#assignModal').modal('show');
+    });
 </script>
 <script>
     $(function () {
         let buttonsConfig = [];
 
         @if ($check_assign == true)
-            buttonsConfig.push({
-                text: 'Download Slip',
-                className: 'btn-datatable',
-                action: function () {
-                    window.location.href = "{{ route('admin.product_order.downloadCuttingSlip', ['id' => $order_main->id]) }}";
-                }
-            });
+            // buttonsConfig.push({
+            //     text: 'Download Slip',
+            //     className: 'btn-datatable',
+            //     action: function () {
+            //         window.location.href = "{{ route('admin.product_order.downloadCuttingSlip', ['id' => $order_main->id]) }}";
+            //     }
+            // });
         @endif
         var i = 1;
         var oTable = $('#customers').DataTable({
@@ -322,10 +383,14 @@
                 {data: 'bar_code', name: 'bar_code'},
                 {data: 'design_number', name: 'design_number'},  
                 {data: 'set_size', name: 'set_size'},
+                {data: 'size_group', name: 'size_group'},
                 {data: 'color_id', name: 'color_id'},
                 {data: 'set_quantity', name: 'set_quantity'},
                 {data: 'no_of_pcs', name: 'no_of_pcs'},  
-                {data: 'total_qty', name: 'Quantity'},                         
+                {data: 'total_qty', name: 'Quantity'}, 
+                // {data: 'basic_amount', name: 'basic_amount'},
+                // {data: 'gst', name: 'gst'}, 
+                // {data: 'total_amount', name: 'total_amount'},                        
                 {data: 'status', name: 'status'}, 
                 {data: 'assign_to', name: 'assign_to'},                 
                 {data: 'action', name: 'action', searchable: false}
@@ -344,7 +409,7 @@
 
                 // Total SET QUANTITY (column index 5)
                 let setQtyTotal = api
-                    .column(5, { page: 'current' })
+                    .column(6, { page: 'current' })
                     .data()
                     .reduce(function (a, b) {
                         return intVal(a) + intVal(b);
@@ -352,7 +417,7 @@
 
                 // Total TOTAL QUANTITY (column index 7)
                 let totalQtyTotal = api
-                    .column(7, { page: 'current' })
+                    .column(8, { page: 'current' })
                     .data()
                     .reduce(function (a, b) {
                         return intVal(a) + intVal(b);
@@ -392,76 +457,40 @@
         $('#time_type, #allowed_time').on('change keyup', function () {
             calculateAllowedTill();
         });
-
-        // Final submit
-        $('#confirmFinalSubmit').on('click', function(){
-            calculateAllowedTill();
-        // ✅ count only real data rows
-            let dataRowCount = $('#productTable tbody tr')
-                .not('#noDataRow')
-                .length;
-
-            if (dataRowCount === 0) {
-                alert('Please add at least one design before submitting.');
-                return;
-            }
-
-            let timeType     = $('#time_type').val();
-            let allowedTime  = $('#allowed_time').val();
-            let remark       = $('#final_remark').val().trim();
-
-            if (!timeType) {
-                alert('Please select Time Type (Hours / Days)');
-                return;
-            }
-
-            if (!allowedTime || allowedTime <= 0) {
-                alert('Please enter valid allowed time');
-                return;
-            }
-
-            // ✅ copy modal values to hidden form fields
-            $('#remark').val(remark);
-            $('#hidden_allowed_time').val(allowedTime);
-            $('#hidden_time_type').val(timeType);
-
-            // ✅ submit
-            $('#confirmSubmitModal').modal('hide');
-            $('#slip_digitalization form').submit();
-        });
-
-        function calculateAllowedTill() {
-            let type  = $('#time_type').val();
-            let value = parseInt($('#allowed_time').val());
-            if (!type || !value || value <= 0) {
-                $('#hidden_allowed_till').val('');
-                return;
-            }
-
-            let now = new Date();
-
-            if (type === 'hours') {
-                now.setHours(now.getHours() + value);
-            }
-
-            if (type === 'days') {
-                now.setDate(now.getDate() + value);
-            }
-
-            // format for backend: YYYY-MM-DD HH:mm:ss
-            let formatted =
-                now.getFullYear() + '-' +
-                String(now.getMonth() + 1).padStart(2, '0') + '-' +
-                String(now.getDate()).padStart(2, '0') + ' ' +
-                String(now.getHours()).padStart(2, '0') + ':' +
-                String(now.getMinutes()).padStart(2, '0') + ':00';
-
-            $('#hidden_allowed_till').val(formatted);
-            $('#till_allowed_time').val(formatted);
-            
-        }
-
+        
     });
+
+$(document).on('select2:select', '#warehouse_id', function (e) {
+
+    alert('changed'); // ✅ ab 100% aayega
+
+    var warehouse_id = $(this).val();
+    if (!warehouse_id) return;
+
+    $.ajax({
+        url: "{{ route('admin.product_order.getCuttingUnit') }}",
+        type: "GET",
+        data: { warehouse_id: warehouse_id },
+        dataType: "json",
+        success: function (response) {
+
+            var options = '<option value="">Select Cutting Master</option>';
+
+            $.each(response.data, function (i, unit) {
+                options += '<option value="'+unit.id+'">'+unit.cutting_master_name+'</option>';
+            });
+
+            $('#cutting_unit_id')
+                .html(options)
+                .trigger('change'); // refresh select2
+        },
+        error: function () {
+            alert('AJAX Error');
+        }
+    });
+
+});
+
 
 $('#assignForm').on('submit', function (e) {
     e.preventDefault();

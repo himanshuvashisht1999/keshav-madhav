@@ -45,8 +45,9 @@ class ProductOrderController extends Controller {
         $response['order_main_id'] = $request->id ?? 0;
         $response['order_main'] = $this->service->orderMainDetails($request);
         $response['check_assign'] = $this->service->checkAssign($request);
-        $response['cutting_units'] = $this->fabricReceiptService->cutting_units();
-        // dd($response['cutting_units']);
+        $response['cutting_units'] = $this->service->cutting_units();
+        $response['patterns'] = $this->service->getPatterns();
+        // dd($response['patterns']);
         $response['fabrics'] = $this->fabricReceiptService->fabrics();
         $response['fittings'] = $this->service->fittings();
         return view('admin.product_order.index-order-set', $response);
@@ -339,8 +340,8 @@ class ProductOrderController extends Controller {
         return response()->json($response);
     }
 
-    public function getCuttingUnit(Request $request){
-        $response = $this->service->getCuttingUnit($request);
-        return response()->json($response);
-    }
+    // public function getCuttingUnit(Request $request){
+    //     $response = $this->service->getCuttingUnit($request);
+    //     return response()->json($response);
+    // }
 }
