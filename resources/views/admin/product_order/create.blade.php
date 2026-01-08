@@ -7,7 +7,31 @@
     gap: 10px;
     font-size: 14px;
 }
+
+.refresh-master-btn {
+    border: 1px solid #d0d7de;
+    background: #f8f9fa;
+    color: #0d6efd;
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+
+.refresh-master-btn:hover {
+    background: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+}
+
+.refresh-master-btn i {
+    transition: transform 0.4s ease;
+}
+
+.refresh-master-btn:hover i {
+    transform: rotate(180deg);
+}
+
 </style>
+
 <div class="content-wrapper">
 
     <!-- HEADER -->
@@ -49,12 +73,23 @@
 
                         <div class="col-md-4">
                             <label>Expected Delivery Date</label>
+
+                            <input type="text" id="ex_delivery_date" class="form-control" placeholder="Select Expected Delivery Date">
+
+                            <input type="hidden"
+                                name="expected_delivery_date"
+                                id="ex_d_date_hidden"
+                                value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
+                        </div>
+
+                        <!-- <div class="col-md-4">
+                            <label>Expected Delivery Date</label>
                             <input type="date"
                                    name="expected_delivery_date"
                                    class="form-control"
                                    min="{{ date('Y-m-d') }}"
                                    required>
-                        </div>
+                        </div> -->
 
                         <div class="col-md-4">
                             <label>Upload Order File</label>
@@ -85,7 +120,16 @@
 
                 <!-- ADD PRODUCT -->
                 <div class="card p-3 mb-3 shadow-sm border-0">
-                    <h5 class="border-bottom pb-2 mb-3">Add Product</h5>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                        <h5 class="mb-0">Add Product</h5>
+
+                        <button type="button"
+                                class="btn btn-light btn-sm refresh-master-btn"
+                                onclick="loadSalesOrderMasterData()">
+                            <i class="fa fa-sync-alt mr-1"></i>
+                            Refresh Design / Size / Colour
+                        </button>
+                    </div>
 
                     <div class="row product-row">
 
@@ -110,11 +154,7 @@
                             <select class="form-control select2 design-input" name="design_id" id="design_id">
 
                                 <option value="">Select Design</option>
-                                @foreach($products as $product)
-                                    <option value="{{ $product->id }}">
-                                        {{ $product->design_number }}
-                                    </option>
-                                @endforeach
+                                
                             </select>
                         </div>
 
@@ -131,17 +171,12 @@
 
                             <select class="form-control select2 size-input" name="set_size" id="set_size">
                                 <option value="">Select Set Size</option>
-                                @foreach($product_size as $size)
-                                    <option value="{{ $size->id }}"
-                                            data-set-group="{{ $size->size_group }}">
-                                        {{ $size->name }}
-                                    </option>
-                                @endforeach
+                                
                             </select>
                             <input type="hidden" id="size_radio" name="size_radio">
                             <label id="custom_size_set_show"></label>
                             <div class="open-label" id="openCustomSizeBtn" style="display:none;">
-                                Create Custom Size Set
+                                Update Ratio
                             </div>
 
                         </div>
@@ -159,9 +194,7 @@
 
                             <select class="form-control select2 colour-input" name="colour_id">
                                 <option value="">Select Colour</option>
-                                @foreach($colours as $colour)
-                                    <option value="{{ $colour->id }}">{{ $colour->sku }}</option>
-                                @endforeach
+                                
                             </select>
                         </div>
 
@@ -238,7 +271,7 @@
 <div class="modal" id="sizeModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h4>Create Custom Size Set</h4>
+            <h4>Update Ratio</h4>
             <span class="close" onclick="closeModal()">×</span>
         </div>
         <div class="modal-body">
@@ -271,6 +304,7 @@
 $(document).ready(function () {
 
     $('.select2').select2();
+    loadSalesOrderMasterData();
     
 
     // File preview
@@ -625,6 +659,77 @@ function calculateGrandTotal() {
 }
 
 
+</script>
+<script>
+flatpickr("#ex_delivery_date", {
+    dateFormat: "d M Y",
+    defaultDate: "{{ \Carbon\Carbon::now()->format('Y-m-d') }}",
+    onChange: function(selectedDates) {
+        document.getElementById("ex_d_date_hidden").value =
+            flatpickr.formatDate(selectedDates[0], "Y-m-d");
+    }
+});
+
+flatpickr("#delivery_date", {
+    dateFormat: "d M Y",
+    minDate: "today",
+    onChange: function(selectedDates) {
+        document.getElementById("delivery_date_hidden").value =
+            flatpickr.formatDate(selectedDates[0], "Y-m-d");
+    }
+});
+</script>
+
+<script>
+function loadSalesOrderMasterData() {
+
+    $.ajax({
+        url: "{{ route('admin.sales_order.master_data') }}",
+        type: "GET",
+        success: function (res) {
+
+            /* ------------------------
+               DESIGN
+            ------------------------ */
+            let designSelect = $('#design_id');
+            designSelect.empty().append('<option value="">Select Design</option>');
+
+            res.products.forEach(item => {
+                designSelect.append(
+                    `<option value="${item.id}">${item.design_number}</option>`
+                );
+            });
+
+            /* ------------------------
+               SIZE
+            ------------------------ */
+            let sizeSelect = $('#set_size');
+            sizeSelect.empty().append('<option value="">Select Set Size</option>');
+
+            res.sizes.forEach(item => {
+                sizeSelect.append(
+                    `<option value="${item.id}" data-set-group="${item.size_group}">
+                        ${item.name}
+                    </option>`
+                );
+            });
+
+            /* ------------------------
+               COLOUR
+            ------------------------ */
+            let colourSelect = $('.colour-input');
+            colourSelect.empty().append('<option value="">Select Colour</option>');
+
+            res.colours.forEach(item => {
+                colourSelect.append(
+                    `<option value="${item.id}">${item.sku}</option>`
+                );
+            });
+
+            $('.select2').trigger('change');
+        }
+    });
+}
 </script>
 
 @endsection
