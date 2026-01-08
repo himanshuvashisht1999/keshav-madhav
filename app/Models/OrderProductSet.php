@@ -19,6 +19,7 @@ class OrderProductSet extends Model
         'order_main_id',
         'product_sku',
         'bar_code',
+        'production_goods_id',
         'design_number',
         'set_size',
         'color_id',
