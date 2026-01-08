@@ -24,11 +24,13 @@ use App\Models\OrderProductDesign;
 use App\Models\WarehouseDetail;
 use App\Models\MasterSizeMeasurement;
 use App\Models\MasterColor;
-use App\Models\CorporateOrderProduct;
+use App\Models\MasterFabricWarehouse;
 use App\Models\OrderProductSet;
 use App\Models\OrderCuttingStage;
 use App\Models\MasterProductFitting;
 use App\Models\StageMasterUnit;
+use App\Models\MasterDesignPattern;
+
 use PDF;
 
 
@@ -909,6 +911,7 @@ class ProductOrderService {
                 'fabric_id' => $request->fabric_id,
                 'quantity' => $data->total_quantity ?? 0,
                 'master_fitting_id' => $request->master_fitting_id,
+                'master_pattern_id' => $request->master_pattern_id,
                 'processed_by' => $user_id,
                 'status' => 1,
                 'remaining_quantity' => $data->total_quantity ?? 0,
@@ -995,10 +998,38 @@ class ProductOrderService {
         $return_data['no_of_pcs'] = $no_of_pcs;
         return $return_data;
     }
+    
+    public function cutting_units(){
+        $data = MasterFabricWarehouse::with(['cuttingUnits' => function ($q) {
+            $q->where('master_stage_id', 3)
+            ->where('status', 1);
+        }])
+        ->where('status', 1)
+        ->get()->toArray();
+        
+        $result = [];
+        foreach ($data as $warehouse) {
+            $cutting_units = [];
+            foreach ($warehouse['cutting_units'] as $unit) {
+                $cutting_units[] = [
+                    'id' => $unit['id'],
+                    'name' => $unit['name'],
+                ];
+            }
 
-    function getCuttingUnit(Request $request){ 
-        dd($request);
-        $data = StageMasterUnit::where('status',1)->get();
+            $result[$warehouse['id']] = [
+                'id' => $warehouse['id'],
+                'warehouse_name' => $warehouse['cutting_master_name'],
+                'cutting_units' => $cutting_units,
+            ];
+        }
+        
+        return $result;
+    }
+
+    public function getPatterns(){
+        $data = MasterDesignPattern::where('status',1)->orderBy('id','asc')->get();
         return $data;
     }
+
 }

@@ -28,4 +28,10 @@ class MasterFabricWarehouse extends Model
     {
         return $this->hasMany('App\Models\OrderCuttingStage', 'to_assign_id');
     }
+
+    public function cuttingUnits()
+    {
+        return $this->hasMany('App\Models\StageMasterUnit', 'master_fabric_warehouse_id', 'id');
+    }
+
 }
