@@ -134,6 +134,7 @@ class OrderDigitalizationController extends Controller {
 
     public function cuttingMaster(Request $request){
         $response['cutting_slip'] = $this->service->cutting_slip($request);
+        // dd($response['cutting_slip']);
         if($response['cutting_slip']){
             //// time allot
             $response['stages'] = $this->service->stages($response['cutting_slip']->getUnitMaster?->master_fabric_warehouse_id);
@@ -157,7 +158,6 @@ class OrderDigitalizationController extends Controller {
 
             $cutting_unit = $response['cutting_slip']->getUnitMaster?->id;
             $response['cutting_master_orders'] = $this->service->cutting_master_orders($cutting_unit);
-            dd($response['cutting_master_orders']);
         }
 
         return view('admin.order_digitalization.cutting_master',$response);
