@@ -151,9 +151,9 @@
                                         <label>Order No *</label>
                                         <select id="select_order_no" name="select_order_no" class="form-control mb-2 select2">
                                             <option value="">Select Order No</option>
-                                            @foreach($order_numbers as $order_number)
-                                                <option value="{{ $order_number }}">
-                                                    {{ $order_number}}
+                                            @foreach($cutting_master_orders as $order)
+                                                <option value="{{ $order->id }}">
+                                                    {{ $order->sku}}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -862,18 +862,17 @@ $(function () {
 
 
     $(document).on('change','#select_order_no',function(){
-        let orderNo = $(this).val();
-        alert(orderNo);
+        let main_order_id = $(this).val();
         $('#design_id').html('<option value="">Loading...</option>');
         $('#roll_no').html('<option value="">Select Roll No</option>');
         $('#size_group').html('<option value="">Select Size Group</option>');
 
-        if (!orderNo) return;
+        if (!main_order_id) return;
 
         $.ajax({
             url: "{{ route('admin.order_digitalization.order-designs') }}",
             type: "GET",
-            data: { order_no: orderNo },
+            data: { main_order_id: main_order_id },
             success: function (response) {
                 console.log(response);
                 // let options = '<option value="">Select Design No</option>';

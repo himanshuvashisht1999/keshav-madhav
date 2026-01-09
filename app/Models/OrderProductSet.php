@@ -31,6 +31,11 @@ class OrderProductSet extends Model
         'basic_amount',
         'gst',
         'total_amount',
+        'stage_master_unit_id',
+        'fabric_id',
+        'master_product_fitting_id',
+        'master_design_pattern_id',
+        'remark',
         'status',
         'created_at',
         'updated_at'
@@ -44,10 +49,26 @@ class OrderProductSet extends Model
     {
         return $this->hasOne(OrderCuttingStage::class, 'set_product_id');
     }
+    public function stage_master_unit()
+    {
+        return $this->hasOne(StageMasterUnit::class, 'id','stage_master_unit_id');
+    }
+    public function fabric()
+    {
+        return $this->hasOne(Fabric::class, 'id','fabric_id');
+    }
+    public function master_design_pattern()
+    {
+        return $this->hasOne(MasterDesignPattern::class, 'id','master_design_pattern_id');
+    }
 
     public function colors()
     {
         return $this->hasOne(MasterColor::class, 'id', 'color_id');
+    }
+    public function master_product_fitting()
+    {
+        return $this->hasOne(MasterProductFitting::class, 'id', 'master_product_fitting_id');
     }
 
     public function sizeMeasurement()

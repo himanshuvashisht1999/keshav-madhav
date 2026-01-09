@@ -189,19 +189,15 @@ class ProductOrderController extends Controller {
     public function indexOrderSetDownload(Request $request)
     {
         $data = OrderProductSet::with([
-            'order_cutting_stage.cutting_master.masterFabricWarehouse',
-            'order_cutting_stage.fabric',
-            'order_cutting_stage.pattern',
+            'stage_master_unit',
+            'fabric',
+            'master_design_pattern',
             'orderMain.customer',
             'colors',
             'sizeMeasurement',
-            'order_cutting_stage.master_fitting',
+            'master_product_fitting',
         ])->where('id', $request->id)->firstOrFail();
-        // dd($data);
-        // ==============================
-        // HEADER DATA
-        // ==============================
-        // dd($data);
+
         $cmpoHeader = [
             'cmpo_id'     => $data->id,
             'date'        => $data->created_at->format('d-m-Y'),
@@ -209,13 +205,13 @@ class ProductOrderController extends Controller {
             'customer'    => $data->orderMain->customer->name ?? '-',
             'design_no'   => $data->design_number ?? '-',
             'color'       => $data->colors->name ?? '-',
-            'fabric'      => $data->order_cutting_stage->fabric->name ?? '-',
-            'pattern'     => $data->order_cutting_stage->pattern->name ?? '-',
-            'warehouse_name' => $data->order_cutting_stage->cutting_master->masterFabricWarehouse->cutting_master_name ?? '-',
-            'cuttingMaster' => $data->order_cutting_stage->cutting_master->name ?? '-',
-            'cuttingMasterAddress' => $data->order_cutting_stage->cutting_master->masterFabricWarehouse->address ?? '-',
-            'fitting' => $data->order_cutting_stage?->master_fitting->name ?? '-',
-            'remark' => $data->order_cutting_stage?->remarks ?? '-',
+            'fabric'      => $data->fabric->name ?? '-',
+            'pattern'     => $data->master_design_pattern->name ?? '-',
+            'warehouse_name' => $data->stage_master_unit->masterFabricWarehouse->cutting_master_name ?? '-',
+            'cuttingMaster' => $data->stage_master_unit->name ?? '-',
+            'cuttingMasterAddress' => $data->stage_master_unit->masterFabricWarehouse->address ?? '-',
+            'fitting' => $data->master_product_fitting?->name ?? '-',
+            'remark' => $data->remark ?? '-',
             'total_pcs' => $data->total_quantity ?? '0',
         ];
 

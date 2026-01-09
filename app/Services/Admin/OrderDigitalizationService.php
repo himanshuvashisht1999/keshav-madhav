@@ -19,6 +19,7 @@ use App\Models\MasterStageWiseTimeAllocation;
 use App\Models\masterFabricWarehouse;
 use App\Models\ProductionGoods;
 use App\Models\OrderCuttingStage;
+use App\Models\OrderProductSet;
 
 
 
@@ -629,9 +630,10 @@ class OrderDigitalizationService {
         return $data;
     }
     public function cutting_master_orders($cutting_unit){
-        $data = OrderCuttingStage::with('')->where('to_assign_id',$cutting_unit)->whereNot('status',0)->get();
-        dd($data);
-        return $data;
+        $order_main_ids = OrderCuttingStage::where('to_assign_id',$cutting_unit)->pluck('order_main_id');
+        $main_orders = OrderMain::whereIn('id',$order_main_ids)->get();
+
+        return $main_orders;
     }
     function product_sizes(){
         $data = MasterSizeMeasurement::whereIn('status',[1,2])->orderBy('id','asc')->get();
@@ -641,12 +643,9 @@ class OrderDigitalizationService {
 
     public function getDesigns(Request $request)
     {
-        $orderNo = $request->order_no;
-
-        $designs = OrderMain::with('OrderProductSets')
-            ->where('sku', $orderNo)->first();
-        dd($designs);
-        return response()->json($designs);
+        $main_order_id = $request->main_order_id;
+        $data = OrderProductSet::where('order_main_id',$main_order_id)->get();
+        return $data;
     }
 
     // Step 2: Design → Rolls + Size Groups

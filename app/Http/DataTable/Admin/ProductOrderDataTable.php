@@ -152,56 +152,32 @@ class ProductOrderDataTable  {
                 if ($request->has('design_number') && !empty($request->design_number)) {
                     $query->where('design_number', 'like', "%{$request->get('design_number')}%");
                 }
-                // if ($request->has('created_at') && !empty($request->created_at)) {
-                //     $query->where('created_at', 'like', "%{$request->get('created_at')}%");
-                // }
-                // if ($request->has('expected_delivery_date') && !empty($request->expected_delivery_date)) {
-                //     $query->where('expected_delivery_date', 'like', "%{$request->get('expected_delivery_date')}%");
-                // }
+
                 if ($request->has('status') && !empty($request->status)) {
                     $query->where('status', $request->get('status'));
                 }
                 
             }) 
             ->addColumn('set_size', function ($queue) {
-                $set_size = DB::table('master_size_measurements')
-                    ->where('id', $queue->set_size)
-                    ->select('set_size', 'size_group')
-                    ->first();
-
+                $set_size = $queue->sizeMeasurement;
                 return $set_size->set_size ?? '';
             })
             ->addColumn('size_group', function ($queue) {
-                $set_size = DB::table('master_size_measurements')
-                    ->where('id', $queue->set_size)
-                    ->select('set_size', 'size_group')
-                    ->first();
-
+                $set_size = $queue->sizeMeasurement;
                 return $set_size->size_group ?? '';
             })
             ->addColumn('color_id', function ($queue) {
-                $name = DB::table('master_colors')->where('id', $queue->color_id)
-                    ->value('name');
-
+                $name = $queue->colors->name;
                 return $name ?? '';
             })
             ->addColumn('assign_to', function ($queue) {
-
-                $assign = DB::table('order_cutting_stage as ocs')
-                    ->leftJoin('master_fabric_warehouse as cm', 'cm.id', '=', 'ocs.to_assign_id')
-                    ->where('ocs.set_product_id', $queue->id)   // ✅ IMPORTANT
-                    ->select('cm.cutting_master_name')
-                    ->first();
-
-                if ($assign) { 
-                    return '<span class="badge badge-success">'.$assign->cutting_master_name.'</span>';
+                $assign = $queue->stage_master_unit_id;
+                if ($assign) {
+                    
+                    return '<span class="badge badge-success">'.$queue->stage_master_unit?->name.'</span>';
                 }
-                $color = DB::table('master_colors')->where('id', $queue->color_id)
-                    ->value('name');
-                $set_size = DB::table('master_size_measurements')
-                    ->where('id', $queue->set_size)
-                    ->select('set_size', 'size_group')
-                    ->first();
+                $color = $queue->colors->name;
+                $set_size = $queue->sizeMeasurement;
                 return '
                     <button 
                         class="btn btn-sm btn-primary assign-btn"
@@ -214,20 +190,17 @@ class ProductOrderDataTable  {
                         Assign
                     </button>';
             })
-            // ->addColumn('total_amount', function ($queue) {
-            //     return number_format($queue->total_amount, 2) ?? '0.00';
-            // })
+
             ->addColumn('status', function ($queue) {
 
-                $exists = DB::table('order_cutting_stage')
-                    ->where('set_product_id', $queue->id)   // ✅ IMPORTANT
-                    ->exists();
+                $status = $queue->status;
 
-                if ($exists) {
+                if ($status == 2) {
                     return '<span class="badge badge-success">Assigned</span>';
+                }else{
+                    return '<span class="badge badge-primary">Not Assigned</span>';
                 }
 
-                return '<span class="badge badge-primary">Not Assigned</span>';
             })
 
             ->addColumn('total_qty', function ($queue) {
@@ -236,11 +209,9 @@ class ProductOrderDataTable  {
             
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;
-                 $exists = DB::table('order_cutting_stage')
-                    ->where('set_product_id', $parameter)   // ✅ IMPORTANT
-                    ->exists();
+                $status = $queue->status;
 
-                if ($exists) {
+                if ($status == 2) {
                     $view = '<a href="' . route('admin.product_order.indexOrderSetDownload',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Download"><i class="fas fa-download text-muted" title="View"></i></a>';
                 }else{
                     $view = '';
