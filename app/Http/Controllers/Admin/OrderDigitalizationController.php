@@ -132,33 +132,46 @@ class OrderDigitalizationController extends Controller {
         return response()->json($response);
     }
 
-    public function cuttingMaster(Request $request){
-        $response['cutting_slip'] = $this->service->cutting_slip($request);
-        // dd($response['cutting_slip']);
-        if($response['cutting_slip']){
-            //// time allot
-            $response['stages'] = $this->service->stages($response['cutting_slip']->getUnitMaster?->master_fabric_warehouse_id);
+    // public function cuttingMaster(Request $request){
+    //     $response['cutting_slip'] = $this->service->cutting_slip($request);
+    //     // dd($response['cutting_slip']);
+    //     if($response['cutting_slip']){
+    //         //// time allot
+    //         $response['stages'] = $this->service->stages($response['cutting_slip']->getUnitMaster?->master_fabric_warehouse_id);
 
-            //// rolls assign
-            $response['master_fabric_warehouse'] = $this->service->master_fabric_warehouse($response['cutting_slip']->getUnitMaster?->master_fabric_warehouse_id);
+    //         //// rolls assign
+    //         $response['master_fabric_warehouse'] = $this->service->master_fabric_warehouse($response['cutting_slip']->getUnitMaster?->master_fabric_warehouse_id);
 
            
-            $response['product_size'] = $this->service->product_sizes();
-            $response['colours'] = $this->productOrderService->getColours();
-            $response['designs'] = $this->service->designs();
+    //         $response['product_size'] = $this->service->product_sizes();
+    //         $response['colours'] = $this->productOrderService->getColours();
+    //         $response['designs'] = $this->service->designs();
 
-            /// stiching
-            $master_fabric_warehouse_id = $response['cutting_slip']->getUnitMaster?->master_fabric_warehouse_id;
-            $response['stiching_to_data'] = $this->service->stage_unit_data($master_fabric_warehouse_id,4);
-            $response['printing_to_data'] = $this->service->stage_unit_data($master_fabric_warehouse_id,1);
-            $response['embroidery_to_data'] = $this->service->stage_unit_data($master_fabric_warehouse_id,2);
-            $response['cutting_data'] = $this->service->stage_unit_data($master_fabric_warehouse_id,3);
-            $response['roll_numbers'] = $this->service->roll_numbers();
-            $response['order_numbers'] = $this->service->order_numbers();
+    //         /// stiching
+    //         $master_fabric_warehouse_id = $response['cutting_slip']->getUnitMaster?->master_fabric_warehouse_id;
+    //         $response['stiching_to_data'] = $this->service->stage_unit_data($master_fabric_warehouse_id,4);
+    //         $response['printing_to_data'] = $this->service->stage_unit_data($master_fabric_warehouse_id,1);
+    //         $response['embroidery_to_data'] = $this->service->stage_unit_data($master_fabric_warehouse_id,2);
+    //         $response['cutting_data'] = $this->service->stage_unit_data($master_fabric_warehouse_id,3);
+    //         $response['roll_numbers'] = $this->service->roll_numbers();
+    //         $response['order_numbers'] = $this->service->order_numbers();
 
-            $cutting_unit = $response['cutting_slip']->getUnitMaster?->id;
-            $response['cutting_master_orders'] = $this->service->cutting_master_orders($cutting_unit);
+    //         $cutting_unit = $response['cutting_slip']->getUnitMaster?->id;
+    //         $response['cutting_master_orders'] = $this->service->cutting_master_orders($cutting_unit);
+    //     }
+
+    //     return view('admin.order_digitalization.cutting_master',$response);
+    // }
+
+    public function cuttingMaster(Request $request){
+        $production_slip_digitization = $this->service->cutting_slip($request);
+        if($production_slip_digitization){
+            $response['orders'] = $this->service->orders($production_slip_digitization->stage_master_unit_id);
+            // dd($response['orders']);
+        }else{
+            $response['orders'] = [];
         }
+        $response['cutting_slip'] = $production_slip_digitization;
 
         return view('admin.order_digitalization.cutting_master',$response);
     }

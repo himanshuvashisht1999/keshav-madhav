@@ -31,6 +31,7 @@ use App\Models\MasterProductFitting;
 use App\Models\StageMasterUnit;
 use App\Models\MasterDesignPattern;
 use App\Models\Fabric;
+use App\Models\OrderProductSetDetail;
 
 use PDF;
 
@@ -119,6 +120,22 @@ class ProductOrderService {
                     $save_orderProductSet->remain_total_quantity = $order_quantity * $size_data->no_of_pcs;                    
                     $save_orderProductSet->status = 1;
                     $save_orderProductSet->save();
+
+                    $sizeCounts = array_count_values($size_explode);
+                    foreach ($sizeCounts as $size => $count) {
+
+                        $totalQty = $count * $order_quantity;
+        
+                        $save_orderProductSetDetail = new OrderProductSetDetail();
+                        $save_orderProductSetDetail->order_products_set_id = $save_data_main->id;
+                        $save_orderProductSetDetail->sku = '';
+                        $save_orderProductSetDetail->size = $size;
+                        $save_orderProductSetDetail->total_quantity = $totalQty;
+                        $save_orderProductSetDetail->remaining_quantity = $totalQty;
+                        $save_orderProductSetDetail->remaining_lot_allocated = $totalQty;
+                        $save_orderProductSetDetail->status = 1;
+                        $save_orderProductSetDetail->save();
+                    }
                 }     
                 
             }

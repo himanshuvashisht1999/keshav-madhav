@@ -668,4 +668,30 @@ class OrderDigitalizationService {
     }
 
 
+    // new code 
+    public function orders($stage_master_unit_id)
+    {
+        $main_orders = OrderMain::with([
+                'OrderProductSets' => function ($q) use ($stage_master_unit_id) {
+                    $q->where('stage_master_unit_id', $stage_master_unit_id)
+                    ->with([
+                        'fabric.receiptDetails',
+                        'colors',
+                        'master_design_pattern',
+                        'master_product_fitting',
+                        'size_measurement',
+                        'stage_master_unit'
+                    ]);
+                }
+            ])
+            ->whereHas('OrderProductSets', function ($q) use ($stage_master_unit_id) {
+                $q->where('stage_master_unit_id', $stage_master_unit_id);
+            })
+            ->get();
+
+        return $main_orders;
+    }
+
+
+
 }

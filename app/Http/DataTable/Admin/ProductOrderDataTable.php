@@ -159,11 +159,11 @@ class ProductOrderDataTable  {
                 
             }) 
             ->addColumn('set_size', function ($queue) {
-                $set_size = $queue->sizeMeasurement;
+                $set_size = $queue->size_measurement;
                 return $set_size->set_size ?? '';
             })
             ->addColumn('size_group', function ($queue) {
-                $set_size = $queue->sizeMeasurement;
+                $set_size = $queue->size_measurement;
                 return $set_size->size_group ?? '';
             })
             ->addColumn('color_id', function ($queue) {
@@ -177,7 +177,7 @@ class ProductOrderDataTable  {
                     return '<span class="badge badge-success">'.$queue->stage_master_unit?->name.'</span>';
                 }
                 $color = $queue->colors->name;
-                $set_size = $queue->sizeMeasurement;
+                $set_size = $queue->size_measurement;
                 return '
                     <button 
                         class="btn btn-sm btn-primary assign-btn"

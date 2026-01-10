@@ -384,7 +384,7 @@ $(document).ready(function () {
                 <td>${qty}
                     <input type="hidden" name="product_quantity[]" value="${qty}">
                 </td>
-                <td>${pcsPerSet}
+                <td>${pcsPerSet} 
                     <input type="hidden" name="pcs[]" value="${pcsPerSet}">
                 </td>
                 <td>${total_qty}
@@ -708,7 +708,7 @@ function loadSalesOrderMasterData() {
 
             res.sizes.forEach(item => {
                 sizeSelect.append(
-                    `<option value="${item.id}" data-set-group="${item.size_group}">
+                    `<option value="${item.id}" data-set-group="${item.size_group}" data-pcs="${item.no_of_pcs}">
                         ${item.name}
                     </option>`
                 );

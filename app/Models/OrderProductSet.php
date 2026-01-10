@@ -70,6 +70,10 @@ class OrderProductSet extends Model
     {
         return $this->hasOne(MasterProductFitting::class, 'id', 'master_product_fitting_id');
     }
+    public function size_measurement()
+    {
+        return $this->hasOne(MasterSizeMeasurement::class, 'id', 'set_size');
+    }
 
     public function sizeMeasurement()
     {
