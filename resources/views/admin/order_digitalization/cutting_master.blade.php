@@ -151,7 +151,7 @@
                                         <label>Order No *</label>
                                         <select id="select_order_no" name="select_order_no" class="form-control mb-2 select2">
                                             <option value="">Select Order No</option>
-                                            @foreach($cutting_master_orders as $order)
+                                            @foreach($orders as $order)
                                                 <option value="{{ $order->id }}">
                                                     {{ $order->sku}}
                                                 </option>
@@ -171,8 +171,7 @@
                                     <small class="text-danger" id="err_lot_no"></small>
 
                                     {{-- CUTTING MASTER --}}
-                                    <!-- <label>Cutting Master ({{$master_fabric_warehouse->cutting_master_name}})</label> -->
-                                    <input type="hidden" name="to_master_unit" value="{{$master_fabric_warehouse->id}}">
+                                    <input type="hidden" name="to_master_unit" value="">
                                     
 
                                     {{-- ADD ROLL --}}
@@ -181,10 +180,14 @@
                                         <select id="design_id" class="form-control mb-2 select2">
                                             <option value="">Select Design No</option>
                                         </select>
-                                        <label>Fabric</label>
-                                        <select id="fabric" class="form-control mb-2 select2">
-                                            <option value="">Select Fabric</option>
-                                        </select>
+                                        
+                                    </div>
+                                    <div class="card p-2 mt-2 border bg-light">
+                                        <div><strong>Fabric :</strong> <span id="show_fabric">—</span></div>
+                                        <div><strong>Color :</strong> <span id="show_color">—</span></div>
+                                        <div><strong>Pattern :</strong> <span id="show_pattern">—</span></div>
+                                        <div><strong>Fitting :</strong> <span id="show_fitting">—</span></div>
+                                        <div><strong>Cutting Master :</strong> <span id="show_cutting_master">—</span></div>
                                     </div>
                                     <div class="card p-2 mt-3 border">
                                         <h6>Add Roll</h6>
@@ -193,11 +196,11 @@
                                             <option value="">Select Roll No</option>
                                             
                                         </select>
-                                        {{-- <input type="text" id="roll_no" class="form-control mb-1"> --}}
+                                        
                                         <small class="text-danger" id="err_roll_no"></small>
 
                                         <label class="mt-2">Total Meter</label>
-                                        <input type="number" id="meter" class="form-control mb-1" step="0.01" readonly>
+                                        <input type="number" id="meter" class="form-control mb-1">
                                         <div id="roll_cutting_details"></div>
                                         <small class="text-danger" id="err_meter"></small>
 
@@ -248,194 +251,14 @@
 
                             {{-- TIME ALLOCATION FORM --}}
                             <div class="form-section" id="form-time">
-                                <!-- <h5 class="card-title mb-3">Stage Wise Time Allocation</h5> -->
-
-                                <form method="POST"
-                                    action="{{ route('admin.order_digitalization.store-time-allocation') }}">
-                                    @csrf
-
-                                    <!-- <label>(Date - {{ getformatDateTime($cutting_slip->created_at) }})</label> -->
-
-                                    <input type="hidden"
-                                        name="slip_create_date_time"
-                                        value="{{ $cutting_slip->created_at }}">
-
-                                    <div class="form-group mt-2">
-                                        <label>Start Date & Time</label>
-                                        <input type="datetime-local" name="start_date_time" class="form-control">
-                                    </div>
-
-                                    {{-- LOT NO --}}
-                                    
-
-                                    <div class="lot-input-wrapper my-3 lot-inline">
-                                        <label class="lot-input-label">Lot No.</label>
-                                        <input type="text" name="lot_no" class="lot-input"
-                                            placeholder="Enter Lot Number"
-                                            required inputmode="numeric"
-                                            oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-                                    </div>
-                                    <small class="text-danger" id="err_lot_no"></small>
-
-                                    <div class="row align-items-center mb-2">
-
-                                        <div class="col-md-6">
-                                            <label class="fw-bold">Stage Name</label>
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <label class="fw-bold">Time (in Days)</label>
-                                        </div>
-
-                                        @foreach($stages as $stage_data)
-                                            <div class="col-md-6 mb-1">
-                                                <label>{{ $stage_data->masterStage?->name }}</label>
-                                            </div>
-
-                                            <div class="col-md-6 mb-1">
-                                                <input type="number"
-                                                    class="form-control bg-light"
-                                                    placeholder="Enter allowed days"
-                                                    name="stages[{{ $stage_data->master_stage_id }}]"
-                                                    min="0.5"
-                                                    step="0.5"
-                                                    required>
-                                            </div>
-
-                                            <!-- <div class="col-12"><hr></div> -->
-                                        @endforeach
-                                    </div>
-
-                                    <input type="hidden"
-                                        name="production_slip_digitization_id"
-                                        value="{{ $cutting_slip->id }}">
-
-
-                                    <button type="submit" class="btn btn-success w-100">
-                                        Submit Allocation
-                                    </button>
-
-                                </form>
+                                
                                 
                             </div>
                             {{-- STITCHING FORM --}}
                             <div class="form-section" id="form-stitching">
 
 
-                                <form method="POST" id="stitchingForm" action="{{ route('admin.order_digitalization.store-slip') }}">
-                                    @csrf
-
-                                    
-                                    <input type="hidden" name="slip_create_date_time" value="{{ $cutting_slip->created_at }}">
-
-                                    {{-- ORDER NO --}}
-                                    <div class="form-group mt-2">
-                                        <label>Order No *</label>
-                                        {{-- <input type="text" id="st_order_no" name="order_no" class="form-control" required> --}}
-                                        <select id="st_order_no" name="order_no" class="form-control select2" required>
-                                            <option value="">Select Order</option>
-                                            @foreach($order_numbers as $order_number)
-                                                <option value="{{ $order_number }}">
-                                                    {{ $order_number}}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    {{-- FROM --}}
-                                    <input type="hidden" id="from_stage_id" value="3">
-                                    <input type="hidden" id="from_stage_name" value="Cutting">
-                                    <input type="hidden" id="from_unit_id" value="{{ $cutting_data->id }}">
-                                    <input type="hidden" id="from_unit_name" value="{{ $cutting_data->name }}">
-
-                                    {{-- TO = STITCHING --}}
-                                    <input type="hidden" id="to_stage_id" value="4">
-                                    <input type="hidden" id="to_stage_name" value="Stitching">
-                                    <input type="hidden" id="to_unit_id" value="{{ $stiching_to_data?->id }}">
-                                    <input type="hidden" id="to_unit_name" value="{{ $stiching_to_data?->name }}">
-
-                                    {{-- LOT --}}
-                                    <div class="lot-input-wrapper my-3 lot-inline">
-                                        <label class="lot-input-label">Lot No.</label>
-                                        <input type="text"
-                                            id="st_lot_no"
-                                            class="lot-input"
-                                            placeholder="Enter Lot Number"
-                                            inputmode="numeric"
-                                            oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-                                    </div>
-
-                                    {{-- ADD DESIGN --}}
-                                    <div class="card p-3 border">
-                                        <h6>Add Design</h6>
-
-                                        <label>Design *</label>
-                                        <select id="st_design" class="form-control mb-2">
-                                            <option value="">Select Design</option>
-                                            @foreach($designs as $d)
-                                                <option value="{{ $d->design_number }}">{{ $d->design_number }}</option>
-                                            @endforeach
-                                        </select>
-
-                                        <label>Colour *</label>
-                                        <select id="st_colour_id" class="form-control mb-2">
-                                            <option value="">Select Colour</option>
-                                            @foreach($colours as $c)
-                                                <option value="{{ $c->id }}">{{ $c->sku }}</option>
-                                            @endforeach
-                                        </select>
-
-                                        {{-- ALWAYS SET SIZE --}}
-                                        <label>Set Size *</label>
-                                        <select id="st_set_size" class="form-control mb-2">
-                                            <option value="">Select Set</option>
-                                            @foreach($product_size as $ps)
-                                                <option value="{{ $ps->id }}" data-no-of-pcs="{{ $ps->no_of_pcs }}">
-                                                    {{ $ps->set_size }} ({{ $ps->size_group }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-
-                                        <label>Set Quantity *</label>
-                                        <input type="number" id="st_set_qty" class="form-control" min="1">
-
-                                        <button type="button" class="btn btn-primary w-100 mt-2" id="st_addRow">
-                                            + Add Row
-                                        </button>
-                                    </div>
-
-                                    {{-- TABLE --}}
-                                    <div class="card p-3 mt-3 border">
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered table-sm align-middle" id="st_table">
-
-                                                <thead>
-                                                    <tr>
-                                                        <th>Lot</th>
-                                                        <th>Order No</th>
-                                                        <th>From</th>
-                                                        <th>To</th>
-                                                        <th>Design</th>
-                                                        <th>Colour</th>
-                                                        <th>Set Size</th>
-                                                        <th>Set Qty</th>
-                                                        <th>Total Qty</th>
-                                                        <th>Action</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody></tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-
-                                    <input type="hidden" name="production_slip_digitization_id" value="{{ $cutting_slip->id }}">
-                                    <input type="hidden" name="remark" value="">
-
-                                    <button class="btn btn-warning w-100 mt-3">
-                                        Submit to Stitching
-                                    </button>
-
-                                </form>
+                                
 
                             </div>
                             {{-- PRINTING FORM --}}
@@ -443,197 +266,14 @@
 
                                 <!-- <h5 class="card-title mb-3">Send to Printing</h5> -->
 
-                                <form method="POST" id="printingForm" action="{{ route('admin.order_digitalization.store-slip') }}">
-                                    @csrf
-
-                                    <!-- <label>(Date - {{ getformatDateTime($cutting_slip->created_at) }})</label> -->
-                                    <input type="hidden" name="slip_create_date_time" value="{{ $cutting_slip->created_at }}">
-
-                                    {{-- FROM --}}
-                                    <input type="hidden" id="pr_from_stage_id" value="3">
-                                    <input type="hidden" id="pr_from_stage_name" value="Cutting">
-                                    <input type="hidden" id="pr_from_unit_id" value="{{ $cutting_data->id }}">
-                                    <input type="hidden" id="pr_from_unit_name" value="{{ $cutting_data->name }}">
-
-                                    {{-- TO PRINTING --}}
-                                    <input type="hidden" id="pr_to_stage_id" value="1">
-                                    <input type="hidden" id="pr_to_stage_name" value="Printing">
-                                    <input type="hidden" id="pr_to_unit_id" value="{{ $printing_to_data?->id }}">
-                                    <input type="hidden" id="pr_to_unit_name" value="{{ $printing_to_data?->name }}">
-
-                                    {{-- LOT --}}
-                                    <div class="lot-input-wrapper my-3 lot-inline">
-                                        <label class="lot-input-label">Lot No.</label>
-                                        <input type="text" id="pr_lot_no" class="lot-input"
-                                            inputmode="numeric"
-                                            oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-                                    </div>
-
-                                    {{-- ADD DESIGN --}}
-                                    <div class="card p-3 border">
-                                        <h6>Add Design</h6>
-
-                                        <label>Design *</label>
-                                        <select id="pr_design" class="form-control mb-2">
-                                            <option value="">Select</option>
-                                            @foreach($designs as $d)
-                                                <option value="{{ $d->design_number }}">{{ $d->design_number }}</option>
-                                            @endforeach
-                                        </select>
-
-                                        <label>Colour *</label>
-                                        <select id="pr_colour_id" class="form-control mb-2">
-                                            <option value="">Select</option>
-                                            @foreach($colours as $c)
-                                                <option value="{{ $c->id }}">{{ $c->sku }}</option>
-                                            @endforeach
-                                        </select>
-
-                                        <label>Set Size *</label>
-                                        <select id="pr_set_size" class="form-control mb-2">
-                                            <option value="">Select</option>
-                                            @foreach($product_size as $ps)
-                                                <option value="{{ $ps->id }}" data-no-of-pcs="{{ $ps->no_of_pcs }}">
-                                                    {{ $ps->set_size }} ({{ $ps->size_group }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-
-                                        <label>Set Quantity *</label>
-                                        <input type="number" id="pr_set_qty" class="form-control" min="1">
-
-                                        <button type="button" class="btn btn-primary w-100 mt-2" id="pr_addRow">
-                                            + Add Row
-                                        </button>
-                                    </div>
-
-                                    <div class="card p-3 mt-3 border">
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered table-sm" id="pr_table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Lot</th>
-                                                        <th>From</th>
-                                                        <th>To</th>
-                                                        <th>Design</th>
-                                                        <th>Colour</th>
-                                                        <th>Set Size</th>
-                                                        <th>Set Qty</th>
-                                                        <th>Total Qty</th>
-                                                        <th>Action</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody></tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-
-                                    <input type="hidden" name="production_slip_digitization_id" value="{{ $cutting_slip->id }}">
-                                    <input type="hidden" name="remark" value="">
-
-                                    <button class="btn btn-info w-100 mt-3">
-                                        Submit to Printing
-                                    </button>
-
-                                </form>
+                                
                             </div>
 
                             <div class="form-section" id="form-embroidery">
 
                                 <!-- <h5 class="card-title mb-3">Send to Embroidery</h5> -->
 
-                                <form method="POST" id="embroideryForm" action="{{ route('admin.order_digitalization.store-slip') }}">
-                                    @csrf
-
-                                    <!-- <label>(Date - {{ getformatDateTime($cutting_slip->created_at) }})</label> -->
-                                    <input type="hidden" name="slip_create_date_time" value="{{ $cutting_slip->created_at }}">
-
-                                    {{-- FROM --}}
-                                    <input type="hidden" id="em_from_stage_id" value="3">
-                                    <input type="hidden" id="em_from_stage_name" value="Cutting">
-                                    <input type="hidden" id="em_from_unit_id" value="{{ $cutting_data->id }}">
-                                    <input type="hidden" id="em_from_unit_name" value="{{ $cutting_data->name }}">
-
-                                    {{-- TO --}}
-                                    <input type="hidden" id="em_to_stage_id" value="2">
-                                    <input type="hidden" id="em_to_stage_name" value="Embroidery">
-                                    <input type="hidden" id="em_to_unit_id" value="{{ $embroidery_to_data?->id }}">
-                                    <input type="hidden" id="em_to_unit_name" value="{{ $embroidery_to_data?->name }}">
-
-                                    {{-- LOT --}}
-                                    <div class="lot-input-wrapper my-3 lot-inline">
-                                        <label class="lot-input-label">Lot No.</label>
-                                        <input type="text" id="em_lot_no" class="lot-input"
-                                            oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-                                    </div>
-
-                                    {{-- ADD DESIGN --}}
-                                    <div class="card p-3 border">
-                                        <h6>Add Design</h6>
-
-                                        <label>Design *</label>
-                                        <select id="em_design" class="form-control mb-2">
-                                            <option value="">Select</option>
-                                            @foreach($designs as $d)
-                                                <option value="{{ $d->design_number }}">{{ $d->design_number }}</option>
-                                            @endforeach
-                                        </select>
-
-                                        <label>Colour *</label>
-                                        <select id="em_colour_id" class="form-control mb-2">
-                                            <option value="">Select</option>
-                                            @foreach($colours as $c)
-                                                <option value="{{ $c->id }}">{{ $c->sku }}</option>
-                                            @endforeach
-                                        </select>
-
-                                        <label>Set Size *</label>
-                                        <select id="em_set_size" class="form-control mb-2">
-                                            <option value="">Select</option>
-                                            @foreach($product_size as $ps)
-                                                <option value="{{ $ps->id }}" data-no-of-pcs="{{ $ps->no_of_pcs }}">
-                                                    {{ $ps->set_size }} ({{ $ps->size_group }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-
-                                        <label>Set Quantity *</label>
-                                        <input type="number" id="em_set_qty" class="form-control" min="1">
-
-                                        <button type="button" class="btn btn-primary w-100 mt-2" id="em_addRow">
-                                            + Add Row
-                                        </button>
-                                    </div>
-
-                                    <div class="card p-3 mt-3 border">
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered table-sm" id="em_table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Lot</th>
-                                                        <th>From</th>
-                                                        <th>To</th>
-                                                        <th>Design</th>
-                                                        <th>Colour</th>
-                                                        <th>Set Size</th>
-                                                        <th>Set Qty</th>
-                                                        <th>Total Qty</th>
-                                                        <th>Action</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody></tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-
-                                    <input type="hidden" name="production_slip_digitization_id" value="{{ $cutting_slip->id }}">
-                                    <input type="hidden" name="remark" value="">
-
-                                    <button class="btn btn-primary w-100 mt-3">
-                                        Submit to Embroidery
-                                    </button>
-
-                                </form>
+                                
                             </div>
 
 
@@ -715,320 +355,234 @@ $(function(){
         $('.text-danger').text('');
     }
 
-    $('.add-roll').click(function(){
+    $('.add-roll').click(function () {
 
-        clearErrors();
+        // clear previous errors
+        $('#err_lot_no,#err_roll_no,#err_meter').text('');
 
-        let lotNo   = $('#lot_no').val().trim();
+        let lotNo = $('#lot_no').val().trim();
+        let rollSelect = $('#roll_no');
+        let selectedOption = rollSelect.find(':selected');
+
+        let rollId = selectedOption.val();
+        let rollText = selectedOption.text();
+        let availableMeter = parseFloat(selectedOption.data('meter')) || 0;
+
+        let meter = parseFloat($('#meter').val()) || 0;
+
         let cutting = $('input[name="to_master_unit"]').val();
-        let cuttingText = "{{isset($master_fabric_warehouse) ? $master_fabric_warehouse->cutting_master_name : ''}}";
-        let rollNo  = $('#roll_no').val().trim();
-        let meter   = $('#meter').val();
+        let cuttingText = $('#show_cutting_master').text() || '—';
 
         let valid = true;
 
-        if(!lotNo){ $('#err_lot_no').text('Lot No is required'); valid=false; }
-        if(!rollNo){ $('#err_roll_no').text('Roll No required'); valid=false; }
-        if(!meter || meter <= 0){ $('#err_meter').text('Meter must be > 0'); valid=false; }
+        /* --------------------
+        BASIC VALIDATIONS
+        -------------------- */
+        if (!lotNo) {
+            $('#err_lot_no').text('Lot No is required');
+            valid = false;
+        }
 
-        $('input[name="roll_no_list[]"]').each(function(){
-            if($(this).val() === rollNo){
-                $('#err_roll_no').text('Roll already added');
-                valid=false;
-            }
-        });
+        if (!rollId) {
+            $('#err_roll_no').text('Roll No is required');
+            valid = false;
+        }
 
-        if(!valid) return;
+        if (meter <= 0) {
+            $('#err_meter').text('Meter must be greater than 0');
+            valid = false;
+        }
 
+        if (!valid) return;
+
+        /* --------------------
+        METER VALIDATION
+        -------------------- */
+        let alreadyUsed = selectedRollMeters[rollId] || 0;
+        let remaining = availableMeter - alreadyUsed;
+
+        if (meter > remaining) {
+            $('#err_meter').text(`Only ${remaining} meter remaining for this roll`);
+            return;
+        }
+
+        /* --------------------
+        ADD ROW
+        -------------------- */
         $('#noDataRow').remove();
 
         $('#productList tbody').append(`
-            <tr>
-                <td>${lotNo}<input type="hidden" name="lot_no_list[]" value="${lotNo}"></td>
-                <td>${cuttingText}<input type="hidden" name="cutting_unit_list[]" value="${cutting}"></td>
-                <td>${rollNo}<input type="hidden" name="roll_no_list[]" value="${rollNo}"></td>
-                <td>${meter}<input type="hidden" name="meter_list[]" value="${meter}"></td>
-                <td><button type="button" class="btn btn-danger btn-sm remove-row">X</button></td>
+            <tr data-roll-id="${rollId}" data-meter="${meter}">
+                <td>${lotNo}
+                    <input type="hidden" name="lot_no_list[]" value="${lotNo}">
+                </td>
+
+                <td>${cuttingText}
+                    <input type="hidden" name="cutting_unit_list[]" value="${cutting}">
+                </td>
+
+                <td>${rollText}
+                    <input type="hidden" name="roll_no_list[]" value="${rollId}">
+                </td>
+
+                <td>${meter}
+                    <input type="hidden" name="meter_list[]" value="${meter}">
+                </td>
+
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm remove-row">X</button>
+                </td>
             </tr>
         `);
 
-        $('#roll_no,#meter').val('');
+        /* --------------------
+        TRACK USED METER
+        -------------------- */
+        selectedRollMeters[rollId] = alreadyUsed + meter;
+
+        /* --------------------
+        RESET INPUTS
+        -------------------- */
+        $('#roll_no').val('').trigger('change');
+        $('#meter').val('');
     });
 
-    $(document).on('click','.remove-row',function(){
-        $(this).closest('tr').remove();
 
-        if($('#productList tbody tr').length === 0){
+    $(document).on('click', '.remove-row', function () {
+
+        let row = $(this).closest('tr');
+        let rollId = row.data('roll-id');
+        let meter = parseFloat(row.data('meter')) || 0;
+
+        if (rollId && selectedRollMeters[rollId]) {
+            selectedRollMeters[rollId] -= meter;
+
+            if (selectedRollMeters[rollId] <= 0) {
+                delete selectedRollMeters[rollId];
+            }
+        }
+
+        row.remove();
+
+        if ($('#productList tbody tr').length === 0) {
             $('#productList tbody').html(`
                 <tr id="noDataRow">
-                    <td colspan="6" class="text-center text-muted">No rolls added yet</td>
+                    <td colspan="6" class="text-center text-muted">
+                        No rolls added yet
+                    </td>
                 </tr>
             `);
         }
     });
 
+
 });
-</script>
+let selectedRollMeters = {}; // track used meters per roll
 
+$(document).ready(function () {
+    const ordersData = @json($orders);
+    $('#select_order_no').on('change', function () {
+        
+        let orderId = parseInt($(this).val());
+        
+        let designSelect = $('#design_id');
 
-<script>
-    // --- STITCHING LOGIC ---
-$(function () {
+        designSelect.empty()
+            .append('<option value="">Select Design No</option>');
 
-    $('#st_addRow').click(function(){
+        if (!orderId) return;
 
-        let lot      = $('#st_lot_no').val();
-        let orderNo  = $('#st_order_no').val();
-        let design   = $('#st_design').val();
-        let designText = $('#st_design option:selected').text();
-        let colour   = $('#st_colour_id').val();
-        let colourText = $('#st_colour_id option:selected').text();
-        let setSize  = $('#st_set_size').val();
-        let setSizeText = $('#st_set_size option:selected').text();
-        let qty      = $('#st_set_qty').val();
-        let pcs      = $('#st_set_size').find(':selected').data('no-of-pcs') ?? 1;
+        let order = ordersData.find(o => o.id === orderId);
+        
+        if (!order || !order.order_product_sets) return;
 
-        let totalQty = qty * pcs;
-
-        if(!lot || !orderNo || !design || !colour || !setSize || !qty){
-            alert('Please fill all fields.');
-            return;
-        }
-
-        $('#st_table tbody').append(`
-            <tr>
-
-                <td>${lot}
-                    <input type="hidden" name="lot_no_list[]" value="${lot}">
-                </td>
-
-                <td>${orderNo}
-                    <input type="hidden" name="order_no" value="${orderNo}">
-                </td>
-
-                <td>Cutting
-                    <input type="hidden" name="from_stage_id[]" value="${$('#from_stage_id').val()}">
-                    <input type="hidden" name="from_stage_name[]" value="${$('#from_stage_name').val()}">
-                    <input type="hidden" name="from_unit_id[]" value="${$('#from_unit_id').val()}">
-                    <input type="hidden" name="from_unit_name[]" value="${$('#from_unit_name').val()}">
-                </td>
-
-                <td>Stitching
-                    <input type="hidden" name="to_stage_id[]" value="${$('#to_stage_id').val()}">
-                    <input type="hidden" name="to_stage_name[]" value="${$('#to_stage_name').val()}">
-                    <input type="hidden" name="to_unit_id[]" value="${$('#to_unit_id').val()}">
-                    <input type="hidden" name="to_unit_name[]" value="${$('#to_unit_name').val()}">
-                </td>
-
-                <td>${designText}
-                    <input type="hidden" name="design[]" value="${design}">
-                </td>
-
-                <td>${colourText}
-                    <input type="hidden" name="colour_id[]" value="${colour}">
-                </td>
-
-                <td>${setSizeText}
-                    <input type="hidden" name="set_size[]" value="${setSize}">
-                </td>
-
-                <td>${qty}
-                    <input type="hidden" name="set_qty[]" value="${qty}">
-                </td>
-
-                <td>${totalQty}
-
-                    <input type="hidden" name="individual_size[]" value="">
-                    <input type="hidden" name="individual_qty[]" value="">
-                </td>
-
-                <td>
-                    <button type="button" class="btn btn-danger btn-sm st_remove">X</button>
-                </td>
-
-            </tr>
-        `);
-
-
-        $('#st_design').val('');
-        $('#st_colour_id').val('');
-        $('#st_set_size').val('');
-        $('#st_set_qty').val('');
-    });
-
-    $(document).on('click','.st_remove',function(){
-        $(this).closest('tr').remove();
-    });
-
-
-    $(document).on('change','#select_order_no',function(){
-        let main_order_id = $(this).val();
-        $('#design_id').html('<option value="">Loading...</option>');
-        $('#roll_no').html('<option value="">Select Roll No</option>');
-        $('#size_group').html('<option value="">Select Size Group</option>');
-
-        if (!main_order_id) return;
-
-        $.ajax({
-            url: "{{ route('admin.order_digitalization.order-designs') }}",
-            type: "GET",
-            data: { main_order_id: main_order_id },
-            success: function (response) {
-                console.log(response);
-                // let options = '<option value="">Select Design No</option>';
-                // designs.forEach(function (design) {
-                //     options += `<option value="${design}">${design}</option>`;
-                // });
-
-                // $('#design_id').html(options);
-            }
+        order.order_product_sets.forEach(set => {
+            designSelect.append(
+                `<option value="${set.id}">
+                    ${set.design_number}
+                </option>`
+            );
         });
+        designSelect.trigger('change');
     });
 
+    $('#design_id').on('change', function () {
 
-});
+        let designSetId = parseInt($(this).val());
+        let orderId = parseInt($('#select_order_no').val());
 
-</script>
+        // reset UI
+        $('#show_fabric,#show_color,#show_pattern,#show_fitting,#show_cutting_master').text('—');
+        let rollSelect = $('#roll_no');
+        rollSelect.empty().append('<option value="">Select Roll No</option>');
 
-<script>
-    $('#pr_addRow').click(function(){
+        if (!designSetId || !orderId) return;
 
-    let lot = $('#pr_lot_no').val();
-    let design = $('#pr_design').val();
-    let colour = $('#pr_colour_id').val();
-    let set = $('#pr_set_size').val();
-    let qty = $('#pr_set_qty').val();
-    let pcs = $('#pr_set_size').find(':selected').data('no-of-pcs') ?? 1;
-    let total = qty * pcs;
+        let order = ordersData.find(o => o.id === orderId);
+        if (!order || !order.order_product_sets) return;
 
-    if(!lot || !design || !colour || !set || !qty){
-        alert('Please fill all fields.');
-        return;
-    }
+        let set = order.order_product_sets.find(s => s.id === designSetId);
+        if (!set) return;
 
-    $('#pr_table tbody').append(`
-        <tr>
+        /* --------------------
+           SHOW BASIC INFO
+        -------------------- */
+        $('#show_fabric').text(set.fabric?.name ?? '—');
+        $('#show_color').text(set.colors?.name ?? '—');
+        $('#show_pattern').text(set.master_design_pattern?.name ?? '—');
+        $('#show_fitting').text(set.master_product_fitting?.name ?? '—');
+        $('#show_cutting_master').text(set.stage_master_unit?.name ?? '—');
 
-            <td>${lot}
-                <input type="hidden" name="lot_no_list[]" value="${lot}">
-            </td>
-
-            <td>Cutting
-                <input type="hidden" name="from_stage_id[]" value="${$('#pr_from_stage_id').val()}">
-                <input type="hidden" name="from_stage_name[]" value="${$('#pr_from_stage_name').val()}">
-                <input type="hidden" name="from_unit_id[]" value="${$('#pr_from_unit_id').val()}">
-                <input type="hidden" name="from_unit_name[]" value="${$('#pr_from_unit_name').val()}">
-            </td>
-
-            <td>Printing
-                <input type="hidden" name="to_stage_id[]" value="${$('#pr_to_stage_id').val()}">
-                <input type="hidden" name="to_stage_name[]" value="${$('#pr_to_stage_name').val()}">
-                <input type="hidden" name="to_unit_id[]" value="${$('#pr_to_unit_id').val()}">
-                <input type="hidden" name="to_unit_name[]" value="${$('#pr_to_unit_name').val()}">
-            </td>
-
-            <td>${$('#pr_design option:selected').text()}
-                <input type="hidden" name="design[]" value="${design}">
-            </td>
-
-            <td>${$('#pr_colour_id option:selected').text()}
-                <input type="hidden" name="colour_id[]" value="${colour}">
-            </td>
-
-            <td>${$('#pr_set_size option:selected').text()}
-                <input type="hidden" name="set_size[]" value="${set}">
-            </td>
-
-            <td>${qty}
-                <input type="hidden" name="set_qty[]" value="${qty}">
-            </td>
-
-            <td>${total}
-                <input type="hidden" name="individual_size[]" value="">
-                <input type="hidden" name="individual_qty[]" value="">
-            </td>
-
-            <td><button type="button" class="btn btn-danger btn-sm remove">X</button></td>
-
-        </tr>
-    `);
-
-    $('#pr_design').val('');
-    $('#pr_colour_id').val('');
-    $('#pr_set_size').val('');
-    $('#pr_set_qty').val('');
-});
-
-</script>
-
-<script>
-    $('#em_addRow').click(function(){
-
-        let lot = $('#em_lot_no').val();
-        let design = $('#em_design').val();
-        let colour = $('#em_colour_id').val();
-        let set = $('#em_set_size').val();
-        let qty = $('#em_set_qty').val();
-        let pcs = $('#em_set_size').find(':selected').data('no-of-pcs') ?? 1;
-        let total = qty * pcs;
-
-        if(!lot || !design || !colour || !set || !qty){
-            alert('Please fill all fields.');
+        /* --------------------
+           LOAD ROLL NUMBERS
+        -------------------- */
+        if (!set.fabric || !set.fabric.receipt_details) {
+            rollSelect.trigger('change');
             return;
         }
 
-        $('#em_table tbody').append(`
-            <tr>
+        set.fabric.receipt_details.forEach(detail => {
 
-                <td>${lot}
-                    <input type="hidden" name="lot_no_list[]" value="${lot}">
-                </td>
+            // OPTIONAL: skip empty rolls
+            if (parseFloat(detail.remaining_quantity) <= 0) return;
 
-                <td>Cutting
-                    <input type="hidden" name="from_stage_id[]" value="${$('#em_from_stage_id').val()}">
-                    <input type="hidden" name="from_stage_name[]" value="${$('#em_from_stage_name').val()}">
-                    <input type="hidden" name="from_unit_id[]" value="${$('#em_from_unit_id').val()}">
-                    <input type="hidden" name="from_unit_name[]" value="${$('#em_from_unit_name').val()}">
-                </td>
+            rollSelect.append(`
+                <option 
+                    value="${detail.id}"
+                    data-meter="${detail.remaining_quantity}"
+                    data-roll="${detail.roll_number}">
+                    Roll ${detail.roll_number} (${detail.remaining_quantity} m)
+                </option>
+            `);
+        });
 
-                <td>Embroidery
-                    <input type="hidden" name="to_stage_id[]" value="${$('#em_to_stage_id').val()}">
-                    <input type="hidden" name="to_stage_name[]" value="${$('#em_to_stage_name').val()}">
-                    <input type="hidden" name="to_unit_id[]" value="${$('#em_to_unit_id').val()}">
-                    <input type="hidden" name="to_unit_name[]" value="${$('#em_to_unit_name').val()}">
-                </td>
-
-                <td>${$('#em_design option:selected').text()}
-                    <input type="hidden" name="design[]" value="${design}">
-                </td>
-
-                <td>${$('#em_colour_id option:selected').text()}
-                    <input type="hidden" name="colour_id[]" value="${colour}">
-                </td>
-
-                <td>${$('#em_set_size option:selected').text()}
-                    <input type="hidden" name="set_size[]" value="${set}">
-                </td>
-
-                <td>${qty}
-                    <input type="hidden" name="set_qty[]" value="${qty}">
-                </td>
-
-                <td>${total}
-                    <input type="hidden" name="individual_size[]" value="">
-                    <input type="hidden" name="individual_qty[]" value="">
-                </td>
-
-                <td><button type="button" class="btn btn-danger btn-sm remove">X</button></td>
-
-            </tr>
-        `);
-
-        $('#em_design').val('');
-        $('#em_colour_id').val('');
-        $('#em_set_size').val('');
-        $('#em_set_qty').val('');
+        rollSelect.trigger('change'); // refresh select2
     });
 
+    
+
+    $('#roll_no').on('change', function () {
+        let selected = $(this).find(':selected');
+        let availableMeter = parseFloat(selected.data('meter')) || 0;
+
+        $('#meter').val('');
+        $('#meter').attr('max', availableMeter);
+    });
+
+    $('#meter').on('input', function () {
+        let max = parseFloat($(this).attr('max')) || 0;
+        let val = parseFloat($(this).val()) || 0;
+
+        if (val > max) {
+            $(this).val(max);
+            $('#err_meter').text(`Max allowed meter is ${max}`);
+        } else {
+            $('#err_meter').text('');
+        }
+    });
+
+});
 </script>
+
+
 @endsection
