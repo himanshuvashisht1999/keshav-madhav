@@ -47,9 +47,14 @@ class OrderDigitalizationService {
     public function storeRollsAssign(Request $request)
     {
         DB::beginTransaction();
-        // dd($request->all());
         try {
-           
+            // Get the production slip to retrieve stage_master_unit_id
+            $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
+            
+            if (!$slip) {
+                throw new \Exception('Production slip not found');
+            }
+
             ////// corporate order photo upload
             if ($request->lot_no_list){
                 foreach ($request->lot_no_list as $key => $lot_no) {
@@ -58,7 +63,7 @@ class OrderDigitalizationService {
                     $save_data_main->lot_no = $lot_no;
                     $save_data_main->production_slip_digitization_id = $request->production_slip_digitization_id;
                     $save_data_main->order_no = '';
-                    $save_data_main->stage_master_unit_id = $request->cutting_unit_list[$key];
+                    $save_data_main->stage_master_unit_id = $slip->stage_master_unit_id; // Get from slip
                     $save_data_main->roll_no = $request->roll_no_list[$key];
                     $save_data_main->meter = $request->meter_list[$key];
                     $save_data_main->slip_create_date_time = $request->slip_create_date_time ?? NULL;
@@ -68,7 +73,7 @@ class OrderDigitalizationService {
                     // update rolls
                     // 2️⃣ Update fabric receipt (SAFE)
                     $fabricReceiptDetail = FabricReceiptDetail::where(
-                        'roll_number',
+                        'id',
                         $request->roll_no_list[$key]
                     )->lockForUpdate()->first();
 
@@ -82,6 +87,35 @@ class OrderDigitalizationService {
 
                     $fabricReceiptDetail->remaining_quantity -= $request->meter_list[$key];
                     $fabricReceiptDetail->save();
+
+                    // Update saved record with human-readable roll number
+                    $save_data_main->update(['roll_no' => $fabricReceiptDetail->roll_number]);
+
+                    // 3️⃣ Save Size Details (NEW)
+                    if (isset($request->size_details[$key])) {
+                        $sizeArray = json_decode($request->size_details[$key], true);
+                        if (is_array($sizeArray)) {
+                            foreach ($sizeArray as $sizeItem) {
+                                // Create Detail Record
+                                $detail = new \App\Models\FabricRollAssigningsDetail();
+                                $detail->production_fabric_roll_assigning_id = $save_data_main->id;
+                                $detail->order_product_set_detail_id = $sizeItem['detail_id'];
+                                $detail->size = $sizeItem['size'];
+                                $detail->quantity = $sizeItem['qty'];
+                                $detail->status = 1;
+                                $detail->save();
+
+                                // Update OrderProductSetDetail
+                                if ($sizeItem['detail_id']) {
+                                    $setDetail = \App\Models\OrderProductSetDetail::find($sizeItem['detail_id']);
+                                    if ($setDetail) {
+                                        $setDetail->remaining_lot_allocated -= $sizeItem['qty'];
+                                        $setDetail->save();
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -226,7 +260,7 @@ class OrderDigitalizationService {
             // dd($expected_completed_at);
             $save_data_main->sku = '';
             $save_data_main->lot_no = $request->lot_no;
-            $save_data_main->production_slip_digitization_id = $request->production_slip_digitization_id;
+            $save_data_main->production_slip_digitization_id = $request->production_slip_digitization_id ?? null;
             $save_data_main->start_date_time  = $datetime;
             foreach ($request->stages as $stage_id => $days) {
                 $expected = $this->calculateExpectedCompletion($datetime, $days);
@@ -245,7 +279,7 @@ class OrderDigitalizationService {
             // dd($expected_completed_at);
             $save_data_master->sku = '';
             $save_data_master->lot_no = $request->lot_no;
-            $save_data_master->production_slip_digitization_id = $request->production_slip_digitization_id;
+            $save_data_master->production_slip_digitization_id = $request->production_slip_digitization_id ?? null;
             $save_data_master->start_date_time  = $request->start_date_time;
             foreach ($request->stages as $stage_id => $days) {
                 $save_data_master->{'stage_id_'.$stage_id} = $days;
@@ -253,12 +287,17 @@ class OrderDigitalizationService {
             $save_data_master->status = 1;
             $save_data_master->save();
 
-            $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
-
-            $slip->update([
-                'lot_no'  => $request->lot_no,
-                'status'  => 5
-            ]);
+            // Only update slip status if production_slip_digitization_id is provided
+            if ($request->production_slip_digitization_id) {
+                $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
+                if ($slip) {
+                    $slip->update([
+                        'lot_no'  => $request->lot_no,
+                        'status'  => 5
+                    ]);
+                }
+            }
+            
             $msg = 'Stage wise time allocation successfully completed.';
             
             // Commit everything if all successful
@@ -506,18 +545,19 @@ class OrderDigitalizationService {
     function calculateExpectedCompletion($startDateTime, $days)
     {
         $WORK_START = 9;    // 9 AM
-        $WORK_END   = 19;   // 7 PM
-        $EVENING    = 17;   // 5 PM
-        $HOURS_PER_DAY = 10;
-        $HALF_DAY_HOURS = 5;
+        $WORK_END   = 17;   // 5 PM (8-hour workday)
+        $HOURS_PER_DAY = 8; // 8 hours per day
+        $HALF_DAY_HOURS = 4; // 4 hours for half day
 
         $current = new \DateTime($startDateTime);
         $hour = (int)$current->format('H');
 
-        // 🔹 Align start time
+        // 🔹 Align start time to working hours
         if ($hour < $WORK_START) {
+            // If before 9 AM, start at 9 AM
             $current->setTime($WORK_START, 0);
         } elseif ($hour >= $WORK_END) {
+            // If after 5 PM, move to next day 9 AM
             $current->modify('+1 day')->setTime($WORK_START, 0);
         }
 
@@ -529,15 +569,15 @@ class OrderDigitalizationService {
             $endOfDay = clone $current;
             $endOfDay->setTime($WORK_END, 0);
 
-            // aaj kitne hours available hain
+            // Calculate how many hours are available today
             $availableToday =
                 ($endOfDay->getTimestamp() - $current->getTimestamp()) / 3600;
 
-            // ✅ Agar aaj 5 hours available hain
+            // ✅ If 4 hours are available today
             if ($availableToday >= $HALF_DAY_HOURS) {
                 $current->modify("+{$HALF_DAY_HOURS} hours");
             }
-            // ❌ warna next day se count
+            // ❌ Otherwise start from next day
             else {
                 $current->modify('+1 day')->setTime($WORK_START, 0);
                 $current->modify("+{$HALF_DAY_HOURS} hours");
@@ -640,6 +680,40 @@ class OrderDigitalizationService {
         return $data;
     }
 
+    /**
+     * Get all available lots for time allocation
+     * Returns distinct lot numbers from fabric roll assignments
+     * Excludes lots that already have time allocation
+     */
+    public function getLotsForTimeAllocation()
+    {
+        // Get lots that already have time allocation
+        $allocatedLots = MasterStageWiseTimeAllocation::whereNotNull('lot_no')
+            ->where('lot_no', '!=', '')
+            ->pluck('lot_no')
+            ->toArray();
+
+        // Get all lots from fabric roll assignments, excluding already allocated ones
+        return FabricRollAssigning::distinct()
+            ->whereNotNull('lot_no')
+            ->where('lot_no', '!=', '')
+            ->whereNotIn('lot_no', $allocatedLots)
+            ->pluck('lot_no')
+            ->sort()
+            ->values();
+    }
+
+    /**
+     * Get all production stages for time allocation
+     * Returns stages with status 1 or 2, ordered by sequence
+     */
+    public function getProductionStages()
+    {
+        return \App\Models\MasterProductStage::whereIn('status', [1, 2])
+            ->orderBy('sequence', 'asc')
+            ->get();
+    }
+
 
     public function getDesigns(Request $request)
     {
@@ -680,7 +754,8 @@ class OrderDigitalizationService {
                         'master_design_pattern',
                         'master_product_fitting',
                         'size_measurement',
-                        'stage_master_unit'
+                        'stage_master_unit',
+                        'product_set_details'
                     ]);
                 }
             ])
@@ -689,9 +764,522 @@ class OrderDigitalizationService {
             })
             ->get();
 
+        // FALLBACK: If product_set_details is empty, check if they exist under order_main_id (due to previous bug)
+        foreach ($main_orders as $order) {
+            foreach ($order->OrderProductSets as $set) {
+                if ($set->product_set_details->isEmpty()) {
+                    $fallbackDetails = \App\Models\OrderProductSetDetail::where('order_products_set_id', $order->id)->get();
+                    if ($fallbackDetails->isNotEmpty()) {
+                        $set->setRelation('product_set_details', $fallbackDetails);
+                    }
+                }
+            }
+        }
+
         return $main_orders;
     }
 
+    public function getLotsBySlip($slip_id, $stage_type = null)
+    {
+        // Get the slip to find the stage_master_unit_id (cutting master)
+        $slip = ProductionSlipDigitization::find($slip_id);
+        
+        if (!$slip) {
+            return collect([]);
+        }
 
+        // Build query to get all lots assigned to this cutting master
+        $query = FabricRollAssigning::where('stage_master_unit_id', $slip->stage_master_unit_id);
 
+        // Filter based on stage type
+        if ($stage_type === 'stitching') {
+            // For stitching: exclude lots already sent to stitching (status 2)
+            $query->where('status', '!=', 2);
+        } elseif ($stage_type === 'printing') {
+            // For printing: exclude lots already sent to printing (status 3)
+            $query->where('status', '!=', 3);
+        }
+
+        // Get distinct lot numbers
+        return $query->distinct()->pluck('lot_no');
+    }
+
+    public function getLotDetails($lot_no, $slip_id)
+    {
+        $rolls = FabricRollAssigning::where('lot_no', $lot_no)
+            ->where('production_slip_digitization_id', $slip_id)
+            ->get();
+
+        $details = [];
+        foreach ($rolls as $roll) {
+            $sizeDetails = \App\Models\FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id', $roll->id)
+                ->with('orderProductSetDetail')
+                ->get();
+            
+            $details[] = [
+                'roll' => $roll,
+                'sizes' => $sizeDetails
+            ];
+        }
+
+        return $details;
+    }
+
+    /**
+     * Get comprehensive lot details for display
+     * Returns cutting master, fabric, order details, and size quantities
+     */
+    public function getLotDetailsForDisplay($lot_no)
+    {
+        // Get fabric roll assignments for this lot
+        $rollAssignments = FabricRollAssigning::where('lot_no', $lot_no)
+            ->with([
+                'stageMasterUnit.masterFabricWarehouse',
+                'stageMasterUnit.masterStage'
+            ])
+            ->get();
+
+        if ($rollAssignments->isEmpty()) {
+            return null;
+        }
+
+        $firstAssignment = $rollAssignments->first();
+        
+        // Get cutting master details
+        $cuttingMaster = $firstAssignment->stageMasterUnit;
+        $warehouse = $cuttingMaster ? $cuttingMaster->masterFabricWarehouse : null;
+
+        // Get all rolls with their details
+        $rollsData = [];
+        $totalMeters = 0;
+        $sizeWiseQuantities = [];
+        $fabricNames = [];
+        $orderNumbers = [];
+
+        foreach ($rollAssignments as $assignment) {
+            $totalMeters += $assignment->meter;
+
+            // Get size details for this roll with eager loading
+            $sizeDetails = \App\Models\FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id', $assignment->id)
+                ->with(['orderProductSetDetail.orderProductSet.fabric', 'orderProductSetDetail.orderProductSet.orderMain'])
+                ->get();
+
+            foreach ($sizeDetails as $detail) {
+                $size = $detail->size;
+                if (!isset($sizeWiseQuantities[$size])) {
+                    $sizeWiseQuantities[$size] = 0;
+                }
+                $sizeWiseQuantities[$size] += $detail->quantity;
+
+                // Collect fabric and order info with proper null checks
+                if ($detail->orderProductSetDetail) {
+                    $productSet = $detail->orderProductSetDetail->orderProductSet;
+                    //dd($detail->orderProductSetDetail->orderProductSet);
+                    if ($productSet) {
+                        // Get fabric name - try both relationship methods
+                        if ($productSet->fabric) {
+                            $fabricName = $productSet->fabric->name ?? null;
+                            if ($fabricName) {
+                                $fabricNames[$fabricName] = true;
+                            }
+                        }
+                        
+                        // Get order SKU - try both relationship methods
+                        if ($productSet->orderMain) {
+                            $orderSku = $productSet->orderMain->sku ?? null;
+                            if ($orderSku) {
+                                $orderNumbers[$orderSku] = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            $rollsData[] = [
+                'roll_number' => $assignment->roll_no,
+                'meters' => $assignment->meter,
+                'sizes' => $sizeDetails
+            ];
+        }
+
+        return [
+            'lot_no' => $lot_no,
+            'cutting_master' => [
+                'name' => $cuttingMaster ? $cuttingMaster->name : 'N/A',
+                'warehouse' => $warehouse ? $warehouse->cutting_master_name : 'N/A',
+                'address' => $warehouse ? $warehouse->address : 'N/A',
+            ],
+            'fabric_names' => array_keys($fabricNames),
+            'order_numbers' => array_keys($orderNumbers),
+            'total_meters' => $totalMeters,
+            'total_rolls' => $rollAssignments->count(),
+            'size_wise_quantities' => $sizeWiseQuantities,
+            'rolls' => $rollsData,
+            'debug' => [
+                'fabric_count' => count($fabricNames),
+                'order_count' => count($orderNumbers),
+                'size_details_count' => $rollAssignments->sum(function($r) {
+                    return \App\Models\FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id', $r->id)->count();
+                })
+            ]
+        ];
+    }
+
+    /**
+     * Alternative method to get lot details with direct queries
+     */
+    public function getLotDetailsAlternative($lot_no)
+    {
+        // Get all fabric roll assignments for this lot
+        $rollIds = FabricRollAssigning::where('lot_no', $lot_no)
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($rollIds)) {
+            return null;
+        }
+
+        // Get all order product set detail IDs from fabric roll assigning details
+        $orderProductSetDetailIds = \App\Models\FabricRollAssigningsDetail::whereIn('production_fabric_roll_assigning_id', $rollIds)
+            ->pluck('order_product_set_detail_id')
+            ->unique()
+            ->toArray();
+
+        // Get all order product set IDs
+        $orderProductSetIds = \App\Models\OrderProductSetDetail::whereIn('id', $orderProductSetDetailIds)
+            ->pluck('order_products_set_id')
+            ->unique()
+            ->toArray();
+
+        // Get fabric names
+        $fabricNames = \App\Models\OrderProductSet::whereIn('id', $orderProductSetIds)
+            ->with('fabric')
+            ->get()
+            ->pluck('fabric.name')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        // Get order SKUs
+        $orderSkus = \App\Models\OrderProductSet::whereIn('id', $orderProductSetIds)
+            ->with('orderMain')
+            ->get()
+            ->pluck('orderMain.sku')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        return [
+            'fabric_names' => $fabricNames,
+            'order_numbers' => $orderSkus
+        ];
+    }
+
+    public function getNextStages($warehouse_id)
+    {
+        return StageMasterUnit::with('masterStage')
+            ->where('master_fabric_warehouse_id', $warehouse_id)
+            ->where('status', 1)
+            ->get();
+    }
+
+    public function storeStitching(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
+            
+            if (!$slip) {
+                throw new \Exception('Production slip not found');
+            }
+
+            // Update slip status to mark as processed for stitching
+            $slip->update([
+                'status' => 5, // Processed for stitching
+                'lot_no' => $request->lot_no
+            ]);
+
+            // Update all fabric roll assignments for this lot to mark them as sent to stitching
+            FabricRollAssigning::where('lot_no', $request->lot_no)
+                ->where('stage_master_unit_id', $slip->stage_master_unit_id)
+                ->update([
+                    'status' => 2, // Sent to next stage
+                    'to_stage_id' => $request->to_stage_id ?? 4 // Stitching stage
+            ]);
+
+        // Create Transaction with Details (Cutting -> Stitching)
+        // Stage 3 is Cutting. Stage 4 is Stitching.
+        $this->createTransactionWithDetails($request->lot_no, 3, $request->to_stage_id ?? 4, $slip->id);
+            
+            DB::commit();
+            return [
+                'status_code' => 1,
+                'message' => 'Lot successfully sent to Stitching stage.'
+            ];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return [
+                'status_code' => 0,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    public function storePrinting(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
+            
+            if (!$slip) {
+                throw new \Exception('Production slip not found');
+            }
+
+            // Update slip status to mark as processed for printing
+            $slip->update([
+                'status' => 6, // Processed for printing
+                'lot_no' => $request->lot_no
+            ]);
+
+            // Update all fabric roll assignments for this lot to mark them as sent to printing
+            FabricRollAssigning::where('lot_no', $request->lot_no)
+                ->where('stage_master_unit_id', $slip->stage_master_unit_id)
+                ->update([
+                    'status' => 3, // Sent to printing
+                    'to_stage_id' => $request->to_stage_id ?? 1 // Printing stage
+            ]);
+
+        // Create Transaction with Details (Cutting -> Printing)
+        // Stage 3 is Cutting. Stage 1 is Printing.
+        $this->createTransactionWithDetails($request->lot_no, 3, $request->to_stage_id ?? 1, $slip->id);
+            
+            DB::commit();
+            return [
+                'status_code' => 1,
+                'message' => 'Lot successfully sent to Printing stage.'
+            ];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return [
+                'status_code' => 0,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    private function createTransactionWithDetails($lot_no, $from_stage_id, $to_stage_id, $slip_id = null)
+    {
+        // 1. Calculate Total Quantities per Size for the Lot
+        // We get this from the OrderProductSet details which represent the Cutting Master output
+        $sets = \App\Models\OrderProductSet::where('lot_no', $lot_no)
+            ->with('orderProductSetDetails')
+            ->get();
+
+        $sizeQuantities = [];
+        $totalQuantity = 0;
+        $orderProductIds = [];
+
+        foreach ($sets as $set) {
+            foreach ($set->orderProductSetDetails as $detail) {
+                // Determine size key (could be ID or Name, preserving what is in DB)
+                $sizeKey = $detail->size; 
+                
+                if (!isset($sizeQuantities[$sizeKey])) {
+                    $sizeQuantities[$sizeKey] = 0;
+                }
+                $sizeQuantities[$sizeKey] += $detail->total_quantity;
+                $totalQuantity += $detail->total_quantity;
+            }
+             // Keep track of order product IDs if needed, though usually mixed in a lot
+             if($set->order_product_id) {
+                 $orderProductIds[] = $set->order_product_id;
+             }
+        }
+        
+        $orderProductId = count($orderProductIds) > 0 ? $orderProductIds[0] : null;
+
+        // 2. Create Transaction Header
+        $transaction = \App\Models\OrderStageTransaction::create([
+            'from_stage_id' => $from_stage_id,
+            'to_stage_id' => $to_stage_id,
+            'lot_no' => $lot_no,
+            'quantity' => $totalQuantity,
+            'remaining_quantity' => $totalQuantity, // Initially full
+            'order_product_id' => $orderProductId, // Best guess or first
+            'status' => 1,
+            // 'production_slip_digitization_id' => $slip_id 
+        ]);
+
+        // 3. Create Transaction Details (Size-wise)
+        foreach ($sizeQuantities as $size => $qty) {
+            \App\Models\OrderStageTransactionDetail::create([
+                'order_stage_transaction_id' => $transaction->id,
+                'size' => $size,
+                'quantity' => $qty
+            ]);
+        }
+        
+        return $transaction;
+    }
+
+    public function getAvailableLotsForStage($stage_id)
+    {
+        // 1. Get all lots that have entered this stage
+        $candidateLots = \App\Models\OrderStageTransaction::where('to_stage_id', $stage_id)
+            ->distinct()
+            ->pluck('lot_no');
+
+        $availableLots = [];
+
+        foreach ($candidateLots as $lot_no) {
+            // Optimization: We could do this in a single aggregate query if needed, 
+            // but loop is safer for complex size logic logic transparency.
+            
+            // Calculate Inflow (Total Items entered this stage)
+            $inflow = \App\Models\OrderStageTransaction::where('to_stage_id', $stage_id)
+                ->where('lot_no', $lot_no)
+                ->sum('quantity');
+
+            // Calculate Outflow (Total Items left this stage)
+            $outflow = \App\Models\OrderStageTransaction::where('from_stage_id', $stage_id)
+                ->where('lot_no', $lot_no)
+                ->sum('quantity');
+            
+            // If there is stock remaining, add to list
+            if (($inflow - $outflow) > 0) {
+                // Determine Order No (Optional, for display)
+                // $transaction = \App\Models\OrderStageTransaction::where('lot_no', $lot_no)->first();
+                $availableLots[] = (object)[
+                    'lot_no' => $lot_no,
+                    // 'remaining_qty' => $inflow - $outflow
+                ];
+            }
+        }
+
+        return $availableLots;
+    }
+
+    public function getLotDetailsForHandSlip($lot_no, $current_stage_id)
+    {
+        // 1. Calculate Inflow (What came INTO this stage) per size
+        $inflow = \App\Models\OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transactions.id', '=', 'order_stage_transaction_details.order_stage_transaction_id')
+            ->where('order_stage_transactions.to_stage_id', $current_stage_id)
+            ->where('order_stage_transactions.lot_no', $lot_no)
+            ->select('order_stage_transaction_details.size', 'order_stage_transaction_details.quantity')
+            ->get();
+
+        // 2. Calculate Outflow (What already LEFT this stage) per size
+        $outflow = \App\Models\OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transactions.id', '=', 'order_stage_transaction_details.order_stage_transaction_id')
+            ->where('order_stage_transactions.from_stage_id', $current_stage_id)
+            ->where('order_stage_transactions.lot_no', $lot_no)
+            ->select('order_stage_transaction_details.size', 'order_stage_transaction_details.quantity')
+            ->get();
+
+        $inventory = [];
+
+        foreach ($inflow as $item) {
+            if (!isset($inventory[$item->size])) {
+                $inventory[$item->size] = 0;
+            }
+            $inventory[$item->size] += $item->quantity;
+        }
+
+        foreach ($outflow as $item) {
+            if (isset($inventory[$item->size])) {
+                $inventory[$item->size] -= $item->quantity;
+            }
+        }
+
+        // 3. Filter out zero quantities (optional, but cleaner)
+        // $inventory = array_filter($inventory, function($qty) { return $qty > 0; });
+        
+        // 4. Get Basic Lot Info (Cutting Master Info)
+        // We can reuse getLotDetailsForUser logic or just fetch basics
+        $basicInfo = $this->getLotDetailsForDisplay(['lot_no' => $lot_no], true); // true for basic only? Adjust later if needed
+        // Or simply:
+         $cuttingMaster = \App\Models\FabricRollAssigning::where('lot_no', $lot_no)->first();
+         
+         return [
+             'lot_no' => $lot_no,
+             'inventory' => $inventory,
+             'basic_info' => $basicInfo
+         ];
+    }
+
+    public function storeHandSlip(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
+            if (!$slip) throw new \Exception('Slip not found');
+
+            $from_stage_id = $request->from_stage_id; // Current Stage
+            $to_stage_id = $request->to_stage_id;     // Next Stage
+            $lot_no = $request->lot_no;
+            $sizes = $request->sizes; // Array of [size => qty]
+
+            // Validate Inventory
+            $currentInventory = $this->getLotDetailsForHandSlip($lot_no, $from_stage_id)['inventory'];
+            $totalMoved = 0;
+
+            foreach ($sizes as $size => $qty) {
+                if ($qty > 0) {
+                    if (!isset($currentInventory[$size]) || $currentInventory[$size] < $qty) {
+                         throw new \Exception("Insufficient inventory for Size $size. Available: " . ($currentInventory[$size]??0));
+                    }
+                    $totalMoved += $qty;
+                }
+            }
+
+            if ($totalMoved == 0) throw new \Exception('No quantity selected to move.');
+
+            // Create Transaction
+            $transaction = \App\Models\OrderStageTransaction::create([
+                'from_stage_id' => $from_stage_id,
+                'to_stage_id' => $to_stage_id,
+                'lot_no' => $lot_no,
+                'quantity' => $totalMoved,
+                'remaining_quantity' => $totalMoved, 
+                'status' => 1,
+            ]);
+
+            // Create Details
+            foreach ($sizes as $size => $qty) {
+                if ($qty > 0) {
+                    \App\Models\OrderStageTransactionDetail::create([
+                        'order_stage_transaction_id' => $transaction->id,
+                        'size' => $size,
+                        'quantity' => $qty
+                    ]);
+                }
+            }
+            
+            // Check if Lot is Fully Processed at this stage?
+            // (Optional logic: if all inventory is 0, we might want to flag something, but for now just move it)
+
+            // Update Slip Status
+            // Logic for status update depends on requirements. 
+            // If Hand Slip is "One Slip = One Move", then we mark processed.
+            // If "One Slip = Multiple Moves" (Partial), then we might keep it open?
+            // User said: "In this but one main major change... from lot he will send size wise ... when any lot will complete then this lot will not listed."
+            // This implies the LISTING (Dropdown) shows Lots. The Slip itself might be the container?
+            // Actually, the user flow is: "Upload Image -> Admin select Lot -> Send".
+            // So the Slip (Image) is the trigger.
+            // If success, we mark slip as processed?
+            // "when any lot will complete then this lot will not listed" -> This refers to the LOT DROPDOWN in the listing, not the slip itself.
+            // But here we are processing a SLIP.
+            // So we mark the Slip as processed (status 1 or appropriate).
+            // Currently status 0 is pending.
+             $slip->update(['status' => 1, 'lot_no' => $lot_no]); // Mark as processed
+
+            DB::commit();
+            return ['status_code' => 1, 'message' => 'Hand Slip Processed Successfully'];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status_code' => 0, 'message' => $e->getMessage()];
+        }
+    }
 }

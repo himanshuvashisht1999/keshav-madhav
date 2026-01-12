@@ -82,6 +82,7 @@ class ProductOrderService {
 
             $save_data_main = new OrderMain;
             $save_data_main->sku = '';
+            $save_data_main->order_type = $request->order_type ?? 'domestic';
             $save_data_main->expected_delivery_date = $request->expected_delivery_date;
             $save_data_main->master_customer_id = $request->master_customer_id;
             $save_data_main->corporate_order_file = $imgName ?? null;
@@ -127,7 +128,7 @@ class ProductOrderService {
                         $totalQty = $count * $order_quantity;
         
                         $save_orderProductSetDetail = new OrderProductSetDetail();
-                        $save_orderProductSetDetail->order_products_set_id = $save_data_main->id;
+                        $save_orderProductSetDetail->order_products_set_id = $save_orderProductSet->id;
                         $save_orderProductSetDetail->sku = '';
                         $save_orderProductSetDetail->size = $size;
                         $save_orderProductSetDetail->total_quantity = $totalQty;

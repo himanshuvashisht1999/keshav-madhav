@@ -25,4 +25,8 @@ class OrderProductSetDetail extends Model
         'updated_at'
     ];
 
+    public function orderProductSet()
+    {
+        return $this->belongsTo(\App\Models\OrderProductSet::class, 'order_products_set_id');
+    }
 }

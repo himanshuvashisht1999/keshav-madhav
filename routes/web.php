@@ -247,6 +247,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/create-slips-production',[AdminOrderDigitalizationController::class,'createSlipsProduction'])->name('create-slips-production');
             Route::post('/store-rolls-assign',[AdminOrderDigitalizationController::class,'storeRollsAssign'])->name('store-rolls-assign');
             Route::post('/store-slip',[AdminOrderDigitalizationController::class,'storeProductionSlipDigitization'])->name('store-slip');
+            Route::post('/store-hand-slip',[AdminOrderDigitalizationController::class,'storeHandSlip'])->name('store-hand-slip');
+            Route::post('/get-lot-details-for-hand-slip',[AdminOrderDigitalizationController::class,'getLotDetailsForHandSlip'])->name('get-lot-details-for-hand-slip');
             Route::get('/create-rolls-assign',[AdminOrderDigitalizationController::class,'createRollsAssign'])->name('create-rolls-assign');
             Route::get('/create-time-allocation',[AdminOrderDigitalizationController::class,'createTimeAllocation'])->name('create-time-allocation');
             Route::post('/store-time-allocation',[AdminOrderDigitalizationController::class,'storeTimeAllocation'])->name('store-time-allocation');
@@ -264,7 +266,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/cutting-master',[AdminOrderDigitalizationController::class,'cuttingMaster'])->name('cutting-master');
 
             Route::get('/order-designs', [AdminOrderDigitalizationController::class, 'getDesigns'])->name('order-designs');
-            Route::get('/design-details', [AdminOrderDigitalizationController::class, 'getDesignDetails'])->name('design-details');
+            Route::get('/lot-details', [AdminOrderDigitalizationController::class, 'getLotDetails'])->name('lot-details');
+            Route::post('/store-stitching', [AdminOrderDigitalizationController::class, 'storeStitching'])->name('store-stitching');
+            Route::post('/store-printing', [AdminOrderDigitalizationController::class, 'storePrinting'])->name('store-printing');
+            Route::post('/get-lot-details-for-display', [AdminOrderDigitalizationController::class, 'getLotDetailsForDisplay'])->name('get-lot-details-for-display');
         });
 
         Route::prefix('/packing-carton')->name('packing-carton.')->group(function () {

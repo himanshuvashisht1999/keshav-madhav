@@ -20,6 +20,7 @@ class FabricRollAssigning extends Model
         'lot_no',
         'order_no',
         'stage_master_unit_id',
+        'to_stage_id',
         'roll_no',
         'meter',
         'slip_create_date_time',
@@ -28,4 +29,9 @@ class FabricRollAssigning extends Model
         'created_at',
         'updated_at'
     ];
+
+    public function stageMasterUnit()
+    {
+        return $this->belongsTo(\App\Models\StageMasterUnit::class, 'stage_master_unit_id');
+    }
 }
