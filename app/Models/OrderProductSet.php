@@ -51,24 +51,24 @@ class OrderProductSet extends Model
     }
     public function stage_master_unit()
     {
-        return $this->hasOne(StageMasterUnit::class, 'id','stage_master_unit_id');
+        return $this->belongsTo(StageMasterUnit::class, 'stage_master_unit_id');
     }
     public function fabric()
     {
-        return $this->hasOne(Fabric::class, 'id','fabric_id');
+        return $this->belongsTo(Fabric::class, 'fabric_id');
     }
     public function master_design_pattern()
     {
-        return $this->hasOne(MasterDesignPattern::class, 'id','master_design_pattern_id');
+        return $this->belongsTo(MasterDesignPattern::class, 'master_design_pattern_id');
     }
 
     public function colors()
     {
-        return $this->hasOne(MasterColor::class, 'id', 'color_id');
+        return $this->belongsTo(MasterColor::class, 'color_id');
     }
     public function master_product_fitting()
     {
-        return $this->hasOne(MasterProductFitting::class, 'id', 'master_product_fitting_id');
+        return $this->belongsTo(MasterProductFitting::class, 'master_product_fitting_id');
     }
     public function size_measurement()
     {
@@ -94,5 +94,10 @@ class OrderProductSet extends Model
     public function orderMain()
     {
         return $this->belongsTo(OrderMain::class, 'order_main_id', 'id');
+    }
+
+    public function product_set_details()
+    {
+        return $this->hasMany(OrderProductSetDetail::class, 'order_products_set_id');
     }
 }

@@ -58,6 +58,18 @@
 
                     <div class="row">
 
+                        <div class="col-md-12 mb-3">
+                            <label class="d-block">Order Type</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="order_type" id="order_type_domestic" value="domestic" checked>
+                                <label class="form-check-label" for="order_type_domestic">Domestic</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="order_type" id="order_type_corporate" value="corporate">
+                                <label class="form-check-label" for="order_type_corporate">Corporate</label>
+                            </div>
+                        </div>
+
                         <div class="col-md-4">
                             <label>Select Customer</label>
                             <select name="master_customer_id"

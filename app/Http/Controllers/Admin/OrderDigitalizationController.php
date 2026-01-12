@@ -34,6 +34,11 @@ class OrderDigitalizationController extends Controller {
         $response['slip_data'] = $this->service->getSlipDigitalization();
         $response['skip_slip_data'] = $this->service->getSkipSlips();
         // dd($response['slip_data']);
+        if(!empty($response['slip_data']['from_stage']['master_stage_id'])){
+             $response['available_lots'] = $this->service->getAvailableLotsForStage($response['slip_data']['from_stage']['master_stage_id']);
+        } else {
+             $response['available_lots'] = [];
+        }
         /// roll assign 
         return view('admin.order_digitalization.create-slips-production',$response);
     }
@@ -167,13 +172,54 @@ class OrderDigitalizationController extends Controller {
         $production_slip_digitization = $this->service->cutting_slip($request);
         if($production_slip_digitization){
             $response['orders'] = $this->service->orders($production_slip_digitization->stage_master_unit_id);
-            // dd($response['orders']);
+            $response['lots_stitching'] = $this->service->getLotsBySlip($production_slip_digitization->id, 'stitching');
+            $response['lots_printing'] = $this->service->getLotsBySlip($production_slip_digitization->id, 'printing');
+            $response['next_stages'] = $this->service->getNextStages($production_slip_digitization->getUnitMaster->master_fabric_warehouse_id);
         }else{
             $response['orders'] = [];
+            $response['lots_stitching'] = [];
+            $response['lots_printing'] = [];
+            $response['next_stages'] = [];
         }
         $response['cutting_slip'] = $production_slip_digitization;
+        
+        // Data for Time Allocation (independent of slip)
+        $response['available_lots'] = $this->service->getLotsForTimeAllocation();
+        $response['production_stages'] = $this->service->getProductionStages();
 
         return view('admin.order_digitalization.cutting_master',$response);
+    }
+
+    public function getLotDetails(Request $request)
+    {
+        $details = $this->service->getLotDetails($request->lot_no, $request->production_slip_digitization_id);
+        return response()->json($details);
+    }
+
+    public function storeStitching(Request $request)
+    {
+        $result = $this->service->storeStitching($request);
+        
+        if ($result['status_code'] == 1) {
+            return redirect()->route('admin.order_digitalization.cutting-master')
+                ->with('success', $result['message']);
+        } else {
+            return redirect()->back()
+                ->with('error', $result['message']);
+        }
+    }
+
+    public function storePrinting(Request $request)
+    {
+        $result = $this->service->storePrinting($request);
+        
+        if ($result['status_code'] == 1) {
+            return redirect()->route('admin.order_digitalization.cutting-master')
+                ->with('success', $result['message']);
+        } else {
+            return redirect()->back()
+                ->with('error', $result['message']);
+        }
     }
 
     public function getDesigns(Request $request){
@@ -184,5 +230,42 @@ class OrderDigitalizationController extends Controller {
     public function getDesignDetails(Request $request){
         $response = $this->service->getDesignDetails($request);
         return response()->json($response);
+    }
+
+    public function getLotDetailsForDisplay(Request $request)
+    {
+        $details = $this->service->getLotDetailsForDisplay($request->lot_no);
+        
+        // Try alternative method if fabric/orders are empty
+        if ($details && (empty($details['fabric_names']) || empty($details['order_numbers']))) {
+            $alternative = $this->service->getLotDetailsAlternative($request->lot_no);
+            if ($alternative) {
+                if (empty($details['fabric_names']) && !empty($alternative['fabric_names'])) {
+                    $details['fabric_names'] = $alternative['fabric_names'];
+                }
+                if (empty($details['order_numbers']) && !empty($alternative['order_numbers'])) {
+                    $details['order_numbers'] = $alternative['order_numbers'];
+                }
+            }
+        }
+        
+        return response()->json($details);
+    }
+
+
+    public function getLotDetailsForHandSlip(Request $request)
+    {
+        $details = $this->service->getLotDetailsForHandSlip($request->lot_no, $request->from_stage_id);
+        return response()->json($details);
+    }
+
+    public function storeHandSlip(Request $request)
+    {
+        $result = $this->service->storeHandSlip($request);
+        if ($result['status_code'] == 1) {
+            return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($result['message']);
+        } else {
+            return redirect()->back()->withError($result['message']);
+        }
     }
 }
