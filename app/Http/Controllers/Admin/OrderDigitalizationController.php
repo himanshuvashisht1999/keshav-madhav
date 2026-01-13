@@ -54,33 +54,7 @@ class OrderDigitalizationController extends Controller {
         return view('admin.order_digitalization.create-rolls-assign', $response);
     }
 
-    public function createTimeAllocation(){
-        $response['order_no_data'] = $this->service->orderMainForRollAssign();
-        $response['cutting_units'] = $this->fabricReceiptService->cutting_units();
-        // dd($response['cutting_units']);
-        $response['fabrics'] = $this->service->getFabricsData();
-        $response['slip_data'] = $this->service->getSlipDigitalization();
-        $response['skip_slip_data'] = $this->service->getSkipSlips();
-        // dd($response['slip_data']);
-        return view('admin.order_digitalization.create-time-allocation', $response);
-    }
-    public function storeProductionSlipDigitization(Request $request){
-        $data = $this->service->storeProductionSlipDigitization($request);
-        if($data['status_code'] == 1){
-            return redirect()->back()->withSuccess($data['message']);
-          
-        }else{
-            return redirect()->back()->withError($data['message']);
-        }
-    }
-    public function storeTimeAllocation(Request $request){
-        $data = $this->service->storeTimeAllocation($request);
-        if($data['status_code'] == 1){
-            return redirect()->back()->withSuccess($data['message']);
-        }else{
-            return redirect()->back()->withError($data['message']);
-        }
-    }
+
     public function storeRollsAssign(Request $request){
         $data = $this->service->storeRollsAssign($request);
         if($data['status_code'] == 1){
@@ -174,12 +148,23 @@ class OrderDigitalizationController extends Controller {
             $response['orders'] = $this->service->orders($production_slip_digitization->stage_master_unit_id);
             $response['lots_stitching'] = $this->service->getLotsBySlip($production_slip_digitization->id, 'stitching');
             $response['lots_printing'] = $this->service->getLotsBySlip($production_slip_digitization->id, 'printing');
-            $response['next_stages'] = $this->service->getNextStages($production_slip_digitization->getUnitMaster->master_fabric_warehouse_id);
+            
+            // NEW: Fetch Units
+            $warehouse_id = $production_slip_digitization->getUnitMaster->master_fabric_warehouse_id ?? 0;
+            $response['stitching_units'] = $this->service->getStageUnits($warehouse_id, 4); // 4 = Stitching
+            $response['printing_units'] = $this->service->getStageUnits($warehouse_id, 1);  // 1 = Printing
+            
+            $cutting_unit = $production_slip_digitization->stage_master_unit_id;
+            $response['cutting_master_orders'] = $this->service->cutting_master_orders($cutting_unit);
+            
+            // $response['next_stages'] = $this->service->getNextStages($production_slip_digitization->getUnitMaster->master_fabric_warehouse_id);
         }else{
             $response['orders'] = [];
             $response['lots_stitching'] = [];
             $response['lots_printing'] = [];
-            $response['next_stages'] = [];
+            // $response['next_stages'] = [];
+            // $response['stitching_units'] = [];
+            // $response['printing_units'] = [];
         }
         $response['cutting_slip'] = $production_slip_digitization;
         

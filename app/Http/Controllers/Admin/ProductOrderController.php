@@ -194,7 +194,7 @@ class ProductOrderController extends Controller {
             'master_design_pattern',
             'orderMain.customer',
             'colors',
-            'sizeMeasurement',
+            'size_measurement',
             'master_product_fitting',
         ])->where('id', $request->id)->firstOrFail();
 
@@ -222,10 +222,9 @@ class ProductOrderController extends Controller {
 
         $sizes = [$data->set_size]; // fallback
         
-        if (!empty($data->sizeMeasurement->size_group)) {
-            $sizes = explode(',', $data->sizeMeasurement->size_group);
+        if (!empty($data->size_measurement->size_group)) {
+            $sizes = explode(',', $data->size_measurement->size_group);
         }
-        // dd($data);
 
         foreach ($sizes as $size) {
             $size = trim($size);

@@ -85,10 +85,6 @@
                     Rolls Allot
                 </button>
 
-                <button class="btn action-btn btn-time" data-target="time">
-                    Time Allocation
-                </button>
-
                 <button class="btn action-btn btn-stitching" data-target="stitching">
                     Send to Stitching
                 </button>
@@ -174,7 +170,7 @@
                                     {{-- ADD ROLL --}}
                                     <div class="card p-2 mt-3 border">
                                         <label>Design No</label>
-                                        <select id="design_id" class="form-control mb-2 select2">
+                                        <select id="design_id" class="form-control mb-2 select2" name="design_id">
                                             <option value="">Select Design No</option>
                                         </select>
                                         
@@ -254,107 +250,7 @@
                             </div>
 
 
-                            {{-- TIME ALLOCATION FORM --}}
-                            <div class="form-section" id="form-time">
-                                <h5 class="mb-4 text-success font-weight-bold">Time Allocation</h5>
-                                
-                                <form method="POST" id="timeAllocationForm" action="{{ route('admin.order_digitalization.store-time-allocation') }}">
-                                    @csrf
-                                    
-                                    {{-- Lot Number Selection --}}
-                                    <div class="form-group">
-                                        <label class="font-weight-bold">Select Lot No *</label>
-                                        <select name="lot_no" id="time_lot_no" class="form-control select2 lot-selector" data-tab="time" required>
-                                            <option value="">Select Lot No</option>
-                                            @foreach($available_lots as $lot)
-                                                <option value="{{ $lot }}">{{ $lot }}</option>
-                                            @endforeach
-                                        </select>
-                                        <small class="text-muted">Select the lot number for time allocation</small>
-                                    </div>
 
-                                    {{-- Lot Details Display --}}
-                                    <div id="time_lot_details" class="lot-details-container" style="display:none;"></div>
-
-                                    {{-- Start Date Time --}}
-                                    <div class="form-group">
-                                        <label class="font-weight-bold">Start Date & Time *</label>
-                                        <input type="datetime-local" 
-                                               name="start_date_time" 
-                                               class="form-control" 
-                                               required
-                                               value="{{ date('Y-m-d\TH:i') }}">
-                                        <small class="text-muted">Production start date and time</small>
-                                    </div>
-
-                                    {{-- Production Stages Time Allocation --}}
-                                    <div class="card border-success mb-3">
-                                        <div class="card-header bg-light">
-                                            <h6 class="mb-0 text-success">
-                                                <i class="fas fa-clock mr-2"></i>Stage-wise Time Allocation
-                                            </h6>
-                                        </div>
-                                        <div class="card-body">
-                                            @if($production_stages->count() > 0)
-                                                <div class="table-responsive">
-                                                    <table class="table table-sm table-bordered">
-                                                        <thead class="bg-light">
-                                                            <tr>
-                                                                <th width="10%">#</th>
-                                                                <th width="50%">Stage Name</th>
-                                                                <th width="40%">Time (Days)</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @foreach($production_stages as $index => $stage)
-                                                                <tr>
-                                                                    <td class="text-center font-weight-bold">{{ $stage->sequence ?? ($index + 1) }}</td>
-                                                                    <td>
-                                                                        <strong>{{ $stage->name }}</strong>
-                                                                    </td>
-                                                                    <td>
-                                                                        <div class="input-group input-group-sm">
-                                                                            <input type="number" 
-                                                                                   name="stages[{{ $stage->id }}]" 
-                                                                                   class="form-control" 
-                                                                                   step="0.5" 
-                                                                                   min="0"
-                                                                                   placeholder="0.5, 1, 2..."
-                                                                                   required>
-                                                                            <div class="input-group-append">
-                                                                                <span class="input-group-text">days</span>
-                                                                            </div>
-                                                                        </div>
-                                                                        <small class="text-muted">Enter 0.5 for half day (4 hrs), 1 for full day (8 hrs)</small>
-                                                                    </td>
-                                                                </tr>
-                                                            @endforeach
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            @else
-                                                <div class="alert alert-warning mb-0">
-                                                    <i class="fas fa-exclamation-triangle mr-2"></i>
-                                                    No production stages found. Please configure stages first.
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-
-                                    {{-- Remarks --}}
-                                    <div class="form-group">
-                                        <label class="font-weight-bold">Remarks</label>
-                                        <textarea name="remarks" class="form-control" rows="2" placeholder="Optional remarks..."></textarea>
-                                    </div>
-
-                                    {{-- Submit Button --}}
-                                    @if($production_stages->count() > 0)
-                                        <button type="submit" class="btn btn-success btn-lg w-100">
-                                            <i class="fas fa-save mr-2"></i> Save Time Allocation
-                                        </button>
-                                    @endif
-                                </form>
-                            </div>
                             {{-- STITCHING FORM --}}
                             <div class="form-section" id="form-stitching">
                                 <h5 class="mb-4 text-primary font-weight-bold">Send to Stitching</h5>
@@ -363,6 +259,19 @@
                                     @csrf
                                     <input type="hidden" name="production_slip_digitization_id" value="{{ $cutting_slip->id ?? '' }}">
                                     <input type="hidden" name="to_stage_id" value="4">{{-- Stitching stage ID --}}
+                                    
+                                    {{-- Stitching Unit --}}
+                                    <div class="form-group">
+                                        <label class="font-weight-bold">Select Stitching Unit</label>
+                                        <select name="to_stage_unit_id" class="form-control select2" required>
+                                            <option value="">Select Stitching Unit</option>
+                                            @if(isset($stitching_units))
+                                                @foreach($stitching_units as $unit)
+                                                    <option value="{{ $unit->id }}">{{ $unit->name }}</option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
                                     
                                     <div class="form-group">
                                         <label class="font-weight-bold">Select Lot No *</label>
@@ -395,6 +304,19 @@
                                     @csrf
                                     <input type="hidden" name="production_slip_digitization_id" value="{{ $cutting_slip->id ?? '' }}">
                                     <input type="hidden" name="to_stage_id" value="1">{{-- Printing stage ID --}}
+
+                                    {{-- Printing Unit --}}
+                                    <div class="form-group">
+                                        <label class="font-weight-bold">Select Printing Unit</label>
+                                        <select name="to_stage_unit_id" class="form-control select2" required>
+                                            <option value="">Select Printing Unit</option>
+                                            @if(isset($printing_units))
+                                                @foreach($printing_units as $unit)
+                                                    <option value="{{ $unit->id }}">{{ $unit->name }}</option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
                                     
                                     <div class="form-group">
                                         <label class="font-weight-bold">Select Lot No *</label>
@@ -737,11 +659,31 @@ $(document).ready(function () {
         if (!order || !order.order_product_sets) return;
 
         order.order_product_sets.forEach(set => {
-            designSelect.append(
-                `<option value="${set.id}">
-                    ${set.design_number}
-                </option>`
-            );
+            // Check if any detail has remaining quantity
+            let hasRemaining = false;
+            
+            if (set.product_set_details && set.product_set_details.length > 0) {
+                 // Check if at least one size has remaining quantity > 0
+                 hasRemaining = set.product_set_details.some(detail => (parseFloat(detail.remaining_lot_allocated) || 0) > 0);
+            } else {
+                 // If no details are present, fallback to showing it (or filtering it out based on exact requirement).
+                 // User said: "if there is no any size quanity left then sizes are not coming".
+                 // Assuming empty details means no sizes to allocate, so safer to hide, OR could mean fresh order.
+                 // Given the context of "completed", assuming we only hide if we KNOW it's 0.
+                 // However, usually detailed data is populated. If empty, safe to assume nothing to allocate?
+                 // Let's assume if no details, we show it (safe default) or check if logic implies "completed" means details exist with 0.
+                 // Let's assume hasRemaining is false if no details are found unless we know otherwise.
+                 // Actually, if a set has NO details, how can we allocate? We can't. So hiding seems correct.
+                 hasRemaining = false; 
+            }
+
+            if (hasRemaining) {
+                designSelect.append(
+                    `<option value="${set.id}">
+                        ${set.design_number}
+                    </option>`
+                );
+            }
         });
         designSelect.trigger('change');
     });

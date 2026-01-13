@@ -17,6 +17,7 @@ class FabricRollAssigning extends Model
         'sub_company_id',
         'project_id',
         'sku',
+        'order_products_set_id',
         'lot_no',
         'order_no',
         'stage_master_unit_id',
@@ -33,5 +34,10 @@ class FabricRollAssigning extends Model
     public function stageMasterUnit()
     {
         return $this->belongsTo(\App\Models\StageMasterUnit::class, 'stage_master_unit_id');
+    }
+
+    public function order_product_set()
+    {
+        return $this->belongsTo(\App\Models\OrderProductSet::class, 'order_products_set_id');
     }
 }

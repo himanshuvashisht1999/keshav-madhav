@@ -135,6 +135,7 @@
     <th>Customer</th>
     <th>Order No</th>
     <th>Total Pcs</th>
+    <th>Action</th>
     <th>Lot No</th>
     <th>Pcs / Lot</th>
     <th>Current Stage</th>
@@ -169,6 +170,11 @@
                 </td>
                 <td rowspan="{{ $rowspan }}" class="order-cell text-center">
                     {{ $order['total_pcs_in_order'] }}
+                </td>
+                <td rowspan="{{ $rowspan }}" class="order-cell text-center">
+                    <a href="{{ route('admin.report.sales-order.detail', $order['order_id']) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-eye"></i> Details
+                    </a>
                 </td>
             @endif
 

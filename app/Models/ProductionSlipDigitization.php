@@ -40,4 +40,8 @@ class ProductionSlipDigitization extends Model
         );
     }
    
+    public function packingMain()
+    {
+        return $this->hasOne('App\Models\PackingMain', 'slip_id', 'id');
+    }
 }
