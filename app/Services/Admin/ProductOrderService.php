@@ -259,9 +259,9 @@ class ProductOrderService {
                     ->where('lot_no', $request->lot_no)
                     ->exists();
 
-                if ($cuttingStageId == $from_stage_id && $isExistLotNO) {
-                    throw new \Exception(" This Lot no {$request->lot_no} is already exist");
-                }
+                // if ($cuttingStageId == $from_stage_id && $isExistLotNO) {
+                //     throw new \Exception(" This Lot no {$request->lot_no} is already exist");
+                // }
                 // 3️⃣ Record transaction
                 $OrderStageTransaction = OrderStageTransaction::create([
                     'sku' => $sku_for_trans,

@@ -18,14 +18,99 @@ class PackingController extends Controller {
 
     public function process($slip_id){
         $slip = $this->service->getSlipDetails($slip_id); 
-        // Need to load order details to show items to pack
-        // Slip has 'sku'.
-        $order = $this->service->getOrderDetails($slip->sku);
         
-        // We also need to fetch any existing PackingMain if we are returning to a draft
         $packing = $this->service->getPackingMainWithStructure($slip_id);
         
-        return view('admin.packing.process', compact('slip', 'order', 'packing'));
+        // If packing exists, get the linked order
+        $order = null;
+        if($packing && $packing->order_main_id) {
+             $order = \App\Models\OrderMain::with('customer', 'OrderProductSets.product_set_details')->find($packing->order_main_id);
+        } else if($slip->sku) {
+             // Fallback to SKU link if exists (legacy support)
+             $order = $this->service->getOrderDetails($slip->sku);
+        }
+
+        $active_orders = [];
+        $packed_quantities = [];
+        $order_sets = [];
+
+        if(!$order) {
+            // Fetch orders for dropdown if no order is linked yet
+            $active_orders = \App\Models\OrderMain::with('customer')->orderBy('id', 'desc')->get();
+        } else {
+             $packed_quantities = $this->service->getPackedQuantitiesForOrder($order->id);
+             // Logic to prepare sets (duplicated from JSON method for initial load)
+             $order_sets = $order->OrderProductSets->map(function($set) use ($packed_quantities) {
+                $set_total_qty = $set->set_quantity > 0 ? $set->set_quantity : 1;
+                $min_packed_sets = null;
+                $details = $set->product_set_details->map(function($detail) use ($packed_quantities, $set_total_qty) {
+                    $detail->packed_qty = $packed_quantities[$detail->id] ?? 0;
+                    $ratio = $detail->total_quantity / $set_total_qty;
+                    $detail->qty_per_set = $ratio;
+                    return $detail;
+                });
+                foreach($details as $detail) {
+                     if($detail->qty_per_set > 0) {
+                         $sets_packed_for_this_detail = floor($detail->packed_qty / $detail->qty_per_set);
+                         if($min_packed_sets === null || $sets_packed_for_this_detail < $min_packed_sets) {
+                             $min_packed_sets = $sets_packed_for_this_detail;
+                         }
+                     }
+                }
+                $set->packed_sets = $min_packed_sets ?? 0;
+                $set->details_data = $details; // Pass details
+                return $set;
+            });
+        }
+        
+        $storerooms = \App\Models\Storeroom::with('racks')->where('status', 1)->get();
+
+        return view('admin.packing.process', compact('slip', 'order', 'packing', 'storerooms', 'active_orders', 'packed_quantities', 'order_sets'));
+    }
+
+    public function getOrderDetailsJson($id) {
+        $order = \App\Models\OrderMain::with(['OrderProductSets.product_set_details', 'OrderProductSets.colors'])->findOrFail($id);
+        
+        $packed = $this->service->getPackedQuantitiesForOrder($id); // [detail_id => packed_qty]
+        
+        // Prepare Sets Data
+        $sets = $order->OrderProductSets->map(function($set) use ($packed) {
+            $set_total_qty = $set->set_quantity > 0 ? $set->set_quantity : 1;
+            $min_packed_sets = null;
+            
+            $set->details = $set->product_set_details->map(function($detail) use ($packed, $set_total_qty) {
+                $detail->packed_qty = $packed[$detail->id] ?? 0;
+                // Calculate ratio (items per set)
+                $ratio = $detail->total_quantity / $set_total_qty;
+                $detail->qty_per_set = $ratio;
+                return $detail;
+            });
+
+            // Calculate how many full sets have been packed
+            // Based on the detail with the LOWEST relative completion
+            foreach($set->details as $detail) {
+                 if($detail->qty_per_set > 0) {
+                     $sets_packed_for_this_detail = floor($detail->packed_qty / $detail->qty_per_set);
+                     if($min_packed_sets === null || $sets_packed_for_this_detail < $min_packed_sets) {
+                         $min_packed_sets = $sets_packed_for_this_detail;
+                     }
+                 }
+            }
+            $set->packed_sets = $min_packed_sets ?? 0;
+            return $set;
+        });
+        
+        // Flatten items for legacy view (if needed)
+        $items = $order->OrderProductSets->flatMap->product_set_details->map(function($item) {
+             return $item;
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'order' => $order,
+            'items' => $items,
+            'sets' => $sets
+        ]);
     }
     // API/AJAX Methods
     public function saveCarton(Request $request) {
@@ -43,6 +128,12 @@ class PackingController extends Controller {
 
     public function finalize(Request $request) {
         $result = $this->service->finalizePacking($request->packing_main_id);
+        return response()->json($result);
+    }
+
+    public function createSet(Request $request) {
+        $data = $request->all();
+        $result = $this->service->createAdHocSet($data);
         return response()->json($result);
     }
 }

@@ -23,9 +23,9 @@
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Slip ID</th>
-                                <th>Order SKU</th>
-                                <th>Lot No</th>
+                                <th>ID</th>
+                                <!-- <th>Slip ID</th> -->
+                                <th>Image</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -34,8 +34,16 @@
                             <tr>
                                 <td>{{ $slip->created_at->format('d-m-Y') }}</td>
                                 <td>#{{ $slip->id }}</td>
-                                <td>{{ $slip->sku }}</td>
-                                <td>{{ $slip->lot_no }}</td>
+                                <!-- <td>{{ $slip->id ?? 'N/A' }}</td> {{-- Assuming slip_id is a field or just use ID --}} -->
+                                <td>
+                                    @if($slip->slip_file)
+                                        <a href="{{ asset('assets/production_slips/'.$slip->slip_file) }}" target="_blank">
+                                            <img src="{{ asset('assets/production_slips/'.$slip->slip_file) }}" alt="Slip" style="height: 50px; width: 50px; object-fit: cover;">
+                                        </a>
+                                    @else
+                                        <span class="text-muted">No Image</span>
+                                    @endif
+                                </td>
                                 <td>
                                     <a href="{{ route('admin.packing.process', $slip->id) }}" class="btn btn-primary btn-sm">
                                         <i class="fas fa-box-open"></i> Process Packing
