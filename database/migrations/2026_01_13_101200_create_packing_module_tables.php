@@ -14,6 +14,10 @@ return new class extends Migration
     public function up()
     {
         // 1. Packing Main Table
+        Schema::dropIfExists('packing_items');
+        Schema::dropIfExists('packing_boxes');
+        Schema::dropIfExists('packing_cartons');
+        Schema::dropIfExists('packing_mains');
         Schema::create('packing_mains', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('order_main_id');
@@ -24,7 +28,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Foreign Keys
-            $table->foreign('order_main_id')->references('id')->on('order_main')->onDelete('cascade');
+            // $table->foreign('order_main_id')->references('id')->on('order_main')->onDelete('cascade');
              // $table->foreign('slip_id')->references('id')->on('production_slip_digitization'); // Optional
         });
 

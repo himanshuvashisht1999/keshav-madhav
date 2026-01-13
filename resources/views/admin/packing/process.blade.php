@@ -5,11 +5,25 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Process Packing: {{ $order->sku }}</h1>
-                </div>
-                <div class="col-sm-6 text-end">
-                    <a href="{{ route('admin.packing.index') }}" class="btn btn-secondary btn-sm">Back to List</a>
+                <div class="col-sm-12">
+                   <h4>
+                       @if($order)
+                           <span class="text-muted">Customer:</span> {{ $order->customer->name ?? 'N/A' }} 
+                           <small class="ms-3 text-muted">Order: {{ $order->sku }}</small>
+                       @else
+                           <div class="d-flex align-items-center">
+                               <span class="text-muted me-2">Select Order: </span>
+                               <select class="form-control select2" id="orderSelect" style="width: 300px;">
+                                   <option value="">-- Select Order to Start Packing --</option>
+                                   @foreach($active_orders as $ao)
+                                       <option value="{{ $ao->id }}">
+                                           #{{ $ao->id }} - {{ $ao->customer->name ?? 'Unknown' }} ({{ $ao->sku }})
+                                       </option>
+                                   @endforeach
+                               </select>
+                           </div>
+                       @endif
+                   </h4>
                 </div>
             </div>
         </div>
@@ -17,16 +31,19 @@
 
     <section class="content">
         <div class="container-fluid">
+            <!-- ... existing structure ... -->
             <div class="row">
                 <!-- LEFT PANEL: AVAILABLE ITEMS -->
                 <div class="col-md-4">
                     <div class="card h-100">
                         <div class="card-header bg-light">
-                            <h3 class="card-title">Available Items (From Slip)</h3>
+                            <h3 class="card-title">Order Details & Items</h3>
                         </div>
                         <div class="card-body p-0" style="overflow-y: auto; max-height: 600px;">
                             <ul class="list-group list-group-flush" id="available-items-list">
-                                <li class="list-group-item text-muted text-center">Loading items...</li>
+                                <li class="list-group-item text-muted text-center">
+                                    @if($order) Loading items... @else Please select an order first. @endif
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -36,12 +53,12 @@
                 <div class="col-md-8">
                     <div class="card h-100">
                         <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                            <h3 class="card-title mb-0">Packed Structure</h3>
+                            <h3 class="card-title mb-0">Packed Structure (Storeroom)</h3>
                             <div>
-                                <button class="btn btn-light btn-sm" onclick="openCreateCartonModal()">
+                                <button class="btn btn-light btn-sm" onclick="openCreateCartonModal()" id="btnCreateCarton" @if(!$order) disabled @endif>
                                     <i class="fas fa-plus"></i> New Carton
                                 </button>
-                                <button class="btn btn-success btn-sm ms-2" onclick="finalizePacking()">
+                                <button class="btn btn-success btn-sm ms-2" onclick="finalizePacking()" id="btnFinalize" @if(!$order) disabled @endif>
                                     <i class="fas fa-check"></i> Finalize
                                 </button>
                             </div>
@@ -49,7 +66,7 @@
                         <div class="card-body" id="packing-structure-area" style="overflow-y: auto; max-height: 600px;">
                             <div class="text-center text-muted mt-5">
                                 <p>No cartons created yet.</p>
-                                <button class="btn btn-outline-primary btn-sm" onclick="openCreateCartonModal()">Create First Carton</button>
+                                <button class="btn btn-outline-primary btn-sm" onclick="openCreateCartonModal()" id="btnCreateFirstCarton" @if(!$order) disabled @endif>Create First Carton</button>
                             </div>
                         </div>
                     </div>
@@ -66,7 +83,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Create New Box</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <div class="modal-body">
                 <form id="createBoxForm">
@@ -76,16 +93,8 @@
                     </div>
                     <h6>Select Items to Pack in Box</h6>
                     <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Item/Size</th>
-                                <th>Available</th>
-                                <th>Pack Qty</th>
-                            </tr>
-                        </thead>
-                        <tbody id="boxItemsTable">
-                            <!-- Populated by JS -->
-                        </tbody>
+                        <!-- ... -->
+                        <tbody id="boxItemsTable"></tbody>
                     </table>
                 </form>
             </div>
@@ -101,34 +110,61 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Create New Carton</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <div class="modal-body">
                 <form id="createCartonForm">
-                    <div class="mb-3">
-                        <label>Carton Number</label>
-                        <input type="text" class="form-control" name="carton_no" required>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label>Carton Number</label>
+                            <input type="text" class="form-control" name="carton_no" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label>Store Room</label>
+                            <select class="form-control" id="storeroomSelect" onchange="updateRackSelect()">
+                                <option value="">Select Store Room</option>
+                                @foreach($storerooms as $store)
+                                    <option value="{{ $store->id }}" data-racks="{{ $store->racks }}">{{ $store->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label>Rack</label>
+                            <select class="form-control" name="rack_id" id="rackSelect">
+                                <option value="">Select Rack</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <h6>Add Unpacked Boxes</h6>
-                            <div id="unpackedBoxesList">
-                                <!-- Checkboxes for boxes -->
-                            </div>
+                            <div id="unpackedBoxesList"></div>
                         </div>
-                        <div class="col-md-6">
-                             <h6>OR Add Loose Items</h6>
-                             <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Item/Size</th>
-                                        <th>Pack Qty</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="cartonItemsTable">
-                                    <!-- Populated by JS -->
-                                </tbody>
-                            </table>
+                        <!-- ... -->
+                        <div class="col-md-7">
+                            <div class="d-flex border-bottom mb-3">
+                                <button type="button" class="btn btn-outline-primary active mr-2" id="btn-tab-sets" onclick="switchPackTab('sets')">Pack Sets</button>
+                                <button type="button" class="btn btn-outline-secondary" id="btn-tab-loose" onclick="switchPackTab('loose')">Pack Loose Items</button>
+                            </div>
+
+                            <div id="tab-content-sets">
+                                <div id="cartonSetsContainer" style="max-height: 400px; overflow-y: auto;">
+                                    <p class="text-muted small">Loading sets...</p>
+                                </div>
+                            </div>
+
+                            <div id="tab-content-loose" style="display: none;">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Size</th>
+                                            <th>Remaining</th>
+                                            <th>Qty</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cartonItemsTable"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -142,10 +178,40 @@
 
 @push('scripts')
 <script>
-    const ORDER_ID = {{ $order->id }};
+    let ORDER_ID = {{ $order ? $order->id : 'null' }}; // Mutable
     const SLIP_ID = {{ $slip->id }};
-    const ORDER_ITEMS = @json($order->OrderProductSets->flatMap->product_set_details);
+    let ORDER_ITEMS = []; 
+    let ORDER_SETS = @json($order_sets ?? []);
+    const PACKED_DATA = @json($packed_quantities ?? []);
     const EXISTING_PACKING = @json($packing);
+
+    // Initial Population of ORDER_ITEMS from Sets if available
+    if(ORDER_SETS.length > 0 && ORDER_ITEMS.length === 0) {
+        ORDER_SETS.forEach(set => {
+             let details = set.details_data || set.details;
+             if(details) {
+                 details.forEach(d => {
+                     // We clone it to avoid reference issues if we modify it
+                     let item = JSON.parse(JSON.stringify(d));
+                     // Map fields if necessary, but standard fields should match
+                     // detail has: id, size, total_quantity, packed_qty (computed in controller)
+                     // Ensure packed_qty is set
+                     item.packed_qty = item.packed_qty || PACKED_DATA[item.id] || 0;
+                     ORDER_ITEMS.push(item);
+                 });
+             }
+        });
+    }
+
+    // If loaded via AJAX later, we might need similar logic, but fetchOrderDetails handles it.
+    
+    // Merge packed data into ORDER_ITEMS on init (redundant if handled above, but safe)
+    if(ORDER_ITEMS.length > 0) {
+        ORDER_ITEMS = ORDER_ITEMS.map(item => {
+            item.packed_qty = PACKED_DATA[item.id] || item.packed_qty || 0; // Use item.id (detail id)
+            return item;
+        });
+    }
     
     // Structure State
     let packedStructure = {
@@ -154,9 +220,48 @@
     };
     
     $(document).ready(function() {
-        renderAvailableItems();
+        if(ORDER_ID) {
+            renderAvailableItems();
+        }
         renderStructure();
+        
+        // Initialize Select2 if available
+        if($('.select2').length > 0) {
+            $('.select2').select2();
+        }
+        
+        // Handle Order Selection
+        $('#orderSelect').on('change', function() {
+            let orderId = $(this).val();
+            if(orderId) {
+                fetchOrderDetails(orderId);
+            } else {
+                ORDER_ID = null;
+                ORDER_ITEMS = [];
+                $('#available-items-list').html('<li class="list-group-item text-muted text-center">Please select an order first.</li>');
+                disableActions(true);
+            }
+        });
     });
+    
+    function fetchOrderDetails(orderId) {
+        $('#available-items-list').html('<li class="list-group-item text-muted text-center">Loading items...</li>');
+        
+        $.get("{{ route('admin.packing.orderDeps', '') }}/" + orderId, function(response) {
+            if(response.status === 'success') {
+                ORDER_ID = orderId;
+                ORDER_ITEMS = response.items;
+                renderAvailableItems();
+                disableActions(false);
+            } else {
+                alert("Failed to load order details.");
+            }
+        });
+    }
+    
+    function disableActions(disable) {
+        $('#btnCreateCarton, #btnFinalize, #btnCreateFirstCarton').prop('disabled', disable);
+    }
     
     function renderStructure() {
         let html = '';
@@ -179,11 +284,11 @@
                 html += `
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#carton${index}">
+                        <button class="accordion-button collapsed" type="button" data-toggle="collapse" data-target="#carton${index}">
                             <i class="fas fa-box-open me-2"></i> Carton #${carton.carton_no}
                         </button>
                     </h2>
-                    <div id="carton${index}" class="accordion-collapse collapse" data-bs-parent="#cartonAccordion">
+                    <div id="carton${index}" class="accordion-collapse collapse" data-parent="#cartonAccordion">
                         <div class="accordion-body">
                             <!-- Boxes in Carton -->
                             ${carton.boxes.length > 0 ? '<h6><small>Boxes:</small></h6><ul>' + carton.boxes.map(b => `<li>Box #${b.box_no}</li>`).join('') + '</ul>' : ''}
@@ -200,7 +305,7 @@
         if(html === '') {
             html = `<div class="text-center text-muted mt-5">
                         <p>No cartons or boxes created yet.</p>
-                        <p>Start by creating a box or a carton.</p>
+                        <button class="btn btn-outline-primary btn-sm" onclick="openCreateCartonModal()" id="btnCreateFirstCarton" ${!ORDER_ID ? 'disabled' : ''}>Create First Carton</button>
                     </div>`;
         }
         
@@ -209,35 +314,108 @@
 
     function renderAvailableItems() {
         let html = '';
-        ORDER_ITEMS.forEach(item => {
-            html += `<li class="list-group-item d-flex justify-content-between align-items-center">
-                Size: ${item.size}
-                <span class="badge bg-primary rounded-pill">${item.total_quantity}</span>
-            </li>`;
-        });
-        $('#available-items-list').html(html);
+        let modalSetsHtml = '';
         
-        // Also populate modal tables
+        // Render SETS in Left Panel
+        if(ORDER_SETS && ORDER_SETS.length > 0) {
+             ORDER_SETS.forEach((set, index) => {
+                let remainingSets = set.set_quantity - set.packed_sets;
+                if(remainingSets < 0) remainingSets = 0;
+                
+                html += `
+                <li class="list-group-item bg-light">
+                    <strong>Set #${index+1}</strong> <small class="text-muted">(Qty: ${set.set_quantity})</small>
+                    <span class="badge ${remainingSets > 0 ? 'bg-primary' : 'bg-success'} float-right">Rem: ${remainingSets} Sets</span>
+                </li>`;
+                
+                // Details
+                if(set.details_data || set.details) {
+                    let details = set.details_data || set.details;
+                    details.forEach(item => {
+                        let packed = parseInt(item.packed_qty) || 0;
+                        let total = parseInt(item.total_quantity);
+                        let remaining = total - packed;
+                        let badgeClass = remaining === 0 ? 'bg-success' : 'bg-secondary';
+                        
+                        html += `<li class="list-group-item d-flex justify-content-between align-items-center ps-4 py-1">
+                            <small>Size: ${item.size}</small>
+                            <span>
+                                <span class="badge ${badgeClass} badge-pill">${remaining}</span> 
+                                <small class="text-muted">/ ${total}</small>
+                            </span>
+                        </li>`;
+                    });
+                }
+                
+                 // Modal Option for this Set
+                 if(remainingSets > 0) {
+                     let compositionText = (set.details_data || set.details).map(d => `${d.size}(${d.qty_per_set})`).join(', ');
+                     modalSetsHtml += `
+                     <div class="card mb-2 p-2 border-left-primary">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                 <strong>Set #${index+1}</strong> <small class="text-muted">(${compositionText})</small><br>
+                                 <small class="text-info">Available: ${remainingSets}</small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <input type="number" class="form-control form-control-sm set-pack-qty mr-2" style="width: 70px;" placeholder="Qty" max="${remainingSets}" min="0" data-set-id="${set.id}">
+                                <span>Sets</span>
+                            </div>
+                        </div>
+                     </div>`;
+                 }
+             });
+        }
+        
+        // Fallback for flat items if no sets (Legacy)
+        if((!ORDER_SETS || ORDER_SETS.length === 0) && ORDER_ITEMS.length > 0) {
+             ORDER_ITEMS.forEach(item => {
+                let packed = parseInt(item.packed_qty) || 0;
+                let total = parseInt(item.total_quantity);
+                let remaining = total - packed;
+                let badgeClass = remaining === 0 ? 'bg-success' : 'bg-primary';
+                
+                html += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                    Size: ${item.size}
+                    <span class="badge ${badgeClass} badge-pill">${remaining} / ${total}</span>
+                </li>`;
+            });
+        }
+        
+        if(html === '') {
+             html = '<li class="list-group-item text-muted text-center">No items found.</li>';
+        }
+
+        $('#available-items-list').html(html);
+        $('#cartonSetsContainer').html(modalSetsHtml || '<p class="text-muted text-center py-2">No full sets available to pack.</p>');
+        
+        // Also populate loose items table (optional/fallback)
         let modalHtml = '';
-        ORDER_ITEMS.forEach(item => {
-            // Need to update MAX based on packed quantity? 
-            // For now, user can overpack logic (as per request not strictly limited yet)
-            // But we can check balance if needed.
-            modalHtml += `<tr>
-                <td>${item.size}</td>
-                <td>${item.total_quantity}</td>
-                <td><input type="number" class="form-control form-control-sm item-pack-qty" data-size-id="${item.id}" max="${item.total_quantity}"></td>
-            </tr>`;
-        });
-        $('#boxItemsTable').html(modalHtml);
+        if(ORDER_ITEMS && ORDER_ITEMS.length > 0) {
+            ORDER_ITEMS.forEach(item => {
+                let packed = parseInt(item.packed_qty) || 0;
+                let total = parseInt(item.total_quantity);
+                let remaining = total - packed;
+                if(remaining > 0) {
+                    modalHtml += `<tr>
+                        <td>${item.size}</td>
+                        <td>${remaining} <small class="text-muted">(${total})</small></td>
+                        <td><input type="number" class="form-control form-control-sm item-pack-qty" data-size-id="${item.id}" max="${remaining}" min="0"></td>
+                    </tr>`;
+                }
+            });
+        }
         $('#cartonItemsTable').html(modalHtml);
     }
-    
+
     function openCreateBoxModal() {
+        if(!ORDER_ID) return;
         $('#createBoxModal').modal('show');
     }
     
     function openCreateCartonModal() {
+        if(!ORDER_ID) return; 
+        
         // Populate Unpacked Boxes list
         let html = '';
         if(packedStructure.boxes.length > 0) {
@@ -257,6 +435,24 @@
         $('#unpackedBoxesList').html(html);
         
         $('#createCartonModal').modal('show');
+    }
+
+    function updateRackSelect() {
+        let storeSelect = document.getElementById('storeroomSelect');
+        let rackSelect = document.getElementById('rackSelect');
+        let selectedOption = storeSelect.options[storeSelect.selectedIndex];
+        
+        rackSelect.innerHTML = '<option value="">Select Rack</option>';
+        
+        if (selectedOption.value) {
+            let racks = JSON.parse(selectedOption.getAttribute('data-racks'));
+            racks.forEach(rack => {
+                let option = document.createElement('option');
+                option.value = rack.id;
+                option.text = rack.name + (rack.capacity ? ` (Cap: ${rack.capacity})` : '');
+                rackSelect.add(option);
+            });
+        }
     }
 
     function submitCreateBox() {
@@ -294,7 +490,18 @@
     }
 
     function submitCreateCarton() {
-        let items = [];
+        let sets = [];
+        $('#cartonSetsContainer .set-pack-qty').each(function() {
+            let val = $(this).val();
+            if(val > 0) {
+                 sets.push({
+                     set_id: $(this).data('set-id'),
+                     quantity: val
+                 });
+            }
+        });
+        
+        let items = []; 
         $('#cartonItemsTable .item-pack-qty').each(function() {
             let val = $(this).val();
             if(val > 0) {
@@ -311,8 +518,8 @@
             boxIds.push($(this).val());
         });
 
-        if(items.length === 0 && boxIds.length === 0) {
-             alert("Select at least one box or item");
+        if(items.length === 0 && boxIds.length === 0 && sets.length === 0) {
+             alert("Select at least one set, box, or item to pack.");
              return;
         }
 
@@ -321,6 +528,7 @@
             slip_id: SLIP_ID,
             order_id: ORDER_ID,
             carton_no: $('input[name="carton_no"]').val(),
+            sets: sets,
             items: items,
             box_ids: boxIds
         }, function(response) {
@@ -339,7 +547,22 @@
          alert("Not implemented fully yet");
     }
 
+    function switchPackTab(tab) {
+        if(tab === 'sets') {
+            $('#tab-content-sets').show();
+            $('#tab-content-loose').hide();
+            $('#btn-tab-sets').addClass('active btn-outline-primary').removeClass('btn-outline-secondary');
+            $('#btn-tab-loose').removeClass('active btn-outline-primary').addClass('btn-outline-secondary');
+        } else {
+            $('#tab-content-sets').hide();
+            $('#tab-content-loose').show();
+            $('#btn-tab-loose').addClass('active btn-outline-primary').removeClass('btn-outline-secondary');
+            $('#btn-tab-sets').removeClass('active btn-outline-primary').addClass('btn-outline-secondary');
+        }
+    }
 </script>
 @endpush
 @endsection
+
+
 

@@ -210,7 +210,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
         Route::prefix('/packing')->name('packing.')->group(function () {
 
             Route::get('/index',[AdminPackingController::class,'index'])->name('index');
-
+            Route::get('/process/{id}',[AdminPackingController::class,'process'])->name('process');
+            Route::post('/finalize',[AdminPackingController::class,'finalize'])->name('finalize');
+            Route::post('/box/save',[AdminPackingController::class,'saveBox'])->name('saveBox');
+            Route::post('/carton/save',[AdminPackingController::class,'saveCarton'])->name('saveCarton');
+            Route::get('/order-details/{id}',[AdminPackingController::class,'getOrderDetailsJson'])->name('orderDeps');
         });
 
         Route::prefix('/warehouse')->name('warehouse.')->group(function () {
@@ -564,6 +568,20 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/delete',[AdminCustomerController::class,'delete'])->name('delete');
         }); 
 
+        Route::prefix('master/storerooms')->name('master.storeroom.')->group(function () {
+            Route::get('/index', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'index'])->name('index');
+            Route::get('/indexList', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'indexList'])->name('indexList');
+            Route::post('/store', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'store'])->name('store');
+            Route::get('/edit/{id}', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'edit'])->name('edit'); // Changed to get with Param
+            Route::post('/update', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'update'])->name('update');
+            Route::get('/delete/{id}', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'delete'])->name('delete');
+            
+            // Rack AJAX
+            Route::post('/rack/store', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'storeRack'])->name('rack.store');
+             Route::post('/rack/update', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'updateRack'])->name('rack.update');
+            Route::get('/rack/delete/{id}', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'deleteRack'])->name('rack.delete');
+        }); 
+
         Route::get('edit-profile',[AdminUserController::class,'profileEdit'])->name('user.profileEdit');
         Route::post('profile-update',[AdminUserController::class,'profileUpdate'])->name('user.profileUpdate');
         Route::prefix('master/settings')->name('settings.')->group(function () {
@@ -640,12 +658,13 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 });
 
 // Packing Module Routes
-Route::prefix('/packing')->name('packing.')->group(function () {
+Route::prefix('/packing')->name('admin.packing.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Admin\PackingController::class, 'index'])->name('index');
     Route::get('/process/{slip_id}', [\App\Http\Controllers\Admin\PackingController::class, 'process'])->name('process');
     Route::post('/save-carton', [\App\Http\Controllers\Admin\PackingController::class, 'saveCarton'])->name('saveCarton');
     Route::post('/save-box', [\App\Http\Controllers\Admin\PackingController::class, 'saveBox'])->name('saveBox');
     Route::post('/finalize', [\App\Http\Controllers\Admin\PackingController::class, 'finalize'])->name('finalize');
+    Route::post('/create-set', [\App\Http\Controllers\Admin\PackingController::class, 'createSet'])->name('createSet');
 });
 
 Route::get('/debug-stages', function() {

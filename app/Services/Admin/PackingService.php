@@ -70,12 +70,14 @@ class PackingService
             $carton = PackingCarton::create([
                 'packing_main_id' => $main->id,
                 'carton_no' => $data['carton_no'],
+                'rack_id' => $data['rack_id'] ?? null, // Save Rack ID
                 'note' => $data['note'] ?? null,
+                'status' => 1,
                 // Dimensions etc
             ]);
 
-            // If direct items provided
-            if (isset($data['items']) && is_array($data['items'])) {
+            // If direct items provided (Legacy/Manual)
+            if (isset($data['items']) && is_array($data['items']) && count($data['items']) > 0) {
                 foreach ($data['items'] as $item) {
                      PackingItem::create([
                         'packing_main_id' => $main->id,
@@ -85,16 +87,46 @@ class PackingService
                     ]);
                 }
             }
+
+            // If SETS are provided (New)
+            if (isset($data['sets']) && is_array($data['sets'])) {
+                foreach ($data['sets'] as $set_req) {
+                    $set = \App\Models\OrderProductSet::with('product_set_details')->find($set_req['set_id']);
+                    if($set) {
+                        $pack_qty = $set_req['quantity'];
+                        $set_total_qty = $set->set_quantity > 0 ? $set->set_quantity : 1;
+                        
+                        foreach($set->product_set_details as $detail) {
+                            // Calculate qty per set unit
+                            // If total required is 100 for 100 sets, then 1 per set.
+                            // If total required is 200 for 100 sets, then 2 per set.
+                            $ratio = $detail->total_quantity / $set_total_qty; 
+                            
+                            $qty_to_pack = ceil($ratio * $pack_qty); // Use ceil to be safe or round? 
+                            // Integer math might key here.
+                            
+                            if($qty_to_pack > 0) {
+                                PackingItem::create([
+                                    'packing_main_id' => $main->id,
+                                    'packing_carton_id' => $carton->id,
+                                    'size_id' => $detail->id, // Wait, size_id refers to ORDER_PRODUCT_SET_DETAIL_ID? OR Size Master ID?
+                                    // In current PackingItem, what is 'size_id'?
+                                    // In Controller saveBox, we used $item['size_id']. Frontend passed `item.id`.
+                                    // item.id comes from `OrderProductSetDetail->id`.
+                                    // So `size_id` in PackingItem actually stores `order_product_set_detail_id`.
+                                    // Checking PackingItem model to be sure...
+                                    // Assuming it stores Detail ID for traceability.
+                                    'quantity' => $qty_to_pack
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
             
             // If existing boxes are being put into this carton
             if (isset($data['box_ids']) && is_array($data['box_ids'])) {
                 PackingBox::whereIn('id', $data['box_ids'])->update(['packing_carton_id' => $carton->id]);
-                // Also update items? No, items link to box. But they also have carton_id? 
-                // schema says item has `packing_carton_id`. 
-                // Ideally, if item is in box, and box is in carton, item should link to both for query ease?
-                // Or just link to box, and box links to carton.
-                // My migration creates both FKs. I'll update them for consistency if I want, or leave null.
-                // Let's update them so queries on "Items in Carton X" are easier.
                 PackingItem::whereIn('packing_box_id', $data['box_ids'])->update(['packing_carton_id' => $carton->id]);
             }
 
@@ -142,5 +174,61 @@ class PackingService
         // Simple status update for now
         PackingMain::where('id', $main_id)->update(['status' => 1]);
         return ['status' => 'success'];
+    }
+
+    public function getPackedQuantitiesForOrder($order_id)
+    {
+        return PackingItem::join('packing_mains', 'packing_items.packing_main_id', '=', 'packing_mains.id')
+            ->where('packing_mains.order_main_id', $order_id)
+            ->select('packing_items.size_id', DB::raw('SUM(packing_items.quantity) as total_packed'))
+            ->groupBy('packing_items.size_id')
+            ->pluck('total_packed', 'packing_items.size_id')
+            ->toArray();
+    }
+    public function createAdHocSet($data)
+    {
+        DB::beginTransaction();
+        try {
+            // Check if Order exists
+            $order = OrderMain::findOrFail($data['order_id']);
+
+            // Create OrderProductSet
+            // We need to fill required fields. Some might be null or dummy for ad-hoc sets.
+            // Assuming 0 for price related fields if not critical for packing.
+            $set = \App\Models\OrderProductSet::create([
+                'order_main_id' => $order->id,
+                'order_id' => $order->id, // Legacy field?
+                'set_quantity' => $data['quantity'], // Total Sets requested
+                'remark' => 'Created via Ad-Hoc Packing',
+                'status' => 1,
+                // Required fields based on Model fillable (assuming nullable in DB or defaults)
+                // If strict mode is on, we might fail if we don't provide everything.
+                // Assuming basic fields are enough for now based on context.
+                'company_id' => $order->company_id ?? 1,
+            ]);
+
+            // Create Details
+            if (isset($data['items']) && is_array($data['items'])) {
+                foreach ($data['items'] as $item) {
+                    $qty_per_set = $item['qty_per_set'];
+                    $total_qty = $data['quantity'] * $qty_per_set;
+                    
+                    \App\Models\OrderProductSetDetail::create([
+                        'order_products_set_id' => $set->id,
+                        'size' => $item['size_name'], // String name (e.g., "22")
+                        'order_product_id' => $item['product_id'] ?? null, // Link to original product if known
+                        'total_quantity' => $total_qty,
+                        'remaining_quantity' => $total_qty, // Initially all remaining
+                        'color_id' => $item['color_id'] ?? null
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return ['status' => 'success', 'set' => $set];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
     }
 }

@@ -416,6 +416,16 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             <p>Production</p>
                         </a>
                     </li> --}}
+                    
+                    <li class="nav-item">
+                        <a href="{{ route('admin.packing.index') }}"
+                            class="{{ str_contains($page_url, 'admin/packing') ? 'nav-link active' : 'nav-link' }} border_class"
+                            style="position:static;">
+                            <i class="fas fa-box-open"></i>
+                            <p>PACKING MODULE</p>
+                        </a>
+                    </li>
+
                     <li class="{{ str_contains($page_url, 'admin/order-stages') ? 'nav-item menu-open' : 'nav-item' }}" style="display:none;">
                         <a href="#"
                             class="{{ str_contains($page_url, 'admin/order-stages') ? 'nav-link active' : 'nav-link' }}">
@@ -685,6 +695,12 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <p>Customers</p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.master.storeroom.index') }}" class="nav-link {{ str_contains($page_url, 'master/storerooms') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Storeroom Master</p>
+                            </a>
+                        </li>
                             <li class="nav-item">
                                 <a href="{{ route('admin.master.fabric_warehouse.index') }}"
                                     class="{{ request()->path() === 'admin/master/fabric-warehouse/index' ? 'nav-link active' : 'nav-link' }}">

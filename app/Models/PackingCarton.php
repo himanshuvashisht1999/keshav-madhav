@@ -13,23 +13,23 @@ class PackingCarton extends Model
     protected $table= 'packing_cartons';
     protected $fillable = [
         'id',
-        'sno',
-        'company_id',
-        'sub_company_id',
-        'project_id',
-        'sku',
-        'carton_packing_session_id',
-        'customer_id',
-        'main_order_id',
-        'carton_details_id',
-        'total_quantity',
-        'status',
-        'created_at',
-        'updated_at'
+        'packing_main_id',
+        'carton_no',
+        'rack_id',
+        'barcode',
+        'weight',
+        'dimensions',
+        'note'
     ];
 
-    public function cartonsDetails(){
-        return $this->hasMany('App\Models\PackingCartonsDetails','cartons_id','id');
+    public function main()
+    {
+        return $this->belongsTo(PackingMain::class, 'packing_main_id');
+    }
+    
+    public function rack()
+    {
+        return $this->belongsTo(Rack::class, 'rack_id');
     }
 
     public function items()
@@ -37,6 +37,10 @@ class PackingCarton extends Model
         return $this->hasMany(PackingItem::class, 'packing_carton_id');
     }
 
+    public function boxes()
+    {
+        return $this->hasMany(PackingBox::class, 'packing_carton_id');
+    }
     public function orderMain()
     {
         return $this->belongsTo(OrderMain::class, 'main_order_id', 'id' );
