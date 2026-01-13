@@ -32,8 +32,8 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Cutting Master Name</label>
-                                    <input type="text" name="cutting_master_name" class="form-control" placeholder="Enter cutting master name" value="{{old('cutting_master_name')}}">
+                                    <label for="exampleInputEmail1">Warehouse Name</label>
+                                    <input type="text" name="cutting_master_name" class="form-control" placeholder="Enter warehouse name" value="{{old('cutting_master_name')}}">
                                     @if ($errors->has('cutting_master_name'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('cutting_master_name') }}

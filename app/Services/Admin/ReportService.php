@@ -86,6 +86,23 @@ class ReportService {
             $total_pcs_in_order = OrderProductSet::where('order_main_id', $order->id)
                 ->sum('total_quantity');
 
+            if ($lotNos->isEmpty()) {
+                 $result[] = [
+                    'order_date'      => $order->created_at,
+                    'order_id'        => $order->id, // Added ID
+                    'customer'        => $order->customer->name ?? '',
+                    'order_no'        => $order->sku,
+                    'lot_no'          => '-',
+                    'total_pcs_in_order' => $total_pcs_in_order,
+                    'pieces_in_lot'   => 0,
+                    'stage_name'      => 'Pending',
+                    'isDelayed'       => 'No',
+                    'allowed_till_datetime' => null,
+                    'current_datetime' => now()->toDateTimeString(),
+                ];
+                continue;
+            }
+
             foreach ($lotNos as $lot_no) {
 
                 //$parts_data = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->get();
@@ -116,6 +133,7 @@ class ReportService {
 
                 $result[] = [
                     'order_date'      => $order->created_at,
+                    'order_id'        => $order->id, // Added ID
                     'customer'        => $order->customer->name ?? '',
                     'order_no'        => $order->sku,
                     'lot_no'          => $lot_no,
@@ -130,6 +148,115 @@ class ReportService {
         }
 
         return collect($result)->groupBy('order_no');
+    }
+
+    public function getSalesOrderDetails($id)
+    {
+        // 1. Fetch Order and Product Sets
+        $order = OrderMain::where('id', $id) // Switch to ID
+            ->with([
+                'customer',
+                'OrderProductSets.colors',
+                'OrderProductSets.sizeMeasurement'
+            ])
+            ->firstOrFail();
+
+        // 2. Process hierarchy
+        // Structure: Order -> Sets -> Lots -> Transactions
+        
+        $order->OrderProductSets->each(function ($set) {
+            
+            // Collect Unique Lots for this set
+            // Lots can be found via product_set_details -> fabric_roll_assigning
+            // Or if design level, maybe we need to fetch lots by design_id?
+            // Let's stick to what we know: fabric_roll_assigning links to order_products_set_id
+            
+            $lots = \App\Models\FabricRollAssigning::where('order_products_set_id', $set->id)
+                ->with(['stageMasterUnit.masterStage'])
+                ->get();
+
+            $allStages = \App\Models\MasterProductStage::where('status', 1)->get()
+                ->sortBy(function ($stage) {
+                    $order = [3, 2, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+                    $pos = array_search($stage->id, $order);
+                    return $pos === false ? 999 : $pos;
+                });
+
+            $lots->each(function ($lot) use ($allStages, $set) {
+                // Fetch transaction history
+                $transactions = \App\Models\OrderStageTransaction::where('lot_no', $lot->lot_no)->get();
+                
+                // Calculate Initial Pieces from Roll Assigning (Input to Cutting - Stage 3)
+                // We need to calculate pieces from meter or if it's stored.
+                // Looking at earlier code index: $pieces_in_lot += $no_of_pcs * $single_part->set_quantity;
+                // But FabricRollAssigning doesn't have set_quantity. It has meter.
+                // Actually, the lot is created IN Cutting. 
+                // Let's assume the "Total Pcs" for the lot is the sum of quantities of the first transaction? 
+                // OR we can sum up everything that ENTERED a stage.
+                
+                $summary = [];
+                
+                foreach($allStages as $stage) {
+                    
+                    // IN: Transactions arriving at this stage
+                    // If multiple sources send to this stage (e.g. Stitching receives from Cutting AND Printing),
+                    // they are likely parallel parts of the same lot. We should take the MAX flow, not SUM.
+                    // Group by 'from_stage_id' and sum, then take max.
+                    
+                    $inFlows = $transactions->where('to_stage_id', $stage->id)
+                        ->groupBy('from_stage_id')
+                        ->map(function ($rows) {
+                            return $rows->sum('quantity');
+                        });
+                    
+                    $in = $inFlows->isEmpty() ? 0 : $inFlows->max();
+                    
+                    // OUT: Transactions leaving this stage
+                    // If sending to multiple targets (e.g. Cutting sends to Stitching AND Printing),
+                    // we should take the MAX flow to determine how much "Lot Quantity" has moved on.
+                    
+                    $outFlows = $transactions->where('from_stage_id', $stage->id)
+                        ->groupBy('to_stage_id')
+                        ->map(function ($rows) {
+                            return $rows->sum('quantity');
+                        });
+                        
+                    $out = $outFlows->isEmpty() ? 0 : $outFlows->max();
+                    
+                    // Special Case: Cutting (Stage 3) - Initial In
+                    if ($stage->id == 3 && $in == 0) {
+                         $parts = \App\Models\ProductionSlipDigitizationParts::where('lot_no', $lot->lot_no)->get();
+                         $initial_pcs = 0;
+                         foreach($parts as $part){
+                             $pcs_per_set = \App\Models\MasterSizeMeasurement::where('id', $part->set_size)->value('no_of_pcs') ?? 0;
+                             $initial_pcs += ($part->set_quantity * $pcs_per_set);
+                         }
+                         // If we found initial pcs, that's our IN.
+                         if($initial_pcs > 0) {
+                             $in = $initial_pcs;
+                         }
+                    }
+
+
+                    $summary[] = [
+                        'stage_name' => $stage->name,
+                        'in' => $in,
+                        'out' => $out,
+                        'balance' => $in - $out
+                    ];
+
+                }
+                
+                $lot->stage_summary = $summary;
+                
+                // Keep history for detailed view if needed
+                $lot->history = $transactions->load(['from_stage', 'to_stage']);
+            });
+
+            $set->lots = $lots;
+        });
+
+        return $order;
     }
 
 

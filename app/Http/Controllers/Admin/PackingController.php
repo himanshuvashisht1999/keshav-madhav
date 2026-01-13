@@ -2,58 +2,47 @@
 namespace App\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Services\Admin\PackingService as Service;
-use App\Services\Admin\ProductOrderService;
-use Illuminate\Support\Facades\Crypt;
-use Auth;
+use App\Services\Admin\PackingService;
 
 class PackingController extends Controller { 
     protected $service;
-    public function __construct(Service $service, ProductOrderService $ProductOrderService) {
+    
+    public function __construct(PackingService $service) {
         $this->service = $service;
-        $this->productOrderService = $ProductOrderService;
-    }
-    public function createDispatch(Request $request){
-        $response['customers'] = $this->productOrderService->customers();
-        // $response['order_main_id'] = $request->id ?? 0;
-        // // $response['order_main'] = $this->productOrderService->orderMainDetails($request);
-        return view('admin.carton_packing.create-packing', $response);
-    } 
-    public function store(Request $request){
-        $data = $this->service->store($request);
-        if($data['status_code'] == 1){
-            return redirect()->route('admin.carton_packing.view',['id' => $data['id']])->withSuccess($data['message']);
-        }else{
-            return redirect()->back()->withError($data['message']);
-        }
-        // return view('admin.carton_packing.create-packing');
-    } 
-    public function index(Request $request){
-        $response['customers'] = $this->productOrderService->customers();
-        $response['orders'] = $this->service->getOrders();
-        // dd($response['orders']);
-        return view('admin.carton_packing.index',$response);
-    }
-    public function indexList(Request $request){
-        return $this->service->indexList($request);
     }
 
-    public function view(Request $request){
-        $response['data'] = $this->service->view($request);
-        return view('admin.carton_packing.view',$response);
+    public function index(Request $request){
+        $slips = $this->service->getPendingSlips();
+        return view('admin.packing.index', compact('slips'));
     }
-    public function getCustomerOrders(Request $request){
-        $response['data'] = $this->service->getCustomerOrders($request);
-        return response()->json($response);
+
+    public function process($slip_id){
+        $slip = $this->service->getSlipDetails($slip_id); 
+        // Need to load order details to show items to pack
+        // Slip has 'sku'.
+        $order = $this->service->getOrderDetails($slip->sku);
+        
+        // We also need to fetch any existing PackingMain if we are returning to a draft
+        $packing = $this->service->getPackingMainWithStructure($slip_id);
+        
+        return view('admin.packing.process', compact('slip', 'order', 'packing'));
     }
-    public function getCustomersBybarcode(Request $request){
-        $response['data'] = $this->service->getCustomersBybarcode($request);
-        return response()->json($response);
+    // API/AJAX Methods
+    public function saveCarton(Request $request) {
+        $data = $request->all();
+        // Validation logic here
+        $result = $this->service->saveCarton($data);
+        return response()->json($result);
     }
-    public function getOrdersDetails(Request $request){
-        $response['data'] = $this->service->getOrdersDetails($request);
-        return response()->json($response);
+
+    public function saveBox(Request $request) {
+        $data = $request->all();
+        $result = $this->service->saveBox($data);
+        return response()->json($result);
     }
-    
- 
+
+    public function finalize(Request $request) {
+        $result = $this->service->finalizePacking($request->packing_main_id);
+        return response()->json($result);
+    }
 }

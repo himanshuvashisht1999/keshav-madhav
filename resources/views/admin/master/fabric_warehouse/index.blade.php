@@ -42,9 +42,9 @@
                         <td>
                             <input type="text" class="form-control" name="cutting_master_name" id="cutting_master_name" autocomplete="off">
                         </td>
-                        <td>
+                        <!-- <td>
                             <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
-                        </td>
+                        </td> -->
                         <td>
                             <input type="text" class="form-control" name="address" id="address" autocomplete="off">
                         </td>
@@ -55,8 +55,8 @@
                     </tr>
                   <tr>
                     <th>ID</th>
-                    <th>Cutting Master</th>
-                    <th>SKU</th>
+                    <th>Warehouse</th>
+                    <!-- <th>SKU</th> -->
                     <th>Address</th>
                     <th>Action</th>
                   </tr>
@@ -94,7 +94,6 @@
                 data: function (d) {
                     d.id = $('#id').val();
                     d.cutting_master_name = $('#cutting_master_name').val();
-                    d.sku = $('#sku').val();
                     d.address = $('#address').val();
                   
                 },
@@ -103,7 +102,6 @@
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'cutting_master_name', name: 'cutting_master_name'},
-                {data: 'sku', name: 'sku'},
                 {data: 'address', name: 'address'},
                 {data: 'action', name: 'action', searchable: false}
             ],
@@ -133,10 +131,7 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#sku').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+        
         $('#address').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();

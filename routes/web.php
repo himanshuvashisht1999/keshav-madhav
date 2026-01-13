@@ -250,8 +250,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/store-hand-slip',[AdminOrderDigitalizationController::class,'storeHandSlip'])->name('store-hand-slip');
             Route::post('/get-lot-details-for-hand-slip',[AdminOrderDigitalizationController::class,'getLotDetailsForHandSlip'])->name('get-lot-details-for-hand-slip');
             Route::get('/create-rolls-assign',[AdminOrderDigitalizationController::class,'createRollsAssign'])->name('create-rolls-assign');
-            Route::get('/create-time-allocation',[AdminOrderDigitalizationController::class,'createTimeAllocation'])->name('create-time-allocation');
-            Route::post('/store-time-allocation',[AdminOrderDigitalizationController::class,'storeTimeAllocation'])->name('store-time-allocation');
+
 
             Route::get('/getRollsData',[AdminOrderDigitalizationController::class,'getRollsData'])->name('getRollsData');
             Route::post('/skip',[AdminOrderDigitalizationController::class,'skip'])->name('skip');
@@ -270,6 +269,12 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/store-stitching', [AdminOrderDigitalizationController::class, 'storeStitching'])->name('store-stitching');
             Route::post('/store-printing', [AdminOrderDigitalizationController::class, 'storePrinting'])->name('store-printing');
             Route::post('/get-lot-details-for-display', [AdminOrderDigitalizationController::class, 'getLotDetailsForDisplay'])->name('get-lot-details-for-display');
+        });
+
+        Route::prefix('/time-allocation')->name('time_allocation.')->group(function () {
+             Route::get('/create',[\App\Http\Controllers\Admin\TimeAllocationController::class,'create'])->name('create');
+             Route::post('/store',[\App\Http\Controllers\Admin\TimeAllocationController::class,'store'])->name('store');
+             Route::post('/get-lot-details',[\App\Http\Controllers\Admin\TimeAllocationController::class,'getLotDetails'])->name('get-lot-details');
         });
 
         Route::prefix('/packing-carton')->name('packing-carton.')->group(function () {
@@ -568,6 +573,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
         Route::prefix('/report')->name('report.')->group(function () {
             Route::get('/sales-order',[AdminReportController::class,'salesOrder'])->name('sales-order');
+            Route::get('/sales-order/detail/{id}', [AdminReportController::class, 'salesOrderDetail'])->name('sales-order.detail');
             Route::get('/sales-order/export', [AdminReportController::class, 'salesOrderExport'])->name('sales-order.export');
             Route::get('/stock',[AdminReportController::class,'stock'])->name('stock');
             Route::get('/stock/roll-details', [AdminReportController::class, 'fabricRollDetails'])->name('stock.roll.details');
@@ -631,6 +637,22 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/stages-excel',[AdminReportController::class,'generateStagesReportExcel'])->name('stagesExcel');
         });
     });
+});
+
+// Packing Module Routes
+Route::prefix('/packing')->name('packing.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Admin\PackingController::class, 'index'])->name('index');
+    Route::get('/process/{slip_id}', [\App\Http\Controllers\Admin\PackingController::class, 'process'])->name('process');
+    Route::post('/save-carton', [\App\Http\Controllers\Admin\PackingController::class, 'saveCarton'])->name('saveCarton');
+    Route::post('/save-box', [\App\Http\Controllers\Admin\PackingController::class, 'saveBox'])->name('saveBox');
+    Route::post('/finalize', [\App\Http\Controllers\Admin\PackingController::class, 'finalize'])->name('finalize');
+});
+
+Route::get('/debug-stages', function() {
+    return [
+        'lots' => \App\Models\FabricRollAssigning::where('project_id', 1)->orWhere('id', '>', 0)->take(10)->get(), // just get recent lots
+        'transactions' => \App\Models\OrderStageTransaction::latest()->take(5)->get()
+    ];
 });
 
 

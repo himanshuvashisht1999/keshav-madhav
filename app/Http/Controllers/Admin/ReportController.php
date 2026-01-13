@@ -24,6 +24,12 @@ class ReportController extends Controller
         $response['data'] = $this->service->salesOrder($request);
         return view('admin.report.sales_order',$response);
     }
+
+    public function salesOrderDetail($id)
+    {
+        $response['order'] = $this->service->getSalesOrderDetails($id);
+        return view('admin.report.sales_order_detail', $response);
+    }
     public function salesOrderExport(Request $request)
     {
         // SAME data as screen

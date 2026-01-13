@@ -58,10 +58,18 @@ class OrderDigitalizationService {
             ////// corporate order photo upload
             if ($request->lot_no_list){
                 foreach ($request->lot_no_list as $key => $lot_no) {
+                    
+                    // VALIDATION CHECK: Check if lot number already exists
+                    $existingLot = FabricRollAssigning::where('lot_no', $lot_no)->exists();
+                    if ($existingLot) {
+                        throw new \Exception("Lot No {$lot_no} already exists. Please use a unique Lot No.");
+                    }
+
                     $save_data_main = new FabricRollAssigning;
                     $save_data_main->sku = '';
                     $save_data_main->lot_no = $lot_no;
                     $save_data_main->production_slip_digitization_id = $request->production_slip_digitization_id;
+                    $save_data_main->order_products_set_id = $request->design_id;
                     $save_data_main->order_no = '';
                     $save_data_main->stage_master_unit_id = $slip->stage_master_unit_id; // Get from slip
                     $save_data_main->roll_no = $request->roll_no_list[$key];
@@ -1008,10 +1016,13 @@ class OrderDigitalizationService {
                     'status' => 2, // Sent to next stage
                     'to_stage_id' => $request->to_stage_id ?? 4 // Stitching stage
             ]);
+            $fab_roll_assigning = FabricRollAssigning::where('lot_no', $request->lot_no)
+                ->where('stage_master_unit_id', $slip->stage_master_unit_id)
+                ->first();
 
         // Create Transaction with Details (Cutting -> Stitching)
         // Stage 3 is Cutting. Stage 4 is Stitching.
-        $this->createTransactionWithDetails($request->lot_no, 3, $request->to_stage_id ?? 4, $slip->id);
+        $this->createTransactionWithDetails($request->lot_no, 3, $request->to_stage_id ?? 4, $slip->id,$fab_roll_assigning->order_products_set_id);
             
             DB::commit();
             return [
@@ -1050,10 +1061,13 @@ class OrderDigitalizationService {
                     'status' => 3, // Sent to printing
                     'to_stage_id' => $request->to_stage_id ?? 1 // Printing stage
             ]);
+            $fab_roll_assigning = FabricRollAssigning::where('lot_no', $request->lot_no)
+                ->where('stage_master_unit_id', $slip->stage_master_unit_id)
+                ->first();
 
         // Create Transaction with Details (Cutting -> Printing)
         // Stage 3 is Cutting. Stage 1 is Printing.
-        $this->createTransactionWithDetails($request->lot_no, 3, $request->to_stage_id ?? 1, $slip->id);
+        $this->createTransactionWithDetails($request->lot_no, 3, $request->to_stage_id ?? 1, $slip->id,$fab_roll_assigning->order_products_set_id);
             
             DB::commit();
             return [
@@ -1069,12 +1083,12 @@ class OrderDigitalizationService {
         }
     }
 
-    private function createTransactionWithDetails($lot_no, $from_stage_id, $to_stage_id, $slip_id = null)
+    private function createTransactionWithDetails($lot_no, $from_stage_id, $to_stage_id, $slip_id = null,$order_products_set_id)
     {
         // 1. Calculate Total Quantities per Size for the Lot
         // We get this from the OrderProductSet details which represent the Cutting Master output
-        $sets = \App\Models\OrderProductSet::where('lot_no', $lot_no)
-            ->with('orderProductSetDetails')
+        $sets = \App\Models\OrderProductSet::where('id', $order_products_set_id)
+            ->with('product_set_details')
             ->get();
 
         $sizeQuantities = [];
@@ -1082,7 +1096,7 @@ class OrderDigitalizationService {
         $orderProductIds = [];
 
         foreach ($sets as $set) {
-            foreach ($set->orderProductSetDetails as $detail) {
+            foreach ($set->product_set_details as $detail) {
                 // Determine size key (could be ID or Name, preserving what is in DB)
                 $sizeKey = $detail->size; 
                 
@@ -1122,6 +1136,18 @@ class OrderDigitalizationService {
         }
         
         return $transaction;
+    }
+
+    public function getStageUnits($warehouse_id, $master_stage_id)
+    {
+        return \App\Models\StageMasterUnit::with('masterStage')
+            ->join('master_product_stages as master_stages', 'master_stages.id', '=', 'stage_master_units.master_stage_id')
+            ->where('stage_master_units.status', 1)
+            ->where('stage_master_units.master_fabric_warehouse_id', $warehouse_id)
+            ->where('stage_master_units.master_stage_id', $master_stage_id)
+            ->orderBy('stage_master_units.name', 'asc')
+            ->select('stage_master_units.*')
+            ->get();
     }
 
     public function getAvailableLotsForStage($stage_id)
