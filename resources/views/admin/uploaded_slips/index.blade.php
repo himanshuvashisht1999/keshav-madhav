@@ -113,7 +113,7 @@
                                                 if($from_stage_id == 3) {
                                                     $actionRoute = route('admin.order_digitalization.cutting-master', ['slip_id' => $slip->id]);
                                                 } elseif($from_stage_id == 11) {
-                                                    $actionRoute = route('admin.packing.index', ['slip_id' => $slip->id]);
+                                                    $actionRoute = route('admin.packing.process', [$slip->id]);
                                                 } else {
                                                     $actionRoute = route('admin.order_digitalization.create-slips-production', ['slip_id' => $slip->id]);
                                                 }

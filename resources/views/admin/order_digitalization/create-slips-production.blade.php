@@ -16,11 +16,11 @@
             <div class="row">
                 <div class="col-12 text-right">
                     @if(!empty($slip_data))
-                        <form action="{{ route('admin.order_digitalization.skip') }}" method="POST" class="d-inline">
+                        <!-- <form action="{{ route('admin.order_digitalization.skip') }}" method="POST" class="d-inline">
                             @csrf
                             <input type="hidden" name="production_slip_digitization_id" value="{{ $slip_data['id'] }}">
                             <button type="submit" class="btn btn-secondary mr-2">Skip</button>
-                        </form>
+                        </form> -->
 
                         <form action="{{ route('admin.order_digitalization.delete-slip') }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this slip?');">
                             @csrf

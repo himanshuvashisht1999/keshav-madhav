@@ -664,18 +664,19 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/stages-excel',[AdminReportController::class,'generateStagesReportExcel'])->name('stagesExcel');
         });
     });
+    // Packing Module Routes
+    Route::prefix('/packing')->name('packing.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PackingController::class, 'index'])->name('index');
+        Route::get('/process/{slip_id}', [\App\Http\Controllers\Admin\PackingController::class, 'process'])->name('process');
+        Route::post('/save-carton', [\App\Http\Controllers\Admin\PackingController::class, 'saveCarton'])->name('saveCarton');
+        Route::post('/save-box', [\App\Http\Controllers\Admin\PackingController::class, 'saveBox'])->name('saveBox');
+        Route::post('/finalize', [\App\Http\Controllers\Admin\PackingController::class, 'finalize'])->name('finalize');
+        Route::post('/create-set', [\App\Http\Controllers\Admin\PackingController::class, 'createSet'])->name('createSet');
+        Route::post('/delete-carton', [\App\Http\Controllers\Admin\PackingController::class, 'deleteCarton'])->name('deleteCarton');
+    });
 });
 
-// Packing Module Routes
-Route::prefix('/packing')->name('admin.packing.')->group(function () {
-    Route::get('/', [\App\Http\Controllers\Admin\PackingController::class, 'index'])->name('index');
-    Route::get('/process/{slip_id}', [\App\Http\Controllers\Admin\PackingController::class, 'process'])->name('process');
-    Route::post('/save-carton', [\App\Http\Controllers\Admin\PackingController::class, 'saveCarton'])->name('saveCarton');
-    Route::post('/save-box', [\App\Http\Controllers\Admin\PackingController::class, 'saveBox'])->name('saveBox');
-    Route::post('/finalize', [\App\Http\Controllers\Admin\PackingController::class, 'finalize'])->name('finalize');
-    Route::post('/create-set', [\App\Http\Controllers\Admin\PackingController::class, 'createSet'])->name('createSet');
-    Route::post('/delete-carton', [\App\Http\Controllers\Admin\PackingController::class, 'deleteCarton'])->name('deleteCarton');
-});
+
 
 Route::prefix('/admin/uploaded-slips')->name('admin.uploaded-slips.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'index'])->name('index');

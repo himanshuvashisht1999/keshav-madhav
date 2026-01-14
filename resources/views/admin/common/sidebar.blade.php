@@ -272,13 +272,21 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             <p>SALES ORDER</p>
                         </a>
                     </li>
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a href="{{ route('admin.order_digitalization.cutting-master') }}"
                             class="{{ str_contains($page_url, 'admin/order_digitalization/cutting-master') ? 'nav-link active' : 'nav-link' }} border_class"
                             style="position:static;">
                             <i class="fas fa-file-signature"></i>
                             
                             <p>Cutting Master Slip</p>
+                        </a>
+                    </li> -->
+                    <li class="nav-item">
+                        <a href="{{ route('admin.uploaded-slips.index') }}"
+                            class="{{ str_contains($page_url, 'admin/uploaded-slips') ||  str_contains($page_url, 'admin/packing/process') ||  str_contains($page_url, 'admin/order_digitalization/create-slips-production') ||  str_contains($page_url, 'admin/order_digitalization/cutting-master') ? 'nav-link active' : 'nav-link' }} border_class"
+                            style="position:static;">
+                            <i class="fas fa-file-upload"></i>
+                            <p>UPLOADED SLIPS</p>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -289,7 +297,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             <p>TIME ALLOCATION</p>
                         </a>
                     </li>
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a href="{{ route('admin.order_digitalization.create-slips-production') }}"
                             class="{{ str_contains($page_url, 'admin/order_digitalization/create-slips-production') ? 'nav-link active' : 'nav-link' }} border_class"
                             style="position:static;">
@@ -297,7 +305,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             
                             <p>HAND SLIP DIGITALIZATION</p>
                         </a>
-                    </li>
+                    </li> -->
                     
                     <!-- <li class="nav-item">
                         <a href="{{ route('admin.packing-carton.index') }}"
@@ -307,22 +315,15 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             <p>PACKING IN CARTON</p>
                         </a>
                     </li> -->
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a href="{{ route('admin.packing.index') }}"
                             class="{{ str_contains($page_url, 'admin/packing') ? 'nav-link active' : 'nav-link' }} border_class"
                             style="position:static;">
                             <i class="fas fa-box-open"></i>
                             <p>PACKING MODULE</p>
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.uploaded-slips.index') }}"
-                            class="{{ str_contains($page_url, 'admin/uploaded-slips') ? 'nav-link active' : 'nav-link' }} border_class"
-                            style="position:static;">
-                            <i class="fas fa-file-upload"></i>
-                            <p>UPLOADED SLIPS</p>
-                        </a>
-                    </li>
+                    </li> -->
+                    
                     <li class="nav-item">
                         <a href="{{ route('admin.order-dispatch.index') }}"
                             class="{{ str_contains($page_url, 'admin/order-dispatch') ? 'nav-link active' : 'nav-link' }} border_class"

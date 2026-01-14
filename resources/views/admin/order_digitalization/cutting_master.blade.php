@@ -94,17 +94,17 @@
                 </button>
 
                 @if(request('is_skip') == 1)
-                <a href="{{ route('admin.order_digitalization.cutting-master') }}"
+                <!-- <a href="{{ route('admin.order_digitalization.cutting-master') }}"
                 class="btn btn-secondary">
                     View Normal Slips
-                </a>
+                </a> -->
 
                 
                 @else
-                <a href="{{ route('admin.order_digitalization.cutting-master', ['is_skip' => 1]) }}"
+                <!-- <a href="{{ route('admin.order_digitalization.cutting-master', ['is_skip' => 1]) }}"
                 class="btn btn-secondary">
                     View Skipped Slips
-                </a>
+                </a> -->
                 @endif
 
                     

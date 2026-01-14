@@ -393,17 +393,26 @@ class OrderDigitalizationService {
         return $data;
     }
 
-    public function getSlipDigitalization()
+    public function getSlipDigitalization(Request $request)
     {
         // defaults status 0 data get for Digitization
-
-        $results = ProductionSlipDigitization::with([
+        if($request->slip_id){
+            $results = ProductionSlipDigitization::with([
             'getUnitMaster.masterFabricWarehouse'
             ])
             ->where('status', 0)
             ->whereNot('from_stage_id', 3)
             ->orderBy('id', 'asc')
             ->first();
+        }else{
+            $results = ProductionSlipDigitization::with([
+            'getUnitMaster.masterFabricWarehouse'
+            ])
+            ->where('status', 0)
+            ->whereNot('from_stage_id', 3)
+            ->orderBy('id', 'asc')
+            ->first();
+        }
             
         $data = [];
         if ($results){
@@ -637,23 +646,33 @@ class OrderDigitalizationService {
 
     public function cutting_slip(Request $request)
     {
-        if($request->is_skip == 1){
+        if($request->slip_id){
             $results = ProductionSlipDigitization::with([
                 'getUnitMaster.masterFabricWarehouse'
                 ])
-                ->where('status', 2)
-                ->where('from_stage_id', 3)
-                ->orderBy('id', 'asc')
-                ->first();
+                ->where('id', $request->slip_id)->first();
         }else{
-            $results = ProductionSlipDigitization::with([
-                'getUnitMaster.masterFabricWarehouse'
-                ])
-                ->where('status', 0)
-                ->where('from_stage_id', 3)
-                ->orderBy('id', 'asc')
-                ->first();
+
+            if($request->is_skip == 1){
+                $results = ProductionSlipDigitization::with([
+                    'getUnitMaster.masterFabricWarehouse'
+                    ])
+                    ->where('status', 2)
+                    ->where('from_stage_id', 3)
+                    ->orderBy('id', 'asc')
+                    ->first();
+            }else{
+                $results = ProductionSlipDigitization::with([
+                    'getUnitMaster.masterFabricWarehouse'
+                    ])
+                    ->where('status', 0)
+                    ->where('from_stage_id', 3)
+                    ->orderBy('id', 'asc')
+                    ->first();
+            }
         }
+
+        
         
             
         
