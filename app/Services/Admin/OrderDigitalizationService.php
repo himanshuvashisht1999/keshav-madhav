@@ -54,16 +54,24 @@ class OrderDigitalizationService {
             if (!$slip) {
                 throw new \Exception('Production slip not found');
             }
+            $lotNos = array_unique($request->lot_no_list ?? []);
+
+            foreach ($lotNos as $lotNo) {
+                $exists = FabricRollAssigning::where('lot_no', $lotNo)
+                    ->where('production_slip_digitization_id', '!=', $request->production_slip_digitization_id)
+                    ->exists();
+
+                if ($exists) {
+                    throw new \Exception("Lot No {$lotNo} already exists. Please use a unique Lot No.");
+                }
+            }
 
             ////// corporate order photo upload
             if ($request->lot_no_list){
                 foreach ($request->lot_no_list as $key => $lot_no) {
                     
                     // VALIDATION CHECK: Check if lot number already exists
-                    $existingLot = FabricRollAssigning::where('lot_no', $lot_no)->exists();
-                    if ($existingLot) {
-                        throw new \Exception("Lot No {$lot_no} already exists. Please use a unique Lot No.");
-                    }
+                    
 
                     $save_data_main = new FabricRollAssigning;
                     $save_data_main->sku = '';

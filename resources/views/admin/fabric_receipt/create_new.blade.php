@@ -161,10 +161,26 @@
                                 readonly>
                         </div>
 
-                        <div class="col-md-6 mt-2">
+                        <div class="col-md-3 mt-2">
                             <label for="total_roll">Total Roll</label>
                             <input type="number" name="total_roll" id="total_roll" class="form-control" placeholder="Enter total roll" value="1">
                         </div>
+                        <div class="col-md-3 mt-2">
+                            <label for="total_meter">Total Meter</label>
+                            <input type="number"
+                                name="total_meter"
+                                id="total_meter"
+                                class="form-control"
+                                placeholder="Enter total meter"
+                                min="0"
+                                step="0.01"
+                                required>
+
+                            <small class="text-danger d-none" id="total-meter-error">
+                                Total Meter must be equal to sum of selected fabric meters
+                            </small>
+                        </div>
+
                     </div>
 
                     <div class="flex-row mt-3">
@@ -276,6 +292,42 @@
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.3/dist/tesseract.min.js"></script>
 <script>
 $(document).ready(function() {
+
+    $(document).on('submit', '#fabric-receipt-form', function (e) {
+
+        let totalMeter = parseFloat($('#total_meter').val()) || 0;
+        let fabricMeterSum = 0;
+
+        $('.meter').each(function () {
+            let val = parseFloat($(this).val());
+            if (!isNaN(val)) {
+                fabricMeterSum += val;
+            }
+        });
+
+        // 2 decimal safe comparison
+        totalMeter = Number(totalMeter.toFixed(2));
+        fabricMeterSum = Number(fabricMeterSum.toFixed(2));
+
+        if (totalMeter !== fabricMeterSum) {
+            e.preventDefault();
+
+            $('#total-meter-error').removeClass('d-none');
+            $('#total_meter').addClass('is-invalid');
+
+            alert(
+                "Meter mismatch!\n\n" +
+                "Total Meter: " + totalMeter + "\n" +
+                "Selected Fabric Meter Sum: " + fabricMeterSum
+            );
+
+            return false;
+        } else {
+            $('#total-meter-error').addClass('d-none');
+            $('#total_meter').removeClass('is-invalid');
+        }
+    });
+
     // ---------------------------
     // Initial fabrics list (server-provided for initially selected vendor)
     // ---------------------------
