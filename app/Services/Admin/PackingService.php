@@ -161,6 +161,10 @@ class PackingService
                 }
             }
 
+            $update = ProductionSlipDigitization::where('id',$data['slip_id'])->update([
+                'status' => 1
+            ]);
+
             DB::commit();
             return ['status' => 'success', 'box' => $box];
         } catch (\Exception $e) {

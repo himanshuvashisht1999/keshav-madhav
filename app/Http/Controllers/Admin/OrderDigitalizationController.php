@@ -24,14 +24,15 @@ class OrderDigitalizationController extends Controller {
         return $this->service->indexList($request);
     }
  
-    public function createSlipsProduction(){
+    public function createSlipsProduction(Request $request){
+        
         $response['products'] = $this->productOrderService->products();
         // // dd( $response['products']);
         $response['product_size'] = $this->service->product_sizes();
         // dd($response['product_size']);
         $response['colours'] = $this->productOrderService->getColours();
         $response['customers'] = $this->productOrderService->customers();
-        $response['slip_data'] = $this->service->getSlipDigitalization();
+        $response['slip_data'] = $this->service->getSlipDigitalization($request);
         $response['skip_slip_data'] = $this->service->getSkipSlips();
         // dd($response['slip_data']);
         if(!empty($response['slip_data']['from_stage']['master_stage_id'])){
@@ -58,7 +59,7 @@ class OrderDigitalizationController extends Controller {
     public function storeRollsAssign(Request $request){
         $data = $this->service->storeRollsAssign($request);
         if($data['status_code'] == 1){
-            return redirect()->back()->withSuccess($data['message']);
+            return redirect()->route('admin.uploaded-slips.index')->withSuccess($data['message']);
         }else{
             return redirect()->back()->withError($data['message']);
         }
@@ -67,7 +68,8 @@ class OrderDigitalizationController extends Controller {
     public function skip(Request $request){
         $data = $this->service->skip($request);
         if($data['status_code'] == 1){
-            return redirect()->back()->withSuccess($data['message']);
+            return redirect()->route('admin.uploaded-slips.index')->withSuccess($data['message']);
+            // return redirect()->back()->withSuccess($data['message']);
             
         }else{
             return redirect()->back()->withError($data['message']);
@@ -77,7 +79,8 @@ class OrderDigitalizationController extends Controller {
     public function deleteSlip(Request $request){
         $data = $this->service->deleteSlip($request);
         if($data['status_code'] == 1){
-            return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
+            return redirect()->route('admin.uploaded-slips.index')->withSuccess($data['message']);
+            // return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
         }else{
             return redirect()->back()->withError($data['message']);
         }
@@ -86,7 +89,8 @@ class OrderDigitalizationController extends Controller {
     public function addSkipSlips(Request $request){
         $data = $this->service->addSkipSlips($request);
         if($data['status_code'] == 1){
-            return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
+            return redirect()->route('admin.uploaded-slips.index')->withSuccess($data['message']);
+            // return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
         }else{
             return redirect()->back()->withError($data['message']);
         }
@@ -186,8 +190,9 @@ class OrderDigitalizationController extends Controller {
         $result = $this->service->storeStitching($request);
         
         if ($result['status_code'] == 1) {
-            return redirect()->route('admin.order_digitalization.cutting-master')
-                ->with('success', $result['message']);
+            return redirect()->route('admin.uploaded-slips.index')->withSuccess($result['message']);
+            // return redirect()->route('admin.order_digitalization.cutting-master')
+            //     ->with('success', $result['message']);
         } else {
             return redirect()->back()
                 ->with('error', $result['message']);
@@ -199,8 +204,9 @@ class OrderDigitalizationController extends Controller {
         $result = $this->service->storePrinting($request);
         
         if ($result['status_code'] == 1) {
-            return redirect()->route('admin.order_digitalization.cutting-master')
-                ->with('success', $result['message']);
+            return redirect()->route('admin.uploaded-slips.index')->withSuccess($result['message']);
+            // return redirect()->route('admin.order_digitalization.cutting-master')
+            //     ->with('success', $result['message']);
         } else {
             return redirect()->back()
                 ->with('error', $result['message']);
@@ -248,7 +254,8 @@ class OrderDigitalizationController extends Controller {
     {
         $result = $this->service->storeHandSlip($request);
         if ($result['status_code'] == 1) {
-            return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($result['message']);
+            return redirect()->route('admin.uploaded-slips.index')->withSuccess($result['message']);
+            // return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($result['message']);
         } else {
             return redirect()->back()->withError($result['message']);
         }
