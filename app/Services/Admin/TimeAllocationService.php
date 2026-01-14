@@ -12,6 +12,7 @@ use App\Models\OrderMain;
 use App\Models\Stock;
 use App\Models\StageMasterUnit;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class TimeAllocationService {
 
@@ -117,10 +118,16 @@ class TimeAllocationService {
         try {
             
             $save_data_main = new OrderStageWiseTimeTracking;
-            $datetime = date(
-                        'Y-m-d H:i:s',
-                        strtotime($request->start_date_time)
-                    );
+            // $datetime = date(
+            //             'Y-m-d H:i:s',
+            //             strtotime($request->start_date_time)
+            //         );
+
+            $datetime = Carbon::createFromFormat(
+                'Y-m-d\TH:i',
+                $request->start_date_time
+            )->format('Y-m-d H:i:s');
+
             
             $save_data_main->sku = '';
             $save_data_main->lot_no = $request->lot_no;
@@ -145,7 +152,7 @@ class TimeAllocationService {
             $save_data_master->sku = '';
             $save_data_master->lot_no = $request->lot_no;
             $save_data_master->production_slip_digitization_id = $request->production_slip_digitization_id ?? null;
-            $save_data_master->start_date_time  = $request->start_date_time;
+            $save_data_master->start_date_time  = $datetime;
             
             if ($request->stages && is_array($request->stages)) {
                 foreach ($request->stages as $stage_id => $days) {

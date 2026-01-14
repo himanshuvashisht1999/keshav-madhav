@@ -131,7 +131,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
 
                         <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                <a href="{{ route('admin.purchase_order.estimation') }}" class="{{ (str_contains($page_url, 'admin/purchase-order/estimation')) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
+                                <a href="{{ route('admin.purchase_order.create') }}" class="{{ (str_contains($page_url, 'admin/purchase-order/create')) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Create PO For Fabric</p>
                                 </a>
