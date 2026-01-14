@@ -15,4 +15,9 @@ class PackingItem extends Model
     {
         return $this->belongsTo(MasterSizeMeasurement::class, 'size_id');
     }
+
+    public function detail()
+    {
+        return $this->belongsTo(OrderProductSetDetail::class, 'size_id');
+    }
 }

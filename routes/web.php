@@ -598,6 +598,15 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/stock/export', [AdminReportController::class, 'stockExport'])->name('stock.export');
             Route::get('/purchase-order',[AdminReportController::class,'purchaseOrder'])->name('purchase_order');
             Route::get('/purchase-order/item-details',[AdminReportController::class, 'purchaseOrderItemDetails'])->name('purchase_order.item.details');
+            
+            // Order Summary Report
+            Route::prefix('order-summary')->name('order-summary.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'index'])->name('index');
+                Route::get('/list', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'indexList'])->name('indexList');
+                Route::get('/view/{id}', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'view'])->name('view');
+                Route::get('/view/{id}', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'view'])->name('view');
+            });
+            
             Route::get('/purchase-order/export', [AdminReportController::class, 'purchaseOrderExport'])->name('purchase_order.export');
             Route::get('/order-tracking-system',[AdminReportController::class,'orderTrackingSystem'])->name('orderTrackingSystem');
             Route::get('/order-lot-tracking',[AdminReportController::class,'lotTrackingDetails'])->name('lotTrackingDetails');
@@ -665,6 +674,7 @@ Route::prefix('/packing')->name('admin.packing.')->group(function () {
     Route::post('/save-box', [\App\Http\Controllers\Admin\PackingController::class, 'saveBox'])->name('saveBox');
     Route::post('/finalize', [\App\Http\Controllers\Admin\PackingController::class, 'finalize'])->name('finalize');
     Route::post('/create-set', [\App\Http\Controllers\Admin\PackingController::class, 'createSet'])->name('createSet');
+    Route::post('/delete-carton', [\App\Http\Controllers\Admin\PackingController::class, 'deleteCarton'])->name('deleteCarton');
 });
 
 Route::get('/debug-stages', function() {

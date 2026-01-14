@@ -40,9 +40,11 @@ class OrderDispatchController extends Controller {
     }
 
     public function view(Request $request){
-        $response['data'] = $this->service->view($request);
-        // dd($response['data']);
-        return view('admin.order_dispatch.view',$response);
+        $data = $this->service->view($request);
+        if (!$data) {
+            return redirect()->back()->with('error', 'Dispatch not found');
+        }
+        return view('admin.order_dispatch.view', $data);
     }
     
     public function getOrderPackingData(Request $request){

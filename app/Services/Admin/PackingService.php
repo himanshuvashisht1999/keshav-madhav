@@ -231,4 +231,40 @@ class PackingService
             return ['status' => 'error', 'message' => $e->getMessage()];
         }
     }
+    public function deleteCarton($carton_id)
+    {
+        DB::beginTransaction();
+        try {
+            $carton = PackingCarton::findOrFail($carton_id);
+            
+            // 1. Release Boxes (Set carton_id to null)
+            PackingBox::where('packing_carton_id', $carton->id)->update(['packing_carton_id' => null]);
+            
+            // 2. Delete Items directly in Carton (where box_id is null)
+            // Wait, items inside boxes also have packing_carton_id set?
+            // In saveCarton: PackingItem::whereIn('packing_box_id', $data['box_ids'])->update(['packing_carton_id' => $carton->id]);
+            // So if we just delete items with carton_id, we delete items inside boxes too!
+            // We must NOT delete items that belong to a box.
+            
+            // Delete items that are DIRECTLY in the carton (no box)
+            PackingItem::where('packing_carton_id', $carton->id)
+                       ->whereNull('packing_box_id')
+                       ->delete();
+                       
+            // For items IN boxes, we should set their packing_carton_id to null too?
+            // Yes, so they stay with the box.
+            PackingItem::where('packing_carton_id', $carton->id)
+                       ->whereNotNull('packing_box_id')
+                       ->update(['packing_carton_id' => null]);
+
+            // 3. Delete the Carton
+            $carton->delete();
+
+            DB::commit();
+            return ['status' => 'success'];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
 }

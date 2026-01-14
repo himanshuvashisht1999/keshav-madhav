@@ -1,294 +1,137 @@
 @extends('admin.layouts.app')
 @section('content')
 <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+    <!-- PAGE HEADER -->
     <section class="content-header">
         <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-12">
-                    <h1 class="text-center">List of Order Dispatch</h1>
+            <div class="row mb-3 align-items-center">
+                <div class="col-sm-6">
+                    <h1 class="m-0 font-weight-bold text-dark">Order Dispatches</h1>
+                    <small class="text-muted">Manage and track all dispatched orders</small>
+                </div>
+                <div class="col-sm-6 text-right">
+                    <a href="{{ route('admin.order-dispatch.create') }}" class="btn btn-primary px-4 shadow-sm">
+                        <i class="fas fa-plus mr-1"></i> Create Dispatch
+                    </a>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Main content -->
+    <!-- CONTENT -->
     <section class="content">
         <div class="container-fluid">
-            <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default ">
-                <div class="row" >
-                    <div class="col-9 card-header">
-                        <!-- <h3 class="card-title">Manage Production Order</h3> -->
-                    </div>
-                    <div class="col-3 card-header">
-                        <a href="{{route('admin.order-dispatch.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Create Order Dispatch</a>
-                    </div>
-                </div>
-                
-                <div class="card-body table-responsive">
-                <table id="customers" class="table table-bordered table-hover">
-                  <thead>
-                    <tr role="row" class="filter">
-                        <td>
-                            {{-- <input type="hidden" class="form-control" name="id" id="id" value="{{$order_main->id}}" autocomplete="off"> --}}
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="order_dispatch_no" id="order_dispatch_no" autocomplete="off"> 
-                        </td>
-                        <td>
-                           <input type="text" class="form-control" name="main_order_id" id="main_order_id" autocomplete="off"> 
-                        </td>
-                        <td>
-                            <select name="customer_id" id="customer_id" class="form-control select2" style="width: 100%;">
-                                <option value="">All</option>
+
+            <!-- FILTER CARD -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body bg-light rounded">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <label class="small font-weight-bold text-muted">Search Order No</label>
+                            <input type="text" id="main_order_id" class="form-control" placeholder="Enter Order No...">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="small font-weight-bold text-muted">Dispatcher No</label>
+                            <input type="text" id="order_dispatch_no" class="form-control" placeholder="Enter Dispatch No...">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="small font-weight-bold text-muted">Customer</label>
+                            <select id="customer_id" class="form-control select2">
+                                <option value="">All Customers</option>
                                 @foreach($customers as $customer)
-                                <option value="{{$customer->id}}">{{$customer->name}}</option>
+                                    <option value="{{$customer->id}}">{{$customer->name}}</option>
                                 @endforeach
                             </select>
-                        </td>
-                                            
-                        <td>
-                           
-                        </td>
-                        <td>
-                           
-                        </td>
-                        {{-- <td>
-                           
-                        </td>
-                        <td>
-                           
-                        </td> --}}
-                        <td>
-                           
-                        </td>
-                        
-                        <td> <select id="status" class="form-control form-control-sm">
-                                <option value="">All</option>
-                                <option value="1">Partial</option>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="small font-weight-bold text-muted">Status</label>
+                            <select id="status" class="form-control">
+                                <option value="">All Status</option>
+                                <option value="1">Dispatched</option>
                                 <option value="2">Complete</option>
                             </select>
-                        </td>
-                        <td>
-                           
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>ID</th>
-                        <th>Order Dispatch No</th>
-                        <th>Order No</th>
-                        <th>Customer Name</th>
-                        <th>Total Cartons</th>
-                        {{-- <th>Total Boxes</th>
-                        <th>Total Qty</th> --}}
-                        <th>Dispatch Address</th>
-                        <th>Dispatch Date</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody></tbody>
-                </table>
-              </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            <!-- TABLE CARD -->
+            <div class="card shadow border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table id="dispatchTable" class="table table-hover table-striped mb-0">
+                            <thead class="bg-primary text-white">
+                                <tr>
+                                    <th width="5%" class="text-center">#</th>
+                                    <th>Dispatch No</th>
+                                    <th>Order No</th>
+                                    <th>Customer</th>
+                                    <th class="text-center">Cartons</th>
+                                    <th>Date</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </section>
 </div>
 
-<style >
-    #hoverBox {
-        position: absolute;
-        display: none;
-        background: #fff;
-        border-radius: 10px;
-        padding: 10px 15px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        min-width: 220px;
-        z-index: 9999;
-        transition: all 0.2s ease-in-out;
-    }
-
-    #hoverBox h6 {
-        margin: 0 0 5px;
-        font-weight: 600;
-        color: #007bff;
-    }
-
-    #hoverBox p {
-        margin: 0;
-        font-size: 14px;
-        color: #444;
-    }
-
-    #productTable tbody tr:hover {
-        background-color: #f8f9fa;
-        cursor: pointer;
-    }
-
+<style>
+    .card { border-radius: 8px; }
+    .form-control { border-radius: 6px; }
+    .table thead th { border: none; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
+    .table tbody td { vertical-align: middle; font-size: 0.95rem; }
+    .select2-container .select2-selection--single { height: 38px; border: 1px solid #ced4da; border-radius: 6px; }
+    .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 38px; }
+    .select2-container--default .select2-selection--single .select2-selection__arrow { height: 36px; }
 </style>
-<div id="hoverBox"></div>
+
 <script>
     $(function () {
-        var i = 1;
-        var oTable = $('#customers').DataTable({
+        
+        let table = $('#dispatchTable').DataTable({
             processing: true,
             serverSide: true,
-            stateSave: true,
-            searching: true,
-            ordering:false,
-            lengthMenu: [[25, 100, -1], [25, 100, "All"]],
-            "pageLength":25,
+            ordering: false, // Disable default ordering if not handled
+            searching: false, // Disable default search box
+            lengthChange: false,
+            pageLength: 25,
             ajax: {
                 url: '{!! route('admin.order-dispatch.indexList') !!}',
                 data: function (d) {
-                    d.id = $('#id').val();
                     d.order_dispatch_no = $('#order_dispatch_no').val();
                     d.main_order_id = $('#main_order_id').val();
                     d.customer_id = $('#customer_id').val();  
                     d.status = $('#status').val();
-                },
-                orderable: false
+                }
             },
             columns: [
-                {data: 'DT_RowIndex', name: 'id'},
-                {data: 'order_dispatch_no', name: 'order_dispatch_no'},
+                {data: 'DT_RowIndex', name: 'id', className: 'text-center text-muted'},
+                {data: 'order_dispatch_no', name: 'order_dispatch_no', className: 'font-weight-bold'},
                 {data: 'main_order_id', name: 'main_order_id'},                
                 {data: 'customer_id', name: 'customer_id'}, 
-                {data: 'total_quantity', name: 'total_quantity'},  
-                {data: 'dispatch_address', name: 'dispatch_address'}, 
+                {data: 'total_quantity', name: 'total_quantity', className: 'text-center'}, // Actually Total Cartons
                 {data: 'dispatch_date', name: 'dispatch_date'},              
-                {data: 'status', name: 'status'},                
-                {data: 'action', name: 'action', searchable: false}
+                {data: 'status', name: 'status', className: 'text-center'},                
+                {data: 'action', name: 'action', className: 'text-right'}
             ],
-           
-        });
-
-        $('#email-queue-search-form').on('submit', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#order_dispatch_no').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#main_order_id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#customer_id').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#status').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        
-        
-
-    });
-
-    $(document).ready(function () {
-        
-    });
-
-    function deleteData(id){
-        Swal.fire({
-            title: "Are you sure?",
-            text: "You won't be able to revert this!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, delete it!"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.product_order.delete', ['id' => '']) }}" + id;
+            language: {
+                emptyTable: "No dispatches found",
+                processing: '<i class="fas fa-spinner fa-spin fa-2x text-primary"></i>'
             }
         });
-    }
 
-    
-    $(document).ready(function() {
-        const STAGE_ROUTE = "{{ route('admin.order-stages.index') }}";
-        $(document).on('click', '.statusLink', function() {
-            let product_order_id = $(this).data('id');   // Get ID from data-id
-            let order_sku = $(this).data('order_sku');   // Get ID from data-id    
-                // small delay to avoid too many calls
-                ajaxTimeout = setTimeout(() => {
-                $.ajax({
-                    url: '/admin/production-order/status-hover-data', // Laravel route
-                    type: 'GET',
-                    data: { id: product_order_id },
-                    success: function (response) {
-                    const stages = response.data.original;
-                    // console.log("Product Order ID:", order_sku);
-                    // console.log(stages);
-                    $('#tableModalLabel').text('Order ID: ' + order_sku);
-                    let tableHtml = `
-                    
-                    <table class="table table-bordered table-sm mb-0">
-                        <thead class="bg-light">
-                        <tr>
-                            <th>Stage</th>
-                            <th>Total</th>
-                            <th>Completed</th>
-                            <th>Pending</th>
-                            <th>Status</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                    `;
+        // Event Listeners for Filters
+        $('#order_dispatch_no, #main_order_id, #customer_id, #status').on('keyup change', function() {
+            table.draw();
+        });
 
-                    Object.values(stages).forEach(row => {
-                    let statusBadge = "";
-                    if (row.status === 0) {
-                        statusBadge = '<span class="badge badge-primary">Pending</span>';
-                    } else if (row.status === 1) {
-                        statusBadge = '<span class="badge badge-warning">In Progress</span>';
-                    } else if (row.status === 2) {
-                        statusBadge = '<span class="badge badge-success">Completed</span>';
-                    }
-
-                    tableHtml += `
-                        <tr>
-                        <td><a target="_blank" href="${STAGE_ROUTE}?stage_id=${row.stage_id}">${row.name}</a></td>
-                        <td>${row.total_qty}</td>
-                        <td>${row.completed_qty}</td>
-                        <td>${row.pending_qty}</td>
-                        <td>${statusBadge}</td>
-                        </tr>
-                    `;
-                    });
-
-                    tableHtml += '</tbody></table>';
-
-                    // Inject table into modal body
-                    $('#tableContainer').html(tableHtml);
-
-                    // Show modal
-                    $('#tableModal').modal('show');
-                    
-                    
-                    },
-                    error: function () {
-                    hoverBox.html("<strong>Error loading data</strong>").fadeIn(150);
-                    }
-                });
-                }, 200);
-            });
     });
 </script>
-
 @endsection

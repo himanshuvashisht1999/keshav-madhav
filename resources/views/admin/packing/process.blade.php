@@ -36,8 +36,11 @@
                 <!-- LEFT PANEL: AVAILABLE ITEMS -->
                 <div class="col-md-4">
                     <div class="card h-100">
-                        <div class="card-header bg-light">
-                            <h3 class="card-title">Order Details & Items</h3>
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h3 class="card-title mb-0">Order Details & Items</h3>
+                            <button class="btn btn-sm btn-outline-primary" onclick="openCreateSetModal()" id="btnCreateSet" disabled>
+                                <i class="fas fa-plus-circle"></i> Create Set
+                            </button>
                         </div>
                         <div class="card-body p-0" style="overflow-y: auto; max-height: 600px;">
                             <ul class="list-group list-group-flush" id="available-items-list">
@@ -172,6 +175,40 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" onclick="submitCreateCarton()">Create Carton</button>
             </div>
+
+<div class="modal fade" id="createSetModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Set</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <form id="createSetForm">
+                    <h6>Define Set Composition</h6>
+                    <small class="text-muted">Enter quantity of each item per set.</small>
+                    <table class="table table-sm mt-2">
+                        <thead>
+                            <tr>
+                                <th>Size</th>
+                                <th>Qty Per Set</th>
+                            </tr>
+                        </thead>
+                        <tbody id="createSetTableBody"></tbody>
+                    </table>
+                    
+                    <div class="form-group mt-3">
+                        <label>Total Sets to Make</label>
+                        <input type="number" class="form-control" id="totalSetsToMake" min="1" value="1">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="submitCreateSet()">Create Sets</button>
+            </div>
+        </div>
+    </div>
+</div>
         </div>
     </div>
 </div>
@@ -250,7 +287,8 @@
         $.get("{{ route('admin.packing.orderDeps', '') }}/" + orderId, function(response) {
             if(response.status === 'success') {
                 ORDER_ID = orderId;
-                ORDER_ITEMS = response.items;
+                ORDER_ITEMS = response.items || [];
+                ORDER_SETS = response.sets || [];
                 renderAvailableItems();
                 disableActions(false);
             } else {
@@ -294,7 +332,7 @@
                             ${carton.boxes.length > 0 ? '<h6><small>Boxes:</small></h6><ul>' + carton.boxes.map(b => `<li>Box #${b.box_no}</li>`).join('') + '</ul>' : ''}
                             
                             <!-- Loose Items in Carton -->
-                            ${carton.items && carton.items.length > 0 ? '<h6><small>Loose Items:</small></h6><ul>' + carton.items.map(i => `<li>Size ID: ${i.size_id} (Qty: ${i.quantity})</li>`).join('') + '</ul>' : ''}
+                            ${carton.items && carton.items.length > 0 ? '<h6><small>Loose Items:</small></h6><ul>' + carton.items.map(i => `<li>Size: ${resolveSizeName(i.size_id)} (Qty: ${i.quantity})</li>`).join('') + '</ul>' : ''}
                         </div>
                     </div>
                 </div>`;
@@ -434,6 +472,15 @@
         }
         $('#unpackedBoxesList').html(html);
         
+        $('#unpackedBoxesList').html(html);
+        
+        // Smart Tab Selection: If no sets, default to Loose Items
+        if(ORDER_SETS && ORDER_SETS.length > 0) {
+            switchPackTab('sets');
+        } else {
+            switchPackTab('loose');
+        }
+
         $('#createCartonModal').modal('show');
     }
 
@@ -490,9 +537,37 @@
     }
 
     function submitCreateCarton() {
+        // Validation
+        let cartonNo = $('input[name="carton_no"]').val();
+        let rackId = $('#rackSelect').val();
+        let storeId = $('#storeroomSelect').val();
+
+        if(!cartonNo || cartonNo.trim() === '') {
+            alert("Please enter a Carton Number.");
+            return;
+        }
+        if(!storeId) {
+            alert("Please select a Store Room.");
+            return;
+        }
+        if(!rackId) {
+            alert("Please select a Rack.");
+            return;
+        }
+
         let sets = [];
+        let error = false;
+
         $('#cartonSetsContainer .set-pack-qty').each(function() {
-            let val = $(this).val();
+            let val = parseInt($(this).val()) || 0;
+            let max = parseInt($(this).attr('max')) || 0;
+            
+            if(val > max) {
+                 alert(`Error: You cannot pack ${val} sets. Only ${max} remaining.`);
+                 error = true;
+                 return false;
+            }
+
             if(val > 0) {
                  sets.push({
                      set_id: $(this).data('set-id'),
@@ -501,9 +576,20 @@
             }
         });
         
+        if(error) return;
+        
         let items = []; 
         $('#cartonItemsTable .item-pack-qty').each(function() {
-            let val = $(this).val();
+            let val = parseInt($(this).val()) || 0;
+            let max = parseInt($(this).attr('max')) || 0;
+
+            if(val > max) {
+                 alert(`Error: You cannot pack ${val} items for size ${$(this).data('size-id')}. Only ${max} remaining.`);
+                 error = true; // Use simple var validation
+                 return false; 
+            }
+            // Ideally we need looking up size name for better error, but this stops the negative data.
+
             if(val > 0) {
                 items.push({
                     size_id: $(this).data('size-id'),
@@ -511,7 +597,9 @@
                 });
             }
         });
-        
+
+        if(error) return;
+
         // Boxes
         let boxIds = [];
         $('.box-select:checked').each(function() {
@@ -527,7 +615,8 @@
             _token: "{{ csrf_token() }}",
             slip_id: SLIP_ID,
             order_id: ORDER_ID,
-            carton_no: $('input[name="carton_no"]').val(),
+            carton_no: cartonNo,
+            rack_id: rackId,
             sets: sets,
             items: items,
             box_ids: boxIds
@@ -543,8 +632,26 @@
     }
     
     function finalizePacking() {
-        // call AJAX finalize
-         alert("Not implemented fully yet");
+        if(!EXISTING_PACKING || !EXISTING_PACKING.id) {
+             alert("No packing session found to finalize.");
+             return;
+        }
+
+        if(!confirm("Are you sure you want to finalize this packing? This will mark it as complete.")) {
+            return;
+        }
+
+        $.post("{{ route('admin.packing.finalize') }}", {
+             _token: "{{ csrf_token() }}",
+             packing_main_id: EXISTING_PACKING.id
+        }, function(response) {
+             if(response.status === 'success') {
+                 alert("Packing Finalized Successfully!");
+                 window.location.href = "{{ route('admin.packing.index') }}";
+             } else {
+                 alert("Error: " + response.message);
+             }
+        });
     }
 
     function switchPackTab(tab) {
@@ -559,6 +666,19 @@
             $('#btn-tab-loose').addClass('active btn-outline-primary').removeClass('btn-outline-secondary');
             $('#btn-tab-sets').removeClass('active btn-outline-primary').addClass('btn-outline-secondary');
         }
+    }
+    function resolveSizeName(sizeId) {
+        // Try to find in ORDER_ITEMS
+        // Note: ORDER_ITEMS might have 'id' matching 'size_id' (which is detail_id).
+        // Or 'size' (the name).
+        
+        // Strategy: iterate ORDER_ITEMS, check id.
+        let found = ORDER_ITEMS.find(i => i.id == sizeId);
+        if(found) return found.size;
+        
+        // Fallback: Check if it's a simple size match (less likely with new ID system but possible legacy)
+        // If not found, return ID so we at least see something.
+        return 'ID: ' + sizeId;
     }
 </script>
 @endpush
