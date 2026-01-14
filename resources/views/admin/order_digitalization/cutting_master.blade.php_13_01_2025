@@ -182,38 +182,59 @@
                                         <div><strong>Fitting :</strong> <span id="show_fitting">—</span></div>
                                         <div><strong>Cutting Master :</strong> <span id="show_cutting_master">—</span></div>
                                     </div>
-                                    {{-- TOTAL ROLL & TOTAL METER --}}
-                                    <select id="roll_no" class="d-none">
-                                        <option value="">Select Roll No</option>
-                                    </select>
                                     <div class="card p-2 mt-3 border">
                                         <h6>Add Roll</h6>
+                                        <label>Roll No</label>
+                                        <select id="roll_no" class="form-control mb-2 select2">
+                                            <option value="">Select Roll No</option>
+                                            
+                                        </select>
+                                        
+                                        <small class="text-danger" id="err_roll_no"></small>
 
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <label>Total Rolls *</label>
-                                                <input type="number" id="total_rolls" class="form-control" >
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label>Total Meter *</label>
-                                                <input type="number" id="total_meter" class="form-control">
-                                            </div>
-                                        </div>
-
-                                        <small class="text-danger" id="err_total_meter"></small>
-
-                                        <!-- Dynamic Roll Rows -->
-                                        <div id="roll_rows" class="mt-3"></div>
-
-                                        <!-- SIZE ALLOCATION UI (UNCHANGED) -->
+                                        <label class="mt-2">Total Meter</label>
+                                        <input type="number" id="meter" class="form-control mb-1">
+                                        
+                                        <!-- SIZE ALLOCATION UI -->
                                         <div id="size_allocations" class="mt-3 p-2 border rounded bg-white">
                                             <label class="mb-2">Size Wise Quantity</label>
                                             <div id="size_inputs_container"></div>
                                         </div>
+
+                                        <div id="roll_cutting_details"></div>
+                                        <small class="text-danger" id="err_meter"></small>
+
+                                        <button type="button"
+                                                class="btn btn-primary mt-3 w-100 add-roll">
+                                            + Add Roll
+                                        </button>
                                     </div>
 
+                                    {{-- ADDED ROLLS TABLE --}}
+                                    <div class="card p-2 mt-3 border">
+                                        <h6>Added Rolls</h6>
 
-                                    
+                                        <table class="table table-bordered" id="productList">
+                                            <thead>
+                                                <tr>
+                                                    <th>Lot No</th>
+                                                    <th>Cutting Master</th>
+                                                    <th>Roll No</th>
+                                                    <th>Meter</th>
+                                                    <th>Sizes</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+
+                                            <tbody>
+                                                <tr id="noDataRow">
+                                                    <td colspan="6" class="text-center text-muted">
+                                                        No rolls added yet
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
 
                                     <input type="hidden"
                                         name="production_slip_digitization_id"
@@ -438,81 +459,180 @@
     });
 </script>
 <script>
-    $(function(){
+$(function(){
 
-        $('#rollAssignForm').on('submit', function (e) {
+    $('#rollAssignForm').on('submit', function (e) {
 
-            let totalMeter = parseFloat($('#total_meter').val()) || 0;
-            let usedMeter = 0;
-
-            $('.roll-meter').each(function () {
-                usedMeter += parseFloat($(this).val()) || 0;
-            });
-
-            if (usedMeter !== totalMeter) {
-                e.preventDefault();
-                $('#err_total_meter').text(
-                    `Meter mismatch. Used ${usedMeter}, Required ${totalMeter}`
-                );
-                return false;
-            }
-
-            $('.roll-meter').each(function () {
-                let max = parseFloat($(this).data('max')) || 0;
-                let val = parseFloat($(this).val()) || 0;
-
-                if (val > max) {
-                    meterValid = false;
-                }
-            });
-
-            let sizeValid = true;
-
-            $('.size-qty-input').each(function () {
-                let pending = parseInt($(this).data('pending')) || 0;
-                let val = parseInt($(this).val()) || 0;
-
-                if (val > pending) {
-                    sizeValid = false;
-                }
-            });
-
-            if (!sizeValid) {
-                e.preventDefault();
-                alert('Size quantity exceeds pending limit.');
-                return false;
-            }
-
-            if (!meterValid) {
-                e.preventDefault();
-                alert('One or more rolls exceed available meter.');
-                return false;
-            }
-
-            // ✅ update lot number for ALL rows
-            let lotNo = $('#lot_no').val();
-            $('input[name="lot_no_list[]"]').each(function () {
-                $(this).val(lotNo);
-            });
-
-            // ✅ update size JSON for ALL rows
-            let sizeJson = getSizeJson();
-            $('.size-json').each(function () {
-                $(this).val(sizeJson);
-            });
-
-        });
-
-
+        if ($('#productList tbody tr').not('#noDataRow').length === 0) {
+            alert('Please add at least one roll before submitting.');
+            e.preventDefault();
+            return false;
+        }
+    });
 
     function clearErrors(){
         $('.text-danger').text('');
     }
 
-   
+    $('.add-roll').click(function () {
+
+        // clear previous errors
+        $('#err_lot_no,#err_roll_no,#err_meter').text('');
+
+        let lotNo = $('#lot_no').val().trim();
+        let rollSelect = $('#roll_no');
+        let selectedOption = rollSelect.find(':selected');
+
+        let rollId = selectedOption.val();
+        let rollText = selectedOption.text();
+        let availableMeter = parseFloat(selectedOption.data('meter')) || 0;
+
+        let meter = parseFloat($('#meter').val()) || 0;
+
+        let cutting = $('input[name="to_master_unit"]').val();
+        let cuttingText = $('#show_cutting_master').text() || '—';
+
+        let valid = true;
+
+        /* --------------------
+        BASIC VALIDATIONS
+        -------------------- */
+        if (!lotNo) {
+            $('#err_lot_no').text('Lot No is required');
+            valid = false;
+        }
+
+        if (!rollId) {
+            $('#err_roll_no').text('Roll No is required');
+            valid = false;
+        }
+
+        if (meter <= 0) {
+            $('#err_meter').text('Meter must be greater than 0');
+            valid = false;
+        }
+
+        if (!valid) return;
+
+        /* --------------------
+        METER VALIDATION
+        -------------------- */
+        let alreadyUsed = selectedRollMeters[rollId] || 0;
+        let remaining = availableMeter - alreadyUsed;
+
+        if (meter > remaining) {
+            $('#err_meter').text(`Only ${remaining} meter remaining for this roll`);
+            return;
+        }
+
+        /* --------------------
+        SIZE VALIDATION & COLLECTION
+        -------------------- */
+        let sizeDetails = [];
+        let sizeSummary = [];
+        let totalQty = 0;
+
+        $('.size-qty-input').each(function() {
+            let qty = parseFloat($(this).val()) || 0;
+            if (qty > 0) {
+                let size = $(this).data('size');
+                let detailId = $(this).data('detail-id');
+                let pending = parseFloat($(this).data('pending')) || 0;
+
+                // Optional: Validate if qty > pending (if strict check needed)
+                // if(qty > pending) { alert('Qty exceeds pending requirement'); valid=false; return false; }
+
+                sizeDetails.push({
+                    detail_id: detailId,
+                    size: size,
+                    qty: qty
+                });
+                sizeSummary.push(`${size}:${qty}`);
+                totalQty += qty;
+            }
+        });
+
+        // Uncomment if you want to enforce at least one size quantity
+        // if (totalQty <= 0) { alert('Please enter quantity for at least one size'); return; }
+
+        if (!valid) return;
+
+        /* --------------------
+        ADD ROW
+        -------------------- */
+        $('#noDataRow').remove();
+
+        // Convert sizeDetails object to JSON string for backend
+        let sizeJson = JSON.stringify(sizeDetails);
+        let sizeDisplay = sizeSummary.join(', ') || '—';
+
+        $('#productList tbody').append(`
+            <tr data-roll-id="${rollId}" data-meter="${meter}">
+                <td>${lotNo}
+                    <input type="hidden" name="lot_no_list[]" value="${lotNo}">
+                </td>
+
+                <td>${cuttingText}
+                    <input type="hidden" name="cutting_unit_list[]" value="${cutting}">
+                </td>
+
+                <td>${rollText}
+                    <input type="hidden" name="roll_no_list[]" value="${rollId}">
+                </td>
+
+                <td>${meter}
+                    <input type="hidden" name="meter_list[]" value="${meter}">
+                    <input type="hidden" name="size_details[]" value='${sizeJson}'>
+                </td>
+                
+                <td>${sizeDisplay}</td>
+
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm remove-row">X</button>
+                </td>
+            </tr>
+        `);
+
+        /* --------------------
+        TRACK USED METER
+        -------------------- */
+        selectedRollMeters[rollId] = alreadyUsed + meter;
+
+        /* --------------------
+        RESET INPUTS
+        -------------------- */
+        $('#roll_no').val('').trigger('change');
+        $('#meter').val('');
+        $('.size-qty-input').val(''); // Clear size inputs
+    });
 
 
-   
+    $(document).on('click', '.remove-row', function () {
+
+        let row = $(this).closest('tr');
+        let rollId = row.data('roll-id');
+        let meter = parseFloat(row.data('meter')) || 0;
+
+        if (rollId && selectedRollMeters[rollId]) {
+            selectedRollMeters[rollId] -= meter;
+
+            if (selectedRollMeters[rollId] <= 0) {
+                delete selectedRollMeters[rollId];
+            }
+        }
+
+        row.remove();
+
+        if ($('#productList tbody tr').length === 0) {
+            $('#productList tbody').html(`
+                <tr id="noDataRow">
+                    <td colspan="6" class="text-center text-muted">
+                        No rolls added yet
+                    </td>
+                </tr>
+            `);
+        }
+    });
 
 
 });
@@ -572,8 +692,6 @@ $(document).ready(function () {
 
         let designSetId = parseInt($(this).val());
         let orderId = parseInt($('#select_order_no').val());
-        $('#roll_rows').show();
-        $('#roll_rows').empty();
 
         // reset UI
         $('#show_fabric,#show_color,#show_pattern,#show_fitting,#show_cutting_master').text('—');
@@ -637,18 +755,19 @@ $(document).ready(function () {
 
         set.fabric.receipt_details.forEach(detail => {
 
+            // OPTIONAL: skip empty rolls
             if (parseFloat(detail.remaining_quantity) <= 0) return;
 
-            rollSelect.append(
-                $('<option>', {
-                    value: detail.id,
-                    text: `Roll ${detail.roll_number} (${detail.remaining_quantity} m)`
-                })
-                .attr('data-meter', detail.remaining_quantity)
-                .attr('data-roll', detail.roll_number)
-            );
+            rollSelect.append(`
+                <option 
+                    value="${detail.id}"
+                    data-meter="${detail.remaining_quantity}"
+                    data-roll="${detail.roll_number}">
+                    Roll ${detail.roll_number} (${detail.remaining_quantity} m)
+                </option>
+            `);
         });
-        
+
         rollSelect.trigger('change'); // refresh select2
     });
 
@@ -674,96 +793,9 @@ $(document).ready(function () {
         }
     });
 
-    $('#total_rolls').on('input', function () {
-
-        let total = parseInt($(this).val()) || 0;
-        let container = $('#roll_rows');
-        container.empty();
-
-        if (total <= 0) return;
-
-        // ✅ SAFETY CHECK: rolls must exist
-        if ($('#roll_no option').length <= 1) {
-            alert('Please select Design first');
-            $(this).val('');
-            return;
-        }
-
-        let rollCount = $('#roll_no option').length - 1; // exclude placeholder
-        $('#total_rolls').attr('max', rollCount);
-        if (total > rollCount) {
-            alert(`Only ${rollCount} rolls available for selected design.`);
-            $(this).val('');
-            return;
-        }
-        // ✅ BUILD optionsHtml AT THE RIGHT TIME
-        let optionsHtml = '';
-        $('#roll_no option').each(function () {
-            optionsHtml += `<option 
-                value="${this.value}"
-                data-meter="${$(this).attr('data-meter')}"
-                data-roll="${$(this).attr('data-roll')}">
-                ${$(this).text()}
-            </option>`;
-        });
-
-        for (let i = 1; i <= total; i++) {
-            let lotNo = $('#lot_no').val();
-
-            container.append(`
-                <div class="row mb-2 roll-row">
-                    <div class="col-md-6">
-                        <label>Roll No (${i}) *</label>
-                        <select name="roll_no_list[]" class="form-control select2 roll-select" required>
-                            ${optionsHtml}
-                        </select>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label>Meter Used *</label>
-                        <input type="number"
-                            name="meter_list[]"
-                            class="form-control roll-meter"
-                            disabled
-                            placeholder="Select roll first">
-                    </div>
-
-                    <input type="hidden" name="lot_no_list[]" value="${lotNo}">
-                    <input type="hidden" name="size_details[]" class="size-json">
-                </div>
-            `);
-        }
-
-        $('.select2').select2();
-    });
-
-
-
-    
-
 
 });
 </script>
-<script>
-/* ✅ GLOBAL FUNCTION – ACCESSIBLE EVERYWHERE */
-function getSizeJson() {
-    let sizeDetails = [];
-
-    $('.size-qty-input').each(function () {
-        let qty = parseFloat($(this).val()) || 0;
-        if (qty > 0) {
-            sizeDetails.push({
-                detail_id: $(this).data('detail-id'),
-                size: $(this).data('size'),
-                qty: qty
-            });
-        }
-    });
-
-    return JSON.stringify(sizeDetails);
-}
-</script>
-
 
 {{-- Lot Details Fetching Script --}}
 <script>
@@ -991,64 +1023,8 @@ $(document).ready(function() {
             $(this).find('.toggle-icon').toggleClass('fa-rotate-180');
         });
     }
-
-
-    $(document).on('select2:select', '.roll-select', function (e) {
-
-        // IMPORTANT: get the REAL <option> element
-        let selectedOption = e.params.data.element;
-
-        let maxMeter = parseFloat(
-            selectedOption.getAttribute('data-meter')
-        ) || 0;
-
-        let meterInput = $(this).closest('.roll-row').find('.roll-meter');
-        
-        if (!maxMeter || maxMeter <= 0) {
-            meterInput.prop('disabled', true);
-            meterInput.val('');
-            return;
-        }
-
-        meterInput.prop('disabled', false);
-        meterInput.attr('max', maxMeter);
-        meterInput.data('max', maxMeter);
-        meterInput.val('');
-    });
-
 });
-</script>
-
-<script>
-    
-
-    $(document).on('input', '.roll-meter', function () {
-        let max = parseFloat($(this).data('max')) || 0;
-        let val = parseFloat($(this).val()) || 0;
-
-        if (!max || max <= 0) {
-            $(this).val('');
-            alert('Please select a roll first');
-            return;
-        }
-
-        if (val > max) {
-            $(this).val(max);
-            alert(`Max allowed meter for this roll is ${max}`);
-        }
-    });
-
-    $(document).on('input', '.size-qty-input', function () {
-        let pending = parseInt($(this).data('pending')) || 0;
-        let val = parseInt($(this).val()) || 0;
-
-        if (val > pending) {
-            $(this).val(pending);
-            alert(`Maximum allowed quantity is ${pending}`);
-        }
-    });
 </script>
 
 
 @endsection
- 
