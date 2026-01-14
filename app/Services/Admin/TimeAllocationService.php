@@ -127,7 +127,6 @@ class TimeAllocationService {
                 'Y-m-d\TH:i',
                 $request->start_date_time
             )->format('Y-m-d H:i:s');
-
             
             $save_data_main->sku = '';
             $save_data_main->lot_no = $request->lot_no;
@@ -159,10 +158,10 @@ class TimeAllocationService {
                     $save_data_master->{'stage_id_'.$stage_id} = $days;
                 }
             }
-            
+           
             $save_data_master->status = 1;
             $save_data_master->save();
-
+            
             // Only update slip status if production_slip_digitization_id is provided
             if ($request->production_slip_digitization_id) {
                 $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
@@ -187,7 +186,7 @@ class TimeAllocationService {
         } catch (\Exception $e) {
             //  Rollback everything on any error
             DB::rollBack();
-
+            dd($e->getMessage());
             return [
                 'status_code' => 0,
                 'message' => $e->getMessage()
