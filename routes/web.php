@@ -677,6 +677,14 @@ Route::prefix('/packing')->name('admin.packing.')->group(function () {
     Route::post('/delete-carton', [\App\Http\Controllers\Admin\PackingController::class, 'deleteCarton'])->name('deleteCarton');
 });
 
+Route::prefix('/admin/uploaded-slips')->name('admin.uploaded-slips.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'index'])->name('index');
+    Route::get('/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'show'])->name('show');
+    Route::delete('/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'destroy'])->name('destroy');
+});
+
+
+
 Route::get('/debug-stages', function() {
     return [
         'lots' => \App\Models\FabricRollAssigning::where('project_id', 1)->orWhere('id', '>', 0)->take(10)->get(), // just get recent lots

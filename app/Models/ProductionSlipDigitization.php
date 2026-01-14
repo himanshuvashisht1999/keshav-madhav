@@ -39,6 +39,11 @@ class ProductionSlipDigitization extends Model
             'id'
         );
     }
+
+    public function fromStage()
+    {
+        return $this->belongsTo(\App\Models\MasterProductStage::class, 'from_stage_id', 'id');
+    }
    
     public function packingMain()
     {
