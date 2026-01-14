@@ -316,6 +316,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{{ route('admin.uploaded-slips.index') }}"
+                            class="{{ str_contains($page_url, 'admin/uploaded-slips') ? 'nav-link active' : 'nav-link' }} border_class"
+                            style="position:static;">
+                            <i class="fas fa-file-upload"></i>
+                            <p>UPLOADED SLIPS</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{{ route('admin.order-dispatch.index') }}"
                             class="{{ str_contains($page_url, 'admin/order-dispatch') ? 'nav-link active' : 'nav-link' }} border_class"
                             style="position:static;">
