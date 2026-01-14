@@ -136,4 +136,9 @@ class PackingController extends Controller {
         $result = $this->service->createAdHocSet($data);
         return response()->json($result);
     }
+
+    public function deleteCarton(Request $request) {
+        $result = $this->service->deleteCarton($request->carton_id);
+        return response()->json($result);
+    }
 }

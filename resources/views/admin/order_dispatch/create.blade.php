@@ -451,8 +451,8 @@ function renderOrderData(data) {
                                class="carton-checkbox"
                                checked>
                     </td>
-                    <td><strong>Carton - ${carton.id}</strong></td>
-                    <td>${carton.boxes_in_carton}</td>
+                    <td><strong>Carton - ${carton.carton_no || carton.id}</strong></td>
+                    <td>${carton.contents || carton.boxes_in_carton + ' (Items)'}</td>
                 </tr>
                 `;
             });

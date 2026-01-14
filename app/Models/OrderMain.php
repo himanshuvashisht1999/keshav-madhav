@@ -49,7 +49,14 @@ class OrderMain extends Model
 
     public function dispatchCartons()
     {
-        return $this->hasMany(PackingCarton::class, 'main_order_id', 'id');
+        return $this->hasManyThrough(
+            PackingCarton::class,
+            PackingMain::class,
+            'order_main_id', // Foreign key on PackingMain table
+            'packing_main_id', // Foreign key on PackingCarton table
+            'id', // Local key on OrderMain table
+            'id' // Local key on PackingMain table
+        );
     }
     
 }

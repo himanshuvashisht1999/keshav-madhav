@@ -54,24 +54,23 @@ class OrderDispatchDataTable  {
                 
             })
             ->editColumn('dispatch_date', function ($queue) {
-				return date('d-m-Y h:i A', strtotime( $queue->dispatch_date )) ?? '';
-                
+				return date('d M, Y h:i A', strtotime( $queue->dispatch_date )) ?? '';
             })
             ->addColumn('status', function ($queue) {
                 if ($queue->status == 1) {
-                    return '<span class="badge badge-primary">Partial</span>';
-                }elseif($queue->status == 2){
-                    return '<span class="badge badge-success">Complete</span>';
+                    return '<span class="badge badge-success px-3 py-1">Dispatched</span>';
+                } elseif($queue->status == 2){
+                    return '<span class="badge badge-secondary px-3 py-1">Complete</span>';
                 } 
+                return '<span class="badge badge-light">Unknown</span>';
             })
 
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;
                 
-                $view = '<a href="' . route('admin.order-dispatch.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
-                $status = '<a href="javascript:void(0);" data-id="'.$parameter.'" data-order_sku="'.$queue->sku.'" title="Status" class="statusLink" style="margin-left: 8px;"><i class="fas fa-chart-line text-muted"></i> </a>';
+                $view = '<a href="' . route('admin.order-dispatch.view',['id' => $parameter]) . '" class="btn btn-sm btn-outline-primary" data-toggle="tooltip" title="View Details"><i class="fas fa-eye"></i> View</a>';
                 
-                return $view . ' ' . (($queue->status != 1) ? $status : '');
+                return $view;
             })
             
             ->rawColumns(['action','main_order_id', 'customer_id', 'status'])

@@ -93,71 +93,83 @@ class OrderDispatchService {
     }
 
     public function view(Request $request){
-
         
         $order_dispatch = OrderDispatch::with([
             'dispatchDetails:id,order_dispatch_id,carton_packing_id',
             'orderMain.customer',
-            'orderMain.OrderProductSets.colors',
-            'orderMain.OrderProductSets.sizeMeasurement'
-        ])->where('id',$request->id)->first()->toArray();
-        // dd($order_dispatch);
-        if($order_dispatch){
-            $order_dispatch_data = [
-                'id' =>  $order_dispatch['id'],
-                'order_dispatch_no' =>  $order_dispatch['sku'],
-                'order_no' => $order_dispatch['order_main']['sku'] ?? '',
-                'customer' => $order_dispatch['order_main']['customer']['name'] ?? '',
-                'dispatch_date' => date("d-m-Y h:i A", strtotime($order_dispatch['dispatch_date'])) ?? '',
-            ];
+            // 'orderMain.OrderProductSets.colors', // Not strictly needed if we rely on PackingItem detail
+            // 'orderMain.OrderProductSets.sizeMeasurement'
+        ])->where('id',$request->id)->first();
+
+        if(!$order_dispatch) {
+            return null; 
         }
+
+        $order_dispatch = $order_dispatch->toArray();
+
+        // Basic Info
+        $order_dispatch_data = [
+            'id'                =>  $order_dispatch['id'],
+            'order_dispatch_no' =>  $order_dispatch['sku'],
+            'order_no'          => $order_dispatch['order_main']['sku'] ?? '',
+            'customer'          => $order_dispatch['order_main']['customer']['name'] ?? '',
+            'address'           => $order_dispatch['order_main']['customer']['address'] ?? '',
+            'dispatch_date'     => date("d-m-Y h:i A", strtotime($order_dispatch['dispatch_date'])) ?? '',
+        ];
+
         $dispatch_carton_ids = [];
         foreach ($order_dispatch['dispatch_details'] as $v) {
            $dispatch_carton_ids[] = $v['carton_packing_id'];
         }
 
+        // Fetch Cartons with Items and Details
         $cartons_data = PackingCarton::with([
-            'cartonsDetails',
-            'orderMain.OrderProductSets.colors',
-            'orderMain.OrderProductSets.sizeMeasurement'
-        ])->whereIn('id',$dispatch_carton_ids)->get()->toArray();
+            'items.detail' 
+        ])->whereIn('id', $dispatch_carton_ids)->get()->toArray();
         
-        $total_boxes_session = 0;
+        $total_items_dispatch = 0;
         $cartonsDetails = []; 
+
         foreach($cartons_data as $carton){
-            $total_boxes = 0;
-            $car_data = [];
-            foreach($carton['cartons_details'] as $val){
-                foreach($carton['order_main']['order_product_sets'] as $order_product_sets){
-                    if($val['bar_code'] == $order_product_sets['bar_code']){
-                        $car_data[$val['bar_code']] = [
-                            'bar_code'      => $order_product_sets['bar_code'],
-                            'design_number' => $order_product_sets['design_number'],
-                            'set_size'      => $order_product_sets['size_measurement']['set_size'],
-                            'size_group'    => $order_product_sets['size_measurement']['size_group'],
-                            'color'         => $order_product_sets['colors']['name'],
-                            'no_of_pcs'     => $order_product_sets['no_of_pcs'],
-                            'set_quantity'  => $val['set_quantity'],
-                        ];
-                    }
-                }
-                $total_boxes += $val['set_quantity'];
-                $total_boxes_session += $val['set_quantity'];
-            } 
+            $total_items_in_carton = 0;
             
-            $cartonsDetails[$carton['id']] = [
-                'id' => $carton['id'],
-                'total_boxes' => $total_boxes,
-                'car_data' => $car_data,
+            // detailed summary logic
+            $summary = [];
+            if(isset($carton['items']) && is_array($carton['items'])) {
+                foreach($carton['items'] as $item) {
+                    $qty = $item['quantity'];
+                    $total_items_in_carton += $qty;
+                    $total_items_dispatch += $qty;
+
+                    $sizeName = $item['detail']['size'] ?? 'ID:'.$item['size_id'];
+                    if(!isset($summary[$sizeName])) $summary[$sizeName] = 0;
+                    $summary[$sizeName] += $qty;
+                }
+            }
+
+            $contents_text = [];
+            foreach($summary as $size => $qty) {
+                $contents_text[] = "$size ($qty)";
+            }
+            
+            $cartonsDetails[] = [
+                'id'            => $carton['id'],
+                'carton_no'     => $carton['carton_no'] ?? $carton['id'],
+                'rack_id'       => $carton['rack_id'] ?? 'N/A', // Assuming rack_id exists
+                'status'        => $carton['status'] ?? 1,
+                'total_items'   => $total_items_in_carton,
+                'contents'      => implode(', ', $contents_text),
             ];
         }
+
         $order_dispatch_data['total_cartons'] = count($cartons_data);
-        $order_dispatch_data['total_boxes_dispatch'] = $total_boxes_session;   
+        $order_dispatch_data['total_items_dispatch'] = $total_items_dispatch;   
+        
         $data = [
             'order_dispatch_data' => $order_dispatch_data,
-            'cartonsDetails' => $cartonsDetails,
+            'cartonsDetails'      => $cartonsDetails,
         ];
-        // dd($data);
+
         return $data;
     }
 
@@ -168,9 +180,9 @@ class OrderDispatchService {
         $results = OrderMain::with([
                 'customer',
                 'dispatchCartons' => function ($q) {
-                    $q->where('status', 1);
+                    $q->where('packing_cartons.status', 1);
                 },
-                'dispatchCartons.cartonsDetails',
+                'dispatchCartons.items.detail', // Eager load detail for size string
             ])
             ->where('sku', $search_order_no)
             ->where('status', 1)
@@ -182,11 +194,29 @@ class OrderDispatchService {
         foreach($results as $val){
             $cartons = [];
             foreach ($val['dispatch_cartons'] as $value) {
+                
+                // Aggregate items
+                $summary = [];
+                if(isset($value['items']) && is_array($value['items'])) {
+                    foreach($value['items'] as $item) {
+                        $sizeName = $item['detail']['size'] ?? 'ID:'.$item['size_id'];
+                        $qty = $item['quantity'];
+                        if(!isset($summary[$sizeName])) $summary[$sizeName] = 0;
+                        $summary[$sizeName] += $qty;
+                    }
+                }
+                
+                $contents_text = [];
+                foreach($summary as $size => $qty) {
+                    $contents_text[] = "$size ($qty)";
+                }
 
                 $cartons[] = [
                     'id'                            => $value['id'] ?? '',
+                    'carton_no'                     => $value['carton_no'] ?? '', // Ensure proper carton no
                     'carton_packing_session_id'     => $value['carton_packing_session_id'] ?? '',
-                    'boxes_in_carton'               => count($value['cartons_details']) ?? 0,
+                    'boxes_in_carton'               => count($value['items']) ?? 0,
+                    'contents'                      => implode(', ', $contents_text),
                 ];
             }
             $data[] = [
