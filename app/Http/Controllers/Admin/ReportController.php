@@ -225,6 +225,7 @@ class ReportController extends Controller
     public function lots(Request $request)
     {
         $response['data'] = $this->service->lots($request);
+        $response['lotNos'] = $this->service->lot_numbers();
         return view('admin.report.lots',$response);
     }
 

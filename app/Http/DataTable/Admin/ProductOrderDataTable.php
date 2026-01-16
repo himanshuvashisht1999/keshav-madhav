@@ -212,7 +212,7 @@ class ProductOrderDataTable  {
                 $status = $queue->status;
 
                 if ($status == 2) {
-                    $view = '<a href="' . route('admin.product_order.indexOrderSetDownload',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Download"><i class="fas fa-download text-muted" title="View"></i></a>';
+                    $view = '<a href="' . route('admin.product_order.viewCuttingSlip',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Download">View</a>';
                 }else{
                     $view = '';
                 }
