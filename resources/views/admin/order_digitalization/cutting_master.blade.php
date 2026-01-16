@@ -7,8 +7,9 @@
     }
 
     .action-btn-group .btn.active {
-        background-color: #007bff;
+        background-color: green;
         color: #fff;
+        padding:10px;
     }
 
     .form-section {
@@ -411,6 +412,34 @@
 
 {{-- SCRIPT --}}
 <script>
+const USED_LOTS = @json($used_lots);
+
+$(document).ready(function () {
+
+    $('#lot_no').on('input', function () {
+
+        const lotNo = $(this).val().trim();
+        const errorBox = $('#err_lot_no');
+
+        if (!lotNo) {
+            errorBox.text('');
+            $('#submit').prop('disabled', false);
+            return;
+        }
+
+        if (USED_LOTS.includes(Number(lotNo))) {
+            errorBox.text('❌ This lot number is already used');
+            $('#submit').prop('disabled', true);
+        } else {
+            errorBox.text('');
+            $('#submit').prop('disabled', false);
+        }
+    });
+
+});
+</script>
+
+<script>
     document.querySelectorAll('.action-btn').forEach(btn => {
         btn.addEventListener('click', function () {
 
@@ -441,7 +470,7 @@
     $(function(){
 
         $('#rollAssignForm').on('submit', function (e) {
-
+            let meterValid = true;
             let totalMeter = parseFloat($('#total_meter').val()) || 0;
             let usedMeter = 0;
 
@@ -468,20 +497,20 @@
 
             let sizeValid = true;
 
-            $('.size-qty-input').each(function () {
-                let pending = parseInt($(this).data('pending')) || 0;
-                let val = parseInt($(this).val()) || 0;
+            // $('.size-qty-input').each(function () {
+            //     let pending = parseInt($(this).data('pending')) || 0;
+            //     let val = parseInt($(this).val()) || 0;
 
-                if (val > pending) {
-                    sizeValid = false;
-                }
-            });
+            //     if (val > pending) {
+            //         sizeValid = false;
+            //     }
+            // });
 
-            if (!sizeValid) {
-                e.preventDefault();
-                alert('Size quantity exceeds pending limit.');
-                return false;
-            }
+            // if (!sizeValid) {
+            //     e.preventDefault();
+            //     alert('Size quantity exceeds pending limit.');
+            //     return false;
+            // }
 
             if (!meterValid) {
                 e.preventDefault();
@@ -611,7 +640,7 @@ $(document).ready(function () {
                         <div class="row mb-2 align-items-center">
                             <div class="col-4">
                                 <span class="font-weight-bold">${size}</span> <br>
-                                <small class="text-muted">(Pending: ${remaining})</small>
+                                {{-- <small class="text-muted">(Pending: ${remaining})</small>  --}}
                             </div>
                             <div class="col-8">
                                 <input type="number" 
@@ -1042,10 +1071,10 @@ $(document).ready(function() {
         let pending = parseInt($(this).data('pending')) || 0;
         let val = parseInt($(this).val()) || 0;
 
-        if (val > pending) {
-            $(this).val(pending);
-            alert(`Maximum allowed quantity is ${pending}`);
-        }
+        // if (val > pending) {
+        //     $(this).val(pending);
+        //     alert(`Maximum allowed quantity is ${pending}`);
+        // }
     });
 </script>
 

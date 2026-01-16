@@ -22,11 +22,11 @@
                             <button type="submit" class="btn btn-secondary mr-2">Skip</button>
                         </form> -->
 
-                        <form action="{{ route('admin.order_digitalization.delete-slip') }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this slip?');">
+                        <!-- <form action="{{ route('admin.order_digitalization.delete-slip') }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this slip?');">
                             @csrf
                             <input type="hidden" name="production_slip_digitization_id" value="{{ $slip_data['id'] }}">
                             <button type="submit" class="btn btn-danger mr-2">Delete</button>
-                        </form>
+                        </form> -->
                     @endif
                 </div>
             </div>

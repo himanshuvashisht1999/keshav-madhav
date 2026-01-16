@@ -60,8 +60,7 @@ class TimeAllocationService {
     {
         $allocatedLots = \App\Models\OrderStageWiseTimeTracking::pluck('lot_no')->toArray();
 
-        $lots = \App\Models\FabricRollAssigning::where('status', 1)
-            ->whereNotIn('lot_no', $allocatedLots)
+        $lots = \App\Models\FabricRollAssigning::whereNotIn('lot_no', $allocatedLots)
             ->distinct()
             ->pluck('lot_no');
             
@@ -172,7 +171,7 @@ class TimeAllocationService {
                 if ($slip) {
                     $slip->update([
                         'lot_no'  => $request->lot_no,
-                        'status'  => 5
+                        'status'  => 1
                     ]);
                 }
             }
