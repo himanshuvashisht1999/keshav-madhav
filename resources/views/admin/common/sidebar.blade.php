@@ -158,14 +158,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
 
                         
 
-                        <ul class="nav nav-treeview">
+                        <!-- <ul class="nav nav-treeview">
                                 <li class="nav-item">
                                 <a href="{{ route('admin.purchase_order.index') }}" class="{{ (str_contains($page_url, 'admin/purchase-order/receipts') && !str_contains($page_url, 'admin/purchase-order-material')) ? 'nav-link active' : 'nav-link' }}" style="position:static;">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>PO Reports</p>
                                 </a>
                             </li>
-                        </ul>
+                        </ul> -->
                        
                         <!-- <ul class="nav nav-treeview">
                             <li class="nav-item">
@@ -519,7 +519,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                             {{-- ================= FABRIC MASTER ================= --}}
                             <li class="{{ (
                                     str_contains($page_url, 'admin/master/fabric_dye') ||
-                                    str_contains($page_url, 'admin/master/fabric_composition') ||
+                                    str_contains($page_url, 'admin/master/fabric-composition') ||
                                     str_contains($page_url, 'admin/master/fabric_gsm') ||
                                     str_contains($page_url, 'admin/master/fabric_weave') ||
                                     str_contains($page_url, 'admin/master/fabric_width') ||
@@ -528,7 +528,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                 <a href="#"
                                     class="{{ (
                                             str_contains($page_url, 'admin/master/fabric_dye') ||
-                                            str_contains($page_url, 'admin/master/fabric_composition') ||
+                                            str_contains($page_url, 'admin/master/fabric-composition') ||
                                             str_contains($page_url, 'admin/master/fabric_gsm') ||
                                             str_contains($page_url, 'admin/master/fabric_weave') ||
                                             str_contains($page_url, 'admin/master/fabric_width') ||
@@ -552,7 +552,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
 
                                     <li class="nav-item">
                                         <a href="{{ route('admin.master.fabric_composition.index') }}"
-                                            class="{{ str_contains($page_url, 'admin/master/fabric_composition') ? 'nav-link active' : 'nav-link' }}">
+                                            class="{{ str_contains($page_url, 'admin/master/fabric-composition') ? 'nav-link active' : 'nav-link' }}">
                                             <i class="fas fa-circle"></i>
                                             <p>Composition</p>
                                         </a>

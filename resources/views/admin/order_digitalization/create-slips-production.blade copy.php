@@ -70,14 +70,14 @@
 
                                 <div class="product-row">
 
-                                    <label>Design Number (Royal Jeans)</label>
+                                    <label>Design Number (Snapkid)</label>
                                     <input type="text" name="design_id" id="design_id" class="form-control">
                                     @if ($errors->has('designList'))
                                         <span class="invalid-feedback d-block">
                                             {{ $errors->first('designList') }}
                                         </span>
                                     @endif
-                                   <label class="mt-3">Colour (Royal Jeans)</label>
+                                   <label class="mt-3">Colour (Snapkid)</label>
                                     <select class="form-control select2 mb-3 colour-input" name="colour_id">
                                         <option value="">Select</option>
                                         @foreach($colours as $colour)

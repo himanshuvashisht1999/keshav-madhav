@@ -415,7 +415,6 @@
 const USED_LOTS = @json($used_lots);
 
 $(document).ready(function () {
-
     $('#lot_no').on('input', function () {
 
         const lotNo = $(this).val().trim();
@@ -427,7 +426,8 @@ $(document).ready(function () {
             return;
         }
 
-        if (USED_LOTS.includes(Number(lotNo))) {
+        // if (USED_LOTS.includes(Number(lotNo))) {
+        if (USED_LOTS.includes((lotNo))) {
             errorBox.text('❌ This lot number is already used');
             $('#submit').prop('disabled', true);
         } else {
@@ -887,15 +887,9 @@ $(document).ready(function() {
                     <tr>
                         <td class="font-weight-bold">${size}</td>
                         <td>
-                            <div class="progress" style="height: 20px;">
-                                <div class="progress-bar bg-info" role="progressbar" 
-                                     style="width: ${percentage}%" 
-                                     aria-valuenow="${qty}" aria-valuemin="0" aria-valuemax="${totalPieces}">
+                                
                                     ${qty} pcs
-                                </div>
-                            </div>
                         </td>
-                        <td class="text-right">${percentage}%</td>
                     </tr>
                 `;
             }
@@ -992,7 +986,6 @@ $(document).ready(function() {
                                         <tr>
                                             <th width="20%">Size</th>
                                             <th width="60%">Quantity</th>
-                                            <th width="20%" class="text-right">%</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1002,7 +995,6 @@ $(document).ready(function() {
                                         <tr>
                                             <td>Total</td>
                                             <td>${totalPieces} pieces</td>
-                                            <td class="text-right">100%</td>
                                         </tr>
                                     </tfoot>
                                 </table>

@@ -709,17 +709,17 @@ $(document).ready(function() {
         });
     });
 
-    $(document).on('input', '.meter', function () {
-        let currentRow = parseInt($(this).closest('tr').data('row'));
-        let meterVal = $(this).val();
+    // $(document).on('input', '.meter', function () {
+    //     let currentRow = parseInt($(this).closest('tr').data('row'));
+    //     let meterVal = $(this).val();
 
-        $('#fabric-body tr').each(function () {
-            let row = parseInt($(this).data('row'));
-            if (row > currentRow) {
-                $(this).find('.meter').val(meterVal);
-            }
-        });
-    });
+    //     $('#fabric-body tr').each(function () {
+    //         let row = parseInt($(this).data('row'));
+    //         if (row > currentRow) {
+    //             $(this).find('.meter').val(meterVal);
+    //         }
+    //     });
+    // });
 
     // $(document).on('input', 'input[name^="rolls"][name$="[roll]"]', function () {
     //     let currentRow = parseInt($(this).closest('tr').data('row'));

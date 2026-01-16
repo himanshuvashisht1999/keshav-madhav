@@ -270,7 +270,11 @@ class TimeAllocationService {
             ];
 
         } catch (\Exception $e) {
-            dd($e->getMessage());
+            return [
+                'status_code' => 0,
+                'message' => $e->getMessage()
+            ];
+            // dd($e->getMessage());
         }
     }
 
