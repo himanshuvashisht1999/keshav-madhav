@@ -118,7 +118,7 @@
                                                     $actionRoute = route('admin.order_digitalization.create-slips-production', ['slip_id' => $slip->id]);
                                                 }
                                             ?>
-                                            <a href="{{ $actionRoute }}" class="btn btn-primary btn-sm shadow-sm">Action</a>
+                                            <a href="{{ $actionRoute }}" class="btn btn-primary btn-sm shadow-sm"><i class="fas fa-pen"></i></a>
                                         @endif
 
                                         @if($slip->status == 0)

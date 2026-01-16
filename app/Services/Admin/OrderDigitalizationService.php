@@ -50,6 +50,7 @@ class OrderDigitalizationService {
         try {
             // Get the production slip to retrieve stage_master_unit_id
             $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
+            $order_product_set = OrderProductSet::with('orderMain')->where('id',$request->design_id)->first();
             
             if (!$slip) {
                 throw new \Exception('Production slip not found');
@@ -78,7 +79,7 @@ class OrderDigitalizationService {
                     $save_data_main->lot_no = $lot_no;
                     $save_data_main->production_slip_digitization_id = $request->production_slip_digitization_id;
                     $save_data_main->order_products_set_id = $request->design_id;
-                    $save_data_main->order_no = '';
+                    $save_data_main->order_no = $order_product_set->orderMain?->sku;
                     $save_data_main->stage_master_unit_id = $slip->stage_master_unit_id; // Get from slip
                     $save_data_main->roll_no = $request->roll_no_list[$key];
                     $save_data_main->meter = $request->meter_list[$key];
@@ -108,7 +109,8 @@ class OrderDigitalizationService {
                     $save_data_main->update(['roll_no' => $fabricReceiptDetail->roll_number]);
 
                     // 3️⃣ Save Size Details (NEW)
-                    if (isset($request->size_details[$key])) {
+                    // if (isset($request->size_details[$key])) {
+                    if ($key === 0 && isset($request->size_details[$key])) {
                         $sizeArray = json_decode($request->size_details[$key], true);
                         if (is_array($sizeArray)) {
                             foreach ($sizeArray as $sizeItem) {
@@ -401,6 +403,7 @@ class OrderDigitalizationService {
             'getUnitMaster.masterFabricWarehouse'
             ])
             ->where('status', 0)
+            ->where('id', $request->slip_id)
             ->whereNot('from_stage_id', 3)
             ->orderBy('id', 'asc')
             ->first();
@@ -432,6 +435,7 @@ class OrderDigitalizationService {
                 ->select('stage_master_units.*', 'master_stages.sequence')
                 ->get()
                 ->toArray();
+                //dd($results_units);
             $unit_master_data = [];
             $from_stage = [];
             if ($results_units){
@@ -1338,7 +1342,7 @@ class OrderDigitalizationService {
     }
 
     public function used_lots(){
-        $lots= FabricRollAssigning::pluck('lot_no');
+        $lots= FabricRollAssigning::distinct()->pluck('lot_no');
         return $lots;
     }
 }

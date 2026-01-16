@@ -46,7 +46,7 @@
 
                             <p class="mb-0">
                                 @if($data->company_id == 2)
-                                    Royal Jeans
+                                    Snapkid
                                 @else
                                     General
                                 @endif

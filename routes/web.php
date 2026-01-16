@@ -378,7 +378,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/update',[AdminFabricGsmController::class,'update'])->name('update');
             Route::get('/delete',[AdminFabricGsmController::class,'delete'])->name('delete');
         });
-        Route::prefix('master/fabric_composition')->name('master.fabric_composition.')->group(function () {
+        Route::prefix('master/fabric-composition')->name('master.fabric_composition.')->group(function () {
             Route::get('/index',[AdminFabricCompositionController::class,'index'])->name('index');
             Route::get('/indexList',[AdminFabricCompositionController::class,'indexList'])->name('indexList');
             Route::get('/create',[AdminFabricCompositionController::class,'create'])->name('create');
