@@ -37,6 +37,16 @@
 </section>
 
 <section class="content">
+    <div class="row mb-3">
+        <div class="col-md-3 ml-2">
+            <label for="">Search Lot No</label>
+            <input type="text"
+                id="lotSearch"
+                class="form-control form-control-sm"
+                placeholder="Search Lot No">
+        </div>
+    </div>
+
 <div class="container-fluid">
 
 @forelse($order->OrderProductSets as $set)
@@ -46,7 +56,7 @@
                 <h5 class="m-0">Design No: <strong>{{ $set->design_number }}</strong></h5>
                 <small class="text-muted">
                     Color: {{ $set->colors->name ?? '-' }} | 
-                    Size Group: {{ $set->sizeMeasurement->size_group ?? '-' }} |
+                    Size Group: {{ $set->size_measurement->size_group ?? '-' }} |
                     Total Order Qty: {{ $set->total_quantity }} pcs
                 </small>
             </div>
@@ -57,13 +67,13 @@
                 <div class="row">
                     @foreach($set->lots as $lot)
                     <div class="col-md-12">
-                        <div class="lot-card">
+                        <div class="lot-card" data-lot="{{ strtolower($lot->lot_no) }}">
                             <div class="lot-header">
                                 <div>
                                     <i class="fas fa-layer-group text-primary"></i> Lot No: {{ $lot->lot_no }}
                                 </div>
                                 <div>
-                                    <span class="badge bg-info">{{ $lot->stage_master_unit->masterStage->name ?? 'Unknown Stage' }}</span>
+                                    <span class="badge bg-info">{{ $lot->stage_master_unit->masterStage->name ?? '' }}</span>
                                 </div>
                             </div>
                             <div class="lot-body">
@@ -103,6 +113,12 @@
                                     <button class="btn btn-xs btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#history-{{ $lot->id }}">
                                         Show/Hide
                                     </button>
+                                    {{-- <button class="btn btn-xs btn-outline-secondary"
+                                            type="button"
+                                            data-toggle="collapse"
+                                            data-target="#history-{{ $lot->id }}">
+                                        Show/Hide
+                                    </button> --}}
                                 </div>
                                 <div class="collapse" id="history-{{ $lot->id }}">
                                     <div class="table-responsive">
@@ -159,5 +175,26 @@
 </div>
 </section>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
 
+        const searchInput = document.getElementById('lotSearch');
+
+        searchInput.addEventListener('keyup', function () {
+            const searchValue = this.value.toLowerCase().trim();
+            const lotCards = document.querySelectorAll('.lot-card');
+
+            lotCards.forEach(card => {
+                const lotNo = card.getAttribute('data-lot');
+
+                if (lotNo.includes(searchValue)) {
+                    card.closest('.col-md-12').style.display = '';
+                } else {
+                    card.closest('.col-md-12').style.display = 'none';
+                }
+            });
+        });
+
+    });
+</script>
 @endsection

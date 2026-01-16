@@ -28,6 +28,7 @@ class ReportController extends Controller
     public function salesOrderDetail($id)
     {
         $response['order'] = $this->service->getSalesOrderDetails($id);
+        // dd($response['order']);
         return view('admin.report.sales_order_detail', $response);
     }
     public function salesOrderExport(Request $request)
@@ -221,4 +222,15 @@ class ReportController extends Controller
         return view('admin.report.dispatch_order',$response);
     }
 
+    public function lots(Request $request)
+    {
+        $response['data'] = $this->service->lots($request);
+        return view('admin.report.lots',$response);
+    }
+
+    public function lotDetails(Request $request)
+    {
+        $response['data'] = $this->service->lotDetails($request);
+        return view('admin.report.lot_details',$response);
+    }
 }
