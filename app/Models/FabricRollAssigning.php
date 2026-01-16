@@ -40,4 +40,9 @@ class FabricRollAssigning extends Model
     {
         return $this->belongsTo(\App\Models\OrderProductSet::class, 'order_products_set_id');
     }
+
+    public function fabricRollAssigningsDetail()
+    {
+        return $this->hasMany(\App\Models\FabricRollAssigningsDetail::class, 'production_fabric_roll_assigning_id', 'id');
+    }
 }

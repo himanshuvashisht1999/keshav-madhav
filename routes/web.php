@@ -593,6 +593,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/sales-order',[AdminReportController::class,'salesOrder'])->name('sales-order');
             Route::get('/sales-order/detail/{id}', [AdminReportController::class, 'salesOrderDetail'])->name('sales-order.detail');
             Route::get('/sales-order/export', [AdminReportController::class, 'salesOrderExport'])->name('sales-order.export');
+            Route::get('/lots',[AdminReportController::class,'lots'])->name('lots');
+            Route::get('/lots/lot-details/{id}', [AdminReportController::class, 'lotDetails'])->name('sales-order.lot-details');
             Route::get('/stock',[AdminReportController::class,'stock'])->name('stock');
             Route::get('/stock/roll-details', [AdminReportController::class, 'fabricRollDetails'])->name('stock.roll.details');
             Route::get('/stock/export', [AdminReportController::class, 'stockExport'])->name('stock.export');
