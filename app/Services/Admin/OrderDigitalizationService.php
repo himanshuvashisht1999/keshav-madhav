@@ -138,7 +138,7 @@ class OrderDigitalizationService {
             $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
 
             $slip->update([
-                'status'  => 4
+                'status'  => 1
             ]);
 
             // Commit everything if all successful
@@ -309,7 +309,7 @@ class OrderDigitalizationService {
                 if ($slip) {
                     $slip->update([
                         'lot_no'  => $request->lot_no,
-                        'status'  => 5
+                        'status'  => 1
                     ]);
                 }
             }
@@ -798,6 +798,7 @@ class OrderDigitalizationService {
                 $q->where('stage_master_unit_id', $stage_master_unit_id);
             })
             ->get();
+            // dd($main_orders);
 
         // FALLBACK: If product_set_details is empty, check if they exist under order_main_id (due to previous bug)
         foreach ($main_orders as $order) {
@@ -1032,7 +1033,7 @@ class OrderDigitalizationService {
 
             // Update slip status to mark as processed for stitching
             $slip->update([
-                'status' => 5, // Processed for stitching
+                'status' => 1, // Processed for stitching
                 'lot_no' => $request->lot_no
             ]);
 
@@ -1077,7 +1078,7 @@ class OrderDigitalizationService {
 
             // Update slip status to mark as processed for printing
             $slip->update([
-                'status' => 6, // Processed for printing
+                'status' => 1, // Processed for printing
                 'lot_no' => $request->lot_no
             ]);
 
@@ -1334,5 +1335,10 @@ class OrderDigitalizationService {
             DB::rollBack();
             return ['status_code' => 0, 'message' => $e->getMessage()];
         }
+    }
+
+    public function used_lots(){
+        $lots= FabricRollAssigning::pluck('lot_no');
+        return $lots;
     }
 }

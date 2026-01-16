@@ -148,6 +148,7 @@ class OrderDigitalizationController extends Controller {
 
     public function cuttingMaster(Request $request){
         $production_slip_digitization = $this->service->cutting_slip($request);
+        
         if($production_slip_digitization){
             $response['orders'] = $this->service->orders($production_slip_digitization->stage_master_unit_id);
             $response['lots_stitching'] = $this->service->getLotsBySlip($production_slip_digitization->id, 'stitching');
@@ -159,23 +160,16 @@ class OrderDigitalizationController extends Controller {
             $response['printing_units'] = $this->service->getStageUnits($warehouse_id, 1);  // 1 = Printing
             
             $cutting_unit = $production_slip_digitization->stage_master_unit_id;
-            $response['cutting_master_orders'] = $this->service->cutting_master_orders($cutting_unit);
             
-            // $response['next_stages'] = $this->service->getNextStages($production_slip_digitization->getUnitMaster->master_fabric_warehouse_id);
         }else{
             $response['orders'] = [];
             $response['lots_stitching'] = [];
             $response['lots_printing'] = [];
-            // $response['next_stages'] = [];
-            // $response['stitching_units'] = [];
-            // $response['printing_units'] = [];
-        }
+            $response['stitching_units'] = [];
+            $response['printing_units'] = [];
+        } 
         $response['cutting_slip'] = $production_slip_digitization;
-        
-        // Data for Time Allocation (independent of slip)
-        $response['available_lots'] = $this->service->getLotsForTimeAllocation();
-        $response['production_stages'] = $this->service->getProductionStages();
-
+        $response['used_lots'] = $this->service->used_lots();
         return view('admin.order_digitalization.cutting_master',$response);
     }
 

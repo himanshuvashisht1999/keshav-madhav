@@ -22,7 +22,7 @@
                 <div class="card-body bg-light rounded">
                     <form method="GET" action="{{ route('admin.uploaded-slips.index') }}">
                         <div class="row">
-                            <div class="col-md-3 mb-2">
+                            <div class="col-md-2 mb-2">
                                 <label class="small font-weight-bold text-muted">From Stage</label>
                                 <select name="from_stage_id" class="form-control select2">
                                     <option value="">-- All Stages --</option>
@@ -33,7 +33,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-3 mb-2">
+                            <div class="col-md-2 mb-2">
                                 <label class="small font-weight-bold text-muted">Unit</label>
                                 <select name="stage_master_unit_id" class="form-control select2">
                                     <option value="">-- All Units --</option>
@@ -44,20 +44,20 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-3 mb-2">
+                            <div class="col-md-2 mb-2">
                                 <label class="small font-weight-bold text-muted">Status</label>
                                 <select name="status" class="form-control select2">
                                     <option value="">-- All Status --</option>
                                     <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Pending</option>
-                                    <option value="1" {{ request('status') == 1 ? 'selected' : '' }}>Digitised</option>
+                                    <option value="1" {{ request('status') == 1 ? 'selected' : '' }}>Digitized</option>
                                     <option value="2" {{ request('status') == 2 ? 'selected' : '' }}>Skipped</option>
                                 </select>
                             </div>
-                            <div class="col-md-3 mb-2">
+                            <div class="col-md-2 mb-2">
                                 <label class="small font-weight-bold text-muted">Date</label>
                                 <input type="date" name="date" class="form-control" value="{{ request('date') }}">
                             </div>
-                            <div class="col-md-12 mb-2 d-flex justify-content-end align-items-end">
+                            <div class="col-md-4 mb-2 d-flex justify-content-end align-items-end">
                                 <button type="submit" class="btn btn-primary px-4 shadow-sm mr-2">Filter</button>
                                 <a href="{{ route('admin.uploaded-slips.index') }}" class="btn btn-secondary px-3 shadow-sm">Reset</a>
                             </div>
@@ -96,7 +96,7 @@
                                         @elseif($slip->status == 2)
                                             <span class="badge badge-danger px-2 py-1">Skipped</span>
                                         @else
-                                            <span class="badge badge-success px-2 py-1">Digitised</span>
+                                            <span class="badge badge-success px-2 py-1">Digitized</span>
                                         @endif
                                     </td>
                                     <td class="text-right">
@@ -121,6 +121,7 @@
                                             <a href="{{ $actionRoute }}" class="btn btn-primary btn-sm shadow-sm">Action</a>
                                         @endif
 
+                                        @if($slip->status == 0)
                                         <form action="{{ route('admin.uploaded-slips.destroy', $slip->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this slip?');" style="display:inline-block;">
                                             @csrf
                                             @method('DELETE')
@@ -128,6 +129,7 @@
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
+                                        @endif
 
                                     </td>
                                 </tr>
