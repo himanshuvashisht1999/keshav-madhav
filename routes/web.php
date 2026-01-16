@@ -186,7 +186,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/index-order-set',[AdminProductOrderController::class,'indexOrderSet'])->name('indexOrderSet');
             Route::get('/indexListOrderSet',[AdminProductOrderController::class,'indexListOrderSet'])->name('indexListOrderSet');
             Route::get('/index-order-set-download',[AdminProductOrderController::class,'indexOrderSetDownload'])->name('indexOrderSetDownload');
-            
+            Route::get('/view-cutting-slip',[AdminProductOrderController::class,'viewCuttingSlip'])->name('viewCuttingSlip');
+
             Route::get('/index',[AdminProductOrderController::class,'index'])->name('index');
             Route::get('/indexList',[AdminProductOrderController::class,'indexList'])->name('indexList');
             
@@ -203,6 +204,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
             Route::post('/assign_to',[AdminProductOrderController::class,'assign_to'])->name('assign_to');
             Route::get('/download-cutting-slip',[AdminProductOrderController::class,'downloadCuttingSlip'])->name('downloadCuttingSlip');
+            
             // Route::get('/fabric_combined_receipt',[AdminProductOrderController::class,'fabric_combined_receipt'])->name('fabric_combined_receipt');
             Route::post('/getCuttingUnit',[AdminProductOrderController::class,'getCuttingUnit'])->name('getCuttingUnit');
         });
@@ -594,7 +596,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/sales-order/detail/{id}', [AdminReportController::class, 'salesOrderDetail'])->name('sales-order.detail');
             Route::get('/sales-order/export', [AdminReportController::class, 'salesOrderExport'])->name('sales-order.export');
             Route::get('/lots',[AdminReportController::class,'lots'])->name('lots');
-            Route::get('/lots/lot-details/{id}', [AdminReportController::class, 'lotDetails'])->name('sales-order.lot-details');
+            Route::get('/lots/lot-details/{lot_no}', [AdminReportController::class, 'lotDetails'])->name('lots.lot-details');
             Route::get('/stock',[AdminReportController::class,'stock'])->name('stock');
             Route::get('/stock/roll-details', [AdminReportController::class, 'fabricRollDetails'])->name('stock.roll.details');
             Route::get('/stock/export', [AdminReportController::class, 'stockExport'])->name('stock.export');

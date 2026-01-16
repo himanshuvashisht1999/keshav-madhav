@@ -36,7 +36,7 @@ class FabricRollAssigning extends Model
         return $this->belongsTo(\App\Models\StageMasterUnit::class, 'stage_master_unit_id');
     }
 
-    public function order_product_set()
+    public function orderProductSet()
     {
         return $this->belongsTo(\App\Models\OrderProductSet::class, 'order_products_set_id');
     }

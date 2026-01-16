@@ -188,72 +188,81 @@ class ProductOrderController extends Controller {
 
     public function indexOrderSetDownload(Request $request)
     {
-        $data = OrderProductSet::with([
-            'stage_master_unit',
-            'fabric',
-            'master_design_pattern',
-            'orderMain.customer',
-            'colors',
-            'size_measurement',
-            'master_product_fitting',
-        ])->where('id', $request->id)->firstOrFail();
+        // $data = OrderProductSet::with([
+        //     'stage_master_unit',
+        //     'fabric',
+        //     'master_design_pattern',
+        //     'orderMain.customer',
+        //     'colors',
+        //     'size_measurement',
+        //     'master_product_fitting',
+        // ])->where('id', $request->id)->firstOrFail();
 
-        $cmpoHeader = [
-            'cmpo_id'     => $data->id,
-            'date'        => $data->created_at->format('d-m-Y'),
-            'order_no'    => $data->orderMain->sku ?? '-',
-            'customer'    => $data->orderMain->customer->name ?? '-',
-            'design_no'   => $data->design_number ?? '-',
-            'color'       => $data->colors->name ?? '-',
-            'fabric'      => $data->fabric->name ?? '-',
-            'pattern'     => $data->master_design_pattern->name ?? '-',
-            'warehouse_name' => $data->stage_master_unit->masterFabricWarehouse->cutting_master_name ?? '-',
-            'cuttingMaster' => $data->stage_master_unit->name ?? '-',
-            'cuttingMasterAddress' => $data->stage_master_unit->masterFabricWarehouse->address ?? '-',
-            'fitting' => $data->master_product_fitting?->name ?? '-',
-            'remark' => $data->remark ?? '-',
-            'total_pcs' => $data->total_quantity ?? '0',
-        ];
+        // $cmpoHeader = [
+        //     'cmpo_id'     => $data->id,
+        //     'date'        => $data->created_at->format('d-m-Y'),
+        //     'order_no'    => $data->orderMain->sku ?? '-',
+        //     'customer'    => $data->orderMain->customer->name ?? '-',
+        //     'design_no'   => $data->design_number ?? '-',
+        //     'color'       => $data->colors->name ?? '-',
+        //     'fabric'      => $data->fabric->name ?? '-',
+        //     'pattern'     => $data->master_design_pattern->name ?? '-',
+        //     'warehouse_name' => $data->stage_master_unit->masterFabricWarehouse->cutting_master_name ?? '-',
+        //     'cuttingMaster' => $data->stage_master_unit->name ?? '-',
+        //     'cuttingMasterAddress' => $data->stage_master_unit->masterFabricWarehouse->address ?? '-',
+        //     'fitting' => $data->master_product_fitting?->name ?? '-',
+        //     'remark' => $data->remark ?? '-',
+        //     'total_pcs' => $data->total_quantity ?? '0',
+        // ];
 
-        // ==============================
-        // SIZE-WISE DATA (LIKE CUTTING SLIP)
-        // ==============================
-        $sizeData = [];
+        // // ==============================
+        // // SIZE-WISE DATA (LIKE CUTTING SLIP)
+        // // ==============================
+        // $sizeData = [];
 
-        $sizes = [$data->set_size]; // fallback
+        // $sizes = [$data->set_size]; // fallback
         
-        if (!empty($data->size_measurement->size_group)) {
-            $sizes = explode(',', $data->size_measurement->size_group);
-        }
+        // if (!empty($data->size_measurement->size_group)) {
+        //     $sizes = explode(',', $data->size_measurement->size_group);
+        // }
 
-        foreach ($sizes as $size) {
-            $size = trim($size);
+        // foreach ($sizes as $size) {
+        //     $size = trim($size);
 
-            if (!isset($sizeData[$size])) {
-                $sizeData[$size] = [
-                    'design_no' => $data->design_number,
-                    'color'     => $data->colors->name,
-                    'size'      => $size,
-                    'pcs'       => 0,
-                ];
-            }
+        //     if (!isset($sizeData[$size])) {
+        //         $sizeData[$size] = [
+        //             'design_no' => $data->design_number,
+        //             'color'     => $data->colors->name,
+        //             'size'      => $size,
+        //             'pcs'       => 0,
+        //         ];
+        //     }
 
-            // distribute quantity per size
-            $sizeData[$size]['pcs'] += $data->set_quantity;
-        }
-
+        //     // distribute quantity per size
+        //     $sizeData[$size]['pcs'] += $data->set_quantity;
+        // }
+        $slip_data = $this->buildCmpoData($request->id);
         // ==============================
         // PDF
         // ==============================
         $pdf = Pdf::loadView(
             'admin.product_order.cmpo_slip',
-            [
-                'header'   => $cmpoHeader,
-                'sizeData' => $sizeData,
+             [
+                'header'   => $slip_data['cmpoHeader'],
+                'sizeData' => $slip_data['sizeData'],
             ]
         )->setPaper('a4', 'portrait');
 
-        return $pdf->download('CMPO-' . $data->id . '.pdf');
+        return $pdf->download('CMPO-' . $request->id . '.pdf');
+    }
+
+    public function viewCuttingSlip(Request $request){
+        $slip_data = $this->buildCmpoData($request->id);
+        $response = [
+                'header'   => $slip_data['cmpoHeader'],
+                'sizeData' => $slip_data['sizeData'],
+            ];
+        return view('admin.product_order.view_cmpo_slip', $response);
     }
 
     public function downloadCuttingSlip(Request $request){
@@ -347,4 +356,57 @@ class ProductOrderController extends Controller {
     //     $response = $this->service->getCuttingUnit($request);
     //     return response()->json($response);
     // }
+
+    private function buildCmpoData(int $id): array
+    {
+        $data = OrderProductSet::with([
+            'stage_master_unit.masterFabricWarehouse',
+            'fabric',
+            'master_design_pattern',
+            'orderMain.customer',
+            'colors',
+            'size_measurement',
+            'master_product_fitting',
+        ])->findOrFail($id);
+
+        // ================= HEADER =================
+        $cmpoHeader = [
+            'cmpo_id'     => $data->id,
+            'date'        => $data->created_at->format('d-m-Y'),
+            'order_no'    => $data->orderMain->sku ?? '-',
+            'customer'    => $data->orderMain->customer->name ?? '-',
+            'design_no'   => $data->design_number ?? '-',
+            'color'       => $data->colors->name ?? '-',
+            'fabric'      => $data->fabric->name ?? '-',
+            'pattern'     => $data->master_design_pattern->name ?? '-',
+            'warehouse_name' => $data->stage_master_unit->masterFabricWarehouse->cutting_master_name ?? '-',
+            'cuttingMaster' => $data->stage_master_unit->name ?? '-',
+            'cuttingMasterAddress' => $data->stage_master_unit->masterFabricWarehouse->address ?? '-',
+            'fitting' => $data->master_product_fitting?->name ?? '-',
+            'remark' => $data->remark ?? '-',
+            'total_pcs' => $data->total_quantity ?? 0,
+        ];
+
+        // ================= SIZE DATA =================
+        $sizeData = [];
+
+        $sizes = [$data->set_size];
+        if (!empty($data->size_measurement?->size_group)) {
+            $sizes = explode(',', $data->size_measurement->size_group);
+        }
+
+        foreach ($sizes as $size) {
+            $size = trim($size);
+
+            $sizeData[$size] = [
+                'design_no' => $data->design_number,
+                'color'     => $data->colors->name,
+                'size'      => $size,
+                'pcs'       => $data->set_quantity, // per size
+            ];
+        }
+
+        return ['cmpoHeader' => $cmpoHeader, 'sizeData' => $sizeData];
+    }
+
 }

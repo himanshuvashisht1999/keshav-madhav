@@ -64,55 +64,49 @@
             {{-- FILTERS --}}
             <div class="card mb-3">
                 <div class="card-body">
-                    <form method="GET" action="{{ route('admin.report.stock') }}">
-                        <div class="row g-2">
-
-                            <div class="col-md-2">
-                                <label>Warehouse</label>
-                                <select name="warehouse_id" class="form-control">
-                                    <option value="">All Warehouses</option>
-                                    @foreach($warehouses as $warehouse)
-                                    <option value="{{ $warehouse->id }}"
-                                        {{ ($filters['warehouse_id'] ?? '') == $warehouse->id ? 'selected' : '' }}>
-                                        {{ $warehouse->cutting_master_name }}
-                                    </option>
+                    <form method="GET" action="{{ url()->current() }}">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="fw-bold">Order No</label>
+                                <select name="order_id" id="order_no" class="form-control select2" onchange="changeOrderId(this.value)">
+                                    <option value="">All</option>
+                                    @foreach(collect($lotNos)->unique('order_id') as $row)
+                                        <option value="{{ $row['order_id'] }}"
+                                            {{ request('order_id') == $row['order_id'] ? 'selected' : '' }}>
+                                            {{ $row['order_no'] }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
 
-                            <div class="col-md-2">
-                                <label>Fabric SKU</label>
-                                <select name="fabric_sku" class="form-control">
-                                    <option value="">All Fabrics</option>
-                                    @foreach($fabrics as $fabric)
-                                    <option value="{{ $fabric->sku }}"
-                                        {{ ($filters['fabric_sku'] ?? '') == $fabric->sku ? 'selected' : '' }}>
-                                        {{ $fabric->sku }}
-                                    </option>
+                            <div class="col-md-4">
+                                <label class="fw-bold">Lot No</label>
+                                <select name="lot_no" id="lot_no" class="form-control select2">
+                                    <option value="">All</option>
+                                    @forelse($lotNos as $index => $row)
+                                        <option value="{{ $row['lot_no'] }}" {{ request('lot_no') == $row['lot_no'] ? 'selected' : '' }}>
+                                            {{ $row['lot_no'] }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
 
-                            <div class="col-md-2">
-                                <label>Qty From</label>
-                                <input type="number" name="meter_from" class="form-control"
-                                    value="{{ $filters['meter_from'] ?? '' }}">
-                            </div>
+                            {{--<div class="col-md-4">
+                                <label class="fw-bold">Order No</label>
+                                <input type="text"
+                                    name="order_no"
+                                    value="{{ request('order_no') }}"
+                                    class="form-control"
+                                    placeholder="Search Order No">
+                            </div> --}}
 
-                            <div class="col-md-2">
-                                <label>Qty To</label>
-                                <input type="number" name="meter_to" class="form-control"
-                                    value="{{ $filters['meter_to'] ?? '' }}">
-                            </div>
-
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button class="btn btn-primary w-100">
-                                    <i class="fas fa-filter"></i> Apply
+                            <div class="col-md-4 d-flex align-items-end gap-2">
+                                <button class="btn btn-primary mr-2">
+                                    Search
                                 </button>
-                            </div>
-                            <div class="col-md-2 d-flex align-items-end">
-                                <a href="{{ route('admin.report.stock.export', request()->query()) }}" class="btn btn-secondary w-100">
-                                    <i class="fas fa-file-excel"></i> Export
+
+                                <a href="{{ url()->current() }}" class="btn btn-secondary">
+                                    Reset
                                 </a>
                             </div>
 
@@ -130,68 +124,45 @@
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Fabric SKU</th>
-                                    <th>Warehouse</th>
-                                    <th class="text-end">Remaining Qty</th>
-                                    <th class="text-center">Action</th>
+                                    <th>Lot No</th>
+                                    <th>Order No</th>
+                                    <th>Customer Name</th>
+                                    <th>Lot Quantity</th>
+                                    <th class="text-end">Action</th>
                                 </tr>
                             </thead>
 
                             <tbody>
-                                @php $sr = 1; @endphp
-
-                                @forelse($data as $fabricSku => $rows)
-
-                                @php $rowspan = $rows->count(); @endphp
-
-                                @foreach($rows as $index => $row)
-
-                                <tr>
-
-                                    {{-- FABRIC (ONLY ONCE) --}}
-                                    @if($index === 0)
-                                    <td rowspan="{{ $rowspan }}" class="fabric-cell">{{ $sr }}</td>
-                                    <td rowspan="{{ $rowspan }}" class="fabric-cell">
-                                        {{ $fabricSku }}
-                                    </td>
-                                    @endif
-
-                                    {{-- WAREHOUSE --}}
-                                    <td>
-                                        <i class="fas fa-warehouse text-primary me-2"></i>
-                                        {{ $row->master_fabric_warehouse?->cutting_master_name }}
-                                    </td>
-
-                                    <td class="text-end fw-bold">
-                                        {{ number_format($row->total_remaining,2) }}
-                                    </td>
-
-                                    <td class="text-center">
-                                        <button class="btn btn-sm btn-outline-primary expand-btn" onclick="openStockModal(
-                    '{{ $fabricSku }}',
-                    '{{ $row->master_fabric_warehouse_id }}',
-                    '{{ $row->master_fabric_warehouse?->cutting_master_name }}'
-                )">
+                                @forelse($data as $index => $row)
+                                    <tr>
+                                        <td>{{ $data->firstItem() + $index }}</td>
+                                        <td>{{ $row['lot_no'] }}</td>
+                                        <td>{{ $row['order_no'] }}</td>
+                                        <td>{{ $row['customer_name'] }}</td>
+                                        <td class="text-end fw-bold">
+                                            {{ $row['lot_quantity'] ?? '0' }}
+                                        </td>
+                                        <td class="text-center">
+                        
+                                            <a href="{{ route('admin.report.lots.lot-details', ['lot_no' => $row['lot_no']]) }}" class="btn btn-sm btn-outline-primary">
                                             View
-                                        </button>
-                                    </td>
-                                </tr>
-
-                                @endforeach
-
-                                @php $sr++; @endphp
-
+                                            </a>
+                                        </td>
+                                    </tr>
                                 @empty
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">
-                                        No stock data found
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">
+                                            No data found
+                                        </td>
+                                    </tr>
                                 @endforelse
                             </tbody>
 
-                        </table>
 
+                        </table>
+                        <div class="mt-3">
+                            {{ $data->links() }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -200,118 +171,46 @@
     </section>
 </div>
 
-{{-- ================= MODAL ================= --}}
-<div class="modal fade" id="stockModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    Stock Roll Details
-                </h5>
-                <!-- <button type="button" class="btn-close" data-bs-dismiss="modal"></button> -->
-            </div>
-
-            <div class="modal-body">
-
-                <!-- SUMMARY -->
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <strong>Fabric :</strong>
-                        <span id="modalFabricSku"></span>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>Warehouse :</strong>
-                        <span id="modalWarehouse"></span>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>Total Remaining :</strong>
-                        <span id="modalTotalQty" class="fw-bold"></span>
-                    </div>
-                </div>
-
-                <!-- TABLE -->
-                <div class="table-responsive">
-                    <table class="table table-bordered table-sm">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Roll No</th>
-                                <th class="text-end">Remaining Qty</th>
-                                <th>Shipment No</th>
-                                <th>Supplier</th>
-                                <th>Date</th>
-                                <th>PO Number</th>
-                            </tr>
-                        </thead>
-                        <tbody id="modalStockTable">
-                            <tr>
-                                <td colspan="5" class="text-center text-muted">Loading...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-            </div>
-
-        </div>
-    </div>
-</div>
 
 {{-- ================= SCRIPT ================= --}}
+
 <script>
-function openStockModal(fabricSku, warehouseId, cuttingMasterName) {
+    
+        const lotData = @json($lotNos);
 
-    document.getElementById('modalFabricSku').innerText = fabricSku;
-    document.getElementById('modalWarehouse').innerText = cuttingMasterName ?? '';
-    document.getElementById('modalTotalQty').innerText = '0';
+        const orderSelect = $('#order_no');
+        const lotSelect   = $('#lot_no');
 
-    document.getElementById('modalStockTable').innerHTML = `
-        <tr>
-            <td colspan="5" class="text-center text-muted">Loading...</td>
-        </tr>
-    `;
+        // helper: unique values
+        function unique(arr) {
+            return [...new Set(arr)];
+        }
 
-    fetch(`{{ route('admin.report.stock.roll.details') }}?fabric_sku=${fabricSku}&warehouse_id=${warehouseId}`)
-        .then(res => res.json())
-        .then(data => {
+        // helper: refill lot dropdown
+        function fillLotDropdown(lots) {
+            lotSelect.empty().append(`<option value="">All</option>`);
+            lots.forEach(lot => {
+                lotSelect.append(`<option value="${lot}">${lot}</option>`);
+            });
+            lotSelect.trigger('change');
+        }
 
-            if (!data.length) {
-                document.getElementById('modalStockTable').innerHTML = `
-                    <tr>
-                        <td colspan="5" class="text-center text-muted">No stock available</td>
-                    </tr>
-                `;
+        // On ORDER change
+        function changeOrderId(selectedOrderId) {
+            // If All selected → show ALL lots
+            if (!selectedOrderId) {
+                const allLots = unique(lotData.map(i => i.lot_no));
+                fillLotDropdown(allLots);
                 return;
             }
 
-            let rowsHtml = '';
-            let totalQty = 0;
+            //  FILTER USING order_id (NOT order_no)
+            const filteredLots = lotData
+                .filter(i => String(i.order_id) === String(selectedOrderId))
+                .map(i => i.lot_no);
 
-            data.forEach(ship => {
-                ship.rolls.forEach(r => {
-
-                    totalQty += parseFloat(r.remaining_quantity ?? 0);
-
-                    rowsHtml += `
-                        <tr>
-                            <td>${r.roll_number ?? '-'}</td>
-                            <td class="text-end fw-bold">${Number(r.remaining_quantity).toFixed(2)}</td>
-                            <td>${ship.shipment_number ?? '-'}</td>
-                            <td>${ship.supplier ?? '-'}</td>
-                            <td>${ship.receipt_date ?? '-'}</td>
-                            <td>${ship.po_number ?? '-'}</td>
-                        </tr>
-                    `;
-                });
-            });
-
-            document.getElementById('modalStockTable').innerHTML = rowsHtml;
-            document.getElementById('modalTotalQty').innerText = totalQty.toFixed(2);
-        });
-
-    new bootstrap.Modal(document.getElementById('stockModal')).show();
-}
+            fillLotDropdown(unique(filteredLots));
+        };
 </script>
-
 
 @endsection

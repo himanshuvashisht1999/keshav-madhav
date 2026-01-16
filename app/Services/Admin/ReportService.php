@@ -888,8 +888,60 @@ class ReportService {
         return $data;
     }
 
-    public function lots()
+    public function lots(Request $request)
     {
+        $searchLot   = $request->lot_no;
+        $searchOrder = $request->order_id;
+
+        $lots = \App\Models\FabricRollAssigning::query()
+
+            ->selectRaw('
+                lot_no,
+                MIN(id) as id,
+                MIN(order_products_set_id) as order_products_set_id
+            ')
+
+            ->withSum('fabricRollAssigningsDetail as lot_quantity', 'quantity')
+
+            ->with([
+                'orderProductSet.orderMain.customer'
+            ])
+
+            ->when($searchLot, function ($q) use ($searchLot) {
+                $q->where('lot_no', 'like', "%{$searchLot}%");
+            })
+
+            ->when($searchOrder, function ($q) use ($searchOrder) {
+                $q->whereHas('orderProductSet.orderMain', function ($qq) use ($searchOrder) {
+                    $qq->where('id', 'like', "%{$searchOrder}%");
+                });
+            })
+
+            ->groupBy('lot_no')
+
+            ->paginate(10)
+            ->withQueryString();
+        // dd($lots);
+        $result = $lots->through(function ($lot) {
+
+            $orderMain = $lot->orderProductSet?->orderMain;
+
+            return [
+                'order_id'      => $orderMain->id ?? null,
+                'order_no'      => $orderMain->sku ?? '',
+                'customer_name' => $orderMain->customer->name ?? '',
+                'lot_no'        => $lot->lot_no,
+                'lot_quantity'  => $lot->lot_quantity ?? 0,
+            ];
+        });
+
+        return $result;
+    }
+
+
+    public function lotDetails(Request $request){
+        $lot_no = $request->lot_no;
+        dd($lot_no);
         $orders = OrderMain::with([
             'customer',
             'OrderProductSets.colors',
@@ -905,18 +957,19 @@ class ReportService {
             foreach ($order->OrderProductSets as $set) {
 
                 $lots = \App\Models\FabricRollAssigning::with('fabricRollAssigningsDetail')
-                    ->where('order_products_set_id', 14)
+                    ->where('order_products_set_id', 13)
                     ->select('id', 'lot_no', 'order_products_set_id')
                     ->distinct()
                     ->get();
-                    dd($lots);
-                    foreach ($lots as $lot) {
-                        $details = $lot->fabricRollAssigningsDetail; // ✅
-                        if (!$details->isEmpty()) {
-                            dd($lots);
-                        }
-                        
-                    };
+                foreach ($lots as $lot) {
+                    $details = $lot->fabricRollAssigningsDetail; 
+                    if (!$details->isEmpty()) {
+                        $lotsData[] = [
+                            'lot_no' => $lot->lot_no,
+                            'lot_quantity' => $details->sum('quantity')
+                        ];
+                    }
+                };
                 
                 $setsData[$order->id][] = [
                     'set_id'                => $set->id,
@@ -932,6 +985,7 @@ class ReportService {
                     'fitting'               => $set->master_product_fitting->name ?? '',
                     'pattern'               => $set->master_design_pattern->name ?? '',
                     'fabric'                => $set->fabric->name ?? '',
+                    'lotsData'              => $lotsData ?? [],
                 ];
             }
 
@@ -942,15 +996,35 @@ class ReportService {
                 'setsData'      => $setsData[$order->id] ?? []
             ];
         }
-          
-        dd($orderMain); 
-        return $orders;
+        dd($orderMain);
+        return $orderMain;
     }
 
+    public function lot_numbers()
+    {
+        $lots = \App\Models\FabricRollAssigning::query()
+            ->selectRaw('
+                lot_no,
+                MIN(order_products_set_id) as order_products_set_id
+            ')
+            ->with([
+                'orderProductSet.orderMain'
+            ])
+            ->groupBy('lot_no')
+            ->orderBy('lot_no', 'asc')
+            ->get();
 
-    public function lotDetails(){
-        $data = "";
-        return $data;
+        $result = $lots->map(function ($lot) {
+
+            $orderMain = $lot->orderProductSet?->orderMain;
+
+            return [
+                'order_id' => $orderMain->id ?? null,
+                'order_no' => $orderMain->sku ?? '',
+                'lot_no'   => $lot->lot_no,
+            ];
+        });
+        return $result; 
     }
     
     public function customers(){
