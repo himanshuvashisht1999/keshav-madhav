@@ -111,8 +111,9 @@ class TimeAllocationService {
         return $count;
     }
 
-    public function storeTimeAllocation(Request $request)
+    public function storeTimeAllocationOld(Request $request)
     {
+        // dd($request->all());
         DB::beginTransaction();
         try {
             
@@ -126,6 +127,9 @@ class TimeAllocationService {
                 'Y-m-d\TH:i',
                 $request->start_date_time
             )->format('Y-m-d H:i:s');
+
+            $startDatetime = Carbon::parse($request->start_date_time);
+            $currentDatetime = $startDatetime->copy();
             
             $save_data_main->sku = '';
             $save_data_main->lot_no = $request->lot_no;
@@ -193,80 +197,139 @@ class TimeAllocationService {
         }
     }
 
-    function calculateExpectedCompletion($startDateTime, $days)
+    public function storeTimeAllocation(Request $request)
     {
-        $WORK_START = 9;    // 9 AM
-        $WORK_END   = 17;   // 5 PM (8-hour workday)
-        $HOURS_PER_DAY = 8; // 8 hours per day
-        $HALF_DAY_HOURS = 4; // 4 hours for half day
+        DB::beginTransaction();
 
-        $current = new \DateTime($startDateTime);
-        $hour = (int)$current->format('H');
+        try {
 
-        // 🔹 Align start time to working hours
+            $save_data_main = new OrderStageWiseTimeTracking;
+
+            // ✅ Parse ONCE
+            $startDatetime = Carbon::parse($request->start_date_time);
+            $currentDatetime = $startDatetime->copy();
+
+            $save_data_main->sku = '';
+            $save_data_main->lot_no = $request->lot_no;
+            $save_data_main->production_slip_digitization_id =
+                $request->production_slip_digitization_id ?? null;
+            $save_data_main->start_date_time =
+                $startDatetime->toDateTimeString();
+
+            if ($request->stages && is_array($request->stages)) {
+                foreach ($request->stages as $stage_id => $days) {
+
+                    $currentDatetime =
+                        $this->calculateExpectedCompletion($currentDatetime, $days);
+
+                    $save_data_main->{'stage_id_'.$stage_id} =
+                        $currentDatetime->toDateTimeString();
+                }
+            }
+
+            $save_data_main->status = 1;
+            $save_data_main->save();
+
+            // -------- MASTER TABLE --------
+            $save_data_master = new MasterStageWiseTimeAllocation;
+
+            $save_data_master->sku = '';
+            $save_data_master->lot_no = $request->lot_no;
+            $save_data_master->production_slip_digitization_id =
+                $request->production_slip_digitization_id ?? null;
+            $save_data_master->start_date_time =
+                $startDatetime->toDateTimeString();
+
+            if ($request->stages && is_array($request->stages)) {
+                foreach ($request->stages as $stage_id => $days) {
+                    $save_data_master->{'stage_id_'.$stage_id} = $days;
+                }
+            }
+
+            $save_data_master->status = 1;
+            $save_data_master->save();
+
+            if ($request->production_slip_digitization_id) {
+                $slip = ProductionSlipDigitization::find(
+                    $request->production_slip_digitization_id
+                );
+
+                if ($slip) {
+                    $slip->update([
+                        'lot_no' => $request->lot_no,
+                        'status' => 1
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return [
+                'status_code' => 1,
+                'message' => 'Stage wise time allocation successfully completed.'
+            ];
+
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+        }
+    }
+
+    public function calculateExpectedCompletion(Carbon $current, $days)
+    {
+        $WORK_START = 9;
+        $WORK_END = 17;
+        $HOURS_PER_DAY = 8;
+        $HALF_DAY_HOURS = 4;
+
+        $current = $current->copy();
+
+        $hour = (int) $current->format('H');
+
         if ($hour < $WORK_START) {
-            // If before 9 AM, start at 9 AM
             $current->setTime($WORK_START, 0);
         } elseif ($hour >= $WORK_END) {
-            // If after 5 PM, move to next day 9 AM
-            $current->modify('+1 day')->setTime($WORK_START, 0);
+            $current->addDay()->setTime($WORK_START, 0);
         }
 
-        /* -------------------------
-        HALF DAY (0.5) LOGIC
-        --------------------------*/
+        // -------- HALF DAY --------
         if ($days == 0.5) {
 
-            $endOfDay = clone $current;
-            $endOfDay->setTime($WORK_END, 0);
+            $endOfDay = $current->copy()->setTime($WORK_END, 0);
+            $availableToday = $endOfDay->diffInHours($current, false) * -1;
 
-            // Calculate how many hours are available today
-            $availableToday =
-                ($endOfDay->getTimestamp() - $current->getTimestamp()) / 3600;
-
-            // ✅ If 4 hours are available today
             if ($availableToday >= $HALF_DAY_HOURS) {
-                $current->modify("+{$HALF_DAY_HOURS} hours");
-            }
-            // ❌ Otherwise start from next day
-            else {
-                $current->modify('+1 day')->setTime($WORK_START, 0);
-                $current->modify("+{$HALF_DAY_HOURS} hours");
+                $current->addHours($HALF_DAY_HOURS);
+            } else {
+                $current->addDay()->setTime($WORK_START, 0)
+                        ->addHours($HALF_DAY_HOURS);
             }
 
-            return $current->format('Y-m-d H:i:s');
+            return $current;
         }
 
-        /* -------------------------
-        FULL / MULTI DAY LOGIC
-        --------------------------*/
+        // -------- FULL DAYS --------
         $remainingHours = $days * $HOURS_PER_DAY;
 
         while ($remainingHours > 0) {
 
-            $endOfDay = clone $current;
-            $endOfDay->setTime($WORK_END, 0);
+            $endOfDay = $current->copy()->setTime($WORK_END, 0);
+            $availableToday = $endOfDay->diffInHours($current, false) * -1;
 
-            $availableToday =
-                ($endOfDay->getTimestamp() - $current->getTimestamp()) / 3600;
-            
-            // If we have time today, use it, but max out at remainingHours
             $hoursToUse = min($availableToday, $remainingHours);
 
             if ($hoursToUse > 0) {
-                $current->modify("+{$hoursToUse} hours");
+                $current->addHours($hoursToUse);
                 $remainingHours -= $hoursToUse;
             }
 
-            // If still need more hours, move to next day 9 AM
             if ($remainingHours > 0) {
-                $current->modify('+1 day');
-                $current->setTime($WORK_START, 0);
+                $current->addDay()->setTime($WORK_START, 0);
             }
         }
 
-        return $current->format('Y-m-d H:i:s');
+        return $current;
     }
+
 
     public function skip(Request $request)
     {
