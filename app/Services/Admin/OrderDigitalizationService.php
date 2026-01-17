@@ -708,12 +708,12 @@ class OrderDigitalizationService {
         $data = OrderMain::whereNot('status',0)->pluck('sku');
         return $data;
     }
-    public function cutting_master_orders($cutting_unit){
-        $order_main_ids = OrderCuttingStage::where('to_assign_id',$cutting_unit)->pluck('order_main_id');
-        $main_orders = OrderMain::whereIn('id',$order_main_ids)->get();
+    // public function cutting_master_orders($cutting_unit){
+    //     $order_main_ids = OrderCuttingStage::where('to_assign_id',$cutting_unit)->pluck('order_main_id');
+    //     $main_orders = OrderMain::whereIn('id',$order_main_ids)->get();
 
-        return $main_orders;
-    }
+    //     return $main_orders;
+    // }
     function product_sizes(){
         $data = MasterSizeMeasurement::whereIn('status',[1,2])->orderBy('id','asc')->get();
         return $data;
@@ -1273,8 +1273,11 @@ class OrderDigitalizationService {
             $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
             if (!$slip) throw new \Exception('Slip not found');
 
-            $from_stage_id = $request->from_stage_id; // Current Stage
-            $to_stage_id = $request->to_stage_id;     // Next Stage
+            $stage_master_unit_from = StageMasterUnit::where('id',$request->from_stage_id)->first();
+            $stage_master_unit_to = StageMasterUnit::where('id',$request->to_stage_id)->first();
+
+            $from_stage_id = $stage_master_unit_from->master_stage_id; // Current Stage
+            $to_stage_id = $stage_master_unit_to->master_stage_id;     // Next Stage
             $lot_no = $request->lot_no;
             $sizes = $request->sizes; // Array of [size => qty]
 
@@ -1294,23 +1297,53 @@ class OrderDigitalizationService {
             if ($totalMoved == 0) throw new \Exception('No quantity selected to move.');
 
             // Create Transaction
-            $transaction = \App\Models\OrderStageTransaction::create([
-                'from_stage_id' => $from_stage_id,
-                'to_stage_id' => $to_stage_id,
-                'lot_no' => $lot_no,
-                'quantity' => $totalMoved,
-                'remaining_quantity' => $totalMoved, 
-                'status' => 1,
-            ]);
+            if($from_stage_id == 1){
 
-            // Create Details
-            foreach ($sizes as $size => $qty) {
-                if ($qty > 0) {
-                    \App\Models\OrderStageTransactionDetail::create([
-                        'order_stage_transaction_id' => $transaction->id,
-                        'size' => $size,
-                        'quantity' => $qty
-                    ]);
+                $transaction = \App\Models\OrderPrintingStageTransaction::create([
+                    'from_stage_id' => $from_stage_id,
+                    'to_stage_id' => $to_stage_id,
+                    'sub_stage_id' => $stage_master_unit_from?->id,
+                    'sub_stage_id_to' => $stage_master_unit_to?->id,
+                    'lot_no' => $lot_no,
+                    'quantity' => $totalMoved,
+                    'remaining_quantity' => $totalMoved, 
+                    'status' => 1,
+                ]);
+
+                // Create Details
+                foreach ($sizes as $size => $qty) {
+                    if ($qty > 0) {
+                        \App\Models\OrderPrintingStageTransactionDetail::create([
+                            'order_printing_stage_transaction_id' => $transaction->id,
+                            'size' => $size,
+                            'quantity' => $qty
+                        ]);
+                    }
+                }
+
+            }else
+            {
+
+                $transaction = \App\Models\OrderStageTransaction::create([
+                    'from_stage_id' => $from_stage_id,
+                    'to_stage_id' => $to_stage_id,
+                    'sub_stage_id' => $stage_master_unit_from?->id,
+                    'sub_stage_id_to' => $stage_master_unit_to?->id,
+                    'lot_no' => $lot_no,
+                    'quantity' => $totalMoved,
+                    'remaining_quantity' => $totalMoved, 
+                    'status' => 1,
+                ]);
+
+                // Create Details
+                foreach ($sizes as $size => $qty) {
+                    if ($qty > 0) {
+                        \App\Models\OrderStageTransactionDetail::create([
+                            'order_stage_transaction_id' => $transaction->id,
+                            'size' => $size,
+                            'quantity' => $qty
+                        ]);
+                    }
                 }
             }
             
