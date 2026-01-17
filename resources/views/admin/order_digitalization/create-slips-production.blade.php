@@ -74,14 +74,14 @@
                                         <div class="col-md-6">
                                             <label>From Stage</label>
                                             <input type="text" class="form-control" value="{{ $slip_data['from_stage']['name'] }} ({{ $slip_data['from_stage']['master_stage_name'] }})" readonly>
-                                            <input type="hidden" name="from_stage_id" value="{{ $slip_data['from_stage']['master_stage_id'] }}"> 
+                                            <input type="hidden" name="from_stage_id" value="{{ $slip_data['from_stage']['id'] }}"> 
                                         </div>
                                         <div class="col-md-6">
                                             <label>To Stage</label>
                                             <select name="to_stage_id" class="form-control select2" required>
                                                 <option value="">Select Stage</option>
                                                 @foreach($slip_data['unit_master_data'] as $unit)
-                                                    <option value="{{ $unit['master_stage_id'] }}">{{ $unit['name'] }} ({{ $unit['master_stage_name'] }})</option>
+                                                    <option value="{{ $unit['id'] }}">{{ $unit['name'] }} ({{ $unit['master_stage_name'] }})</option>
                                                 @endforeach
                                             </select>
                                         </div>

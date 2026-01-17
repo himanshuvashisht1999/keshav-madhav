@@ -4,10 +4,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class OrderStageTransaction extends Model
+class OrderPrintingStageTransaction extends Model
 {
     use HasFactory;
-    protected $table= 'order_stage_transactions';
+    protected $table= 'order_printing_stage_transactions';
     protected $fillable = [
         'id',
         'sno',
