@@ -1113,101 +1113,101 @@ class ReportService {
             ->get()
             ->toArray();
 
-        /* ---------------- ORDER ---------------- */
-        $order = $lots_data->first()->orderProductSet->orderMain;
+        // /* ---------------- ORDER ---------------- */
+        // $order = $lots_data->first()->orderProductSet->orderMain;
 
-        /* ---------------- STAGES ---------------- */
-        $allStages = \App\Models\MasterProductStage::where('status', 1)->get()
-            ->sortBy(function ($stage) {
-                $order = [3, 2, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-                return array_search($stage->id, $order) ?? 999;
-            });
+        // /* ---------------- STAGES ---------------- */
+        // $allStages = \App\Models\MasterProductStage::where('status', 1)->get()
+        //     ->sortBy(function ($stage) {
+        //         $order = [3, 2, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+        //         return array_search($stage->id, $order) ?? 999;
+        //     });
 
-        /* ---------------- SIZE → PCS MAP ---------------- */
-        $sizePcsMap = \App\Models\MasterSizeMeasurement::pluck('no_of_pcs', 'id')->toArray();
+        // /* ---------------- SIZE → PCS MAP ---------------- */
+        // $sizePcsMap = \App\Models\MasterSizeMeasurement::pluck('no_of_pcs', 'id')->toArray();
 
-        /* ---------------- PROCESS SETS ---------------- */
-        $order->OrderProductSets->each(function ($set) use (
-            $lots_data,
-            $allStages,
-            $sizePcsMap
-        ) {
+        // /* ---------------- PROCESS SETS ---------------- */
+        // $order->OrderProductSets->each(function ($set) use (
+        //     $lots_data,
+        //     $allStages,
+        //     $sizePcsMap
+        // ) {
 
-            $lots = $lots_data->where('order_products_set_id', $set->id);
+        //     $lots = $lots_data->where('order_products_set_id', $set->id);
 
-            if ($lots->isEmpty()) {
-                $set->lots = collect();
-                return;
-            }
+        //     if ($lots->isEmpty()) {
+        //         $set->lots = collect();
+        //         return;
+        //     }
 
-            $lotNos = $lots->pluck('lot_no');
+        //     $lotNos = $lots->pluck('lot_no');
 
-            $transactionsByLot = \App\Models\OrderStageTransaction::whereIn('lot_no', $lotNos)
-                ->with(['from_stage', 'to_stage'])
-                ->get()
-                ->groupBy('lot_no');
+        //     $transactionsByLot = \App\Models\OrderStageTransaction::whereIn('lot_no', $lotNos)
+        //         ->with(['from_stage', 'to_stage'])
+        //         ->get()
+        //         ->groupBy('lot_no');
 
-            $partsByLot = \App\Models\ProductionSlipDigitizationParts::whereIn('lot_no', $lotNos)
-                ->get()
-                ->groupBy('lot_no');
+        //     $partsByLot = \App\Models\ProductionSlipDigitizationParts::whereIn('lot_no', $lotNos)
+        //         ->get()
+        //         ->groupBy('lot_no');
 
-            $lots->each(function ($lot) use (
-                $allStages,
-                $transactionsByLot,
-                $partsByLot,
-                $sizePcsMap
-            ) {
+        //     $lots->each(function ($lot) use (
+        //         $allStages,
+        //         $transactionsByLot,
+        //         $partsByLot,
+        //         $sizePcsMap
+        //     ) {
 
-                $transactions = $transactionsByLot[$lot->lot_no] ?? collect();
-                $parts = $partsByLot[$lot->lot_no] ?? collect();
+        //         $transactions = $transactionsByLot[$lot->lot_no] ?? collect();
+        //         $parts = $partsByLot[$lot->lot_no] ?? collect();
 
-                /* -------- INITIAL PCS -------- */
-                $initialPcs = 0;
-                foreach ($parts as $part) {
-                    $pcsPerSet = $sizePcsMap[$part->set_size] ?? 0;
-                    $initialPcs += ($part->set_quantity * $pcsPerSet);
-                }
+        //         /* -------- INITIAL PCS -------- */
+        //         $initialPcs = 0;
+        //         foreach ($parts as $part) {
+        //             $pcsPerSet = $sizePcsMap[$part->set_size] ?? 0;
+        //             $initialPcs += ($part->set_quantity * $pcsPerSet);
+        //         }
 
-                /* -------- STAGE SUMMARY -------- */
-                $summary = [];
+        //         /* -------- STAGE SUMMARY -------- */
+        //         $summary = [];
 
-                foreach ($allStages as $stage) {
+        //         foreach ($allStages as $stage) {
 
-                    $in = $transactions->where('to_stage_id', $stage->id)
-                        ->groupBy('from_stage_id')
-                        ->map(fn ($r) => $r->sum('quantity'))
-                        ->max() ?? 0;
+        //             $in = $transactions->where('to_stage_id', $stage->id)
+        //                 ->groupBy('from_stage_id')
+        //                 ->map(fn ($r) => $r->sum('quantity'))
+        //                 ->max() ?? 0;
 
-                    $out = $transactions->where('from_stage_id', $stage->id)
-                        ->groupBy('to_stage_id')
-                        ->map(fn ($r) => $r->sum('quantity'))
-                        ->max() ?? 0;
+        //             $out = $transactions->where('from_stage_id', $stage->id)
+        //                 ->groupBy('to_stage_id')
+        //                 ->map(fn ($r) => $r->sum('quantity'))
+        //                 ->max() ?? 0;
 
-                    if ($stage->id == 3 && $in == 0 && $initialPcs > 0) {
-                        $in = $initialPcs;
-                    }
+        //             if ($stage->id == 3 && $in == 0 && $initialPcs > 0) {
+        //                 $in = $initialPcs;
+        //             }
 
-                    $summary[] = [
-                        'stage_id'   => $stage->id,
-                        'stage_name' => $stage->name,
-                        'in'         => $in,
-                        'out'        => $out,
-                        'balance'    => $in - $out,
-                    ];
-                }
+        //             $summary[] = [
+        //                 'stage_id'   => $stage->id,
+        //                 'stage_name' => $stage->name,
+        //                 'in'         => $in,
+        //                 'out'        => $out,
+        //                 'balance'    => $in - $out,
+        //             ];
+        //         }
 
-                $lot->stage_summary = $summary;
-                $lot->history = $transactions;
-            });
+        //         $lot->stage_summary = $summary;
+        //         $lot->history = $transactions;
+        //     });
 
-            $set->lots = $lots->values();
-        });
-        dd($order);
-        return response()->json([
-            'order'      => $order,
+        //     $set->lots = $lots->values();
+        // });
+        // dd($order);
+        return [
+            // 'order'      => $order,
             'lots_data'  => $lots_data,
             'rolls_data' => $rolls_data,
-        ]);
+        ];
     }
 
     public function lot_numbers()
