@@ -75,6 +75,7 @@
                                             <label>From Stage</label>
                                             <input type="text" class="form-control" value="{{ $slip_data['from_stage']['name'] }} ({{ $slip_data['from_stage']['master_stage_name'] }})" readonly>
                                             <input type="hidden" name="from_stage_id" value="{{ $slip_data['from_stage']['id'] }}"> 
+                                            <input type="hidden" name="from_stage_id_ajax" value="{{ $slip_data['from_stage']['master_stage_id'] }}"> 
                                         </div>
                                         <div class="col-md-6">
                                             <label>To Stage</label>
@@ -166,7 +167,7 @@ $(function(){
 
     function fetchLotDetails() {
         let lotNo = $('#lot_no_input').val();
-        let fromStageId = $('input[name="from_stage_id"]').val();
+        let fromStageId = $('input[name="from_stage_id_ajax"]').val();
 
         if(!lotNo) {
             alert('Please enter a Lot Number');
