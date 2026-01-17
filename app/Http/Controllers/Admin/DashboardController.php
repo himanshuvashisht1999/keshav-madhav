@@ -6,7 +6,7 @@ use App\Services\Admin\DashboardService as Service;
 use App\Models\User;
 
 class DashboardController extends Controller { 
-    protected $service;
+    protected $service; 
     public function __construct(Service $service) {
         $this->service = $service;
     }
