@@ -403,6 +403,15 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <p>Order Summary Reports</p>
                                 </a>
                             </li> 
+
+                            <li class="nav-item">
+                                <a href="{{ route('admin.report.lots') }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/report/lots')  ? 'nav-link active' : 'nav-link' }}"
+                                    >
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Lots Reports</p>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                      {{-- <li class="{{ (str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/create-slips-production')) ? 'nav-item menu-open' : 'nav-item' }} ">
