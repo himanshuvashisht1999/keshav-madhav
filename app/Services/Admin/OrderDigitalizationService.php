@@ -401,12 +401,7 @@ class OrderDigitalizationService {
         if($request->slip_id){
             $results = ProductionSlipDigitization::with([
             'getUnitMaster.masterFabricWarehouse'
-            ])
-            ->where('status', 0)
-            ->where('id', $request->slip_id)
-            ->whereNot('from_stage_id', 3)
-            ->orderBy('id', 'asc')
-            ->first();
+            ])->where('id', $request->slip_id)->first();
         }else{
             $results = ProductionSlipDigitization::with([
             'getUnitMaster.masterFabricWarehouse'
@@ -416,6 +411,17 @@ class OrderDigitalizationService {
             ->orderBy('id', 'asc')
             ->first();
         }
+        $from_stage_id = $results->from_stage_id;
+        if($from_stage_id == 1){$to_stage_id = 4;}
+        if($from_stage_id == 3){$to_stage_id = 4;}
+        if($from_stage_id == 4){$to_stage_id = 5;}
+        if($from_stage_id == 5){$to_stage_id = 6;}
+        if($from_stage_id == 6){$to_stage_id = 7;}
+        if($from_stage_id == 7){$to_stage_id = 8;}
+        if($from_stage_id == 8){$to_stage_id = 9;}
+        if($from_stage_id == 9){$to_stage_id = 10;}
+        if($from_stage_id == 10){$to_stage_id = 11;}
+        if($from_stage_id == 11){$to_stage_id = 12;}
             
         $data = [];
         if ($results){
@@ -441,7 +447,8 @@ class OrderDigitalizationService {
             if ($results_units){
                 foreach ($results_units as $unit_data) {
 
-                    if($results->from_stage_id != $unit_data['master_stage_id']){
+                    // if($results->from_stage_id != $unit_data['master_stage_id']){
+                    if( $unit_data['master_stage_id'] == $to_stage_id){
                         $unit_master_data[] = [
                             'id' => $unit_data['id'],
                             'master_stage_id' => $unit_data['master_stage_id'],
