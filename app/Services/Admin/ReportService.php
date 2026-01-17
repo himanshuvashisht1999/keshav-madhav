@@ -939,86 +939,201 @@ class ReportService {
     }
 
 
-    public function lotDetails(Request $request){
+    // public function lotDetails(Request $request){
+    //     $lot_no = $request->lot_no;
+        
+        
+        
+    //     // $lots = FabricRollAssigning::with('fabricRollAssigningsDetail',
+    //     //             'orderProductSet.orderMain.customer',
+    //     //             'orderProductSet.size_measurement',
+    //     //             'orderProductSet.colors',
+    //     //             'orderProductSet.master_product_fitting',
+    //     //             'orderProductSet.master_design_pattern',
+    //     //             'orderProductSet.fabric'
+    //     //         )   
+    //     //             ->where('lot_no', $lot_no)
+    //     //             ->select('id', 'lot_no', 'order_products_set_id')
+    //     //             ->distinct()
+    //     //             ->get();
+
+    //     $lots_data = FabricRollAssigning::with('fabricRollAssigningsDetail',
+    //                 'orderProductSet.orderMain.customer',
+    //                 'orderProductSet.size_measurement',
+    //                 'orderProductSet.colors',
+    //                 'orderProductSet.master_product_fitting',
+    //                 'orderProductSet.master_design_pattern',
+    //                 'orderProductSet.fabric'
+    //             )   
+    //             ->where('lot_no', $lot_no)
+    //             ->select( 'lot_no', 'order_products_set_id')
+    //             ->distinct()
+    //             ->get();
+    //     $rolls = FabricRollAssigning::where('lot_no', $lot_no)
+    //                 ->select('id', 'lot_no', 'roll_no', 'meter')
+    //                 ->get();
+
+    //     $rolls_data = [];
+    //     if (!$rolls->isEmpty()) {
+    //         foreach ($rolls as $roll) {
+    //             $rolls_data[] = [
+    //                 'roll_no' => $roll->roll_no,
+    //                 'meter'   => $roll->meter,
+    //             ];
+    //         }
+    //     }
+        
+    //     $data = [
+    //         'lots_data' => $lots_data,
+    //         'rolls_data' => $rolls_data,
+    //     ];
+
+        
+    //     $order = $lots_data->first()->orderProductSet->orderMain;
+        
+    //     $allStages = \App\Models\MasterProductStage::where('status', 1)->get()
+    //         ->sortBy(function ($stage) {
+    //             $order = [3, 2, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    //             return array_search($stage->id, $order) ?? 999;
+    //         });
+    //     // $sizePcsMap = $lots_data->first()->orderProductSet->size_measurement->pluck('no_of_pcs', 'id')->toArray();
+    //     $sizePcsMap = $lots_data->first()->orderProductSet->size_measurement->no_of_pcs;
+   
+    //     $order->orderProductSet->each(function ($set) use ($lots_data, $allStages, $sizePcsMap) {
+
+    //         $lots = $lots_data;
+
+    //         if ($lots->isEmpty()) {
+    //             $set->lots = collect();
+    //             return;
+    //         }
+
+    //         $lotNos = $lots->pluck('lot_no');
+
+    //         $transactionsByLot = \App\Models\OrderStageTransaction::whereIn('lot_no', $lotNos)
+    //             ->with(['from_stage', 'to_stage'])
+    //             ->get()
+    //             ->groupBy('lot_no');
+
+    //         $partsByLot = \App\Models\ProductionSlipDigitizationParts::whereIn('lot_no', $lotNos)
+    //             ->get()
+    //             ->groupBy('lot_no');
+
+    //         $lots->each(function ($lot) use (
+    //             $allStages,
+    //             $transactionsByLot,
+    //             $partsByLot,
+    //             $sizePcsMap
+    //         ) {
+
+    //             $transactions = $transactionsByLot[$lot->lot_no] ?? collect();
+    //             $parts = $partsByLot[$lot->lot_no] ?? collect();
+
+    //             $initialPcs = 0;
+    //             foreach ($parts as $part) {
+    //                 $pcsPerSet = $sizePcsMap ?? 0;
+    //                 $initialPcs += ($part->set_quantity * $pcsPerSet);
+    //             }
+
+    //             $summary = [];
+
+    //             foreach ($allStages as $stage) {
+
+    //                 // IN flow
+    //                 $inFlows = $transactions->where('to_stage_id', $stage->id)
+    //                     ->groupBy('from_stage_id')
+    //                     ->map(fn ($rows) => $rows->sum('quantity'));
+
+    //                 $in = $inFlows->isEmpty() ? 0 : $inFlows->max();
+
+    //                 // OUT flow
+    //                 $outFlows = $transactions->where('from_stage_id', $stage->id)
+    //                     ->groupBy('to_stage_id')
+    //                     ->map(fn ($rows) => $rows->sum('quantity'));
+
+    //                 $out = $outFlows->isEmpty() ? 0 : $outFlows->max();
+
+    //                 // Cutting stage special case
+    //                 if ($stage->id == 3 && $in == 0 && $initialPcs > 0) {
+    //                     $in = $initialPcs;
+    //                 }
+
+    //                 $summary[] = [
+    //                     'stage_id'   => $stage->id,
+    //                     'stage_name' => $stage->name,
+    //                     'in'         => $in,
+    //                     'out'        => $out,
+    //                     'balance'    => $in - $out,
+    //                 ];
+    //             }
+
+    //             $lot->stage_summary = $summary;
+    //             $lot->history = $transactions;
+    //         });
+
+    //         $set->lots = $lots;
+    //     });
+
+    //     dd($order);
+    //     return $order;
+       
+    //     return $orderMain;
+    // }
+
+    public function lotDetails(Request $request)
+    {
         $lot_no = $request->lot_no;
-        
-        
-        $lots = \App\Models\FabricRollAssigning::with('fabricRollAssigningsDetail')
-                    ->where('lot_no', $lot_no)
-                    ->select('id', 'lot_no', 'order_products_set_id')
-                    ->distinct()
-                    ->get();
-        dd($lots);
-        
-        $tableData = collect();
-        $orderMain = $setsData = [];
-        foreach ($orders as $order) {
-            foreach ($order->OrderProductSets as $set) {
 
-                $lots = \App\Models\FabricRollAssigning::with('fabricRollAssigningsDetail')
-                    ->where('lot_no', $lot_no)
-                    ->select('id', 'lot_no', 'order_products_set_id')
-                    ->distinct()
-                    ->get();
-                foreach ($lots as $lot) {
-                    $details = $lot->fabricRollAssigningsDetail; 
-                    if (!$details->isEmpty()) {
-                        $lotsData[] = [
-                            'lot_no' => $lot->lot_no,
-                            'lot_quantity' => $details->sum('quantity')
-                        ];
-                    }
-                };
-                
-                $setsData[$order->id][] = [
-                    'set_id'                => $set->id,
-                    'design_number'         => $set->design_number,
-                    'size_group'            => $set->size_measurement->size_group ?? '',
-                    'set_size'              => $set->size_measurement->set_size ?? '',
-                    'color'                 => $set->colors->name ?? '',
-                    'no_of_pcs'             => $set->no_of_pcs,
-                    'set_quantity'          => $set->set_quantity,
-                    'remain_set_quantity'   => $set->remain_set_quantity,
-                    'remain_total_quantity' => $set->remain_total_quantity,
-                    'total_quantity'        => $set->total_quantity,
-                    'fitting'               => $set->master_product_fitting->name ?? '',
-                    'pattern'               => $set->master_design_pattern->name ?? '',
-                    'fabric'                => $set->fabric->name ?? '',
-                    'lotsData'              => $lotsData ?? [],
-                ];
-            }
-
-            $orderMain[$order->id] = [
-                'order_id'      => $order->id,
-                'order_no'      => $order->sku,
-                'customer_name' => $order->customer->name ?? '',
-                'setsData'      => $setsData[$order->id] ?? []
-            ];
+        if (!$lot_no) {
+            return response()->json(['message' => 'Lot number required'], 422);
         }
 
-
-         $order = OrderMain::where('id', $id)
-            ->with([
-                'customer',
-                'OrderProductSets.colors',
-                'OrderProductSets.sizeMeasurement'
+        /* ---------------- LOTS DATA ---------------- */
+        $lots_data = FabricRollAssigning::with([
+                'fabricRollAssigningsDetail',
+                'orderProductSet.orderMain.customer',
+                'orderProductSet.size_measurement',
+                'orderProductSet.colors',
+                'orderProductSet.master_product_fitting',
+                'orderProductSet.master_design_pattern',
+                'orderProductSet.fabric'
             ])
-            ->firstOrFail();
+            ->where('lot_no', $lot_no)
+            ->select('lot_no', 'order_products_set_id')
+            ->distinct()
+            ->get();
 
+        if ($lots_data->isEmpty()) {
+            return response()->json(['message' => 'No data found'], 404);
+        }
+
+        /* ---------------- ROLLS DATA ---------------- */
+        $rolls_data = FabricRollAssigning::where('lot_no', $lot_no)
+            ->select('roll_no', 'meter')
+            ->get()
+            ->toArray();
+
+        /* ---------------- ORDER ---------------- */
+        $order = $lots_data->first()->orderProductSet->orderMain;
+
+        /* ---------------- STAGES ---------------- */
         $allStages = \App\Models\MasterProductStage::where('status', 1)->get()
             ->sortBy(function ($stage) {
                 $order = [3, 2, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12];
                 return array_search($stage->id, $order) ?? 999;
             });
 
-        $sizePcsMap = \App\Models\MasterSizeMeasurement::pluck('no_of_pcs', 'id');
+        /* ---------------- SIZE → PCS MAP ---------------- */
+        $sizePcsMap = \App\Models\MasterSizeMeasurement::pluck('no_of_pcs', 'id')->toArray();
 
-        $order->OrderProductSets->each(function ($set) use ($allStages, $sizePcsMap) {
+        /* ---------------- PROCESS SETS ---------------- */
+        $order->OrderProductSets->each(function ($set) use (
+            $lots_data,
+            $allStages,
+            $sizePcsMap
+        ) {
 
-            $lots = \App\Models\FabricRollAssigning::select('lot_no', 'order_products_set_id')
-                ->where('order_products_set_id', $set->id)
-                ->groupBy('lot_no', 'order_products_set_id')
-                ->get();
+            $lots = $lots_data->where('order_products_set_id', $set->id);
 
             if ($lots->isEmpty()) {
                 $set->lots = collect();
@@ -1046,31 +1161,28 @@ class ReportService {
                 $transactions = $transactionsByLot[$lot->lot_no] ?? collect();
                 $parts = $partsByLot[$lot->lot_no] ?? collect();
 
+                /* -------- INITIAL PCS -------- */
                 $initialPcs = 0;
                 foreach ($parts as $part) {
                     $pcsPerSet = $sizePcsMap[$part->set_size] ?? 0;
                     $initialPcs += ($part->set_quantity * $pcsPerSet);
                 }
 
+                /* -------- STAGE SUMMARY -------- */
                 $summary = [];
 
                 foreach ($allStages as $stage) {
 
-                    // IN flow
-                    $inFlows = $transactions->where('to_stage_id', $stage->id)
+                    $in = $transactions->where('to_stage_id', $stage->id)
                         ->groupBy('from_stage_id')
-                        ->map(fn ($rows) => $rows->sum('quantity'));
+                        ->map(fn ($r) => $r->sum('quantity'))
+                        ->max() ?? 0;
 
-                    $in = $inFlows->isEmpty() ? 0 : $inFlows->max();
-
-                    // OUT flow
-                    $outFlows = $transactions->where('from_stage_id', $stage->id)
+                    $out = $transactions->where('from_stage_id', $stage->id)
                         ->groupBy('to_stage_id')
-                        ->map(fn ($rows) => $rows->sum('quantity'));
+                        ->map(fn ($r) => $r->sum('quantity'))
+                        ->max() ?? 0;
 
-                    $out = $outFlows->isEmpty() ? 0 : $outFlows->max();
-
-                    // Cutting stage special case
                     if ($stage->id == 3 && $in == 0 && $initialPcs > 0) {
                         $in = $initialPcs;
                     }
@@ -1088,11 +1200,14 @@ class ReportService {
                 $lot->history = $transactions;
             });
 
-            $set->lots = $lots;
+            $set->lots = $lots->values();
         });
-        return $order;
-        dd($orderMain);
-        return $orderMain;
+        dd($order);
+        return response()->json([
+            'order'      => $order,
+            'lots_data'  => $lots_data,
+            'rolls_data' => $rolls_data,
+        ]);
     }
 
     public function lot_numbers()
