@@ -23,9 +23,9 @@
         <div class="container-fluid">
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
-                <div class="card-header">
+                <!-- <div class="card-header">
                     <h3 class="card-title">Edit Customer</h3>
-                </div>
+                </div> -->
                 <form action="{{route('admin.master.customer.update')}}" method="post" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="id" value="{{$data->id}}">

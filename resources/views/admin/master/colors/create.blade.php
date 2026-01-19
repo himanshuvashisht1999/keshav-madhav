@@ -23,9 +23,9 @@
         <div class="container-fluid">
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
-                <div class="card-header">
+                <!-- <div class="card-header">
                     <h3 class="card-title">Create Product Color</h3>
-                </div>
+                </div> -->
                 <form action="{{route('admin.master.colors.store')}}" method="post" enctype="multipart/form-data">
                     @csrf
                     <div class="card-body">
