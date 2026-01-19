@@ -3,14 +3,8 @@
 <div class="content-wrapper">
     <!-- PAGE HEADER -->
     <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-3 align-items-center">
-                <div class="col-sm-6">
-                    <h1 class="m-0 font-weight-bold text-dark">Uploaded Slips</h1>
-                    <small class="text-muted">Manage and view all uploaded production slips</small>
-                </div>
-            </div>
-        </div>
+        <h1 class="m-0 font-weight-bold text-dark text-center">Uploaded Slips</h1>
+
     </section>
 
     <!-- CONTENT -->
@@ -18,11 +12,11 @@
         <div class="container-fluid">
 
             <!-- FILTER CARD -->
-            <div class="card shadow-sm border-0 mb-4">
+            <div class="card shadow-sm border-0">
                 <div class="card-body bg-light rounded">
                     <form method="GET" action="{{ route('admin.uploaded-slips.index') }}">
                         <div class="row">
-                            <div class="col-md-2 mb-2">
+                            <div class="col-md-2">
                                 <label class="small font-weight-bold text-muted">From Stage</label>
                                 <select name="from_stage_id" class="form-control select2">
                                     <option value="">-- All Stages --</option>
@@ -33,7 +27,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-2">
+                            <div class="col-md-2">
                                 <label class="small font-weight-bold text-muted">Unit</label>
                                 <select name="stage_master_unit_id" class="form-control select2">
                                     <option value="">-- All Units --</option>
@@ -44,7 +38,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-2">
+                            <div class="col-md-2">
                                 <label class="small font-weight-bold text-muted">Status</label>
                                 <select name="status" class="form-control select2">
                                     <option value="">-- All Status --</option>
@@ -53,11 +47,11 @@
                                     <option value="2" {{ request('status') == 2 ? 'selected' : '' }}>Skipped</option>
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-2">
+                            <div class="col-md-2">
                                 <label class="small font-weight-bold text-muted">Date</label>
                                 <input type="date" name="date" class="form-control" value="{{ request('date') }}">
                             </div>
-                            <div class="col-md-4 mb-2 d-flex justify-content-end align-items-end">
+                            <div class="col-md-4 d-flex justify-content-end align-items-end">
                                 <button type="submit" class="btn btn-primary px-4 shadow-sm mr-2">Filter</button>
                                 <a href="{{ route('admin.uploaded-slips.index') }}" class="btn btn-secondary px-3 shadow-sm">Reset</a>
                             </div>
@@ -71,7 +65,7 @@
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover table-striped mb-0">
-                            <thead class="bg-primary text-white">
+                            <thead class="bg-primary text-black" style="color:black !important;font-weight:bold">
                                 <tr>
                                     <th>Date</th>
                                     <th>From Stage</th>
