@@ -101,7 +101,7 @@
                                                     <input type="number" class="form-control bg-light" 
                                                         placeholder="Days"
                                                         name="stages[{{ $stage->id }}]" 
-                                                        min="0" step="0.5" >
+                                                        min="0" step="0.5" required>
                                                 </div>
                                             </div>
                                         @endforeach
