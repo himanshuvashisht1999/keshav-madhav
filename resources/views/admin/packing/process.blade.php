@@ -647,8 +647,8 @@
         }, function(response) {
              if(response.status === 'success') {
                  alert("Packing Finalized Successfully!");
-                 window.location.href = "{{ route('admin.packing.index') }}";
-             } else {
+                 window.location.href = "{{ route('admin.admin.uploaded-slips.index') }}";
+             } else { 
                  alert("Error: " + response.message);
              }
         });

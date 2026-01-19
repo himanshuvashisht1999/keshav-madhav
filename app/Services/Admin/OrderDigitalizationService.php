@@ -834,36 +834,37 @@ class OrderDigitalizationService {
         return $main_orders;
     }
 
-    // public function getLotsBySlip($slip_id, $stage_type = null)
+    // public function getLotsBySlip($stage_id,$slip_id)
     // {
-    //     // Get the slip to find the stage_master_unit_id (cutting master)
-    //     $slip = ProductionSlipDigitization::find($slip_id);
+    //     if($stage_id == 1){
+    //         $lot_nums = OrderLot::where('is_printing',0)->pluck('lot_no');
+    //     }else{
+    //         $lot_nums = OrderLot::where('is_stitching',0)->pluck('lot_no');
+    //     }
         
-    //     if (!$slip) {
-    //         return collect([]);
-    //     }
-
-    //     $query = FabricRollAssigning::where('stage_master_unit_id', $slip->stage_master_unit_id);
-
-    //     if ($stage_type === 'stitching') {
-    //         $query->where('status', '!=', 2);
-    //     } elseif ($stage_type === 'printing') {
-    //         $query->where('status', '!=', 3);
-    //     }
-
-    //     // Get distinct lot numbers
-    //     return $query->distinct()->pluck('lot_no');
+    //     return $lot_nums;
     // }
-
-    public function getLotsBySlip($stage_id)
+    public function getLotsBySlip(int $stage_id, int $slip_id)
     {
-        if($stage_id == 1){
-            $lot_nums = OrderLot::where('is_printing',0)->pluck('lot_no');
-        }else{
-            $lot_nums = OrderLot::where('is_stitching',0)->pluck('lot_no');
+        $slip = ProductionSlipDigitization::find($slip_id);
+        if (!$slip) {
+            return collect([]);
         }
-        
-        return $lot_nums;
+        $query = OrderLot::query();
+
+        if ($stage_id == 1) {
+            $query->where('is_printing', 0);
+        } else {
+            $query->where('is_stitching', 0);
+        }
+
+        $query->whereIn('lot_no', function ($q) use ($slip) {
+            $q->select('lot_no')
+            ->from('production_fabric_roll_assigning')
+            ->where('stage_master_unit_id', $slip->stage_master_unit_id);
+        });
+
+        return $query->pluck('lot_no')->unique()->values();
     }
 
     public function getLotDetails($lot_no, $slip_id)

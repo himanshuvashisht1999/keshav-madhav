@@ -369,11 +369,10 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                 </a>
                             </li>
                             
-                            <li class="nav-item">
+                            <!-- <li class="nav-item">
                                 <a href="{{ route('admin.report.sales-order') }}"
                                     class="{{ str_contains(strtolower($page_url), 'admin/report/sales-order')  ? 'nav-link active' : 'nav-link' }}"
                                     >
-                                    <!-- <i class="nav-icon fas fa-store"></i> -->
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Sales Order</p>
                                 </a>
@@ -393,7 +392,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status','desc')->get();
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Dispatch Order</p>
                                 </a>
-                            </li>
+                            </li> -->
 
                             <li class="nav-item">
                                 <a href="{{ route('admin.report.order-summary.index') }}"
