@@ -146,7 +146,7 @@
                     <div class="form-group">
                         <label>Fitting</label>
                         <select name="master_fitting_id" class="form-control select2" required>
-                            <option value="">Select</option>
+                            <!-- <option value="">Select</option> -->
                             @foreach($fittings as $fitting)
                                 <option value="{{ $fitting->id }}">{{ $fitting->name }}</option>
                             @endforeach
@@ -156,7 +156,7 @@
                     <div class="form-group">
                         <label>Design Pattern</label>
                         <select name="master_pattern_id" class="form-control select2" required>
-                            <option value="">Select</option>
+                            <!-- <option value="">Select</option> -->
                             @foreach($patterns as $pattern)
                                 <option value="{{ $pattern->id }}">{{ $pattern->name }}</option>
                             @endforeach

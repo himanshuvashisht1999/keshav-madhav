@@ -157,8 +157,8 @@ class OrderDigitalizationController extends Controller {
                 return redirect()->back()->withError('Already digitized slip.');
             }
             $response['orders'] = $this->service->orders($production_slip_digitization->stage_master_unit_id);
-            $response['lots_stitching'] = $this->service->getLotsBySlip(4);
-            $response['lots_printing'] = $this->service->getLotsBySlip(1);
+            $response['lots_stitching'] = $this->service->getLotsBySlip(4,$request->slip_id);
+            $response['lots_printing'] = $this->service->getLotsBySlip(1,$request->slip_id);
             
             // NEW: Fetch Units
             $warehouse_id = $production_slip_digitization->getUnitMaster->master_fabric_warehouse_id ?? 0;
