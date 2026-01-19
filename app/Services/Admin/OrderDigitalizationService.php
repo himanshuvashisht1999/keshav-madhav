@@ -426,10 +426,6 @@ class OrderDigitalizationService {
         $data = [];
         if ($results){
             
-            // $results_units = StageMasterUnit::with('masterStage')->where('status', 1)->where('master_fabric_warehouse_id', $results->getUnitMaster->master_fabric_warehouse_id)
-            //     ->orderBy('sequence', 'asc')
-            //     ->get()->toArray();
-            // dd($results);
             $results_units = StageMasterUnit::with('masterStage')
                 ->join('master_product_stages as master_stages', 'master_stages.id', '=', 'stage_master_units.master_stage_id')
                 ->where('stage_master_units.status', 1)
@@ -476,7 +472,8 @@ class OrderDigitalizationService {
                 'slip_file' => $results->slip_file,
                 'from_stage' => $from_stage,
                 'unit_master_data' => $unit_master_data,
-                'date_time' => $results->created_at
+                'date_time' => $results->created_at,
+                'status' => $results->status
             ];
         }
 

@@ -33,6 +33,9 @@ class OrderDigitalizationController extends Controller {
         $response['colours'] = $this->productOrderService->getColours();
         $response['customers'] = $this->productOrderService->customers();
         $response['slip_data'] = $this->service->getSlipDigitalization($request);
+        if($response['slip_data']['status'] == 1){
+            return redirect()->back()->withError('Already digitized slip.');
+        }
         $response['skip_slip_data'] = $this->service->getSkipSlips();
         // dd($response['slip_data']);
         if(!empty($response['slip_data']['from_stage']['master_stage_id'])){
@@ -150,6 +153,9 @@ class OrderDigitalizationController extends Controller {
         $production_slip_digitization = $this->service->cutting_slip($request);
         
         if($production_slip_digitization){
+            if($production_slip_digitization->status == 1 ){
+                return redirect()->back()->withError('Already digitized slip.');
+            }
             $response['orders'] = $this->service->orders($production_slip_digitization->stage_master_unit_id);
             $response['lots_stitching'] = $this->service->getLotsBySlip($production_slip_digitization->id, 'stitching');
             $response['lots_printing'] = $this->service->getLotsBySlip($production_slip_digitization->id, 'printing');

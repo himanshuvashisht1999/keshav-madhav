@@ -18,6 +18,9 @@ class PackingController extends Controller {
 
     public function process($slip_id){
         $slip = $this->service->getSlipDetails($slip_id); 
+        if($slip->status == 1 ){
+            return redirect()->back()->withError('Already digitized slip.');
+        }
         
         $packing = $this->service->getPackingMainWithStructure($slip_id);
         
@@ -102,7 +105,7 @@ class PackingController extends Controller {
         
         // Flatten items for legacy view (if needed)
         $items = $order->OrderProductSets->flatMap->product_set_details->map(function($item) {
-             return $item;
+            return $item;
         });
 
         return response()->json([

@@ -161,9 +161,7 @@ class PackingService
                 }
             }
 
-            $update = ProductionSlipDigitization::where('id',$data['slip_id'])->update([
-                'status' => 1
-            ]);
+            
 
             DB::commit();
             return ['status' => 'success', 'box' => $box];
@@ -177,6 +175,10 @@ class PackingService
     {
         // Simple status update for now
         PackingMain::where('id', $main_id)->update(['status' => 1]);
+        $packing_data = PackingMain::where('id', $main_id)->first();
+        $update = ProductionSlipDigitization::where('id',$packing_data->slip_id)->update([
+            'status' => 1
+        ]);
         return ['status' => 'success'];
     }
 
