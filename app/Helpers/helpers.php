@@ -2,6 +2,8 @@
 use App\Models\MasterProductSubStage;
 use App\Models\OrderProductStage;
 use App\Models\OrderStageTransaction;
+use App\Models\OrderPrintingStageTransaction;
+use App\Models\OrderStageWiseTimeTracking;
 use App\Models\ProductStage;
 use App\Models\OrderMain;
 use App\Models\PackageBox;
@@ -139,6 +141,25 @@ function total_ordered_quantity($order_main_id){
         $total_quantity = $total_quantity + $single_data->quantity;
     }
     return $total_quantity;
+}
+
+function getLotDetails($lot_id,$master_stage){
+    if($master_stage == 1){
+        $data = OrderPrintingStageTransaction::with('getFromUnitMaster')->where('lot_no',$lot_id)->where('from_stage_id',$master_stage)->first();
+    }else{
+        $data = OrderStageTransaction::with('getFromUnitMaster')->where('lot_no',$lot_id)->where('from_stage_id',$master_stage)->first();
+    }
+    $column_namevar = 'stage_id_'.$master_stage;
+    $time_allocation = OrderStageWiseTimeTracking::where('lot_no',$lot_id)->value($column_namevar);
+    //
+    
+    $data = [
+        'unit_name' => $data?->getFromUnitMaster?->name,
+        'quantity' => $data?->quantity,
+        'remaining_quantity' => $data?->remaining_quantity,
+        'time_allocation' => $time_allocation
+    ];
+   return $data;
 }
 
 

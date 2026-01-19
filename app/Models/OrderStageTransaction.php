@@ -41,5 +41,21 @@ class OrderStageTransaction extends Model
         return $this->belongsTo(OrderProduct::class, 'order_product_id');
     }
 
-    
+    public function getToUnitMaster()
+    {
+        return $this->belongsTo(
+            'App\Models\StageMasterUnit',
+            'sub_stage_id_to',
+            'id'
+        );
+    }
+
+    public function getFromUnitMaster()
+    {
+        return $this->belongsTo(
+            'App\Models\StageMasterUnit',
+            'sub_stage_id',
+            'id'
+        );
+    }
 }
