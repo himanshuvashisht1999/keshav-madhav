@@ -49,4 +49,9 @@ class ProductionSlipDigitization extends Model
     {
         return $this->hasOne('App\Models\PackingMain', 'slip_id', 'id');
     }
+
+    public function fabricRollAssignings()
+    {
+        return $this->hasMany(\App\Models\FabricRollAssigning::class, 'production_slip_digitization_id', 'id');
+    }
 }

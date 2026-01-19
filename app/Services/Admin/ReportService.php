@@ -22,6 +22,7 @@ use App\Models\MasterCustomer;
 use App\Models\OrderDispatch;
 use App\Models\FabricRollAssigning;
 use App\Models\OrderStageTransaction;
+use App\Models\OrderPrintingStageTransaction;
 
 use Carbon\Carbon;
 
@@ -1096,10 +1097,12 @@ class ReportService {
                 'orderProductSet.colors',
                 'orderProductSet.master_product_fitting',
                 'orderProductSet.master_design_pattern',
-                'orderProductSet.fabric'
+                'orderProductSet.fabric',
+                'productionSlipDigitization.fromStage',
+                'productionSlipDigitization.getUnitMaster',
             ])
             ->where('lot_no', $lot_no)
-            ->select('lot_no', 'order_products_set_id')
+            ->select('lot_no', 'order_products_set_id', 'production_slip_digitization_id')
             ->distinct()
             ->get();
 
@@ -1108,103 +1111,13 @@ class ReportService {
         }
 
         /* ---------------- ROLLS DATA ---------------- */
-        $rolls_data = FabricRollAssigning::where('lot_no', $lot_no)
-            ->select('roll_no', 'meter')
-            ->get()
-            ->toArray();
+        $rolls_data = FabricRollAssigning::with('fabricRollAssigningsDetail')->where('lot_no', $lot_no)
+            ->select('id','roll_no', 'meter')
+            ->get();
 
-        // /* ---------------- ORDER ---------------- */
-        // $order = $lots_data->first()->orderProductSet->orderMain;
-
-        // /* ---------------- STAGES ---------------- */
-        // $allStages = \App\Models\MasterProductStage::where('status', 1)->get()
-        //     ->sortBy(function ($stage) {
-        //         $order = [3, 2, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-        //         return array_search($stage->id, $order) ?? 999;
-        //     });
-
-        // /* ---------------- SIZE → PCS MAP ---------------- */
-        // $sizePcsMap = \App\Models\MasterSizeMeasurement::pluck('no_of_pcs', 'id')->toArray();
-
-        // /* ---------------- PROCESS SETS ---------------- */
-        // $order->OrderProductSets->each(function ($set) use (
-        //     $lots_data,
-        //     $allStages,
-        //     $sizePcsMap
-        // ) {
-
-        //     $lots = $lots_data->where('order_products_set_id', $set->id);
-
-        //     if ($lots->isEmpty()) {
-        //         $set->lots = collect();
-        //         return;
-        //     }
-
-        //     $lotNos = $lots->pluck('lot_no');
-
-        //     $transactionsByLot = \App\Models\OrderStageTransaction::whereIn('lot_no', $lotNos)
-        //         ->with(['from_stage', 'to_stage'])
-        //         ->get()
-        //         ->groupBy('lot_no');
-
-        //     $partsByLot = \App\Models\ProductionSlipDigitizationParts::whereIn('lot_no', $lotNos)
-        //         ->get()
-        //         ->groupBy('lot_no');
-
-        //     $lots->each(function ($lot) use (
-        //         $allStages,
-        //         $transactionsByLot,
-        //         $partsByLot,
-        //         $sizePcsMap
-        //     ) {
-
-        //         $transactions = $transactionsByLot[$lot->lot_no] ?? collect();
-        //         $parts = $partsByLot[$lot->lot_no] ?? collect();
-
-        //         /* -------- INITIAL PCS -------- */
-        //         $initialPcs = 0;
-        //         foreach ($parts as $part) {
-        //             $pcsPerSet = $sizePcsMap[$part->set_size] ?? 0;
-        //             $initialPcs += ($part->set_quantity * $pcsPerSet);
-        //         }
-
-        //         /* -------- STAGE SUMMARY -------- */
-        //         $summary = [];
-
-        //         foreach ($allStages as $stage) {
-
-        //             $in = $transactions->where('to_stage_id', $stage->id)
-        //                 ->groupBy('from_stage_id')
-        //                 ->map(fn ($r) => $r->sum('quantity'))
-        //                 ->max() ?? 0;
-
-        //             $out = $transactions->where('from_stage_id', $stage->id)
-        //                 ->groupBy('to_stage_id')
-        //                 ->map(fn ($r) => $r->sum('quantity'))
-        //                 ->max() ?? 0;
-
-        //             if ($stage->id == 3 && $in == 0 && $initialPcs > 0) {
-        //                 $in = $initialPcs;
-        //             }
-
-        //             $summary[] = [
-        //                 'stage_id'   => $stage->id,
-        //                 'stage_name' => $stage->name,
-        //                 'in'         => $in,
-        //                 'out'        => $out,
-        //                 'balance'    => $in - $out,
-        //             ];
-        //         }
-
-        //         $lot->stage_summary = $summary;
-        //         $lot->history = $transactions;
-        //     });
-
-        //     $set->lots = $lots->values();
-        // });
-        // dd($order);
         return [
             // 'order'      => $order,
+            'lot_no'    => $lot_no,
             'lots_data'  => $lots_data,
             'rolls_data' => $rolls_data,
         ];
@@ -1239,6 +1152,10 @@ class ReportService {
     
     public function customers(){
         $data = MasterCustomer::where('status',1)->orderBy('name','asc')->get();
+        return $data;
+    }
+    public function master_stages(){
+        $data = MasterProductStage::where('status',1)->whereNotIn('id', [3,12])->orderBy('sequence','asc')->get();
         return $data;
     }
 

@@ -18,6 +18,7 @@ class FabricRollAssigning extends Model
         'project_id',
         'sku',
         'order_products_set_id',
+        'production_slip_digitization_id',
         'lot_no',
         'order_no',
         'stage_master_unit_id',
@@ -49,4 +50,10 @@ class FabricRollAssigning extends Model
     {
         return $this->hasMany(\App\Models\FabricRollAssigningsDetail::class, 'production_fabric_roll_assigning_id', 'id');
     }
+
+    public function productionSlipDigitization()
+    {
+        return $this->belongsTo(\App\Models\ProductionSlipDigitization::class, 'production_slip_digitization_id');
+    }
+
 }

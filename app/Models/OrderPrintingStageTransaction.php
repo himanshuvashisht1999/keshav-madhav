@@ -41,5 +41,27 @@ class OrderPrintingStageTransaction extends Model
         return $this->belongsTo(OrderProduct::class, 'order_product_id');
     }
 
+    public function printingDetails()
+    {
+        return $this->hasMany(OrderPrintingStageTransactionDetail::class, 'order_printing_stage_transaction_id', 'id');
+    }
+
+    public function getToUnitMaster()
+    {
+        return $this->belongsTo(
+            'App\Models\StageMasterUnit',
+            'sub_stage_id_to',
+            'id'
+        );
+    }
+
+    public function getFromUnitMaster()
+    {
+        return $this->belongsTo(
+            'App\Models\StageMasterUnit',
+            'sub_stage_id',
+            'id'
+        );
+    }
     
 }
