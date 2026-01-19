@@ -1079,6 +1079,7 @@ class OrderDigitalizationService {
                 ->where('stage_master_unit_id', $slip->stage_master_unit_id)
                 ->first();
 
+            // dd($request->lot_no,$slip->stage_master_unit_id);
         // Create Transaction with Details (Cutting -> Stitching)
         // Stage 3 is Cutting. Stage 4 is Stitching.
         $this->createTransactionWithDetails($request->lot_no, 3, $request->to_stage_id ?? 4, $slip->id,$fab_roll_assigning->order_products_set_id,$slip->stage_master_unit_id,$slip->stage_master_unit_id,$request->to_stage_unit_id);
