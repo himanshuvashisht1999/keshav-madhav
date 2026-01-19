@@ -43,7 +43,12 @@ class OrderSummaryReportService
         $order = OrderMain::with([
             'customer',
             'orderProductSets.colors',
-            'orderProductSets.sizeMeasurement'
+            'orderProductSets.size_measurement',
+            'orderProductSets.fabric.receiptDetails',
+            'orderProductSets.master_design_pattern',
+            'orderProductSets.master_product_fitting',
+            'orderProductSets.stage_master_unit',
+            'orderProductSets.product_set_details'
         ])->find($id);
 
         if (!$order) return null;
@@ -66,18 +71,67 @@ class OrderSummaryReportService
         $cartons = PackingCarton::whereHas('main', function($q) use ($id) {
             $q->where('order_main_id', $id);
         })->with(['items.detail'])->get();
-
+        // dd($cartons);
         // 3. Dispatch Details
         // OrderMain -> OrderDispatch (via connection or direct)
         // OrderDispatch usually links to OrderMain.
-        $dispatches = OrderDispatch::where('main_order_id', $id)->get();
+        $dispatches = OrderDispatch::with('orderMain.customer')->where('main_order_id', $id)->get();
 
+        // dd($order);
+
+        // lot details 
 
         return [
             'order' => $order,
             'cartons' => $cartons,
-            'dispatches' => $dispatches,
+            'dispatches' => $dispatches
             // 'lots' => $lots // Placeholder until we confirm relation
         ];
+    }
+
+    public function lots($id)
+    {
+        // $searchLot   = $request->lot_no;
+        $searchOrder = $id;
+
+        $lots = \App\Models\FabricRollAssigning::query()
+
+            ->selectRaw('
+                lot_no,
+                MIN(id) as id,
+                MIN(order_products_set_id) as order_products_set_id
+            ')
+
+            ->withSum('fabricRollAssigningsDetail as lot_quantity', 'quantity')
+
+            ->with([
+                'orderProductSet.orderMain.customer'
+            ])
+
+            ->when($searchOrder, function ($q) use ($searchOrder) {
+                $q->whereHas('orderProductSet.orderMain', function ($qq) use ($searchOrder) {
+                    $qq->where('id', 'like', "%{$searchOrder}%");
+                });
+            })
+
+            ->groupBy('lot_no')
+
+            ->paginate(10)
+            ->withQueryString();
+        // dd($lots);
+        $result = $lots->through(function ($lot) {
+
+            $orderMain = $lot->orderProductSet?->orderMain;
+
+            return [
+                'order_id'      => $orderMain->id ?? null,
+                'order_no'      => $orderMain->sku ?? '',
+                'customer_name' => $orderMain->customer->name ?? '',
+                'lot_no'        => $lot->lot_no,
+                'lot_quantity'  => $lot->lot_quantity ?? 0,
+            ];
+        });
+
+        return $result;
     }
 }
