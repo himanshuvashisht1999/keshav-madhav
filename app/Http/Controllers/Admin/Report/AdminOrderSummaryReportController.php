@@ -19,7 +19,7 @@ class AdminOrderSummaryReportController extends Controller
     public function index()
     {
         $customers = Customer::where('status', 1)->get();
-        return view('admin.reports.order_summary.index', compact('customers'));
+        return view('admin.report.order_summary.index', compact('customers'));
     }
 
     public function indexList(Request $request)
@@ -30,9 +30,11 @@ class AdminOrderSummaryReportController extends Controller
     public function view(Request $request)
     {
         $data = $this->service->view($request->id);
+        $data['lotsData'] = $this->service->lots($request->id);
         if (!$data) {
             return redirect()->back()->with('error', 'Order not found');
         }
-        return view('admin.reports.order_summary.view', $data);
+        // dd($data);
+        return view('admin.report.order_summary.view', $data);
     }
 }
