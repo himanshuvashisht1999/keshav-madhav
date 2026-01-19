@@ -20,6 +20,8 @@ use App\Models\masterFabricWarehouse;
 use App\Models\ProductionGoods;
 use App\Models\OrderCuttingStage;
 use App\Models\OrderProductSet;
+use App\Models\OrderStageTransaction;
+use App\Models\OrderLot;
 
 
 
@@ -58,14 +60,22 @@ class OrderDigitalizationService {
             $lotNos = array_unique($request->lot_no_list ?? []);
 
             foreach ($lotNos as $lotNo) {
-                $exists = FabricRollAssigning::where('lot_no', $lotNo)
+                $exists = OrderLot::where('lot_no', $lotNo)
                     ->where('production_slip_digitization_id', '!=', $request->production_slip_digitization_id)
                     ->exists();
 
                 if ($exists) {
                     throw new \Exception("Lot No {$lotNo} already exists. Please use a unique Lot No.");
                 }
+
+                $save_lot = new OrderLot;
+                $save_lot->order_main_id = $order_product_set->orderMain?->id;
+                $save_lot->order_products_set_id = $order_product_set->id;
+                $save_lot->production_slip_digitization_id = $request->production_slip_digitization_id;
+                $save_lot->lot_no = $lotNo;
+                $save_lot->save();
             }
+
 
             ////// corporate order photo upload
             if ($request->lot_no_list){
@@ -77,6 +87,7 @@ class OrderDigitalizationService {
                     $save_data_main = new FabricRollAssigning;
                     $save_data_main->sku = '';
                     $save_data_main->lot_no = $lot_no;
+                    $save_data_main->order_lot_id = $save_lot->id;
                     $save_data_main->production_slip_digitization_id = $request->production_slip_digitization_id;
                     $save_data_main->order_products_set_id = $request->design_id;
                     $save_data_main->order_no = $order_product_set->orderMain?->sku;
@@ -788,7 +799,7 @@ class OrderDigitalizationService {
     // new code 
     public function orders($stage_master_unit_id)
     {
-        $main_orders = OrderMain::with([
+        $main_orders = OrderMain::orderby('id','desc')->with([
                 'OrderProductSets' => function ($q) use ($stage_master_unit_id) {
                     $q->where('stage_master_unit_id', $stage_master_unit_id)
                     ->with([
@@ -823,29 +834,36 @@ class OrderDigitalizationService {
         return $main_orders;
     }
 
-    public function getLotsBySlip($slip_id, $stage_type = null)
-    {
-        // Get the slip to find the stage_master_unit_id (cutting master)
-        $slip = ProductionSlipDigitization::find($slip_id);
+    // public function getLotsBySlip($slip_id, $stage_type = null)
+    // {
+    //     // Get the slip to find the stage_master_unit_id (cutting master)
+    //     $slip = ProductionSlipDigitization::find($slip_id);
         
-        if (!$slip) {
-            return collect([]);
+    //     if (!$slip) {
+    //         return collect([]);
+    //     }
+
+    //     $query = FabricRollAssigning::where('stage_master_unit_id', $slip->stage_master_unit_id);
+
+    //     if ($stage_type === 'stitching') {
+    //         $query->where('status', '!=', 2);
+    //     } elseif ($stage_type === 'printing') {
+    //         $query->where('status', '!=', 3);
+    //     }
+
+    //     // Get distinct lot numbers
+    //     return $query->distinct()->pluck('lot_no');
+    // }
+
+    public function getLotsBySlip($stage_id)
+    {
+        if($stage_id == 1){
+            $lot_nums = OrderLot::where('is_printing',0)->pluck('lot_no');
+        }else{
+            $lot_nums = OrderLot::where('is_stitching',0)->pluck('lot_no');
         }
-
-        // Build query to get all lots assigned to this cutting master
-        $query = FabricRollAssigning::where('stage_master_unit_id', $slip->stage_master_unit_id);
-
-        // Filter based on stage type
-        if ($stage_type === 'stitching') {
-            // For stitching: exclude lots already sent to stitching (status 2)
-            $query->where('status', '!=', 2);
-        } elseif ($stage_type === 'printing') {
-            // For printing: exclude lots already sent to printing (status 3)
-            $query->where('status', '!=', 3);
-        }
-
-        // Get distinct lot numbers
-        return $query->distinct()->pluck('lot_no');
+        
+        return $lot_nums;
     }
 
     public function getLotDetails($lot_no, $slip_id)
@@ -1042,7 +1060,11 @@ class OrderDigitalizationService {
             // Update slip status to mark as processed for stitching
             $slip->update([
                 'status' => 1, // Processed for stitching
-                'lot_no' => $request->lot_no
+                // 'lot_no' => $request->lot_no
+            ]);
+
+            $order_lot_update = OrderLot::where('lot_no',$request->lot_no)->update([
+                'is_stitching' => 1
             ]);
 
             // Update all fabric roll assignments for this lot to mark them as sent to stitching
@@ -1058,7 +1080,7 @@ class OrderDigitalizationService {
 
         // Create Transaction with Details (Cutting -> Stitching)
         // Stage 3 is Cutting. Stage 4 is Stitching.
-        $this->createTransactionWithDetails($request->lot_no, 3, $request->to_stage_id ?? 4, $slip->id,$fab_roll_assigning->order_products_set_id);
+        $this->createTransactionWithDetails($request->lot_no, 3, $request->to_stage_id ?? 4, $slip->id,$fab_roll_assigning->order_products_set_id,$slip->stage_master_unit_id,$slip->stage_master_unit_id,$request->to_stage_unit_id);
             
             DB::commit();
             return [
@@ -1090,6 +1112,10 @@ class OrderDigitalizationService {
                 'lot_no' => $request->lot_no
             ]);
 
+            $order_lot_update = OrderLot::where('lot_no',$request->lot_no)->update([
+                'is_printing' => 1
+            ]);
+
             // Update all fabric roll assignments for this lot to mark them as sent to printing
             FabricRollAssigning::where('lot_no', $request->lot_no)
                 ->where('stage_master_unit_id', $slip->stage_master_unit_id)
@@ -1103,7 +1129,7 @@ class OrderDigitalizationService {
 
         // Create Transaction with Details (Cutting -> Printing)
         // Stage 3 is Cutting. Stage 1 is Printing.
-        $this->createTransactionWithDetails($request->lot_no, 3, $request->to_stage_id ?? 1, $slip->id,$fab_roll_assigning->order_products_set_id);
+        $this->createTransactionWithDetails($request->lot_no, 3, $request->to_stage_id ?? 1, $slip->id,$fab_roll_assigning->order_products_set_id,$slip->stage_master_unit_id,$request->to_stage_unit_id);
             
             DB::commit();
             return [
@@ -1119,7 +1145,7 @@ class OrderDigitalizationService {
         }
     }
 
-    private function createTransactionWithDetails($lot_no, $from_stage_id, $to_stage_id, $slip_id = null,$order_products_set_id)
+    private function createTransactionWithDetails($lot_no, $from_stage_id, $to_stage_id, $slip_id = null,$order_products_set_id,$sub_stage_id,$sub_stage_id_to)
     {
         // 1. Calculate Total Quantities per Size for the Lot
         // We get this from the OrderProductSet details which represent the Cutting Master output
@@ -1151,7 +1177,7 @@ class OrderDigitalizationService {
         $orderProductId = count($orderProductIds) > 0 ? $orderProductIds[0] : null;
 
         // 2. Create Transaction Header
-        $transaction = \App\Models\OrderStageTransaction::create([
+        $transaction = OrderStageTransaction::create([
             'from_stage_id' => $from_stage_id,
             'to_stage_id' => $to_stage_id,
             'lot_no' => $lot_no,
@@ -1159,7 +1185,8 @@ class OrderDigitalizationService {
             'remaining_quantity' => $totalQuantity, // Initially full
             'order_product_id' => $orderProductId, // Best guess or first
             'status' => 1,
-            // 'production_slip_digitization_id' => $slip_id 
+            'sub_stage_id' => $sub_stage_id,
+            'sub_stage_id_to' => $sub_stage_id_to,
         ]);
 
         // 3. Create Transaction Details (Size-wise)
@@ -1189,7 +1216,7 @@ class OrderDigitalizationService {
     public function getAvailableLotsForStage($stage_id)
     {
         // 1. Get all lots that have entered this stage
-        $candidateLots = \App\Models\OrderStageTransaction::where('to_stage_id', $stage_id)
+        $candidateLots = OrderStageTransaction::where('to_stage_id', $stage_id)
             ->distinct()
             ->pluck('lot_no');
 
@@ -1200,19 +1227,19 @@ class OrderDigitalizationService {
             // but loop is safer for complex size logic logic transparency.
             
             // Calculate Inflow (Total Items entered this stage)
-            $inflow = \App\Models\OrderStageTransaction::where('to_stage_id', $stage_id)
+            $inflow = OrderStageTransaction::where('to_stage_id', $stage_id)
                 ->where('lot_no', $lot_no)
                 ->sum('quantity');
 
             // Calculate Outflow (Total Items left this stage)
-            $outflow = \App\Models\OrderStageTransaction::where('from_stage_id', $stage_id)
+            $outflow = OrderStageTransaction::where('from_stage_id', $stage_id)
                 ->where('lot_no', $lot_no)
                 ->sum('quantity');
             
             // If there is stock remaining, add to list
             if (($inflow - $outflow) > 0) {
                 // Determine Order No (Optional, for display)
-                // $transaction = \App\Models\OrderStageTransaction::where('lot_no', $lot_no)->first();
+                // $transaction = OrderStageTransaction::where('lot_no', $lot_no)->first();
                 $availableLots[] = (object)[
                     'lot_no' => $lot_no,
                     // 'remaining_qty' => $inflow - $outflow
@@ -1301,6 +1328,12 @@ class OrderDigitalizationService {
             if ($totalMoved == 0) throw new \Exception('No quantity selected to move.');
 
             // Create Transaction
+            $update_order_stage_trans = OrderStageTransaction::where('to_stage_id',$from_stage_id)->where('sub_stage_id_to',$stage_master_unit_from?->id)->where('lot_no',$lot_no)->first();
+            if($update_order_stage_trans){
+                $update_order_stage_trans->remaining_quantity = $update_order_stage_trans->remaining_quantity - $totalMoved;
+                $update_order_stage_trans->update();
+            }
+            
             if($from_stage_id == 1){
 
                 $transaction = \App\Models\OrderPrintingStageTransaction::create([
@@ -1328,7 +1361,7 @@ class OrderDigitalizationService {
             }else
             {
 
-                $transaction = \App\Models\OrderStageTransaction::create([
+                $transaction = OrderStageTransaction::create([
                     'from_stage_id' => $from_stage_id,
                     'to_stage_id' => $to_stage_id,
                     'sub_stage_id' => $stage_master_unit_from?->id,
@@ -1351,23 +1384,7 @@ class OrderDigitalizationService {
                 }
             }
             
-            // Check if Lot is Fully Processed at this stage?
-            // (Optional logic: if all inventory is 0, we might want to flag something, but for now just move it)
-
-            // Update Slip Status
-            // Logic for status update depends on requirements. 
-            // If Hand Slip is "One Slip = One Move", then we mark processed.
-            // If "One Slip = Multiple Moves" (Partial), then we might keep it open?
-            // User said: "In this but one main major change... from lot he will send size wise ... when any lot will complete then this lot will not listed."
-            // This implies the LISTING (Dropdown) shows Lots. The Slip itself might be the container?
-            // Actually, the user flow is: "Upload Image -> Admin select Lot -> Send".
-            // So the Slip (Image) is the trigger.
-            // If success, we mark slip as processed?
-            // "when any lot will complete then this lot will not listed" -> This refers to the LOT DROPDOWN in the listing, not the slip itself.
-            // But here we are processing a SLIP.
-            // So we mark the Slip as processed (status 1 or appropriate).
-            // Currently status 0 is pending.
-             $slip->update(['status' => 1, 'lot_no' => $lot_no]); // Mark as processed
+            $slip->update(['status' => 1, 'lot_no' => $lot_no]); // Mark as processed
 
             DB::commit();
             return ['status_code' => 1, 'message' => 'Hand Slip Processed Successfully'];

@@ -19,6 +19,7 @@ class FabricRollAssigning extends Model
         'sku',
         'order_products_set_id',
         'production_slip_digitization_id',
+        'order_lot_id',
         'lot_no',
         'order_no',
         'stage_master_unit_id',
