@@ -150,14 +150,17 @@ function getLotDetails($lot_id,$master_stage){
         $data = OrderStageTransaction::with('getFromUnitMaster')->where('lot_no',$lot_id)->where('from_stage_id',$master_stage)->first();
     }
     $column_namevar = 'stage_id_'.$master_stage;
-    $time_allocation = OrderStageWiseTimeTracking::where('lot_no',$lot_id)->value($column_namevar);
-    //
+    // $time_allocation = OrderStageWiseTimeTracking::where('lot_no',$lot_id)->value($column_namevar);
+    $time_allocation = OrderStageWiseTimeTracking::where('lot_no', $lot_id)
+        ->whereNotNull($column_namevar)   // 🔥 THIS IS THE FIX
+        ->value($column_namevar);
     
     $data = [
         'unit_name' => $data?->getFromUnitMaster?->name,
         'quantity' => $data?->quantity,
         'remaining_quantity' => $data?->remaining_quantity,
-        'time_allocation' => $time_allocation
+        'time_allocation' => $time_allocation,
+        'completed_time' => $data?->updated_at,
     ];
    return $data;
 }
