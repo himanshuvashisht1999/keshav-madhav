@@ -1,289 +1,206 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<style>
-/* ===== HEADER ===== */
-.report-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
+@php use Carbon\Carbon; @endphp
 
-/* ===== CARD ===== */
-.report-card {
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
-    background: #fff;
+<style>
+/* ===== PAGE ===== */
+.report-page { background:#f4f6f9; }
+
+/* ===== TOP BAR ===== */
+.top-bar{
+    background:#ffffff;
+    padding:10px 16px;
+    border-radius:6px;
+    box-shadow:0 1px 4px rgba(0,0,0,.08);
+    display:flex;
+    justify-content:space-between;
+    font-size:14px;
+    margin-bottom:12px;
 }
 
 /* ===== SECTION ===== */
-.section-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 8px 0 6px;
-    border-bottom: 1px solid #dee2e6;
-    padding-bottom: 3px;
+.section{
+    background:#fff;
+    border-radius:6px;
+    box-shadow:0 1px 4px rgba(0,0,0,.06);
+    margin-bottom:12px;
+}
+.section-title{
+    padding:10px 14px;
+    font-weight:600;
+    border-bottom:1px solid #e5e7eb;
 }
 
-/* ===== ORDER DETAILS GRID ===== */
-.meta-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px 16px;
-    font-size: 13px;
+/* ===== TABLE ===== */
+.compact-table{
+    width:100%;
+    font-size:13px;
+}
+.compact-table th{
+    background:#111827;
+    color:#fff;
+    padding:6px;
+}
+.compact-table td{
+    padding:6px;
+}
+.compact-table tr:last-child td{
+    background:#f1f5f9;
+    font-weight:600;
 }
 
-.meta-label {
-    font-weight: 600;
-    color: #333;
+/* ===== PROGRESS LIST ===== */
+.stage-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 12px;
+    border-bottom:1px solid #e5e7eb;
+    font-size:13px;
+}
+.stage-row:last-child{ border-bottom:none; }
+
+.stage-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.stage-indicator{
+    width:4px;
+    height:100%;
+    border-radius:2px;
 }
 
-/* ===== TABLE COMMON ===== */
-.report-table {
-    width: 100%;
-    table-layout: fixed;
-    margin-bottom: 4px;
-}
+/* ===== STATUS COLORS ===== */
+.indicator-delayed{ background:#dc2626; }
+.indicator-completed{ background:#16a34a; }
+.indicator-progress{ background:#f59e0b; }
 
-.report-table th,
-.report-table td {
-    padding: 6px 8px;
-    font-size: 13px;
+.badge{
+    font-size:11px;
+    padding:4px 8px;
+    border-radius:12px;
+    font-weight:600;
 }
+.badge-danger{ background:#fee2e2;color:#991b1b; }
+.badge-success{ background:#dcfce7;color:#166534; }
+.badge-warning{ background:#fef3c7;color:#92400e; }
 
-.report-table th {
-    background: #2f363d;
-    color: #fff;
+.stage-meta{
+    color:#6b7280;
+    font-size:12px;
 }
-
-.col-label {
-    width: 65%;
-}
-
-.col-value {
-    width: 35%;
-    text-align: right;
-}
-
-/* ===== TOTAL ROW ===== */
-.total-row td {
-    background: #f1f3f5;
-    font-weight: 600;
-}
-
-/* ===== STAGE DETAILS ===== */
-.stage-card {
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    background: #ffffff;
-    box-shadow: 0 1px 4px rgba(0,0,0,.05);
-    overflow: hidden;
-}
-
-.stage-header {
-    display: flex;
-    justify-content: space-between; /* LEFT & RIGHT */
-    align-items: center;
-    background: #f1f3f5;
-    padding: 6px 10px;
-    border-bottom: 1px solid #dee2e6;
-}
-
-.stage-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: #2f363d;
-}
-
-.stage-body {
-    padding: 8px 10px;
-    font-size: 14px;
-}
-
-.stage-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 0;
-    border-bottom: 1px dashed #e9ecef;
-}
-
-.stage-row:last-child {
-    border-bottom: none;
-}
-
-.stage-row .label {
-    color: #555;
-    font-weight: 500;
-}
-
-.stage-row .value {
-    font-weight: 600;
-    color: #000;
-}
-
-.stage-row .value.strong {
-    color: #2f363d;
-}
-
-.stage-row.remaining .value {
-    color: #c0392b; /* remaining qty highlight */
-}
-
 </style>
 
-<div class="content-wrapper">
+<div class="content-wrapper report-page">
+<section class="content">
+<div class="container-fluid">
 
-    {{-- HEADER --}}
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="report-header">
-                <div>Report No :</div>
-                <h5 class="mb-0">Lots Details Report</h5>
-                <div>{{ now()->format('d M Y h:i A') }}</div>
-            </div>
-        </div>
-    </section>
-
-    <section class="content">
-        <div class="container-fluid">
-            <div class="report-card p-3">
-
-                {{-- LOT NO --}}
-                <strong>Lot No :</strong>
-                {{ $data['lots_data'][0]->lot_no ?? '' }}
-
-                {{-- ORDER DETAILS --}}
-                <div class="section-title">Order Details</div>
-
-                @foreach ($data['lots_data'] as $lot)
-                    <div class="meta-grid mb-2">
-                        <div><span class="meta-label">Order:</span> {{ $lot->orderProductSet->orderMain->sku ?? '' }}</div>
-                        <div><span class="meta-label">Customer:</span> {{ $lot->orderProductSet->orderMain->customer->name ?? '' }}</div>
-                        <div><span class="meta-label">Size:</span> {{ $lot->orderProductSet->size_measurement->size_group ?? '' }}</div>
-
-                        <div><span class="meta-label">Pcs:</span> {{ $lot->orderProductSet->size_measurement->no_of_pcs ?? '' }}</div>
-                        <div><span class="meta-label">Color:</span> {{ $lot->orderProductSet->colors->name ?? '' }}</div>
-                        <div><span class="meta-label">Fit:</span> {{ $lot->orderProductSet->master_product_fitting->name ?? '' }}</div>
-
-                        <div><span class="meta-label">Pattern:</span> {{ $lot->orderProductSet->master_design_pattern->name ?? '' }}</div>
-                        <div><span class="meta-label">Fabric:</span> {{ $lot->orderProductSet->fabric->name ?? '' }}</div>
-                        <div><span class="meta-label">Unit:</span> {{ $lot->productionSlipDigitization->getUnitMaster->name ?? '' }}</div>
-                    </div>
-                @endforeach
-
-                {{-- CUTTING & ROLLS (SAME ROW) --}}
-                <div class="row mt-2">
-
-                    {{-- CUTTING --}}
-                    <div class="col-md-6">
-                        <div class="section-title">Cutting</div>
-
-                        <table class="table table-bordered table-sm report-table">
-                            <thead>
-                                <tr>
-                                    <th class="col-label">Size</th>
-                                    <th class="col-value">Qty</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @php $total_qty = 0; @endphp
-
-                                @foreach ($data['rolls_data'] as $roll)
-                                    @if (!empty($roll->fabricRollAssigningsDetail))
-                                        @foreach ($roll->fabricRollAssigningsDetail as $detail)
-                                            <tr>
-                                                <td>{{ $detail->size ?? '' }}</td>
-                                                <td class="col-value">{{ $detail->quantity ?? 0 }}</td>
-                                            </tr>
-                                            @php $total_qty += $detail->quantity ?? 0; @endphp
-                                        @endforeach
-                                    @endif
-                                @endforeach
-
-                                <tr class="total-row">
-                                    <td>Total</td>
-                                    <td class="col-value">{{ $total_qty }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {{-- ROLLS --}}
-                    <div class="col-md-6">
-                        <div class="section-title">Rolls</div>
-
-                        <table class="table table-bordered table-sm report-table">
-                            <thead>
-                                <tr>
-                                    <th class="col-label">Roll</th>
-                                    <th class="col-value">Meter</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($data['rolls_data'] as $roll)
-                                    <tr>
-                                        <td>{{ $roll->roll_no ?? '' }}</td>
-                                        <td class="col-value">{{ $roll->meter ?? 0 }}</td>
-                                    </tr>
-                                @endforeach
-
-                                <tr class="total-row">
-                                    <td>Total</td>
-                                    <td class="col-value">{{ $data['rolls_data']->sum('meter') ?? 0 }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                </div>
-
-                
-
-                <div class="row mt-3 stage-wrapper">
-                    @foreach($master_stages as $stage)
-                        @php
-                            $lot_details = getLotDetails($data['lot_no'], $stage->id);
-                        @endphp
-
-                        @if($lot_details)
-                            <div class="col-md-6 mb-3">
-                                <div class="stage-card">
-
-                                    {{-- HEADER --}}
-                                    <div class="stage-header">
-                                        <span class="stage-title">{{ $stage->name }} Stage</span>
-                                        <span class="stage-title">Estimated Time : {{ \Carbon\Carbon::parse($lot_details['time_allocation'])->format('d M Y, h:i A') ?? 'N/A' }}</span>
-                                    </div>
-
-                                    {{-- BODY --}}
-                                    <div class="stage-body">
-                                        <div class="stage-row">
-                                            <span class="label">Unit</span>
-                                            <span class="value">{{ $lot_details['unit_name'] ?? 'N/A' }}</span>
-                                        </div>
-
-                                        <div class="stage-row">
-                                            <span class="label">Total Quantity</span>
-                                            <span class="value strong">{{ $lot_details['quantity'] }}</span>
-                                        </div>
-
-                                        <div class="stage-row remaining">
-                                            <span class="label">Remaining Quantity</span>
-                                            <span class="value">{{ $lot_details['remaining_quantity'] }}</span>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-                        @endif
-                    @endforeach
-                </div>
-
-
-            </div>
-        </div>
-    </section>
+{{-- ================= TOP BAR ================= --}}
+@php $lot = $data['lots_data'][0] ?? null; @endphp
+<div class="top-bar">
+    <div>
+        <strong>Lot:</strong> {{ $lot->lot_no ?? '-' }} |
+        <strong>Order:</strong> {{ $lot->orderProductSet->orderMain->sku ?? '-' }} |
+        <strong>Customer:</strong> {{ $lot->orderProductSet->orderMain->customer->name ?? '-' }}
+    </div>
+    <div>{{ now()->format('d M Y') }}</div>
 </div>
 
+{{-- ================= ORDER SUMMARY ================= --}}
+<div class="section">
+    <div class="section-title">Order Summary</div>
+    <div class="p-3 row">
+        <div class="col-md-3"><strong>Fabric:</strong> {{ $lot->orderProductSet->fabric->name ?? '-' }}</div>
+        <div class="col-md-3"><strong>Color:</strong> {{ $lot->orderProductSet->colors->name ?? '-' }}</div>
+        <div class="col-md-3"><strong>Pattern:</strong> {{ $lot->orderProductSet->master_design_pattern->name ?? '-' }}</div>
+        <div class="col-md-3"><strong>Unit:</strong> {{ $lot->productionSlipDigitization->getUnitMaster->name ?? '-' }}</div>
+    </div>
+</div>
+
+{{-- ================= CUTTING & ROLLS ================= --}}
+<div class="section">
+    <div class="section-title">Cutting & Rolls</div>
+    <div class="row p-3">
+        <div class="col-md-6">
+            <table class="compact-table">
+                <thead><tr><th>Size</th><th class="text-right">Qty</th></tr></thead>
+                <tbody>
+                @php $total=0; @endphp
+                @foreach($data['rolls_data'] as $roll)
+                    @foreach($roll->fabricRollAssigningsDetail ?? [] as $d)
+                    <tr><td>{{ $d->size }}</td><td class="text-right">{{ $d->quantity }}</td></tr>
+                    @php $total+=$d->quantity; @endphp
+                    @endforeach
+                @endforeach
+                <tr><td>Total</td><td class="text-right">{{ $total }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="col-md-6">
+            <table class="compact-table">
+                <thead><tr><th>Roll</th><th class="text-right">Meter</th></tr></thead>
+                <tbody>
+                @foreach($data['rolls_data'] as $roll)
+                    <tr><td>{{ $roll->roll_no }}</td><td class="text-right">{{ $roll->meter }}</td></tr>
+                @endforeach
+                <tr><td>Total</td><td class="text-right">{{ $data['rolls_data']->sum('meter') }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{-- ================= PRODUCTION PROGRESS ================= --}}
+<div class="section">
+    <div class="section-title">Production Progress</div>
+
+    @foreach($master_stages as $stage)
+        @php
+            $d = getLotDetails($data['lot_no'],$stage->id);
+            if(!$d || !$d['time_allocation']) continue;
+
+            $remaining=(int)$d['remaining_quantity'];
+            $eta=Carbon::parse($d['time_allocation']);
+            $completed=$d['completed_time']?Carbon::parse($d['completed_time']):null;
+
+            $status='progress';
+            if($remaining===0 && $completed && $completed->gt($eta)) $status='delayed';
+            elseif($remaining>0 && now()->gt($eta)) $status='delayed';
+            elseif($remaining===0) $status='completed';
+        @endphp
+
+        <div class="stage-row">
+            <div class="stage-left">
+                <div class="stage-indicator
+                    {{ $status=='delayed'?'indicator-delayed':($status=='completed'?'indicator-completed':'indicator-progress') }}">
+                </div>
+                <div>
+                    <strong>{{ $stage->name }}</strong>
+                    <div class="stage-meta">
+                        Unit: {{ $d['unit_name'] }} |
+                        Remaining: {{ $remaining }} |
+                        ETA: {{ $eta->format('d M Y') }}
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                @if($status=='delayed')
+                    <span class="badge badge-danger">Delayed</span>
+                @elseif($status=='completed')
+                    <span class="badge badge-success">Completed</span>
+                @else
+                    <span class="badge badge-warning">In Progress</span>
+                @endif
+            </div>
+        </div>
+    @endforeach
+</div>
+
+</div>
+</section>
+</div>
 @endsection
