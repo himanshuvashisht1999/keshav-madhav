@@ -18,6 +18,7 @@ class OrderDispatchController extends Controller {
     }
     public function create(Request $request){
         $response['customers'] = $this->productOrderService->customers();
+        $response['orders'] = $this->service->getOrders();
         // dd($response);
         return view('admin.order_dispatch.create', $response);
     } 
@@ -32,7 +33,6 @@ class OrderDispatchController extends Controller {
     } 
     public function index(Request $request){
         $response['customers'] = $this->productOrderService->customers();
-        // dd($response);
         return view('admin.order_dispatch.index', $response);
     }
     public function indexList(Request $request){
