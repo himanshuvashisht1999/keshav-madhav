@@ -1194,7 +1194,7 @@ class OrderDigitalizationService {
             // 3. Create Transaction Details (Size-wise)
             foreach ($sizeQuantities as $size => $qty) {
                 OrderPrintingStageTransactionDetail::create([
-                    'order_stage_transaction_id' => $transaction->id,
+                    'order_printing_stage_transaction_id' => $transaction->id,
                     'size' => $size,
                     'quantity' => $qty
                 ]);
@@ -1242,7 +1242,10 @@ class OrderDigitalizationService {
     public function getAvailableLotsForStage($stage_id)
     {
         // 1. Get all lots that have entered this stage
-        $candidateLots = OrderStageTransaction::where('to_stage_id', $stage_id)
+        $model_name = ($stage_id == 1)
+        ? OrderPrintingStageTransaction::class
+        : OrderStageTransaction::class;
+        $candidateLots = $model_name::where('to_stage_id', $stage_id)
             ->distinct()
             ->pluck('lot_no');
 
@@ -1253,19 +1256,19 @@ class OrderDigitalizationService {
             // but loop is safer for complex size logic logic transparency.
             
             // Calculate Inflow (Total Items entered this stage)
-            $inflow = OrderStageTransaction::where('to_stage_id', $stage_id)
+            $inflow = $model_name::where('to_stage_id', $stage_id)
                 ->where('lot_no', $lot_no)
                 ->sum('quantity');
 
             // Calculate Outflow (Total Items left this stage)
-            $outflow = OrderStageTransaction::where('from_stage_id', $stage_id)
+            $outflow = $model_name::where('from_stage_id', $stage_id)
                 ->where('lot_no', $lot_no)
                 ->sum('quantity');
             
             // If there is stock remaining, add to list
             if (($inflow - $outflow) > 0) {
                 // Determine Order No (Optional, for display)
-                // $transaction = OrderStageTransaction::where('lot_no', $lot_no)->first();
+                // $transaction = $model_name::where('lot_no', $lot_no)->first();
                 $availableLots[] = (object)[
                     'lot_no' => $lot_no,
                     // 'remaining_qty' => $inflow - $outflow
@@ -1279,18 +1282,35 @@ class OrderDigitalizationService {
     public function getLotDetailsForHandSlip($lot_no, $current_stage_id)
     {
         // 1. Calculate Inflow (What came INTO this stage) per size
-        $inflow = \App\Models\OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transactions.id', '=', 'order_stage_transaction_details.order_stage_transaction_id')
+        if($current_stage_id == 1){
+            $inflow = OrderPrintingStageTransactionDetail::join('order_printing_stage_transactions', 'order_printing_stage_transactions.id', '=', 'order_printing_stage_transaction_details.order_printing_stage_transaction_id')
+            ->where('order_printing_stage_transactions.to_stage_id', $current_stage_id)
+            ->where('order_printing_stage_transactions.lot_no', $lot_no)
+            ->select('order_printing_stage_transaction_details.size', 'order_printing_stage_transaction_details.quantity')
+            ->get();
+
+            // 2. Calculate Outflow (What already LEFT this stage) per size
+            $outflow = OrderPrintingStageTransactionDetail::join('order_printing_stage_transactions', 'order_printing_stage_transactions.id', '=', 'order_printing_stage_transaction_details.order_printing_stage_transaction_id')
+                ->where('order_printing_stage_transactions.from_stage_id', $current_stage_id)
+                ->where('order_printing_stage_transactions.lot_no', $lot_no)
+                ->select('order_printing_stage_transaction_details.size', 'order_printing_stage_transaction_details.quantity')
+                ->get();
+        }else{
+            $inflow = \App\Models\OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transactions.id', '=', 'order_stage_transaction_details.order_stage_transaction_id')
             ->where('order_stage_transactions.to_stage_id', $current_stage_id)
             ->where('order_stage_transactions.lot_no', $lot_no)
             ->select('order_stage_transaction_details.size', 'order_stage_transaction_details.quantity')
             ->get();
 
-        // 2. Calculate Outflow (What already LEFT this stage) per size
-        $outflow = \App\Models\OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transactions.id', '=', 'order_stage_transaction_details.order_stage_transaction_id')
-            ->where('order_stage_transactions.from_stage_id', $current_stage_id)
-            ->where('order_stage_transactions.lot_no', $lot_no)
-            ->select('order_stage_transaction_details.size', 'order_stage_transaction_details.quantity')
-            ->get();
+            // 2. Calculate Outflow (What already LEFT this stage) per size
+            $outflow = \App\Models\OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transactions.id', '=', 'order_stage_transaction_details.order_stage_transaction_id')
+                ->where('order_stage_transactions.from_stage_id', $current_stage_id)
+                ->where('order_stage_transactions.lot_no', $lot_no)
+                ->select('order_stage_transaction_details.size', 'order_stage_transaction_details.quantity')
+                ->get();
+
+        }
+        
 
         $inventory = [];
 
@@ -1312,7 +1332,7 @@ class OrderDigitalizationService {
         
         // 4. Get Basic Lot Info (Cutting Master Info)
         // We can reuse getLotDetailsForUser logic or just fetch basics
-        $basicInfo = $this->getLotDetailsForDisplay(['lot_no' => $lot_no], true); // true for basic only? Adjust later if needed
+        $basicInfo = $this->getLotDetailsForDisplay(['lot_no' => $lot_no], true); // true for basic only? Adjust later if needed 
         // Or simply:
          $cuttingMaster = \App\Models\FabricRollAssigning::where('lot_no', $lot_no)->first();
          
