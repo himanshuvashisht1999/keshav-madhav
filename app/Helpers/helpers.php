@@ -145,9 +145,9 @@ function total_ordered_quantity($order_main_id){
 
 function getLotDetails($lot_id,$master_stage){
     if($master_stage == 1){
-        $data = OrderPrintingStageTransaction::with('getFromUnitMaster')->where('lot_no',$lot_id)->where('from_stage_id',$master_stage)->first();
+        $data = OrderPrintingStageTransaction::with('getFromUnitMaster')->where('lot_no',$lot_id)->where('to_stage_id',$master_stage)->first();
     }else{
-        $data = OrderStageTransaction::with('getFromUnitMaster')->where('lot_no',$lot_id)->where('from_stage_id',$master_stage)->first();
+        $data = OrderStageTransaction::with('getFromUnitMaster')->where('lot_no',$lot_id)->where('to_stage_id',$master_stage)->first();
     }
     $column_namevar = 'stage_id_'.$master_stage;
     // $time_allocation = OrderStageWiseTimeTracking::where('lot_no',$lot_id)->value($column_namevar);
