@@ -1385,27 +1385,31 @@ class OrderDigitalizationService {
                 $update_order_stage_trans->update();
             }
             
-            $transaction = OrderStageTransaction::create([
-                'from_stage_id' => $from_stage_id,
-                'to_stage_id' => $to_stage_id,
-                'sub_stage_id' => $stage_master_unit_from?->id,
-                'sub_stage_id_to' => $stage_master_unit_to?->id,
-                'lot_no' => $lot_no,
-                'quantity' => $totalMoved,
-                'remaining_quantity' => $totalMoved, 
-                'status' => 1,
-            ]);
+            if($from_stage_id == 1){}else{
+                $transaction = OrderStageTransaction::create([
+                    'from_stage_id' => $from_stage_id,
+                    'to_stage_id' => $to_stage_id,
+                    'sub_stage_id' => $stage_master_unit_from?->id,
+                    'sub_stage_id_to' => $stage_master_unit_to?->id,
+                    'lot_no' => $lot_no,
+                    'quantity' => $totalMoved,
+                    'remaining_quantity' => $totalMoved, 
+                    'status' => 1,
+                ]);
 
-            // Create Details
-            foreach ($sizes as $size => $qty) {
-                if ($qty > 0) {
-                    \App\Models\OrderStageTransactionDetail::create([
-                        'order_stage_transaction_id' => $transaction->id,
-                        'size' => $size,
-                        'quantity' => $qty
-                    ]);
+                // Create Details
+                foreach ($sizes as $size => $qty) {
+                    if ($qty > 0) {
+                        \App\Models\OrderStageTransactionDetail::create([
+                            'order_stage_transaction_id' => $transaction->id,
+                            'size' => $size,
+                            'quantity' => $qty
+                        ]);
+                    }
                 }
             }
+            
+            
             
             
             $slip->update(['status' => 1, 'lot_no' => $lot_no]); // Mark as processed
