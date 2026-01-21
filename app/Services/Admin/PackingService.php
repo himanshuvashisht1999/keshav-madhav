@@ -65,6 +65,15 @@ class PackingService
     {
         DB::beginTransaction();
         try {
+
+            $exists = $this->checkCartonNo($data['carton_no']); 
+            if ($exists) {
+                DB::rollBack();
+                return [
+                    'status' => 'exists',
+                    'message' => 'Carton number already exists'
+                ];
+            }
             $main = $this->getOrCreatePackingMain($data['slip_id'], $data['order_id']);
 
             $carton = PackingCarton::create([
@@ -273,4 +282,11 @@ class PackingService
             return ['status' => 'error', 'message' => $e->getMessage()];
         }
     }
+
+    public function checkCartonNo($carton_no)
+    {
+        $exists = PackingCarton::where('carton_no', $carton_no)->exists();  
+        return $exists; 
+    }
+
 }
