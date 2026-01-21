@@ -27,7 +27,7 @@ class PackingController extends Controller {
         // If packing exists, get the linked order
         $order = null;
         if($packing && $packing->order_main_id) {
-             $order = \App\Models\OrderMain::with('customer', 'OrderProductSets.product_set_details')->find($packing->order_main_id);
+             $order = \App\Models\OrderMain::with('customer', 'OrderProductSets.product_set_details', 'OrderProductSets.colors')->find($packing->order_main_id);
         } else if($slip->sku) {
              // Fallback to SKU link if exists (legacy support)
              $order = $this->service->getOrderDetails($slip->sku);
@@ -107,12 +107,20 @@ class PackingController extends Controller {
         $items = $order->OrderProductSets->flatMap->product_set_details->map(function($item) {
             return $item;
         });
-
+        
         return response()->json([
             'status' => 'success',
             'order' => $order,
             'items' => $items,
             'sets' => $sets
+        ]);
+    }
+
+    public function checkCartonNo(Request $request)
+    {
+        $result = $this->service->checkCartonNo($request->carton_no);
+        return response()->json([
+            'exists' => $result
         ]);
     }
     // API/AJAX Methods

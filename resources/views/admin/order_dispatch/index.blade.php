@@ -26,13 +26,14 @@
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body bg-light rounded">
                     <div class="row">
-                        <div class="col-md-3 mb-2">
-                            <label class="small font-weight-bold text-muted">Search Order No</label>
-                            <input type="text" id="main_order_id" class="form-control" placeholder="Enter Order No...">
-                        </div>
+                        
                         <div class="col-md-3 mb-2">
                             <label class="small font-weight-bold text-muted">Dispatcher No</label>
                             <input type="text" id="order_dispatch_no" class="form-control" placeholder="Enter Dispatch No...">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="small font-weight-bold text-muted">Search Order No</label>
+                            <input type="text" id="main_order_id" class="form-control" placeholder="Enter Order No...">
                         </div>
                         <div class="col-md-3 mb-2">
                             <label class="small font-weight-bold text-muted">Customer</label>
