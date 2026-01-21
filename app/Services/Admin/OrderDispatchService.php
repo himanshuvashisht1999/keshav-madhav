@@ -244,4 +244,11 @@ class OrderDispatchService {
 
         return $data;
     }
+
+    public function getOrders(){
+        $data = $data =  OrderMain::where('status', 1)
+                ->orderBy('id', 'asc')
+                ->get(['id', 'sku as order_no']);
+        return $data;
+    }
 }

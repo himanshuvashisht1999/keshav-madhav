@@ -38,9 +38,9 @@
                     <div class="card h-100">
                         <div class="card-header bg-light d-flex justify-content-between align-items-center">
                             <h3 class="card-title mb-0">Order Details & Items</h3>
-                            <button class="btn btn-sm btn-outline-primary" onclick="openCreateSetModal()" id="btnCreateSet" disabled>
+                            {{-- <button class="btn btn-sm btn-outline-primary" onclick="openCreateSetModal()" id="btnCreateSet" disabled>
                                 <i class="fas fa-plus-circle"></i> Create Set
-                            </button>
+                            </button> --}}
                         </div>
                         <div class="card-body p-0" style="overflow-y: auto; max-height: 600px;">
                             <ul class="list-group list-group-flush" id="available-items-list">
@@ -647,7 +647,7 @@
         }, function(response) {
              if(response.status === 'success') {
                  alert("Packing Finalized Successfully!");
-                 window.location.href = "{{ route('admin.admin.uploaded-slips.index') }}";
+                 window.location.href = "{{ route('admin.uploaded-slips.index') }}";
              } else { 
                  alert("Error: " + response.message);
              }

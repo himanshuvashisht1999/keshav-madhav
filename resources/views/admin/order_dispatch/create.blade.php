@@ -29,11 +29,19 @@
 
                             <div class="col-md-3">
                                 <label class="font-weight-semibold">Order No</label>
-                                <input type="text"
+                                {{-- <input type="text"
                                        id="search_order_no"
                                        name ="search_order_no"
                                        class="form-control"
-                                       placeholder="Enter Order Number">
+                                       placeholder="Enter Order Number"> --}}
+                                <select id="search_order_no" name="search_order_no" class="form-control select2">
+                                    <option value="">Select Order No</option>
+                                    @foreach ($orders as $order)
+                                        <option value="{{ $order->id }}">
+                                            {{ $order->order_no }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
 
                             <div class="col-md-1 text-center text-muted font-weight-bold">
