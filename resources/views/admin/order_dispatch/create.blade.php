@@ -45,12 +45,12 @@
                             </div>
 
                             <div class="col-md-1 text-center text-muted font-weight-bold">
-                                AND
+                                OR
                             </div>
 
                             <div class="col-md-4">
                                 <label class="font-weight-semibold">Customer</label>
-                                <select id="customer_id" name ="master_customer_id"
+                                <select id="customer_id"  
                                         class="form-control select2">
                                     <option value="">Select Customer</option>
                                     @foreach($customers as $customer)
@@ -99,8 +99,8 @@
                 <!-- SUBMIT -->
                 <div class="row mt-4">
                     <div class="col-12 text-right">
-                        {{-- <input type="hidden" name="final_order_no" id="final_order_no">
-                        <input type="hidden" name="final_customer_id" id="final_customer_id"> --}}
+                        <input type="hidden" name="final_order_no" id="final_order_no">
+                        <input type="hidden" name="final_customer_id" id="final_customer_id">
                         <button class="btn btn-success btn-lg px-4"
                                 id="submitDispatchBtn"
                                 disabled>
@@ -384,11 +384,9 @@ function renderOrderData(data) {
     }
 
     let html = '';
-
+    let pcs_in_carton = 0;
     data.forEach(order => {
-
         let totalBoxes = 0;
-
         html += `
         <div class="card shadow-sm mb-3">
             <div class="order-card-header">
@@ -445,10 +443,10 @@ function renderOrderData(data) {
             `;
 
         } else {
-
+            console.log(order.cartons);
             order.cartons.forEach(carton => {
 
-                totalBoxes += Number(carton.boxes_in_carton);
+                pcs_in_carton += Number(carton.pcs_in_carton);
 
                 html += `
                 <tr>
@@ -467,8 +465,8 @@ function renderOrderData(data) {
 
             html += `
                 <tr class="bg-light font-weight-bold">
-                    <td colspan="2" class="text-right">Total Boxes</td>
-                    <td>${totalBoxes}</td>
+                    <td colspan="2" class="text-right">Total Pcs</td>
+                    <td>${pcs_in_carton}</td>
                 </tr>
             `;
         }
@@ -480,54 +478,20 @@ function renderOrderData(data) {
         </div>
         `;
     });
-
+    
     $('#orderContainer').html(html);
+    
     toggleSubmitButton();
 }
 
 /* ================= EVENTS ================= */
 
 $(function () {
-
-    $('#search_order_no').keydown(function(e){
-        if(e.key === 'Enter'){
-            e.preventDefault();
-
-            let orderNo = $(this).val().trim();
-            if (!orderNo) return;
-
-            $('#orderContainer').html('');
-
-            $.get("{{ route('admin.order-dispatch.getOrderPackingData') }}",
-            { search_order_no: orderNo },
-            function (res) {
-
-                if (!res.data || res.data.length === 0) {
-                    showNoData('Order not found');
-                    return;
-                }
-
-                let order = res.data[0];
-
-                $('#customer_id').val(order.master_customer_id).trigger('change');
-                $('#final_order_no').val(order.id);
-                $('#final_customer_id').val(order.master_customer_id);
-                showOrderFile(order.slip_file);
-                renderOrderData(res.data);
-
-                setTimeout(() => {
-                    $('#order_no').val(order.id).trigger('change');
-                }, 300);
-            });
-        }
-    });
-
-    $('#order_no').on('change', function () {
-
+    $('#search_order_no').on('change', function () {
+        let order_id = $(this).val();
+        $('#order_no').val(order_id).trigger('change.select2');
         let order_no = $(this).find('option:selected').text().trim();
         if (!order_no) return;
-
-        $('#search_order_no').val(order_no);
 
         $.get("{{ route('admin.order-dispatch.getOrderPackingData') }}",
         { search_order_no : order_no },
@@ -540,10 +504,42 @@ $(function () {
 
             let order = res.data[0];
             $('#final_order_no').val(order.id);
+            $('#final_customer_id').val(order.master_customer_id);
+            
+            showOrderFile(order.slip_file);
+            renderOrderData(res.data);
+        });
+       
+    });
+
+    $('#order_no').on('change', function () {
+        let order_id = $(this).val();
+        
+        $('#search_order_no').val(order_id).trigger('change.select2');
+        let order_no = $(this).find('option:selected').text().trim();
+        if (!order_no) return;
+
+        // $('#search_order_no').val(order_no);
+
+        $.get("{{ route('admin.order-dispatch.getOrderPackingData') }}",
+        { search_order_no : order_no },
+        function (res) {
+
+            if (!res.data || res.data.length === 0) {
+                showNoData('Order not found');
+                return;
+            }
+
+            let order = res.data[0];
+            $('#final_order_no').val(order.id);
+            $('#final_customer_id').val(order.master_customer_id);
 
             showOrderFile(order.slip_file);
             renderOrderData(res.data);
         });
+
+        $('#final_order_no').val(order_id);
+        $('#final_customer_id').val(order_id);
     });
 
     $('#customer_id').on('change', function () {
@@ -587,6 +583,7 @@ $(function () {
 
 });
 
+
 /* ================= CHECKBOX ================= */
 
 $(document).on('change', '.select-all-cartons', function () {
@@ -629,6 +626,9 @@ $('#toggleDocumentBtn').on('click', function () {
 
     isDocVisible = !isDocVisible;
 });
+
+
+
 </script>
 
 @endsection

@@ -1,29 +1,49 @@
 @extends('admin.layouts.app')
 
 @section('content')
+
+<style>
+    .content-wrapper h4,
+    .content-wrapper .h4 {
+        font-size: 1.00rem !important;
+        font-weight: 500;
+    }
+
+</style>
 <div class="content-wrapper">
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-12">
+                <div class="col-sm-10">
                    <h4>
                        @if($order)
                            <span class="text-muted">Customer:</span> {{ $order->customer->name ?? 'N/A' }} 
                            <small class="ms-3 text-muted">Order: {{ $order->sku }}</small>
                        @else
                            <div class="d-flex align-items-center">
-                               <span class="text-muted me-2">Select Order: </span>
+                               <span class="text-muted me-2 mr-1 ">Select Order: </span>
                                <select class="form-control select2" id="orderSelect" style="width: 300px;">
                                    <option value="">-- Select Order to Start Packing --</option>
                                    @foreach($active_orders as $ao)
                                        <option value="{{ $ao->id }}">
-                                           #{{ $ao->id }} - {{ $ao->customer->name ?? 'Unknown' }} ({{ $ao->sku }})
+                                           {{-- #{{ $ao->id }} - {{ $ao->customer->name ?? 'Unknown' }} ({{ $ao->sku }}) --}}
+                                           {{ $ao->customer->name ?? 'Unknown' }} ({{ $ao->sku }})
                                        </option>
                                    @endforeach
                                </select>
                            </div>
                        @endif
                    </h4>
+                   
+                </div>
+                <div class="col-md-2 text-right">
+                    <a href=""
+                        id="fileLink"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="btn btn-outline-primary btn-sm d-none">
+                            <i class="fas fa-file-alt mr-1"></i> Sales Order File
+                    </a>
                 </div>
             </div>
         </div>
@@ -307,6 +327,12 @@
                 }
             });
         });
+
+
+        $('#openFileBtn').on('click', function () {
+            window.open('', '_blank');
+        });
+
     });
     
     function fetchOrderDetails(orderId) {
@@ -320,6 +346,21 @@
                 
                 renderAvailableItems();
                 disableActions(false);
+                if (response.order && response.order.corporate_order_file) {
+
+                    let fileUrl = response.order.corporate_order_file;
+
+                    // If backend sends only filename
+                    if (!fileUrl.startsWith('http')) {
+                        fileUrl = '/assets/products/' + fileUrl;
+                    }
+
+                    $('#fileLink').attr('href', fileUrl).removeClass('d-none').show();
+
+                } else {
+                    // No file available
+                    $('#fileLink').hide();
+                }
             } else {
                 alert("Failed to load order details.");
             }

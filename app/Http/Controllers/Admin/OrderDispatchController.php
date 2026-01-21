@@ -56,4 +56,9 @@ class OrderDispatchController extends Controller {
         $response['data'] = $this->service->getOrdersByCustomer($request);
         return response()->json($response);
     }
+
+    public function comppleteOrder(Request $request){
+        $response['data'] = $this->service->comppleteOrder($request);
+        return response()->json($response);
+    }
 }
