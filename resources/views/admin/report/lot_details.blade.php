@@ -4,35 +4,77 @@
 @php use Carbon\Carbon; @endphp
 
 <style>
-/* ===== PAGE ===== */
+/* ================= PAGE ================= */
 .report-page { background:#f4f6f9; }
 
-/* ===== TOP BAR ===== */
-.top-bar{
-    background:#ffffff;
-    padding:10px 16px;
-    border-radius:6px;
-    box-shadow:0 1px 4px rgba(0,0,0,.08);
-    display:flex;
-    justify-content:space-between;
-    font-size:14px;
-    margin-bottom:12px;
-}
-
-/* ===== SECTION ===== */
+/* ================= SECTION ================= */
 .section{
     background:#fff;
-    border-radius:6px;
-    box-shadow:0 1px 4px rgba(0,0,0,.06);
-    margin-bottom:12px;
+    border-radius:8px;
+    box-shadow:0 2px 6px rgba(0,0,0,.08);
+    margin-bottom:14px;
 }
 .section-title{
-    padding:10px 14px;
-    font-weight:600;
+    padding:12px 16px;
+    font-weight:700;
     border-bottom:1px solid #e5e7eb;
 }
 
-/* ===== TABLE ===== */
+/* ================= INFO HEADER ================= */
+.info-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:14px;
+    margin-bottom:14px;
+}
+
+.info-card{
+    background:#ffffff;
+    border-radius:8px;
+    padding:14px;
+    box-shadow:0 2px 6px rgba(0,0,0,.08);
+    border-left:5px solid #2563eb;
+}
+
+.info-card label{
+    font-size:11px;
+    color:#6b7280;
+    font-weight:600;
+}
+
+.info-card div{
+    font-size:15px;
+    font-weight:700;
+    color:#111827;
+}
+
+/* ================= SUMMARY ================= */
+.summary-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:14px;
+    padding:16px;
+}
+
+.summary-card{
+    background:#f9fafb;
+    border-radius:8px;
+    padding:12px;
+    border:1px solid #e5e7eb;
+}
+
+.summary-card label{
+    font-size:11px;
+    color:#6b7280;
+    font-weight:600;
+}
+
+.summary-card div{
+    font-size:14px;
+    font-weight:700;
+}
+
+/* ================= TABLE ================= */
 .compact-table{
     width:100%;
     font-size:13px;
@@ -47,157 +89,219 @@
 }
 .compact-table tr:last-child td{
     background:#f1f5f9;
-    font-weight:600;
+    font-weight:700;
 }
 
-/* ===== PROGRESS LIST ===== */
-.stage-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:10px 12px;
-    border-bottom:1px solid #e5e7eb;
+/* ================= CUTTING ================= */
+.cutting-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    padding:16px;
+}
+.cut-card{
+    background:#ffffff;
+    border-radius:8px;
+    box-shadow:0 2px 6px rgba(0,0,0,.08);
+    padding:12px;
+}
+.cut-card h6{
+    font-size:14px;
+    font-weight:700;
+    margin-bottom:10px;
+}
+
+/* ================= PROGRESS CARDS ================= */
+.progress-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+    gap:14px;
+    padding:16px;
+}
+
+.stage-card{
+    border-radius:10px;
+    padding:14px;
+    position:relative;
+    box-shadow:0 6px 14px rgba(0,0,0,.08);
+    border-left:6px solid;
+}
+
+.stage-card h5{ font-size:15px;font-weight:700;margin-bottom:6px; }
+.stage-card .unit{ font-size:12px;color:#374151;margin-bottom:10px; }
+
+.stage-metrics{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+}
+
+.metric{
+    background:rgba(255,255,255,.7);
+    border-radius:6px;
+    padding:6px;
+    text-align:center;
     font-size:13px;
 }
-.stage-row:last-child{ border-bottom:none; }
+.metric strong{ display:block;font-size:15px; }
 
-.stage-left{
-    display:flex;
-    align-items:center;
-    gap:10px;
-}
-.stage-indicator{
-    width:4px;
-    height:100%;
-    border-radius:2px;
-}
+/* STATUS */
+.card-progress{ background:#fef3c7;border-color:#f59e0b; }
+.card-completed{ background:#dcfce7;border-color:#16a34a; }
+.card-delayed{ background:#fee2e2;border-color:#dc2626; }
+.card-not_started{ background:#e5e7eb;border-color:#6b7280; }
 
-/* ===== STATUS COLORS ===== */
-.indicator-delayed{ background:#dc2626; }
-.indicator-completed{ background:#16a34a; }
-.indicator-progress{ background:#f59e0b; }
-
-.badge{
+.status-badge{
+    position:absolute;
+    top:10px;
+    right:10px;
     font-size:11px;
-    padding:4px 8px;
-    border-radius:12px;
-    font-weight:600;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:14px;
+    color:#fff;
 }
-.badge-danger{ background:#fee2e2;color:#991b1b; }
-.badge-success{ background:#dcfce7;color:#166534; }
-.badge-warning{ background:#fef3c7;color:#92400e; }
-
-.stage-meta{
-    color:#6b7280;
-    font-size:12px;
-}
+.badge-progress{ background:#f59e0b; }
+.badge-completed{ background:#16a34a; }
+.badge-delayed{ background:#dc2626; }
+.badge-not_started{ background:#6b7280; }
 </style>
 
 <div class="content-wrapper report-page">
 <section class="content">
 <div class="container-fluid">
 
-{{-- ================= TOP BAR ================= --}}
 @php $lot = $data['lots_data'][0] ?? null; @endphp
-<div class="top-bar">
-    <div>
-        <strong>Lot:</strong> {{ $lot->lot_no ?? '-' }} |
-        <strong>Order:</strong> {{ $lot->orderProductSet->orderMain->sku ?? '-' }} |
-        <strong>Customer:</strong> {{ $lot->orderProductSet->orderMain->customer->name ?? '-' }}
+
+{{-- ================= INFO HEADER ================= --}}
+<div class="info-grid">
+    <div class="info-card">
+        <label>Lot Number</label>
+        <div>{{ $lot->lot_no ?? '-' }}</div>
     </div>
-    <div>{{ now()->format('d M Y') }}</div>
+    <div class="info-card">
+        <label>Order SKU</label>
+        <div>{{ $lot->orderProductSet->orderMain->sku ?? '-' }}</div>
+    </div>
+    <div class="info-card">
+        <label>Customer</label>
+        <div>{{ $lot->orderProductSet->orderMain->customer->name ?? '-' }}</div>
+    </div>
+    <div class="info-card">
+        <label>Report Date</label>
+        <div>{{ now()->format('d M Y') }}</div>
+    </div>
 </div>
 
 {{-- ================= ORDER SUMMARY ================= --}}
 <div class="section">
     <div class="section-title">Order Summary</div>
-    <div class="p-3 row">
-        <div class="col-md-3"><strong>Fabric:</strong> {{ $lot->orderProductSet->fabric->name ?? '-' }}</div>
-        <div class="col-md-3"><strong>Color:</strong> {{ $lot->orderProductSet->colors->name ?? '-' }}</div>
-        <div class="col-md-3"><strong>Pattern:</strong> {{ $lot->orderProductSet->master_design_pattern->name ?? '-' }}</div>
-        <div class="col-md-3"><strong>Unit:</strong> {{ $lot->productionSlipDigitization->getUnitMaster->name ?? '-' }}</div>
+    <div class="summary-grid">
+        <div class="summary-card">
+            <label>Fabric</label>
+            <div>{{ $lot->orderProductSet->fabric->name ?? '-' }}</div>
+        </div>
+        <div class="summary-card">
+            <label>Color</label>
+            <div>{{ $lot->orderProductSet->colors->name ?? '-' }}</div>
+        </div>
+        <div class="summary-card">
+            <label>Pattern</label>
+            <div>{{ $lot->orderProductSet->master_design_pattern->name ?? '-' }}</div>
+        </div>
+        <div class="summary-card">
+            <label>Production Unit</label>
+            <div>{{ $lot->productionSlipDigitization->getUnitMaster->name ?? '-' }}</div>
+        </div>
     </div>
 </div>
 
 {{-- ================= CUTTING & ROLLS ================= --}}
 <div class="section">
     <div class="section-title">Cutting & Rolls</div>
-    <div class="row p-3">
-        <div class="col-md-6">
+    <div class="cutting-grid">
+
+        <div class="cut-card">
+            <h6>Size Wise Quantity</h6>
             <table class="compact-table">
                 <thead><tr><th>Size</th><th class="text-right">Qty</th></tr></thead>
                 <tbody>
-                @php $total=0; @endphp
+                @php $qtyTotal=0; @endphp
                 @foreach($data['rolls_data'] as $roll)
                     @foreach($roll->fabricRollAssigningsDetail ?? [] as $d)
-                    <tr><td>{{ $d->size }}</td><td class="text-right">{{ $d->quantity }}</td></tr>
-                    @php $total+=$d->quantity; @endphp
+                        <tr>
+                            <td>{{ $d->size }}</td>
+                            <td class="text-right">{{ $d->quantity }}</td>
+                        </tr>
+                        @php $qtyTotal+=$d->quantity; @endphp
                     @endforeach
                 @endforeach
-                <tr><td>Total</td><td class="text-right">{{ $total }}</td></tr>
+                <tr><td>Total</td><td class="text-right">{{ $qtyTotal }}</td></tr>
                 </tbody>
             </table>
         </div>
 
-        <div class="col-md-6">
+        <div class="cut-card">
+            <h6>Roll Consumption</h6>
             <table class="compact-table">
                 <thead><tr><th>Roll</th><th class="text-right">Meter</th></tr></thead>
                 <tbody>
                 @foreach($data['rolls_data'] as $roll)
-                    <tr><td>{{ $roll->roll_no }}</td><td class="text-right">{{ $roll->meter }}</td></tr>
+                    <tr>
+                        <td>{{ $roll->roll_no }}</td>
+                        <td class="text-right">{{ $roll->meter }}</td>
+                    </tr>
                 @endforeach
-                <tr><td>Total</td><td class="text-right">{{ $data['rolls_data']->sum('meter') }}</td></tr>
+                <tr>
+                    <td>Total</td>
+                    <td class="text-right">{{ $data['rolls_data']->sum('meter') }}</td>
+                </tr>
                 </tbody>
             </table>
         </div>
+
     </div>
 </div>
 
-{{-- ================= PRODUCTION PROGRESS ================= --}}
+{{-- ================= PRODUCTION PROGRESS (UNCHANGED LOGIC) ================= --}}
 <div class="section">
     <div class="section-title">Production Progress</div>
 
+    <div class="progress-grid">
     @foreach($master_stages as $stage)
         @php
             $d = getLotDetails($data['lot_no'],$stage->id);
             if(!$d || !$d['time_allocation']) continue;
 
-            $remaining=(int)$d['remaining_quantity'];
-            $eta=Carbon::parse($d['time_allocation']);
-            $completed=$d['completed_time']?Carbon::parse($d['completed_time']):null;
+            $remaining = (int)$d['remaining_quantity'];
+            $total = (int)$d['quantity'];
 
-            $status='progress';
-            if($remaining===0 && $completed && $completed->gt($eta)) $status='delayed';
-            elseif($remaining>0 && now()->gt($eta)) $status='delayed';
-            elseif($remaining===0) $status='completed';
+            $eta = Carbon::parse($d['time_allocation']);
+            $completed = $d['completed_time'] ? Carbon::parse($d['completed_time']) : null;
+
+            if ($total === 0) $status='not_started';
+            elseif ($remaining === 0) $status = ($completed && $completed->gt($eta)) ? 'delayed' : 'completed';
+            elseif (now()->gt($eta)) $status='delayed';
+            else $status='progress';
         @endphp
 
-        <div class="stage-row">
-            <div class="stage-left">
-                <div class="stage-indicator
-                    {{ $status=='delayed'?'indicator-delayed':($status=='completed'?'indicator-completed':'indicator-progress') }}">
-                </div>
-                <div>
-                    <strong>{{ $stage->name }}</strong>
-                    <div class="stage-meta">
-                        Unit: {{ $d['unit_name'] }} |
-                        Remaining: {{ $remaining }} |
-                        ETA: {{ $eta->format('d M Y') }}
-                    </div>
-                </div>
-            </div>
+        <div class="stage-card card-{{ $status }}">
+            <span class="status-badge badge-{{ $status }}">
+                {{ $status=='not_started'?'Not Started':ucfirst($status) }}
+            </span>
 
-            <div>
-                @if($status=='delayed')
-                    <span class="badge badge-danger">Delayed</span>
-                @elseif($status=='completed')
-                    <span class="badge badge-success">Completed</span>
-                @else
-                    <span class="badge badge-warning">In Progress</span>
-                @endif
+            <h5>{{ $stage->name }}</h5>
+            <div class="unit">Unit: {{ $status=='not_started'?'Not Assigned':$d['unit_name'] }}</div>
+
+            <div class="stage-metrics">
+                <div class="metric">Total<strong>{{ $total }}</strong></div>
+                <div class="metric">Remaining<strong>{{ $remaining }}</strong></div>
+                <div class="metric">ETA<strong>{{ $eta->format('d M Y') }}</strong></div>
+                <div class="metric">Completed<strong>{{ $completed?$completed->format('d M Y'):'-' }}</strong></div>
             </div>
         </div>
     @endforeach
+    </div>
 </div>
 
 </div>

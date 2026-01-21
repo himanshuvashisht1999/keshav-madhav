@@ -1,65 +1,135 @@
 @extends('admin.layouts.app')
+
 @section('content')
+<style>
+/* ===== REPORT COMMON STYLE (SAME AS OTHER REPORTS) ===== */
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.report-header h3 {
+    font-weight: 600;
+    margin: 0;
+}
+
+/* .report-meta {
+    font-size: 13px;
+    color: #6c757d;
+} */
+
+.report-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+}
+
+.table-report thead th {
+    background: #343a40;
+    color: #fff !important;
+    font-weight: 600;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.table-report tbody td {
+    vertical-align: middle;
+    font-size: 14px;
+}
+
+.badge-status {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.expand-btn {
+    font-size: 13px;
+}
+</style>
+
 <div class="content-wrapper">
-    <!-- PAGE HEADER -->
+
+    {{-- ================= HEADER ================= --}}
     <section class="content-header">
         <div class="container-fluid">
-            <div class="row mb-3 align-items-center">
-                <div class="col-sm-6">
-                    <h1 class="m-0 font-weight-bold text-dark">Order Summary Report</h1>
-                    <small class="text-muted">360-degree view of all orders</small>
+            <div class="report-header">
+                <div>
+                    <div class="report-meta">Report No : RJ 3</div>
+                </div>
+                <div>
+                    <h3>Order Summary Report</h3>
+                </div>
+                <div class="report-meta">
+                    Date : {{ now()->format('d M Y h:i A') }}
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- CONTENT -->
+    {{-- ================= CONTENT ================= --}}
     <section class="content">
         <div class="container-fluid">
 
-            <!-- FILTER CARD -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-body bg-light rounded">
-                    <div class="row">
-                        <div class="col-md-4 mb-2">
-                            <label class="small font-weight-bold text-muted">Search Order No</label>
-                            <input type="text" id="order_no" class="form-control" placeholder="Enter Order No...">
+            {{-- ================= FILTERS ================= --}}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row g-2">
+
+                        <div class="col-md-4">
+                            <label>Order No</label>
+                            <input type="text" id="order_no" class="form-control"
+                                   placeholder="Enter Order No">
                         </div>
-                        <div class="col-md-4 mb-2">
-                            <label class="small font-weight-bold text-muted">Customer</label>
+
+                        <div class="col-md-4">
+                            <label>Customer</label>
                             <select id="customer_id" class="form-control select2">
                                 <option value="">All Customers</option>
                                 @foreach($customers as $customer)
-                                    <option value="{{$customer->id}}">{{$customer->name}}</option>
+                                    <option value="{{ $customer->id }}">
+                                        {{ $customer->name }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4 mb-2 d-flex align-items-end">
+
+                        <!-- <div class="col-md-2 d-flex align-items-end">
                             <button class="btn btn-primary w-100" id="searchBtn">
-                                <i class="fas fa-search mr-1"></i> Search
+                                <i class="fas fa-filter"></i> Apply
+                            </button>
+                        </div> -->
+
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-secondary w-100" onclick="$('#order_no,#customer_id').val('').trigger('change')">
+                                <i class="fas fa-sync"></i> Reset
                             </button>
                         </div>
+
                     </div>
                 </div>
             </div>
 
-            <!-- TABLE CARD -->
-            <div class="card shadow border-0">
-                <div class="card-body p-0">
+            {{-- ================= TABLE ================= --}}
+            <div class="card report-card">
+                <div class="card-body">
                     <div class="table-responsive">
-                        <table id="reportTable" class="table table-hover table-striped mb-0">
-                            <thead class="bg-primary text-white">
+
+                        <table id="reportTable" class="table table-bordered table-report">
+                            <thead>
                                 <tr>
                                     <th width="5%" class="text-center">#</th>
                                     <th>Order No</th>
                                     <th>Customer</th>
                                     <th>Order Date</th>
                                     <th class="text-center">Status</th>
-                                    <th class="text-right">Action</th>
+                                    <th class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
                         </table>
+
                     </div>
                 </div>
             </div>
@@ -68,48 +138,68 @@
     </section>
 </div>
 
-<style>
-    .card { border-radius: 8px; }
-    .form-control { border-radius: 6px; }
-    .table thead th { border: none; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
-    .table tbody td { vertical-align: middle; font-size: 0.95rem; }
-</style>
-
+{{-- ================= SCRIPT ================= --}}
 <script>
-    $(function () {
-        let table = $('#reportTable').DataTable({
-            processing: true,
-            serverSide: true,
-            ordering: false,
-            searching: false,
-            lengthChange: false,
-            pageLength: 25,
-            ajax: {
-                url: '{!! route('admin.report.order-summary.indexList') !!}',
-                data: function (d) {
-                    d.order_no = $('#order_no').val();
-                    d.customer_id = $('#customer_id').val();
+$(function () {
+
+    let table = $('#reportTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ordering: false,
+        searching: false,
+        lengthChange: false,
+        pageLength: 25,
+        ajax: {
+            url: '{!! route('admin.report.order-summary.indexList') !!}',
+            data: function (d) {
+                d.order_no = $('#order_no').val();
+                d.customer_id = $('#customer_id').val();
+            }
+        },
+        columns: [
+            {
+                data: 'DT_RowIndex',
+                name: 'id',
+                className: 'text-center text-muted'
+            },
+            {
+                data: 'sku',
+                name: 'sku',
+                className: 'fw-bold'
+            },
+            {
+                data: 'customer_name',
+                name: 'customer.name'
+            },
+            {
+                data: 'created_at',
+                name: 'created_at'
+            },
+            {
+                data: 'status',
+                name: 'status',
+                className: 'text-center',
+                render: function () {
+                    return '<span class="badge bg-info badge-status">Active</span>';
                 }
             },
-            columns: [
-                {data: 'DT_RowIndex', name: 'id', className: 'text-center text-muted'},
-                {data: 'sku', name: 'sku', className: 'font-weight-bold'},
-                {data: 'customer_name', name: 'customer.name'},
-                {data: 'created_at', name: 'created_at'},
-                {data: 'status', name: 'status', className: 'text-center', render: function(data) {
-                    return '<span class="badge badge-info">Active</span>'; // Placeholder
-                }},
-                {data: 'action', name: 'action', className: 'text-right'}
-            ]
-        });
-
-        $('#searchBtn').on('click', function() {
-            table.draw();
-        });
-        
-        $('#order_no, #customer_id').on('keyup change', function() {
-            table.draw();
-        });
+            {
+                data: 'action',
+                name: 'action',
+                className: 'text-center'
+            }
+        ]
     });
+
+    $('#searchBtn').on('click', function () {
+        table.draw();
+    });
+
+    $('#order_no, #customer_id').on('keyup change', function () {
+        table.draw();
+    });
+
+});
 </script>
+
 @endsection

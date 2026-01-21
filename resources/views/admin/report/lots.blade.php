@@ -46,7 +46,7 @@
         <div class="container-fluid">
             <div class="report-header">
                 <div>
-                    <div class="report-meta">Report No : RJ 2</div>
+                    <div class="report-meta">Report No : RJ 4</div>
                 </div>
                 <div>
                     <h3>Fabric Stock Report</h3>
