@@ -304,6 +304,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/store',[AdminOrderDispatchController::class,'store'])->name('store');
             Route::get('/getOrderPackingData',[AdminOrderDispatchController::class,'getOrderPackingData'])->name('getOrderPackingData');
             Route::get('/getOrdersByCustomer',[AdminOrderDispatchController::class,'getOrdersByCustomer'])->name('getOrdersByCustomer');
+            Route::get('/comppleteOrder',[AdminOrderDispatchController::class,'comppleteOrder'])->name('comppleteOrder');
         });
         Route::prefix('master/vendors')->name('master.vendor.')->group(function () {
             Route::get('/index',[AdminVendorController::class,'index'])->name('index');

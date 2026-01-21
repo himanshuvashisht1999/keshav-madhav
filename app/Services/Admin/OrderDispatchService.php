@@ -45,8 +45,8 @@ class OrderDispatchService {
 
             // ================= MAIN DISPATCH =================
             $data_save = new OrderDispatch();
-            $data_save->customer_id     = $request->master_customer_id ?? null;
-            $data_save->main_order_id   = $request->order_no ?? $request->final_order_no;
+            $data_save->customer_id     = $request->final_customer_id ?? $request->master_customer_id;
+            $data_save->main_order_id   = $request->final_order_no ?? $request->order_no;
             $data_save->dispatch_date   = now();
             $data_save->total_quantity  = count($request->cartons);
             $data_save->status          = 1;
@@ -197,12 +197,14 @@ class OrderDispatchService {
                 
                 // Aggregate items
                 $summary = [];
+                $pcs_in_carton = 0;
                 if(isset($value['items']) && is_array($value['items'])) {
                     foreach($value['items'] as $item) {
                         $sizeName = $item['detail']['size'] ?? 'ID:'.$item['size_id'];
                         $qty = $item['quantity'];
                         if(!isset($summary[$sizeName])) $summary[$sizeName] = 0;
                         $summary[$sizeName] += $qty;
+                        $pcs_in_carton += $qty;
                     }
                 }
                 
@@ -217,6 +219,7 @@ class OrderDispatchService {
                     'carton_packing_session_id'     => $value['carton_packing_session_id'] ?? '',
                     'boxes_in_carton'               => count($value['items']) ?? 0,
                     'contents'                      => implode(', ', $contents_text),
+                    'pcs_in_carton'                 => $pcs_in_carton ?? 0,
                 ];
             }
             $data[] = [
@@ -238,7 +241,7 @@ class OrderDispatchService {
         $customer_id = $request->customer_id ?? "";
         $data =  OrderMain::where('master_customer_id', $customer_id)
                 ->where('status', 1)
-                ->orderBy('id', 'asc')
+                ->orderBy('id', 'DESC')
                 ->get(['id', 'sku as order_no']);
         
 
@@ -247,8 +250,19 @@ class OrderDispatchService {
 
     public function getOrders(){
         $data = $data =  OrderMain::where('status', 1)
-                ->orderBy('id', 'asc')
+                ->orderBy('id', 'DESC')
                 ->get(['id', 'sku as order_no']);
         return $data;
+    }
+
+    public function comppleteOrder(){
+        // $data =  OrderMain::where('status', 1)->where('id' , 10)
+        //         ->orderBy('id', 'DESC')
+        //         ->get(['id', 'sku as order_no', 'order_type'])->first();
+        //     if ($data->order_type){
+        
+        //     }
+        //         dd($data->order_type);
+        // return $data;
     }
 }
