@@ -24,6 +24,7 @@ use App\Models\OrderStageTransaction;
 use App\Models\OrderLot;
 use App\Models\OrderPrintingStageTransaction;
 use App\Models\OrderPrintingStageTransactionDetail;
+use App\Models\FabricRollAssigningsDetail;
 
 
 
@@ -1081,7 +1082,7 @@ class OrderDigitalizationService {
                 ->where('stage_master_unit_id', $slip->stage_master_unit_id)
                 ->first();
 
-        $this->createTransactionWithDetails($request->lot_no, 3, 4, $slip->id,$fab_roll_assigning->order_products_set_id,$slip->stage_master_unit_id,$request->to_stage_unit_id);
+        $this->createTransactionWithDetails($request->lot_no, 3, 4, $slip->id,$fab_roll_assigning->order_products_set_id,$slip->stage_master_unit_id,$request->to_stage_unit_id,$fab_roll_assigning->id);
             
             DB::commit();
             return [
@@ -1130,7 +1131,7 @@ class OrderDigitalizationService {
 
             // Create Transaction with Details (Cutting -> Printing)
             // Stage 3 is Cutting. Stage 1 is Printing.
-            $this->createTransactionWithDetails($request->lot_no, 3, 1, $slip->id,$fab_roll_assigning->order_products_set_id,$slip->stage_master_unit_id,$request->to_stage_unit_id);
+            $this->createTransactionWithDetails($request->lot_no, 3, 1, $slip->id,$fab_roll_assigning->order_products_set_id,$slip->stage_master_unit_id,$request->to_stage_unit_id,$fab_roll_assigning->id);
             
             DB::commit();
             return [
@@ -1146,7 +1147,63 @@ class OrderDigitalizationService {
         }
     }
 
-    private function createTransactionWithDetails($lot_no, $from_stage_id, $to_stage_id, $slip_id = null,$order_products_set_id,$sub_stage_id,$sub_stage_id_to)
+    private function createTransactionWithDetails($lot_no, $from_stage_id, $to_stage_id, $slip_id = null,$order_products_set_id,$sub_stage_id,$sub_stage_id_to,$production_fabric_roll_assigning_id)
+    {
+
+        $production_fabric_roll_assigning = FabricRollAssigning::where('id',$production_fabric_roll_assigning_id)->first();
+
+        $totalQuantity = FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id',$production_fabric_roll_assigning_id)->sum('quantity');
+        $production_fabric_roll_assigning_detail = FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id',$production_fabric_roll_assigning_id)->get();
+
+        if($to_stage_id == 1){
+            $transaction = OrderPrintingStageTransaction::create([
+                'from_stage_id' => $from_stage_id,
+                'to_stage_id' => $to_stage_id, 
+                'lot_no' => $lot_no,
+                'quantity' => $totalQuantity,
+                'remaining_quantity' => $totalQuantity, // Initially full
+                'status' => 1,
+                'sub_stage_id' => $sub_stage_id,
+                'sub_stage_id_to' => $sub_stage_id_to,
+            ]);
+
+            // 3. Create Transaction Details (Size-wise)
+            foreach ($production_fabric_roll_assigning_detail as $production_fabric_roll_assigning_single) {
+                OrderPrintingStageTransactionDetail::create([
+                    'order_printing_stage_transaction_id' => $transaction->id,
+                    'size' => $production_fabric_roll_assigning_single->size,
+                    'quantity' => $production_fabric_roll_assigning_single->quantity
+                ]);
+            }
+        }else{
+            $transaction = OrderStageTransaction::create([
+                'from_stage_id' => $from_stage_id,
+                'to_stage_id' => $to_stage_id, 
+                'lot_no' => $lot_no,
+                'quantity' => $totalQuantity,
+                'remaining_quantity' => $totalQuantity, // Initially full
+                'status' => 1,
+                'sub_stage_id' => $sub_stage_id,
+                'sub_stage_id_to' => $sub_stage_id_to,
+            ]);
+
+            // 3. Create Transaction Details (Size-wise)
+            foreach ($production_fabric_roll_assigning_detail as $production_fabric_roll_assigning_single) {
+                \App\Models\OrderStageTransactionDetail::create([
+                    'order_stage_transaction_id' => $transaction->id,
+                    'size' => $production_fabric_roll_assigning_single->size,
+                    'quantity' => $production_fabric_roll_assigning_single->quantity
+                ]);
+            }
+
+        }
+        
+        ///////////end code
+        
+        return $transaction;
+    }
+
+    private function createTransactionWithDetailsOld($lot_no, $from_stage_id, $to_stage_id, $slip_id = null,$order_products_set_id,$sub_stage_id,$sub_stage_id_to)
     {
         // 1. Calculate Total Quantities per Size for the Lot
         // We get this from the OrderProductSet details which represent the Cutting Master output

@@ -13,7 +13,7 @@ class OrderSummaryReportService
     public function indexList($request)
     {
         $query = OrderMain::with(['customer'])
-            ->select('order_main.*');
+            ->select('order_main.*')->orderBy('id','desc');
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -22,7 +22,7 @@ class OrderSummaryReportService
                     $q->where('sku', 'like', '%' . $request->order_no . '%');
                 }
                 if ($request->filled('customer_id')) {
-                    $q->where('customer_id', $request->customer_id);
+                    $q->where('master_customer_id', $request->customer_id);
                 }
             })
             ->editColumn('created_at', function ($row) {

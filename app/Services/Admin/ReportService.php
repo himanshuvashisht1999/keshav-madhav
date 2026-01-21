@@ -919,6 +919,7 @@ class ReportService {
             })
 
             ->groupBy('lot_no')
+            ->orderBy('id','desc')
 
             ->paginate(10)
             ->withQueryString();

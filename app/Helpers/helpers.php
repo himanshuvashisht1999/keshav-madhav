@@ -143,7 +143,7 @@ function total_ordered_quantity($order_main_id){
     return $total_quantity;
 }
 
-function getLotDetails($lot_id,$master_stage){
+function getLotDetailsOld($lot_id,$master_stage){
     if($master_stage == 1){
         $data = OrderPrintingStageTransaction::with('getToUnitMaster')->where('lot_no',$lot_id)->where('to_stage_id',$master_stage)->first();
     }else{
@@ -164,6 +164,43 @@ function getLotDetails($lot_id,$master_stage){
     ];
     // dd($data);
    return $data;
+}
+
+function getLotDetails($lot_id, $master_stage)
+{
+    // 🔹 Decide model dynamically
+    $model = ($master_stage == 1)
+        ? OrderPrintingStageTransaction::class
+        : OrderStageTransaction::class;
+
+    // 🔹 Fetch ALL entries for this lot & stage
+    $records = $model::with('getToUnitMaster')
+        ->where('lot_no', $lot_id)
+        ->where('to_stage_id', $master_stage)
+        ->get();
+
+    // 🔹 Aggregate data from multiple rows
+    $unitName = $records->first()?->getToUnitMaster?->name;
+
+    $totalQuantity = $records->sum('quantity');
+    $remainingQuantity = $records->sum('remaining_quantity');
+
+    $completedTime = $records->max('updated_at');
+
+    // 🔹 Dynamic stage column
+    $column_namevar = 'stage_id_' . $master_stage;
+
+    $time_allocation = OrderStageWiseTimeTracking::where('lot_no', $lot_id)
+        ->whereNotNull($column_namevar)
+        ->value($column_namevar);
+
+    return [
+        'unit_name'           => $unitName,
+        'quantity'            => $totalQuantity,
+        'remaining_quantity'  => $remainingQuantity,
+        'time_allocation'     => $time_allocation,
+        'completed_time'      => $completedTime,
+    ];
 }
 
 

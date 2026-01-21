@@ -6,10 +6,10 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-6">
+                <div class="col-sm-8">
                     <h1 class="m-0 font-weight-bold">Order Summary: <span class="text-primary">{{ $order->sku }}</span></h1>
                 </div>
-                <div class="col-sm-6 text-right">
+                <div class="col-sm-4 text-right">
                     <a href="{{ route('admin.report.order-summary.index') }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left mr-1"></i> Back to Report
                     </a>
@@ -150,7 +150,7 @@
                     <ul class="nav nav-tabs" id="reportTabs" role="tablist">
                         <li class="nav-item">
                             <a class="nav-link active" id="production-tab" data-toggle="pill" href="#production" role="tab">
-                                <i class="fas fa-industry mr-1"></i> Production & Lots
+                                <i class="fas fa-industry mr-1"></i>Lots Details
                             </a>
                         </li>
                         <li class="nav-item">
@@ -170,9 +170,9 @@
                         
                         <!-- PRODUCTION TAB -->
                         <div class="tab-pane fade show active" id="production" role="tabpanel">
-                            <div class="alert alert-info">
+                            <!-- <div class="alert alert-info">
                                 <i class="fas fa-info-circle mr-1"></i> Production Lot details will be shown here.
-                            </div>
+                            </div> -->
                             <!-- Placeholder for Lot Table -->
                             <table class="table table-bordered table-sm">
                                 <thead class="bg-light">
