@@ -36,6 +36,17 @@
                    </h4>
                    
                 </div>
+                @if($order)
+                    <div class="col-md-2 text-right">
+                        <a id="fileLink"
+                            href="{{asset('/assets/products/'.$order->corporate_order_file)}}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-file-alt mr-1"></i> Sales Order File
+                        </a>
+                    </div>
+                @endif
                 <div class="col-md-2 text-right">
                     <a href=""
                         id="fileLink"
