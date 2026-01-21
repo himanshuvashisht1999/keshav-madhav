@@ -120,7 +120,7 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label>Carton Number</label>
-                            <input type="text" class="form-control" name="carton_no" required>
+                            <input type="text" class="form-control" name="carton_no" id="carton_no" required>
                         </div>
                         <div class="col-md-3">
                             <label>Store Room</label>
@@ -144,7 +144,7 @@
                             <div id="unpackedBoxesList"></div>
                         </div>
                         <!-- ... -->
-                        <div class="col-md-7">
+                        <div class="col-md-12">
                             <div class="d-flex border-bottom mb-3">
                                 <button type="button" class="btn btn-outline-primary active mr-2" id="btn-tab-sets" onclick="switchPackTab('sets')">Pack Sets</button>
                                 <button type="button" class="btn btn-outline-secondary" id="btn-tab-loose" onclick="switchPackTab('loose')">Pack Loose Items</button>
@@ -160,6 +160,9 @@
                                 <table class="table table-sm">
                                     <thead>
                                         <tr>
+                                            <th>Barcode</th>
+                                            <th>Design No</th>
+                                            <th>Colour</th>
                                             <th>Size</th>
                                             <th>Remaining</th>
                                             <th>Qty</th>
@@ -279,6 +282,31 @@
                 disableActions(true);
             }
         });
+
+        $('#carton_no').on('blur', function () {
+            let cartonNo = $(this).val().trim();
+
+            if (cartonNo === '') return;
+
+            $.ajax({
+                url: "{{ route('admin.packing.check-carton-no') }}",
+                type: 'get',
+                data: {
+                    carton_no: cartonNo,
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function (res) {
+                    // console.log
+                    if (res.exists) {
+                        alert('Carton number already exists!');
+                        $('#carton_no').val('').focus();
+                    }
+                },
+                error: function () {
+                    alert('Something went wrong while checking carton number');
+                }
+            });
+        });
     });
     
     function fetchOrderDetails(orderId) {
@@ -289,6 +317,7 @@
                 ORDER_ID = orderId;
                 ORDER_ITEMS = response.items || [];
                 ORDER_SETS = response.sets || [];
+                
                 renderAvailableItems();
                 disableActions(false);
             } else {
@@ -357,6 +386,7 @@
         // Render SETS in Left Panel
         if(ORDER_SETS && ORDER_SETS.length > 0) {
              ORDER_SETS.forEach((set, index) => {
+                
                 let remainingSets = set.set_quantity - set.packed_sets;
                 if(remainingSets < 0) remainingSets = 0;
                 
@@ -384,7 +414,7 @@
                         </li>`;
                     });
                 }
-                
+                // console.log(set);
                  // Modal Option for this Set
                  if(remainingSets > 0) {
                      let compositionText = (set.details_data || set.details).map(d => `${d.size}(${d.qty_per_set})`).join(', ');
@@ -392,7 +422,7 @@
                      <div class="card mb-2 p-2 border-left-primary">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                 <strong>Set #${index+1}</strong> <small class="text-muted">(${compositionText})</small><br>
+                                 <strong>Set #${index+1}</strong> <small class="text-muted">(${compositionText}), <br>Barcode -${set.bar_code}, Design No - ${set.design_number}, Colour - ${set?.colors?.name ?? ''}, </small><br>
                                  <small class="text-info">Available: ${remainingSets}</small>
                             </div>
                             <div class="d-flex align-items-center">
@@ -404,7 +434,11 @@
                  }
              });
         }
-        
+         // Create relation map
+        const orderSetMap = ORDER_SETS.reduce((acc, set) => {
+            acc[set.id] = set;
+            return acc;
+        }, {});
         // Fallback for flat items if no sets (Legacy)
         if((!ORDER_SETS || ORDER_SETS.length === 0) && ORDER_ITEMS.length > 0) {
              ORDER_ITEMS.forEach(item => {
@@ -429,13 +463,18 @@
         
         // Also populate loose items table (optional/fallback)
         let modalHtml = '';
+        
         if(ORDER_ITEMS && ORDER_ITEMS.length > 0) {
             ORDER_ITEMS.forEach(item => {
                 let packed = parseInt(item.packed_qty) || 0;
                 let total = parseInt(item.total_quantity);
                 let remaining = total - packed;
                 if(remaining > 0) {
+                    const setData = orderSetMap[item.order_products_set_id];
                     modalHtml += `<tr>
+                        <td>${setData ? setData.bar_code : '-'}</td>
+                        <td>${setData ? setData.design_number : '-'}</td>
+                        <td>${setData && setData.colors ? setData.colors.name : '-'}</td>
                         <td>${item.size}</td>
                         <td>${remaining} <small class="text-muted">(${total})</small></td>
                         <td><input type="number" class="form-control form-control-sm item-pack-qty" data-size-id="${item.id}" max="${remaining}" min="0"></td>
@@ -626,7 +665,11 @@
                 alert("Carton Created Successfully");
                 location.reload(); 
             } else {
-                alert("Error: " + response.message);
+                if(response.status === 'exists') {
+                    alert(response.message);
+                } else {
+                    alert("Error: " + response.message);
+                }
             }
         });
     }
@@ -680,6 +723,8 @@
         // If not found, return ID so we at least see something.
         return 'ID: ' + sizeId;
     }
+
+   
 </script>
 @endpush
 @endsection

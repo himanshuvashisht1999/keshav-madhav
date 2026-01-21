@@ -217,6 +217,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/box/save',[AdminPackingController::class,'saveBox'])->name('saveBox');
             Route::post('/carton/save',[AdminPackingController::class,'saveCarton'])->name('saveCarton');
             Route::get('/order-details/{id}',[AdminPackingController::class,'getOrderDetailsJson'])->name('orderDeps');
+            Route::get('check-carton-no', [AdminPackingController::class, 'checkCartonNo'])->name('check-carton-no');
         });
 
         Route::prefix('/warehouse')->name('warehouse.')->group(function () {
