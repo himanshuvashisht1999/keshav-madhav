@@ -112,10 +112,32 @@
                                     <td class="text-center text-muted">{{ $index + 1 }}</td>
                                     <td>
                                         <div class="font-weight-bold text-dark">Carton - {{ $carton['carton_no'] }}</div>
-                                        <small class="text-muted">Rack: {{ $carton['rack_id'] }}</small>
+                                        <small class="text-muted">Store Room: {{ $carton['storeroom'] ?? '' }}</small><br>
+                                        <small class="text-muted">Rack: {{ $carton['rack'] ?? '' }}</small>
                                     </td>
                                     <td>
-                                        <span class="text-dark">{{ $carton['contents'] }}</span>
+                                        @php
+                                            $contents = $carton['contents'] ?? [];
+                                        @endphp
+                                        @if(count($contents))
+                                            <table class="table table-bordered table-sm mb-0">
+                                                <tr>
+                                                    <th class="text-left align-middle">Size</th>
+                                                    @foreach ($contents as $size => $qty)
+                                                        <th class="text-center align-middle">{{ $size }}</th>
+                                                    @endforeach
+                                                </tr>
+
+                                                <tr>
+                                                    <th class="text-left align-middle">Qty</th>
+                                                    @foreach ($contents as $qty)
+                                                        <td class="text-center align-middle">{{ $qty }}</td>
+                                                    @endforeach
+                                                </tr>
+                                            </table>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
                                     </td>
                                     <td class="text-center">
                                         <span class="badge badge-light border text-dark px-3 py-2" style="font-size:14px;">

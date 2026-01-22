@@ -441,7 +441,26 @@
                 
                 let remainingSets = set.set_quantity - set.packed_sets;
                 if(remainingSets < 0) remainingSets = 0;
-                
+                let minRemaining = null; // important
+                ORDER_ITEMS.forEach(item => {
+
+                    if (item.order_products_set_id == set.id) {
+
+                        let packed = parseInt(item.packed_qty) || 0;
+                        let total  = parseInt(item.total_quantity) || 0;
+                        let remaining = total - packed;
+                        // console.log(item.size);
+                        // console.log(remaining);
+                        if (remaining < 0) remaining = 0;
+
+                        if (minRemaining === null || remaining < minRemaining) {
+                            minRemaining = remaining;
+                        }
+                    }
+                });
+                // console.log(minRemaining);
+                // Final remaining sets = min remaining of all sizes
+                remainingSets = minRemaining ?? 0;
                 html += `
                 <li class="list-group-item bg-light">
                     <strong>Set #${index+1}</strong> <small class="text-muted">(Qty: ${set.set_quantity})</small>
@@ -493,7 +512,7 @@
         }, {});
         // Fallback for flat items if no sets (Legacy)
         if((!ORDER_SETS || ORDER_SETS.length === 0) && ORDER_ITEMS.length > 0) {
-             ORDER_ITEMS.forEach(item => {
+            ORDER_ITEMS.forEach(item => {
                 let packed = parseInt(item.packed_qty) || 0;
                 let total = parseInt(item.total_quantity);
                 let remaining = total - packed;
@@ -535,6 +554,9 @@
             });
         }
         $('#cartonItemsTable').html(modalHtml);
+        if (!modalSetsHtml || modalSetsHtml.trim() === '') {
+            switchPackTab('loose');
+        }
     }
 
     function openCreateBoxModal() {
@@ -751,11 +773,13 @@
 
     function switchPackTab(tab) {
         if(tab === 'sets') {
+            resetForm('#createCartonForm');
             $('#tab-content-sets').show();
             $('#tab-content-loose').hide();
             $('#btn-tab-sets').addClass('active btn-outline-primary').removeClass('btn-outline-secondary');
             $('#btn-tab-loose').removeClass('active btn-outline-primary').addClass('btn-outline-secondary');
         } else {
+            resetForm('#createCartonForm');
             $('#tab-content-sets').hide();
             $('#tab-content-loose').show();
             $('#btn-tab-loose').addClass('active btn-outline-primary').removeClass('btn-outline-secondary');
@@ -775,7 +799,40 @@
         // If not found, return ID so we at least see something.
         return 'ID: ' + sizeId;
     }
+    // $(document).on('blur', '.set-pack-qty', function () {
+    //     let enteredQty = $(this).val();          // input value
+    //     let setId = $(this).data('set-id');      // data-set-id
+    //     let maxQty = $(this).attr('max');        // max attribute
 
+    //     alert(
+    //         'Set ID: ' + setId +
+    //         '\nEntered Qty: ' + enteredQty +
+    //         '\nMax Allowed: ' + maxQty
+    //     );
+    // });
+    // function checkSetValidation(setId, $setQty){
+    //     if(ORDER_ITEMS && ORDER_ITEMS.length > 0) {
+    //         ORDER_ITEMS.forEach(item => {
+    //             let packed = parseInt(item.packed_qty) || 0;
+    //             let total = parseInt(item.total_quantity);
+    //             let remaining = total - packed;
+    //             if(remaining > 0 && remaining <= $setQty ) {
+                    
+    //             }
+    //         });
+    //     }
+    // }
+
+
+    function resetForm(formSelector) {
+        let $form = $(formSelector);
+
+        if ($form.length) {
+            $form[0].reset();                     // inputs clear
+            $form.find('.is-invalid').removeClass('is-invalid');
+            $form.find('.invalid-feedback').remove();
+        }
+    }
    
 </script>
 @endpush
