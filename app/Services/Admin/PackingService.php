@@ -8,6 +8,8 @@ use App\Models\PackingCarton;
 use App\Models\PackingBox;
 use App\Models\PackingItem;
 use App\Models\OrderMain;
+use App\Models\OrderStageTransaction;
+use App\Models\OrderLot;
 use Illuminate\Support\Facades\DB;
 
 class PackingService
@@ -65,7 +67,7 @@ class PackingService
     {
         DB::beginTransaction();
         try {
-
+            $packed_pcs = 0;
             $exists = $this->checkCartonNo($data['carton_no']); 
             if ($exists) {
                 DB::rollBack();
@@ -88,12 +90,13 @@ class PackingService
             // If direct items provided (Legacy/Manual)
             if (isset($data['items']) && is_array($data['items']) && count($data['items']) > 0) {
                 foreach ($data['items'] as $item) {
-                     PackingItem::create([
+                    PackingItem::create([
                         'packing_main_id' => $main->id,
                         'packing_carton_id' => $carton->id,
                         'size_id' => $item['size_id'],
                         'quantity' => $item['quantity']
                     ]);
+                    $packed_pcs += $item['quantity'];
                 }
             }
 
@@ -127,6 +130,7 @@ class PackingService
                                     // Assuming it stores Detail ID for traceability.
                                     'quantity' => $qty_to_pack
                                 ]);
+                                $packed_pcs += $qty_to_pack;
                             }
                         }
                     }
@@ -138,6 +142,46 @@ class PackingService
                 PackingBox::whereIn('id', $data['box_ids'])->update(['packing_carton_id' => $carton->id]);
                 PackingItem::whereIn('packing_box_id', $data['box_ids'])->update(['packing_carton_id' => $carton->id]);
             }
+            
+            $slip_details = ProductionSlipDigitization::where('id', $data['slip_id'])->first();
+            
+            $orderLots = OrderLot::where('order_main_id', $data['order_id'])
+                        ->pluck('lot_no')
+                        ->toArray();
+            
+            $orderStageTransactions = OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
+                                        ->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                                        ->whereIn('lot_no', $orderLots)
+                                        ->orderBy('id')
+                                        ->get();
+            
+            if ($orderStageTransactions->isNotEmpty()) {
+                /* ADJUST REMAINING QTY */
+                foreach ($orderStageTransactions as $transaction) {
+
+                    if ($packed_pcs <= 0) {
+                        break;
+                    }
+
+                    if ($transaction->remaining_quantity <= 0) {
+                        continue;
+                    }
+
+                    if ($transaction->remaining_quantity > $packed_pcs) {
+
+                        $transaction->remaining_quantity -= $packed_pcs;
+                        $packed_pcs = 0;
+
+                    } else {
+
+                        $packed_pcs -= $transaction->remaining_quantity;
+                        $transaction->remaining_quantity = 0;
+                    }
+
+                    $transaction->save();
+                }
+            }
+            // (int) $packed_pcs;
 
             DB::commit();
             return ['status' => 'success', 'carton' => $carton];

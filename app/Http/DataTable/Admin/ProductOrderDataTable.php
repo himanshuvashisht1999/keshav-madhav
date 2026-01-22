@@ -7,6 +7,7 @@ use App\Models\Fabric;
 use App\Models\Order;
 use App\Models\OrderMain;
 use App\Models\OrderProductSet;
+use App\Models\PackingMain;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 
@@ -100,11 +101,22 @@ class ProductOrderDataTable  {
             }) 
          
             ->addColumn('status', function ($queue) {
-                if($queue->status == 2){
+
+                 $stats = $this->getOrderPackingStats($queue->id);
+
+                if ($stats['remaining'] === 0) {
                     return '<span class="badge badge-success">Completed</span>';
-                } else {
-                    return '<span class="badge badge-primary">In Progress</span>';
                 }
+
+                if ($stats['packed'] > 0) {
+                    return '<span class="badge badge-warning">Partial</span>';
+                }
+
+                return '<span class="badge badge-primary">In Progress</span>';
+            })
+
+            ->addColumn('dispatch_pcs', function ($queue) {
+                return $this->getOrderPackingStats($queue->id)['packed'];
             })
             
             ->editColumn('master_customer_id', function ($queue) {
@@ -118,10 +130,7 @@ class ProductOrderDataTable  {
                 return getformatDate($queue->expected_delivery_date);
             })
             ->addColumn('total_pcs', function ($queue) {
-                $total = DB::table('order_products_sets')
-                    ->where('order_main_id', $queue->id)
-                    ->sum('total_quantity');
-                return $total;
+                return $this->getOrderPackingStats($queue->id)['total'];
             })
             // ->addColumn('total_amount', function ($queue) {
             //     return number_format($queue->total_amount, 2) ?? '0.00';
@@ -134,7 +143,7 @@ class ProductOrderDataTable  {
                 return $view;
             })
             
-            ->rawColumns(['action','master_customer_id', 'total_pcs', 'created_at','status'])
+            ->rawColumns(['action','master_customer_id', 'total_pcs', 'dispatch_pcs', 'created_at','status'])
             ->make(true);
     }
 
@@ -224,4 +233,32 @@ class ProductOrderDataTable  {
             ->rawColumns(['action','design_number', 'size_set','size_group','assign_to', 'total_qty', 'status'])
             ->make(true);
     }
-}
+
+
+
+    private function getOrderPackingStats($orderMainId)
+    {
+            $total = DB::table('order_products_sets')
+                ->where('order_main_id', $orderMainId)
+                ->sum('total_quantity');
+
+            $packed = DB::table('packing_items as pi')
+                ->join('packing_mains as pm', 'pm.id', '=', 'pi.packing_main_id')
+                ->where('pm.order_main_id', $orderMainId)
+                ->where('pm.status', 1)
+                ->whereIn('pm.id', function ($q) use ($orderMainId) {
+                    $q->select('pc.packing_main_id')
+                        ->from('order_dispatch as od')
+                        ->join('order_dispatch_details as odd', 'odd.order_dispatch_id', '=', 'od.id')
+                        ->join('packing_cartons as pc', 'pc.id', '=', 'odd.carton_packing_id')
+                        ->where('od.main_order_id', $orderMainId);
+                })
+                ->sum('pi.quantity');
+
+            return [
+                'total'     => (int) $total,
+                'packed'    => (int) $packed,
+                'remaining' => max(0, $total - $packed),
+            ];
+        }
+    }
