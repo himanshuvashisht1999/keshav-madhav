@@ -283,7 +283,7 @@
                                             <td>{{ $dispatch->orderMain->customer->address ?? 'N/A' }}</td>
                                             <td>
                                                 @if($dispatch->status == 2) <span class="badge badge-success">Complete</span>
-                                                @else <span class="badge badge-primary">Processing</span> @endif
+                                                @else <span class="badge badge-primary">Complete</span> @endif
                                             </td>
                                         </tr>
                                         @empty
