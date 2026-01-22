@@ -124,7 +124,8 @@ class OrderDispatchService {
 
         // Fetch Cartons with Items and Details
         $cartons_data = PackingCarton::with([
-            'items.detail' 
+            'items.detail',
+            'rack.storeroom'
         ])->whereIn('id', $dispatch_carton_ids)->get()->toArray();
         
         $total_items_dispatch = 0;
@@ -147,18 +148,14 @@ class OrderDispatchService {
                 }
             }
 
-            $contents_text = [];
-            foreach($summary as $size => $qty) {
-                $contents_text[] = "$size ($qty)";
-            }
-            
             $cartonsDetails[] = [
                 'id'            => $carton['id'],
                 'carton_no'     => $carton['carton_no'] ?? $carton['id'],
-                'rack_id'       => $carton['rack_id'] ?? 'N/A', // Assuming rack_id exists
+                'storeroom'     => $carton['rack']['storeroom']['name'] ?? 'N/A', // Assuming rack_id exists
+                'rack'          => $carton['rack']['name'] ?? 'N/A', // Assuming rack_id exists
                 'status'        => $carton['status'] ?? 1,
                 'total_items'   => $total_items_in_carton,
-                'contents'      => implode(', ', $contents_text),
+                'contents'      => $summary,
             ];
         }
 

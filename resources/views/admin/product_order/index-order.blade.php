@@ -59,6 +59,7 @@
                             <input type="date" class="form-control" name="expected_delivery_date" id="expected_delivery_date" autocomplete="off">
                         </td>
                         <td></td>
+                        <td></td>
                         <td>
                             <select id="status" class="form-control form-control-sm">
                                 <option value="">All</option>
@@ -77,7 +78,7 @@
                         <th>Order Date</th>
                         <th>Expected Delivery Date</th>
                         <th>Total Pcs</th>
-                        {{-- <th>Total Amount</th> --}}
+                        <th>Dispatch Pcs</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -131,7 +132,7 @@
                 {data: 'created_at', name: 'created_at'},                
                 {data: 'expected_delivery_date', name: 'expected_delivery_date'},     
                 {data: 'total_pcs', name: 'total_pcs'}, 
-                // {data: 'total_amount', name: 'total_amount'},          
+                {data: 'dispatch_pcs', name: 'dispatch_pcs'},          
                 {data: 'status', name: 'status'},                
                 {data: 'action', name: 'action', searchable: false}
             ],
