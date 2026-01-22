@@ -25,6 +25,8 @@ class OrderStageTransaction extends Model
         'processed_by',
         'remaining_quantity',
         'remarks',
+        'production_datetime',
+        'production_slip_digitization_id',
         'status',
         'created_at',
         'updated_at'

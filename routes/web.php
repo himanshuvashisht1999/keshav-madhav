@@ -688,6 +688,9 @@ Route::prefix('/admin/uploaded-slips')->name('admin.uploaded-slips.')->group(fun
     Route::get('/', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'index'])->name('index');
     Route::get('/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'show'])->name('show');
     Route::delete('/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'destroy'])->name('destroy');
+    Route::get(
+    '/{id}/download',[\App\Http\Controllers\Admin\UploadedSlipsController::class, 'download'])->name('download');
+
 });
 
 

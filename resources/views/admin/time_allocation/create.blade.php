@@ -30,7 +30,12 @@
 
                                 <div class="form-group mb-3">
                                     <label>Start Date & Time</label>
-                                    <input type="datetime-local" name="start_date_time" class="form-control" value="{{ date('Y-m-d\TH:i') }}" required>
+                                    <!-- <input type="datetime-local" name="start_date_time" class="form-control datetime-picker" value="{{ date('Y-m-d\TH:i') }}" required> -->
+                                    <input type="text"
+                                            name="start_date_time"
+                                            class="form-control datetime-picker"
+                                            placeholder="Select date & time"
+                                            required>
                                 </div>
 
                                 <!-- LOT NO -->

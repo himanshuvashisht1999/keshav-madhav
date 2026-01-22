@@ -17,10 +17,16 @@ class OrderLot extends Model
         'is_printing',
         'is_stitching',
         'lot_no',
+        'production_datetime',
         'status',
         'created_at',
         'updated_at'
     ];
 
-    
+    public function orderMain(){
+        return $this->hasOne('App\Models\OrderMain','id','order_main_id');
+    }
+    public function orderProductSet(){
+        return $this->hasOne('App\Models\OrderProductSet','id','order_products_set_id');
+    }
 }
