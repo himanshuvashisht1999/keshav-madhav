@@ -54,20 +54,29 @@
                                     </div>
                                    
                                     {{-- LOT INPUT --}}
-                                    <div class="my-3">
-                                        <label class="font-weight-bold">Select Lot No.</label>
-                                        <select name="lot_no" id="lot_no_input" class="form-control select2" style="width: 100%;">
-                                            <option value="">Select Lot</option>
-                                            @if(isset($available_lots) && count($available_lots) > 0)
-                                                @foreach($available_lots as $lot)
-                                                    <option value="{{ $lot->lot_no }}">{{ $lot->lot_no }}</option>
-                                                @endforeach
-                                            @else
-                                                <option value="" disabled>No available lots found for this stage</option>
-                                            @endif
-                                        </select>
-                                        <!-- <button type="button" class="btn btn-primary mt-2" id="fetchLotBtn">Check</button> -->
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <label>Production Date & Time</label>
+                                            <input type="text"
+                                            name="production_datetime" class="form-control datetime-picker" placeholder="Select date & time"
+                                            required>
+                                        </div>
+                                        <div class="col-md-12 mt-2 mb-2">
+                                            <label class="font-weight-bold">Select Lot No.</label>
+                                            <select name="lot_no" id="lot_no_input" class="form-control select2" style="width: 100%;">
+                                                <option value="">Select Lot</option>
+                                                @if(isset($available_lots) && count($available_lots) > 0)
+                                                    @foreach($available_lots as $lot)
+                                                        <option value="{{ $lot->lot_no }}">{{ $lot->lot_no }}</option>
+                                                    @endforeach
+                                                @else
+                                                    <option value="" disabled>No available lots found for this stage</option>
+                                                @endif
+                                            </select>
+                                        </div>
+                                        
                                     </div>
+                                   
 
                                     {{-- STAGE INFO --}}
                                     <div class="row">
@@ -91,7 +100,16 @@
 
                                 {{-- LOT DETAILS & INVENTORY (Dynamic) --}}
                                 <div id="lotDetailsCard" class="card p-3 border d-none">
-                                    <h5 class="text-primary">Lot Inventory Details</h5>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="text-primary mb-0">Lot Inventory Details</h5>
+
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="sendAllQty">
+                                            <label class="form-check-label fw-bold" for="sendAllQty">
+                                                Send All
+                                            </label>
+                                        </div>
+                                    </div>
                                     
                                     <div id="basicInfo" class="mb-3 p-2 bg-light rounded">
                                         <!-- Basic API info here -->
@@ -216,7 +234,7 @@ $(function(){
                 tbody.append(`
                     <tr>
                         <td class="font-weight-bold">${size}</td>
-                        <td>${qty}</td>
+                        <td class="available-qty" data-qty="${qty}">${qty}</td>
                         <td>
                             <input type="number" name="sizes[${size}]" 
                                    class="form-control form-control-sm send-qty" 
@@ -230,6 +248,7 @@ $(function(){
     }
 
     $(document).on('input', '.send-qty', function(){
+        $('#sendAllQty').prop('checked', false);
         let total = 0;
         $('.send-qty').each(function(){
             total += parseInt($(this).val()) || 0;
@@ -246,6 +265,28 @@ $(function(){
         }
     });
 
+});
+</script>
+<script>
+$(document).on('change', '#sendAllQty', function () {
+    let total = 0;
+
+    if ($(this).is(':checked')) {
+        // ✅ Fill all Send Qty with Available Qty
+        $('#inventoryTableBody tr').each(function () {
+            let availableQty = parseInt($(this).find('.available-qty').data('qty')) || 0;
+            let input = $(this).find('.send-qty');
+
+            input.val(availableQty);
+            total += availableQty;
+        });
+    } else {
+        // ❌ Clear all Send Qty
+        $('.send-qty').val('');
+        total = 0;
+    }
+
+    $('#totalMovingQty').text(total);
 });
 </script>
 @endsection
