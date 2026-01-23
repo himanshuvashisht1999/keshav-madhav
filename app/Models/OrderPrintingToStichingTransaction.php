@@ -4,10 +4,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class OrderPrintingStageTransaction extends Model
+class OrderPrintingToStichingTransaction extends Model
 {
     use HasFactory;
-    protected $table= 'order_printing_stage_transactions';
+    protected $table= 'order_printing_to_stiching_transactions';
     protected $fillable = [
         'id',
         'sno',
@@ -45,7 +45,7 @@ class OrderPrintingStageTransaction extends Model
 
     public function printingDetails()
     {
-        return $this->hasMany(OrderPrintingStageTransactionDetail::class, 'order_printing_stage_transaction_id', 'id');
+        return $this->hasMany(OrderPrintingToStichingTransactionDetail::class, 'order_printing_to_stiching_transaction_id', 'id');
     }
 
     public function getToUnitMaster()

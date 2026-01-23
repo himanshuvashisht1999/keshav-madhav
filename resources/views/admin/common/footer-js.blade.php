@@ -90,3 +90,15 @@
     })
     
   </script>
+  <script>
+document.addEventListener('DOMContentLoaded', function () {
+    flatpickr(".datetime-picker", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        time_24hr: true,
+        defaultDate: new Date(),
+        // minTime: "09:00",
+        // maxTime: "17:00"
+    });
+});
+</script>

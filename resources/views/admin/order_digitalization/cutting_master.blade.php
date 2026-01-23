@@ -142,6 +142,15 @@
 
                                     {{-- LOT --}}
                                     <div class="card p-2 mt-3 border">
+                                        <label class="font-weight-bold">
+                                            Production Date & Time <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text"
+                                            name="production_datetime" class="form-control datetime-picker"
+                                            placeholder="Select date & time"
+                                            required>
+                                    </div>
+                                    <div class="card p-2 mt-3 border">
                                         <label>Order No *</label>
                                         <select id="select_order_no" name="select_order_no" class="form-control mb-2 select2">
                                             <option value="">Select Order No</option>
@@ -242,6 +251,16 @@
                                     
                                     {{-- Stitching Unit --}}
                                     <div class="form-group">
+                                        <label class="font-weight-bold">
+                                            Stitching Date & Time <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text"
+                                            name="production_datetime"
+                                            class="form-control datetime-picker"
+                                            placeholder="Select date & time"
+                                            required>
+                                    </div>
+                                    <div class="form-group">
                                         <label class="font-weight-bold">Select Stitching Unit</label>
                                         <select name="to_stage_unit_id" class="form-control select2" required>
                                             <option value="">Select Stitching Unit</option>
@@ -286,6 +305,16 @@
                                     <input type="hidden" name="to_stage_id" value="1">{{-- Printing stage ID --}}
 
                                     {{-- Printing Unit --}}
+                                    <div class="form-group">
+                                        <label class="font-weight-bold">
+                                            Printing Date & Time <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text"
+                                            name="production_datetime"
+                                            class="form-control datetime-picker"
+                                            placeholder="Select date & time"
+                                            required>
+                                    </div>
                                     <div class="form-group">
                                         <label class="font-weight-bold">Select Printing Unit</label>
                                         <select name="to_stage_unit_id" class="form-control select2" required>
@@ -1069,6 +1098,7 @@ $(document).ready(function() {
         // }
     });
 </script>
+
 
 
 @endsection
