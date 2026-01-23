@@ -39,6 +39,8 @@ class FabricReceiptService {
     }
 
     public function store(Request $request){
+
+        // dd($request->all());
         $imgName = '';
         if($request->file('shipment_photo')){
             $image = $request->file('shipment_photo');
@@ -60,7 +62,7 @@ class FabricReceiptService {
         $save_data->vendor_id = $request->vendor_id;
         $save_data->truck_number = $request->truck_number ?? '';
         $save_data->time = $request->time;
-        $save_data->roll = count($request->rolls);
+        $save_data->roll = count($request->roll_details);
         $save_data->received_by = $request->received_by ?? '';
         $save_data->amount = $request->amount ?? 0.00;
         $save_data->gst_amount = $request->gst_amount ?? 0.00;
@@ -80,14 +82,15 @@ class FabricReceiptService {
             'shipment_id' => $shipment_id
         ]);
 
-        foreach($request->rolls as $single_data){
-            $fab_data = Fabric::where('id',$single_data['fabric_sku'])->first();
+        foreach($request->roll_details as $single_data){
+            $fab_data = Fabric::where('id',$single_data['fabric_id'])->first();
             if($fab_data){
                 $fabric_sku = $fab_data->sku;
                 $fabric_id = $fab_data->id;
                 
                 $meter = $single_data['meter'];
-                $roll_number = $single_data['roll'];
+                $roll_number = $single_data['roll_no'];
+                $price = $single_data['price'];
                 ////////// work for barcode
                 $qrcode_number = $this->generateUniqueQrNumber();
 
@@ -108,8 +111,9 @@ class FabricReceiptService {
                 $qrData = json_encode([
                     'fabric_id'   => $fabric_id,
                     'shipment_id' => $shipment_id,
-                    'roll_number' => $roll_number
-                ]);
+                    'roll_number' => $roll_number,
+                    'price'       => $price
+                ]); 
 
                 $destinationPath = public_path('assets/qrcodes');
 
@@ -139,6 +143,7 @@ class FabricReceiptService {
                 $save_data_detail->fabric_id = $fabric_id;
                 $save_data_detail->roll = 1;
                 $save_data_detail->roll_number = $roll_number;
+                $save_data_detail->price_per_meter = $price;
                 $save_data_detail->meter = $meter;
                 $save_data_detail->batch_no = '';
                 $save_data_detail->status = 1;
@@ -186,6 +191,7 @@ class FabricReceiptService {
         $data = FabricReceipt::where('id',$request->id)->first();
         return $data;
     }
+    
     public function update(Request $request){
         $update_data = FabricReceipt::find($request->id);
         $update_data->sku = $request->sku;
@@ -431,4 +437,9 @@ class FabricReceiptService {
 
     }
 
+    public function checkRollNo($request)
+    {
+        $exists = FabricReceiptDetail::where('roll_number', $request->roll_no)->exists();
+        return $exists;
+    }
 }
