@@ -22,6 +22,7 @@ class FabricReceiptDetail extends Model
         'fabric_id',
         'roll',
         'roll_number',
+        'price_per_meter',
         'master_fabric_warehouse_id',
         'barcode',
         'qrcode',

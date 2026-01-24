@@ -126,7 +126,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/purchase-order-items/{id}', [AdminFabricReceiptController::class, 'getPurchaseOrderItems'])->name('items');
 
             Route::get('/vendor_fabrics/{vendor}',[AdminFabricReceiptController::class,'vendorFabrics'])->name('vendor_fabrics');
-
+            Route::post('/check-roll-no', [AdminFabricReceiptController::class, 'checkRollNo'])->name('check-roll-no');
         });
 
         Route::prefix('/item-receipt')->name('item_receipt.')->group(function () {

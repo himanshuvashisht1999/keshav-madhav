@@ -98,5 +98,10 @@ class FabricReceiptController extends Controller {
         return view('admin.fabric_receipt.scan',$response);
     }
 
-
+    public function checkRollNo(Request $request){
+        $exists = $this->service->checkRollNo($request);
+        return response()->json([
+            'exists' => $exists
+        ]);
+    }
 }

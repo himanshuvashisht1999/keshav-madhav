@@ -131,6 +131,7 @@
                             <tr>
                                 <th>#</th>
                                 <th>Fabric</th>
+                                <th>Price (per Meter)</th>
                                 <th>Roll No</th>
                                 <th>Meter</th>
                                 <th>QR Code</th>
@@ -144,6 +145,8 @@
                                     <td>{{ $key + 1 }}</td>
 
                                     <td>{{ $detail->fabric->name ?? '-' }}</td>
+
+                                    <td>Rs. {{ $detail->price_per_meter ?? 0 }}</td>
 
                                     <td>{{ $detail->roll_number }}</td>
 
