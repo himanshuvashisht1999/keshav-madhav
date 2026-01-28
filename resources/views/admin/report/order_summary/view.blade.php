@@ -27,7 +27,17 @@
                 <div class="col-md-12">
                     <div class="card shadow-sm mb-4">
                         <div class="card-header bg-white">
-                            <h3 class="card-title font-weight-bold text-dark">Order Information</h3>
+                            <h3 class="card-title font-weight-bold text-dark">
+                                Order Information
+                            </h3>
+
+                            <div class="card-tools">
+                                <a href="{{ route('admin.report.order-summary.pdf', $order->id) }}"
+                                class="btn btn-sm btn-outline-info"
+                                title="Download Order Summary PDF">
+                                    <i class="fas fa-file-pdf mr-1"></i> PDF
+                                </a>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="row">
