@@ -611,6 +611,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
                 Route::get('/list', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'indexList'])->name('indexList');
                 Route::get('/view/{id}', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'view'])->name('view');
                 Route::get('/view/{id}', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'view'])->name('view');
+                Route::get('/pdf/{id}', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'downloadOrderSummaryPdf'])->name('pdf');
             });
             
             Route::get('/purchase-order/export', [AdminReportController::class, 'purchaseOrderExport'])->name('purchase_order.export');

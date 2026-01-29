@@ -231,7 +231,7 @@ class ReportController extends Controller
 
     public function lotDetails(Request $request)
     {
-        $response['data'] = $this->service->lotDetails($request);
+        $response['data'] = $this->service->lotDetails($request->lot_no);
         $response['master_stages'] = $this->service->master_stages();
         // dd($response['data']);
         return view('admin.report.lot_details',$response);

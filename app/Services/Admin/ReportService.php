@@ -1082,9 +1082,8 @@ class ReportService {
     //     return $orderMain;
     // }
 
-    public function lotDetails(Request $request)
+    public function lotDetails($lot_no)
     {
-        $lot_no = $request->lot_no;
 
         if (!$lot_no) {
             return response()->json(['message' => 'Lot number required'], 422);
