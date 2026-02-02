@@ -488,7 +488,7 @@
                 // console.log(set);
                  // Modal Option for this Set
                  if(remainingSets > 0) {
-                     let compositionText = (set.details_data || set.details).map(d => `${d.size}(${d.qty_per_set})`).join(', ');
+                     let compositionText = (set.details_data || set.details).map(d => `${d.size}(${d.qty_per_set} pcs)`).join(', ');
                      modalSetsHtml += `
                      <div class="card mb-2 p-2 border-left-primary">
                         <div class="d-flex justify-content-between align-items-center">
