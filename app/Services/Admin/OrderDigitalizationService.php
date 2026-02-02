@@ -1305,12 +1305,20 @@ class OrderDigitalizationService {
             ->select('order_printing_stage_transaction_details.size', 'order_printing_stage_transaction_details.quantity')
             ->get();
 
+
             // 2. Calculate Outflow (What already LEFT this stage) per size
-            $outflow = OrderPrintingStageTransactionDetail::join('order_printing_stage_transactions', 'order_printing_stage_transactions.id', '=', 'order_printing_stage_transaction_details.order_printing_stage_transaction_id')
-                ->where('order_printing_stage_transactions.from_stage_id', $current_stage_id)
-                ->where('order_printing_stage_transactions.lot_no', $lot_no)
-                ->select('order_printing_stage_transaction_details.size', 'order_printing_stage_transaction_details.quantity')
+            // $outflow = OrderPrintingStageTransactionDetail::join('order_printing_stage_transactions', 'order_printing_stage_transactions.id', '=', 'order_printing_stage_transaction_details.order_printing_stage_transaction_id')
+            //     ->where('order_printing_stage_transactions.from_stage_id', $current_stage_id)
+            //     ->where('order_printing_stage_transactions.lot_no', $lot_no)
+            //     ->select('order_printing_stage_transaction_details.size', 'order_printing_stage_transaction_details.quantity')
+            //     ->get();
+            $outflow = OrderPrintingToStichingTransactionDetail::join('order_printing_to_stiching_transactions', 'order_printing_to_stiching_transactions.id', '=', 'order_printing_to_stiching_transaction_details.order_printing_to_stiching_transaction_id')
+                ->where('order_printing_to_stiching_transactions.from_stage_id', $current_stage_id)
+                ->where('order_printing_to_stiching_transactions.lot_no', $lot_no)
+                ->select('order_printing_to_stiching_transaction_details.size', 'order_printing_to_stiching_transaction_details.quantity')
                 ->get();
+            // dd($outflow);
+
         }else{
             $inflow = OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transactions.id', '=', 'order_stage_transaction_details.order_stage_transaction_id')
             ->where('order_stage_transactions.to_stage_id', $current_stage_id)
