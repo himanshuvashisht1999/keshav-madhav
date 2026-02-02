@@ -117,11 +117,10 @@
             <td class="meta-label">Cutting Master:</td>
             <td>{{ $header['cuttingMaster'] }}</td>
         </tr>
-        <tr>
-
+        {{-- <tr>
             <td class="meta-label">Address:</td>
             <td>{{ $header['cuttingMasterAddress'] }}</td>
-        </tr>
+        </tr> --}}
 
         <tr>
             <td class="meta-label">Remark:</td>
