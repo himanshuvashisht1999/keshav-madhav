@@ -88,7 +88,7 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label>To Stage</label>
-                                            <select name="to_stage_id" class="form-control select2" required>
+                                            <select name="to_stage_id" class="form-control select2" id="to_stage_id" required>
                                                 <option value="">Select Stage</option>
                                                 @foreach($slip_data['unit_master_data'] as $unit)
                                                     <option value="{{ $unit['id'] }}">{{ $unit['name'] }} ({{ $unit['master_stage_name'] }})</option>
@@ -103,11 +103,21 @@
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <h5 class="text-primary mb-0">Lot Inventory Details</h5>
 
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="sendAllQty">
-                                            <label class="form-check-label fw-bold" for="sendAllQty">
-                                                Send All
-                                            </label>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <!-- TOTAL PIECES -->
+                                            <input type="number"
+                                                id="totalPieces"
+                                                class="form-control form-control-sm"
+                                                style="width:140px"
+                                                placeholder="Total Pieces">
+
+                                            <!-- SEND ALL -->
+                                            <div class="form-check ml-2">
+                                                <input class="form-check-input" type="checkbox" id="sendAllQty">
+                                                <label class="form-check-label fw-bold" for="sendAllQty">
+                                                    Send All
+                                                </label>
+                                            </div>
                                         </div>
                                     </div>
                                     
@@ -205,6 +215,8 @@ $(function(){
                     renderInventory(response.inventory);
                     renderBasicInfo(response.basic_info);
                     $('#lotDetailsCard').removeClass('d-none');
+                    updateToStage(response.godam_stage);
+                    console.log(response.godam_stage);
                 } else {
                     $('#lotDetailsCard').addClass('d-none');
                     alert('No inventory found for this Lot at current stage.');
@@ -214,6 +226,32 @@ $(function(){
                 alert('Error fetching details.');
             }
         });
+    }
+
+    function updateToStage(godamStage) {
+        if (godamStage && godamStage.length > 0) {
+
+            let $toStage = $('#to_stage_id');
+
+            // Clear old options
+            $toStage.empty();
+
+            // ✅ Use GODAM STAGE from AJAX
+            $.each(godamStage, function (index, stage) {
+                $toStage.append(`
+                    <option value="${stage.id}">
+                        ${stage.name} (${stage.master_stage.name})
+                    </option>
+                `);
+            });
+            $toStage.trigger('change.select2');
+
+        } else {
+
+            
+        }
+
+        
     }
 
     function renderBasicInfo(info) {
@@ -289,4 +327,85 @@ $(document).on('change', '#sendAllQty', function () {
     $('#totalMovingQty').text(total);
 });
 </script>
+<script>
+let isAutoFilling = false;
+
+/* TOTAL PIECES ➜ SEND QTY */
+$(document).on('input', '#totalPieces', function () {
+
+    let totalPieces = parseInt($(this).val()) || 0;
+    let rows = $('#inventoryTableBody tr');
+
+    if (totalPieces <= 0 || rows.length === 0) return;
+
+    isAutoFilling = true;
+    $('#sendAllQty').prop('checked', false);
+
+    let sizeCount = rows.length;
+    let baseQty = Math.floor(totalPieces / sizeCount);
+    let remainder = totalPieces % sizeCount;
+
+    rows.each(function (index) {
+        let maxQty = parseInt($(this).find('.available-qty').data('qty')) || 0;
+        let qty = baseQty + (index < remainder ? 1 : 0);
+
+        // ❗ Respect available qty
+        qty = Math.min(qty, maxQty);
+
+        $(this).find('.send-qty').val(qty);
+    });
+
+    updateTotalMoving();
+    isAutoFilling = false;
+});
+
+/* SEND QTY ➜ TOTAL PIECES */
+$(document).on('input', '.send-qty', function () {
+
+    if (isAutoFilling) return;
+
+    $('#sendAllQty').prop('checked', false);
+    updateTotalMoving();
+
+    let total = 0;
+    $('.send-qty').each(function () {
+        total += parseInt($(this).val()) || 0;
+    });
+
+    $('#totalPieces').val(total);
+});
+
+/* SEND ALL */
+$(document).on('change', '#sendAllQty', function () {
+
+    let total = 0;
+    isAutoFilling = true;
+
+    if ($(this).is(':checked')) {
+        $('#inventoryTableBody tr').each(function () {
+            let qty = parseInt($(this).find('.available-qty').data('qty')) || 0;
+            $(this).find('.send-qty').val(qty);
+            total += qty;
+        });
+    } else {
+        $('.send-qty').val('');
+        total = 0;
+    }
+
+    $('#totalMovingQty').text(total);
+    $('#totalPieces').val(total);
+
+    isAutoFilling = false;
+});
+
+/* HELPER */ 
+function updateTotalMoving() {
+    let total = 0;
+    $('.send-qty').each(function () {
+        total += parseInt($(this).val()) || 0;
+    });
+    $('#totalMovingQty').text(total);
+}
+</script>
+
 @endsection

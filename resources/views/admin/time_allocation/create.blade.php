@@ -61,6 +61,7 @@
                                     <div class="col-6 mb-1"><strong>Meters:</strong> <span id="dtl_meter">-</span></div>
                                     <div class="col-6 mb-1"><strong>Rolls:</strong> <span id="dtl_roll_count">-</span></div>
                                     <div class="col-12 mb-1"><strong>Master:</strong> <span id="dtl_master">-</span></div>
+                                    <div class="col-12 mb-1"><strong>Total Pcs:</strong> <span id="dtl_total_pcs">-</span></div>
                                 </div>
                                 <hr class="my-2">
                                 <h6 class="font-weight-bold text-xs">Roll Breakdown</h6>
@@ -160,6 +161,7 @@ $(function(){
                     $('#dtl_meter').text(res.total_meter || '0');
                     $('#dtl_master').text(res.cutting_master || '-');
                     $('#dtl_roll_count').text(res.roll_count || '0');
+                    $('#dtl_total_pcs').text((res.total_quantity + ' pcs') || '0 pcs');
 
                     let rows = '';
                     if(res.roll_details && res.roll_details.length > 0) {

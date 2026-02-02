@@ -216,10 +216,27 @@
                                         <div id="roll_rows" class="mt-3"></div>
 
                                         <!-- SIZE ALLOCATION UI (UNCHANGED) -->
-                                        <div id="size_allocations" class="mt-3 p-2 border rounded bg-white">
+                                        <!-- <div id="size_allocations" class="mt-3 p-2 border rounded bg-white">
                                             <label class="mb-2">Size Wise Quantity</label>
                                             <div id="size_inputs_container"></div>
+                                        </div> -->
+                                        <div id="size_allocations" class="mt-3 p-2 border rounded bg-white">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <label class="mb-0 font-weight-bold">Size Wise Quantity</label>
+
+                                                <!-- ✅ TOTAL PIECES INPUT -->
+                                                <div style="width:180px">
+                                                    <span><strong>Total Piece</strong></span>
+                                                    <input type="number"
+                                                        id="total_pieces"
+                                                        class="form-control form-control-sm"
+                                                        placeholder="Total Pieces">
+                                                </div>
+                                            </div>
+
+                                            <div id="size_inputs_container"></div>
                                         </div>
+
                                     </div>
 
 
@@ -442,6 +459,7 @@
 {{-- SCRIPT --}}
 <script>
 const USED_LOTS = @json($used_lots);
+let isAutoFillingSizes = false;
 
 $(document).ready(function () {
     $('#lot_no').on('input', function () {
@@ -681,6 +699,9 @@ $(document).ready(function () {
                             </div>
                         </div>
                     `);
+                    setTimeout(() => {
+                        autoFillSizesFromTotal();
+                    }, 0);
                 }
             });
         }
@@ -1089,16 +1110,50 @@ $(document).ready(function() {
     });
 
     $(document).on('input', '.size-qty-input', function () {
-        let pending = parseInt($(this).data('pending')) || 0;
-        let val = parseInt($(this).val()) || 0;
 
-        // if (val > pending) {
-        //     $(this).val(pending);
-        //     alert(`Maximum allowed quantity is ${pending}`);
-        // }
+        // ❌ Ignore updates triggered by auto-fill
+        if (isAutoFillingSizes) return;
+
+        let total = 0;
+
+        $('.size-qty-input').each(function () {
+            total += parseInt($(this).val()) || 0;
+        });
+
+        $('#total_pieces').val(total);
     });
 </script>
+<script>
+$(document).on('input', '#total_pieces', function () {
+    autoFillSizesFromTotal();
+});
+setTimeout(() => {
+    autoFillSizesFromTotal();
+}, 0);
+</script>
+<script>
+function autoFillSizesFromTotal() {
 
+    let totalPieces = parseInt($('#total_pieces').val()) || 0;
+    let sizeInputs = $('.size-qty-input');
+
+    if (totalPieces <= 0 || sizeInputs.length === 0) return;
+
+    isAutoFillingSizes = true;
+
+    let sizeCount = sizeInputs.length;
+    let baseQty = Math.floor(totalPieces / sizeCount);
+    let remainder = totalPieces % sizeCount;
+
+    sizeInputs.each(function (index) {
+        let qty = baseQty;
+        if (index < remainder) qty += 1;
+        $(this).val(qty);
+    });
+
+    isAutoFillingSizes = false;
+}
+</script>
 
 
 @endsection

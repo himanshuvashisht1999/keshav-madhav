@@ -28,6 +28,8 @@ use App\Models\FabricRollAssigningsDetail;
 use App\Models\OrderPrintingToStichingTransaction;
 use App\Models\OrderPrintingToStichingTransactionDetail;
 use App\Models\OrderStageTransactionDetail;
+use App\Models\OrderGodamStageTransaction;
+use App\Models\OrderGodamStageTransactionDetail;
 
 
 
@@ -431,6 +433,9 @@ class OrderDigitalizationService {
             ->first();
         }
         $from_stage_id = $results->from_stage_id;
+        // if($from_stage_id == 3)}{
+        //     $data_check = OrderStageTransaction::where('from_stage_id',3)->where('to_stage_id',4)->where('lot_no',)
+        // }
         if($from_stage_id == 1){$to_stage_id = 4;}
         if($from_stage_id == 3){$to_stage_id = 4;}
         if($from_stage_id == 4){$to_stage_id = 5;}
@@ -1087,7 +1092,32 @@ class OrderDigitalizationService {
                 ->where('stage_master_unit_id', $slip->stage_master_unit_id)
                 ->first();
 
-        $this->createTransactionWithDetails($request->lot_no, 3, 4, $slip->id,$fab_roll_assigning->order_products_set_id,$slip->stage_master_unit_id,$request->to_stage_unit_id,$fab_roll_assigning->id,$request->production_datetime);
+            $this->createTransactionWithDetails($request->lot_no, 3, 4, $slip->id,$fab_roll_assigning->order_products_set_id,$slip->stage_master_unit_id,$request->to_stage_unit_id,$fab_roll_assigning->id,$request->production_datetime);
+
+            /////new code
+            
+            $godamIds = OrderGodamStageTransaction::where('lot_no', $request->lot_no)->pluck('id');
+
+            if ($godamIds->isNotEmpty()) {
+
+                // 2️⃣ Main table bulk update (single query)
+                OrderGodamStageTransaction::whereIn('id', $godamIds)
+                    ->update([
+                        'quantity' => 0
+                    ]);
+
+                // 3️⃣ Detail table bulk update (single query)
+                OrderGodamStageTransactionDetail::whereIn(
+                    'order_godam_stage_transaction_id',
+                    $godamIds
+                )->update([
+                    'remaining_quantity' => 0
+                ]);
+            }
+
+
+
+            /////////// end code
             
             DB::commit();
             return [
@@ -1320,12 +1350,19 @@ class OrderDigitalizationService {
         // We can reuse getLotDetailsForUser logic or just fetch basics
         $basicInfo = $this->getLotDetailsForDisplay(['lot_no' => $lot_no], true); // true for basic only? Adjust later if needed 
         // Or simply:
-         $cuttingMaster = \App\Models\FabricRollAssigning::where('lot_no', $lot_no)->first();
+
+        $stage_check = OrderStageTransaction::where('from_stage_id',3)->where('to_stage_id',4)->where('lot_no',$lot_no)->first();
+        if($stage_check){
+            $godam_stage = '';
+        }else{
+            $godam_stage = \App\Models\StageMasterUnit::with('masterStage')->where('master_stage_id',13)->get();
+        }
          
          return [
              'lot_no' => $lot_no,
              'inventory' => $inventory,
-             'basic_info' => $basicInfo
+             'basic_info' => $basicInfo,
+             'godam_stage' => $godam_stage
          ];
     }
 
@@ -1395,6 +1432,35 @@ class OrderDigitalizationService {
                             'quantity' => $qty
                         ]);
                     }
+                }
+
+                if($to_stage_id == 13){
+
+                    $transaction = OrderGodamStageTransaction::create([
+                        'from_stage_id' => $from_stage_id,
+                        'to_stage_id' => $to_stage_id,
+                        'sub_stage_id' => $stage_master_unit_from?->id,
+                        'sub_stage_id_to' => $stage_master_unit_to?->id,
+                        'lot_no' => $lot_no,
+                        'quantity' => $totalMoved,
+                        'remaining_quantity' => $totalMoved, 
+                        'production_datetime' => $request->production_datetime, 
+                        'production_slip_digitization_id' => $slip->id,
+                        'status' => 1,
+                    ]);
+
+                    // Create Details
+                    foreach ($sizes as $size => $qty) {
+                        if ($qty > 0) {
+                            OrderGodamStageTransactionDetail::create([
+                                'order_godam_stage_transaction_id' => $transaction->id,
+                                'size' => $size,
+                                'quantity' => $qty,
+                                'remaining_quantity' => $qty,
+                            ]);
+                        }
+                    }
+
                 }
 
             }else{
