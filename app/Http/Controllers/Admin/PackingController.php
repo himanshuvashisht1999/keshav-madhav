@@ -15,8 +15,18 @@ class PackingController extends Controller
 
     public function index(Request $request)
     {
-        $slips = $this->service->getPendingSlips();
-        return view('admin.packing.index', compact('slips'));
+        return view('admin.packing.index');
+    }
+
+    public function indexList(Request $request)
+    {
+        return $this->service->indexList($request);
+    }
+
+    public function view($id)
+    {
+        $order = $this->service->getPackingDetailsForOrder($id);
+        return view('admin.packing.view', compact('order'));
     }
 
     public function process($slip_id)

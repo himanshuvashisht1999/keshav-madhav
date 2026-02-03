@@ -675,7 +675,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
     // Packing Module Routes
     Route::prefix('/packing')->name('packing.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\PackingController::class, 'index'])->name('index');
+        Route::get('/indexList', [\App\Http\Controllers\Admin\PackingController::class, 'indexList'])->name('indexList');
         Route::get('/process/{slip_id}', [\App\Http\Controllers\Admin\PackingController::class, 'process'])->name('process');
+        Route::get('/view/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'view'])->name('view');
         Route::post('/save-carton', [\App\Http\Controllers\Admin\PackingController::class, 'saveCarton'])->name('saveCarton');
         Route::post('/save-box', [\App\Http\Controllers\Admin\PackingController::class, 'saveBox'])->name('saveBox');
         Route::post('/finalize', [\App\Http\Controllers\Admin\PackingController::class, 'finalize'])->name('finalize');

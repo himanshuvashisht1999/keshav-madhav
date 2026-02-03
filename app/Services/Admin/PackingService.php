@@ -14,6 +14,83 @@ use Illuminate\Support\Facades\DB;
 
 class PackingService
 {
+    public function getPackingList()
+    {
+        return PackingMain::with(['order.customer'])
+            ->orderBy('id', 'desc')
+            ->get();
+    }
+
+    public function indexList($request)
+    {
+        // Select unique orders that have at least one packing session
+        $query = OrderMain::whereHas('packingMains')
+            ->with(['customer', 'packingMains']);
+
+        // Filter by Order No (SKU)
+        if ($request->has('order_no') && !empty($request->order_no)) {
+            $query->where('sku', 'like', '%' . $request->order_no . '%');
+        }
+
+        // Filter by Customer Name
+        if ($request->has('customer_name') && !empty($request->customer_name)) {
+            $query->whereHas('customer', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->customer_name . '%');
+            });
+        }
+
+        // Filter by Date Range (Checking the latest packing_date)
+        if ($request->has('start_date') && !empty($request->start_date)) {
+            $query->whereHas('packingMains', function ($q) use ($request) {
+                $q->whereDate('packing_date', '>=', $request->start_date);
+            });
+        }
+        if ($request->has('end_date') && !empty($request->end_date)) {
+            $query->whereHas('packingMains', function ($q) use ($request) {
+                $q->whereDate('packing_date', '<=', $request->end_date);
+            });
+        }
+
+        $query->orderBy('id', 'desc');
+
+        return datatables()->of($query)
+            ->addIndexColumn()
+            ->addColumn('order_no', function ($row) {
+                return $row->sku ?? 'N/A';
+            })
+            ->addColumn('customer', function ($row) {
+                return $row->customer->name ?? 'N/A';
+            })
+            ->addColumn('packing_date', function ($row) {
+                // Get the latest packing date from all associated slips
+                $latestDate = $row->packingMains->max('packing_date');
+                return $latestDate ? date('d/m/Y', strtotime($latestDate)) : 'N/A';
+            })
+            ->addColumn('status', function ($row) {
+                // If any slip is still in draft (status 0), the order is In-Progress
+                $allFinalized = !($row->packingMains->contains('status', 0));
+                if ($allFinalized) {
+                    return '<span class="badge badge-success">Finalized</span>';
+                }
+                return '<span class="badge badge-warning">Packing In-Progress</span>';
+            })
+            ->addColumn('action', function ($row) {
+                $btn = '<a href="' . route('admin.packing.view', $row->id) . '" class="btn btn-info btn-sm mr-1"><i class="fas fa-eye"></i> View Complete Details</a>';
+                return $btn;
+            })
+            ->rawColumns(['status', 'action'])
+            ->make(true);
+    }
+
+    public function getPackingDetailsForOrder($order_id)
+    {
+        return OrderMain::with([
+            'customer',
+            'packingMains.cartons.boxes.items.detail',
+            'packingMains.cartons.items.detail',
+            'packingMains.cartons.rack.storeroom'
+        ])->findOrFail($order_id);
+    }
     /**
      * Get pending packing slips (Stage 11)
      */
