@@ -191,6 +191,7 @@
                                         <div><strong>Pattern :</strong> <span id="show_pattern">—</span></div>
                                         <div><strong>Fitting :</strong> <span id="show_fitting">—</span></div>
                                         <div><strong>Cutting Master :</strong> <span id="show_cutting_master">—</span></div>
+                                        <div><strong>Total Order:</strong> <span id="show_total_order_pcs">—</span></div>
                                     </div>
                                     {{-- TOTAL ROLL & TOTAL METER --}}
                                     <select id="roll_no" class="d-none">
@@ -596,7 +597,7 @@ let selectedRollMeters = {}; // track used meters per roll
 
 $(document).ready(function () {
     const ordersData = @json($orders);
-    
+    // console.log(ordersData);
     // ... (rest of order select logic same) ...
 
     $('#select_order_no').on('change', function () {
@@ -666,6 +667,9 @@ $(document).ready(function () {
         let set = order.order_product_sets.find(s => s.id === designSetId);
         if (!set) return;
 
+        const sum_total =  order.order_product_sets.reduce((acc, item) => {
+            return acc + item.total_quantity;
+        }, 0);
         /* --------------------
            SHOW BASIC INFO
         -------------------- */
@@ -674,6 +678,7 @@ $(document).ready(function () {
         $('#show_pattern').text(set.master_design_pattern?.name ?? '—');
         $('#show_fitting').text(set.master_product_fitting?.name ?? '—');
         $('#show_cutting_master').text(set.stage_master_unit?.name ?? '—');
+        $('#show_total_order_pcs').text(sum_total + ' pcs' ?? '—');
 
         /* --------------------
            LOAD SIZE INPUTS
