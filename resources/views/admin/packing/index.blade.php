@@ -1,65 +1,140 @@
 @extends('admin.layouts.app')
-
 @section('content')
-<div class="content-wrapper">
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Packing Module</h1>
+    <div class="content-wrapper">
+        <!-- PAGE HEADER -->
+        <section class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-3 align-items-center">
+                    <div class="col-sm-6">
+                        <h1 class="m-0 font-weight-bold text-dark">Packing Dashboard</h1>
+                        <small class="text-muted">Monitor and manage order packing sessions</small>
+                    </div>
+                    <div class="col-sm-6 text-right">
+                        <a href="{{ route('admin.uploaded-slips.index') }}" class="btn btn-primary px-4 shadow-sm">
+                            <i class="fas fa-plus mr-1"></i> Start New Packing
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="content">
-        <div class="container-fluid">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Pending Packing Slips</h3>
+        <!-- CONTENT -->
+        <section class="content">
+            <div class="container-fluid">
+                <!-- FILTER CARD -->
+                <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+                    <div class="card-body bg-light rounded">
+                        <div class="row align-items-end">
+                            <div class="col-md-3 mb-2">
+                                <label class="small font-weight-bold text-muted">Order No</label>
+                                <input type="text" id="order_no" class="form-control" placeholder="Search Order...">
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="small font-weight-bold text-muted">Customer Name</label>
+                                <input type="text" id="customer_name" class="form-control" placeholder="Search Customer...">
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <label class="small font-weight-bold text-muted">Start Date</label>
+                                <input type="date" id="start_date" class="form-control">
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <label class="small font-weight-bold text-muted">End Date</label>
+                                <input type="date" id="end_date" class="form-control">
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <button id="resetFilters" class="btn btn-outline-secondary btn-block">
+                                    <i class="fas fa-undo mr-1"></i> Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <table class="table table-bordered table-striped">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>ID</th>
-                                <!-- <th>Slip ID</th> -->
-                                <th>Image</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($slips as $slip)
-                            <tr>
-                                <td>{{ $slip->created_at->format('d-m-Y') }}</td>
-                                <td>#{{ $slip->id }}</td>
-                                <!-- <td>{{ $slip->id ?? 'N/A' }}</td> {{-- Assuming slip_id is a field or just use ID --}} -->
-                                <td>
-                                    @if($slip->slip_file)
-                                        <a href="{{ asset('assets/production_slips/'.$slip->slip_file) }}" target="_blank">
-                                            <img src="{{ asset('assets/production_slips/'.$slip->slip_file) }}" alt="Slip" style="height: 50px; width: 50px; object-fit: cover;">
-                                        </a>
-                                    @else
-                                        <span class="text-muted">No Image</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <a href="{{ route('admin.packing.process', $slip->id) }}" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-box-open"></i> Process Packing
-                                    </a>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="5" class="text-center">No pending slips for packing.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+
+                <!-- TABLE CARD -->
+                <div class="card shadow border-0" style="border-radius: 12px; overflow: hidden;">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table id="packingTable" class="table table-hover mb-0">
+                                <thead class="bg-light contrast-text">
+                                    <tr>
+                                        <th width="5%" class="text-center py-3">#</th>
+                                        <th class="py-3">Order No</th>
+                                        <th class="py-3">Customer</th>
+                                        <th class="py-3">Latest Packing Date</th>
+                                        <th class="text-center py-3">Status</th>
+                                        <th class="text-right py-3 px-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
-</div>
+        </section>
+    </div>
+
+    <style>
+        .contrast-text th {
+            color: #444;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        .table tbody td {
+            vertical-align: middle;
+            padding: 1rem 0.75rem;
+        }
+
+        .badge {
+            padding: 0.5em 0.8em;
+            border-radius: 6px;
+        }
+        .form-control { border-radius: 8px; }
+    </style>
+
+    <script>
+        $(function () {
+            let table = $('#packingTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ordering: false,
+                searching: false,
+                ajax: {
+                    url: '{!! route('admin.packing.indexList') !!}',
+                    data: function (d) {
+                        d.order_no = $('#order_no').val();
+                        d.customer_name = $('#customer_name').val();
+                        d.start_date = $('#start_date').val();
+                        d.end_date = $('#end_date').val();
+                    }
+                },
+                columns: [
+                    { data: 'DT_RowIndex', name: 'id', className: 'text-center text-muted' },
+                    { data: 'order_no', name: 'order_no', className: 'font-weight-bold text-primary' },
+                    { data: 'customer', name: 'customer' },
+                    { data: 'packing_date', name: 'packing_date' },
+                    { data: 'status', name: 'status', className: 'text-center' },
+                    { data: 'action', name: 'action', className: 'text-right px-4' }
+                ],
+                language: {
+                    emptyTable: "No packing sessions found",
+                    processing: '<i class="fas fa-spinner fa-spin fa-2x text-primary"></i>'
+                }
+            });
+
+            // Trigger filter
+            $('#order_no, #customer_name, #start_date, #end_date').on('keyup change', function() {
+                table.draw();
+            });
+
+            // Reset filter
+            $('#resetFilters').on('click', function() {
+                $('#order_no, #customer_name, #start_date, #end_date').val('');
+                table.draw();
+            });
+        });
+    </script>
 @endsection

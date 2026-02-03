@@ -54,12 +54,13 @@ class UploadedSlipsController extends Controller
     {
         $data = $this->getSlipData($slipId);
         $pdf = Pdf::loadView('admin.uploaded_slips.pdf', $data)
-        ->setPaper('A4', 'portrait');
+            ->setPaper('A4', 'portrait');
 
-        return $pdf->download('Production_Slip_'.$slipId.'.pdf');
+        return $pdf->download('Production_Slip_' . $slipId . '.pdf');
     }
 
-    public function getSlipData($slipId){
+    public function getSlipData($slipId)
+    {
         $slip = ProductionSlipDigitization::with([
             'fromStage',
             'getUnitMaster.masterFabricWarehouse'
@@ -74,13 +75,13 @@ class UploadedSlipsController extends Controller
         ];
 
         /* -----------------------------
-        * 2️⃣ SWITCH BY SAVE TYPE
-        * ----------------------------- */
+         * 2️⃣ SWITCH BY SAVE TYPE
+         * ----------------------------- */
         switch ($slip->save_type) {
 
             /* =====================================================
-            * 🟢 TYPE 1 → LOT / ROLLS ALLOT
-            * ===================================================== */
+             * 🟢 TYPE 1 → LOT / ROLLS ALLOT
+             * ===================================================== */
             case 1:
 
                 // One slip = one lot
@@ -96,9 +97,9 @@ class UploadedSlipsController extends Controller
 
                 if ($lot) {
                     $rolls = FabricRollAssigning::where(
-                            'production_slip_digitization_id',
-                            $slip->id
-                        )
+                        'production_slip_digitization_id',
+                        $slip->id
+                    )
                         ->with([
                             'fabricRollAssigningsDetail',
                             'stageMasterUnit.masterFabricWarehouse'
@@ -111,22 +112,22 @@ class UploadedSlipsController extends Controller
                 break;
 
             /* =====================================================
-            * 🔵 TYPE 2 → PRINTING
-            * ===================================================== */
+             * 🔵 TYPE 2 → PRINTING
+             * ===================================================== */
             case 2:
 
                 $printing = OrderPrintingStageTransaction::where(
-                        'production_slip_digitization_id',
-                        $slip->id
-                    )
+                    'production_slip_digitization_id',
+                    $slip->id
+                )
                     ->with('from_stage', 'to_stage')
                     ->first();
 
                 if ($printing) {
                     $printingSizes = OrderPrintingStageTransactionDetail::where(
-                            'order_printing_stage_transaction_id',
-                            $printing->id
-                        )->get();
+                        'order_printing_stage_transaction_id',
+                        $printing->id
+                    )->get();
 
                     $data['printing'] = $printing;
                     $data['printing_sizes'] = $printingSizes;
@@ -134,45 +135,53 @@ class UploadedSlipsController extends Controller
                 break;
 
             /* =====================================================
-            * 🟠 TYPE 3 → OTHER (STITCHING / HAND SLIP)
-            * ===================================================== */
+             * 🟠 TYPE 3 → OTHER (STITCHING / HAND SLIP)
+             * ===================================================== */
             case 3:
-                if($slip->from_stage_id == 1){
+                if ($slip->from_stage_id == 1) {
                     $stageTransaction = OrderPrintingToStichingTransaction::where(
-                            'production_slip_digitization_id',
-                            $slip->id
-                        )
+                        'production_slip_digitization_id',
+                        $slip->id
+                    )
                         ->with('from_stage', 'to_stage')
                         ->first();
 
                     if ($stageTransaction) {
                         $stageSizes = OrderPrintingToStichingTransactionDetail::where(
-                                'order_printing_to_stiching_transaction_id',
-                                $stageTransaction->id
-                            )->get();
+                            'order_printing_to_stiching_transaction_id',
+                            $stageTransaction->id
+                        )->get();
 
                         $data['stage_transaction'] = $stageTransaction;
                         $data['stage_sizes'] = $stageSizes;
                     }
-                }else{
-                    
-                
+                } else {
+
+
                     $stageTransaction = OrderStageTransaction::where(
-                            'production_slip_digitization_id',
-                            $slip->id
-                        )
+                        'production_slip_digitization_id',
+                        $slip->id
+                    )
                         ->with('from_stage', 'to_stage')
                         ->first();
 
                     if ($stageTransaction) {
                         $stageSizes = \App\Models\OrderStageTransactionDetail::where(
-                                'order_stage_transaction_id',
-                                $stageTransaction->id
-                            )->get();
+                            'order_stage_transaction_id',
+                            $stageTransaction->id
+                        )->get();
 
                         $data['stage_transaction'] = $stageTransaction;
                         $data['stage_sizes'] = $stageSizes;
                     }
+                }
+
+                // NEW: If this is a Packing stage slip, fetch the packing details
+                if ($slip->from_stage_id == 11) {
+                    $packingDetails = \App\Models\PackingMain::where('slip_id', $slip->id)
+                        ->with(['cartons.boxes.items.detail', 'cartons.items.detail'])
+                        ->first();
+                    $data['packing_details'] = $packingDetails;
                 }
                 break;
         }
@@ -185,7 +194,7 @@ class UploadedSlipsController extends Controller
     public function destroy($id)
     {
         $slip = ProductionSlipDigitization::findOrFail($id);
-        
+
         // Optional: Delete physical file if needed
         // if(file_exists(public_path($slip->slip_file))) {
         //     unlink(public_path($slip->slip_file));
