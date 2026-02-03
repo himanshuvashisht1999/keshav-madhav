@@ -21,17 +21,20 @@ class StageMasterUnit extends Model
         'name',
         'phone',
         'status',
+        'employee_id',
+        'password',
         'created_at',
         'updated_at'
     ];
 
-    public function masterStage(){
-        return $this->hasOne('App\Models\MasterProductStage','id','master_stage_id');
+    public function masterStage()
+    {
+        return $this->hasOne('App\Models\MasterProductStage', 'id', 'master_stage_id');
     }
 
     public function masterFabricWarehouse()
     {
-        return $this->belongsTo('App\Models\MasterFabricWarehouse', 'master_fabric_warehouse_id', 'id' );
+        return $this->belongsTo('App\Models\MasterFabricWarehouse', 'master_fabric_warehouse_id', 'id');
     }
-   
+
 }

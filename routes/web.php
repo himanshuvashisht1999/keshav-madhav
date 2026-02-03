@@ -63,6 +63,17 @@ Route::get('/upload-production-slip/{encryptedId}', [AdminLoginController::class
 Route::post('/submit-production-slip', [AdminLoginController::class, 'submitProductionSlip'])->name('submitProductionSlip');
 Route::get('/scan', [AdminFabricReceiptController::class, 'scan'])->name('scan');
 
+// ================= UNIT AUTHENTICATION ROUTES (SEPARATE FROM ADMIN) =================
+Route::prefix('unit')->name('unit.')->group(function () {
+    Route::get('/login', [\App\Http\Controllers\Unit\UnitAuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [\App\Http\Controllers\Unit\UnitAuthController::class, 'login'])->name('login.post');
+    Route::get('/dashboard', [\App\Http\Controllers\Unit\UnitAuthController::class, 'dashboard'])->name('dashboard');
+    Route::post('/submit', [\App\Http\Controllers\Unit\UnitAuthController::class, 'submitSlip'])->name('submit');
+    Route::get('/history', [\App\Http\Controllers\Unit\UnitAuthController::class, 'history'])->name('history');
+    Route::get('/view/{type}/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'viewSlip'])->name('view.slip');
+    Route::get('/logout', [\App\Http\Controllers\Unit\UnitAuthController::class, 'logout'])->name('logout');
+});
+
 ////////////  Admin Routes
 Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
     Route::get('/', [AdminLoginController::class, 'login'])->name('login');
