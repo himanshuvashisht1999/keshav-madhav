@@ -389,20 +389,22 @@ class ProductOrderController extends Controller {
 
         // ================= SIZE DATA =================
         $sizeData = [];
-
+        
         $sizes = [$data->set_size];
+
         if (!empty($data->size_measurement?->size_group)) {
-            $sizes = explode(',', $data->size_measurement->size_group);
+            $sizes = array_map('trim', explode(',', $data->size_measurement->size_group));
         }
 
-        foreach ($sizes as $size) {
-            $size = trim($size);
+        /* size count */
+        $sizeCounts = array_count_values($sizes);
 
+        foreach ($sizeCounts as $size => $count) {
             $sizeData[$size] = [
                 'design_no' => $data->design_number,
                 'color'     => $data->colors->name,
                 'size'      => $size,
-                'pcs'       => $data->set_quantity, // per size
+                'pcs'       => $count * $data->set_quantity,
             ];
         }
 

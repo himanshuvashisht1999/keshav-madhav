@@ -70,7 +70,7 @@ class TimeAllocationService {
     public function getLotDetailsForDisplay($lot_no)
     {
         $rolls = \App\Models\FabricRollAssigning::where('lot_no', $lot_no)
-            ->with(['order_product_set.fabric', 'order_product_set.colors', 'stageMasterUnit']) // Eager load relationships
+            ->with(['order_product_set.fabric', 'order_product_set.colors', 'stageMasterUnit', 'fabricRollAssigningsDetail']) // Eager load relationships
             ->get();
 
         if ($rolls->isEmpty()) {
@@ -82,14 +82,17 @@ class TimeAllocationService {
         $order_nos = $rolls->pluck('order_no')->unique()->filter()->implode(', ');
         $total_meter = $rolls->sum('meter');
         $cutting_master = $rolls->first()->stageMasterUnit->name ?? 'N/A';
-
+        $total_quantity = $rolls->sum(function ($roll) {
+            return $roll->fabricRollAssigningsDetail->sum('quantity');
+        });
         // Get roll-wise details
         $roll_details = $rolls->map(function($roll) {
             return [
                 'roll_no' => $roll->roll_no,
                 'meter' => $roll->meter,
                 'fabric' => $roll->order_product_set->fabric->name ?? '',
-                'color' => $roll->order_product_set->colors->name ?? ''
+                'color' => $roll->order_product_set->colors->name ?? '',
+                'quantity'=> $roll->fabricRollAssigningsDetail->sum('quantity')
             ];
         });
 
@@ -101,6 +104,7 @@ class TimeAllocationService {
             'total_meter' => $total_meter,
             'cutting_master' => $cutting_master,
             'roll_count' => $rolls->count(),
+            'total_quantity' => $total_quantity,
             'roll_details' => $roll_details
         ];
     }

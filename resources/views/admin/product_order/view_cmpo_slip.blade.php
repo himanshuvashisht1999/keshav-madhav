@@ -116,10 +116,10 @@
                     <td>{{ $header['cuttingMaster'] }}</td>
                 </tr>
 
-                <tr>
+                {{-- <tr>
                     <td class="meta-label">Address:</td>
                     <td colspan="3">{{ $header['cuttingMasterAddress'] }}</td>
-                </tr>
+                </tr> --}}
 
                 <tr>
                     <td class="meta-label">Remark:</td>

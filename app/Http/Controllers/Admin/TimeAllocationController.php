@@ -23,12 +23,14 @@ class TimeAllocationController extends Controller {
         $response['skip_slip_data'] = 0; 
         
         $response['available_lots'] = $this->service->getActiveLots();
+        // dd($response);
         return view('admin.time_allocation.create', $response);
     } 
 
     public function getLotDetails(Request $request)
     {
         $details = $this->service->getLotDetailsForDisplay($request->lot_no);
+        // dd($details);
         return response()->json($details);
     }
 
