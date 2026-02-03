@@ -1261,6 +1261,10 @@ class OrderDigitalizationService {
         $model_name = ($stage_id == 1)
         ? OrderPrintingStageTransaction::class
         : OrderStageTransaction::class;
+
+        $out_model_name = ($stage_id == 1)
+        ? OrderPrintingToStichingTransaction::class
+        : OrderStageTransaction::class;
         $candidateLots = $model_name::where('to_stage_id', $stage_id)
             ->distinct()
             ->pluck('lot_no');
@@ -1277,7 +1281,7 @@ class OrderDigitalizationService {
                 ->sum('quantity');
 
             // Calculate Outflow (Total Items left this stage)
-            $outflow = $model_name::where('from_stage_id', $stage_id)
+            $outflow = $out_model_name::where('from_stage_id', $stage_id)
                 ->where('lot_no', $lot_no)
                 ->sum('quantity');
             
