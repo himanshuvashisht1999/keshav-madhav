@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class OrderMain extends Model
 {
     use HasFactory;
-    protected $table= 'order_main';
+    protected $table = 'order_main';
     protected $fillable = [
         'id',
         'sno',
@@ -24,22 +24,26 @@ class OrderMain extends Model
         'updated_at'
     ];
 
-    public function customer(){
-        return $this->hasOne('App\Models\MasterCustomer','id','master_customer_id');
+    public function customer()
+    {
+        return $this->hasOne('App\Models\MasterCustomer', 'id', 'master_customer_id');
     }
-    public function orders(){
-        return $this->hasMany('App\Models\Order','order_main_id','id');
+    public function orders()
+    {
+        return $this->hasMany('App\Models\Order', 'order_main_id', 'id');
     }
-    public function order_products(){
-        return $this->hasMany('App\Models\OrderProduct','order_main_id','id');
+    public function order_products()
+    {
+        return $this->hasMany('App\Models\OrderProduct', 'order_main_id', 'id');
     }
     public function packages()
     {
         return $this->hasMany(Package::class, 'order_main_id');
     }
 
-    public function package(){
-        return $this->hasOne('App\Models\Package','order_main_id','id');
+    public function package()
+    {
+        return $this->hasOne('App\Models\Package', 'order_main_id', 'id');
     }
 
     public function OrderProductSets()
@@ -58,5 +62,10 @@ class OrderMain extends Model
             'id' // Local key on PackingMain table
         );
     }
-    
+
+    public function packingMains()
+    {
+        return $this->hasMany(PackingMain::class, 'order_main_id');
+    }
+
 }
