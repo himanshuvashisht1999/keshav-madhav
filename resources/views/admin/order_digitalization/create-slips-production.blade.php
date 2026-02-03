@@ -263,7 +263,7 @@ $(function(){
         $('#basicInfo').html(html);
     }
 
-    function renderInventory(inventory) {
+    function renderInventory(inventory) { 
         let tbody = $('#inventoryTableBody');
         tbody.empty();
 
