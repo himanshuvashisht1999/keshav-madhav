@@ -82,39 +82,61 @@ class UnitAuthController extends Controller
             return redirect()->route('unit.login');
         }
 
-        $stageMasterUnitId = Crypt::decryptString($request->stage_master_unit_id);
-        $data = StageMasterUnit::findOrFail($stageMasterUnitId);
+        try {
+            $stageMasterUnitId = Crypt::decryptString($request->stage_master_unit_id);
+            $data = StageMasterUnit::findOrFail($stageMasterUnitId);
 
-        $request->validate([
-            'photo_data' => 'required'
-        ]);
+            $request->validate([
+                'photo_data' => 'required'
+            ]);
 
-        $slip_file = null;
+            $slip_file = null;
 
-        if ($request->photo_data) {
-            $image = $request->photo_data;
-            $image = preg_replace('/^data:image\/\w+;base64,/', '', $image);
-            $image = str_replace(' ', '+', $image);
-            $imageData = base64_decode($image);
-            $slip_file = 'production-slip-' . rand(1000, 9999) . '_' . time() . '.jpg';
-            $destinationPath = public_path('assets/production_slips');
+            if ($request->photo_data) {
+                $image = $request->photo_data;
 
-            if (!File::exists($destinationPath)) {
-                File::makeDirectory($destinationPath, 0777, true);
+                // Remove base64 prefix
+                $image = preg_replace('/^data:image\/\w+;base64,/', '', $image);
+                $image = str_replace(' ', '+', $image);
+
+                // Decode base64
+                $imageData = base64_decode($image);
+
+                // Check if decode was successful
+                if ($imageData === false) {
+                    return redirect()->back()->withErrors(['photo_data' => 'Invalid image data. Please try capturing the photo again.']);
+                }
+
+                $slip_file = 'production-slip-' . rand(1000, 9999) . '_' . time() . '.jpg';
+                $destinationPath = public_path('assets/production_slips');
+
+                if (!File::exists($destinationPath)) {
+                    File::makeDirectory($destinationPath, 0777, true);
+                }
+
+                // Save the file
+                $fileSaved = file_put_contents($destinationPath . '/' . $slip_file, $imageData);
+
+                if ($fileSaved === false) {
+                    \Log::error('Failed to save production slip file', [
+                        'path' => $destinationPath . '/' . $slip_file,
+                        'unit_id' => $stageMasterUnitId
+                    ]);
+                    return redirect()->back()->withErrors(['photo_data' => 'Failed to save image file. Please try again.']);
+                }
             }
 
-            file_put_contents($destinationPath . '/' . $slip_file, $imageData);
-        }
+            // if ($request->type == 1) {
+            //     $save_data = new FabricRollAssigning;
+            //     $save_data->stage_master_unit_id = $data->id;
+            //     $save_data->slip_file = $slip_file;
+            //     $save_data->status = 0;
+            //     if ($request->has('to_stage_id'))
+            //         $save_data->to_stage_id = $request->to_stage_id;
+            //     $save_data->save();
 
-        if ($request->type == 1) {
-            $save_data = new FabricRollAssigning;
-            $save_data->stage_master_unit_id = $data->id;
-            $save_data->slip_file = $slip_file;
-            $save_data->status = 0;
-            if ($request->has('to_stage_id'))
-                $save_data->to_stage_id = $request->to_stage_id;
-            $save_data->save();
-        } else {
+            //     \Log::info('FabricRollAssigning saved', ['id' => $save_data->id, 'slip_file' => $slip_file]);
+            // } else {
             $save_data = new ProductionSlipDigitization;
             $save_data->from_stage_id = $data->master_stage_id;
             $save_data->stage_master_unit_id = $data->id;
@@ -125,9 +147,20 @@ class UnitAuthController extends Controller
             if ($request->has('order_product_set_id'))
                 $save_data->order_product_set_id = $request->order_product_set_id;
             $save_data->save();
-        }
 
-        return redirect()->back()->withSuccess('Production slip uploaded successfully.');
+            \Log::info('ProductionSlipDigitization saved', ['id' => $save_data->id, 'slip_file' => $slip_file]);
+            //}
+
+            return redirect()->back()->withSuccess('Production slip uploaded successfully.');
+
+        } catch (\Exception $e) {
+            dd('error' . $e->getMessage());
+            \Log::error('Error in submitSlip', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->withErrors(['error' => 'An error occurred: ' . $e->getMessage()]);
+        }
     }
 
     public function logout()
