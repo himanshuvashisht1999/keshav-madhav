@@ -709,10 +709,8 @@
 
                 let set = order.order_product_sets.find(s => s.id === designSetId);
                 if (!set) return;
-
-                const sum_total = order.order_product_sets.reduce((acc, item) => {
-                    return acc + item.total_quantity;
-                }, 0);
+                console.log(order.order_product_sets);
+                const total_quantity = set ? set.total_quantity : 0;
                 /* --------------------
                    SHOW BASIC INFO
                 -------------------- */
@@ -721,7 +719,7 @@
                 $('#show_pattern').text(set.master_design_pattern?.name ?? '—');
                 $('#show_fitting').text(set.master_product_fitting?.name ?? '—');
                 $('#show_cutting_master').text(set.stage_master_unit?.name ?? '—');
-                $('#show_total_order_pcs').text(sum_total + ' pcs' ?? '—');
+                $('#show_total_order_pcs').text(total_quantity + ' pcs' ?? '—');
 
                 /* --------------------
                    LOAD SIZE INPUTS
