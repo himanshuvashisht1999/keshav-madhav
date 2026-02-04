@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -24,7 +25,7 @@
             --secondary: #764ba2;
             --success: #10b981;
             --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
 
         body {
@@ -60,7 +61,7 @@
         }
 
         .unit-badge {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(10px);
             padding: 6px 12px;
             border-radius: 10px;
@@ -106,7 +107,7 @@
 
         .slip-card:active {
             transform: scale(0.98);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .slip-thumbnail {
@@ -219,38 +220,32 @@
             left: 0;
             right: 0;
             background: white;
-            padding: 12px 20px 20px;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            padding: 12px 20px 24px;
             display: flex;
             justify-content: space-around;
-            z-index: 1000;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
             border-top: 1px solid #f3f4f6;
+            z-index: 1000;
         }
 
         .nav-item {
+            text-decoration: none;
+            color: #9ca3af;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 6px;
-            text-decoration: none;
-            color: #9ca3af;
+            gap: 5px;
+            font-weight: 600;
+            font-size: 11px;
             transition: all 0.3s;
-            padding: 8px 16px;
-            border-radius: 12px;
-        }
-
-        .nav-item.active {
-            color: var(--primary);
-            background: rgba(102, 126, 234, 0.1);
         }
 
         .nav-item i {
             font-size: 22px;
         }
 
-        .nav-label {
-            font-size: 12px;
-            font-weight: 600;
+        .nav-item.active {
+            color: var(--primary);
         }
 
         @media (max-width: 480px) {
@@ -268,7 +263,9 @@
             }
         }
 
-        @supports (padding: max(0px)) {
+        @supports
+        (padding: max(0))
+            {
             .app-header {
                 padding-top: max(20px, env(safe-area-inset-top));
             }
@@ -279,85 +276,82 @@
         }
     </style>
 </head>
+
 <body>
 
-<!-- App Header -->
-<div class="app-header">
-    <div class="header-top">
-        <div class="page-title">
-            <i class="fas fa-history"></i>
-            <span>Upload History</span>
+    <!-- App Header -->
+    <div class="app-header">
+        <div class="header-top">
+            <div class="page-title">
+                <i class="fas fa-history"></i>
+                <span>History</span>
+            </div>
+            <a href="{{ route('unit.logout') }}" style="color: white; font-size: 20px;">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
         </div>
     </div>
-    <div class="unit-badge">
-        <i class="fas fa-industry"></i> {{ $unit->name }}
-    </div>
-</div>
 
-<!-- Main Content -->
-<div class="app-content">
-    <div class="slip-grid">
-        @forelse($slips as $slip)
-            <a href="{{ route('unit.view.slip', ['type' => $slip['type'], 'id' => $slip['id']]) }}" class="slip-card">
-                <img 
-                    src="{{ asset('assets/production_slips/' . $slip['slip_file']) }}" 
-                    alt="Slip" 
-                    class="slip-thumbnail"
-                    onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23f3f4f6%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%239ca3af%22 font-size=%2214%22%3E📷%3C/text%3E%3C/svg%3E'"
-                >
-                <div class="slip-content">
-                    <div class="slip-header">
-                        <div>
-                            <div class="slip-date">
-                                <i class="far fa-clock"></i> {{ $slip['created_at']->format('d M Y, h:i A') }}
+    <!-- Main Content -->
+    <div class="app-content">
+        <div class="slip-grid">
+            @forelse($slips as $slip)
+                <a href="{{ route('unit.view.slip', ['type' => 'production', 'id' => $slip['id']]) }}" class="slip-card">
+                    <img src="/assets/production_slips/{{ $slip['slip_file'] }}" alt="Slip" class="slip-thumbnail"
+                        onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23f3f4f6%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%239ca3af%22 font-size=%2214%22%3E📷%3C/text%3E%3C/svg%3E'">
+                    <div class="slip-content">
+                        <div class="slip-header">
+                            <div>
+                                <div class="slip-date">
+                                    <i class="far fa-clock"></i> {{ $slip['created_at']->format('d M Y, h:i A') }}
+                                </div>
+                                <div class="slip-badges">
+                                    <span class="badge badge-type">
+                                        {{ $slip['type'] === 'fabric' ? '🧵 Fabric' : '📦 Production' }}
+                                    </span>
+                                    <span class="badge {{ $slip['status'] == 0 ? 'badge-pending' : 'badge-approved' }}">
+                                        {{ $slip['status'] == 0 ? '⏳ Pending' : '✅ Done' }}
+                                    </span>
+                                </div>
                             </div>
-                            <div class="slip-badges">
-                                <span class="badge badge-type">
-                                    {{ $slip['type'] === 'fabric' ? '🧵 Fabric' : '📦 Production' }}
-                                </span>
-                                <span class="badge {{ $slip['status'] == 0 ? 'badge-pending' : 'badge-approved' }}">
-                                    {{ $slip['status'] == 0 ? '⏳ Pending' : '✅ Done' }}
-                                </span>
-                            </div>
+                            <i class="fas fa-chevron-right chevron"></i>
                         </div>
-                        <i class="fas fa-chevron-right chevron"></i>
+                        <div class="slip-meta">
+                            @if($slip['type'] === 'fabric')
+                                <span><i class="fas fa-tag"></i> {{ $slip['lot_no'] }}</span>
+                                <span><i class="fas fa-shopping-cart"></i> {{ $slip['order_no'] }}</span>
+                            @else
+                                <span><i class="fas fa-tag"></i> {{ $slip['lot_no'] }}</span>
+                                <span><i class="fas fa-layer-group"></i> {{ $slip['stage'] }}</span>
+                            @endif
+                        </div>
                     </div>
-                    <div class="slip-meta">
-                        @if($slip['type'] === 'fabric')
-                            <span><i class="fas fa-tag"></i> {{ $slip['lot_no'] }}</span>
-                            <span><i class="fas fa-shopping-cart"></i> {{ $slip['order_no'] }}</span>
-                        @else
-                            <span><i class="fas fa-tag"></i> {{ $slip['lot_no'] }}</span>
-                            <span><i class="fas fa-layer-group"></i> {{ $slip['stage'] }}</span>
-                        @endif
-                    </div>
+                </a>
+            @empty
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <div class="empty-text">No Slips Yet</div>
+                    <div class="empty-subtext">Your uploaded slips will appear here</div>
                 </div>
-            </a>
-        @empty
-            <div class="empty-state">
-                <div class="empty-icon">📭</div>
-                <div class="empty-text">No Slips Yet</div>
-                <div class="empty-subtext">Your uploaded slips will appear here</div>
-            </div>
-        @endforelse
+            @endforelse
+        </div>
     </div>
-</div>
 
-<!-- Bottom Navigation -->
-<div class="bottom-nav">
-    <a href="{{ route('unit.dashboard') }}" class="nav-item">
-        <i class="fas fa-camera"></i>
-        <span class="nav-label">Upload</span>
-    </a>
-    <a href="{{ route('unit.history') }}" class="nav-item active">
-        <i class="fas fa-history"></i>
-        <span class="nav-label">History</span>
-    </a>
-    <a href="{{ route('unit.logout') }}" class="nav-item">
-        <i class="fas fa-sign-out-alt"></i>
-        <span class="nav-label">Logout</span>
-    </a>
-</div>
+    <div class="bottom-nav">
+        <a href="{{ route('unit.dashboard') }}" class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="{{ route('unit.assignments') }}" class="nav-item">
+            <i class="fas fa-clipboard-list"></i>
+            <span>Tasks</span>
+        </a>
+        <a href="{{ route('unit.history') }}" class="nav-item active">
+            <i class="fas fa-clock"></i>
+            <span>History</span>
+        </a>
+    </div>
 
 </body>
+
 </html>

@@ -71,6 +71,10 @@ Route::prefix('unit')->name('unit.')->group(function () {
     Route::post('/submit', [\App\Http\Controllers\Unit\UnitAuthController::class, 'submitSlip'])->name('submit');
     Route::get('/history', [\App\Http\Controllers\Unit\UnitAuthController::class, 'history'])->name('history');
     Route::get('/view/{type}/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'viewSlip'])->name('view.slip');
+    Route::get('/assignments', [\App\Http\Controllers\Unit\UnitAuthController::class, 'assignments'])->name('assignments');
+    Route::get('/assignment-details/{type}/{id}', [App\Http\Controllers\Unit\UnitAuthController::class, 'showAssignmentDetails'])->name('assignments.details');
+    Route::get('/download-slip/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'downloadSlip'])->name('download.slip');
+    Route::get('/download-cmpo/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'downloadCmpo'])->name('download.cmpo');
     Route::get('/logout', [\App\Http\Controllers\Unit\UnitAuthController::class, 'logout'])->name('logout');
 });
 
