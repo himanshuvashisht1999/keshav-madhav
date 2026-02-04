@@ -14,7 +14,7 @@ class ReportController extends Controller
 {
     protected $service;
     public function __construct(
-        Service $service, 
+        Service $service,
     ) {
         $this->service = $service;
     }
@@ -22,7 +22,7 @@ class ReportController extends Controller
     public function salesOrder(Request $request)
     {
         $response['data'] = $this->service->salesOrder($request);
-        return view('admin.report.sales_order',$response);
+        return view('admin.report.sales_order', $response);
     }
 
     public function salesOrderDetail($id)
@@ -53,7 +53,7 @@ class ReportController extends Controller
         $response['warehouses'] = $this->service->warehouses();
         $response['fabrics'] = $this->service->fabrics();
         $response['filters'] = $request->all();
-        return view('admin.report.stock',$response);
+        return view('admin.report.stock', $response);
     }
     public function fabricRollDetails(Request $request)
     {
@@ -61,7 +61,7 @@ class ReportController extends Controller
             $request->fabric_sku,
             $request->warehouse_id
         );
-    } 
+    }
     // public function stockExport(Request $request)
     // {
     //     // Same summary data as stock page
@@ -104,9 +104,9 @@ class ReportController extends Controller
 
         // Roll-level data (same logic as fabricRollDetails)
         $rolls = FabricReceiptDetail::with([
-                'fabric_receipt.vendor',
-                'purchase_order'
-            ])
+            'fabric_receipt.vendor',
+            'purchase_order'
+        ])
             ->where('remaining_quantity', '>', 0)
 
             ->when($request->filled('warehouse_id'), function ($q) use ($request) {
@@ -129,8 +129,8 @@ class ReportController extends Controller
 
         return response()
             ->view('admin.report.stock_export', [
-                'data'       => $data,
-                'rolls'      => $rolls,
+                'data' => $data,
+                'rolls' => $rolls,
                 'exportedAt' => now()
             ])
             ->header('Content-Type', 'application/vnd.ms-excel')
@@ -146,7 +146,7 @@ class ReportController extends Controller
         $response['data'] = $this->service->purchaseOrder($request);
         $response['fabrics'] = $this->service->fabrics();
         $response['filters'] = $request->all();
-        return view('admin.report.purchase_order',$response);
+        return view('admin.report.purchase_order', $response);
     }
 
     public function purchaseOrderItemDetails(Request $request)
@@ -187,7 +187,7 @@ class ReportController extends Controller
     public function orderTrackingSystem(Request $request)
     {
         $response['data'] = $this->service->orderTrackingSystem($request);
-        return view('admin.report.order_tracking',$response);
+        return view('admin.report.order_tracking', $response);
     }
 
     public function lotTrackingDetails(Request $request)
@@ -216,17 +216,17 @@ class ReportController extends Controller
     }
 
     public function dispatchOrder(Request $request)
-    {   
-        $response['customers'] = $this->service->customers();   
+    {
+        $response['customers'] = $this->service->customers();
         $response['data'] = $this->service->dispatchOrder($request);
-        return view('admin.report.dispatch_order',$response);
+        return view('admin.report.dispatch_order', $response);
     }
 
     public function lots(Request $request)
     {
-        $response['data'] = $this->service->lots($request);
+        $response['data'] = $this->service->orderLotsDetailed($request);
         $response['lotNos'] = $this->service->lot_numbers();
-        return view('admin.report.lots',$response);
+        return view('admin.report.lots', $response);
     }
 
     public function lotDetails(Request $request)
@@ -234,6 +234,6 @@ class ReportController extends Controller
         $response['data'] = $this->service->lotDetails($request->lot_no);
         $response['master_stages'] = $this->service->master_stages();
         // dd($response['data']);
-        return view('admin.report.lot_details',$response);
+        return view('admin.report.lot_details', $response);
     }
 }

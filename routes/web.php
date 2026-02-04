@@ -78,6 +78,31 @@ Route::prefix('unit')->name('unit.')->group(function () {
     Route::get('/logout', [\App\Http\Controllers\Unit\UnitAuthController::class, 'logout'])->name('logout');
 });
 
+// ================= OWNER AUTHENTICATION ROUTES =================
+Route::prefix('owner')->name('owner.')->group(function () {
+    Route::get('/login', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'login'])->name('login.post');
+
+    Route::middleware(['checkOwnerLogin'])->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'dashboard'])->name('dashboard');
+        Route::get('/logout', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'logout'])->name('logout');
+
+        // Report specific routes
+        Route::get('/orders', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'orders'])->name('orders');
+        Route::get('/lots', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'lots'])->name('lots');
+        Route::get('/lot-details', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'lotDetails'])->name('lot-details');
+        Route::get('/stock', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'stock'])->name('stock');
+        Route::get('/stock/roll-details', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'stockRollDetails'])->name('stock.roll.details');
+
+        Route::prefix('order-summary')->name('order-summary.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'orderSummary'])->name('index');
+            Route::get('/list', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'orderSummaryList'])->name('indexList');
+            Route::get('/view', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'orderSummaryView'])->name('view');
+            Route::get('/pdf', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'orderSummaryPdf'])->name('pdf');
+        });
+    });
+});
+
 ////////////  Admin Routes
 Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
     Route::get('/', [AdminLoginController::class, 'login'])->name('login');
