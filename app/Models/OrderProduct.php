@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class OrderProduct extends Model
 {
     use HasFactory;
-    protected $table= 'order_products';
+    protected $table = 'order_products';
     protected $fillable = [
         'id',
         'sno',
@@ -25,24 +25,36 @@ class OrderProduct extends Model
         'created_at',
         'updated_at'
     ];
-    public function product_details(){
-        return $this->hasMany('App\Models\OrderProductDetail','order_product_id','id');
+    public function product_details()
+    {
+        return $this->hasMany('App\Models\OrderProductDetail', 'order_product_id', 'id');
     }
-    public function order_stages(){
-        return $this->hasMany('App\Models\OrderProductStage','order_product_id','id');
+    public function order_stages()
+    {
+        return $this->hasMany('App\Models\OrderProductStage', 'order_product_id', 'id');
     }
-    public function order_stage_trnsactions(){
-        return $this->hasMany('App\Models\OrderStageTransaction','order_product_id','id');
+    public function order_stage_trnsactions()
+    {
+        return $this->hasMany('App\Models\OrderStageTransaction', 'order_product_id', 'id');
     }
-    public function first_stage(){
-        return $this->hasOne('App\Models\OrderProductStage','order_product_id','id')->orderBy('id','asc');
+    public function first_stage()
+    {
+        return $this->hasOne('App\Models\OrderProductStage', 'order_product_id', 'id')->orderBy('id', 'asc');
     }
-    public function order(){
-        return $this->hasOne('App\Models\Order','id','order_id');
-    }
-    public function product_data(){
-        return $this->hasOne('App\Models\ProductionGoods','sku','product_sku');
+    public function orderProductSet()
+    {
+        return $this->belongsTo(OrderProductSet::class, 'order_product_set_id');
     }
 
-    
+    public function orderMain()
+    {
+        return $this->belongsTo(OrderMain::class, 'order_main_id');
+    }
+
+    public function product_data()
+    {
+        return $this->hasOne('App\Models\ProductionGoods', 'sku', 'product_sku');
+    }
+
+
 }

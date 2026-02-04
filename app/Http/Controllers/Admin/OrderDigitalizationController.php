@@ -6,26 +6,31 @@ use App\Services\Admin\OrderDigitalizationService as Service;
 use App\Services\Admin\ProductOrderService;
 use App\Services\Admin\FabricReceiptService;
 
-class OrderDigitalizationController extends Controller { 
+class OrderDigitalizationController extends Controller
+{
     protected $service;
-    public function __construct(Service $service, ProductOrderService $productOrderService, FabricReceiptService $fabricReceiptService ) {
+    public function __construct(Service $service, ProductOrderService $productOrderService, FabricReceiptService $fabricReceiptService)
+    {
         $this->service = $service;
         $this->productOrderService = $productOrderService;
         $this->fabricReceiptService = $fabricReceiptService;
 
     }
-    public function index_slip_production(Request $request){
+    public function index_slip_production(Request $request)
+    {
         // $response['customers'] = $this->productOrderService->customers();
         // $response['order_main_id'] = $request->id ?? 0;
         // // $response['order_main'] = $this->productOrderService->orderMainDetails($request);
         return view('admin.order_digitalization.index-slip-production');
-    } 
-    public function indexList(Request $request){
+    }
+    public function indexList(Request $request)
+    {
         return $this->service->indexList($request);
     }
- 
-    public function createSlipsProduction(Request $request){
-        
+
+    public function createSlipsProduction(Request $request)
+    {
+
         $response['products'] = $this->productOrderService->products();
         // // dd( $response['products']);
         $response['product_size'] = $this->service->product_sizes();
@@ -33,21 +38,22 @@ class OrderDigitalizationController extends Controller {
         $response['colours'] = $this->productOrderService->getColours();
         $response['customers'] = $this->productOrderService->customers();
         $response['slip_data'] = $this->service->getSlipDigitalization($request);
-        if($response['slip_data']['status'] == 1){
+        if ($response['slip_data']['status'] == 1) {
             return redirect()->back()->withError('Already digitized slip.');
         }
         $response['skip_slip_data'] = $this->service->getSkipSlips();
         // dd($response['slip_data']);
-        if(!empty($response['slip_data']['from_stage']['master_stage_id'])){
-             $response['available_lots'] = $this->service->getAvailableLotsForStage($response['slip_data']['from_stage']['master_stage_id']);
+        if (!empty($response['slip_data']['from_stage']['master_stage_id'])) {
+            $response['available_lots'] = $this->service->getAvailableLotsForStage($response['slip_data']['from_stage']['master_stage_id']);
         } else {
-             $response['available_lots'] = [];
+            $response['available_lots'] = [];
         }
         /// roll assign 
-        return view('admin.order_digitalization.create-slips-production',$response);
+        return view('admin.order_digitalization.create-slips-production', $response);
     }
 
-    public function createRollsAssign(){
+    public function createRollsAssign()
+    {
         $response['order_no_data'] = $this->service->orderMainForRollAssign();
         $response['cutting_units'] = $this->fabricReceiptService->cutting_units();
         // dd($response['cutting_units']);
@@ -59,61 +65,69 @@ class OrderDigitalizationController extends Controller {
     }
 
 
-    public function storeRollsAssign(Request $request){
+    public function storeRollsAssign(Request $request)
+    {
         $data = $this->service->storeRollsAssign($request);
-        if($data['status_code'] == 1){
+        if ($data['status_code'] == 1) {
             return redirect()->route('admin.uploaded-slips.index')->withSuccess($data['message']);
-        }else{
+        } else {
             return redirect()->back()->withError($data['message']);
         }
     }
 
-    public function skip(Request $request){
+    public function skip(Request $request)
+    {
         $data = $this->service->skip($request);
-        if($data['status_code'] == 1){
+        if ($data['status_code'] == 1) {
             return redirect()->route('admin.uploaded-slips.index')->withSuccess($data['message']);
             // return redirect()->back()->withSuccess($data['message']);
-            
-        }else{
+
+        } else {
             return redirect()->back()->withError($data['message']);
         }
     }
 
-    public function deleteSlip(Request $request){
+    public function deleteSlip(Request $request)
+    {
         $data = $this->service->deleteSlip($request);
-        if($data['status_code'] == 1){
+        if ($data['status_code'] == 1) {
             return redirect()->route('admin.uploaded-slips.index')->withSuccess($data['message']);
             // return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
-        }else{
+        } else {
             return redirect()->back()->withError($data['message']);
         }
     }
 
-    public function addSkipSlips(Request $request){
+    public function addSkipSlips(Request $request)
+    {
         $data = $this->service->addSkipSlips($request);
-        if($data['status_code'] == 1){
+        if ($data['status_code'] == 1) {
             return redirect()->route('admin.uploaded-slips.index')->withSuccess($data['message']);
             // return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($data['message']);
-        }else{
+        } else {
             return redirect()->back()->withError($data['message']);
         }
     }
-    
-    public function edit(Request $request){
+
+    public function edit(Request $request)
+    {
         $response['data'] = $this->service->edit($request);
         $response['products'] = $this->service->products();
-        return view('admin.product_order.edit',$response);
+        return view('admin.product_order.edit', $response);
     }
-    public function update(Request $request){
+    public function update(Request $request)
+    {
         $data = $this->service->update($request);
         return redirect()->route('admin.product_order.index')->withSuccess('The product order has been successfully updated.');
     }
-    public function view(Request $request){
+    public function view(Request $request)
+    {
         $response['data'] = $this->service->view($request);
-        return view('admin.product_order.view',$response);
+        return view('admin.product_order.view', $response);
     }
-    
-    public function getRollsData(Request $request){
+
+    public function getRollsData(Request $request)
+    {
         $response = $this->service->getRollsData($request);
         return response()->json($response);
     }
@@ -128,7 +142,7 @@ class OrderDigitalizationController extends Controller {
     //         //// rolls assign
     //         $response['master_fabric_warehouse'] = $this->service->master_fabric_warehouse($response['cutting_slip']->getUnitMaster?->master_fabric_warehouse_id);
 
-           
+
     //         $response['product_size'] = $this->service->product_sizes();
     //         $response['colours'] = $this->productOrderService->getColours();
     //         $response['designs'] = $this->service->designs();
@@ -149,34 +163,50 @@ class OrderDigitalizationController extends Controller {
     //     return view('admin.order_digitalization.cutting_master',$response);
     // }
 
-    public function cuttingMaster(Request $request){
+    public function cuttingMaster(Request $request)
+    {
         $production_slip_digitization = $this->service->cutting_slip($request);
-        
-        if($production_slip_digitization){
-            if($production_slip_digitization->status == 1 ){
+
+        if ($production_slip_digitization) {
+            if ($production_slip_digitization->status == 1) {
                 return redirect()->back()->withError('Already digitized slip.');
             }
             $response['orders'] = $this->service->orders($production_slip_digitization->stage_master_unit_id);
-            $response['lots_stitching'] = $this->service->getLotsBySlip(4,$request->slip_id);
-            $response['lots_printing'] = $this->service->getLotsBySlip(1,$request->slip_id);
-            
+            $response['lots_stitching'] = $this->service->getLotsBySlip(4, $request->slip_id);
+            $response['lots_printing'] = $this->service->getLotsBySlip(1, $request->slip_id);
+
             // NEW: Fetch Units
             $warehouse_id = $production_slip_digitization->getUnitMaster->master_fabric_warehouse_id ?? 0;
             $response['stitching_units'] = $this->service->getStageUnits($warehouse_id, 4); // 4 = Stitching
             $response['printing_units'] = $this->service->getStageUnits($warehouse_id, 1);  // 1 = Printing
-            
+
             $cutting_unit = $production_slip_digitization->stage_master_unit_id;
-            
-        }else{
+
+        } else {
             $response['orders'] = [];
             $response['lots_stitching'] = [];
             $response['lots_printing'] = [];
             $response['stitching_units'] = [];
             $response['printing_units'] = [];
-        } 
+        }
+
+        $preFilledOrderId = null;
+        $preFilledDesignId = null;
+
+        if ($production_slip_digitization && $production_slip_digitization->order_product_set_id) {
+            $set = \App\Models\OrderProductSet::find($production_slip_digitization->order_product_set_id);
+            if ($set) {
+                $preFilledOrderId = $set->order_main_id;
+                $preFilledDesignId = $set->id;
+            }
+        }
+
         $response['cutting_slip'] = $production_slip_digitization;
         $response['used_lots'] = $this->service->used_lots();
-        return view('admin.order_digitalization.cutting_master',$response);
+        $response['preFilledOrderId'] = $preFilledOrderId;
+        $response['preFilledDesignId'] = $preFilledDesignId;
+
+        return view('admin.order_digitalization.cutting_master', $response);
     }
 
     public function getLotDetails(Request $request)
@@ -188,7 +218,7 @@ class OrderDigitalizationController extends Controller {
     public function storeStitching(Request $request)
     {
         $result = $this->service->storeStitching($request);
-        
+
         if ($result['status_code'] == 1) {
             return redirect()->route('admin.uploaded-slips.index')->withSuccess($result['message']);
             // return redirect()->route('admin.order_digitalization.cutting-master')
@@ -202,7 +232,7 @@ class OrderDigitalizationController extends Controller {
     public function storePrinting(Request $request)
     {
         $result = $this->service->storePrinting($request);
-        
+
         if ($result['status_code'] == 1) {
             return redirect()->route('admin.uploaded-slips.index')->withSuccess($result['message']);
             // return redirect()->route('admin.order_digitalization.cutting-master')
@@ -213,12 +243,14 @@ class OrderDigitalizationController extends Controller {
         }
     }
 
-    public function getDesigns(Request $request){
+    public function getDesigns(Request $request)
+    {
         $response = $this->service->getDesigns($request);
         return response()->json($response);
     }
 
-    public function getDesignDetails(Request $request){
+    public function getDesignDetails(Request $request)
+    {
         $response = $this->service->getDesignDetails($request);
         return response()->json($response);
     }
@@ -226,7 +258,7 @@ class OrderDigitalizationController extends Controller {
     public function getLotDetailsForDisplay(Request $request)
     {
         $details = $this->service->getLotDetailsForDisplay($request->lot_no);
-        
+
         // Try alternative method if fabric/orders are empty
         if ($details && (empty($details['fabric_names']) || empty($details['order_numbers']))) {
             $alternative = $this->service->getLotDetailsAlternative($request->lot_no);
@@ -239,7 +271,7 @@ class OrderDigitalizationController extends Controller {
                 }
             }
         }
-        
+
         return response()->json($details);
     }
 

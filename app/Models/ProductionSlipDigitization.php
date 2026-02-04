@@ -22,6 +22,7 @@ class ProductionSlipDigitization extends Model
         'lot_no',
         'save_type',
         'slip_file',
+        'order_product_set_id',
         'remarks',
         'status',
         'created_at',
@@ -45,7 +46,7 @@ class ProductionSlipDigitization extends Model
     {
         return $this->belongsTo(\App\Models\MasterProductStage::class, 'from_stage_id', 'id');
     }
-   
+
     public function packingMain()
     {
         return $this->hasOne('App\Models\PackingMain', 'slip_id', 'id');
