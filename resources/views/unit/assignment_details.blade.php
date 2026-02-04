@@ -451,6 +451,16 @@
                 </div>
             @endif
 
+            @if($errors->any())
+                <div
+                    style="padding: 12px; background: #fee2e2; color: #991b1b; border-radius: 12px; margin-bottom: 15px; font-size: 14px; font-weight: 600;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    @foreach($errors->all() as $error)
+                        {{ $error }}
+                    @endforeach
+                </div>
+            @endif
+
             <form action="{{ route('unit.submit') }}" method="POST" id="uploadForm">
                 @csrf
                 <input type="hidden" name="stage_master_unit_id" value="{{ $encrypted_unit_id }}">
@@ -577,6 +587,16 @@
                 if (stream) {
                     stream.getTracks().forEach(track => track.stop());
                     stream = null;
+                }
+            });
+
+            // Form validation before submit
+            $('#uploadForm').on('submit', function (e) {
+                const photoData = $('#photoData').val();
+                if (!photoData || photoData.trim() === '') {
+                    e.preventDefault();
+                    alert('⚠️ Please capture or select a photo before submitting!');
+                    return false;
                 }
             });
         });
