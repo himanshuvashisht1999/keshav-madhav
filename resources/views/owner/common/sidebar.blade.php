@@ -28,13 +28,6 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ route('owner.orders') }}"
-                        class="nav-link {{ request()->routeIs('owner.orders') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-shopping-cart"></i>
-                        <p>Order Details</p>
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a href="{{ route('owner.order-summary.index') }}"
                         class="nav-link {{ request()->routeIs('owner.order-summary.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-file-invoice"></i>

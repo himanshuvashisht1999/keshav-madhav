@@ -2,286 +2,315 @@
 
 @section('content')
     <style>
-        /* ===== COMMON STYLE ===== */
-        .report-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 20px;
-            background: white;
-            border-bottom: 1px solid #eee;
-        }
-
-        .report-header h3 {
-            font-weight: 700;
-            margin: 0;
-            color: #1e3a8a;
-        }
-
-        .report-card {
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, .05);
-            border: none;
-            margin: 0 20px;
-        }
-
-        .table-report thead th {
-            background: #1e3a8a;
-            color: #fff !important;
-            font-weight: 600;
-            white-space: nowrap;
-            vertical-align: middle;
-            padding: 12px;
-        }
-
-        .table-report tbody td {
-            vertical-align: middle;
-            font-size: 14px;
-            padding: 12px;
-        }
-
-        .fabric-cell {
-            background: #f8f9fa;
-            font-weight: 700;
-            color: #1e3a8a;
-        }
-
-        /* MOBILE RESPONSIVE TWEAKS */
+        /* MOBILE APP LIST STYLES */
         @media (max-width: 991.98px) {
-            .report-header {
-                background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-                color: white;
+            .app-container {
+                padding: 15px;
+            }
+
+            .stock-card {
+                background: white;
+                border: 1px solid #f1f5f9;
+                border-radius: 16px;
+                padding: 18px;
+                margin-bottom: 16px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            }
+
+            .card-header-top {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+
+            .sku-label {
+                font-size: 15px;
+                font-weight: 800;
+                color: #1e293b;
+            }
+
+            .wh-pill {
+                padding: 4px 10px;
+                border-radius: 20px;
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 0.5px;
+                background: #f1f5f9;
+                color: #64748b;
+            }
+
+            .card-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #f1f5f9;
+                margin-bottom: 15px;
+            }
+
+            .info-item label {
+                display: block;
+                font-size: 10px;
+                color: #94a3b8;
+                text-transform: uppercase;
+                font-weight: 700;
+                margin-bottom: 2px;
+            }
+
+            .info-item .value {
+                font-size: 15px;
+                font-weight: 700;
+                color: #334155;
+            }
+
+            .stock-value {
+                color: var(--primary);
+                font-weight: 900;
+            }
+
+            .card-action {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .stock-meta {
+                font-size: 11px;
+                color: #94a3b8;
+                font-weight: 600;
+            }
+
+            .btn-view-app {
+                background: var(--primary);
+                color: white !important;
+                padding: 8px 16px;
+                border-radius: 10px;
+                font-size: 12px;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                text-decoration: none !important;
+                box-shadow: 0 4px 10px rgba(111, 66, 193, 0.2);
                 border: none;
             }
 
-            .report-header h3 {
+            /* Modal Styling */
+            .modal-content {
+                border-radius: 20px;
+                border: none;
+                overflow: hidden;
+            }
+
+            .modal-header {
+                background: var(--primary);
                 color: white;
+                border: none;
+                padding: 20px;
             }
 
-            .report-card {
-                margin: -30px 15px 20px;
+            .modal-header .close {
+                color: white;
+                opacity: 1;
+                text-shadow: none;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .desktop-wrapper {
+                padding: 25px;
             }
 
-            /* App-style list for mobile */
-            .mobile-stock-list {
-                padding-top: 10px;
-            }
-
-            .stock-item {
+            .table-card {
                 background: white;
-                border-radius: 15px;
-                padding: 15px;
-                margin-bottom: 12px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            }
-
-            .stock-item-title {
-                font-weight: 800;
-                color: #1e3a8a;
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 5px;
-            }
-
-            .stock-item-qty {
-                color: #10b981;
-                font-weight: 800;
-            }
-
-            .stock-item-meta {
-                font-size: 12px;
-                color: #64748b;
-                margin-bottom: 8px;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                border: none;
             }
         }
     </style>
 
-    <div class="report-header">
-        <div>
-            <h3>Fabric Stock Inventory</h3>
-        </div>
-        <div class="desktop-only text-muted">Date: {{ now()->format('d M Y') }}</div>
-    </div>
+    <!-- MOBILE CONTENT -->
+    <div class="mobile-only">
+        <div class="app-container" style="padding-top: 20px;">
+            <h5 class="mb-4 font-weight-bold" style="color: #1e293b;">Fabric Inventory</h5>
 
-    <div class="card report-card">
-        <div class="card-body">
-            <!-- FILTERS -->
-            <form method="GET" action="{{ route('owner.stock') }}" class="mb-4">
-                <div class="row g-2">
-                    <div class="col-md-3 col-6 mb-2">
-                        <label class="text-xs font-weight-bold">Warehouse</label>
-                        <select name="warehouse_id" class="form-control form-control-sm">
-                            <option value="">All Warehouses</option>
-                            @foreach($warehouses as $warehouse)
-                                <option value="{{ $warehouse->id }}" {{ ($filters['warehouse_id'] ?? '') == $warehouse->id ? 'selected' : '' }}>
-                                    {{ $warehouse->cutting_master_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-3 col-6 mb-2">
-                        <label class="text-xs font-weight-bold">Fabric SKU</label>
-                        <select name="fabric_sku" class="form-control form-control-sm">
+            <!-- Mobile Filters -->
+            <div class="mb-3">
+                <form action="{{ route('owner.stock') }}" method="GET">
+                    <div class="input-group"
+                        style="background: white; border-radius: 10px; border: 1px solid #eee; overflow: hidden;">
+                        <select name="fabric_sku" class="form-control border-0" onchange="this.form.submit()"
+                            style="font-size: 13px;">
                             <option value="">All Fabrics</option>
-                            @foreach($fabrics as $fabric)
-                                <option value="{{ $fabric->sku }}" {{ ($filters['fabric_sku'] ?? '') == $fabric->sku ? 'selected' : '' }}>
+                            @foreach ($fabrics as $fabric)
+                                <option value="{{ $fabric->sku }}" {{ request('fabric_sku') == $fabric->sku ? 'selected' : '' }}>
                                     {{ $fabric->sku }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2 col-4 mb-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary btn-sm w-100">Apply</button>
-                    </div>
-                    <div class="col-md-2 col-4 mb-2 d-flex align-items-end">
-                        <a href="{{ route('owner.stock') }}" class="btn btn-outline-secondary btn-sm w-100">Reset</a>
-                    </div>
-                </div>
-            </form>
+                </form>
+            </div>
 
-            <!-- DESKTOP TABLE -->
-            <div class="desktop-only">
+            @foreach ($stocks as $sku => $whStocks)
+                @foreach ($whStocks as $stock)
+                    <div class="stock-card">
+                        <div class="card-header-top">
+                            <div class="sku-label">{{ $sku }}</div>
+                            <div class="wh-pill">
+                                <i class="fas fa-warehouse"></i>
+                                {{ \Illuminate\Support\Str::limit($stock->master_fabric_warehouse->cutting_master_name, 12) }}
+                            </div>
+                        </div>
+
+                        <div class="card-grid">
+                            <div class="info-item">
+                                <label>Available Stock</label>
+                                <div class="value stock-value">{{ number_format($stock->total_remaining, 2) }} Mtr</div>
+                            </div>
+                            <div class="info-item">
+                                <label>Status</label>
+                                <div class="value" style="font-size: 12px; color: #16a34a;">In Stock</div>
+                            </div>
+                        </div>
+
+                        <div class="card-action">
+                            <div class="stock-meta">
+                                <i class="fas fa-box"></i> Roll Details Available
+                            </div>
+                            <button class="btn-view-app"
+                                onclick="viewRollDetails('{{ $sku }}', '{{ $stock->master_fabric_warehouse_id }}')">
+                                View Rolls <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                @endforeach
+            @endforeach
+        </div>
+    </div>
+
+    <!-- DESKTOP CONTENT -->
+    <div class="desktop-only desktop-wrapper">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 style="font-weight: 800; color: var(--text-main);">Fabric Stock Report</h2>
+        </div>
+
+        <div class="card table-card">
+            <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-report">
-                        <thead>
+                    <table class="table table-hover">
+                        <thead class="bg-light">
                             <tr>
-                                <th>#</th>
                                 <th>Fabric SKU</th>
-                                <th>Warehouse Location</th>
-                                <th class="text-right">Total Remaining (Mtr)</th>
-                                <th class="text-center">Action</th>
+                                <th>Warehouse</th>
+                                <th class="text-right">Remaining Qty (Mtrs)</th>
+                                <th class="text-center">Details</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @php $sr = 1; @endphp
-                            @forelse($stocks as $fabricSku => $rows)
-                                @php $rowspan = $rows->count(); @endphp
-                                @foreach($rows as $idx => $row)
+                            @foreach ($stocks as $sku => $whStocks)
+                                @foreach ($whStocks as $stock)
                                     <tr>
-                                        @if($idx === 0)
-                                            <td rowspan="{{ $rowspan }}" class="fabric-cell text-center">{{ $sr++ }}</td>
-                                            <td rowspan="{{ $rowspan }}" class="fabric-cell">{{ $fabricSku }}</td>
-                                        @endif
-                                        <td><i class="fas fa-warehouse text-muted mr-2"></i>
-                                            {{ $row->master_fabric_warehouse->cutting_master_name ?? 'Unknown' }}</td>
-                                        <td class="text-right font-weight-bold">{{ number_format($row->total_remaining, 2) }}</td>
+                                        <td class="font-weight-bold">{{ $sku }}</td>
+                                        <td>{{ $stock->master_fabric_warehouse->cutting_master_name }}</td>
+                                        <td class="text-right font-weight-bold">{{ number_format($stock->total_remaining, 2) }}
+                                        </td>
                                         <td class="text-center">
-                                            <button class="btn btn-xs btn-outline-info"
-                                                onclick="viewRollDetails('{{ $fabricSku }}', '{{ $row->master_fabric_warehouse_id }}')">
+                                            <button class="btn btn-sm btn-outline-primary" style="border-radius: 6px;"
+                                                onclick="viewRollDetails('{{ $sku }}', '{{ $stock->master_fabric_warehouse_id }}')">
                                                 View Rolls
                                             </button>
                                         </td>
                                     </tr>
                                 @endforeach
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">No stock found matching filters.</td>
-                                </tr>
-                            @endforelse
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
             </div>
-
-            <!-- MOBILE LIST -->
-            <div class="mobile-only mobile-stock-list">
-                @forelse($stocks as $sku => $rows)
-                    @foreach($rows as $row)
-                        <div class="stock-item" onclick="viewRollDetails('{{ $sku }}', '{{ $row->master_fabric_warehouse_id }}')">
-                            <div class="stock-item-title">
-                                <span>{{ $sku }}</span>
-                                <span class="stock-item-qty">{{ number_format($row->total_remaining, 2) }} Mtr</span>
-                            </div>
-                            <div class="stock-item-meta">
-                                <i class="fas fa-warehouse mr-1"></i>
-                                {{ $row->master_fabric_warehouse->cutting_master_name ?? 'Unknown' }}
-                            </div>
-                            <div class="text-right">
-                                <span class="text-xs text-info">View Roll Details <i class="fas fa-chevron-right ml-1"></i></span>
-                            </div>
-                        </div>
-                    @endforeach
-                @empty
-                    <div class="text-center p-4 text-muted">No stock found.</div>
-                @endforelse
-            </div>
         </div>
     </div>
 
-    <!-- Stock Details Modal -->
+    <!-- UNIFIED MODAL -->
     <div class="modal fade" id="rollModal" tabindex="-1">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title font-weight-bold">Stock Roll Details</h5>
-                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold" id="rollModalTitle">Roll Details</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body p-0">
-                    <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="badge bg-white text-primary px-3 py-2" id="modalFabricLabel"></span>
-                            <span class="badge bg-white text-muted px-3 py-2 ml-2" id="modalWarehouseLabel"></span>
+                    <div id="rollDetailsContent">
+                        <div class="p-5 text-center loading-spinner">
+                            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
                         </div>
-                        <div class="h5 m-0 font-weight-bold text-success"><span id="modalTotalSpan">0.00</span> Mtr</div>
-                    </div>
-                    <div class="table-responsive" style="max-height: 500px;">
-                        <table class="table table-sm mb-0">
-                            <thead class="bg-dark text-white text-xs">
-                                <tr>
-                                    <th>Roll #</th>
-                                    <th>Shipment</th>
-                                    <th>PO #</th>
-                                    <th>Supplier</th>
-                                    <th>Date</th>
-                                    <th class="text-right">Remaining (M)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="rollsBody" class="text-sm"></tbody>
-                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
 @endsection
 
 @section('scripts')
     <script>
         function viewRollDetails(sku, whId) {
-            $('#modalFabricLabel').text(sku);
-            $('#rollsBody').html('<tr><td colspan="6" class="text-center p-5"><div class="spinner-border text-primary"></div></td></tr>');
+            $('#rollModalTitle').text(`SKU: ${sku} - Details`);
+            $('#rollDetailsContent').html(
+                '<div class="p-5 text-center"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i></div>');
             $('#rollModal').modal('show');
-
-            // Reuse admin API but ensure owner can access or better, use owner route
-            // Admin route works if middleware allows or if we created an owner one.
-            // Let's check admin route: admin.report.stock.roll.details
-            // I created owner.lot-details but not owner.stock-details. 
-            // I'll use the admin one for now if possible, or create an owner one.
-            // Actually, I'll create a new owner endpoint to be safe.
 
             fetch(`{{ route('owner.stock.roll.details') }}?fabric_sku=${sku}&warehouse_id=${whId}`)
                 .then(r => r.json())
                 .then(data => {
                     let html = '';
-                    let total = 0;
-                    data.forEach(ship => {
-                        ship.rolls.forEach(r => {
-                            total += parseFloat(r.remaining_quantity);
-                            html += `<tr>
-                                <td><b>${r.roll_number}</b></td>
-                                <td>${ship.shipment_number}</td>
-                                <td class="text-muted">${ship.po_number}</td>
-                                <td>${ship.supplier}</td>
-                                <td>${ship.receipt_date}</td>
-                                <td class="text-right font-weight-bold text-success">${Number(r.remaining_quantity).toFixed(2)}</td>
-                            </tr>`;
+                    if (window.innerWidth < 992) {
+                        // Mobile View for Modal
+                        data.forEach(shipment => {
+                            shipment.rolls.forEach(roll => {
+                                html += `
+                                        <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="font-weight-bold" style="font-size:14px;">Roll #${roll.roll_number}</div>
+                                                <div class="text-xs text-muted">PO: ${shipment.po_number || 'N/A'}</div>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="font-weight-bold text-primary">${roll.remaining_quantity}</div>
+                                                <div class="text-xs text-muted">Meters</div>
+                                            </div>
+                                        </div>
+                                    `;
+                            });
                         });
-                    });
-                    $('#rollsBody').html(html || '<tr><td colspan="6" class="text-center p-3">No rolls found</td></tr>');
-                    $('#modalTotalSpan').text(total.toFixed(2));
-                    $('#modalWarehouseLabel').text(data[0] ? data[0].warehouse : ''); // wh name
+                    } else {
+                        // Desktop Table for Modal
+                        html = `
+                                <div class="p-3">
+                                    <table class="table table-sm table-bordered">
+                                        <thead>
+                                            <tr class="bg-light">
+                                                <th>Roll No</th>
+                                                <th>PO No</th>
+                                                <th class="text-right">Quantity</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                            `;
+                        data.forEach(shipment => {
+                            shipment.rolls.forEach(roll => {
+                                html += `
+                                        <tr>
+                                            <td>${roll.roll_number}</td>
+                                            <td>${shipment.po_number || 'N/A'}</td>
+                                            <td class="text-right font-weight-bold">${roll.remaining_quantity}</td>
+                                        </tr>
+                                    `;
+                            });
+                        });
+                        html += '</tbody></table></div>';
+                    }
+                    $('#rollDetailsContent').html(html);
                 });
         }
     </script>

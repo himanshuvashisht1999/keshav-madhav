@@ -12,7 +12,23 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
+        :root {
+            --primary: #6f42c1;
+            --secondary: #8e67d5;
+            --bg-app: #f4f6f9;
+            --text-main: #2d3436;
+            --text-muted: #636e72;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif !important;
+            background-color: var(--bg-app) !important;
+            margin: 0 !important;
+        }
+
         /* Responsive Visibility */
         .mobile-only {
             display: none !important;
@@ -30,61 +46,107 @@
             .desktop-only {
                 display: none !important;
             }
-
-            /* Reset AdminLTE force styles for mobile app feel */
-            body.sidebar-mini.sidebar-collapse .content-wrapper,
-            body.sidebar-mini .content-wrapper {
-                margin-left: 0 !important;
-                padding-bottom: 70px;
-                /* Space for bottom nav */
-            }
-
-            .main-header {
-                display: none !important;
-            }
-
-            .main-sidebar {
-                display: none !important;
-            }
-
-            .content-wrapper {
-                background: #f5f7fa !important;
-            }
         }
 
-        /* Bottom Nav Styling (Mobile Only) */
+        /* Universal UI Layout (Laptop + Mobile) - NO SIDEBAR */
+        body.sidebar-mini.sidebar-collapse .content-wrapper,
+        body.sidebar-mini .content-wrapper,
+        .content-wrapper {
+            margin-left: 0 !important;
+            padding-top: 60px !important;
+            padding-bottom: 80px !important;
+            background: var(--bg-app) !important;
+            min-height: 100vh !important;
+        }
+
+        .main-header,
+        .main-sidebar,
+        .main-footer {
+            display: none !important;
+        }
+
+        .wrapper {
+            height: auto !important;
+            min-height: 100vh !important;
+        }
+
+        /* Mobile Top Bar - FORCE ROW */
+        .mobile-top-bar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 60px !important;
+            background: var(--primary) !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 0 15px !important;
+            z-index: 9999 !important;
+            color: white !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .mobile-app-logo {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 12px !important;
+            font-size: 19px !important;
+            font-weight: 700 !important;
+        }
+
+        /* Bottom Nav - FORCE ROW */
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: white;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
-            z-index: 1000;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            height: 75px !important;
+            background: #ffffff !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: stretch !important;
+            justify-content: space-around !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.1) !important;
+            z-index: 9999 !important;
+            border-top: 1px solid #edf2f7 !important;
         }
 
         .nav-link-mobile {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-decoration: none;
-            color: #9ca3af;
-            font-size: 11px;
-            font-weight: 600;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-decoration: none !important;
+            color: #94a3b8 !important;
+            flex: 1 !important;
+            height: 100% !important;
+            margin: 0 !important;
         }
 
         .nav-link-mobile i {
-            font-size: 20px;
-            margin-bottom: 4px;
+            font-size: 22px !important;
+            margin-bottom: 4px !important;
+        }
+
+        .nav-link-mobile span {
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            display: block !important;
         }
 
         .nav-link-mobile.active {
-            color: #1e3a8a;
+            color: var(--primary) !important;
+        }
+
+        /* Content spacing */
+        .content-wrapper {
+            border: none !important;
         }
     </style>
     @yield('styles')
@@ -92,10 +154,18 @@
 
 <body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
-        <!-- Desktop Header & Sidebar -->
-        <div class="desktop-only">
-            @include('owner.common.header')
-            @include('owner.common.sidebar')
+
+        <!-- App Top Bar -->
+        <div class="mobile-top-bar">
+            <div class="mobile-app-logo">
+                <i class="fas fa-list-ul"></i>
+                <span>Owner Portal</span>
+            </div>
+            <div class="d-flex align-items-center">
+                <a href="{{ route('owner.logout') }}" style="color: white; font-size: 20px;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
         </div>
 
         <!-- Main Content -->
@@ -103,21 +173,21 @@
             @yield('content')
         </div>
 
-        <!-- Mobile Bottom Nav -->
-        <nav class="bottom-nav mobile-only">
+        <!-- App Bottom Nav -->
+        <nav class="bottom-nav">
             <a href="{{ route('owner.dashboard') }}"
                 class="nav-link-mobile {{ request()->routeIs('owner.dashboard') ? 'active' : '' }}">
                 <i class="fas fa-th-large"></i>
                 <span>Home</span>
             </a>
-            <a href="{{ route('owner.orders') }}"
-                class="nav-link-mobile {{ request()->routeIs('owner.orders') ? 'active' : '' }}">
-                <i class="fas fa-shopping-bag"></i>
-                <span>Orders</span>
+            <a href="{{ route('owner.order-summary.index') }}"
+                class="nav-link-mobile {{ request()->routeIs('owner.order-summary.*') ? 'active' : '' }}">
+                <i class="fas fa-file-invoice"></i>
+                <span>Summary</span>
             </a>
             <a href="{{ route('owner.stock') }}"
                 class="nav-link-mobile {{ request()->routeIs('owner.stock') ? 'active' : '' }}">
-                <i class="fas fa-database"></i>
+                <i class="fas fa-warehouse"></i>
                 <span>Stock</span>
             </a>
             <a href="{{ route('owner.lots') }}"
@@ -125,15 +195,8 @@
                 <i class="fas fa-layer-group"></i>
                 <span>Lots</span>
             </a>
-            <a href="{{ route('owner.logout') }}" class="nav-link-mobile text-danger">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </a>
         </nav>
 
-        <div class="desktop-only">
-            @include('admin.common.footer')
-        </div>
     </div>
 
     @include('admin.common.footer-js')

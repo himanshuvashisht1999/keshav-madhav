@@ -98,10 +98,36 @@ class OwnerAuthController extends Controller
     }
 
     /* Detailed Reports - Mirroring Admin */
-    public function orderSummary()
+    public function orderSummary(Request $request)
     {
+        $salesOrders = OrderMain::with(['customer', 'orderProductSets'])
+            ->when($request->filled('order_no'), function ($q) use ($request) {
+                $q->where('sku', 'like', '%' . $request->order_no . '%');
+            })
+            ->when($request->filled('customer_id'), function ($q) use ($request) {
+                $q->where('master_customer_id', $request->customer_id);
+            })
+            ->orderBy('id', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        $salesOrders->getCollection()->transform(function ($order) {
+            $total_pcs = $order->orderProductSets->sum('no_of_pcs');
+            return [
+                'id' => $order->id,
+                'order_no' => $order->sku,
+                'created_at' => $order->created_at,
+                'customer' => $order->customer->name ?? 'N/A',
+                'status' => $order->status,
+                'total_pcs' => $total_pcs,
+                'scanned_pcs' => 0, // Current logic doesn't summarize scanned_pcs easily at this level
+                'set_type' => $order->set_type ?? 'N/A',
+                'lots' => [] // Optional: if we need lot count
+            ];
+        });
+
         $customers = Customer::where('status', 1)->get();
-        return view('owner.reports.order_summary_index', compact('customers'));
+        return view('owner.reports.order_summary_index', compact('customers', 'salesOrders'));
     }
 
     public function orderSummaryList(Request $request)
@@ -141,6 +167,11 @@ class OwnerAuthController extends Controller
     {
         $response['data'] = $this->reportService->lotDetails($request->lot_no);
         $response['master_stages'] = $this->reportService->master_stages();
+
+        if (!$response['data']) {
+            return redirect()->back()->with('error', 'Lot not found');
+        }
+
         return view('owner.reports.lot_details', $response);
     }
 }
