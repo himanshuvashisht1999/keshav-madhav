@@ -1,335 +1,455 @@
 @extends('owner.layouts.app')
 
-@section('content')
+@section('styles')
     <style>
+        :root {
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            --KM-purple: #6f42c1;
+            --KM-purple-dark: #5a32a3;
+            --KM-purple-light: #8b5cf6;
+        }
+
+        body {
+            background-color: #f8fafc;
+            color: var(--slate-800);
+        }
+
         /* =========================================
-                       MOBILE APP STYLES (Screen < 992px)
-                    ========================================= */
+               MOBILE APP STYLES (Screen < 992px)
+            ========================================= */
         @media (max-width: 991.98px) {
             .app-hero {
-                background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
-                padding: 35px 20px 60px;
+                background: var(--KM-purple);
+                padding: 40px 24px 80px;
                 color: white;
                 position: relative;
-                box-shadow: 0 4px 20px rgba(111, 66, 193, 0.3);
+                overflow: hidden;
+            }
+
+            .app-hero::after {
+                content: '';
+                position: absolute;
+                top: -50px;
+                right: -50px;
+                width: 150px;
+                height: 150px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 50%;
             }
 
             .app-hero-label {
-                font-size: 11px;
+                font-size: 10px;
                 text-transform: uppercase;
-                letter-spacing: 1.5px;
-                opacity: 0.85;
-                margin-bottom: 8px;
-                font-weight: 700;
+                letter-spacing: 2px;
+                font-weight: 800;
+                opacity: 0.8;
+                display: block;
+                margin-bottom: 4px;
             }
 
             .app-hero-title {
-                font-size: 32px;
+                font-size: 28px;
                 font-weight: 900;
-                margin-bottom: 8px;
-                line-height: 1.1;
+                margin-bottom: 6px;
+                letter-spacing: -1px;
             }
 
             .app-hero-subtitle {
-                opacity: 0.9;
                 font-size: 14px;
                 font-weight: 500;
+                opacity: 0.9;
+            }
+
+            .app-stats-container {
+                padding: 0 20px;
+                margin-top: -45px;
+                position: relative;
+                z-index: 10;
             }
 
             .app-stats-grid {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
-                gap: 15px;
-                margin-top: -35px;
-                padding: 0 20px;
+                gap: 12px;
             }
 
             .app-stat-card {
                 background: white;
-                padding: 20px 12px;
                 border-radius: 16px;
+                padding: 16px 10px;
                 text-align: center;
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+                border: 1px solid var(--slate-100);
                 text-decoration: none;
-                border: 1px solid #f1f5f9;
+                transition: transform 0.2s ease;
+            }
+
+            .app-stat-card:active {
+                transform: scale(0.95);
             }
 
             .app-stat-value {
-                font-size: 22px;
-                font-weight: 900;
-                color: var(--primary);
                 display: block;
-                margin-bottom: 4px;
+                font-size: 20px;
+                font-weight: 900;
+                color: var(--slate-900);
+                margin-bottom: 2px;
             }
 
             .app-stat-label {
-                font-size: 10px;
-                color: #64748b;
-                font-weight: 700;
+                display: block;
+                font-size: 9px;
+                font-weight: 800;
+                color: var(--slate-500);
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
             }
 
             .app-menu-section {
-                padding: 30px 20px;
+                padding: 35px 24px;
+            }
+
+            .section-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
             }
 
             .section-title {
                 font-size: 18px;
                 font-weight: 900;
-                color: #1e293b;
-                margin-bottom: 20px;
+                color: var(--slate-900);
+                margin: 0;
                 letter-spacing: -0.5px;
             }
 
-            .app-report-card {
+            .app-nav-card {
                 background: white;
-                border-radius: 16px;
-                padding: 18px;
+                border-radius: 18px;
+                padding: 20px;
                 display: flex;
                 align-items: center;
-                gap: 16px;
+                gap: 18px;
+                margin-bottom: 16px;
                 text-decoration: none;
-                color: var(--text-main);
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-                margin-bottom: 15px;
-                border: 1px solid #f1f5f9;
-                transition: transform 0.2s ease, box-shadow 0.2s ease;
+                border: 1px solid var(--slate-100);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
             }
 
-            .app-report-card:active {
-                transform: scale(0.98);
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            }
-
-            .app-report-icon {
-                width: 56px;
-                height: 56px;
+            .app-nav-icon {
+                width: 52px;
+                height: 52px;
                 border-radius: 14px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 22px;
+                font-size: 20px;
                 flex-shrink: 0;
             }
 
-            .app-report-title {
-                font-size: 16px;
-                font-weight: 800;
-                margin: 0;
-                color: #1e293b;
+            .app-nav-content {
+                flex-grow: 1;
             }
 
-            .app-report-desc {
+            .app-nav-title {
+                display: block;
+                font-size: 16px;
+                font-weight: 800;
+                color: var(--slate-900);
+                margin-bottom: 2px;
+            }
+
+            .app-nav-desc {
+                display: block;
                 font-size: 12px;
-                color: #64748b;
-                margin: 2px 0 0 0;
+                color: var(--slate-500);
                 font-weight: 500;
             }
 
-            .app-report-arrow {
-                margin-left: auto;
-                color: #cbd5e1;
+            .app-nav-arrow {
+                color: var(--slate-300);
                 font-size: 14px;
             }
         }
 
         /* =========================================
-                       DESKTOP ADMIN STYLES (Screen >= 992px)
-                    ========================================= */
+               DESKTOP ADMIN STYLES (Screen >= 992px)
+            ========================================= */
         @media (min-width: 992px) {
-            .desktop-header {
-                padding: 20px;
+            .desktop-wrapper {
+                padding: 40px;
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+
+            .desktop-welcome {
+                margin-bottom: 40px;
+            }
+
+            .welcome-title {
+                font-size: 32px;
+                font-weight: 900;
+                color: var(--slate-900);
+                letter-spacing: -1px;
+                margin-bottom: 8px;
+            }
+
+            .welcome-meta {
+                color: var(--slate-500);
+                font-weight: 600;
+                font-size: 14px;
+            }
+
+            .dashboard-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
+                margin-bottom: 40px;
+            }
+
+            .stat-card-desktop {
                 background: white;
-                border-bottom: 1px solid #e5e7eb;
-                margin-bottom: 25px;
+                border-radius: 20px;
+                padding: 30px;
+                border: 1px solid var(--slate-200);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .stat-icon-desktop {
+                width: 64px;
+                height: 64px;
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+            }
+
+            .stat-info-desktop .stat-label {
+                display: block;
+                font-size: 13px;
+                font-weight: 800;
+                color: var(--slate-500);
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 4px;
+            }
+
+            .stat-info-desktop .stat-value {
+                display: block;
+                font-size: 28px;
+                font-weight: 900;
+                color: var(--slate-900);
+            }
+
+            .quick-actions-card {
+                background: white;
+                border-radius: 24px;
+                border: 1px solid var(--slate-200);
+                box-shadow: 0 15px 40px rgba(0, 0, 0, 0.03);
+                overflow: hidden;
+            }
+
+            .card-header-new {
+                padding: 30px 40px;
+                border-bottom: 1px solid var(--slate-100);
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
             }
 
-            .desktop-stats {
+            .card-header-new h3 {
+                margin: 0;
+                font-size: 20px;
+                font-weight: 900;
+                color: var(--slate-900);
+            }
+
+            .card-body-new {
+                padding: 40px;
+            }
+
+            .action-grid {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
-                gap: 20px;
-                padding: 0 20px;
+                gap: 24px;
             }
 
-            .info-box {
-                box-shadow: 0 0 1px rgba(0, 0, 0, .125), 0 1px 3px rgba(0, 0, 0, .2);
-                border-radius: .25rem;
-                background-color: #fff;
-                display: flex;
-                margin-bottom: 1rem;
-                min-height: 80px;
-                padding: .5rem;
-                position: relative;
-                width: 100%;
-            }
-
-            .info-box-icon {
-                border-radius: .25rem;
-                align-items: center;
-                display: flex;
-                font-size: 1.875rem;
-                justify-content: center;
-                text-align: center;
-                width: 70px;
-            }
-
-            .info-box-content {
+            .action-btn-modern {
                 display: flex;
                 flex-direction: column;
+                align-items: center;
                 justify-content: center;
-                line-height: 1.2;
-                flex: 1;
-                padding: 0 10px;
+                padding: 40px 20px;
+                border: 2px solid var(--slate-100);
+                border-radius: 20px;
+                text-decoration: none;
+                transition: all 0.3s ease;
+                background: var(--slate-50);
             }
 
-            .info-box-text {
-                text-transform: uppercase;
-                font-size: 14px;
-                font-weight: 600;
-                color: #666;
+            .action-btn-modern:hover {
+                border-color: var(--KM-purple);
+                background: white;
+                transform: translateY(-5px);
+                box-shadow: 0 15px 30px rgba(111, 66, 193, 0.1);
             }
 
-            .info-box-number {
-                display: block;
-                font-weight: 700;
-                font-size: 22px;
+            .action-btn-modern i {
+                font-size: 32px;
+                margin-bottom: 16px;
+                color: var(--KM-purple);
+            }
+
+            .action-btn-modern span {
+                font-weight: 800;
+                color: var(--slate-800);
+                font-size: 15px;
             }
         }
     </style>
+@endsection
 
+@section('content')
     <!-- ================= MOBILE APP CONTENT ================= -->
     <div class="mobile-only">
         <div class="app-hero">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="app-hero-label">OWNER DASHBOARD</span>
-                <span style="font-size: 11px; opacity: 0.8; font-weight: 600;">{{ now()->format('D, d M') }}</span>
-            </div>
+            <span class="app-hero-label">Owner Portal Dashboard</span>
             <h1 class="app-hero-title">Welcome Back</h1>
-            <p class="app-hero-subtitle">Here's your business at a glance</p>
+            <p class="app-hero-subtitle">Wednesday, 04 Feb 2026</p>
         </div>
 
-        <div class="app-stats-grid">
-            <div class="app-stat-card">
-                <span class="app-stat-value">{{ $total_orders }}</span>
-                <span class="app-stat-label">Orders</span>
-            </div>
-            <div class="app-stat-card">
-                <span class="app-stat-value">{{ number_format($total_stock, 0) }}</span>
-                <span class="app-stat-label">Stock</span>
-            </div>
-            <div class="app-stat-card">
-                <span class="app-stat-value">{{ $total_lots }}</span>
-                <span class="app-stat-label">Lots</span>
+        <div class="app-stats-container">
+            <div class="app-stats-grid">
+                <div class="app-stat-card">
+                    <span class="app-stat-value">{{ $total_orders }}</span>
+                    <span class="app-stat-label">Orders</span>
+                </div>
+                <div class="app-stat-card">
+                    <span class="app-stat-value">{{ number_format($total_stock, 0) }}</span>
+                    <span class="app-stat-label">Mtrs</span>
+                </div>
+                <div class="app-stat-card">
+                    <span class="app-stat-value">{{ $total_lots }}</span>
+                    <span class="app-stat-label">Lots</span>
+                </div>
             </div>
         </div>
 
-        <!-- Quick Navigation -->
         <div class="app-menu-section">
-            <h2 class="section-title">Main Modules</h2>
+            <div class="section-header">
+                <h2 class="section-title">Business Modules</h2>
+            </div>
 
-            <a href="{{ route('owner.order-summary.index') }}" class="app-report-card">
-                <div class="app-report-icon" style="background: #eff6ff; color: #1e3a8a;">
+            <a href="{{ route('owner.order-summary.index') }}" class="app-nav-card">
+                <div class="app-nav-icon" style="background: rgba(111, 66, 193, 0.1); color: var(--KM-purple);">
                     <i class="fas fa-file-invoice"></i>
                 </div>
-                <div class="flex-grow-1">
-                    <h3 class="app-report-title">Order Summary</h3>
-                    <p class="app-report-desc">Deep tracking & manifest</p>
+                <div class="app-nav-content">
+                    <span class="app-nav-title">Order Summary</span>
+                    <span class="app-nav-desc">Track manifests & production</span>
                 </div>
-                <i class="fas fa-chevron-right app-report-arrow"></i>
+                <i class="fas fa-chevron-right app-nav-arrow"></i>
             </a>
 
-            <a href="{{ route('owner.stock') }}" class="app-report-card">
-                <div class="app-report-icon" style="background: #f0fdf4; color: #166534;">
+            <a href="{{ route('owner.stock') }}" class="app-nav-card">
+                <div class="app-nav-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
                     <i class="fas fa-warehouse"></i>
                 </div>
-                <div class="flex-grow-1">
-                    <h3 class="app-report-title">Fabric Stock</h3>
-                    <p class="app-report-desc">Unique & roll details</p>
+                <div class="app-nav-content">
+                    <span class="app-nav-title">Fabric Stock</span>
+                    <span class="app-nav-desc">Manage rolls & quantities</span>
                 </div>
-                <i class="fas fa-chevron-right app-report-arrow"></i>
+                <i class="fas fa-chevron-right app-nav-arrow"></i>
             </a>
 
-            <a href="{{ route('owner.lots') }}" class="app-report-card">
-                <div class="app-report-icon" style="background: #fff7ed; color: #9a3412;">
+            <a href="{{ route('owner.lots') }}" class="app-nav-card">
+                <div class="app-nav-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
                     <i class="fas fa-layer-group"></i>
                 </div>
-                <div class="flex-grow-1">
-                    <h3 class="app-report-title">Production Lots</h3>
-                    <p class="app-report-desc">Batch tracking status</p>
+                <div class="app-nav-content">
+                    <span class="app-nav-title">Production Lots</span>
+                    <span class="app-nav-desc">Batch and lot tracking</span>
                 </div>
-                <i class="fas fa-chevron-right app-report-arrow"></i>
+                <i class="fas fa-chevron-right app-nav-arrow"></i>
             </a>
         </div>
     </div>
 
-    <!-- ================= DESKTOP ADMIN CONTENT ================= -->
-    <div class="desktop-only">
-        <div class="desktop-header">
-            <h2 style="font-weight: 700; margin: 0;">Owner Dashboard</h2>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb" style="background:transparent; margin:0; padding:0;">
-                    <li class="breadcrumb-item"><a href="#">Home</a></li>
-                    <li class="breadcrumb-item active">Dashboard</li>
-                </ol>
-            </nav>
-        </div>
-
-        <div class="desktop-stats">
-            <div class="info-box">
-                <span class="info-box-icon bg-info"><i class="fas fa-shopping-cart"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text">Total Orders</span>
-                    <span class="info-box-number">{{ $total_orders }}</span>
-                </div>
-            </div>
-            <div class="info-box">
-                <span class="info-box-icon bg-success"><i class="fas fa-boxes"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text">Fabric Stock</span>
-                    <span class="info-box-number">{{ number_format($total_stock, 2) }} Mtr</span>
-                </div>
-            </div>
-            <div class="info-box">
-                <span class="info-box-icon bg-warning"><i class="fas fa-layer-group"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text">Active Lots</span>
-                    <span class="info-box-number">{{ $total_lots }}</span>
-                </div>
+    <!-- ================= DESKTOP CONTENT ================= -->
+    <div class="desktop-only desktop-wrapper">
+        <div class="desktop-welcome">
+            <h1 class="welcome-title">Owner Dashboard</h1>
+            <div class="welcome-meta">
+                <i class="far fa-calendar-alt mr-2"></i> {{ now()->format('l, d F Y') }}
+                <span class="mx-3">|</span>
+                <i class="far fa-clock mr-2"></i> {{ now()->format('h:i A') }}
             </div>
         </div>
 
-        <div class="row px-3 mt-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header border-0">
-                        <h3 class="card-title">Business Quick Links</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <a href="{{ route('owner.stock') }}" class="btn btn-block btn-outline-primary p-4">
-                                    <i class="fas fa-warehouse mb-2 d-block fa-2x"></i>
-                                    View Fabric Stock
-                                </a>
-                            </div>
-                            <div class="col-md-4">
-                                <a href="{{ route('owner.orders') }}" class="btn btn-block btn-outline-info p-4">
-                                    <i class="fas fa-shopping-bag mb-2 d-block fa-2x"></i>
-                                    View Sales Orders
-                                </a>
-                            </div>
-                            <div class="col-md-4">
-                                <a href="{{ route('owner.lots') }}" class="btn btn-block btn-outline-success p-4">
-                                    <i class="fas fa-layer-group mb-2 d-block fa-2x"></i>
-                                    View Production Lots
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+        <div class="dashboard-grid">
+            <div class="stat-card-desktop">
+                <div class="stat-icon-desktop" style="background: rgba(111, 66, 193, 0.1); color: var(--KM-purple);">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="stat-info-desktop">
+                    <span class="stat-label">Total Orders</span>
+                    <span class="stat-value">{{ $total_orders }}</span>
+                </div>
+            </div>
+            <div class="stat-card-desktop">
+                <div class="stat-icon-desktop" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <div class="stat-info-desktop">
+                    <span class="stat-label">Fabric Stock</span>
+                    <span class="stat-value">{{ number_format($total_stock, 2) }} <small
+                            class="font-weight-bold">Mtr</small></span>
+                </div>
+            </div>
+            <div class="stat-card-desktop">
+                <div class="stat-icon-desktop" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="stat-info-desktop">
+                    <span class="stat-label">Active Lots</span>
+                    <span class="stat-value">{{ $total_lots }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="quick-actions-card">
+            <div class="card-header-new">
+                <h3>Business Quick Links</h3>
+                <span class="badge badge-pill badge-light px-3 py-2 font-weight-bold text-muted">Owner Portal v2.0</span>
+            </div>
+            <div class="card-body-new">
+                <div class="action-grid">
+                    <a href="{{ route('owner.order-summary.index') }}" class="action-btn-modern">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Order Summary</span>
+                    </a>
+                    <a href="{{ route('owner.stock') }}" class="action-btn-modern">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Fabric Stock</span>
+                    </a>
+                    <a href="{{ route('owner.lots') }}" class="action-btn-modern">
+                        <i class="fas fa-industry"></i>
+                        <span>Production Lots</span>
+                    </a>
                 </div>
             </div>
         </div>
