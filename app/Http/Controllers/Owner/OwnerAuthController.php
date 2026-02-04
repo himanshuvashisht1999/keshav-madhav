@@ -142,23 +142,32 @@ class OwnerAuthController extends Controller
 
     public function orderSummaryView(Request $request)
     {
-        $data = $this->orderSummaryService->view($request->id);
-        $data['lotsData'] = $this->orderSummaryService->lots($request->id);
-        if (!$data) {
+        $id = $request->id ?? array_key_first($request->query());
+        $data = $this->orderSummaryService->view($id);
+
+        if (!$data || !$data['order']) {
             return redirect()->back()->with('error', 'Order not found');
         }
-        return view('owner.reports.order_summary_view', $data);
+
+        $data['lotsData'] = $this->orderSummaryService->lots($id);
+        $data['history_data'] = $data['history_data'] ?? [];
+
+        return view('owner.reports.order_summary_view', compact('data'));
     }
 
     public function orderSummaryPdf(Request $request)
     {
-        $id = $request->id;
+        $id = $request->id ?? array_key_first($request->query());
         $data = $this->orderSummaryService->view($id);
-        if (!$data)
+
+        if (!$data || !$data['order']) {
             return redirect()->back()->with('error', 'Order not found');
+        }
+
         $data['lotsData'] = $this->orderSummaryService->lots($id);
         $data['cartons'] = $data['cartons'] ?? [];
         $data['dispatches'] = $data['dispatches'] ?? [];
+
         $pdf = PDF::loadView('admin.report.order_summary.order-summary-pdf', $data)->setPaper('A4', 'portrait');
         return $pdf->download('order-summary.pdf');
     }

@@ -193,12 +193,14 @@
     <!-- Premium Hero Section (Header-less Dashboard) -->
     <div style="background: var(--bg-gradient); padding: 50px 20px 70px; color: white; position: relative;">
         <!-- Logout Button Integrated into Hero -->
-        <a href="{{ route('unit.logout') }}" 
-           style="position: absolute; top: 25px; right: 20px; color: white; font-size: 20px; background: rgba(255,255,255,0.15); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
+        <a href="{{ route('unit.logout') }}"
+            style="position: absolute; top: 25px; right: 20px; color: white; font-size: 20px; background: rgba(255,255,255,0.15); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
             <i class="fas fa-sign-out-alt"></i>
         </a>
-        
-        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8; margin-bottom: 8px; font-weight: 700;">Dashboard</div>
+
+        <div
+            style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8; margin-bottom: 8px; font-weight: 700;">
+            Dashboard</div>
         <div style="font-size: 32px; font-weight: 800; margin-bottom: 5px;">Hello,</div>
         <div style="font-size: 22px; font-weight: 600; opacity: 0.95;">{{ $data->name }}</div>
     </div>
@@ -206,18 +208,18 @@
     <div class="stats-grid" style="margin-top: -45px; position: relative; z-index: 10;">
         <div class="stat-card">
             <span class="stat-icon">🧵</span>
-            <span class="stat-label">Stage</span>
-            <span class="stat-value">{{ Str::limit($data->masterStage->name ?? 'N/A', 8) }}</span>
+            <!-- <span class="stat-label">Stage</span> -->
+            <span class="stat-value">{{ Str::limit($data->masterStage->name ?? 'N/A', 15) }}</span>
         </div>
         <div class="stat-card">
             <span class="stat-icon">🏭</span>
-            <span class="stat-label">Warehouse</span>
+            <!-- <span class="stat-label">Warehouse</span> -->
             <span
-                class="stat-value">{{ Str::limit($data->masterFabricWarehouse->cutting_master_name ?? 'N/A', 8) }}</span>
+                class="stat-value">{{ Str::limit($data->masterFabricWarehouse->cutting_master_name ?? 'N/A', 15) }}</span>
         </div>
         <div class="stat-card">
             <span class="stat-icon">📞</span>
-            <span class="stat-label">Phone</span>
+            <!-- <span class="stat-label">Phone</span> -->
             <span class="stat-value">{{ substr($data->phone ?? '0000', -4) }}</span>
         </div>
     </div>
