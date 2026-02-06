@@ -1,6 +1,35 @@
 @extends('admin.layouts.app')
 
 @section('content')
+
+<style>
+    .rotate-btn {
+        top: 10px;
+        left: 10px;
+        z-index: 10;
+    }
+
+    .slip-image {
+        transition: transform 0.3s ease;
+        cursor: zoom-in;
+    }
+
+    .image-wrapper {
+        width: 100%;
+        height: 75vh;              /* image ko space mile */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .image-wrapper img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        transform-origin: center center;
+    }
+</style>
 <div class="content-wrapper">
 
     {{-- HEADER --}}
@@ -149,8 +178,19 @@
                             {{-- RIGHT PANEL (Image) --}}
                             <div class="col-md-5">
                                 <div class="card p-3 border text-center">
-                                    <img src="{{ asset('assets/production_slips/'.$slip_data['slip_file']) }}" 
-                                         class="img-fluid rounded shadow-sm" style="max-height: 600px;">
+                                    <button type="button"
+                                        class="btn btn-primary btn-sm position-absolute rotate-btn"
+                                        onclick="rotateImage()">
+                                        Rotate ↻
+                                    </button>
+                                    <div class="image-wrapper">
+                                        <img id="slipImage"
+                                            src="{{ asset('assets/production_slips/'.$slip_data['slip_file']) }}" 
+                                            class="slip-image"
+                                            ondblclick="openImageInNewTab(this)">
+                                    </div>
+                                    {{-- <img src="{{ asset('assets/production_slips/'.$slip_data['slip_file']) }}" 
+                                         class="img-fluid rounded shadow-sm" style="max-height: 600px;"> --}}
                                 </div>
                             </div>
                         </div>
@@ -407,5 +447,17 @@ function updateTotalMoving() {
     $('#totalMovingQty').text(total);
 }
 </script>
+<script>
+    let rotation = 0;
 
+    function rotateImage() {
+        rotation += 90;
+        document.getElementById('slipImage').style.transform =
+            `rotate(${rotation}deg)`;
+    }
+
+    function openImageInNewTab(img) {
+        window.open(img.src, '_blank');
+    }
+</script>
 @endsection
