@@ -10,6 +10,8 @@ use App\Models\PackingCartonsDetails;
 use App\Models\OrderDispatchDetails;
 use App\Models\OrderProductSet;
 use App\Models\OrderMain;
+use App\Models\PackingMain;
+use App\Models\PackingItem;
 use PDF;
 
 
@@ -41,7 +43,7 @@ class OrderDispatchService
         try {
             //    dd($request->all());
 
-            // ✅ Safety check
+            //  Safety check
             if (empty($request->cartons) || !is_array($request->cartons)) {
                 return back()->with('error', 'No cartons selected for dispatch');
             }
@@ -76,6 +78,18 @@ class OrderDispatchService
                     'status' => 2
                 ]);
 
+            $pack_data = getOrderDispatchData($data_save->main_order_id);
+            if(!empty($pack_data) && $pack_data['remaining'] == 0){
+                OrderMain::where('id', $data_save->main_order_id)
+                    ->update([
+                        'status' => 3
+                    ]);
+            } elseif (!empty($pack_data) && ($pack_data['remaining'] != 0 && $pack_data['packed'] > 0 )){
+                OrderMain::where('id', $data_save->main_order_id)
+                    ->update([
+                        'status' => 2   // partial
+                    ]);
+            }
             // Commit everything if all successful
             DB::commit();
 
@@ -189,7 +203,7 @@ class OrderDispatchService
             'dispatchCartons.items.detail', // Eager load detail for size string
         ])
             ->where('sku', $search_order_no)
-            ->where('status', 1)
+            ->whereIn('status', [1,2])
             ->orderBy('id', 'asc')
             ->get()
             ->toArray();
@@ -260,7 +274,7 @@ class OrderDispatchService
 
     public function getOrders()
     {
-        $data = OrderMain::where('status', 1)
+        $data = OrderMain::whereIn('status', [1,2])
             ->whereHas('dispatchCartons', function ($q) {
                 $q->where('packing_cartons.status', 1)
                     ->where('packing_mains.status', 1);
@@ -281,4 +295,28 @@ class OrderDispatchService
         //         dd($data->order_type);
         // return $data;
     }
+    public function getOrderDispatchData($orderMainId)
+    {
+        $total = DB::table('order_products_sets')
+            ->where('order_main_id', $orderMainId)
+            ->sum('total_quantity');
+
+        $pack_items = PackingMain::with([
+            'cartons' => function ($q) {
+                $q->where('status', 2)
+                ->withSum('items', 'quantity');
+            }
+        ])->where('order_main_id', $orderMainId)
+        ->first();
+
+        // safe check
+        $packed = $pack_items ? $pack_items->cartons->sum('items_sum_quantity') : 0;
+
+        return [
+            'total'     => (int) $total,
+            'packed'    => (int) $packed,
+            'remaining' => max(0, $total - $packed),
+        ];
+    }
+    
 }

@@ -66,6 +66,40 @@
         #st_table td button {
             padding: 3px 8px;
         }
+
+        .skip-btn {
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+
+        .rotate-btn {
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+        }
+
+        .slip-image {
+            transition: transform 0.3s ease;
+            cursor: zoom-in;
+        }
+
+        .image-wrapper {
+            width: 100%;
+            height: 75vh;              /* image ko space mile */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .image-wrapper img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transform-origin: center center;
+        }
+
     </style>
     <style>
         /* default look */
@@ -433,9 +467,22 @@
                                         Skip Slip
                                     </button>
                                 </form>
+                                <button type="button"
+                                    class="btn btn-primary btn-sm position-absolute rotate-btn"
+                                    onclick="rotateImage()">
+                                    Rotate ↻
+                                </button>
+                                {{-- <img id="slipImage"
+                                    src="{{ asset('assets/production_slips/' . ($cutting_slip->slip_file ?? '')) }}"
+                                    class="img-fluid rounded slip-image"
+                                    ondblclick="openImageInNewTab(this)"> --}}
+                                <div class="image-wrapper">
+                                    <img id="slipImage"
+                                        src="{{ asset('assets/production_slips/' . ($cutting_slip->slip_file ?? '')) }}"
+                                        class="slip-image"
+                                        ondblclick="openImageInNewTab(this)">
+                                </div>
 
-                                <img src="{{ asset('assets/production_slips/' . ($cutting_slip->slip_file ?? '')) }}"
-                                    class="img-fluid rounded">
 
                             </div>
 
@@ -634,6 +681,8 @@
 
         $(document).ready(function () {
             const ordersData = @json($orders);
+            let lastDesignId = null;
+            let prefillApplied = false;
             // console.log(ordersData);
             // ... (rest of order select logic same) ...
 
@@ -697,7 +746,10 @@
 
                 // reset UI
                 $('#show_fabric,#show_color,#show_pattern,#show_fitting,#show_cutting_master').text('—');
-                $('#size_inputs_container').empty(); // Clear sizes
+                if (lastDesignId !== designSetId) {
+                    $('#size_inputs_container').empty();
+                    lastDesignId = designSetId;
+                }
 
                 let rollSelect = $('#roll_no');
                 rollSelect.empty().append('<option value="">Select Roll No</option>');
@@ -808,7 +860,7 @@
                 if (total <= 0) return;
 
                 // ✅ SAFETY CHECK: rolls must exist
-                if ($('#roll_no option').length <= 1) {
+                if ($('#roll_no option').length < 1) {
                     alert('Please select Design first');
                     $(this).val('');
                     return;
@@ -832,18 +884,18 @@
                     </option>`;
                 });
 
-                // Trigger Auto-Select if available
-                if (PRE_FILLED_ORDER_ID) {
-                    // Check if value actually exists in dropdown (it should if ordersData matches)
-                    if ($('#select_order_no option[value="' + PRE_FILLED_ORDER_ID + '"]').length > 0) {
-                        $('#select_order_no').val(PRE_FILLED_ORDER_ID).trigger('change');
+                // // Trigger Auto-Select if available
+                // if (PRE_FILLED_ORDER_ID) {
+                //     // Check if value actually exists in dropdown (it should if ordersData matches)
+                //     if ($('#select_order_no option[value="' + PRE_FILLED_ORDER_ID + '"]').length > 0) {
+                //         $('#select_order_no').val(PRE_FILLED_ORDER_ID).trigger('change');
 
-                        if (PRE_FILLED_DESIGN_ID) {
-                            // The change event above repopulates #design_id synchronously
-                            $('#design_id').val(PRE_FILLED_DESIGN_ID).trigger('change');
-                        }
-                    }
-                }
+                //         if (PRE_FILLED_DESIGN_ID) {
+                //             // The change event above repopulates #design_id synchronously
+                //             $('#design_id').val(PRE_FILLED_DESIGN_ID).trigger('change');
+                //         }
+                //     }
+                // }
 
                 for (let i = 1; i <= total; i++) {
                     let lotNo = $('#lot_no').val();
@@ -1211,6 +1263,20 @@
             });
 
             isAutoFillingSizes = false;
+        }
+    </script>
+
+    <script>
+        let rotation = 0;
+
+        function rotateImage() {
+            rotation += 90;
+            document.getElementById('slipImage').style.transform =
+                `rotate(${rotation}deg)`;
+        }
+
+        function openImageInNewTab(img) {
+            window.open(img.src, '_blank');
         }
     </script>
 

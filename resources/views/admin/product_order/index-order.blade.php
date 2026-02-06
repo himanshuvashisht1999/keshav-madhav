@@ -63,8 +63,8 @@
                         <td>
                             <select id="status" class="form-control form-control-sm">
                                 <option value="">All</option>
-                                <option value="1">Not Issued</option>
-                                <option value="2">In Progress</option>
+                                <option value="1">In Progress</option>
+                                <option value="2">Partial</option>
                                 <option value="3">Completed</option>
                             </select>
                         </td>

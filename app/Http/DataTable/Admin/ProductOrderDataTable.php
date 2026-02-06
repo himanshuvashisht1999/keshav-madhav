@@ -102,7 +102,7 @@ class ProductOrderDataTable  {
          
             ->addColumn('status', function ($queue) {
 
-                 $stats = $this->getOrderPackingStats($queue->id);
+                $stats = getOrderDispatchData($queue->id);
 
                 if ($stats['remaining'] === 0) {
                     return '<span class="badge badge-success">Completed</span>';
@@ -116,7 +116,7 @@ class ProductOrderDataTable  {
             })
 
             ->addColumn('dispatch_pcs', function ($queue) {
-                return $this->getOrderPackingStats($queue->id)['packed'];
+                return getOrderDispatchData($queue->id)['packed'] ?? 0;
             })
             
             ->editColumn('master_customer_id', function ($queue) {
@@ -130,7 +130,7 @@ class ProductOrderDataTable  {
                 return getformatDate($queue->expected_delivery_date);
             })
             ->addColumn('total_pcs', function ($queue) {
-                return $this->getOrderPackingStats($queue->id)['total'];
+                return getOrderDispatchData($queue->id)['total'] ?? 0;
             })
             // ->addColumn('total_amount', function ($queue) {
             //     return number_format($queue->total_amount, 2) ?? '0.00';
@@ -238,27 +238,27 @@ class ProductOrderDataTable  {
 
     private function getOrderPackingStats($orderMainId)
     {
-            $total = DB::table('order_products_sets')
-                ->where('order_main_id', $orderMainId)
-                ->sum('total_quantity');
+        $total = DB::table('order_products_sets')
+            ->where('order_main_id', $orderMainId)
+            ->sum('total_quantity');
 
-            $packed = DB::table('packing_items as pi')
-                ->join('packing_mains as pm', 'pm.id', '=', 'pi.packing_main_id')
-                ->where('pm.order_main_id', $orderMainId)
-                ->where('pm.status', 1)
-                ->whereIn('pm.id', function ($q) use ($orderMainId) {
-                    $q->select('pc.packing_main_id')
-                        ->from('order_dispatch as od')
-                        ->join('order_dispatch_details as odd', 'odd.order_dispatch_id', '=', 'od.id')
-                        ->join('packing_cartons as pc', 'pc.id', '=', 'odd.carton_packing_id')
-                        ->where('od.main_order_id', $orderMainId);
-                })
-                ->sum('pi.quantity');
+        $packed = DB::table('packing_items as pi')
+            ->join('packing_mains as pm', 'pm.id', '=', 'pi.packing_main_id')
+            ->where('pm.order_main_id', $orderMainId)
+            ->where('pm.status', 1)
+            ->whereIn('pm.id', function ($q) use ($orderMainId) {
+                $q->select('pc.packing_main_id')
+                    ->from('order_dispatch as od')
+                    ->join('order_dispatch_details as odd', 'odd.order_dispatch_id', '=', 'od.id')
+                    ->join('packing_cartons as pc', 'pc.id', '=', 'odd.carton_packing_id')
+                    ->where('od.main_order_id', $orderMainId);
+            })
+            ->sum('pi.quantity');
 
-            return [
-                'total'     => (int) $total,
-                'packed'    => (int) $packed,
-                'remaining' => max(0, $total - $packed),
-            ];
-        }
+        return [
+            'total'     => (int) $total,
+            'packed'    => (int) $packed,
+            'remaining' => max(0, $total - $packed),
+        ];
     }
+}
