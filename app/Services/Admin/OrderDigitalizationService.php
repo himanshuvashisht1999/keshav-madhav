@@ -881,7 +881,7 @@ class OrderDigitalizationService {
         /** Load packing data */
         $packingData = [];
         foreach ($main_orders as $order) {
-            $packingData[$order->id] = getOrderPackingData($order->id);
+            $packingData[$order->id] = getOrderDispatchData($order->id);
         }
 
         /**  Remove fully packed orders */
@@ -889,7 +889,7 @@ class OrderDigitalizationService {
             return isset($packingData[$order->id])
                 && $packingData[$order->id]['remaining'] > 0;
         })->values();
-        dd($main_orders, $packingData);
+        // dd($main_orders, $packingData);
         /** Load fallback details (KEY FIX HERE) */
         $fallbackDetails = \App\Models\OrderProductSetDetail::whereIn(
                 'order_products_set_id',
