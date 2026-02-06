@@ -443,7 +443,7 @@
             </div>
 
             {{-- ROLLS --}}
-            @if($rolls->count() > 0)
+            {{-- @if($rolls->count() > 0)
                 <div class="card">
                     <div class="section-title">
                         <i class="fas fa-scroll" style="color: var(--primary);"></i>
@@ -474,7 +474,66 @@
                         </div>
                     @endforeach
                 </div>
+            @endif --}}
+
+            {{-- ROLLS --}}
+            @if($rolls->count() > 0)
+                <div class="card">
+                    <div class="section-title">
+                        <i class="fas fa-scroll" style="color: var(--primary);"></i>
+                        Rolls Allocation ({{ $rolls->count() }})
+                    </div>
+
+                    @php
+                        $totalMeter = 0;
+                    @endphp
+
+                    {{-- STEP 1: ALL ROLL NO & METERS --}}
+                    @foreach($rolls as $roll)
+                        @php
+                            $totalMeter += $roll->meter;
+                        @endphp
+
+                        <div class="item-card">
+                            <div class="item-header">
+                                <span>Roll: {{ $roll->roll_no }}</span>
+                                <span>{{ $roll->meter }} m</span>
+                            </div>
+                        </div>
+                    @endforeach
+
+                    {{-- STEP 2: TOTAL METER (ONCE) --}}
+                    <div class="info-row" style="margin-top: 12px;">
+                        <span class="info-label">Total Meter</span>
+                        <span class="info-value">
+                            <strong style="color: var(--primary);">
+                                {{ $totalMeter }} m
+                            </strong>
+                        </span>
+                    </div>
+
+                    {{-- STEP 3: SIZE & QTY TABLE (ONCE) --}}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Size</th>
+                                <th>Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($rolls as $roll)
+                                @foreach($roll->fabricRollAssigningsDetail as $size)
+                                    <tr>
+                                        <td>{{ $size->size }}</td>
+                                        <td><strong>{{ $size->quantity }}</strong></td>
+                                    </tr>
+                                @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             @endif
+
         @endif
 
         {{-- TYPE 2: PRINTING --}}

@@ -6,6 +6,7 @@ use App\Models\OrderPrintingStageTransaction;
 use App\Models\OrderStageWiseTimeTracking;
 use App\Models\ProductStage;
 use App\Models\OrderMain;
+use App\Models\PackingMain;
 use App\Models\PackageBox;
 use App\Models\OrderProduct;
 use Illuminate\Support\Facades\DB;
@@ -204,6 +205,29 @@ function getLotDetails($lot_id, $master_stage)
 }
 
 
+function getOrderDispatchData($orderMainId)
+{
+    $total = DB::table('order_products_sets')
+        ->where('order_main_id', $orderMainId)
+        ->sum('total_quantity');
+
+    $pack_items = PackingMain::with([
+        'cartons' => function ($q) {
+            $q->where('status', 2)
+            ->withSum('items', 'quantity');
+        }
+    ])->where('order_main_id', $orderMainId)
+    ->first();
+
+    // safe check
+    $packed = $pack_items ? $pack_items->cartons->sum('items_sum_quantity') : 0;
+
+    return [
+        'total'     => (int) $total,
+        'packed'    => (int) $packed,
+        'remaining' => max(0, $total - $packed),
+    ];
+}
 
 
 ?>

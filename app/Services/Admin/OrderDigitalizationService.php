@@ -810,9 +810,59 @@ class OrderDigitalizationService {
 
 
     // new code 
+    // public function orders($stage_master_unit_id)
+    // {
+    //     $main_orders = OrderMain::orderby('id','desc')->with([
+    //             'OrderProductSets' => function ($q) use ($stage_master_unit_id) {
+    //                 $q->where('stage_master_unit_id', $stage_master_unit_id)
+    //                 ->with([
+    //                     'fabric.receiptDetails',
+    //                     'colors',
+    //                     'master_design_pattern',
+    //                     'master_product_fitting',
+    //                     'size_measurement',
+    //                     'stage_master_unit',
+    //                     'product_set_details'
+    //                 ]);
+    //             }
+    //         ])
+    //         ->whereHas('OrderProductSets', function ($q) use ($stage_master_unit_id) {
+    //             $q->where('stage_master_unit_id', $stage_master_unit_id);
+    //         })
+    //         ->get();
+    //         // dd($main_orders);
+    //         foreach($main_orders as $order){
+    //             $order_id = $order->id;
+    //             $data[$order_id] = $this->getOrderPackingData($order_id);
+    //         }
+           
+    //         // $this->getOrderPackingData(1);
+    //     // FALLBACK: If product_set_details is empty, check if they exist under order_main_id (due to previous bug)
+    //     foreach ($main_orders as $order) {
+    //         foreach ($order->OrderProductSets as $set) {
+    //             if ($set->product_set_details->isEmpty()) {
+    //                 $fallbackDetails = \App\Models\OrderProductSetDetail::where('order_products_set_id', $order->id)->get();
+    //                 if (isset($data[$order->id]) && !($data[$order->id]['total'] <= $data[$order->id]['packed']) ){
+    //                     if ($fallbackDetails->isNotEmpty()) {
+    //                         $set->setRelation('product_set_details', $fallbackDetails);
+    //                     }
+    //                 }
+                    
+    //             }
+    //         }
+    //     }
+        
+    //     return $main_orders;
+    // }
+
     public function orders($stage_master_unit_id)
     {
-        $main_orders = OrderMain::orderby('id','desc')->with([
+        $main_orders = OrderMain::query()
+            ->orderByDesc('id')
+            ->whereHas('OrderProductSets', function ($q) use ($stage_master_unit_id) {
+                $q->where('stage_master_unit_id', $stage_master_unit_id);
+            })
+            ->with([
                 'OrderProductSets' => function ($q) use ($stage_master_unit_id) {
                     $q->where('stage_master_unit_id', $stage_master_unit_id)
                     ->with([
@@ -822,23 +872,43 @@ class OrderDigitalizationService {
                         'master_product_fitting',
                         'size_measurement',
                         'stage_master_unit',
-                        'product_set_details'
+                        'product_set_details',
                     ]);
                 }
             ])
-            ->whereHas('OrderProductSets', function ($q) use ($stage_master_unit_id) {
-                $q->where('stage_master_unit_id', $stage_master_unit_id);
-            })
             ->get();
-            // dd($main_orders);
 
-        // FALLBACK: If product_set_details is empty, check if they exist under order_main_id (due to previous bug)
+        /** Load packing data */
+        $packingData = [];
+        foreach ($main_orders as $order) {
+            $packingData[$order->id] = getOrderPackingData($order->id);
+        }
+
+        /**  Remove fully packed orders */
+        $main_orders = $main_orders->filter(function ($order) use ($packingData) {
+            return isset($packingData[$order->id])
+                && $packingData[$order->id]['remaining'] > 0;
+        })->values();
+        dd($main_orders, $packingData);
+        /** Load fallback details (KEY FIX HERE) */
+        $fallbackDetails = \App\Models\OrderProductSetDetail::whereIn(
+                'order_products_set_id',
+                $main_orders->pluck('OrderProductSets')
+                    ->flatten()
+                    ->pluck('id')
+            )
+            ->get()
+            ->groupBy('order_products_set_id');
+
+        /** Attach fallback data correctly */
         foreach ($main_orders as $order) {
             foreach ($order->OrderProductSets as $set) {
                 if ($set->product_set_details->isEmpty()) {
-                    $fallbackDetails = \App\Models\OrderProductSetDetail::where('order_products_set_id', $order->id)->get();
-                    if ($fallbackDetails->isNotEmpty()) {
-                        $set->setRelation('product_set_details', $fallbackDetails);
+                    if (isset($fallbackDetails[$set->id])) {
+                        $set->setRelation(
+                            'product_set_details',
+                            $fallbackDetails[$set->id]
+                        );
                     }
                 }
             }
@@ -847,16 +917,6 @@ class OrderDigitalizationService {
         return $main_orders;
     }
 
-    // public function getLotsBySlip($stage_id,$slip_id)
-    // {
-    //     if($stage_id == 1){
-    //         $lot_nums = OrderLot::where('is_printing',0)->pluck('lot_no');
-    //     }else{
-    //         $lot_nums = OrderLot::where('is_stitching',0)->pluck('lot_no');
-    //     }
-        
-    //     return $lot_nums;
-    // }
     public function getLotsBySlip(int $stage_id, int $slip_id)
     {
         $slip = ProductionSlipDigitization::find($slip_id);
@@ -1517,4 +1577,30 @@ class OrderDigitalizationService {
         $lots= FabricRollAssigning::distinct()->pluck('lot_no');
         return $lots;
     }
+
+    // public function getOrderPackingData($orderMainId)
+    // {
+    //     $total = DB::table('order_products_sets')
+    //         ->where('order_main_id', $orderMainId)
+    //         ->sum('total_quantity');
+
+    //     $packed = DB::table('packing_items as pi')
+    //         ->join('packing_mains as pm', 'pm.id', '=', 'pi.packing_main_id')
+    //         ->where('pm.order_main_id', $orderMainId)
+    //         ->where('pm.status', 1)
+    //         ->whereIn('pm.id', function ($q) use ($orderMainId) {
+    //             $q->select('pc.packing_main_id')
+    //                 ->from('order_dispatch as od')
+    //                 ->join('order_dispatch_details as odd', 'odd.order_dispatch_id', '=', 'od.id')
+    //                 ->join('packing_cartons as pc', 'pc.id', '=', 'odd.carton_packing_id')
+    //                 ->where('od.main_order_id', $orderMainId);
+    //         })
+    //         ->sum('pi.quantity');
+
+    //     return [
+    //         'total'     => (int) $total,
+    //         'packed'    => (int) $packed,
+    //         'remaining' => max(0, $total - $packed),
+    //     ];
+    // }
 }
