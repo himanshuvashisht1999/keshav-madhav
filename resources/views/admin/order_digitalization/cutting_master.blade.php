@@ -463,9 +463,9 @@
                                     @csrf
                                     <input type="hidden" name="production_slip_digitization_id"
                                         value="{{ $cutting_slip->id ?? '' }}">
-                                    <button type="submit" class="btn btn-danger btn-sm">
+                                    {{-- <button type="submit" class="btn btn-danger btn-sm">
                                         Skip Slip
-                                    </button>
+                                    </button> --}}
                                 </form>
                                 <button type="button"
                                     class="btn btn-primary btn-sm position-absolute rotate-btn"
@@ -482,8 +482,6 @@
                                         class="slip-image"
                                         ondblclick="openImageInNewTab(this)">
                                 </div>
-
-
                             </div>
 
                             {{-- Time Allocation Info Panel --}}
