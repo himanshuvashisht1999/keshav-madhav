@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class OrderProductSet extends Model
 {
     use HasFactory;
-    protected $table= 'order_products_sets';
+    protected $table = 'order_products_sets';
     protected $fillable = [
         'id',
         'sno',
@@ -94,6 +94,11 @@ class OrderProductSet extends Model
     public function orderMain()
     {
         return $this->belongsTo(OrderMain::class, 'order_main_id', 'id');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(ProductionGoods::class, 'production_goods_id');
     }
 
     public function product_set_details()

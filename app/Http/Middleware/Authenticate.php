@@ -2,28 +2,29 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
+use Illuminate\Auth\Middleware\Authenticate as Middleware;
 use Illuminate\Http\Request;
-use App\Providers\RouteServiceProvider;
 
-class Authenticate
+class Authenticate extends Middleware
 {
     /**
-     * Handle an incoming request.
+     * Get the path the user should be redirected to when they are not authenticated.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
+     * @return string|null
      */
-
-    public function handle(Request $request, Closure $next)
+    protected function redirectTo($request)
     {
-        if(!$request->bearerToken()){
-            return response(['Status' => 401, 'Unauthorized' => 'client failed to authenticate with the server']);
+        if (!$request->expectsJson()) {
+            if ($request->is('agent') || $request->is('agent/*')) {
+                return route('agent.login');
+            }
+            if ($request->is('admin') || $request->is('admin/*')) {
+                return route('admin.login');
+            }
+
+            return route('web.homepage');
         }
-        if(!auth('api')->user()){
-            return response(['Status' => 401, 'Unauthorized' => 'client failed to authenticate with the server']);
-        }
-        return $next($request);
+        return null; // Triggers 401 for JSON requests
     }
 }
