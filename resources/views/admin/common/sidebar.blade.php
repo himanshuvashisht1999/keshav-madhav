@@ -343,6 +343,45 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                         </a>
                     </li>
 
+                    <li
+                        class="{{ (str_contains($page_url, 'admin/inventory') || str_contains($page_url, 'admin/agent-orders') || str_contains($page_url, 'admin/master/inventory-price')) ? 'nav-item menu-open' : 'nav-item' }}">
+                        <a href="#"
+                            class="{{ (str_contains($page_url, 'admin/inventory') || str_contains($page_url, 'admin/agent-orders') || str_contains($page_url, 'admin/master/inventory-price')) ? 'nav-link active' : 'nav-link' }} border_class">
+                            <i class="nav-icon fas fa-warehouse"></i>
+                            <p>
+                                INVENTORY
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{{ route('admin.inventory.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/inventory') ? 'nav-link active' : 'nav-link' }}"
+                                    style="position:static;">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Browse Inventory</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.agent-orders.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/agent-orders') ? 'nav-link active' : 'nav-link' }}"
+                                    style="position:static;">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Agent Orders</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.master.inventory-price.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/master/inventory-price') ? 'nav-link active' : 'nav-link' }}"
+                                    style="position:static;">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Inventory Pricing</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
                     <li class="nav-item">
                         <a href="{{ route('admin.order-dispatch.index') }}"
                             class="{{ str_contains($page_url, 'admin/order-dispatch') ? 'nav-link active' : 'nav-link' }} border_class"
@@ -351,6 +390,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                             <p>ORDER DISPATCH</p>
                         </a>
                     </li>
+
                     {{-- <li class="nav-item">
                         <a href="{{ route('admin.order_digitalization.create-slips-production') }}"
                             class="{{ str_contains($page_url, 'admin.order_digitalization.create-slips-production') ? 'nav-link active' : 'nav-link' }} border_class"
@@ -742,6 +782,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                     <p>Customers</p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.master.sales-agent.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/master/sales-agent') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Sales Agents</p>
+                                </a>
+                            </li>
+
                             <li class="nav-item">
                                 <a href="{{ route('admin.master.storeroom.index') }}"
                                     class="nav-link {{ str_contains($page_url, 'master/storerooms') ? 'active' : '' }}">

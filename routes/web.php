@@ -54,6 +54,7 @@ use App\Http\Controllers\Admin\Master\MasterStageUnitController as AdminMasterSt
 ///// Reports
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\PackingController as AdminPackingController;
+use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
 
 
 
@@ -103,12 +104,50 @@ Route::prefix('owner')->name('owner.')->group(function () {
     });
 });
 
+
+// ================= SALES AGENT ROUTES =================
+Route::prefix('agent')->group(function () {
+    Route::get('login', [App\Http\Controllers\SalesAgent\AuthController::class, 'showLoginForm'])->name('agent.login');
+    Route::post('login', [App\Http\Controllers\SalesAgent\AuthController::class, 'login']);
+    Route::post('logout', [App\Http\Controllers\SalesAgent\AuthController::class, 'logout'])->name('agent.logout');
+
+    Route::middleware('auth:sales_agent')->group(function () {
+        Route::get('dashboard', [App\Http\Controllers\SalesAgent\DashboardController::class, 'index'])->name('agent.dashboard');
+
+        // Shop Management
+        Route::get('shops', [App\Http\Controllers\SalesAgent\ShopController::class, 'index'])->name('agent.shops.index');
+        Route::get('shops/create', [App\Http\Controllers\SalesAgent\ShopController::class, 'create'])->name('agent.shops.create');
+        Route::post('shops', [App\Http\Controllers\SalesAgent\ShopController::class, 'store'])->name('agent.shops.store');
+        Route::get('shops/{id}/edit', [App\Http\Controllers\SalesAgent\ShopController::class, 'edit'])->name('agent.shops.edit');
+        Route::put('shops/{id}', [App\Http\Controllers\SalesAgent\ShopController::class, 'update'])->name('agent.shops.update');
+        Route::post('shops/{id}/toggle-status', [App\Http\Controllers\SalesAgent\ShopController::class, 'toggleStatus'])->name('agent.shops.toggle-status');
+
+        // Inventory & Ordering
+        Route::get('inventory', [App\Http\Controllers\SalesAgent\InventoryController::class, 'index'])->name('agent.inventory.index');
+        Route::get('inventory/{box_id}', [App\Http\Controllers\SalesAgent\InventoryController::class, 'show'])->name('agent.inventory.show');
+
+        // Order Creation & Editing
+        Route::get('orders/create', [App\Http\Controllers\SalesAgent\OrderController::class, 'create'])->name('agent.orders.create');
+        Route::post('orders', [App\Http\Controllers\SalesAgent\OrderController::class, 'store'])->name('agent.orders.store');
+        Route::get('orders/{id}/edit', [App\Http\Controllers\SalesAgent\OrderController::class, 'edit'])->name('agent.orders.edit');
+        Route::put('orders/{id}', [App\Http\Controllers\SalesAgent\OrderController::class, 'update'])->name('agent.orders.update');
+
+        Route::get('orders', [App\Http\Controllers\SalesAgent\OrderController::class, 'myOrders'])->name('agent.orders.index');
+        Route::get('orders/{id}', [App\Http\Controllers\SalesAgent\OrderController::class, 'orderDetails'])->name('agent.orders.show');
+        Route::get('orders/{id}/invoice', [App\Http\Controllers\SalesAgent\OrderController::class, 'downloadInvoice'])->name('agent.orders.invoice');
+    });
+});
+
 ////////////  Admin Routes
+
+use App\Http\Controllers\Admin\Master\SalesAgentController as AdminSalesAgentController;
+use App\Http\Controllers\Admin\Master\InventoryPriceController as AdminInventoryPriceController;
+
 Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
     Route::get('/', [AdminLoginController::class, 'login'])->name('login');
     Route::post('/post-admin', [AdminLoginController::class, 'postLogin'])->name('postLogin');
 
-    Route::middleware([checkAdminLogin::class])->group(function () {
+    Route::middleware(['checkAdminLogin'])->group(function () {
 
         Route::get('/logout', [AdminLoginController::class, 'logout'])->name('logout');
         Route::get('/dashboard', [AdminDashboardController::class, 'dashboard'])->name('dashboard');
@@ -133,13 +172,22 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/adjustment', [AdminPurchaseOrderController::class, 'adjustment'])->name('adjustment');
 
             Route::get('/adjustment-shipment', [AdminPurchaseOrderController::class, 'adjustmentShipment'])->name('adjustmentShipment');
+
             Route::POST('/adjustment-submit', [AdminPurchaseOrderController::class, 'adjustmentSubmit'])->name('adjustmentSubmit');
 
             Route::get('/adjustment-dynamic', [AdminPurchaseOrderController::class, 'adjustmentDynamic'])->name('adjustmentDynamic');
-
-
-
         });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Admin Agent Order Management
+        |--------------------------------------------------------------------------
+        */
+        Route::get('agent-orders', [App\Http\Controllers\Admin\AgentOrderController::class, 'index'])->name('agent-orders.index');
+        Route::get('agent-orders/{id}', [App\Http\Controllers\Admin\AgentOrderController::class, 'show'])->name('agent-orders.show');
+        Route::get('agent-orders/{id}/invoice', [App\Http\Controllers\Admin\AgentOrderController::class, 'downloadInvoice'])->name('agent-orders.invoice');
+        Route::post('agent-orders/{id}/dispatch', [App\Http\Controllers\Admin\AgentOrderController::class, 'dispatchOrder'])->name('agent-orders.dispatch');
 
         Route::prefix('/purchase-order-material')->name('purchase_order_material.')->group(function () {
             Route::get('/index', [AdminPurchaseOrderMaterialController::class, 'index'])->name('index');
@@ -259,6 +307,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/order-details/{id}', [AdminPackingController::class, 'getOrderDetailsJson'])->name('orderDeps');
             Route::get('check-carton-no', [AdminPackingController::class, 'checkCartonNo'])->name('check-carton-no');
             Route::post('/bulk-save', [AdminPackingController::class, 'bulkSaveCarton'])->name('bulk-save');
+        });
+
+        Route::prefix('/inventory')->name('inventory.')->group(function () {
+            Route::get('/index', [\App\Http\Controllers\Admin\InventoryController::class, 'index'])->name('index');
+            Route::get('/indexList', [\App\Http\Controllers\Admin\InventoryController::class, 'indexList'])->name('indexList');
         });
 
         Route::prefix('/warehouse')->name('warehouse.')->group(function () {
@@ -468,6 +521,21 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/delete', [AdminSizeMeasurementController::class, 'delete'])->name('delete');
         });
 
+        Route::prefix('/packing')->name('packing.')->group(function () {
+            Route::get('/index', [AdminPackingController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminPackingController::class, 'indexList'])->name('indexList');
+            Route::post('/store', [AdminPackingController::class, 'store'])->name('store');
+            Route::post('/finalize', [AdminPackingController::class, 'finalize'])->name('finalize');
+            Route::get('/view/{order}', [AdminPackingController::class, 'view'])->name('view');
+            Route::get('/print/{main}', [AdminPackingController::class, 'print'])->name('print');
+        });
+
+        Route::prefix('/inventory')->name('inventory.')->group(function () {
+            Route::get('/index', [AdminInventoryController::class, 'index'])->name('index');
+            Route::get('/list', [AdminInventoryController::class, 'indexList'])->name('list');
+            Route::get('/show/{box}', [AdminInventoryController::class, 'show'])->name('show');
+        });
+
         Route::prefix('master/size')->name('master.size.')->group(function () {
             Route::get('/index', [AdminSizeController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminSizeController::class, 'indexList'])->name('indexList');
@@ -574,6 +642,27 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/update', [AdminMasterWarehouseController::class, 'update'])->name('update');
             Route::get('/delete', [AdminMasterWarehouseController::class, 'delete'])->name('delete');
         });
+        Route::prefix('master/inventory-price')->name('master.inventory-price.')->group(function () {
+            Route::get('/index', [AdminInventoryPriceController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminInventoryPriceController::class, 'indexList'])->name('indexList');
+            Route::get('/create', [AdminInventoryPriceController::class, 'create'])->name('create');
+            Route::post('/store', [AdminInventoryPriceController::class, 'store'])->name('store');
+            Route::get('/edit', [AdminInventoryPriceController::class, 'edit'])->name('edit');
+            Route::post('/update', [AdminInventoryPriceController::class, 'update'])->name('update');
+            Route::get('/delete', [AdminInventoryPriceController::class, 'delete'])->name('delete');
+            Route::post('/image-delete', [\App\Http\Controllers\Admin\Master\InventoryPriceImageController::class, 'delete'])->name('image-delete');
+        });
+
+        Route::prefix('master/sales-agent')->name('master.sales-agent.')->group(function () {
+            Route::get('/index', [AdminSalesAgentController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminSalesAgentController::class, 'indexList'])->name('indexList');
+            Route::get('/create', [AdminSalesAgentController::class, 'create'])->name('create');
+            Route::post('/store', [AdminSalesAgentController::class, 'store'])->name('store');
+            Route::get('/edit', [AdminSalesAgentController::class, 'edit'])->name('edit');
+            Route::post('/update', [AdminSalesAgentController::class, 'update'])->name('update');
+            Route::get('/delete', [AdminSalesAgentController::class, 'delete'])->name('delete');
+        });
+
         Route::prefix('master/fabric-warehouse')->name('master.fabric_warehouse.')->group(function () {
             Route::get('/index', [AdminMasterFabricWarehouseController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminMasterFabricWarehouseController::class, 'indexList'])->name('indexList');

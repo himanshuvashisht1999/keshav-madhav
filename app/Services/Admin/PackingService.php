@@ -10,6 +10,7 @@ use App\Models\PackingItem;
 use App\Models\OrderMain;
 use App\Models\OrderStageTransaction;
 use App\Models\OrderLot;
+use App\Models\DomesticInventory;
 use Illuminate\Support\Facades\DB;
 
 class PackingService
@@ -290,12 +291,26 @@ class PackingService
                 ]);
 
                 $boxes_in_this_carton = min($boxes_per_carton, $boxes_remaining_in_plan);
+
+                $datePrefix = date('ymd');
+                $latestBox = PackingBox::where('box_no', 'LIKE', "BX-$datePrefix-%")
+                    ->orderBy('id', 'desc')
+                    ->first();
+                $nextSeq = 1;
+                if ($latestBox) {
+                    $parts = explode('-', $latestBox->box_no);
+                    $nextSeq = (int) end($parts) + 1;
+                }
+
                 for ($b = 0; $b < $boxes_in_this_carton; $b++) {
                     $box_composition = $box_plan[$box_index];
+
+                    $box_no = "BX-$datePrefix-" . str_pad($nextSeq++, 4, '0', STR_PAD_LEFT);
+
                     $box = PackingBox::create([
                         'packing_main_id' => $main->id,
                         'packing_carton_id' => $carton->id,
-                        'box_no' => "Bulk-" . $next_available_no . "-" . ($b + 1),
+                        'box_no' => $box_no,
                         'box_type' => 'bulk'
                     ]);
 
@@ -485,9 +500,25 @@ class PackingService
         try {
             $main = $this->getOrCreatePackingMain($data['slip_id'], $data['order_id']);
 
+            $datePrefix = date('ymd');
+            $box_no = $data['box_no'] ?? '';
+
+            // If user provides a custom manual name, we check it, but if empty, we auto-generate
+            if (empty($box_no)) {
+                $latestBox = PackingBox::where('box_no', 'LIKE', "BX-$datePrefix-%")
+                    ->orderBy('id', 'desc')
+                    ->first();
+                $nextSeq = 1;
+                if ($latestBox) {
+                    $parts = explode('-', $latestBox->box_no);
+                    $nextSeq = (int) end($parts) + 1;
+                }
+                $box_no = "BX-$datePrefix-" . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
+            }
+
             $box = PackingBox::create([
                 'packing_main_id' => $main->id,
-                'box_no' => $data['box_no'],
+                'box_no' => $box_no,
                 'box_type' => 'mixed'
             ]);
 
@@ -516,14 +547,108 @@ class PackingService
     {
         DB::beginTransaction();
         try {
+            $packing_main = PackingMain::with('cartons.boxes.items', 'order')->find($main_id);
+            if (!$packing_main) {
+                throw new \Exception("Packing record not found.");
+            }
+
+            $order = $packing_main->order;
+            $is_domestic = $order && strtolower($order->order_type) === 'domestic';
+
             // Mark Packing Main as Finalized (1)
-            PackingMain::where('id', $main_id)->update(['status' => 1]);
+            $packing_main->update(['status' => 1]);
 
-            // Propagate status 1 to all cartons in this session
-            PackingCarton::where('packing_main_id', $main_id)->update(['status' => 1]);
+            // Determine status for cartons
+            $carton_status = $is_domestic ? 3 : 1; // 3=Inventory, 1=Ready for Dispatch
 
-            $packing_data = PackingMain::where('id', $main_id)->first();
-            ProductionSlipDigitization::where('id', $packing_data->slip_id)->update([
+            // Update all cartons in this session
+            PackingCarton::where('packing_main_id', $main_id)->update(['status' => $carton_status]);
+
+            // If Domestic, Move to Inventory table
+            if ($is_domestic) {
+                foreach ($packing_main->cartons as $carton) {
+                    foreach ($carton->boxes as $box) {
+                        // Group packing items by their variations
+                        $box_variations = [];
+                        foreach ($box->items as $item) {
+                            $detail = \App\Models\OrderProductSetDetail::find($item->size_id);
+                            if ($detail) {
+                                $set_id = $detail->order_products_set_id;
+                                $box_variations[$set_id] = ($box_variations[$set_id] ?? 0) + $item->quantity;
+                            }
+                        }
+
+                        foreach ($box_variations as $set_id => $qty) {
+                            $set = \App\Models\OrderProductSet::with('colors', 'product', 'size_measurement')->find($set_id);
+                            if ($set) {
+                                DomesticInventory::create([
+                                    'order_main_id' => $order->id,
+                                    'packing_main_id' => $packing_main->id,
+                                    'packing_carton_id' => $carton->id,
+                                    'packing_box_id' => $box->id,
+                                    'product_id' => $set->production_goods_id,
+                                    'product_name' => $set->product ? $set->product->name_of_garment : null,
+                                    'color_id' => $set->color_id,
+                                    'color_name' => $set->colors ? $set->colors->name : null,
+                                    'size_set_id' => $set->set_size,
+                                    'size_set_name' => $set->size_measurement ? $set->size_measurement->name : null,
+                                    'design_number' => $set->design_number,
+                                    'quantity' => $qty,
+                                    'box_no' => $box->box_no,
+                                    'carton_no' => $carton->carton_no,
+                                    'barcode' => $box->box_no,
+                                    'qrcode' => $box->box_no,
+                                    'status' => 1
+                                ]);
+                            }
+                        }
+                    }
+
+                    // Also handle loose items directly in cartons
+                    $carton_items = PackingItem::where('packing_carton_id', $carton->id)
+                        ->whereNull('packing_box_id')
+                        ->get();
+
+                    if ($carton_items->isNotEmpty()) {
+                        $carton_variations = [];
+                        foreach ($carton_items as $item) {
+                            $detail = \App\Models\OrderProductSetDetail::find($item->size_id);
+                            if ($detail) {
+                                $set_id = $detail->order_products_set_id;
+                                $carton_variations[$set_id] = ($carton_variations[$set_id] ?? 0) + $item->quantity;
+                            }
+                        }
+
+                        foreach ($carton_variations as $set_id => $qty) {
+                            $set = \App\Models\OrderProductSet::with('colors', 'product', 'size_measurement')->find($set_id);
+                            if ($set) {
+                                $box_code = $carton->barcode ?: 'C' . $carton->carton_no;
+                                DomesticInventory::create([
+                                    'order_main_id' => $order->id,
+                                    'packing_main_id' => $packing_main->id,
+                                    'packing_carton_id' => $carton->id,
+                                    'packing_box_id' => null,
+                                    'product_id' => $set->production_goods_id,
+                                    'product_name' => $set->product ? $set->product->name_of_garment : null,
+                                    'color_id' => $set->color_id,
+                                    'color_name' => $set->colors ? $set->colors->name : null,
+                                    'size_set_id' => $set->set_size,
+                                    'size_set_name' => $set->size_measurement ? $set->size_measurement->name : null,
+                                    'design_number' => $set->design_number,
+                                    'quantity' => $qty,
+                                    'box_no' => null,
+                                    'carton_no' => $carton->carton_no,
+                                    'barcode' => $box_code,
+                                    'qrcode' => $box_code,
+                                    'status' => 1
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            ProductionSlipDigitization::where('id', $packing_main->slip_id)->update([
                 'status' => 1
             ]);
 
