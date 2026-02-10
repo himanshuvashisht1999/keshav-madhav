@@ -10,7 +10,7 @@ use App\Models\MasterCustomer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class OrderController extends Controller
 {
@@ -88,7 +88,10 @@ class OrderController extends Controller
             $boxImages[$key] = $image;
         }
 
-        return view('sales_agent.orders.create', compact('shop', 'boxes', 'designs', 'colors', 'size_sets', 'boxImages'));
+        // Fetch GST setting
+        $gst_percentage = DB::table('settings')->value('gst_order') ?? 5.00;
+
+        return view('sales_agent.orders.create', compact('shop', 'boxes', 'designs', 'colors', 'size_sets', 'boxImages', 'gst_percentage'));
     }
 
     public function store(Request $request)
@@ -100,6 +103,7 @@ class OrderController extends Controller
             'variations.*.color_id' => 'required',
             'variations.*.size_set_id' => 'required',
             'variations.*.qty' => 'required|integer|min:1',
+            'discount_percentage' => 'nullable|numeric|min:0|max:100',
         ]);
 
         $agent_id = Auth::guard('sales_agent')->id();
@@ -142,6 +146,15 @@ class OrderController extends Controller
             return $item->quantity * $item->master_selling_price;
         });
 
+        $discount_percentage = $request->discount_percentage ?? 0;
+        $discount_amount = $total_amount * ($discount_percentage / 100);
+        $taxable_amount = $total_amount - $discount_amount;
+
+        // Fetch GST from settings if not provided (though stored usually fixed at creation)
+        $gst_percentage = DB::table('settings')->value('gst_order') ?? 5.00;
+        $gst_amount = $taxable_amount * ($gst_percentage / 100);
+        $grand_total = $taxable_amount + $gst_amount;
+
         DB::beginTransaction();
         try {
             $order = AgentOrder::create([
@@ -149,6 +162,11 @@ class OrderController extends Controller
                 'master_customer_id' => $shop_id,
                 'total_qty' => $total_qty,
                 'total_amount' => $total_amount,
+                'discount_percentage' => $discount_percentage,
+                'discount_amount' => $discount_amount,
+                'gst_percentage' => $gst_percentage,
+                'gst_amount' => $gst_amount,
+                'grand_total' => $grand_total,
                 'status' => 'pending',
                 'order_date' => now(),
             ]);
@@ -283,7 +301,10 @@ class OrderController extends Controller
             })
             ->toArray();
 
-        return view('sales_agent.orders.edit', compact('shop', 'boxes', 'designs', 'colors', 'size_sets', 'order', 'selected_quantities', 'boxImages'));
+        // Fetch GST setting
+        $gst_percentage = DB::table('settings')->value('gst_order') ?? 5.00;
+
+        return view('sales_agent.orders.edit', compact('shop', 'boxes', 'designs', 'colors', 'size_sets', 'order', 'selected_quantities', 'boxImages', 'gst_percentage'));
     }
 
     public function update(Request $request, $id)
@@ -294,6 +315,7 @@ class OrderController extends Controller
             'variations.*.color_id' => 'required',
             'variations.*.size_set_id' => 'required',
             'variations.*.qty' => 'required|integer|min:0',
+            'discount_percentage' => 'nullable|numeric|min:0|max:100',
         ]);
 
         $order = AgentOrder::where('id', $id)
@@ -335,9 +357,30 @@ class OrderController extends Controller
             return $item->quantity * $item->master_selling_price;
         });
 
+        $discount_percentage = $request->has('discount_percentage') ? $request->discount_percentage : $order->discount_percentage;
+
+        // Recalculate totals
+        $discount_amount = $total_amount * ($discount_percentage / 100);
+        $taxable_amount = $total_amount - $discount_amount;
+
+        // GST percentage remains what was set at order creation unless we want to update it to current settings? 
+        // Logic: Keep existing GST % unless admin edits it. Agent edit might technically update it if we don't pass it.
+        // For agent edit, let's keep the gst_percentage from the order itself.
+        $gst_percentage = $order->gst_percentage;
+        $gst_amount = $taxable_amount * ($gst_percentage / 100);
+        $grand_total = $taxable_amount + $gst_amount;
+
         DB::beginTransaction();
         try {
-            $order->update(['total_qty' => $total_qty, 'total_amount' => $total_amount, 'updated_at' => now()]);
+            $order->update([
+                'total_qty' => $total_qty,
+                'total_amount' => $total_amount,
+                'discount_percentage' => $discount_percentage,
+                'discount_amount' => $discount_amount,
+                'gst_amount' => $gst_amount,
+                'grand_total' => $grand_total,
+                'updated_at' => now()
+            ]);
             AgentOrderItem::where('agent_order_id', $order->id)->delete();
 
             foreach ($items_to_snapshot as $item) {
@@ -407,6 +450,11 @@ class OrderController extends Controller
             'status' => $order->status,
             'total_qty' => $order->total_qty,
             'total_amount' => $order->total_amount,
+            'discount_percentage' => $order->discount_percentage ?? 0,
+            'discount_amount' => $order->discount_amount ?? 0,
+            'gst_percentage' => $order->gst_percentage ?? 0,
+            'gst_amount' => $order->gst_amount ?? 0,
+            'grand_total' => $order->grand_total ?? $order->total_amount,
             'agent_name' => $order->agent->name ?? 'Sales Agent',
             'shop_name' => $order->shop->name ?? 'N/A',
             'shop_email' => $order->shop->email ?? '',

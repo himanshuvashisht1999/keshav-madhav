@@ -188,6 +188,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
         Route::get('agent-orders/{id}', [App\Http\Controllers\Admin\AgentOrderController::class, 'show'])->name('agent-orders.show');
         Route::get('agent-orders/{id}/invoice', [App\Http\Controllers\Admin\AgentOrderController::class, 'downloadInvoice'])->name('agent-orders.invoice');
         Route::post('agent-orders/{id}/dispatch', [App\Http\Controllers\Admin\AgentOrderController::class, 'dispatchOrder'])->name('agent-orders.dispatch');
+        Route::get('agent-orders/{id}/edit', [App\Http\Controllers\Admin\AgentOrderController::class, 'edit'])->name('agent-orders.edit');
+        Route::put('agent-orders/{id}', [App\Http\Controllers\Admin\AgentOrderController::class, 'update'])->name('agent-orders.update');
 
         Route::prefix('/purchase-order-material')->name('purchase_order_material.')->group(function () {
             Route::get('/index', [AdminPurchaseOrderMaterialController::class, 'index'])->name('index');

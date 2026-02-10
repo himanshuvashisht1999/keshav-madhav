@@ -89,7 +89,7 @@
                 <form id="orderForm">
                     @csrf
 
-                    <div class="table-responsive">
+                    <div class="table-responsive d-none d-md-block">
                         <table class="table table-hover mb-0 align-middle">
                             <thead class="bg-light">
                                 <tr>
@@ -176,6 +176,96 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Mobile Card View -->
+                    <div class="d-md-none space-y-3">
+                        @forelse($boxes as $variation)
+                            @php
+                                $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
+                                $image = $boxImages[$vKey] ?? null;
+                                $itemData = $selected_quantities[$vKey] ?? null;
+                                $initialQty = $itemData ? $itemData['qty'] : 0;
+                            @endphp
+                            <div class="card border-0 shadow-sm rounded-lg mb-2 variation-row overflow-hidden {{ $initialQty > 0 ? 'has-qty' : '' }}"
+                                data-key="{{ $vKey }}" data-product-id="{{ $variation->product_id }}"
+                                data-color-id="{{ $variation->color_id }}" data-size-set-id="{{ $variation->size_set_id }}"
+                                data-pcs="{{ $variation->pcs_per_box }}" data-price="{{ $variation->unit_price }}"
+                                data-available="{{ $variation->available_boxes }}">
+                                <div class="card-body p-2">
+                                    <div class="d-flex">
+                                        <!-- Image -->
+                                        <div class="mr-3">
+                                            @if($image)
+                                                <img src="{{ asset('uploads/inventory_prices/' . $image) }}" alt="Product"
+                                                    class="rounded-lg border" style="width: 70px; height: 70px; object-fit: cover;">
+                                            @else
+                                                <div class="bg-light rounded-lg border d-flex align-items-center justify-content-center"
+                                                    style="width: 70px; height: 70px;">
+                                                    <i class="fas fa-image text-muted opacity-50"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        <!-- Details -->
+                                        <div class="flex-grow-1 min-w-0">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                <div>
+                                                    <h6 class="font-weight-bold text-dark mb-0 text-truncate"
+                                                        style="max-width: 150px;">
+                                                        {{ $variation->design_number }}
+                                                    </h6>
+                                                    <small class="text-muted d-block text-truncate" style="max-width: 150px;">
+                                                        {{ $variation->color_name }} • {{ $variation->size_set_name }}
+                                                    </small>
+                                                </div>
+                                                <div class="text-right">
+                                                    <div class="font-weight-bold text-dark">
+                                                        ₹{{ number_format($variation->unit_price, 0) }}</div>
+                                                    <small class="text-muted" style="font-size: 10px;">/pc</small>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between align-items-end mt-2">
+                                                <div class="small text-muted" style="font-size: 11px; line-height: 1.2;">
+                                                    <div>{{ $variation->pcs_per_box }} pcs/box</div>
+                                                    <div
+                                                        class="{{ $variation->available_boxes < 10 ? 'text-danger' : 'text-success' }}">
+                                                        {{ $variation->available_boxes }} boxes left
+                                                    </div>
+                                                </div>
+
+                                                <div class="quantity-control input-group input-group-sm border rounded-pill overflow-hidden"
+                                                    style="width: 100px;">
+                                                    <div class="input-group-prepend">
+                                                        <button class="btn btn-light btn-minus border-0 text-muted px-2"
+                                                            type="button">
+                                                            <i class="fas fa-minus fa-xs"></i>
+                                                        </button>
+                                                    </div>
+                                                    <input type="number"
+                                                        class="form-control text-center box-qty-input border-0 bg-transparent p-0 h-auto"
+                                                        value="{{ $initialQty }}" min="0"
+                                                        max="{{ $variation->available_boxes }}" data-key="{{ $vKey }}"
+                                                        style="font-size: 14px; font-weight: 600;">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-light btn-plus border-0 text-primary px-2"
+                                                            type="button">
+                                                            <i class="fas fa-plus fa-xs"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center py-5">
+                                <i class="fas fa-search-minus fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">No variations found.</h6>
+                            </div>
+                        @endforelse
+                    </div>
                 </form>
             </div>
             @if($boxes->hasPages())
@@ -189,27 +279,96 @@
     </div>
 
     <!-- Sticky Bottom Summary Bar -->
-    <div class="fixed-bottom bg-white shadow-lg border-top p-3" id="summaryBar" style="z-index: 1050;">
+    <!-- Desktop View -->
+    <div class="fixed-bottom bg-white shadow-lg border-top p-3 d-none d-md-block animate__animated animate__fadeInUp"
+        id="summaryBarDesktop" style="z-index: 1050;">
         <div class="container-fluid">
             <div class="row align-items-center">
-                <div class="col-md-3 d-none d-md-block border-right">
+                <div class="col-md-2 border-right">
                     <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Status</small>
                     <span class="text-dark font-weight-bold d-block">Modifying Order #{{ $order->id }}</span>
                 </div>
-                <div class="col-md-2 col-4 text-center border-right">
+                <div class="col-md-2 text-center border-right">
                     <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Selected</small>
-                    <span class="h5 font-weight-bold text-dark mb-0" id="selectedCount">0</span>
+                    <span class="h5 font-weight-bold text-dark mb-0" id="selectedCountDesktop">0</span>
                     <small class="text-muted ml-1">Boxes</small>
                 </div>
-                <div class="col-md-3 col-8 pl-md-4">
-                    <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Summary Info</small>
-                    <span class="h4 font-weight-bold text-primary mb-0">₹<span id="totalAmount">0</span></span>
-                    <small class="text-muted ml-1 font-weight-bold d-block" id="totalQtyVal">Updating...</small>
+
+                <!-- Discount & GST Section -->
+                <div class="col-md-3 border-right">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted font-weight-bold">Subtotal:</small>
+                        <span class="font-weight-bold">₹<span id="subTotalAmountDesktop">0</span></span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted font-weight-bold">Discount (%):</small>
+                        <input type="number" id="discountInputDesktop"
+                            class="form-control form-control-sm text-right p-1 py-0 discount-input"
+                            style="width: 60px; height: 24px;" value="{{ $order->discount_percentage }}" min="0" max="100">
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted font-weight-bold">GST ({{ $gst_percentage }}%):</small>
+                        <span class="font-weight-bold text-danger">+₹<span id="gstAmountDesktop">0</span></span>
+                    </div>
                 </div>
-                <div class="col-md-4 col-12 mt-3 mt-md-0">
-                    <button type="button" id="updateOrderBtn"
-                        class="btn btn-primary btn-block btn-lg py-2 font-weight-bold shadow-sm">
+
+                <div class="col-md-2 text-center pl-4">
+                    <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Grand Total</small>
+                    <span class="h4 font-weight-bold text-primary mb-0">₹<span id="grandTotalAmountDesktop">0</span></span>
+                </div>
+
+                <div class="col-md-3">
+                    <button type="button"
+                        class="btn btn-primary btn-block btn-lg py-2 font-weight-bold shadow-sm update-order-btn">
                         Update Order <i class="fas fa-save ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile View -->
+    <div class="fixed-bottom bg-white shadow-lg border-top d-md-none" id="summaryBarMobile"
+        style="z-index: 1050; display: none;">
+        <div class="p-2">
+            <!-- Summary Info -->
+            <div class="row mb-1">
+                <div class="col-6">
+                    <small class="text-muted d-block" style="font-size: 11px;">Subtotal</small>
+                    <span class="font-weight-bold text-dark">₹<span id="subTotalAmountMobile">0</span></span>
+                </div>
+                <div class="col-6 text-right">
+                    <small class="text-muted d-block" style="font-size: 11px;">Boxes</small>
+                    <span class="font-weight-bold text-dark"><span id="selectedCountMobile">0</span></span>
+                </div>
+            </div>
+
+            <!-- Discount & GST Row -->
+            <div class="row mb-1">
+                <div class="col-6">
+                    <div class="d-flex align-items-center">
+                        <small class="text-muted mr-2" style="font-size: 11px;">Discount %</small>
+                        <input type="number" id="discountInputMobile"
+                            class="form-control form-control-sm text-center discount-input"
+                            style="width: 50px; height: 28px; font-size: 13px;" value="{{ $order->discount_percentage }}"
+                            min="0" max="100">
+                    </div>
+                </div>
+                <div class="col-6 text-right">
+                    <small class="text-muted d-block" style="font-size: 11px;">GST ({{ $gst_percentage }}%)</small>
+                    <span class="text-success font-weight-bold">+₹<span id="gstAmountMobile">0</span></span>
+                </div>
+            </div>
+
+            <!-- Grand Total & Button -->
+            <div class="d-flex justify-content-between align-items-center pt-1 border-top">
+                <div>
+                    <small class="text-muted d-block" style="font-size: 11px;">Grand Total</small>
+                    <span class="h5 font-weight-bold text-primary mb-0">₹<span id="grandTotalAmountMobile">0</span></span>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-primary px-4 py-2 font-weight-bold shadow-sm update-order-btn">
+                        Update <i class="fas fa-save ml-1"></i>
                     </button>
                 </div>
             </div>
@@ -276,7 +435,7 @@
             Object.keys(initialVariations).forEach(key => {
                 const itemData = initialVariations[key];
                 const row = $(`.variation-row[data-key="${key}"]`);
-                
+
                 if (row.length) {
                     // Item is on current page, prefer DOM data but use qty from controller
                     cart.set(key, {
@@ -308,7 +467,7 @@
             function updateUI() {
                 let totalBoxes = 0;
                 let totalPieces = 0;
-                let totalAmount = 0;
+                let subTotal = 0;
 
                 cart.forEach((item, key) => {
                     if (item.qty > 0) {
@@ -316,14 +475,40 @@
                         // For items on other pages, metadata might be missing in this simple implementation
                         if (item.pcs_per_box) {
                             totalPieces += (item.qty * item.pcs_per_box);
-                            totalAmount += (item.qty * item.pcs_per_box * item.unit_price);
+                            subTotal += (item.qty * item.pcs_per_box * item.unit_price);
                         }
                     }
                 });
 
-                $('#selectedCount').text(totalBoxes);
-                $('#totalAmount').text(totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                $('#totalQtyVal').text(totalPieces + ' Pcs total (' + totalBoxes + ' boxes)');
+                // Get discount from whichever input is visible or has value
+                let discountPercent = 0;
+                if ($('#discountInputDesktop').is(':visible')) {
+                    discountPercent = parseFloat($('#discountInputDesktop').val()) || 0;
+                } else {
+                    discountPercent = parseFloat($('#discountInputMobile').val()) || 0;
+                }
+
+                // Sync discount inputs
+                $('.discount-input').val(discountPercent);
+
+                const discountAmount = subTotal * (discountPercent / 100);
+                const taxableAmount = subTotal - discountAmount;
+                const gstPercent = {{ $gst_percentage }};
+                const gstAmount = taxableAmount * (gstPercent / 100);
+                const grandTotal = taxableAmount + gstAmount;
+
+                // Update Desktop Summary
+                $('#selectedCountDesktop').text(totalBoxes);
+                $('#subTotalAmountDesktop').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                $('#gstAmountDesktop').text(gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                $('#grandTotalAmountDesktop').text(grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
+                // Update Mobile Summary
+                $('#selectedCountMobile').text(totalBoxes);
+                $('#miniBoxCount').text(totalBoxes);
+                $('#subTotalAmountMobile').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                $('#gstAmountMobile').text(gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                $('#grandTotalAmountMobile').text(grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
                 // Sync inputs
                 $('.variation-row').each(function () {
@@ -333,6 +518,7 @@
                     if (item && item.qty > 0) {
                         input.val(item.qty);
                         $(this).addClass('has-qty');
+                        $(this).find('.card').addClass('border-primary bg-light'); // Highlight mobile card
                         // Ensure we have metadata if it was missing (loaded from other page previously)
                         if (!item.pcs_per_box) {
                             item.product_id = $(this).data('product-id');
@@ -344,6 +530,7 @@
                     } else {
                         input.val(0);
                         $(this).removeClass('has-qty');
+                        $(this).find('.card').removeClass('border-primary bg-light');
                     }
                 });
             }
@@ -362,6 +549,9 @@
                     $(this).val(qty);
                 }
 
+                // Find all inputs for this key (both desktop and mobile) and update them
+                $(`.variation-row[data-key="${key}"] .box-qty-input`).val(qty);
+
                 if (qty > 0) {
                     cart.set(key, {
                         product_id: row.data('product-id'),
@@ -376,6 +566,20 @@
                 }
                 updateUI();
             });
+
+            // Discount Input Change
+            $('.discount-input').on('input change', function () {
+                let val = parseFloat($(this).val());
+                if (val < 0) $(this).val(0);
+                if (val > 100) $(this).val(100);
+
+                // Sync other discount inputs
+                $('.discount-input').not(this).val($(this).val());
+
+                updateUI();
+            });
+
+
 
             // Plus/Minus Buttons
             $(document).on('click', '.btn-plus', function () {
@@ -395,7 +599,7 @@
             updateUI();
 
             // Update Order AJAX
-            $('#updateOrderBtn').click(function () {
+            $('.update-order-btn').click(function () {
                 const btn = $(this);
                 const originalText = btn.html();
 
@@ -421,16 +625,25 @@
                     return;
                 }
 
+                // Get discount from visible input
+                let discountPercent = 0;
+                if ($('#discountInputDesktop').is(':visible')) {
+                    discountPercent = parseFloat($('#discountInputDesktop').val()) || 0;
+                } else {
+                    discountPercent = parseFloat($('#discountInputMobile').val()) || 0;
+                }
+
                 Swal.fire({
                     title: 'Update Order?',
-                    text: "Order Summary: " + $('#selectedCount').text() + " boxes total.",
+                    text: "Order Summary: " + variations.reduce((a, b) => a + b.qty, 0) + " boxes total.",
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#007bff',
                     confirmButtonText: 'Yes, Update'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating Order...');
+                        // Disable all update order buttons
+                        $('.update-order-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating Order...');
 
                         $.ajax({
                             url: "{{ route('agent.orders.update', $order->id) }}",
@@ -438,7 +651,8 @@
                             data: {
                                 _method: 'PUT',
                                 _token: "{{ csrf_token() }}",
-                                variations: variations
+                                variations: variations,
+                                discount_percentage: discountPercent,
                             },
                             success: function (response) {
                                 if (response.success) {
@@ -447,12 +661,12 @@
                                     });
                                 } else {
                                     Swal.fire('Error', response.message, 'error');
-                                    btn.prop('disabled', false).html(originalText);
+                                    $('.update-order-btn').prop('disabled', false).html(originalText);
                                 }
                             },
                             error: function (xhr) {
                                 Swal.fire('Error', xhr.responseJSON?.message || 'Something went wrong', 'error');
-                                btn.prop('disabled', false).html(originalText);
+                                $('.update-order-btn').prop('disabled', false).html(originalText);
                             }
                         });
                     }

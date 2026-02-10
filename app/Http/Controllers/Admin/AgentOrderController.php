@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AgentOrderController extends Controller
 {
@@ -43,6 +43,47 @@ class AgentOrderController extends Controller
         $items = DB::table('agent_order_items')->where('agent_order_id', $id)->get();
 
         return view('admin.agent_orders.show', compact('order', 'items'));
+    }
+
+    public function edit($id)
+    {
+        $order = DB::table('agent_orders')->where('id', $id)->first();
+        if (!$order)
+            abort(404);
+
+        return view('admin.agent_orders.edit', compact('order'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'discount_percentage' => 'required|numeric|min:0|max:100',
+            'gst_percentage' => 'required|numeric|min:0|max:100',
+        ]);
+
+        $order = DB::table('agent_orders')->where('id', $id)->first();
+        if (!$order)
+            abort(404);
+
+        $total_amount = $order->total_amount;
+        $discount_percentage = $request->discount_percentage;
+        $gst_percentage = $request->gst_percentage;
+
+        $discount_amount = $total_amount * ($discount_percentage / 100);
+        $taxable_amount = $total_amount - $discount_amount;
+        $gst_amount = $taxable_amount * ($gst_percentage / 100);
+        $grand_total = $taxable_amount + $gst_amount;
+
+        DB::table('agent_orders')->where('id', $id)->update([
+            'discount_percentage' => $discount_percentage,
+            'discount_amount' => $discount_amount,
+            'gst_percentage' => $gst_percentage,
+            'gst_amount' => $gst_amount,
+            'grand_total' => $grand_total,
+            'updated_at' => now()
+        ]);
+
+        return redirect()->route('admin.agent-orders.index')->with('success', 'Order updated successfully');
     }
 
     public function downloadInvoice($id)

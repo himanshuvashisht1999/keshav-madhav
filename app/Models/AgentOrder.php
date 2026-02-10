@@ -14,6 +14,11 @@ class AgentOrder extends Model
         'master_customer_id',
         'total_qty',
         'total_amount',
+        'gst_percentage',
+        'gst_amount',
+        'discount_percentage',
+        'discount_amount',
+        'grand_total',
         'status',
         'order_date'
     ];
