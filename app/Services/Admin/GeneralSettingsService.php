@@ -6,23 +6,26 @@ use Illuminate\Support\Str;
 use Auth;
 use App\Models\GeneralSettings;
 use Illuminate\Support\Facades\Hash;
-class GeneralSettingsService {
+class GeneralSettingsService
+{
     public function __construct(
         GeneralSettings $user
     ) {
-        $this->user= $user;
+        $this->user = $user;
 
     }
 
-    public function getSingleData(Request $request){
+    public function getSingleData(Request $request)
+    {
         $data = GeneralSettings::first();
         // dd($data);
         return $data;
     }
-    public function update(Request $request){
+    public function update(Request $request)
+    {
         // dd($request->all());
         $update_data = GeneralSettings::find($request->id);
-        if($request->file('fav_icon')){
+        if ($request->file('fav_icon')) {
             $oldImageName = $update_data->getRawOriginal('fav_icon');
             if ($oldImageName) {
                 $oldImagePath = public_path('assets/general-settings-image/' . $oldImageName);
@@ -32,12 +35,12 @@ class GeneralSettingsService {
             }
             $fav_icon = $request->file('fav_icon');
             $extIcon = $fav_icon->getClientOriginalExtension();
-            $imgIcon = "fav_icon-".rand()."_".time().".".$extIcon;
-            $destinationPath = public_path().'/assets/general-settings-image';
+            $imgIcon = "fav_icon-" . rand() . "_" . time() . "." . $extIcon;
+            $destinationPath = public_path() . '/assets/general-settings-image';
             $fav_icon->move($destinationPath, $imgIcon);
             $update_data->fav_icon = $imgIcon;
         }
-        if($request->file('logo')){
+        if ($request->file('logo')) {
             $oldImageName = $update_data->getRawOriginal('logo');
             if ($oldImageName) {
                 $oldImagePath = public_path('assets/general-settings-image/' . $oldImageName);
@@ -47,8 +50,8 @@ class GeneralSettingsService {
             }
             $logo = $request->file('logo');
             $extIcon = $logo->getClientOriginalExtension();
-            $imgIcon = "logo-".rand()."_".time().".".$extIcon;
-            $destinationPath = public_path().'/assets/general-settings-image';
+            $imgIcon = "logo-" . rand() . "_" . time() . "." . $extIcon;
+            $destinationPath = public_path() . '/assets/general-settings-image';
             $logo->move($destinationPath, $imgIcon);
             $update_data->logo = $imgIcon;
         }
@@ -70,6 +73,7 @@ class GeneralSettingsService {
         $update_data->meta_description = $request->meta_description;
         $update_data->header_script = $request->header_script;
         $update_data->footer_script = $request->footer_script;
+        $update_data->gst_order = $request->gst_order;
         $update_data->save();
 
         return true;

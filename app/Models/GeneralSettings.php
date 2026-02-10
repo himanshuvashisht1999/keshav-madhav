@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class GeneralSettings extends Model
 {
     use HasFactory;
-    protected $table= 'settings';
+    protected $table = 'settings';
     protected $fillable = [
         'id',
         'logo',
@@ -31,6 +31,7 @@ class GeneralSettings extends Model
         'android_app',
         'ios_app',
         'currency',
+        'gst_order',
         'latitude',
         'longitude',
         'created_at',
@@ -39,7 +40,7 @@ class GeneralSettings extends Model
     public function getImageAttribute($value)
     {
         if ($value) {
-            return asset('assets/general-settings-image/'. $value);
+            return asset('assets/general-settings-image/' . $value);
         } else {
             return asset('assets/general-settings-image/default-image.png');
         }
@@ -47,7 +48,7 @@ class GeneralSettings extends Model
     public function getLogoAttribute($value)
     {
         if ($value) {
-            return asset('assets/general-settings-image/'. $value);
+            return asset('assets/general-settings-image/' . $value);
         } else {
             return asset('assets/general-settings-image/default-image.png');
         }
@@ -55,7 +56,7 @@ class GeneralSettings extends Model
     public function getFavIconAttribute($value)
     {
         if ($value) {
-            return asset('assets/general-settings-image/'. $value);
+            return asset('assets/general-settings-image/' . $value);
         } else {
             return asset('assets/general-settings-image/default-image.png');
         }

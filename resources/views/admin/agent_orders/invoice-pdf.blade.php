@@ -213,8 +213,21 @@
             <td class="summary-value" style="color: #333;">{{ $order->total_qty }} pcs</td>
         </tr>
         <tr>
-            <td class="summary-label">Grand Total:</td>
-            <td class="summary-value">&#8377;{{ number_format($order->total_amount, 2) }}</td>
+            <td class="summary-label">Subtotal:</td>
+            <td class="summary-value" style="color: #333;">&#8377;{{ number_format($order->total_amount, 2) }}</td>
+        </tr>
+        <tr>
+            <td class="summary-label">Discount ({{ number_format($order->discount_percentage, 0) }}%):</td>
+            <td class="summary-value" style="color: #28a745;">-&#8377;{{ number_format($order->discount_amount, 2) }}
+            </td>
+        </tr>
+        <tr>
+            <td class="summary-label">GST ({{ number_format($order->gst_percentage, 0) }}%):</td>
+            <td class="summary-value" style="color: #dc3545;">+&#8377;{{ number_format($order->gst_amount, 2) }}</td>
+        </tr>
+        <tr>
+            <td class="summary-label" style="font-size: 16px;">Grand Total:</td>
+            <td class="summary-value" style="font-size: 16px;">&#8377;{{ number_format($order->grand_total, 2) }}</td>
         </tr>
     </table>
 

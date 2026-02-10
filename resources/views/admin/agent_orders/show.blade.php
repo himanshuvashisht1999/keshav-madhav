@@ -11,6 +11,10 @@
                             class="btn btn-primary rounded-pill px-4 mr-2">
                             <i class="fas fa-file-invoice mr-1"></i> Download Invoice
                         </a>
+                        <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
+                            class="btn btn-warning rounded-pill px-4 mr-2">
+                            <i class="fas fa-edit mr-1"></i> Edit Order
+                        </a>
                         <a href="{{ route('admin.agent-orders.index') }}"
                             class="btn btn-outline-secondary rounded-pill px-4">
                             <i class="fas fa-arrow-left mr-1"></i> Back
@@ -49,9 +53,29 @@
                                         <span class="font-weight-bold">{{ $order->total_qty }} pcs</span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between p-2">
-                                        <span class="text-muted h4">Total Pay:</span>
+                                        <span class="text-muted">Total Quantity:</span>
+                                        <span class="font-weight-bold">{{ $order->total_qty }} pcs</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between p-2">
+                                        <span class="text-muted">Subtotal:</span>
+                                        <span class="font-weight-bold">₹{{ number_format($order->total_amount, 2) }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between p-2">
+                                        <span class="text-muted">Discount
+                                            ({{ number_format($order->discount_percentage, 0) }}%):</span>
                                         <span
-                                            class="font-weight-bold text-primary h4">₹{{ number_format($order->total_amount, 2) }}</span>
+                                            class="font-weight-bold text-success">-₹{{ number_format($order->discount_amount, 2) }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between p-2">
+                                        <span class="text-muted">GST
+                                            ({{ number_format($order->gst_percentage, 0) }}%):</span>
+                                        <span
+                                            class="font-weight-bold text-danger">+₹{{ number_format($order->gst_amount, 2) }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between p-2 bg-light">
+                                        <span class="text-dark h5 mb-0">Grand Total:</span>
+                                        <span
+                                            class="font-weight-bold text-primary h4 mb-0">₹{{ number_format($order->grand_total, 2) }}</span>
                                     </li>
                                 </ul>
 
