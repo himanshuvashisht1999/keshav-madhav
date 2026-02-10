@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class MasterCustomer extends Model
 {
     use HasFactory;
-    protected $table= 'master_customers';
+    protected $table = 'master_customers';
     protected $fillable = [
         'id',
         'sno',
@@ -20,8 +20,9 @@ class MasterCustomer extends Model
         'phone',
         'address',
         'status',
+        'sales_agent_id',
         'created_at',
         'updated_at'
     ];
-    
+
 }

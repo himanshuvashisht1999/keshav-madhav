@@ -48,6 +48,10 @@ return [
             'driver' => 'passport',
             'provider' => 'users',
         ],
+        'sales_agent' => [
+            'driver' => 'session',
+            'provider' => 'sales_agents',
+        ],
     ],
 
     /*
@@ -75,6 +79,10 @@ return [
         'admins' => [
             'driver' => 'eloquent',
             'model' => App\Models\User::class,
+        ],
+        'sales_agents' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\SalesAgent::class,
         ],
 
         // 'users' => [
