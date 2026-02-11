@@ -24,19 +24,37 @@
             <div class="card card-default">
                 <div class="card-body table-responsive">
 
+                    <div class="mb-2 d-flex justify-content-between align-items-center">
+                        <div>
+                            <button type="button" id="bulkAssignBtn" class="btn btn-primary btn-sm">
+                                Assign Selected to Cutting Master
+                            </button>
+                        </div>
+                    </div>
+
                     <table id="customers" class="table table-bordered table-hover">
                         <thead>
                         <tr>
+                            <td></td>
                             <td><input type="hidden" id="id" value="{{ $order_main->id }}"></td>
                             <td><input type="text" class="form-control" id="bar_code"></td>
                             <td><input type="text" class="form-control" id="design_number"></td>
-                            <td colspan="9"></td>
+                            <td>
+                                <select class="form-control" id="assigned_filter">
+                                    <option value="">All</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="assigned">Assigned</option>
+                                </select>
+                            </td>
+                            <td colspan="8"></td>
                         </tr>
 
                         <tr>
+                            <th><input type="checkbox" id="select_all"></th>
                             <th>ID</th>
                             <th>Bar Code</th>
                             <th>Design No</th>
+                            <th>Assign Filter</th>
                             <th>Set Size</th>
                             <th>Size Group</th>
                             <th>Color</th>
@@ -53,7 +71,7 @@
 
                         <tfoot>
                         <tr>
-                            <th colspan="6" class="text-right">Total</th>
+                            <th colspan="7" class="text-right">Total</th>
                             <th id="set_qty_total"></th>
                             <th>Total Qty</th>
                             <th id="total_qty_total"></th>
@@ -111,6 +129,7 @@
                     </div>
 
                     <input type="hidden" id="modal_order_set_id" name="order_product_set_id">
+                    <input type="hidden" id="modal_order_set_ids" name="order_product_set_ids">
 
                     <!-- WAREHOUSE -->
                     <div class="form-group">
@@ -194,9 +213,10 @@ $(document).ready(function () {
     // Load default warehouse cutting masters
     warehouseChange($('#warehouse_id').val());
 
-    // Open modal
+    // Open modal (single row)
     $(document).on('click', '.assign-btn', function () {
         $('#modal_order_set_id').val($(this).data('id'));
+        $('#modal_order_set_ids').val('');
         $('#modal_design_number').text($(this).data('design'));
         $('#modal_set_size').text($(this).data('set-size'));
         $('#modal_set_size_group').text($(this).data('set-size-group'));
@@ -210,15 +230,24 @@ $(document).ready(function () {
         processing: true,
         serverSide: true,
         ordering: false,
+        paging: false,          // show complete order set (no pagination)
+        info: true,
+        lengthChange: false,
         ajax: {
             url: "{{ route('admin.product_order.indexListOrderSet') }}",
             data: function (d) {
                 d.id = $('#id').val();
                 d.bar_code = $('#bar_code').val();
                 d.design_number = $('#design_number').val();
+                d.assigned_filter = $('#assigned_filter').val();
+
+                // force "all rows" behavior for server-side datatables
+                d.start = 0;
+                d.length = -1;
             }
         },
         columns: [
+            {data: 'select', orderable: false, searchable: false},
             {data: 'DT_RowIndex'},
             {data: 'bar_code'},
             {data: 'design_number'},
@@ -235,9 +264,52 @@ $(document).ready(function () {
         footerCallback: function (row, data) {
             let api = this.api();
             let sum = col => api.column(col).data().reduce((a,b)=>+a + +b,0);
-            $('#set_qty_total').html(sum(6));
-            $('#total_qty_total').html(sum(8));
+            $('#set_qty_total').html(sum(7));
+            $('#total_qty_total').html(sum(9));
         }
+    });
+
+    // Reload on filters (debounced)
+    let reloadTimer = null;
+    function reloadTable() {
+        clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(function () {
+            $('#customers').DataTable().ajax.reload(null, false);
+        }, 250);
+    }
+
+    $('#bar_code, #design_number').on('keyup', reloadTable);
+    $('#assigned_filter').on('change', reloadTable);
+
+    // Select all checkbox
+    $('#select_all').on('change', function () {
+        const checked = $(this).is(':checked');
+        $('.row-select').prop('checked', checked);
+    });
+
+    // Bulk assign button
+    $('#bulkAssignBtn').on('click', function () {
+        const selectedIds = $('.row-select:checked').map(function () {
+            return $(this).val();
+        }).get();
+
+        if (selectedIds.length === 0) {
+            alert('Please select at least one set.');
+            return;
+        }
+
+        // Clear single-id and set multi-id
+        $('#modal_order_set_id').val('');
+        $('#modal_order_set_ids').val(selectedIds.join(','));
+
+        // Indicate multiple selection
+        $('#modal_design_number').text('Multiple sets selected');
+        $('#modal_set_size').text('-');
+        $('#modal_set_size_group').text('-');
+        $('#modal_color').text('-');
+        $('#modal_total_qty').text('-');
+
+        $('#assignModal').modal('show');
     });
 
 });
