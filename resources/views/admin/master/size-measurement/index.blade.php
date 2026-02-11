@@ -79,7 +79,7 @@
                     <!-- <th>Customer Name</th>
                     <th>Design Number</th> -->
                     {{-- <th>Name</th> --}}
-                    <th>Size Group</th>
+                    <th>Name</th>
                     <th>No of Pcs (per Set)</th>
                     <th>Size Group</th>
                     <th>Status</th>

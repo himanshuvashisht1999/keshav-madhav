@@ -157,7 +157,7 @@
 
                                 <div class="row mb-3">
                                     <div class="col-md-6"><strong>From:</strong> {{ $printing->from_stage?->name }}</div>
-                                    <div class="col-md-6"><strong>To:</strong> {{ $printing->to_stage?->name }}</div>
+                                    <div class="col-md-6"><strong>To:</strong>{{ $printing->StageMasterUnit?->name }} ({{ $printing->to_stage?->name }})</div>
                                 </div>
 
                                 <table class="table table-sm table-bordered">
@@ -200,7 +200,7 @@
                                 <div class="row mb-3">
                                     <div class="col-md-6"><strong>From:</strong> {{ $stage_transaction->from_stage?->name }}
                                     </div>
-                                    <div class="col-md-6"><strong>To:</strong> {{ $stage_transaction->to_stage?->name }}</div>
+                                    <div class="col-md-6"><strong>To:</strong> {{$stage_transaction->getToUnitMaster?->name}} ({{ $stage_transaction->to_stage?->name }})</div>
                                 </div>
 
                                 <table class="table table-sm table-bordered">
