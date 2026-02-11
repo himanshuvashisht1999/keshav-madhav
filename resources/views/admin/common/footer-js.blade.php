@@ -78,15 +78,31 @@
     });
     $(function () {
       
-        
       //Initialize Select2 Elements
       $('.select2').select2()
-
+      
       //Initialize Select2 Elements
       $('.select2bs4').select2({
         theme: 'bootstrap4'
       })
+      
+      // Prevent double form submission across admin/owner panels
+      $(document).on('submit', 'form', function (e) {
+        var $form = $(this);
 
+        // Allow opt-out with class if needed
+        if ($form.hasClass('allow-multiple-submit')) {
+          return;
+        }
+
+        if ($form.data('submitted') === true) {
+          e.preventDefault();
+          return false;
+        }
+
+        $form.data('submitted', true);
+        $form.find('button[type="submit"], input[type="submit"]').prop('disabled', true);
+      });
     })
     
   </script>
