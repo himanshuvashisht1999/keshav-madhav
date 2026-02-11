@@ -16,7 +16,7 @@
         <div class="container-fluid">
             <div class="card card-default">
 
-                <div class="card-header mb-1" style="background: blue;">
+                <div class="card-header mb-1" style="background: #007bff;">
                     <h3 style="color:white;text-align:center;font-size:1.1rem;font-weight:600;margin:0;">
                         Purchase Order
                     </h3>
@@ -85,7 +85,7 @@
 
                             {{-- FABRIC SECTION --}}
                             <div class="col-md-12 mt-3">
-                                <div class="card-header mb-1" style="background: blue;">
+                                <div class="card-header mb-1" style="background: #007bff;">
                                     <h3 style="color:white;text-align:center;font-size:1.1rem;font-weight:600;margin:0;">
                                         Fabric & Prices
                                     </h3>

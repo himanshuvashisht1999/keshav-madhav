@@ -313,7 +313,7 @@
                 el.closest('tr').querySelector('td:nth-child(7)').innerText.replace(/,/g, '')
             );
             // console debug
-            console.log('selectCheckbox called — fabric_id:', fabricId, 'vendor_id:', vendorId, 'po:', po, 'vendor_name:', vendorName);
+            // console.log('selectCheckbox called — fabric_id:', fabricId, 'vendor_id:', vendorId, 'po:', po, 'vendor_name:', vendorName);
 
             var tbody = document.querySelector('#adjustmentTable tbody');
             if (!tbody) return;
