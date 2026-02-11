@@ -15,14 +15,20 @@ class MasterProductStageDataTable  {
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id','asc');
-                $query->orWhere('name', 'like', "%{$request->get('search')['value']}%");
+                if (!empty($request->get('search')['value'])) {
+                    $search = $request->get('search')['value'];
+
+                    $query->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+                }
                 if ($request->has('name') && !empty($request->name)) {
                     $query->where('name', 'like', "%{$request->get('name')}%");
                 }
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
-                $query->whereIn('status',[1,2]);
+                // $query->whereIn('status',[1,2]);
             }) 
          
             ->editColumn('status', function ($queue) {
@@ -31,9 +37,13 @@ class MasterProductStageDataTable  {
             })
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
+                // return '
+                // <a href="' . route('admin.master.product_stage.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                // <a href="' . route('admin.master.product-sub-stage.index',['stage_id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="View" style="margin-left: 8px;"><i class="fas fa-eye text-muted"></i></a>
+                // ';
+
                 return '
                 <a href="' . route('admin.master.product_stage.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                <a href="' . route('admin.master.product-sub-stage.index',['stage_id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="View" style="margin-left: 8px;"><i class="fas fa-eye text-muted"></i></a>
                 ';
             })
             
