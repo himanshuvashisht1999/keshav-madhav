@@ -170,6 +170,13 @@ body.km-admin {
     color: var(--km-text);
 }
 
+/* Slight global scale-down so 100% browser zoom feels like ~90% */
+@media (min-width: 1200px) {
+    body.km-admin {
+        zoom: 0.9;
+    }
+}
+
 /* Page wrapper spacing */
 body.km-admin .content-wrapper {
     background: var(--km-bg);
@@ -228,6 +235,15 @@ body.km-admin.layout-fixed .content-wrapper {
 /* Standard page header */
 body.km-admin .content-header {
     padding: 14px 1rem;
+}
+
+/* Reduce extra space at bottom of pages */
+body.km-admin .content {
+    padding-bottom: 0.5rem !important;
+}
+
+body.km-admin .content > .container-fluid > .card:last-child {
+    margin-bottom: 0.25rem;
 }
 
 body.km-admin .content-header h1,

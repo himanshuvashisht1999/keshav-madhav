@@ -51,6 +51,32 @@
             padding: 20px;
         }
 
+        .tabs {
+            display: flex;
+            background: #e5e7eb;
+            padding: 4px;
+            border-radius: 999px;
+            margin-bottom: 16px;
+        }
+
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 999px;
+            text-decoration: none;
+            color: #4b5563;
+            transition: all 0.2s;
+        }
+
+        .tab-item.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+
         .assignment-card {
             background: white;
             border-radius: 16px;
@@ -123,20 +149,31 @@
             padding-top: 12px;
             border-top: 1px solid #f3f4f6;
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        .btn-view {
+        .btn-view,
+        .btn-secondary {
+            border: none;
+            outline: none;
+            cursor: pointer;
             background: var(--bg-gradient);
             color: white;
-            padding: 8px 16px;
+            padding: 8px 12px;
             border-radius: 8px;
             text-decoration: none;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
         }
 
         .bottom-nav {
@@ -201,11 +238,36 @@
     </div>
 
     <div class="app-content">
+        @if(!empty($canCloseTasks) && $canCloseTasks)
+            <div class="tabs">
+                <a href="{{ route('unit.assignments', ['view' => 'open']) }}"
+                    class="tab-item {{ ($view ?? 'open') === 'open' ? 'active' : '' }}">
+                    Open Tasks
+                </a>
+                <a href="{{ route('unit.assignments', ['view' => 'closed']) }}"
+                    class="tab-item {{ ($view ?? 'open') === 'closed' ? 'active' : '' }}">
+                    Closed Tasks
+                </a>
+            </div>
+        @endif
+
         @if($assignments->isEmpty())
             <div class="empty-state">
                 <div class="empty-icon">📁</div>
-                <h3>No Assignments Found</h3>
-                <p>You don't have any pending assignments at the moment.</p>
+                <h3>
+                    @if(!empty($canCloseTasks) && $canCloseTasks && ($view ?? 'open') === 'closed')
+                        No Closed Assignments Found
+                    @else
+                        No Open Assignments Found
+                    @endif
+                </h3>
+                <p>
+                    @if(!empty($canCloseTasks) && $canCloseTasks && ($view ?? 'open') === 'closed')
+                        You don't have any closed assignments at the moment.
+                    @else
+                        You don't have any pending assignments at the moment.
+                    @endif
+                </p>
             </div>
         @else
             @if($type == 'cutting')
@@ -214,8 +276,9 @@
                     <div class="assignment-card">
                         <div class="assignment-header">
                             <span class="date-badge">{{ $item->created_at->format('d M Y') }}</span>
-                            <span class="status-badge status-pending">
-                                Assigned
+                            <span
+                                class="status-badge {{ (!empty($canCloseTasks) && $canCloseTasks && ($view ?? 'open') === 'closed') ? 'status-completed' : 'status-pending' }}">
+                                {{ (!empty($canCloseTasks) && $canCloseTasks && ($view ?? 'open') === 'closed') ? 'Closed' : 'Assigned' }}
                             </span>
                         </div>
                         <div class="assignment-body">
@@ -241,6 +304,22 @@
                             </div>
                         </div>
                         <div class="assignment-footer">
+                            @if(!empty($canCloseTasks) && $canCloseTasks)
+                                <form method="POST"
+                                    class="task-action-form"
+                                    data-action="{{ ($view ?? 'open') === 'closed' ? 'reopen' : 'close' }}"
+                                    action="{{ ($view ?? 'open') === 'closed'
+                                        ? route('unit.assignments.reopen', ['type' => 'cutting', 'id' => $item->id])
+                                        : route('unit.assignments.close', ['type' => 'cutting', 'id' => $item->id]) }}">
+                                    @csrf
+                                    <button type="submit" class="btn-secondary">
+                                        <i
+                                            class="fas {{ ($view ?? 'open') === 'closed' ? 'fa-undo' : 'fa-times' }}"></i>
+                                        {{ ($view ?? 'open') === 'closed' ? 'Re-open Task' : 'Close Task' }}
+                                    </button>
+                                </form>
+                            @endif
+
                             <a href="{{ route('unit.assignments.details', ['type' => 'cutting', 'id' => $item->id]) }}"
                                 class="btn-view">
                                 <i class="fas fa-eye"></i> View Details
@@ -254,7 +333,10 @@
                     <div class="assignment-card">
                         <div class="assignment-header">
                             <span class="date-badge">{{ $item->created_at->format('d M Y') }}</span>
-                            <span class="status-badge status-pending">Incoming Slip</span>
+                            <span
+                                class="status-badge {{ (!empty($canCloseTasks) && $canCloseTasks && ($view ?? 'open') === 'closed') ? 'status-completed' : 'status-pending' }}">
+                                {{ (!empty($canCloseTasks) && $canCloseTasks && ($view ?? 'open') === 'closed') ? 'Closed' : 'Incoming Slip' }}
+                            </span>
                         </div>
                         <div class="assignment-body">
                             <div class="info-item">
@@ -277,6 +359,22 @@
                             </div>
                         </div>
                         <div class="assignment-footer">
+                            @if(!empty($canCloseTasks) && $canCloseTasks)
+                                <form method="POST"
+                                    class="task-action-form"
+                                    data-action="{{ ($view ?? 'open') === 'closed' ? 'reopen' : 'close' }}"
+                                    action="{{ ($view ?? 'open') === 'closed'
+                                        ? route('unit.assignments.reopen', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id])
+                                        : route('unit.assignments.close', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id]) }}">
+                                    @csrf
+                                    <button type="submit" class="btn-secondary">
+                                        <i
+                                            class="fas {{ ($view ?? 'open') === 'closed' ? 'fa-undo' : 'fa-times' }}"></i>
+                                        {{ ($view ?? 'open') === 'closed' ? 'Re-open Task' : 'Close Task' }}
+                                    </button>
+                                </form>
+                            @endif
+
                             @if(isset($item->transaction_type))
                                 <!-- Transaction Details Link -->
                                 <a href="{{ route('unit.assignments.details', ['type' => $item->transaction_type, 'id' => $item->id]) }}"
@@ -317,6 +415,38 @@
             <span>History</span>
         </a>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var forms = document.querySelectorAll('.task-action-form');
+            forms.forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    var action = form.getAttribute('data-action');
+                    var isClose = action === 'close';
+
+                    Swal.fire({
+                        title: isClose ? 'Close this task?' : 'Re-open this task?',
+                        text: isClose
+                            ? 'Once closed, this task will move to the Closed tab.'
+                            : 'This task will move back to Open tasks.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: isClose ? 'Yes, close it' : 'Yes, re-open it',
+                        cancelButtonText: 'Cancel'
+                    }).then(function(result) {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
 
 </body>
 

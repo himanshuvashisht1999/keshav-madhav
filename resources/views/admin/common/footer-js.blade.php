@@ -90,7 +90,7 @@
     })
     
   </script>
-  <script>
+<script>
 document.addEventListener('DOMContentLoaded', function () {
     flatpickr(".datetime-picker", {
         enableTime: true,
