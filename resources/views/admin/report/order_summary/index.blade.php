@@ -26,11 +26,12 @@
 }
 
 .table-report thead th {
-    background: #343a40;
-    color: #fff !important;
+    background: #f3f4f6; /* light grey header */
+    color: #374151 !important; /* dark slate text */
     font-weight: 600;
     white-space: nowrap;
     vertical-align: middle;
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .table-report tbody td {

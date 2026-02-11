@@ -65,7 +65,7 @@
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover table-striped mb-0">
-                            <thead class="bg-primary text-black" style="color:black !important;font-weight:bold">
+                            <thead class="bg-light">
                                 <tr>
                                     <th>Date</th>
                                     <th>From Stage</th>
@@ -149,7 +149,15 @@
 <style>
     .card { border-radius: 8px; }
     .form-control { border-radius: 6px; }
-    .table thead th { border: none; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
+    .table thead th { 
+        border: none; 
+        font-weight: 600; 
+        text-transform: uppercase; 
+        font-size: 0.85rem; 
+        letter-spacing: 0.5px; 
+        background: #f3f4f6;
+        color: #374151;
+    }
     .table tbody td { vertical-align: middle; font-size: 0.95rem; }
     .select2-container .select2-selection--single { height: 38px; border: 1px solid #ced4da; border-radius: 6px; }
     .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 38px; }

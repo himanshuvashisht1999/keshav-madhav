@@ -165,8 +165,20 @@ class ProductOrderDataTable  {
                 if ($request->has('status') && !empty($request->status)) {
                     $query->where('status', $request->get('status'));
                 }
+
+                // Assigned / Pending filter (based on actual assignment column)
+                if ($request->filled('assigned_filter')) {
+                    if ($request->assigned_filter === 'assigned') {
+                        $query->whereNotNull('stage_master_unit_id');
+                    } elseif ($request->assigned_filter === 'pending') {
+                        $query->whereNull('stage_master_unit_id');
+                    }
+                }
                 
             }) 
+            ->addColumn('select', function ($queue) {
+                return '<input type="checkbox" class="row-select" value="'.$queue->id.'">';
+            })
             ->addColumn('set_size', function ($queue) {
                 $set_size = $queue->size_measurement;
                 return $set_size->set_size ?? '';
@@ -230,7 +242,7 @@ class ProductOrderDataTable  {
                 return $view;
             })
             
-            ->rawColumns(['action','design_number', 'size_set','size_group','assign_to', 'total_qty', 'status'])
+            ->rawColumns(['select','action','design_number', 'size_set','size_group','assign_to', 'total_qty', 'status'])
             ->make(true);
     }
 

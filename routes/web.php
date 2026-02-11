@@ -74,6 +74,8 @@ Route::prefix('unit')->name('unit.')->group(function () {
     Route::get('/view/{type}/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'viewSlip'])->name('view.slip');
     Route::get('/assignments', [\App\Http\Controllers\Unit\UnitAuthController::class, 'assignments'])->name('assignments');
     Route::get('/assignment-details/{type}/{id}', [App\Http\Controllers\Unit\UnitAuthController::class, 'showAssignmentDetails'])->name('assignments.details');
+    Route::post('/assignments/{type}/{id}/close', [\App\Http\Controllers\Unit\UnitAuthController::class, 'closeAssignment'])->name('assignments.close');
+    Route::post('/assignments/{type}/{id}/reopen', [\App\Http\Controllers\Unit\UnitAuthController::class, 'reopenAssignment'])->name('assignments.reopen');
     Route::get('/download-slip/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'downloadSlip'])->name('download.slip');
     Route::get('/download-cmpo/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'downloadCmpo'])->name('download.cmpo');
     Route::get('/logout', [\App\Http\Controllers\Unit\UnitAuthController::class, 'logout'])->name('logout');
