@@ -629,22 +629,32 @@ class ProductOrderService {
     {
         try {
             DB::beginTransaction();
-            $data = OrderProductSet::where('id', $request->order_product_set_id)->first();
-            if($data){
-                $data->stage_master_unit_id = $request->master_cutting_id;
-                $data->fabric_id = $request->fabric_id ?? null;
-                $data->master_product_fitting_id = $request->master_fitting_id;
-                $data->master_design_pattern_id = $request->master_pattern_id;
-                $data->remark = $request->remark ?? null;
-                $data->status = 2;
-                $data->save();
+            // Support both single-id and multi-id assignment
+            $ids = [];
+            if ($request->filled('order_product_set_ids')) {
+                $ids = array_filter(explode(',', $request->order_product_set_ids));
+            } elseif ($request->order_product_set_id) {
+                $ids = [$request->order_product_set_id];
+            }
+
+            foreach ($ids as $setId) {
+                $data = OrderProductSet::where('id', $setId)->first();
+                if($data){
+                    $data->stage_master_unit_id = $request->master_cutting_id;
+                    $data->fabric_id = $request->fabric_id ?? null;
+                    $data->master_product_fitting_id = $request->master_fitting_id;
+                    $data->master_design_pattern_id = $request->master_pattern_id;
+                    $data->remark = $request->remark ?? null;
+                    $data->status = 2;
+                    $data->save();
+                }
             }
 
             DB::commit();
 
             return [
                 'status' => true,
-                'message' => "order sets assigned successfully"
+                'message' => "Order set(s) assigned successfully"
             ];
 
         } catch (\Exception $e) {

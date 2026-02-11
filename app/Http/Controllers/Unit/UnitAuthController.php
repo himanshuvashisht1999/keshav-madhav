@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Crypt;
 use App\Models\StageMasterUnit;
 use App\Models\FabricRollAssigning;
 use App\Models\ProductionSlipDigitization;
+use App\Models\OrderProductSet;
 use Illuminate\Support\Facades\File;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -420,44 +421,118 @@ class UnitAuthController extends Controller
         $unit = StageMasterUnit::find($unitId);
         $assignments = [];
         $type = '';
+        // Only Cutting & Packing units can close/reopen tasks
+        $isCutting = $unit->master_stage_id == self::STAGE_CUTTING;
+        $isPacking = $unit->master_stage_id == self::STAGE_PACKING;
+        $canCloseTasks = $isCutting || $isPacking;
 
-        if ($unit->master_stage_id == self::STAGE_CUTTING) {
+        // view = open | closed (only meaningful for cutting/packing)
+        $view = request()->get('view', 'open') === 'closed' ? 'closed' : 'open';
+        if (!$canCloseTasks) {
+            $view = 'open';
+        }
+
+        if ($isCutting) {
             $type = 'cutting';
-            // Cutting Master sees OrderProductSets assigned to them
-            // And potentially FabricRollAssigning if used
-            // Currently focusing on OrderProductSet as per Admin URL "index-order-set"
-            $assignments = \App\Models\OrderProductSet::where('stage_master_unit_id', $unitId)
-                ->with(['orderMain.customer', 'fabric', 'colors', 'master_design_pattern'])
-                ->orderBy('created_at', 'desc')
-                ->get();
 
+            $query = OrderProductSet::where('stage_master_unit_id', $unitId)
+                ->with(['orderMain.customer', 'fabric', 'colors', 'master_design_pattern'])
+                ->orderBy('created_at', 'desc');
+
+            if ($view === 'closed') {
+                // Closed tasks for Cutting Master
+                $assignments = $query
+                    ->where('is_closed_for_unit', 1)
+                    ->get();
+            } else {
+                // Open tasks (default) – exclude closed ones
+                $assignments = $query
+                    ->where(function ($q) {
+                        $q->whereNull('is_closed_for_unit')
+                            ->orWhere('is_closed_for_unit', 0);
+                    })
+                    ->get()
+                    ->filter(function (OrderProductSet $set) {
+                        // 1) If any quantity is still remaining, it is definitely pending
+                        if (($set->remain_total_quantity ?? 0) > 0) {
+                            return true;
+                        }
+
+                        // 2) If all qty is allocated (remain_total_quantity == 0), hide the set
+                        //    only when both printing and stitching slips from cutting are completed.
+                        $printingDone = ProductionSlipDigitization::where('order_product_set_id', $set->id)
+                            ->where('from_stage_id', self::STAGE_CUTTING)
+                            ->where('to_stage_id', self::STAGE_PRINTING)
+                            ->where('status', 1)
+                            ->exists();
+
+                        $stitchingDone = ProductionSlipDigitization::where('order_product_set_id', $set->id)
+                            ->where('from_stage_id', self::STAGE_CUTTING)
+                            ->where('to_stage_id', self::STAGE_STITCHING)
+                            ->where('status', 1)
+                            ->exists();
+
+                        // Keep in list unless both are done
+                        return !($printingDone && $stitchingDone);
+                    });
+            }
         } else {
             $type = 'other';
-            // Other Stages (Printing/Stitching) see Slips sent to them (ProductionSlipDigitization)
+            // Other Stages see Slips sent to them (ProductionSlipDigitization)
             // Filter by sub_stage_id_to = current unit's ID in Transactions
 
-            $ass1 = \App\Models\OrderStageTransaction::where('sub_stage_id_to', $unitId)
-                ->where('remaining_quantity', '>', 0)
-                ->with(['from_stage', 'getFromUnitMaster'])
-                ->get()
+            $ass1Query = \App\Models\OrderStageTransaction::where('sub_stage_id_to', $unitId)
+                ->with(['from_stage', 'getFromUnitMaster']);
+
+            $ass2Query = \App\Models\OrderPrintingStageTransaction::where('sub_stage_id_to', $unitId)
+                ->with(['from_stage', 'getFromUnitMaster']);
+
+            $ass3Query = \App\Models\OrderPrintingToStichingTransaction::where('sub_stage_id_to', $unitId)
+                ->with(['from_stage', 'getFromUnitMaster']);
+
+            if ($isPacking && $canCloseTasks) {
+                // Packing unit: supports open/closed state like cutting
+                if ($view === 'closed') {
+                    $ass1Query->where('is_closed_for_unit', 1);
+                    $ass2Query->where('is_closed_for_unit', 1);
+                    $ass3Query->where('is_closed_for_unit', 1);
+                } else {
+                    $ass1Query->where('remaining_quantity', '>', 0)
+                        ->where(function ($q) {
+                            $q->whereNull('is_closed_for_unit')
+                                ->orWhere('is_closed_for_unit', 0);
+                        });
+                    $ass2Query->where('remaining_quantity', '>', 0)
+                        ->where(function ($q) {
+                            $q->whereNull('is_closed_for_unit')
+                                ->orWhere('is_closed_for_unit', 0);
+                        });
+                    $ass3Query->where('remaining_quantity', '>', 0)
+                        ->where(function ($q) {
+                            $q->whereNull('is_closed_for_unit')
+                                ->orWhere('is_closed_for_unit', 0);
+                        });
+                }
+            } else {
+                // Other stages (printing, stitching, etc.) can only see open work; no close option
+                $ass1Query->where('remaining_quantity', '>', 0);
+                $ass2Query->where('remaining_quantity', '>', 0);
+                $ass3Query->where('remaining_quantity', '>', 0);
+            }
+
+            $ass1 = $ass1Query->get()
                 ->map(function ($item) {
                     $item->transaction_type = 'stage';
                     return $item;
                 });
 
-            $ass2 = \App\Models\OrderPrintingStageTransaction::where('sub_stage_id_to', $unitId)
-                ->where('remaining_quantity', '>', 0)
-                ->with(['from_stage', 'getFromUnitMaster'])
-                ->get()
+            $ass2 = $ass2Query->get()
                 ->map(function ($item) {
                     $item->transaction_type = 'printing';
                     return $item;
                 });
 
-            $ass3 = \App\Models\OrderPrintingToStichingTransaction::where('sub_stage_id_to', $unitId)
-                ->where('remaining_quantity', '>', 0)
-                ->with(['from_stage', 'getFromUnitMaster'])
-                ->get()
+            $ass3 = $ass3Query->get()
                 ->map(function ($item) {
                     $item->transaction_type = 'printing_to_stitching'; // or just 'stitching'? keeping specific
                     return $item;
@@ -467,7 +542,101 @@ class UnitAuthController extends Controller
             $assignments = $ass1->merge($ass2)->merge($ass3)->sortByDesc('created_at');
         }
 
-        return view('unit.assignments', compact('assignments', 'unit', 'type'));
+        return view('unit.assignments', compact('assignments', 'unit', 'type', 'view', 'canCloseTasks'));
+    }
+
+    /**
+     * Mark a unit assignment as closed (so it is hidden from the open list).
+     */
+    public function closeAssignment($type, $id)
+    {
+        if (!session()->has('unit_auth')) {
+            return redirect()->route('unit.login');
+        }
+
+        $unitAuth = session('unit_auth');
+        $unitId = $unitAuth['id'];
+        $unit = StageMasterUnit::find($unitId);
+
+        if (!in_array($unit->master_stage_id, [self::STAGE_CUTTING, self::STAGE_PACKING])) {
+            return redirect()->back()->withError('Close task option is only available for Cutting and Packing units.');
+        }
+
+        $record = $this->findAssignmentRecordForUnit($type, $id, $unitId);
+
+        if (!$record) {
+            return redirect()->back()->withError('Assignment not found or access denied.');
+        }
+
+        $record->is_closed_for_unit = 1;
+        $record->save();
+
+        return redirect()->route('unit.assignments')->withSuccess('Task closed successfully.');
+    }
+
+    /**
+     * Re-open a previously closed assignment.
+     */
+    public function reopenAssignment($type, $id)
+    {
+        if (!session()->has('unit_auth')) {
+            return redirect()->route('unit.login');
+        }
+
+        $unitAuth = session('unit_auth');
+        $unitId = $unitAuth['id'];
+        $unit = StageMasterUnit::find($unitId);
+
+        if (!in_array($unit->master_stage_id, [self::STAGE_CUTTING, self::STAGE_PACKING])) {
+            return redirect()->back()->withError('Re-open task option is only available for Cutting and Packing units.');
+        }
+
+        $record = $this->findAssignmentRecordForUnit($type, $id, $unitId);
+
+        if (!$record) {
+            return redirect()->back()->withError('Assignment not found or access denied.');
+        }
+
+        $record->is_closed_for_unit = 0;
+        $record->save();
+
+        return redirect()->route('unit.assignments', ['view' => 'open'])->withSuccess('Task re-opened successfully.');
+    }
+
+    /**
+     * Resolve the underlying record for a unit assignment by type.
+     *
+     * @param string $type
+     * @param int $id
+     * @param int $unitId
+     * @return mixed
+     */
+    protected function findAssignmentRecordForUnit(string $type, int $id, int $unitId)
+    {
+        switch ($type) {
+            case 'cutting':
+                return OrderProductSet::where('id', $id)
+                    ->where('stage_master_unit_id', $unitId)
+                    ->first();
+
+            case 'stage':
+                return \App\Models\OrderStageTransaction::where('id', $id)
+                    ->where('sub_stage_id_to', $unitId)
+                    ->first();
+
+            case 'printing':
+                return \App\Models\OrderPrintingStageTransaction::where('id', $id)
+                    ->where('sub_stage_id_to', $unitId)
+                    ->first();
+
+            case 'printing_to_stitching':
+                return \App\Models\OrderPrintingToStichingTransaction::where('id', $id)
+                    ->where('sub_stage_id_to', $unitId)
+                    ->first();
+
+            default:
+                return null;
+        }
     }
     public function showAssignmentDetails($type, $id)
     {

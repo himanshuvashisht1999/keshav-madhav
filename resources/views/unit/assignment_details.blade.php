@@ -306,6 +306,76 @@
             display: none;
             margin-top: 15px;
         }
+
+        /* Camera Modal */
+        .camera-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .camera-modal {
+            width: 100%;
+            max-width: 420px;
+            background: #0f172a;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.6);
+            color: #e5e7eb;
+        }
+
+        .camera-modal-header {
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        }
+
+        .camera-modal-title {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .camera-modal-close {
+            border: none;
+            background: transparent;
+            color: #9ca3af;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .camera-modal-body {
+            padding: 12px 12px 0 12px;
+            background: radial-gradient(circle at top, #111827 0, #020617 55%, #020617 100%);
+        }
+
+        .camera-modal-footer {
+            padding: 12px;
+            display: flex;
+            gap: 10px;
+            background: #020617;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .camera-modal-footer .btn-action {
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+            .camera-modal {
+                max-width: 96%;
+            }
+        }
     </style>
 </head>
 
@@ -473,15 +543,6 @@
                     <div class="camera-text">Capture photograph or select file to upload</div>
                 </div>
 
-                <div id="videoContainer" style="display: none; margin-bottom: 20px;">
-                    <video id="video" autoplay playsinline
-                        style="width: 100%; border-radius: 16px; background: #000;"></video>
-                    <canvas id="canvas" style="display: none;"></canvas>
-                    <button type="button" class="btn-action btn-upload" id="captureBtn" style="margin-top: 10px;">
-                        <i class="fas fa-camera"></i> Capture Now
-                    </button>
-                </div>
-
                 <img id="preview" src="" style="width: 100%; border-radius: 16px; display: none; margin-bottom: 20px;">
 
                 <div id="initialBtns"
@@ -509,6 +570,48 @@
             </form>
         </div>
 
+        <!-- Camera Modal for Desktop -->
+        <div id="cameraModal" class="camera-modal-overlay" style="display: none;">
+            <div class="camera-modal">
+                <div class="camera-modal-header">
+                    <div class="camera-modal-title">
+                        <i class="fas fa-camera" style="margin-right:6px;"></i> Capture Output Slip
+                    </div>
+                    <button type="button" class="camera-modal-close" id="closeCameraModal">&times;</button>
+                </div>
+                <div class="camera-modal-body">
+                    <div id="videoContainer" style="margin-bottom: 12px; display:none;">
+                        <video id="video" autoplay playsinline
+                            style="width: 100%; border-radius: 16px; background: #000;"></video>
+                        <canvas id="canvas" style="display: none;"></canvas>
+                    </div>
+                    <img id="modalPreview" src=""
+                        style="width: 100%; border-radius: 16px; display: none; margin-bottom: 12px;">
+                </div>
+                <div class="camera-modal-footer">
+                    <div id="cameraLiveControls" style="display:flex; gap:10px; width:100%;">
+                        <button type="button" class="btn-action btn-upload" id="captureBtn">
+                            <i class="fas fa-camera"></i> Capture
+                        </button>
+                        <button type="button" class="btn-action" id="cancelCameraBtn"
+                            style="background:#111827; color:#e5e7eb; border:1px solid #4b5563;">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+
+                    <div id="cameraCapturedControls" style="display:none; gap:10px; width:100%;">
+                        <button type="button" class="btn-action btn-upload" id="submitFromModalBtn">
+                            <i class="fas fa-check-circle"></i> Submit
+                        </button>
+                        <button type="button" class="btn-action" id="retakeFromModalBtn"
+                            style="background:#fff1f2; color:#e11d48;">
+                            <i class="fas fa-redo"></i> Retake
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -527,6 +630,8 @@
             $('#videoContainer').hide();
             $('#afterCaptureBtns').show();
 
+            $('#cameraModal').hide();
+
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
                 stream = null;
@@ -534,6 +639,36 @@
         }
 
         $(document).ready(function () {
+            function setCameraModalState(state, previewDataUrl = '') {
+                if (state === 'live') {
+                    $('#modalPreview').hide().attr('src', '');
+                    $('#cameraCapturedControls').hide();
+                    $('#cameraLiveControls').css('display', 'flex');
+                    $('#videoContainer').show();
+                } else if (state === 'captured') {
+                    if (previewDataUrl) {
+                        $('#modalPreview').attr('src', previewDataUrl).show();
+                    }
+                    $('#videoContainer').hide();
+                    $('#cameraLiveControls').hide();
+                    $('#cameraCapturedControls').css('display', 'flex');
+                }
+            }
+
+            function openCameraModalWithStream(s) {
+                stream = s;
+                $('#video')[0].srcObject = stream;
+                $('#cameraModal').show();
+                setCameraModalState('live');
+            }
+
+            function stopStreamIfAny() {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+            }
+
             $('#openCameraBtn').on('click', function () {
                 if (isMobile()) {
                     const input = $('<input>', { type: 'file', accept: 'image/*', capture: 'environment' });
@@ -548,12 +683,7 @@
                     input.trigger('click');
                 } else {
                     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-                        .then(s => {
-                            stream = s;
-                            $('#video')[0].srcObject = stream;
-                            $('#placeholder').hide();
-                            $('#videoContainer').show();
-                        })
+                        .then(s => openCameraModalWithStream(s))
                         .catch(err => alert('Camera access denied'));
                 }
             });
@@ -564,7 +694,10 @@
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 canvas.getContext('2d').drawImage(video, 0, 0);
-                handleImage(canvas.toDataURL('image/jpeg', 0.9));
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                handleImage(dataUrl); // update main form preview + hidden photo
+                setCameraModalState('captured', dataUrl); // keep modal open with submit/retake
+                stopStreamIfAny(); // release camera after capture
             });
 
             $('#selectFileBtn').on('click', () => $('#fileInput').trigger('click'));
@@ -588,6 +721,37 @@
                     stream.getTracks().forEach(track => track.stop());
                     stream = null;
                 }
+            });
+
+            function closeCameraModal() {
+                $('#cameraModal').hide();
+                $('#videoContainer').hide();
+                setCameraModalState('live');
+                stopStreamIfAny();
+            }
+
+            $('#closeCameraModal').on('click', function () {
+                closeCameraModal();
+            });
+
+            $('#cancelCameraBtn').on('click', function () {
+                closeCameraModal();
+            });
+
+            $('#submitFromModalBtn').on('click', function () {
+                const photoData = $('#photoData').val();
+                if (!photoData || photoData.trim() === '') {
+                    alert('⚠️ Please capture or select a photo before submitting!');
+                    return;
+                }
+                $('#uploadForm').trigger('submit');
+            });
+
+            $('#retakeFromModalBtn').on('click', function () {
+                // Restart camera stream for retake
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                    .then(s => openCameraModalWithStream(s))
+                    .catch(err => alert('Camera access denied'));
             });
 
             // Form validation before submit
