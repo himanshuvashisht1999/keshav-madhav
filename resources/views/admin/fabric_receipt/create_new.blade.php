@@ -164,7 +164,7 @@
                                 name="amount"
                                 id="amount"
                                 class="form-control"
-                                placeholder="Enter amount">
+                                placeholder="Enter amount" required>
                         </div>
 
                         <div class="col-md-3 mt-2">
@@ -173,7 +173,7 @@
                                 name="gst_percentage"
                                 id="gst_percentage"
                                 class="form-control"
-                                placeholder="GST %">
+                                placeholder="GST %" required>
                         </div>
 
                         <div class="col-md-3 mt-2">
