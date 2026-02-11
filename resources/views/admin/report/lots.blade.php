@@ -134,21 +134,25 @@
 
                             <tbody>
                                 @forelse($data as $index => $row)
-                                    <tr>
-                                        <td>{{ $data->firstItem() + $index }}</td>
-                                        <td>{{ $row['lot_no'] }}</td>
-                                        <td>{{ $row['order_no'] }}</td>
-                                        <td>{{ $row['customer_name'] }}</td>
-                                        <td class="text-end fw-bold">
-                                            {{ $row['lot_quantity'] ?? '0' }}
-                                        </td>
-                                        <td class="text-center">
-                        
-                                            <a href="{{ route('admin.report.lots.lot-details', ['lot_no' => $row['lot_no']]) }}" class="btn btn-sm btn-outline-primary">
-                                            View
-                                            </a>
-                                        </td>
-                                    </tr>
+                                    @isset($row['lot_no'])
+                                    
+                                        <tr>
+                                            <td>{{ $data->firstItem() + $index }}</td>
+                                            <td>{{ $row['lot_no'] }}</td>
+                                            <td>{{ $row['order_no'] }}</td>
+                                            <td>{{ $row['customer_name'] }}</td>
+                                            <td class="text-end fw-bold">
+                                                {{ $row['lot_quantity'] ?? '0' }}
+                                            </td>
+                                            <td class="text-center">
+                            
+                                                <a href="{{ route('admin.report.lots.lot-details', ['lot_no' => $row['lot_no']]) }}" class="btn btn-sm btn-outline-primary">
+                                                View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    
+                                    @endisset
                                 @empty
                                     <tr>
                                         <td colspan="5" class="text-center text-muted">
