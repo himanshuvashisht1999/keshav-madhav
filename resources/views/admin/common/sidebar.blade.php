@@ -811,6 +811,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                     <p>Warehouse Units</p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.settings.edit') }}"
+                                    class="{{ request()->path() === 'admin/master/settings/edit' ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>General Settings</p>
+                                </a>
+                            </li>
                             <!-- <li class="nav-item">
                                 <a href="{{ route('admin.master.warehouse.index') }}"
                                     class="{{ request()->path() === 'admin/master/warehouse/index' ? 'nav-link active' : 'nav-link' }}">

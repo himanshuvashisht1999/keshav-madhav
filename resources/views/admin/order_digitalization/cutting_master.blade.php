@@ -226,7 +226,7 @@
                                             <div class="card p-2 mt-3 border">
                                                 <label>Order No *</label>
                                                 <select id="select_order_no" name="select_order_no"
-                                                    class="form-control mb-2 select2">
+                                                    class="form-control mb-2 select2" required>
                                                     <option value="">Select Order No</option>
                                                     @foreach($orders as $order)
                                                         <option value="{{ $order->id }}">
@@ -239,7 +239,7 @@
                                             <div class="lot-input-wrapper my-3 lot-inline">
                                                 <label class="lot-input-label">Lot No.</label>
                                                 <input type="text" id="lot_no" class="lot-input" placeholder="Enter Lot Number"
-                                                    inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                                                    inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required>
                                             </div>
                                             <small class="text-danger" id="err_lot_no"></small>
 
@@ -250,7 +250,7 @@
                                             {{-- ADD ROLL --}}
                                             <div class="card p-2 mt-3 border">
                                                 <label>Design No</label>
-                                                <select id="design_id" class="form-control mb-2 select2" name="design_id">
+                                                <select id="design_id" class="form-control mb-2 select2" name="design_id" required>
                                                     <option value="">Select Design No</option>
                                                 </select>
 
@@ -275,15 +275,16 @@
                                                 <div class="row">
                                                     <div class="col-md-6">
                                                         <label>Total Rolls *</label>
-                                                        <input type="number" id="total_rolls" class="form-control">
+                                                        <input type="number" id="total_rolls" class="form-control" required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label>Total Meter *</label>
-                                                        <input type="number" id="total_meter" class="form-control">
+                                                        <input type="number" id="total_meter" class="form-control" required>
+                                                        <small class="text-danger" id="err_total_meter"></small>
                                                     </div>
                                                 </div>
 
-                                                <small class="text-danger" id="err_total_meter"></small>
+                                                
 
                                                 <!-- Dynamic Roll Rows -->
                                                 <div id="roll_rows" class="mt-3"></div>
@@ -301,7 +302,7 @@
                                                         <div style="width:180px">
                                                             <span><strong>Total Piece</strong></span>
                                                             <input type="number" id="total_pieces"
-                                                                class="form-control form-control-sm" placeholder="Total Pieces">
+                                                                class="form-control form-control-sm" placeholder="Total Pieces" required>
                                                         </div>
                                                     </div>
 
