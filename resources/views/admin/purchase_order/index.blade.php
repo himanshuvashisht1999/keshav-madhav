@@ -152,13 +152,13 @@
             ],
             dom: 'lBfrtip',
             buttons: [
-                // {
-                //     text: 'Add Purchase Order',
-                //     className: 'btn-datatable',
-                //     action: function (e, dt, node, config) {
-                //         window.location.href = "{{ route('admin.purchase_order.create') }}";
-                //     }
-                // }
+                {
+                    text: 'Add Purchase Order',
+                    className: 'btn-datatable',
+                    action: function (e, dt, node, config) {
+                        window.location.href = "{{ route('admin.purchase_order.create') }}";
+                    }
+                }
             ]
         });
 

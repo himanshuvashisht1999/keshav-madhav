@@ -204,6 +204,13 @@ body.km-admin.layout-fixed .main-sidebar .sidebar {
     height: calc(100vh - 3.5rem); /* approx brand height */
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-width: none; /* Firefox: hide scrollbar but allow scroll */
+}
+
+/* WebKit: hide sidebar scrollbar but keep scrolling */
+.km-sidebar .sidebar::-webkit-scrollbar {
+    width: 0;
+    height: 0;
 }
 
 /* Content area: scroll only the content wrapper */
