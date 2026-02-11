@@ -105,9 +105,10 @@ table.dataTable {
     color: #007bff !important;
 }
 
+/* Let the global admin theme control headings */
 .content-header h1{
     font-size: 1.8rem !important;
-    color: #007bff !important;
+    color: inherit !important;
 }
 .table{
     color:black !important;
@@ -131,8 +132,9 @@ table.dataTable {
 .dataTables_length label select{
     color: black;
 }
-.nav-item{
-    font-weight: bold;
+/* Avoid making every nav in the app bold (scope to sidebar) */
+.main-sidebar .nav-item{
+    font-weight: 600;
 }
 /* .border_class{
     background : yellow;
@@ -146,4 +148,286 @@ table.dataTable {
 }
 .badge.badge-primary{
     color: #fff !important;
+}
+
+/* =========================================================
+   Global Admin Theme (consistent across all modules)
+   Scope: only inside body.km-admin
+   ========================================================= */
+.km-admin {
+    --km-primary: #2563eb;   /* blue-600 */
+    --km-bg: #f5f7fb;        /* soft app background */
+    --km-card: #ffffff;
+    --km-text: #0f172a;      /* slate-900 */
+    --km-muted: #64748b;     /* slate-500 */
+    --km-border: rgba(15, 23, 42, 0.10);
+    --km-radius: 12px;
+}
+
+.km-admin body,
+body.km-admin {
+    background: var(--km-bg);
+    color: var(--km-text);
+}
+
+/* Page wrapper spacing */
+body.km-admin .content-wrapper {
+    background: var(--km-bg);
+}
+
+/* =========================================================
+   Independent scrolling: sidebar scrolls, content scrolls
+   ========================================================= */
+body.km-admin.layout-fixed {
+    height: 100vh;
+    overflow: hidden; /* prevent whole page scrolling */
+}
+
+body.km-admin.layout-fixed .wrapper {
+    height: 100vh;
+}
+
+/* Sidebar: fixed height and internal scroll */
+body.km-admin.layout-fixed .main-sidebar {
+    height: 100vh;
+}
+
+/* Brand link is inside aside; keep sidebar area scrolling below it */
+body.km-admin.layout-fixed .main-sidebar .sidebar {
+    height: calc(100vh - 3.5rem); /* approx brand height */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Content area: scroll only the content wrapper */
+body.km-admin.layout-fixed .content-wrapper {
+    height: calc(100vh - 57px); /* approx navbar height */
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* On mobile (top-nav changes), let content scroll naturally */
+@media (max-width: 767.98px) {
+    body.km-admin.layout-fixed {
+        overflow: auto;
+        height: auto;
+    }
+    body.km-admin.layout-fixed .wrapper {
+        height: auto;
+    }
+    body.km-admin.layout-fixed .content-wrapper {
+        height: auto;
+        overflow: visible;
+    }
+    body.km-admin.layout-fixed .main-sidebar .sidebar {
+        height: auto;
+        overflow: visible;
+    }
+}
+
+/* Standard page header */
+body.km-admin .content-header {
+    padding: 14px 1rem;
+}
+
+body.km-admin .content-header h1,
+body.km-admin .content-header h3 {
+    color: var(--km-text) !important;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    margin: 0;
+}
+
+body.km-admin .content-header small,
+body.km-admin .text-muted {
+    color: var(--km-muted) !important;
+}
+
+/* Cards */
+body.km-admin .card {
+    border-radius: var(--km-radius);
+    border: 1px solid var(--km-border);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+body.km-admin .card-header {
+    background: transparent !important;
+    border-bottom: 1px solid var(--km-border);
+    border-top-left-radius: var(--km-radius);
+    border-top-right-radius: var(--km-radius);
+    padding: 0.9rem 1rem;
+}
+
+body.km-admin .card-header h3,
+body.km-admin .card-header .card-title {
+    color: var(--km-text) !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem;
+    margin: 0;
+}
+
+/* Buttons */
+body.km-admin .btn {
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+body.km-admin .btn-primary {
+    background-color: var(--km-primary) !important;
+    border-color: var(--km-primary) !important;
+}
+
+body.km-admin .btn-outline-primary {
+    color: var(--km-primary) !important;
+    border-color: rgba(37, 99, 235, 0.45) !important;
+}
+
+body.km-admin .btn-outline-primary:hover {
+    background: rgba(37, 99, 235, 0.08) !important;
+}
+
+/* Form controls */
+body.km-admin .form-control,
+body.km-admin .select2-container--default .select2-selection--single {
+    border-radius: 10px !important;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+}
+
+body.km-admin .form-control:focus {
+    border-color: rgba(37, 99, 235, 0.60);
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15);
+}
+
+/* Tables */
+body.km-admin .table thead th {
+    background: rgba(15, 23, 42, 0.04);
+    color: var(--km-text);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--km-border) !important;
+}
+
+body.km-admin .table td {
+    vertical-align: middle;
+}
+
+/* Reports header (your report pages use .report-header) */
+body.km-admin .report-header {
+    background: var(--km-card);
+    border: 1px solid var(--km-border);
+    border-radius: var(--km-radius);
+    padding: 10px 14px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+body.km-admin .report-meta {
+    font-size: 0.95rem;
+    color: var(--km-muted) !important;
+}
+
+/* =========================================================
+   Professional Admin Sidebar (AdminLTE compatible)
+   ========================================================= */
+.km-sidebar {
+    background: #0f172a; /* slate-900 */
+}
+
+.km-sidebar .brand-link {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+}
+
+.km-sidebar .brand-text {
+    font-weight: 600 !important;
+    letter-spacing: 0.2px;
+}
+
+.km-sidebar .nav-header.km-nav-header {
+    color: rgba(226, 232, 240, 0.7);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    padding: 0.9rem 1rem 0.35rem;
+    margin-top: 0.25rem;
+}
+
+/* Card-like top-level items */
+.km-sidebar .border_class {
+    background: rgba(30, 41, 59, 0.65); /* slate-800-ish */
+    margin: 6px 10px !important;
+    color: #e5e7eb !important;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    transition: background-color .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.km-sidebar .border_class:hover {
+    background: rgba(51, 65, 85, 0.75); /* slate-700-ish */
+    border-color: rgba(148, 163, 184, 0.25);
+    color: #ffffff !important;
+}
+
+.km-sidebar .border_class.active,
+.km-sidebar .nav-sidebar > .nav-item.menu-open > .border_class {
+    background: #2563eb; /* blue-600 */
+    border-color: #2563eb;
+    color: #ffffff !important;
+}
+
+.km-sidebar .border_class i {
+    color: inherit !important;
+}
+
+/* Spacing / alignment */
+.km-sidebar .nav-sidebar > .nav-item > .nav-link {
+    padding: 12px 14px;
+}
+
+.km-sidebar .nav-treeview {
+    padding: 2px 0 10px 0;
+}
+
+.km-sidebar .nav-treeview > .nav-item > .nav-link {
+    margin: 3px 18px 0 18px;
+    border-radius: 8px;
+    padding: 9px 10px;
+    color: rgba(226, 232, 240, 0.85);
+}
+
+.km-sidebar .nav-treeview > .nav-item > .nav-link.active {
+    background: rgba(37, 99, 235, 0.18);
+    color: #ffffff;
+}
+
+.km-sidebar .nav-treeview > .nav-item > .nav-link:hover {
+    background: rgba(148, 163, 184, 0.12);
+    color: #ffffff;
+}
+
+.km-sidebar .nav-link {
+    display: flex;
+    align-items: flex-start;
+}
+
+.km-sidebar .nav-link .nav-icon,
+.km-sidebar .nav-link i {
+    width: 22px;
+    min-width: 22px;
+    text-align: center;
+    margin-right: 10px;
+    margin-top: 2px;
+}
+
+.km-sidebar .nav-link p {
+    margin: 0;
+    white-space: normal;
+    line-height: 1.25;
+    font-weight: 600;
+}
+
+.km-sidebar .fa-angle-left {
+    margin-right: 0 !important;
 }
