@@ -13,7 +13,7 @@
 		@include('admin.common.sidebar')
 
 		@yield('content')
-		@include('admin.common.footer')
+		{{-- @include('admin.common.footer') --}}
 
 	</div>
 	@include('admin.common.footer-js')
