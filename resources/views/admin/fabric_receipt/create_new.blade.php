@@ -3,6 +3,7 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
+
     /* layout: table on left, image preview on right */
     .flex-row {
         display:flex;
@@ -54,20 +55,20 @@
     }
 
     .zoom-container {
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    max-height: 420px;
-    border-radius: 4px;
-    cursor: crosshair;
-}
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        max-height: 420px;
+        border-radius: 4px;
+        cursor: crosshair;
+    }
 
-.zoom-container img {
-    width: 100%;
-    height: auto;
-    transition: transform 0.1s ease-out;
-    transform-origin: center center;
-}
+    .zoom-container img {
+        width: 100%;
+        height: auto;
+        transition: transform 0.1s ease-out;
+        transform-origin: center center;
+    }
 
 </style>
 
@@ -311,7 +312,7 @@
                     </div>
                     
                     <div class="mt-3 text-right">
-                        <button type="submit" class="btn btn-success">Submit</button>
+                        <button type="submit" id="submit-btn" class="btn btn-success">Submit</button>
                     </div>
                 </form>
             </div>
@@ -435,7 +436,6 @@ $(document).ready(function() {
     });
 
     $(document).on('submit', '#fabric-receipt-form', function (e) {
-
         let totalMeter = parseFloat($('#total_meter').val()) || 0;
         let rollMeterSum = 0;
 
@@ -490,8 +490,13 @@ $(document).ready(function() {
         } else {
             $('#total_roll').removeClass('is-invalid');
         }
+        this.form.submit();
     });
 
+    $(document).on('input change', '#fabric-receipt-form input, #fabric-receipt-form select', function () {
+        $(this).removeClass('is-invalid');
+        $('#submit-btn').prop('disabled', false);
+    });
     // ---------------------------
     // Initial fabrics list (server-provided for initially selected vendor)
     // ---------------------------

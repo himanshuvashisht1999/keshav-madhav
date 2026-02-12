@@ -44,10 +44,13 @@ class ProductionGoodsDataTable  {
             })
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
+                // return '
+                // <a href="' . route('admin.master.production-goods.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                // <a href="' . route('admin.master.production-goods.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
+                // ';
+
                 return '
-                <a href="' . route('admin.master.production-goods.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                <a href="' . route('admin.master.production-goods.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
-                ';
+                <a href="' . route('admin.master.production-goods.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>';
             })
             ->addColumn('main_image', function ($queue) {
                 $img = $queue->mainImage; // relationship

@@ -46,13 +46,13 @@
                         <td>
                             <input type="text" class="form-control" name="name_of_garment" id="name_of_garment" autocomplete="off">
                         </td>
-                        <td>
+                        {{-- <td>
                             <select class="form-control" name="status" id="status" autocomplete="off">
                                 <option value="">ALL</option>
                                 <option value="1">Published</option>
                                 <option value="0">Pending</option>
                             </select>
-                        </td>
+                        </td> --}}
                         <td>
                        
                        </td>
@@ -62,7 +62,7 @@
                     <!-- <th>Image</th> -->
                     <th>Design Number</th>
                     <th>Name</th>
-                    <th>Status</th>
+                    {{-- <th>Status</th> --}}
                     <th>Action</th>
                   </tr>
                   </thead>
@@ -109,7 +109,7 @@
                 // {data: 'main_image', name: 'main_image', orderable: false, searchable: false},
                 {data: 'design_number', name: 'design_number'},
                 {data: 'name_of_garment', name: 'name_of_garment'},
-                {data: 'status', name: 'status'},
+               // {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
