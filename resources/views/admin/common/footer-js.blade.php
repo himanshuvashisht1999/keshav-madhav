@@ -79,12 +79,31 @@
     $(function () {
       
       //Initialize Select2 Elements
-      $('.select2').select2()
+      function initSelect2($el, extraOptions) {
+        // If inside a modal, render dropdown inside modal (fix z-index/position)
+        var $dropdownParent = $el.closest('.modal');
+        if ($dropdownParent.length === 0) {
+          // Otherwise keep dropdown within the immediate form-group/column to avoid body positioning issues
+          $dropdownParent = $el.parent();
+        }
+
+        var baseOptions = {
+          width: '100%',
+          dropdownAutoWidth: true,
+          dropdownParent: $dropdownParent
+        };
+
+        $el.select2($.extend(baseOptions, extraOptions || {}));
+      }
+
+      $('.select2').each(function () {
+        initSelect2($(this));
+      });
       
       //Initialize Select2 Elements
-      $('.select2bs4').select2({
-        theme: 'bootstrap4'
-      })
+      $('.select2bs4').each(function () {
+        initSelect2($(this), { theme: 'bootstrap4' });
+      });
       
       // Prevent double form submission across admin/owner panels
       $(document).on('submit', 'form', function (e) {

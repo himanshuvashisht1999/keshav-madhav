@@ -316,6 +316,27 @@ body.km-admin .select2-container--default .select2-selection--single {
     border: 1px solid rgba(15, 23, 42, 0.14);
 }
 
+/* Select2: full width so dropdown aligns with trigger (fix "options on left" issue) */
+body.km-admin .select2-container,
+body.km-admin .select2-container--default,
+body.km-admin .select2-container--bootstrap4 {
+    width: 100% !important;
+    display: block !important;
+}
+body.km-admin .select2-container .select2-selection--single,
+body.km-admin .select2-container--bootstrap4 .select2-selection {
+    width: 100% !important;
+}
+/* Dropdown panel: match trigger width; ensure it doesn't sit narrow on the left */
+body.km-admin .select2-dropdown {
+    min-width: 200px;
+}
+.select2-container--open.select2-container--below .select2-dropdown--below,
+.select2-container--open.select2-container--above .select2-dropdown--above {
+    left: 0 !important;
+    right: auto !important;
+}
+
 body.km-admin .form-control:focus {
     border-color: rgba(37, 99, 235, 0.60);
     box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15);
