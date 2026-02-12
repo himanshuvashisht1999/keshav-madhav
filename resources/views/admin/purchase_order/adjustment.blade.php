@@ -122,7 +122,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center">No records found.</td>
+                                        <td colspan="8" class="text-center">No records found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -447,7 +447,9 @@ $(function(){
             lengthMenu: [10, 25, 50, 100],
             columnDefs: [
                 { targets: 5, className: 'dt-body-right' },
-                { targets: 6, orderable: false }
+                { targets: 6, orderable: false },
+                { targets: 7, orderable: false }
+                { targets: 8, orderable: false }
             ]
         });
     }
