@@ -28,6 +28,7 @@ class InventoryPriceService
         $sellingPrice = $request->selling_price;
         $status = $request->status ?? 1;
         $size_set_id = $request->size_set_id;
+        $name = $request->name ?? '';
 
         $uploadedImages = [];
         if ($request->hasFile('images')) {
@@ -51,6 +52,7 @@ class InventoryPriceService
                     'size_set_id' => $size_set_id,
                 ],
                 [
+                    'name' => $name,
                     'mrp' => $mrp,
                     'selling_price' => $sellingPrice,
                     'price' => $sellingPrice,
@@ -88,7 +90,7 @@ class InventoryPriceService
         $mrp = $request->mrp;
         $sellingPrice = $request->selling_price;
         $status = $request->status ?? 1;
-
+        $price->name = $request->name ?? '';
         $price->mrp = $mrp;
         $price->selling_price = $sellingPrice;
         $price->price = $sellingPrice;

@@ -25,7 +25,11 @@
                 <form method="GET" action="{{ route('agent.orders.create') }}" id="filterForm">
                     <input type="hidden" name="shop_id" value="{{ $shop->id }}">
                     <div class="row align-items-end">
-                        <div class="col-md-4 col-6 mb-2">
+                        <div class="col-md-3 col-6 mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">Product Name</label>
+                            <input type="text" name="name" id="name" class="form-control" value="{{ request('name') }}" placeholder="Search by Name">
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
                             <label class="small font-weight-bold text-muted mb-1">Design No</label>
                             <select name="design_number" class="form-control form-control-sm select2">
                                 <option value="">All Designs</option>
@@ -36,7 +40,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4 col-6 mb-2">
+                        <div class="col-md-3 col-6 mb-2">
                             <label class="small font-weight-bold text-muted mb-1">Color</label>
                             <select name="color_name" class="form-control form-control-sm select2">
                                 <option value="">All Colors</option>
@@ -47,7 +51,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4 col-12 mb-2">
+                        <div class="col-md-3 col-12 mb-2">
                             <label class="small font-weight-bold text-muted mb-1">Size Set</label>
                             <select name="size_set_name" class="form-control form-control-sm select2">
                                 <option value="">All Sets</option>
@@ -94,7 +98,7 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th width="80">Image</th>
-                                    <th>Design & Color</th>
+                                    <th>Name & Color</th>
                                     <th>Size Set</th>
                                     <th class="text-center">Pcs/Box</th>
                                     <th class="text-center">Available</th>
@@ -127,8 +131,9 @@
                                                 </div>
                                             @endif
                                         </td>
+                                       
                                         <td>
-                                            <div class="text-dark font-weight-500">{{ $variation->design_number }}</div>
+                                            <div class="text-dark font-weight-500">{{ $variation->name }} ( {{ $variation->design_number }} )</div>
                                             <div class="text-muted small"><i class="fas fa-palette mr-1"></i>
                                                 {{ $variation->color_name }}</div>
                                         </td>

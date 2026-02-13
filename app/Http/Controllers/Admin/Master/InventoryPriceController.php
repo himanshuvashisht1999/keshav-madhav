@@ -48,6 +48,7 @@ class InventoryPriceController extends Controller
             'color_ids' => 'required|array',
             'mrp' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
+            'name' => 'required',
             'size_set_id' => 'required|exists:master_size_measurements,id',
             'images' => 'nullable|array',
             'images.*' => 'image|max:2048',

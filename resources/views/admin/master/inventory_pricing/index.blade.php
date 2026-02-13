@@ -56,6 +56,9 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="col-md-3">
+                                <input type="text" name="name" id="name" class="form-control" placeholder="Search by Name">
+                            </div>
                         </div>
                         <div class="table-responsive">
                             <table id="inventory-prices" class="table table-bordered table-striped">
@@ -65,6 +68,7 @@
                                         <th>Image</th>
                                         <th>Design</th>
                                         <th>Color</th>
+                                        <th>Name</th>
                                         <th width="100">MRP</th>
                                         <th width="100">Selling Price</th>
                                         <th width="100">Status</th>
@@ -96,6 +100,7 @@
                         d.design_id = $('#filter-design').val();
                         d.color_id = $('#filter-color').val();
                         d.size_set_id = $('#filter-size-set').val();
+                        d.name = $('#name').val();
                     }
                 },
                 columns: [
@@ -103,6 +108,7 @@
                     { data: 'image', name: 'image' },
                     { data: 'design', name: 'design' },
                     { data: 'color', name: 'color' },
+                    { data: 'name', name: 'name' },
                     { data: 'mrp', name: 'mrp' },
                     { data: 'selling_price', name: 'selling_price' },
                     { data: 'status', name: 'status' },
@@ -113,6 +119,10 @@
 
             $('#filter-design, #filter-color, #filter-size, #filter-size-set').on('change', function () {
                 oTable.draw();
+            });
+            $('#name').on('keyup', function (e) {
+                oTable.draw();
+                e.preventDefault();
             });
         });
     </script>

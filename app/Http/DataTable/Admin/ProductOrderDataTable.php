@@ -177,7 +177,14 @@ class ProductOrderDataTable  {
                 
             }) 
             ->addColumn('select', function ($queue) {
-                return '<input type="checkbox" class="row-select" value="'.$queue->id.'">';
+                $status = $queue->status;
+
+                if ($status == 2) {
+                    return '';
+                }else{
+                    return '<input type="checkbox" class="row-select" value="'.$queue->id.'">';
+                }
+                
             })
             ->addColumn('set_size', function ($queue) {
                 $set_size = $queue->size_measurement;
