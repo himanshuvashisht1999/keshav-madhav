@@ -553,7 +553,7 @@ class PackingService
             }
 
             $order = $packing_main->order;
-            $is_domestic = $order && strtolower($order->order_type) === 'domestic';
+            $is_domestic = $order && strtolower($order->order_type) == 'domestic';
 
             // Mark Packing Main as Finalized (1)
             $packing_main->update(['status' => 1]);

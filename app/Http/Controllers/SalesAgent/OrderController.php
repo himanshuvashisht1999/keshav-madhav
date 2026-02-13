@@ -30,7 +30,7 @@ class OrderController extends Controller
 
         // Build Query - Join with inventory_prices to get prices
         $prices = DB::table('inventory_prices')
-            ->select('design_id', 'color_id', DB::raw('MAX(selling_price) as selling_price'), DB::raw('MAX(mrp) as mrp'))
+            ->select('design_id', 'color_id', 'name', DB::raw('MAX(selling_price) as selling_price'), DB::raw('MAX(mrp) as mrp'))
             ->groupBy('design_id', 'color_id');
 
         $query = DomesticInventory::whereNotNull('packing_box_id')
@@ -49,6 +49,10 @@ class OrderController extends Controller
             $query->where('domestic_inventories.size_set_name', $request->size_set_name);
         }
 
+        if ($request->filled('name')) {
+            $query->where('ip.name', 'like', '%' . $request->name . '%');
+        }
+
         // Get distinct variations with aggregated data
         $boxes = $query->select(
             DB::raw('MIN(domestic_inventories.packing_box_id) as example_box_id'), // Just for image lookup context if needed
@@ -60,7 +64,8 @@ class OrderController extends Controller
             'domestic_inventories.size_set_name',
             DB::raw('COUNT(DISTINCT domestic_inventories.packing_box_id) as available_boxes'),
             DB::raw('SUM(domestic_inventories.quantity) / COUNT(DISTINCT domestic_inventories.packing_box_id) as pcs_per_box'),
-            DB::raw('MAX(COALESCE(ip.selling_price, 0)) as unit_price')
+            DB::raw('MAX(COALESCE(ip.selling_price, 0)) as unit_price'),
+            DB::raw('ip.name')
         )
             ->groupBy('domestic_inventories.product_id', 'domestic_inventories.color_id', 'domestic_inventories.size_set_id', 'domestic_inventories.design_number', 'domestic_inventories.color_name', 'domestic_inventories.size_set_name')
             ->orderBy('design_number')

@@ -173,7 +173,7 @@ body.km-admin {
 /* Slight global scale-down so 100% browser zoom feels like ~90% */
 @media (min-width: 1200px) {
     body.km-admin {
-        zoom: 0.9;
+        /* zoom: 0.9; */
     }
 }
 
@@ -320,7 +320,7 @@ body.km-admin .select2-container--default .select2-selection--single {
 body.km-admin .select2-container,
 body.km-admin .select2-container--default,
 body.km-admin .select2-container--bootstrap4 {
-    width: 100% !important;
+    /* width: 100% !important; */
     display: block !important;
 }
 body.km-admin .select2-container .select2-selection--single,

@@ -12,6 +12,7 @@ class InventoryPrice extends Model
         'design_id',
         'color_id',
         'size_set_id',
+        'name',
         'mrp',
         'selling_price',
         'price',

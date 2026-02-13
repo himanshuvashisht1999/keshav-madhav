@@ -55,6 +55,12 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
+                                        <label>Product Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="name" class="form-control" placeholder="Enter Product Name" value="{{ $data->name }}" required>
+                                        @error('name')<span
+                                        class="text-danger small">{{ $message }}</span>@enderror
+                                    </div>
+                                    <div class="form-group">
                                         <label>MRP <span class="text-danger">*</span></label>
                                         <div class="input-group">
                                             <div class="input-group-prepend">
