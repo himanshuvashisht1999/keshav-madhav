@@ -1,34 +1,38 @@
 @extends('admin.layouts.app')
 @section('content')
 <style>
-    #fileBox {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-}
 
-.refresh-master-btn {
-    border: 1px solid #d0d7de;
-    background: #f8f9fa;
-    color: #0d6efd;
-    font-weight: 600;
-    transition: all 0.25s ease;
-}
+    .flatpickr-calendar {
+        z-index: 9999 !important;
+    }
+        #fileBox {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+    }
 
-.refresh-master-btn:hover {
-    background: #0d6efd;
-    color: #fff;
-    border-color: #0d6efd;
-}
+    .refresh-master-btn {
+        border: 1px solid #d0d7de;
+        background: #f8f9fa;
+        color: #0d6efd;
+        font-weight: 600;
+        transition: all 0.25s ease;
+    }
 
-.refresh-master-btn i {
-    transition: transform 0.4s ease;
-}
+    .refresh-master-btn:hover {
+        background: #0d6efd;
+        color: #fff;
+        border-color: #0d6efd;
+    }
 
-.refresh-master-btn:hover i {
-    transform: rotate(180deg);
-}
+    .refresh-master-btn i {
+        transition: transform 0.4s ease;
+    }
+
+    .refresh-master-btn:hover i {
+        transform: rotate(180deg);
+    }
 
 </style>
 
@@ -675,6 +679,9 @@ function calculateGrandTotal() {
 <script>
 flatpickr("#ex_delivery_date", {
     dateFormat: "d M Y",
+    appendTo: document.body,
+    position: "auto left",
+    static: false,
     defaultDate: "{{ \Carbon\Carbon::now()->format('Y-m-d') }}",
     onChange: function(selectedDates) {
         document.getElementById("ex_d_date_hidden").value =

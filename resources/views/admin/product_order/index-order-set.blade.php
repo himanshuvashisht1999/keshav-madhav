@@ -39,6 +39,7 @@
                             <td><input type="hidden" id="id" value="{{ $order_main->id }}"></td>
                             <td><input type="text" class="form-control" id="bar_code"></td>
                             <td><input type="text" class="form-control" id="design_number"></td>
+                            <td colspan="6"></td>
                             <td>
                                 <select class="form-control" id="assigned_filter">
                                     <option value="">All</option>
@@ -46,7 +47,7 @@
                                     <option value="assigned">Assigned</option>
                                 </select>
                             </td>
-                            <td colspan="8"></td>
+                            <td colspan="2"></td>
                         </tr>
 
                         <tr>
@@ -54,7 +55,6 @@
                             <th>ID</th>
                             <th>Bar Code</th>
                             <th>Design No</th>
-                            <th>Assign Filter</th>
                             <th>Set Size</th>
                             <th>Size Group</th>
                             <th>Color</th>

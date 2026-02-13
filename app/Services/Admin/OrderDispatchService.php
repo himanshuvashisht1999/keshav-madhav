@@ -260,11 +260,12 @@ class OrderDispatchService
     {
         $customer_id = $request->customer_id ?? "";
         $data = OrderMain::where('master_customer_id', $customer_id)
-            ->where('status', 1)
+            ->whereIn('status', [1,2])
             ->whereHas('dispatchCartons', function ($q) {
                 $q->where('packing_cartons.status', 1)
                     ->where('packing_mains.status', 1);
             })
+            ->where('order_type', 'corporate')
             ->orderBy('id', 'DESC')
             ->get(['id', 'sku as order_no']);
 
@@ -279,6 +280,7 @@ class OrderDispatchService
                 $q->where('packing_cartons.status', 1)
                     ->where('packing_mains.status', 1);
             })
+            ->where('order_type', 'corporate')
             ->orderBy('id', 'DESC')
             ->get(['id', 'sku as order_no']);
         return $data;

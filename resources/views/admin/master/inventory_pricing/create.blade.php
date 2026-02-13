@@ -30,7 +30,7 @@
                         @csrf
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Select Design <span class="text-danger">*</span></label>
                                         <select name="design_id" class="form-control select2" required>
@@ -41,6 +41,14 @@
                                             @endforeach
                                         </select>
                                         @error('design_id')<span class="text-danger small">{{ $message }}</span>@enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Product Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="name" class="form-control" placeholder="Enter Product Name" value="{{ old('name') }}" required>
+                                        @error('name')<span
+                                        class="text-danger small">{{ $message }}</span>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-6">

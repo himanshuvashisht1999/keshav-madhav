@@ -24,6 +24,9 @@ class InventoryPriceDataTable
                 if ($request->has('size_set_id') && !empty($request->size_set_id)) {
                     $query->where('size_set_id', $request->size_set_id);
                 }
+                if ($request->has('name') && !empty($request->name)) {
+                    $query->where('name', 'like', "%{$request->get('name')}%");
+                }
             })
             ->editColumn('design', function ($queue) {
                 return $queue->design->design_number ?? 'N/A';
@@ -55,7 +58,7 @@ class InventoryPriceDataTable
                 <a href="' . route('admin.master.inventory-price.delete', ['id' => $parameter]) . '" class="ml-2" onclick="return confirm(\'Are you sure?\')" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash text-danger"></i></a>
                 ';
             })
-            ->rawColumns(['action', 'status', 'image', 'size'])
+            ->rawColumns(['action', 'name', 'status', 'image', 'size'])
             ->make(true);
     }
 }
