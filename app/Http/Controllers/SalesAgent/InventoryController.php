@@ -11,52 +11,48 @@ class InventoryController extends Controller
 {
     public function index(Request $request)
     {
-        // Fetch Filter Options
-        $designs = DomesticInventory::whereNotNull('packing_box_id')->distinct()->pluck('design_number');
-        $colors = DomesticInventory::whereNotNull('packing_box_id')->distinct()->pluck('color_name');
-        $size_sets = DomesticInventory::whereNotNull('packing_box_id')->distinct()->pluck('size_set_name');
+        // Fetch Filter Options from domestic_inventories
+        $designs = DomesticInventory::distinct()->pluck('design_number');
+        $colors = DomesticInventory::distinct()->pluck('color_name');
+        $size_sets = DomesticInventory::distinct()->pluck('size_set_name');
 
-        // Build Query - Join with inventory_prices to get prices
-        $prices = DB::table('inventory_prices')
-            ->select('design_id', 'color_id', DB::raw('MAX(selling_price) as selling_price'), DB::raw('MAX(mrp) as mrp'))
-            ->groupBy('design_id', 'color_id');
-
-        $query = DomesticInventory::whereNotNull('packing_box_id')
-            ->leftJoinSub($prices, 'ip', function ($join) {
-                $join->on('domestic_inventories.product_id', '=', 'ip.design_id')
-                    ->on('domestic_inventories.color_id', '=', 'ip.color_id');
-            });
+        $query = DomesticInventory::query();
 
         // Apply Filters
         if ($request->filled('design_number')) {
-            $query->where('domestic_inventories.design_number', $request->design_number);
+            $query->where('design_number', $request->design_number);
         }
         if ($request->filled('color_name')) {
-            $query->where('domestic_inventories.color_name', $request->color_name);
+            $query->where('color_name', $request->color_name);
         }
         if ($request->filled('size_set_name')) {
-            $query->where('domestic_inventories.size_set_name', $request->size_set_name);
+            $query->where('size_set_name', $request->size_set_name);
         }
 
         // Group by variation
         $inventories = $query->select(
-            'domestic_inventories.product_id',
-            'domestic_inventories.color_id',
-            'domestic_inventories.size_set_id',
-            'domestic_inventories.design_number',
-            'domestic_inventories.color_name',
-            'domestic_inventories.size_set_name',
-            DB::raw('COUNT(DISTINCT domestic_inventories.packing_box_id) as available_boxes'),
-            DB::raw('SUM(domestic_inventories.quantity) / COUNT(DISTINCT domestic_inventories.packing_box_id) as pcs_per_box'),
-            DB::raw('MAX(COALESCE(ip.selling_price, 0)) as unit_price')
+            'product_id',
+            'product_name',
+            'design_number',
+            'color_id',
+            'color_name',
+            'size_set_id',
+            'size_set_name',
+            'mrp',
+            'selling_price',
+            DB::raw('COUNT(DISTINCT packing_box_id) as available_boxes'),
+            DB::raw('SUM(quantity) as total_qty')
         )
             ->groupBy(
-                'domestic_inventories.product_id',
-                'domestic_inventories.color_id',
-                'domestic_inventories.size_set_id',
-                'domestic_inventories.design_number',
-                'domestic_inventories.color_name',
-                'domestic_inventories.size_set_name'
+                'product_id',
+                'product_name',
+                'design_number',
+                'color_id',
+                'color_name',
+                'size_set_id',
+                'size_set_name',
+                'mrp',
+                'selling_price'
             )
             ->orderBy('design_number')
             ->get();
@@ -85,25 +81,48 @@ class InventoryController extends Controller
         return view('sales_agent.inventory.index', compact('inventories', 'designs', 'colors', 'size_sets', 'boxImages'));
     }
 
-    public function show($box_id)
+    public function show(Request $request)
     {
-        $variation = DomesticInventory::where('packing_box_id', $box_id)->first();
-        if (!$variation) {
-            return redirect()->back()->with('error', 'Inventory not found');
+        $query = DomesticInventory::query();
+
+        if ($request->filled('product_name')) {
+            $query->where('product_name', $request->product_name);
+        }
+        if ($request->filled('design_number')) {
+            $query->where('design_number', $request->design_number);
+        }
+        if ($request->filled('color_id')) {
+            $query->where('color_id', $request->color_id);
+        }
+        if ($request->filled('size_set_id')) {
+            $query->where('size_set_id', $request->size_set_id);
+        }
+        if ($request->filled('mrp')) {
+            $query->where('mrp', $request->mrp);
+        }
+        if ($request->filled('selling_price')) {
+            $query->where('selling_price', $request->selling_price);
         }
 
-        $items = DomesticInventory::select(
+        $items = $query->select(
             'packing_box_id',
             'box_no',
             'carton_no',
             DB::raw('SUM(quantity) as total_qty'),
-            DB::raw('MAX(selling_price) as price')
+            'selling_price as price'
         )
-            ->where('product_id', $variation->product_id)
-            ->where('color_id', $variation->color_id)
-            ->where('size_set_id', $variation->size_set_id)
-            ->groupBy('packing_box_id', 'box_no', 'carton_no')
+            ->groupBy('packing_box_id', 'box_no', 'carton_no', 'selling_price')
             ->get();
+
+        if ($items->isEmpty()) {
+            return redirect()->back()->with('error', 'Inventory not found');
+        }
+
+        $variation = $items->first();
+        // Add more context for the header if needed
+        $variation->design_number = $request->design_number;
+        $variation->color_name = DomesticInventory::where('color_id', $request->color_id)->value('color_name');
+        $variation->size_set_name = DomesticInventory::where('size_set_id', $request->size_set_id)->value('size_set_name');
 
         return view('sales_agent.inventory.show', compact('items', 'variation'));
     }

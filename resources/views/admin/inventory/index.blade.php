@@ -21,12 +21,8 @@
                     <div class="card-body bg-light rounded p-4">
                         <div class="row align-items-end">
                             <div class="col-md-3">
-                                <label class="small font-weight-bold text-muted mb-1">Box No</label>
-                                <input type="text" id="box_no" class="form-control" placeholder="Search Box...">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="small font-weight-bold text-muted mb-1">Order No</label>
-                                <input type="text" id="order_no" class="form-control" placeholder="Search Order...">
+                                <label class="small font-weight-bold text-muted mb-1">Design Number</label>
+                                <input type="text" id="design_number" class="form-control" placeholder="Search Design...">
                             </div>
                             <div class="col-md-2">
                                 <label class="small font-weight-bold text-muted mb-1">Size Set</label>
@@ -71,13 +67,12 @@
                                 <thead class="bg-light contrast-text">
                                     <tr>
                                         <th width="5%" class="text-center py-3">#</th>
-                                        <th class="py-3">Box No</th>
-                                        <th class="py-3">Carton No</th>
-                                        <th class="py-3">Order No</th>
-                                        <th class="py-3">Size Sets</th>
-                                        <th class="py-3">Products</th>
+                                        <th class="py-3">Product Name</th>
+                                        <th class="py-3">Design Number</th>
+                                        <th class="py-3">Size Set</th>
                                         <th class="py-3">MRP</th>
                                         <th class="py-3">Selling Price</th>
+                                        <th class="text-center py-3">Total Boxes</th>
                                         <th class="text-center py-3">Total Qty</th>
                                         <th class="text-center py-3">Actions</th>
                                     </tr>
@@ -134,19 +129,17 @@
                         d.product_id = $('#product_filter').val();
                         d.mrp = $('#mrp_filter').val();
                         d.selling_price = $('#selling_price_filter').val();
-                        d.box_no = $('#box_no').val();
-                        d.order_no = $('#order_no').val();
+                        d.design_number = $('#design_number').val();
                     }
                 },
                 columns: [
                     { data: 'DT_RowIndex', name: 'id', className: 'text-center text-muted' },
-                    { data: 'box_display', name: 'box_no' },
-                    { data: 'carton_no', name: 'carton_no' },
-                    { data: 'order_no', name: 'order_no', className: 'font-weight-bold text-primary' },
-                    { data: 'size_sets_summary', name: 'size_sets' },
-                    { data: 'products_summary', name: 'products' },
+                    { data: 'product_name', name: 'product_name' },
+                    { data: 'design_number', name: 'design_number' },
+                    { data: 'size_set_name', name: 'size_set_name' },
                     { data: 'mrp_display', name: 'mrp' },
                     { data: 'selling_price_display', name: 'selling_price' },
+                    { data: 'total_boxes', name: 'total_boxes', className: 'text-center font-weight-bold' },
                     { data: 'total_qty', name: 'total_qty', className: 'text-center font-weight-bold' },
                     { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
                 ],
@@ -158,13 +151,13 @@
             });
 
             // Filter events
-            $('#box_no, #order_no, #size_set_filter, #product_filter, #mrp_filter, #selling_price_filter').on('keyup change', function () {
+            $('#design_number, #size_set_filter, #product_filter, #mrp_filter, #selling_price_filter').on('keyup change', function () {
                 table.ajax.reload();
             });
 
             // Reset filter
             $('#reset_filters').on('click', function () {
-                $('#box_no, #order_no, #mrp_filter, #selling_price_filter').val('');
+                $('#design_number, #mrp_filter, #selling_price_filter').val('');
                 $('#size_set_filter, #product_filter').val('').trigger('change');
                 table.ajax.reload();
             });

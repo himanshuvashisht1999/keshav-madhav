@@ -11,6 +11,52 @@
 
         <section class="content">
             <div class="container-fluid">
+                <!-- FILTER CARD -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body p-3">
+                        <form action="{{ route('admin.agent-orders.index') }}" method="GET" class="row align-items-end">
+                            <div class="col-md-3">
+                                <label class="small text-muted font-weight-bold">Filter by Agent</label>
+                                <select name="agent_id" class="form-control select2">
+                                    <option value="">All Agents</option>
+                                    @foreach($agents as $agent)
+                                        <option value="{{ $agent->id }}" {{ request('agent_id') == $agent->id ? 'selected' : '' }}>
+                                            {{ $agent->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="small text-muted font-weight-bold">Filter by Shop</label>
+                                <select name="shop_id" class="form-control select2">
+                                    <option value="">All Shops</option>
+                                    @foreach($shops as $shop)
+                                        <option value="{{ $shop->id }}" {{ request('shop_id') == $shop->id ? 'selected' : '' }}>
+                                            {{ $shop->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="small text-muted font-weight-bold">Status</label>
+                                <select name="status" class="form-control">
+                                    <option value="">Any Status</option>
+                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>PENDING</option>
+                                    <option value="dispatched" {{ request('status') == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary px-4">
+                                    <i class="fas fa-filter mr-1"></i> APPLY
+                                </button>
+                                <a href="{{ route('admin.agent-orders.index') }}" class="btn btn-outline-secondary px-4">
+                                    <i class="fas fa-undo mr-1"></i> RESET
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-0">
                         <table class="table table-hover mb-0">
@@ -19,8 +65,9 @@
                                     <th>Order ID</th>
                                     <th>Agent</th>
                                     <th>Shop Name</th>
-                                    <th>Items</th>
-                                    <th>Total Amount</th>
+                                    <th>Exp. Dispatch</th>
+                                    <th>Total Items</th>
+                                    <th>Grand Total</th>
                                     <th>Status</th>
                                     <th>Date</th>
                                     <th class="text-right">Actions</th>
@@ -32,9 +79,17 @@
                                         <td>#ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</td>
                                         <td><span class="badge badge-info">{{ $order->agent_name }}</span></td>
                                         <td><strong>{{ $order->shop_name }}</strong></td>
-                                        <td>{{ $order->total_qty }} pcs</td>
+                                        <td>
+                                            {{ $order->expected_dispatch_date ? \Carbon\Carbon::parse($order->expected_dispatch_date)->format('d-m-Y') : 'N/A' }}
+                                            @if($order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d'))
+                                                <div class="mt-1">
+                                                    <span class="badge bg-danger animate__animated animate__flash animate__infinite">DELAYED</span>
+                                                </div>
+                                            @endif
+                                        </td>
+                                        <td>{{ number_format($order->total_qty, 0) }}</td>
                                         <td><span
-                                                class="text-primary font-weight-bold">₹{{ number_format($order->total_amount, 2) }}</span>
+                                                class="text-primary font-weight-bold">₹{{ number_format($order->grand_total, 2) }}</span>
                                         </td>
                                         <td>
                                             <span
@@ -58,6 +113,11 @@
                             </tbody>
                         </table>
                     </div>
+                    @if($orders->hasPages())
+                        <div class="card-footer bg-white">
+                            {{ $orders->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </section>

@@ -11,10 +11,12 @@
                             class="btn btn-primary rounded-pill px-4 mr-2">
                             <i class="fas fa-file-invoice mr-1"></i> Download Invoice
                         </a>
-                        <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
-                            class="btn btn-warning rounded-pill px-4 mr-2">
-                            <i class="fas fa-edit mr-1"></i> Edit Order
-                        </a>
+                        @if($order->status == 'pending')
+                            <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
+                                class="btn btn-warning rounded-pill px-4 mr-2">
+                                <i class="fas fa-edit mr-1"></i> Edit Order
+                            </a>
+                        @endif
                         <a href="{{ route('admin.agent-orders.index') }}"
                             class="btn btn-outline-secondary rounded-pill px-4">
                             <i class="fas fa-arrow-left mr-1"></i> Back
@@ -53,8 +55,11 @@
                                         <span class="font-weight-bold">{{ $order->total_qty }} pcs</span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between p-2">
-                                        <span class="text-muted">Total Quantity:</span>
-                                        <span class="font-weight-bold">{{ $order->total_qty }} pcs</span>
+                                        <span class="text-muted">Exp. Dispatch:</span>
+                                        <span
+                                            class="font-weight-bold {{ $order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d') ? 'text-danger' : '' }}">
+                                            {{ $order->expected_dispatch_date ? \Carbon\Carbon::parse($order->expected_dispatch_date)->format('d-m-Y') : 'N/A' }}
+                                        </span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between p-2">
                                         <span class="text-muted">Subtotal:</span>
@@ -79,13 +84,35 @@
                                     </li>
                                 </ul>
 
+                                @if($order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d'))
+                                    <div class="alert alert-danger animate__animated animate__shakeX mt-3 mb-0 shadow-sm border-left border-danger"
+                                        style="border-left-width: 5px !important;">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-exclamation-triangle fa-2x mr-3"></i>
+                                            <div>
+                                                <h6 class="font-weight-bold mb-1 uppercase">ORDER DELAYED</h6>
+                                                <p class="small mb-0">This order was expected to be dispatched by
+                                                    <strong>{{ \Carbon\Carbon::parse($order->expected_dispatch_date)->format('d M Y') }}</strong>.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
                                 @if($order->status == 'pending')
                                     <hr>
+                                    <div class="alert alert-info small mb-3">
+                                        <i class="fas fa-barcode mr-1"></i> Scan-based dispatch is required for this order.
+                                    </div>
+                                    <a href="{{ route('admin.agent-orders.dispatch-scan', $order->id) }}"
+                                        class="btn btn-primary btn-block btn-lg shadow-sm mb-2">
+                                        <i class="fas fa-barcode mr-2"></i> START DISPATCH SCAN
+                                    </a>
                                     <form action="{{ route('admin.agent-orders.dispatch', $order->id) }}" method="POST"
-                                        onsubmit="return confirm('Note: Dispatching will PERMANENTLY remove selected boxes from current inventory. History will be kept in Order Items. Proceed?')">
+                                        onsubmit="return confirm('Note: Dispatching will PERMANENTLY remove scanned boxes from current inventory. All items must be scanned first. Proceed?')">
                                         @csrf
                                         <button type="submit" class="btn btn-success btn-block btn-lg shadow-sm">
-                                            <i class="fas fa-truck mr-2"></i> DISPATCH ORDER
+                                            <i class="fas fa-truck mr-2"></i> COMPLETE DISPATCH
                                         </button>
                                     </form>
                                 @else

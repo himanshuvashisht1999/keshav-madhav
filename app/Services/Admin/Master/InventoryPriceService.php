@@ -74,7 +74,7 @@ class InventoryPriceService
             }
 
             // Sync to inventory
-            $this->updateInventoryPrices($request->design_id, $color_id, $size_set_id, $mrp, $sellingPrice);
+            $this->updateInventoryPrices($request->design_id, $color_id, $size_set_id, $mrp, $sellingPrice, $name);
         }
         return true;
     }
@@ -86,6 +86,7 @@ class InventoryPriceService
 
     public function update(Request $request)
     {
+        $name = $request->name ?? '';
         $price = InventoryPrice::find($request->id);
         $mrp = $request->mrp;
         $sellingPrice = $request->selling_price;
@@ -121,7 +122,7 @@ class InventoryPriceService
         }
 
         // Update inventory prices for existing stock
-        $this->updateInventoryPrices($price->design_id, $price->color_id, $price->size_set_id, $mrp, $sellingPrice);
+        $this->updateInventoryPrices($price->design_id, $price->color_id, $price->size_set_id, $mrp, $sellingPrice, $name);
 
         return true;
     }
@@ -155,7 +156,7 @@ class InventoryPriceService
         return $pending;
     }
 
-    private function updateInventoryPrices($design_id, $color_id, $size_set_id, $mrp, $selling_price)
+    private function updateInventoryPrices($design_id, $color_id, $size_set_id, $mrp, $selling_price, $name)
     {
         DomesticInventory::where('product_id', $design_id)
             ->where('color_id', $color_id)
@@ -163,7 +164,8 @@ class InventoryPriceService
             ->update([
                 'mrp' => $mrp,
                 'selling_price' => $selling_price,
-                'price' => $selling_price
+                'price' => $selling_price,
+                'product_name' => $name,
             ]);
     }
 }

@@ -61,65 +61,80 @@
         <!-- Inventory List -->
         <div class="row">
             @forelse($inventories as $variation)
-                @php
-                    $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
-                    $image = $boxImages[$vKey] ?? null;
-                    // Find a random packing_box_id from this group to use for the Detail route
-                    // Since the controller grouped them, we need at least one ID.
-                    // Let's pass the variation group context or just use a proxy ID.
-                    $proxy_box_id = DB::table('domestic_inventories')
-                        ->where('product_id', $variation->product_id)
-                        ->where('color_id', $variation->color_id)
-                        ->where('size_set_id', $variation->size_set_id)
-                        ->value('packing_box_id');
-                @endphp
-                <div class="col-12 col-md-6 mb-3">
-                    <div class="app-card shadow-sm border-0 d-flex gap-3 p-3 bg-white" style="border-radius: 15px;">
-                        <div class="variation-img">
-                            @if($image)
-                                <img src="{{ asset('uploads/inventory_prices/' . $image) }}" alt="Product" class="rounded border"
-                                    style="width: 80px; height: 80px; object-fit: cover;">
-                            @else
-                                <div class="bg-light rounded border d-flex align-items-center justify-content-center"
-                                    style="width: 80px; height: 80px;">
-                                    <i class="fas fa-image text-muted opacity-50 fa-2x"></i>
+                    @php
+                        $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
+                        $image = $boxImages[$vKey] ?? null;
+                        // Find a random packing_box_id from this group to use for the Detail route
+                        // Since the controller grouped them, we need at least one ID.
+                        // Let's pass the variation group context or just use a proxy ID.
+                        $proxy_box_id = DB::table('domestic_inventories')
+                            ->where('product_id', $variation->product_id)
+                            ->where('color_id', $variation->color_id)
+                            ->where('size_set_id', $variation->size_set_id)
+                            ->value('packing_box_id');
+                    @endphp
+                    <div class="col-12 col-md-6 mb-3">
+                        <div class="app-card shadow-sm border-0 d-flex gap-3 p-3 bg-white" style="border-radius: 15px;">
+                            <div class="variation-img">
+                                @if($image)
+                                    <img src="{{ asset('uploads/inventory_prices/' . $image) }}" alt="Product" class="rounded border"
+                                        style="width: 80px; height: 80px; object-fit: cover;">
+                                @else
+                                    <div class="bg-light rounded border d-flex align-items-center justify-content-center"
+                                        style="width: 80px; height: 80px;">
+                                        <i class="fas fa-image text-muted opacity-50 fa-2x"></i>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <div>
+                                        <h6 class="font-weight-bold mb-0 text-dark">
+                                            {{ $variation->product_name ?: $variation->design_number }}</h6>
+                                        <div class="small text-muted mb-1">
+                                            <span class="mr-2"><i
+                                                    class="fas fa-fingerprint mr-1"></i>{{ $variation->design_number }}</span>
+                                            <span><i class="fas fa-palette mr-1"></i>{{ $variation->color_name }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="badge badge-primary px-2 py-1 rounded-pill">
+                                            {{ $variation->available_boxes }} Boxes
+                                        </span>
+                                    </div>
                                 </div>
-                            @endif
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                <div>
-                                    <h6 class="font-weight-bold mb-0 text-dark">{{ $variation->design_number }}</h6>
-                                    <small class="text-muted"><i class="fas fa-palette mr-1"></i>
-                                        {{ $variation->color_name }}</small>
-                                </div>
-                                <div class="text-right">
-                                    <span class="badge badge-primary px-2 py-1 rounded-pill">
-                                        {{ $variation->available_boxes }} Boxes
+
+                                <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                                    <span class="small text-secondary">
+                                        <span class="badge badge-light border">{{ $variation->size_set_name }}</span>
+                                        <span class="ml-2">{{ $variation->total_qty }} Total Pcs</span>
                                     </span>
+                                    <div class="text-right">
+                                        @if($variation->mrp)
+                                            <div class="small text-muted text-decoration-line-through"
+                                                style="font-size: 10px; text-decoration: line-through;">MRP:
+                                                ₹{{ number_format($variation->mrp, 2) }}</div>
+                                        @endif
+                                        <span
+                                            class="h6 font-weight-bold text-primary mb-0">₹{{ number_format($variation->selling_price, 2) }}</span>
+                                        <div class="small text-muted" style="font-size: 10px;">per pc</div>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
-                                <span class="small text-secondary">
-                                    <span class="badge badge-light border">{{ $variation->size_set_name }}</span>
-                                    <span class="ml-2">{{ number_format($variation->pcs_per_box, 0) }} pcs/box</span>
-                                </span>
-                                <div class="text-right">
-                                    <span
-                                        class="h6 font-weight-bold text-primary mb-0">₹{{ number_format($variation->unit_price, 2) }}</span>
-                                    <div class="small text-muted" style="font-size: 10px;">per pc</div>
-                                </div>
+                                <a href="{{ route('agent.inventory.show', [
+                    'product_name' => $variation->product_name,
+                    'design_number' => $variation->design_number,
+                    'color_id' => $variation->color_id,
+                    'size_set_id' => $variation->size_set_id,
+                    'mrp' => $variation->mrp,
+                    'selling_price' => $variation->selling_price
+                ]) }}" class="btn btn-light btn-sm btn-block mt-3 rounded-pill py-2 font-weight-bold">
+                                    <i class="fas fa-search-plus mr-1 text-primary"></i> View All {{ $variation->available_boxes }}
+                                    Boxes
+                                </a>
                             </div>
-
-                            <a href="{{ route('agent.inventory.show', $proxy_box_id) }}"
-                                class="btn btn-light btn-sm btn-block mt-3 rounded-pill py-2 font-weight-bold">
-                                <i class="fas fa-search-plus mr-1 text-primary"></i> View All {{ $variation->available_boxes }}
-                                Boxes
-                            </a>
                         </div>
                     </div>
-                </div>
             @empty
                 <div class="col-12 text-center py-5">
                     <i class="fas fa-search fa-3x text-muted mb-3 opacity-25"></i>

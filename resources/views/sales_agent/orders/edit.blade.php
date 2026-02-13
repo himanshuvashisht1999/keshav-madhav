@@ -311,7 +311,13 @@
                         <span class="font-weight-bold text-danger">+₹<span id="gstAmountDesktop">0</span></span>
                     </div>
                 </div>
-
+                <!-- Expected Dispatch -->
+                <div class="col-md-2 border-right">
+                    <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Expected Dispatch</small>
+                    <input type="date" id="expectedDispatchDateDesktop" class="form-control form-control-sm mt-1"
+                        value="{{ $order->expected_dispatch_date ?: date('Y-m-d', strtotime('+3 days')) }}"
+                        min="{{ date('Y-m-d') }}">
+                </div>
                 <div class="col-md-2 text-center pl-4">
                     <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Grand Total</small>
                     <span class="h4 font-weight-bold text-primary mb-0">₹<span id="grandTotalAmountDesktop">0</span></span>
@@ -357,6 +363,20 @@
                 <div class="col-6 text-right">
                     <small class="text-muted d-block" style="font-size: 11px;">GST ({{ $gst_percentage }}%)</small>
                     <span class="text-success font-weight-bold">+₹<span id="gstAmountMobile">0</span></span>
+                </div>
+            </div>
+
+            <!-- Expected Dispatch Row -->
+            <div class="row mb-1 align-items-center">
+                <div class="col-12">
+                    <div class="d-flex align-items-center justify-content-between bg-light p-1 rounded">
+                        <small class="text-muted font-weight-bold" style="font-size: 11px;">Exp. Dispatch:</small>
+                        <input type="date" id="expectedDispatchDateMobile"
+                            class="form-control form-control-sm border-0 bg-transparent py-0 text-right"
+                            style="width: 130px; height: 24px; font-size: 12px; font-weight: bold;"
+                            value="{{ $order->expected_dispatch_date ?: date('Y-m-d', strtotime('+3 days')) }}"
+                            min="{{ date('Y-m-d') }}">
+                    </div>
                 </div>
             </div>
 
@@ -625,12 +645,15 @@
                     return;
                 }
 
-                // Get discount from visible input
+                // Get discount and expected date from visible input
                 let discountPercent = 0;
+                let expectedDate = '';
                 if ($('#discountInputDesktop').is(':visible')) {
                     discountPercent = parseFloat($('#discountInputDesktop').val()) || 0;
+                    expectedDate = $('#expectedDispatchDateDesktop').val();
                 } else {
                     discountPercent = parseFloat($('#discountInputMobile').val()) || 0;
+                    expectedDate = $('#expectedDispatchDateMobile').val();
                 }
 
                 Swal.fire({
@@ -653,6 +676,7 @@
                                 _token: "{{ csrf_token() }}",
                                 variations: variations,
                                 discount_percentage: discountPercent,
+                                expected_dispatch_date: expectedDate,
                             },
                             success: function (response) {
                                 if (response.success) {
