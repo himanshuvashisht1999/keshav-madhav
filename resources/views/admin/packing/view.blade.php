@@ -19,7 +19,16 @@
                         <div class="col-md-4 bg-primary d-flex align-items-center justify-content-center p-4">
                             <div class="text-center text-white">
                                 <span class="text-uppercase small font-weight-bold d-block mb-1" style="letter-spacing: 1px; opacity: 0.8;">Current Status</span>
-                                <h4 class="font-weight-bold mb-0"><i class="fas fa-check-double mr-2"></i> Packing Finalized</h4>
+                                <h4 class="font-weight-bold mb-3"><i class="fas fa-check-double mr-2"></i> Packing Finalized</h4>
+                                @php
+                                    // Get first packing_main_id to print all for the whole order/slips
+                                    $firstMainId = $order->packingMains->first() ? $order->packingMains->first()->id : null;
+                                @endphp
+                                @if($firstMainId)
+                                    <a href="{{ route('admin.packing.labels', ['type' => 'main', 'id' => $firstMainId]) }}" target="_blank" class="btn btn-light btn-sm font-weight-bold shadow-sm px-3">
+                                        <i class="fas fa-print mr-2"></i> Print All Labels
+                                    </a>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -131,6 +140,9 @@
                                             </div>
                                         </div>
                                         <div class="text-right">
+                                            <a href="{{ route('admin.packing.labels', ['type' => 'carton', 'id' => $carton->id]) }}" target="_blank" class="btn btn-outline-primary btn-xs mr-2" title="Print Carton Labels">
+                                                <i class="fas fa-print"></i>
+                                            </a>
                                             <span class="badge badge-pill badge-soft-primary px-3 py-2">{{ $carton->boxes->count() }} Boxes</span>
                                         </div>
                                     </div>
@@ -141,9 +153,10 @@
                                             <label class="text-uppercase x-small font-weight-bold text-muted letter-spacing-1 d-block mb-2">BOX SERIALS</label>
                                             <div class="d-flex flex-wrap" style="gap: 8px;">
                                                 @foreach($carton->boxes as $box)
-                                                    <span class="badge border bg-light text-dark py-2 px-2" style="border-radius: 8px; font-weight: 500;">
+                                                    <a href="{{ route('admin.packing.labels', ['type' => 'box', 'id' => $box->id]) }}" target="_blank" class="badge border bg-light text-dark py-2 px-2" style="border-radius: 8px; font-weight: 500; text-decoration: none;" title="Print Box Label">
                                                        <i class="fas fa-box text-warning mr-1"></i> {{ $box->box_no }}
-                                                    </span>
+                                                       <i class="fas fa-print ml-1 text-muted x-small"></i>
+                                                    </a>
                                                 @endforeach
                                             </div>
                                         </div>
@@ -156,16 +169,31 @@
                                             <table class="table table-sm table-hover mb-0">
                                                 <thead class="bg-light text-muted x-small font-weight-bold">
                                                     <tr>
+                                                        <th class="border-0 px-3 py-2">PRODUCT / DESIGN / COLOR</th>
                                                         <th class="border-0 px-3 py-2">SIZE</th>
                                                         <th class="border-0 px-3 py-2 text-right">QTY</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @foreach($carton->items->groupBy(fn($item) => $item->detail ? $item->detail->size : ($item->size ? $item->size->name : 'ID:' . $item->size_id)) as $sizeName => $items)
-                                                        <tr>
-                                                            <td class="px-3 py-2 font-weight-bold text-dark">{{ $sizeName }}</td>
-                                                            <td class="px-3 py-2 text-right text-primary font-weight-bold">{{ $items->sum('quantity') }} Pcs</td>
-                                                        </tr>
+                                                    @foreach($carton->items->groupBy(function($item) {
+                                                        $set = $item->detail ? $item->detail->orderProductSet : null;
+                                                        $productName = $set && $set->product ? $set->product->name_of_garment : 'N/A';
+                                                        $designNo = $set ? $set->design_number : 'N/A';
+                                                        $colorName = $set && $set->colors ? $set->colors->name : 'N/A';
+                                                        return "{$productName} | D#{$designNo} | {$colorName}";
+                                                    }) as $productInfo => $itemsBySize)
+                                                        @foreach($itemsBySize->groupBy(fn($item) => $item->detail ? $item->detail->size : ($item->size ? $item->size->name : 'ID:' . $item->size_id)) as $sizeName => $items)
+                                                            <tr>
+                                                                @if($loop->first)
+                                                                    <td class="px-3 py-2" rowspan="{{ $itemsBySize->groupBy(fn($item) => $item->detail ? $item->detail->size : ($item->size ? $item->size->name : 'ID:' . $item->size_id))->count() }}">
+                                                                        <div class="text-dark font-weight-bold">{{ explode(' | ', $productInfo)[0] }}</div>
+                                                                        <div class="small text-muted">{{ explode(' | ', $productInfo)[1] }} &bull; {{ explode(' | ', $productInfo)[2] }}</div>
+                                                                    </td>
+                                                                @endif
+                                                                <td class="px-3 py-2 font-weight-bold text-dark">{{ $sizeName }}</td>
+                                                                <td class="px-3 py-2 text-right text-primary font-weight-bold">{{ $items->sum('quantity') }} Pcs</td>
+                                                            </tr>
+                                                        @endforeach
                                                     @endforeach
                                                 </tbody>
                                             </table>

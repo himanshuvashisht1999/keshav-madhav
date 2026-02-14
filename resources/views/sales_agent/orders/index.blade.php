@@ -12,20 +12,36 @@
                             <i class="fas fa-receipt text-muted"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between mb-1">
-                                <h6 class="font-weight-bold text-dark mb-0">{{ $order->shop_name }}</h6>
-                                <span
-                                    class="badge {{ $order->status == 'pending' ? 'badge-warning' : 'badge-success' }} small rounded-pill px-3 py-1">
-                                    {{ ucfirst($order->status) }}
-                                </span>
+                            <div class="d-flex justify-content-between mb-1 align-items-center">
+                                <h6 class="font-weight-bold text-dark mb-0 truncate" style="max-width: 60%;">
+                                    {{ $order->shop_name }}</h6>
+                                <div class="text-right">
+                                    @if($order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d'))
+                                        <span
+                                            class="badge badge-danger small rounded-pill px-2 py-1 mr-1 animate__animated animate__pulse animate__infinite">
+                                            DELAYED
+                                        </span>
+                                    @endif
+                                    <span
+                                        class="badge {{ $order->status == 'pending' ? 'badge-warning' : 'badge-success' }} small rounded-pill px-3 py-1">
+                                        {{ ucfirst($order->status) }}
+                                    </span>
+                                </div>
                             </div>
-                            <p class="text-muted small mb-0">
-                                {{ \Carbon\Carbon::parse($order->order_date)->format('d M Y, h:i A') }}
-                            </p>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <p class="text-muted small mb-0">
+                                    {{ \Carbon\Carbon::parse($order->order_date)->format('d M Y') }}
+                                </p>
+                                @if($order->expected_dispatch_date)
+                                    <small class="text-muted" style="font-size: 10px;">
+                                        Disp: {{ \Carbon\Carbon::parse($order->expected_dispatch_date)->format('d M') }}
+                                    </small>
+                                @endif
+                            </div>
                             <hr class="my-2 border-dashed">
                             <div class="d-flex justify-content-between">
                                 <span class="text-muted small">{{ $order->total_qty }} Items</span>
-                                <span class="font-weight-bold text-primary">₹{{ number_format($order->total_amount, 2) }}</span>
+                                <span class="font-weight-bold text-primary">₹{{ number_format($order->grand_total, 2) }}</span>
                             </div>
                         </div>
                     </div>

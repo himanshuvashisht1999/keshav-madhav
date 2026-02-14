@@ -11,6 +11,7 @@ use App\Models\OrderMain;
 use App\Models\OrderStageTransaction;
 use App\Models\OrderLot;
 use App\Models\DomesticInventory;
+use App\Models\InventoryPrice;
 use Illuminate\Support\Facades\DB;
 
 class PackingService
@@ -87,8 +88,10 @@ class PackingService
     {
         return OrderMain::with([
             'customer',
-            'packingMains.cartons.boxes.items.detail',
-            'packingMains.cartons.items.detail',
+            'packingMains.cartons.boxes.items.detail.orderProductSet.product',
+            'packingMains.cartons.boxes.items.detail.orderProductSet.colors',
+            'packingMains.cartons.items.detail.orderProductSet.product',
+            'packingMains.cartons.items.detail.orderProductSet.colors',
             'packingMains.cartons.rack.storeroom'
         ])->findOrFail($order_id);
     }
@@ -581,19 +584,28 @@ class PackingService
                         foreach ($box_variations as $set_id => $qty) {
                             $set = \App\Models\OrderProductSet::with('colors', 'product', 'size_measurement')->find($set_id);
                             if ($set) {
+                                // Lookup Inventory Pricing
+                                $price_record = InventoryPrice::where('design_id', $set->production_goods_id)
+                                    ->where('color_id', $set->color_id)
+                                    ->where('size_set_id', $set->set_size)
+                                    ->first();
+
                                 DomesticInventory::create([
                                     'order_main_id' => $order->id,
                                     'packing_main_id' => $packing_main->id,
                                     'packing_carton_id' => $carton->id,
                                     'packing_box_id' => $box->id,
                                     'product_id' => $set->production_goods_id,
-                                    'product_name' => $set->product ? $set->product->name_of_garment : null,
+                                    'product_name' => ($price_record && $price_record->name) ? $price_record->name : ($set->product ? $set->product->name_of_garment : null),
                                     'color_id' => $set->color_id,
                                     'color_name' => $set->colors ? $set->colors->name : null,
                                     'size_set_id' => $set->set_size,
                                     'size_set_name' => $set->size_measurement ? $set->size_measurement->name : null,
                                     'design_number' => $set->design_number,
                                     'quantity' => $qty,
+                                    'mrp' => $price_record ? $price_record->mrp : null,
+                                    'selling_price' => $price_record ? $price_record->selling_price : null,
+                                    'price' => $price_record ? $price_record->price : null,
                                     'box_no' => $box->box_no,
                                     'carton_no' => $carton->carton_no,
                                     'barcode' => $box->box_no,
@@ -622,6 +634,12 @@ class PackingService
                         foreach ($carton_variations as $set_id => $qty) {
                             $set = \App\Models\OrderProductSet::with('colors', 'product', 'size_measurement')->find($set_id);
                             if ($set) {
+                                // Lookup Inventory Pricing
+                                $price_record = InventoryPrice::where('design_id', $set->production_goods_id)
+                                    ->where('color_id', $set->color_id)
+                                    ->where('size_set_id', $set->set_size)
+                                    ->first();
+
                                 $box_code = $carton->barcode ?: 'C' . $carton->carton_no;
                                 DomesticInventory::create([
                                     'order_main_id' => $order->id,
@@ -629,13 +647,16 @@ class PackingService
                                     'packing_carton_id' => $carton->id,
                                     'packing_box_id' => null,
                                     'product_id' => $set->production_goods_id,
-                                    'product_name' => $set->product ? $set->product->name_of_garment : null,
+                                    'product_name' => ($price_record && $price_record->name) ? $price_record->name : ($set->product ? $set->product->name_of_garment : null),
                                     'color_id' => $set->color_id,
                                     'color_name' => $set->colors ? $set->colors->name : null,
                                     'size_set_id' => $set->set_size,
                                     'size_set_name' => $set->size_measurement ? $set->size_measurement->name : null,
                                     'design_number' => $set->design_number,
                                     'quantity' => $qty,
+                                    'mrp' => $price_record ? $price_record->mrp : null,
+                                    'selling_price' => $price_record ? $price_record->selling_price : null,
+                                    'price' => $price_record ? $price_record->price : null,
                                     'box_no' => null,
                                     'carton_no' => $carton->carton_no,
                                     'barcode' => $box_code,

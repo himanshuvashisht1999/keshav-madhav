@@ -7,9 +7,9 @@
                 <div class="row mb-3 align-items-center">
                     <div class="col-sm-6">
                         <h1 class="m-0 font-weight-bold text-dark">
-                            <i class="fas fa-box-open mr-2 text-primary"></i>Box Details
+                            <i class="fas fa-layer-group mr-2 text-primary"></i>Product Group Details
                         </h1>
-                        <small class="text-muted">Viewing contents for Box: {{ $box_info->box_no ?: 'Direct' }} | Order: {{ $box_info->orderMain->sku ?? 'N/A' }}</small>
+                        <small class="text-muted">Viewing details for: {{ $group_info->product_name }} ({{ $group_info->design_number }})</small>
                     </div>
                     <div class="col-sm-6 text-right">
                         <a href="{{ route('admin.inventory.index') }}" class="btn btn-secondary shadow-sm">
@@ -32,48 +32,28 @@
                             <div class="card-body p-0">
                                 <table class="table table-hover mb-0">
                                     <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Order No</th>
-                                        <td class="py-3 font-weight-bold">{{ $box_info->orderMain->sku ?? 'N/A' }}</td>
+                                        <th class="pl-4 py-3 text-muted small text-uppercase">Product Name</th>
+                                        <td class="py-3 font-weight-bold">{{ $group_info->product_name }}</td>
                                     </tr>
                                     <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Box No</th>
-                                        <td class="py-3">
-                                            @if($box_info->box_no)
-                                                <span class="badge badge-info px-3">{{ $box_info->box_no }}</span>
-                                            @else
-                                                <span class="text-muted">Direct Packing</span>
-                                            @endif
-                                        </td>
+                                        <th class="pl-4 py-3 text-muted small text-uppercase">Design Number</th>
+                                        <td class="py-3 font-weight-bold text-primary">{{ $group_info->design_number }}</td>
                                     </tr>
                                     <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Carton No</th>
-                                        <td class="py-3">{{ $box_info->carton_no ?? 'N/A' }}</td>
+                                        <th class="pl-4 py-3 text-muted small text-uppercase">Size Set</th>
+                                        <td class="py-3"><span class="badge badge-light border">{{ $group_info->size_set_name }}</span></td>
                                     </tr>
                                     <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Barcode</th>
-                                        <td class="py-3">
-                                            @if($box_info->barcode)
-                                                <div class="mb-2" style="max-width: 100%; overflow-x: auto; overflow-y: hidden;">
-                                                    {!! Milon\Barcode\Facades\DNS1DFacade::getBarcodeHTML($box_info->barcode, 'C128', 1.2, 40) !!}
-                                                </div>
-                                                <code class="text-danger small">{{ $box_info->barcode }}</code>
-                                            @else
-                                                <span class="text-muted">N/A</span>
-                                            @endif
-                                        </td>
+                                        <th class="pl-4 py-3 text-muted small text-uppercase">MRP</th>
+                                        <td class="py-3 font-weight-bold text-dark">₹{{ number_format($group_info->mrp, 2) }}</td>
                                     </tr>
                                     <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">QR Code</th>
-                                        <td class="py-3">
-                                            @if($box_info->qrcode)
-                                                <div class="mb-2">
-                                                    {!! Milon\Barcode\Facades\DNS2DFacade::getBarcodeHTML($box_info->qrcode, 'QRCODE', 3, 3) !!}
-                                                </div>
-                                                <code class="text-info small">{{ $box_info->qrcode }}</code>
-                                            @else
-                                                <span class="text-muted">N/A</span>
-                                            @endif
-                                        </td>
+                                        <th class="pl-4 py-3 text-muted small text-uppercase">Selling Price</th>
+                                        <td class="py-3 font-weight-bold text-dark">₹{{ number_format($group_info->selling_price, 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="pl-4 py-3 text-muted small text-uppercase">Total Boxes</th>
+                                        <td class="py-3 font-weight-bold">{{ $items->unique('packing_box_id')->count() }}</td>
                                     </tr>
                                     <tr>
                                         <th class="pl-4 py-3 text-muted small text-uppercase">Total Quantity</th>
@@ -94,24 +74,26 @@
                                 <table class="table table-striped table-hover mb-0">
                                     <thead class="bg-light contrast-text">
                                         <tr>
-                                            <th class="pl-4 py-3">Design No</th>
-                                            <th class="py-3">Product</th>
+                                            <th class="pl-4 py-3">Box No</th>
+                                            <th class="py-3">Carton No</th>
+                                            <th class="py-3">Order No</th>
                                             <th class="py-3">Color</th>
-                                            <th class="py-3">Size Set</th>
-                                            <th class="py-3">MRP</th>
-                                            <th class="py-3">Selling Price</th>
                                             <th class="text-center py-3">Qty</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($items as $item)
                                             <tr>
-                                                <td class="pl-4 py-3 font-weight-bold">{{ $item->design_number ?? 'N/A' }}</td>
-                                                <td class="py-3">{{ $item->product_name ?? 'N/A' }}</td>
+                                                <td class="pl-4 py-3">
+                                                    @if($item->box_no)
+                                                        <span class="badge badge-info">{{ $item->box_no }}</span>
+                                                    @else
+                                                        <span class="text-muted">Direct</span>
+                                                    @endif
+                                                </td>
+                                                <td class="py-3">{{ $item->carton_no ?? 'N/A' }}</td>
+                                                <td class="py-3 font-weight-bold text-primary">{{ $item->orderMain->sku ?? 'N/A' }}</td>
                                                 <td class="py-3">{{ $item->color_name ?? 'N/A' }}</td>
-                                                <td class="py-3"><span class="badge badge-light border">{{ $item->size_set_name ?? 'N/A' }}</span></td>
-                                                <td class="py-3 font-weight-bold text-dark">₹{{ number_format($item->mrp, 2) }}</td>
-                                                <td class="py-3 font-weight-bold text-dark">₹{{ number_format($item->selling_price, 2) }}</td>
                                                 <td class="text-center py-3 font-weight-bold text-success">{{ $item->quantity }}</td>
                                             </tr>
                                         @endforeach

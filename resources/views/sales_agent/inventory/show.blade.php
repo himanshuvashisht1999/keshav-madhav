@@ -8,8 +8,11 @@
             </a>
             <div>
                 <h2 class="font-weight-bold h4 mb-0 text-dark">Inventory Details</h2>
-                <p class="text-muted small mb-0">{{ $variation->design_number }} - {{ $variation->color_name }}
-                    ({{ $variation->size_set_name }})</p>
+                <p class="text-muted small mb-0">
+                    {{ $variation->product_name ?: $variation->design_number }} |
+                    {{ $variation->design_number }} - {{ $variation->color_name }}
+                    ({{ $variation->size_set_name }})
+                </p>
             </div>
         </div>
 

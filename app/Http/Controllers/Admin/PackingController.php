@@ -180,6 +180,35 @@ class PackingController extends Controller
         return response()->json($result);
     }
 
+    public function labels($type, $id)
+    {
+        $query = \App\Models\DomesticInventory::query();
+
+        if ($type == 'main') {
+            $query->where('packing_main_id', $id);
+        } elseif ($type == 'carton') {
+            $query->where('packing_carton_id', $id);
+        } elseif ($type == 'box') {
+            $query->where('packing_box_id', $id);
+        } else {
+            return abort(404);
+        }
+
+        $labels = $query->get();
+
+        if ($labels->isEmpty()) {
+            return redirect()->back()->withError('No labels found for this record.');
+        }
+
+        // Use DomPDF to generate PDF
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.packing.labels_print', compact('labels'));
+
+        // Set paper size to A4
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->stream('labels-' . $type . '-' . $id . '.pdf');
+    }
+
     public function deleteCarton(Request $request)
     {
         $result = $this->service->deleteCarton($request->carton_id);

@@ -218,7 +218,17 @@
                                     @endif
                                 </div>
                             </div>   
-                            
+                            {{-- <div class="col-md-6" style="display: none">
+                                <div class="form-group">
+                                    <label for="sku">SKU</label>
+                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU">
+                                    @if ($errors->has('sku'))
+                                        <span class="invalid-feedback d-block">
+                                            {{ $errors->first('sku') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>                          --}}
                            
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">

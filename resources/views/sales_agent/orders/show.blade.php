@@ -18,8 +18,8 @@
                     <h4 class="font-weight-bold mb-0 text-uppercase">{{ $order->status }}</h4>
                 </div>
                 <div class="text-right">
-                    <p class="small mb-1 opacity-75">Total Amount</p>
-                    <h3 class="font-weight-bold mb-0">₹{{ number_format($order->total_amount, 2) }}</h3>
+                    <p class="small mb-1 opacity-75">Grand Total</p>
+                    <h3 class="font-weight-bold mb-0">₹{{ number_format($order->grand_total, 2) }}</h3>
                     <a href="{{ route('agent.orders.invoice', $order->id) }}"
                         class="btn btn-sm btn-light mt-2 text-primary font-weight-bold">
                         <i class="fas fa-download mr-1"></i> Invoice
@@ -28,10 +28,32 @@
             </div>
         </div>
 
-        <div class="app-card shadow-sm border-0 mb-4">
-            <h6 class="font-weight-bold text-muted small uppercase mb-3 text-secondary">Shipping to:</h6>
-            <h5 class="font-weight-bold mb-1">{{ $order->shop_name }}</h5>
-            <p class="text-muted small mb-0">{{ $order->order_date }}</p>
+        <div class="app-card shadow-sm border-0 mb-4 bg-white">
+            <div class="row">
+                <div class="col-6 border-right">
+                    <h6 class="font-weight-bold text-muted small uppercase mb-1 text-secondary">Shipping to:</h6>
+                    <h5 class="font-weight-bold mb-1">{{ $order->shop_name }}</h5>
+                    <p class="text-muted small mb-0">{{ \Carbon\Carbon::parse($order->order_date)->format('d M Y, h:i A') }}
+                    </p>
+                </div>
+                <div class="col-6">
+                    <h6 class="font-weight-bold text-muted small uppercase mb-1 text-secondary">Bill Summary:</h6>
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-muted">Subtotal:</span>
+                        <span class="font-weight-bold text-dark">₹{{ number_format($order->total_amount, 2) }}</span>
+                    </div>
+                    @if($order->discount_amount > 0)
+                        <div class="d-flex justify-content-between small mb-1 text-success">
+                            <span>Discount ({{ number_format($order->discount_percentage, 0) }}%):</span>
+                            <span>-₹{{ number_format($order->discount_amount, 2) }}</span>
+                        </div>
+                    @endif
+                    <div class="d-flex justify-content-between small text-danger">
+                        <span>GST ({{ number_format($order->gst_percentage, 0) }}%):</span>
+                        <span>+₹{{ number_format($order->gst_amount, 2) }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         @if($order->status === 'pending')
@@ -43,21 +65,83 @@
         @endif
 
         <!-- ITEM LIST -->
-        <h6 class="font-weight-bold mb-3">Order Items ({{ count($items) }})</h6>
-        @foreach($items as $item)
-            <div class="app-card mb-2 p-3 shadow-none border">
+        <h6 class="font-weight-bold mb-3">Order Items ({{ count($groupedItems) }} Variants)</h6>
+        @foreach($groupedItems as $key => $group)
+            <div class="app-card mb-2 p-3 shadow-none border variation-card" style="cursor: pointer;" data-toggle="modal"
+                data-target="#modal_{{ $key }}">
                 <div class="d-flex justify-content-between mb-2">
-                    <h6 class="font-weight-bold mb-0">{{ $item->product_name }}</h6>
-                    <span class="badge badge-light">Box #{{ $item->box_no }}</span>
+                    <h6 class="font-weight-bold mb-0 text-primary">{{ $group->product_name }}</h6>
+                    <span class="badge badge-primary">{{ $group->box_count }} Boxes</span>
                 </div>
                 <div class="d-flex flex-wrap gap-2 mb-2">
-                    <span class="text-muted small bg-light px-2 rounded mr-2">Des: {{ $item->design_number }}</span>
-                    <span class="text-muted small bg-light px-2 rounded mr-2">Col: {{ $item->color_name }}</span>
-                    <span class="text-muted small bg-light px-2 rounded">Set: {{ $item->size_set_name }}</span>
+                    <span class="text-muted small bg-light px-2 rounded mr-2">Des: {{ $group->design_number }}</span>
+                    <span class="text-muted small bg-light px-2 rounded mr-2">Col: {{ $group->color_name }}</span>
+                    <span class="text-muted small bg-light px-2 rounded">Set: {{ $group->size_set_name }}</span>
                 </div>
-                <div class="d-flex justify-content-between align-items-end">
-                    <span class="text-dark font-weight-bold">{{ $item->quantity }} pcs</span>
-                    <span class="text-primary font-weight-bold">₹{{ $item->selling_price }} / pc</span>
+                <div class="d-flex justify-content-between align-items-end border-top pt-2 mt-1">
+                    <div>
+                        <span class="text-dark font-weight-bold d-block">{{ $group->total_qty }} pcs total</span>
+                        <small class="text-muted">Avg. {{ number_format($group->total_qty / $group->box_count, 1) }} /
+                            box</small>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-primary font-weight-bold d-block">₹{{ number_format($group->selling_price, 2) }} /
+                            pc</span>
+                        <small class="text-muted">MRP: ₹{{ number_format($group->mrp, 2) }}</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal for this variant -->
+            <div class="modal fade" id="modal_{{ $key }}" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content border-0 shadow-lg">
+                        <div class="modal-header bg-primary text-white border-0">
+                            <h5 class="modal-title font-weight-bold">Box Details</h5>
+                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body p-0">
+                            <div class="p-3 bg-light border-bottom">
+                                <h6 class="font-weight-bold mb-1">{{ $group->product_name }}</h6>
+                                <p class="small text-muted mb-0">
+                                    {{ $group->design_number }} | {{ $group->color_name }} | {{ $group->size_set_name }}
+                                </p>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0">
+                                    <thead class="bg-white small text-muted text-uppercase">
+                                        <tr>
+                                            <th class="pl-3">Box #</th>
+                                            <th>Carton</th>
+                                            <th class="text-right pr-3">Qty</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($group->boxes as $box)
+                                            <tr>
+                                                <td class="pl-3 font-weight-bold">{{ $box->box_no ?: 'Pending' }}</td>
+                                                <td class="text-muted">{{ $box->carton_no ?: '-' }}</td>
+                                                <td class="text-right pr-3 font-weight-bold text-primary">{{ $box->quantity }} pcs
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot class="bg-light font-weight-bold">
+                                        <tr>
+                                            <td colspan="2" class="pl-3">Total ({{ $group->box_count }} Boxes)</td>
+                                            <td class="text-right pr-3">{{ $group->total_qty }} pcs</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button type="button" class="btn btn-secondary btn-block rounded-pill"
+                                data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         @endforeach
