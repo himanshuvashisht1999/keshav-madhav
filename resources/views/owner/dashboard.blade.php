@@ -24,8 +24,8 @@
         }
 
         /* =========================================
-               MOBILE APP STYLES (Screen < 992px)
-            ========================================= */
+                           MOBILE APP STYLES (Screen < 992px)
+                        ========================================= */
         @media (max-width: 991.98px) {
             .app-hero {
                 background: var(--KM-purple);
@@ -183,8 +183,8 @@
         }
 
         /* =========================================
-               DESKTOP ADMIN STYLES (Screen >= 992px)
-            ========================================= */
+                           DESKTOP ADMIN STYLES (Screen >= 992px)
+                        ========================================= */
         @media (min-width: 992px) {
             .desktop-wrapper {
                 padding: 40px;
@@ -347,6 +347,16 @@
                     <span class="app-stat-label">Lots</span>
                 </div>
             </div>
+            <div class="app-stats-grid mt-3">
+                <div class="app-stat-card border-success" style="grid-column: span 1.5; border: 1px solid #28a745;">
+                    <span class="app-stat-value text-success">₹{{ number_format($total_receivable, 0) }}</span>
+                    <span class="app-stat-label">Receivable</span>
+                </div>
+                <div class="app-stat-card border-danger" style="grid-column: span 1.5; border: 1px solid #dc3545;">
+                    <span class="app-stat-value text-danger">₹{{ number_format($total_payable, 0) }}</span>
+                    <span class="app-stat-label">Payable</span>
+                </div>
+            </div>
         </div>
 
         <div class="app-menu-section">
@@ -383,6 +393,37 @@
                 <div class="app-nav-content">
                     <span class="app-nav-title">Production Lots</span>
                     <span class="app-nav-desc">Batch and lot tracking</span>
+                </div>
+                <i class="fas fa-chevron-right app-nav-arrow"></i>
+            </a>
+
+            <a href="{{ route('owner.payment-dashboard.index') }}" class="app-nav-card">
+                <div class="app-nav-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="app-nav-content">
+                    <span class="app-nav-title">Payment Analytics</span>
+                    <span class="app-nav-desc">Financial flow & charts</span>
+                </div>
+                <i class="fas fa-chevron-right app-nav-arrow"></i>
+            </a>
+            <a href="{{ route('owner.payment.pending.index') }}" class="app-nav-card shadow-sm border-warning">
+                <div class="app-nav-icon" style="background: rgba(255, 193, 7, 0.1); color: #ffc107;">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="app-nav-content">
+                    <span class="app-nav-title">Pending Payments</span>
+                    <span class="app-nav-desc">Outstanding payables & receivables</span>
+                </div>
+                <i class="fas fa-chevron-right app-nav-arrow"></i>
+            </a>
+            <a href="{{ route('owner.payment.history.index') }}" class="app-nav-card">
+                <div class="app-nav-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="app-nav-content">
+                    <span class="app-nav-title">Payment History</span>
+                    <span class="app-nav-desc">Complete payment records</span>
                 </div>
                 <i class="fas fa-chevron-right app-nav-arrow"></i>
             </a>
@@ -429,6 +470,24 @@
                     <span class="stat-value">{{ $total_lots }}</span>
                 </div>
             </div>
+            <div class="stat-card-desktop border-success">
+                <div class="stat-icon-desktop" style="background: rgba(40, 167, 69, 0.1); color: #28a745;">
+                    <i class="fas fa-hand-holding-usd"></i>
+                </div>
+                <div class="stat-info-desktop">
+                    <span class="stat-label">Receivable</span>
+                    <span class="stat-value text-success">₹{{ number_format($total_receivable, 2) }}</span>
+                </div>
+            </div>
+            <div class="stat-card-desktop border-danger">
+                <div class="stat-icon-desktop" style="background: rgba(220, 53, 69, 0.1); color: #dc3545;">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <div class="stat-info-desktop">
+                    <span class="stat-label">Payable</span>
+                    <span class="stat-value text-danger">₹{{ number_format($total_payable, 2) }}</span>
+                </div>
+            </div>
         </div>
 
         <div class="quick-actions-card">
@@ -449,6 +508,14 @@
                     <a href="{{ route('owner.lots') }}" class="action-btn-modern">
                         <i class="fas fa-industry"></i>
                         <span>Production Lots</span>
+                    </a>
+                    <a href="{{ route('owner.payment-dashboard.index') }}" class="action-btn-modern">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Payment Analytics</span>
+                    </a>
+                    <a href="{{ route('owner.payment.pending.index') }}" class="action-btn-modern">
+                        <i class="fas fa-clock text-warning"></i>
+                        <span>Pending Payments</span>
                     </a>
                 </div>
             </div>

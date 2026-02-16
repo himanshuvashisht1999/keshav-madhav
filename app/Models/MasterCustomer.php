@@ -25,4 +25,8 @@ class MasterCustomer extends Model
         'updated_at'
     ];
 
+    public function orders()
+    {
+        return $this->hasMany(OrderMain::class, 'master_customer_id');
+    }
 }
