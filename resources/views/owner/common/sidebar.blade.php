@@ -19,6 +19,20 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                         <p>Dashboard</p>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{{ route('owner.payment-dashboard.index') }}"
+                        class="nav-link {{ request()->routeIs('owner.payment-dashboard.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-chart-pie"></i>
+                        <p>Payment Analytics</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('owner.payment.pending.index') }}"
+                        class="nav-link {{ request()->routeIs('owner.payment.pending.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-clock"></i>
+                        <p>Pending Payments</p>
+                    </a>
+                </li>
                 <li class="nav-header">REPORTS</li>
                 <li class="nav-item">
                     <a href="{{ route('owner.stock') }}"

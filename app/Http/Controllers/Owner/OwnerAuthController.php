@@ -55,6 +55,23 @@ class OwnerAuthController extends Controller
         $data['total_orders'] = OrderMain::count();
         $data['total_lots'] = FabricRollAssigning::distinct('lot_no')->count();
         $data['total_stock'] = \App\Models\FabricReceiptDetail::sum('remaining_quantity');
+
+        // Pending Payments Totals
+        $agentOrders = \App\Models\AgentOrder::get()->filter(function ($order) {
+            return $order->balance_amount > 0;
+        });
+        $corporateDispatches = \App\Models\OrderDispatch::whereHas('orderMain', function ($q) {
+            $q->where('order_type', 'corporate');
+        })->get()->filter(function ($dispatch) {
+            return $dispatch->balance_amount > 0;
+        });
+        $data['total_receivable'] = $agentOrders->sum('balance_amount') + $corporateDispatches->sum('balance_amount');
+
+        $fabricReceipts = \App\Models\FabricReceipt::get()->filter(function ($receipt) {
+            return $receipt->balance_amount > 0;
+        });
+        $data['total_payable'] = $fabricReceipts->sum('balance_amount');
+
         return view('owner.dashboard', $data);
     }
 

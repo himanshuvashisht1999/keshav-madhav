@@ -5,9 +5,11 @@ use App\Http\Controllers\Controller;
 use App\Services\Admin\DashboardService as Service;
 use App\Models\User;
 
-class DashboardController extends Controller { 
-    protected $service; 
-    public function __construct(Service $service) {
+class DashboardController extends Controller
+{
+    protected $service;
+    public function __construct(Service $service)
+    {
         $this->service = $service;
     }
     public function dashboard(Request $request)
@@ -21,12 +23,32 @@ class DashboardController extends Controller {
         // Grouped data for chart
         $chartData = [
             'users' => User::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
-                            ->whereYear('created_at', $year)
-                            ->groupBy('month')->pluck('count', 'month')->toArray(),
+                ->whereYear('created_at', $year)
+                ->groupBy('month')->pluck('count', 'month')->toArray(),
         ];
 
+        // Pending Payments Totals
+        $agentOrders = \App\Models\AgentOrder::get()->filter(function ($order) {
+            return $order->balance_amount > 0;
+        });
+        $corporateDispatches = \App\Models\OrderDispatch::whereHas('orderMain', function ($q) {
+            $q->where('order_type', 'corporate');
+        })->get()->filter(function ($dispatch) {
+            return $dispatch->balance_amount > 0;
+        });
+        $total_receivable = $agentOrders->sum('balance_amount') + $corporateDispatches->sum('balance_amount');
+
+        $fabricReceipts = \App\Models\FabricReceipt::get()->filter(function ($receipt) {
+            return $receipt->balance_amount > 0;
+        });
+        $total_payable = $fabricReceipts->sum('balance_amount');
+
         return view('admin.dashboard', compact(
-            'total_users','year', 'chartData'
+            'total_users',
+            'year',
+            'chartData',
+            'total_receivable',
+            'total_payable'
         ));
     }
 
@@ -91,19 +113,19 @@ class DashboardController extends Controller {
     public function getDashboardData(Request $request)
     {
         $fabricStock = $this->service->fabricStock($request)->original;
-        $itemStock   = $this->service->itemStock($request)->original;
+        $itemStock = $this->service->itemStock($request)->original;
 
         return response()->json([
             'itemStock' => [
                 'labels' => $itemStock['labels'],   // Original SKUs for tooltip
-                'data'        => $itemStock['data']
+                'data' => $itemStock['data']
             ],
             'fabricStock' => [
                 'labels' => $fabricStock['labels'], // Original SKUs for tooltip
-                'data'        => $fabricStock['data']
+                'data' => $fabricStock['data']
             ]
         ]);
     }
 
-    
+
 }
