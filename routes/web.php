@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Admin\Payment\FabricShipmentPaymentController;
+
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -104,6 +106,14 @@ Route::prefix('owner')->name('owner.')->group(function () {
             Route::get('/view', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'orderSummaryView'])->name('view');
             Route::get('/pdf', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'orderSummaryPdf'])->name('pdf');
         });
+
+        Route::prefix('payment-dashboard')->name('payment-dashboard.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Owner\OwnerPaymentDashboardController::class, 'index'])->name('index');
+            Route::get('/data', [\App\Http\Controllers\Owner\OwnerPaymentDashboardController::class, 'getData'])->name('data');
+        });
+
+        Route::get('/pending-payments', [\App\Http\Controllers\Admin\Payment\PendingPaymentController::class, 'index'])->name('payment.pending.index');
+        Route::get('/payment-history', [\App\Http\Controllers\Admin\Payment\PaymentHistoryController::class, 'index'])->name('payment.history.index');
     });
 });
 
@@ -427,6 +437,33 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/{id}/process-scan', [AdminAgentOrderController::class, 'processScan'])->name('process-scan');
             Route::post('/{id}/remove-scan', [AdminAgentOrderController::class, 'removeScan'])->name('remove-scan');
             Route::post('/{id}/dispatch', [AdminAgentOrderController::class, 'dispatchOrder'])->name('dispatch');
+        });
+
+        Route::prefix('master')->name('master.')->group(function () {
+            Route::resource('employees', \App\Http\Controllers\Admin\EmployeeController::class);
+        });
+
+        Route::prefix('payment/salary')->name('payment.salary.')->group(function () {
+            Route::get('/create', [\App\Http\Controllers\Admin\Payment\SalaryPaymentController::class, 'create'])->name('create');
+            Route::post('/store', [\App\Http\Controllers\Admin\Payment\SalaryPaymentController::class, 'store'])->name('store');
+        });
+
+        Route::prefix('payment/other')->name('payment.other.')->group(function () {
+            Route::get('/create', [\App\Http\Controllers\Admin\Payment\OtherPaymentController::class, 'create'])->name('create');
+            Route::post('/store', [\App\Http\Controllers\Admin\Payment\OtherPaymentController::class, 'store'])->name('store');
+        });
+
+        Route::prefix('payment/history')->name('payment.history.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\Payment\PaymentHistoryController::class, 'index'])->name('index');
+            Route::get('/{payment}', [\App\Http\Controllers\Admin\Payment\PaymentHistoryController::class, 'show'])->name('show');
+            Route::get('/{payment}/edit', [\App\Http\Controllers\Admin\Payment\PaymentHistoryController::class, 'edit'])->name('edit');
+            Route::put('/{payment}', [\App\Http\Controllers\Admin\Payment\PaymentHistoryController::class, 'update'])->name('update');
+            Route::delete('/{payment}', [\App\Http\Controllers\Admin\Payment\PaymentHistoryController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('payment/dashboard')->name('payment.dashboard.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\Payment\PaymentDashboardController::class, 'index'])->name('index');
+            Route::get('/data', [\App\Http\Controllers\Admin\Payment\PaymentDashboardController::class, 'getData'])->name('getData');
         });
         Route::prefix('master/pattern')->name('master.pattern.')->group(function () {
             Route::get('/index', [AdminPatternController::class, 'index'])->name('index');
@@ -798,6 +835,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/item-stock', [AdminReportController::class, 'itemStock'])->name('itemStock');
             Route::get('/item-stock-details', [AdminReportController::class, 'itemStockDetails'])->name('itemStockDetails');
             Route::get('/item-stock-list', [AdminReportController::class, 'itemStockList'])->name('itemStockList');
+
             Route::get('/item-stock-sku-list', [AdminReportController::class, 'itemStockSkuList'])->name('itemStockSkuList');
             Route::post('/item-stock-excel', [AdminReportController::class, 'generateItemStockExcel'])->name('itemStockExcel');
             Route::post('/item-stock-sku-excel', [AdminReportController::class, 'generateItemStockSkuExcel'])->name('itemStockSkuExcel');
@@ -821,6 +859,30 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/stages-excel', [AdminReportController::class, 'generateStagesReportExcel'])->name('stagesExcel');
         });
     });
+
+    Route::prefix('payment')->name('payment.')->group(function () {
+        Route::prefix('fabric-shipment')->name('fabric-shipment.')->group(function () {
+            Route::get('/create', [FabricShipmentPaymentController::class, 'create'])->name('create');
+            Route::get('/get-shipments', [FabricShipmentPaymentController::class, 'getShipments'])->name('get-shipments');
+            Route::post('/store', [FabricShipmentPaymentController::class, 'store'])->name('store');
+        });
+
+        Route::prefix('agent-order')->name('agent-order.')->group(function () {
+            Route::get('/create', [\App\Http\Controllers\Admin\Payment\AgentOrderPaymentController::class, 'create'])->name('create');
+            Route::get('/get-orders', [\App\Http\Controllers\Admin\Payment\AgentOrderPaymentController::class, 'getOrders'])->name('get-orders');
+            Route::post('/store', [\App\Http\Controllers\Admin\Payment\AgentOrderPaymentController::class, 'store'])->name('store');
+        });
+
+        Route::get('/pending', [\App\Http\Controllers\Admin\Payment\PendingPaymentController::class, 'index'])->name('pending.index');
+
+        Route::prefix('corporate-order')->name('corporate-order.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\Payment\CorporateOrderPaymentController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\Payment\CorporateOrderPaymentController::class, 'create'])->name('create');
+            Route::get('/get-dispatches', [\App\Http\Controllers\Admin\Payment\CorporateOrderPaymentController::class, 'getDispatches'])->name('get-dispatches');
+            Route::post('/store', [\App\Http\Controllers\Admin\Payment\CorporateOrderPaymentController::class, 'store'])->name('store');
+        });
+    });
+
     // Packing Module Routes
     Route::prefix('/packing')->name('packing.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\PackingController::class, 'index'])->name('index');

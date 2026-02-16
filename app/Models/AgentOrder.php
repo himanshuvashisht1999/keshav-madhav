@@ -23,6 +23,8 @@ class AgentOrder extends Model
         'order_date'
     ];
 
+    protected $appends = ['paid_amount', 'balance_amount'];
+
     public function items()
     {
         return $this->hasMany(AgentOrderItem::class, 'agent_order_id');
@@ -36,5 +38,20 @@ class AgentOrder extends Model
     public function agent()
     {
         return $this->belongsTo(SalesAgent::class, 'sales_agent_id');
+    }
+
+    public function payments()
+    {
+        return $this->morphMany('App\Models\Payment', 'paymentable');
+    }
+
+    public function getPaidAmountAttribute()
+    {
+        return $this->payments->sum('amount');
+    }
+
+    public function getBalanceAmountAttribute()
+    {
+        return $this->grand_total - $this->paid_amount;
     }
 }

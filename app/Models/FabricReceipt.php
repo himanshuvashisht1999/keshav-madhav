@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class FabricReceipt extends Model
 {
     use HasFactory;
-    protected $table= 'fabric_receipts';
+    protected $table = 'fabric_receipts';
     protected $fillable = [
         'id',
         'sno',
@@ -32,23 +32,30 @@ class FabricReceipt extends Model
         'created_at',
         'updated_at'
     ];
-    public function vendor(){
-        return $this->hasOne('App\Models\Vendor','id','vendor_id');
+
+    protected $appends = ['paid_amount', 'balance_amount'];
+
+    public function vendor()
+    {
+        return $this->hasOne('App\Models\Vendor', 'id', 'vendor_id');
     }
-    public function cutting_master(){
-        return $this->hasOne('App\Models\MasterFabricWarehouse','id','master_fabric_warehouse_id');
+    public function cutting_master()
+    {
+        return $this->hasOne('App\Models\MasterFabricWarehouse', 'id', 'master_fabric_warehouse_id');
     }
-    public function details(){
-        return $this->hasMany('App\Models\FabricReceiptDetail','fabric_receipt_id','id');
+    public function details()
+    {
+        return $this->hasMany('App\Models\FabricReceiptDetail', 'fabric_receipt_id', 'id');
     }
 
-    public function prices(){
-        return $this->hasMany('App\Models\FabricReceiptPrice','fabric_receipt_id','id');
+    public function prices()
+    {
+        return $this->hasMany('App\Models\FabricReceiptPrice', 'fabric_receipt_id', 'id');
     }
     public function getShipmentPhotoAttribute($value)
     {
         if ($value) {
-            return asset('assets/receipts/shipment-image/'. $value);
+            return asset('assets/receipts/shipment-image/' . $value);
         } else {
             return asset('images/image-placeholder.png');
         }
@@ -56,11 +63,24 @@ class FabricReceipt extends Model
     public function getChallanPhotoAttribute($value)
     {
         if ($value) {
-            return asset('assets/receipts/challan-image/'. $value);
+            return asset('assets/receipts/challan-image/' . $value);
         } else {
             return asset('images/image-placeholder.png');
         }
     }
 
-    
+    public function payments()
+    {
+        return $this->morphMany('App\Models\Payment', 'paymentable');
+    }
+
+    public function getPaidAmountAttribute()
+    {
+        return $this->payments->sum('amount');
+    }
+
+    public function getBalanceAmountAttribute()
+    {
+        return $this->total_amount - $this->paid_amount;
+    }
 }

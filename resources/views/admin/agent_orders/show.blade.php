@@ -51,6 +51,17 @@
                                             class="badge {{ $order->status == 'pending' ? 'badge-warning' : 'badge-success' }}">{{ strtoupper($order->status) }}</span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between p-2">
+                                        <span class="text-muted">Payment:</span>
+                                        @if($order->total_paid >= $order->grand_total && $order->grand_total > 0)
+                                            <a
+                                                href="{{ route('admin.payment.history.index', ['paymentable_type' => 'App\Models\AgentOrder', 'paymentable_id' => $order->id]) }}">
+                                                <span class="badge badge-success">PAID</span>
+                                            </a>
+                                        @else
+                                            <span class="badge badge-danger">UNPAID</span>
+                                        @endif
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between p-2">
                                         <span class="text-muted">Total Quantity:</span>
                                         <span class="font-weight-bold">{{ $order->total_qty }} pcs</span>
                                     </li>

@@ -253,6 +253,75 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                             <p>Hand Slip Digitalization</p>
                         </a>
                     </li> --}}
+                    <li class="{{ str_contains($page_url, 'admin/payment') ? 'nav-item menu-open' : 'nav-item' }}">
+                        <a href="#"
+                            class="{{ str_contains($page_url, 'admin/payment') ? 'nav-link active' : 'nav-link' }} border_class">
+                            <i class="nav-icon fas fa-money-bill"></i>
+                            <p>
+                                PAYMENT
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{{ route('admin.payment.dashboard.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/payment/dashboard') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="fas fa-chart-pie nav-icon"></i>
+                                    <p>Analytics Dashboard</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.payment.pending.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/payment/pending') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="fas fa-clock nav-icon"></i>
+                                    <p>Pending Payments</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.payment.fabric-shipment.create') }}"
+                                    class="{{ str_contains($page_url, 'admin/payment/fabric-shipment') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Fabric Shipment</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.payment.corporate-order.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/payment/corporate-order') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Corporate Order</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.payment.agent-order.create') }}"
+                                    class="{{ str_contains($page_url, 'admin/payment/agent-order') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Agent Order</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.payment.salary.create') }}"
+                                    class="{{ str_contains($page_url, 'admin/payment/salary') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Salary Payment</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.payment.other.create') }}"
+                                    class="{{ str_contains($page_url, 'admin/payment/other') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Other Payment</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.payment.history.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/payment/history') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Payment History</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
                     <li class="{{ str_contains($page_url, 'admin/report') ? 'nav-item menu-open' : 'nav-item' }}">
                         <a href="#"
                             class="{{ str_contains($page_url, 'admin/report') ? 'nav-link active' : 'nav-link' }} border_class">
@@ -641,6 +710,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                     class="{{ str_contains($page_url, 'admin/master/sales-agent') ? 'nav-link active' : 'nav-link' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Sales Agents</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.master.employees.index') }}"
+                                    class="{{ str_contains($page_url, 'admin/master/employees') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Employees</p>
                                 </a>
                             </li>
 

@@ -45,11 +45,19 @@
                                     <option value="dispatched" {{ request('status') == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-2">
+                                <label class="small text-muted font-weight-bold">Payment Status</label>
+                                <select name="payment_status" class="form-control">
+                                    <option value="">Any Status</option>
+                                    <option value="paid" {{ request('payment_status') == 'paid' ? 'selected' : '' }}>PAID</option>
+                                    <option value="unpaid" {{ request('payment_status') == 'unpaid' ? 'selected' : '' }}>UNPAID</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
                                 <button type="submit" class="btn btn-primary px-4">
                                     <i class="fas fa-filter mr-1"></i> APPLY
                                 </button>
-                                <a href="{{ route('admin.agent-orders.index') }}" class="btn btn-outline-secondary px-4">
+                                <a href="{{ route('admin.agent-orders.index') }}" class="btn btn-outline-secondary px-4 mt-2">
                                     <i class="fas fa-undo mr-1"></i> RESET
                                 </a>
                             </div>
@@ -69,6 +77,7 @@
                                     <th>Total Items</th>
                                     <th>Grand Total</th>
                                     <th>Status</th>
+                                    <th>Payment</th>
                                     <th>Date</th>
                                     <th class="text-right">Actions</th>
                                 </tr>
@@ -96,6 +105,16 @@
                                                 class="badge {{ $order->status == 'pending' ? 'badge-warning' : 'badge-success' }}">
                                                 {{ strtoupper($order->status) }}
                                             </span>
+                                        </td>
+                                        <td>
+                                            @if($order->total_paid >= $order->grand_total && $order->grand_total > 0)
+                                                <a href="{{ route('admin.payment.history.index', ['paymentable_type' => 'App\Models\AgentOrder', 'paymentable_id' => $order->id]) }}">
+                                                    <span class="badge badge-success">PAID</span>
+                                                </a>
+                                            @else
+                                                <span class="badge badge-danger">UNPAID</span>
+                                                <br><small class="text-muted">₹{{ number_format($order->total_paid, 2) }}</small>
+                                            @endif
                                         </td>
                                         <td>{{ date('d-m-Y H:i', strtotime($order->order_date)) }}</td>
                                         <td class="text-right">

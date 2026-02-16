@@ -18,7 +18,12 @@ class AgentOrderController extends Controller
         $query = DB::table('agent_orders')
             ->join('sales_agents', 'agent_orders.sales_agent_id', '=', 'sales_agents.id')
             ->join('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
-            ->select('agent_orders.*', 'sales_agents.name as agent_name', 'master_customers.name as shop_name');
+            ->select(
+                'agent_orders.*',
+                'sales_agents.name as agent_name',
+                'master_customers.name as shop_name',
+                DB::raw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE paymentable_id = agent_orders.id AND paymentable_type = "App\\\\Models\\\\AgentOrder") as total_paid')
+            );
 
         // Filtering
         if ($request->filled('agent_id')) {
@@ -29,6 +34,14 @@ class AgentOrderController extends Controller
         }
         if ($request->filled('status')) {
             $query->where('agent_orders.status', $request->status);
+        }
+
+        if ($request->filled('payment_status')) {
+            if ($request->payment_status == 'paid') {
+                $query->whereRaw('(SELECT SUM(amount) FROM payments WHERE paymentable_id = agent_orders.id AND paymentable_type = "App\\\\Models\\\\AgentOrder") >= agent_orders.grand_total');
+            } elseif ($request->payment_status == 'unpaid') {
+                $query->whereRaw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE paymentable_id = agent_orders.id AND paymentable_type = "App\\\\Models\\\\AgentOrder") < agent_orders.grand_total');
+            }
         }
 
         $orders = $query->latest('order_date')
@@ -53,7 +66,8 @@ class AgentOrderController extends Controller
                 'master_customers.name as shop_name',
                 'master_customers.email as shop_email',
                 'master_customers.phone as shop_phone',
-                'master_customers.address as shop_address'
+                'master_customers.address as shop_address',
+                DB::raw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE paymentable_id = agent_orders.id AND paymentable_type = "App\\\\Models\\\\AgentOrder") as total_paid')
             )
             ->first();
 
