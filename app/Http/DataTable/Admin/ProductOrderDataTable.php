@@ -88,6 +88,9 @@ class ProductOrderDataTable  {
                 if ($request->has('master_customer_id') && !empty($request->master_customer_id)) {
                     $query->where('master_customer_id', 'like', "%{$request->get('master_customer_id')}%");
                 }
+                if ($request->has('order_type') && !empty($request->order_type)) {
+                    $query->where('order_type', 'like', "%{$request->get('order_type')}%");
+                }
                 if ($request->has('created_at') && !empty($request->created_at)) {
                     $query->where('created_at', 'like', "%{$request->get('created_at')}%");
                 }
@@ -123,6 +126,9 @@ class ProductOrderDataTable  {
 				return $queue->customer?->name;
                 
             })
+            ->editColumn('order_type', function ($queue) {
+				return ucfirst($queue->order_type);
+            })
             ->editColumn('created_at', function ($queue) {
                 return $queue->created_at ? getformatDateTime($queue->created_at) : '-';
             })
@@ -138,8 +144,9 @@ class ProductOrderDataTable  {
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;
                 
-                $view = '<a href="' . route('admin.product_order.indexOrderSet',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
-                
+                $view = '<a href="' . route('admin.product_order.indexOrderSet',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>
+                <a href="' . route('admin.report.order-summary.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Report" data-original-title="Report"><i class="fas fa-chart-bar text-muted" title="Report"></i></a>
+                ';
                 return $view;
             })
             

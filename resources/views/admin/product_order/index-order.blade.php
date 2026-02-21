@@ -41,7 +41,13 @@
                                 @endforeach
                             </select>
                         </td>
-                        
+                        <td>
+                            <select id="order_type" class="form-control form-control-sm">
+                                <option value="">All</option>
+                                <option value="corporate">Corporate</option>
+                                <option value="domestic">Domestic</option>
+                            </select>
+                        </td>
                        
                         <td>
                             <input type="date" class="form-control" name="created_at" id="created_at" autocomplete="off">
@@ -66,6 +72,7 @@
                         <th>ID</th>
                         <th>Order No</th>
                         <th>Customer</th>
+                        <th>Order Type</th>
                         <th>Order Date</th>
                         <th>Expected Delivery Date</th>
                         <th>Total Pcs</th>
@@ -109,6 +116,7 @@
                     d.id = $('#id').val();
                     d.sku = $('#sku').val();
                     d.master_customer_id = $('#master_customer_id').val();
+                    d.order_type = $('#order_type').val();
                     d.created_at = $('#created_at').val();
                     d.expected_delivery_date = $('#expected_delivery_date').val();
                     d.status = $('#status').val();
@@ -120,6 +128,7 @@
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'sku', name: 'sku'},
                 {data: 'master_customer_id', name: 'master_customer_id'},                
+                {data: 'order_type', name: 'order_type'},                
                 {data: 'created_at', name: 'created_at'},                
                 {data: 'expected_delivery_date', name: 'expected_delivery_date'},     
                 {data: 'total_pcs', name: 'total_pcs'}, 
@@ -154,6 +163,10 @@
             e.preventDefault();
         });
         $('#master_customer_id').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#order_type').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });

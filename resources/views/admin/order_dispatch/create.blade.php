@@ -105,7 +105,7 @@
                                         <div class="col-5">
                                             <input type="text" id="calc_subtotal"
                                                 class="form-control form-control-sm text-right font-weight-bold" readonly
-                                                value="0.00">
+                                                >
                                         </div>
                                     </div>
 
@@ -116,7 +116,7 @@
                                         <div class="col-5">
                                             <input type="number" name="discount_percentage" id="calc_discount_p"
                                                 class="form-control form-control-sm text-right" step="0.01" min="0"
-                                                max="100" value="0.00">
+                                                max="100" >
                                         </div>
                                     </div>
 
@@ -126,7 +126,7 @@
                                         <div class="col-5">
                                             <input type="text" id="calc_discount_v"
                                                 class="form-control form-control-sm text-right text-muted" readonly
-                                                value="0.00">
+                                                >
                                         </div>
                                     </div>
 
@@ -147,7 +147,7 @@
                                         <div class="col-5">
                                             <input type="text" id="calc_gst_v"
                                                 class="form-control form-control-sm text-right text-muted" readonly
-                                                value="0.00">
+                                                >
                                         </div>
                                     </div>
 
@@ -161,7 +161,7 @@
                                             <input type="hidden" name="total_amount" id="final_total_amount_hidden">
                                             <input type="text" id="calc_grand_total"
                                                 class="form-control text-right font-weight-bold text-success border-success"
-                                                readonly style="font-size: 1.25rem;" value="0.00">
+                                                readonly style="font-size: 1.25rem;" >
                                         </div>
                                     </div>
                                 </div>
@@ -560,7 +560,7 @@
                                                    step="0.01" 
                                                    min="0" 
                                                    placeholder="0.00"
-                                                   value="${set.suggested_price || '0.00'}"
+                                                   value="${set.suggested_price || ''}"
                                                    required>
                                             </div>
                                         </td>

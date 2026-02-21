@@ -56,6 +56,7 @@
                                         <label>Select Colors <span class="text-danger">*</span></label>
                                         <select name="color_ids[]" class="form-control select2" multiple required
                                             data-placeholder="Choose multiple colors">
+                                            <option value="all">All Colors</option>
                                             @foreach($colors as $color)
                                                 <option value="{{ $color->id }}">{{ $color->name }}</option>
                                             @endforeach
@@ -183,6 +184,22 @@
                 $([document.documentElement, document.body]).animate({
                     scrollTop: $(".card-default").first().offset().top - 20
                 }, 500);
+            });
+
+            $('select[name="color_ids[]"]').on('change', function () {
+                let values = $(this).val();
+
+                if (values && values.includes('all')) {
+                    let allValues = [];
+
+                    $('select[name="color_ids[]"] option').each(function () {
+                        if ($(this).val() !== 'all') {
+                            allValues.push($(this).val());
+                        }
+                    });
+
+                    $(this).val(allValues).trigger('change');
+                }
             });
         });
     </script>
