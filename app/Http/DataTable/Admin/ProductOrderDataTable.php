@@ -130,7 +130,7 @@ class ProductOrderDataTable  {
 				return ucfirst($queue->order_type);
             })
             ->editColumn('created_at', function ($queue) {
-                return $queue->created_at ? getformatDateTime($queue->created_at) : '-';
+                return $queue->created_at ? getformatDate($queue->created_at) : '-';
             })
             ->editColumn('expected_delivery_date', function ($queue) {
                 return getformatDate($queue->expected_delivery_date);

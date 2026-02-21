@@ -52,9 +52,9 @@
                         <td>
                             <input type="date" class="form-control" name="created_at" id="created_at" autocomplete="off">
                         </td>
-                        <td>
+                        {{-- <td>
                             <input type="date" class="form-control" name="expected_delivery_date" id="expected_delivery_date" autocomplete="off">
-                        </td>
+                        </td> --}}
                         <td></td>
                         <td></td>
                         <td>
@@ -74,7 +74,7 @@
                         <th>Customer</th>
                         <th>Order Type</th>
                         <th>Order Date</th>
-                        <th>Expected Delivery Date</th>
+                        {{-- <th>Expected Delivery Date</th> --}}
                         <th>Total Pcs</th>
                         <th>Dispatch Pcs</th>
                         <th>Status</th>
@@ -118,7 +118,7 @@
                     d.master_customer_id = $('#master_customer_id').val();
                     d.order_type = $('#order_type').val();
                     d.created_at = $('#created_at').val();
-                    d.expected_delivery_date = $('#expected_delivery_date').val();
+                    // d.expected_delivery_date = $('#expected_delivery_date').val();
                     d.status = $('#status').val();
                   
                 },
@@ -130,7 +130,7 @@
                 {data: 'master_customer_id', name: 'master_customer_id'},                
                 {data: 'order_type', name: 'order_type'},                
                 {data: 'created_at', name: 'created_at'},                
-                {data: 'expected_delivery_date', name: 'expected_delivery_date'},     
+                // {data: 'expected_delivery_date', name: 'expected_delivery_date'},     
                 {data: 'total_pcs', name: 'total_pcs'}, 
                 {data: 'dispatch_pcs', name: 'dispatch_pcs'},          
                 {data: 'status', name: 'status'},                
