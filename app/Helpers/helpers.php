@@ -206,14 +206,14 @@ function getLotDetails($lot_id, $master_stage)
 
 
 function getOrderDispatchData($orderMainId)
-{
+{   
     $total = DB::table('order_products_sets')
         ->where('order_main_id', $orderMainId)
         ->sum('total_quantity');
 
     $pack_items = PackingMain::with([
         'cartons' => function ($q) {
-            $q->where('status', 2)
+            $q->whereIn('status', [2,3])
             ->withSum('items', 'quantity');
         }
     ])->where('order_main_id', $orderMainId)
@@ -228,6 +228,7 @@ function getOrderDispatchData($orderMainId)
         'remaining' => max(0, $total - $packed),
     ];
 }
+
 
 
 ?>

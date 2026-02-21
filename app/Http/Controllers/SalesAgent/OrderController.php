@@ -68,6 +68,7 @@ class OrderController extends Controller
             DB::raw('ip.name')
         )
             ->groupBy('domestic_inventories.product_id', 'domestic_inventories.color_id', 'domestic_inventories.size_set_id', 'domestic_inventories.design_number', 'domestic_inventories.color_name', 'domestic_inventories.size_set_name')
+            ->havingRaw('MAX(COALESCE(ip.selling_price, 0)) > 0')
             ->orderBy('design_number')
             ->paginate(20)
             ->appends($request->except('page'));
@@ -254,6 +255,7 @@ class OrderController extends Controller
             DB::raw('MAX(COALESCE(ip.selling_price, 0)) as unit_price')
         )
             ->groupBy('domestic_inventories.product_id', 'domestic_inventories.color_id', 'domestic_inventories.size_set_id', 'domestic_inventories.design_number', 'domestic_inventories.color_name', 'domestic_inventories.size_set_name')
+            ->havingRaw('MAX(COALESCE(ip.selling_price, 0)) > 0')
             ->orderBy('design_number')
             ->paginate(20)
             ->appends($request->except('page'));
