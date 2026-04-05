@@ -145,10 +145,26 @@
 
 <body>
     <div class="main-container">
-        <div class="header-section text-center">
-            <div class="estimate-title">ESTIMATE</div>
-            <div class="company-name">{{ $settings->website_name ?? 'SURGICAL JEANS' }}</div>
-            <div style="font-size: 10px;">{{ $settings->address ?? '' }}</div>
+        <div class="header-section">
+            <table width="100%" style="border-collapse: collapse;">
+                <tr>
+                    <td width="20%" class="text-left" style="vertical-align: middle;">
+                        @if($settings && isset($settings->logo) && $settings->logo)
+                            <img src="{{ public_path('assets/general-settings-image/' . $settings->logo) }}" style="height: 50px; max-width: 150px;">
+                        @endif
+                    </td>
+                    <td width="60%" class="text-center" style="vertical-align: middle;">
+                        <div class="estimate-title">INVOICE</div>
+                        <div class="company-name">{{ $settings->website_name ?? 'SURGICAL JEANS' }}</div>
+                        <div style="font-size: 10px;">{{ $settings->address ?? '' }}</div>
+                    </td>
+                    <td width="20%" class="text-right" style="vertical-align: middle;">
+                        @if($settings && isset($settings->logo) && $settings->logo)
+                            <img src="{{ public_path('assets/general-settings-image/' . $settings->logo) }}" style="height: 50px; max-width: 150px;">
+                        @endif
+                    </td>
+                </tr>
+            </table>
         </div>
 
         <table class="info-table">
@@ -277,8 +293,7 @@
                     <div style="margin-bottom: 10px;"><strong>Remarks :</strong> {{ $order->remarks ?? '' }}</div>
                     <strong>Terms & Conditions</strong><br>
                     E.& O.E.<br>
-                    1. Goods once sold will not be taken back.<br>
-                    2.FOR ANY ACCOUNT RELATED INFORMATION-8094409864(DEVA NAYAK)
+                    1. Goods once sold will not be taken back.
                 </td>
                 <td width="40%" class="text-right">
                     <strong>Receiver's Signature :</strong><br><br><br><br>
