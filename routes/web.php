@@ -52,12 +52,39 @@ use App\Http\Controllers\Admin\Master\MasterWarehouseBlocksController as AdminMa
 use App\Http\Controllers\Admin\Master\MasterWarehouseController as AdminMasterWarehouseController;
 use App\Http\Controllers\Admin\Master\MasterFabricWarehouseController as AdminMasterFabricWarehouseController;
 use App\Http\Controllers\Admin\Master\MasterStageUnitController as AdminMasterStageUnitController;
+use App\Http\Controllers\Admin\Master\MasterSeriesController as AdminMasterSeriesController;
+use App\Http\Controllers\Admin\Payment\Master\CashPaymentController as AdminCashPaymentController;
+use App\Http\Controllers\Admin\Payment\Master\BankAccountController as AdminBankAccountController;
+use App\Http\Controllers\Admin\Payment\Master\PaymentTypeController as AdminPaymentTypeController;
+use App\Http\Controllers\Admin\Payment\Master\TaxController as AdminTaxController;
+use App\Http\Controllers\Admin\Payment\Master\InterestController as AdminInterestController;
+use App\Http\Controllers\Admin\Payment\Master\TourExpenseController as AdminTourExpenseController;
+use App\Http\Controllers\Admin\Payment\Master\ContractorController as AdminContractorController;
+use App\Http\Controllers\Admin\Payment\Master\ConsumableGoodController as AdminConsumableGoodController;
+use App\Http\Controllers\Admin\Payment\Master\GeneralExpenseController as AdminGeneralExpenseController;
+use App\Http\Controllers\Admin\Payment\Master\ElectricityExpenseController as AdminElectricityExpenseController;
+use App\Http\Controllers\Admin\Payment\Master\RentController as AdminRentController;
+use App\Http\Controllers\Admin\Payment\Master\TelephoneExpenseController as AdminTelephoneExpenseController;
+use App\Http\Controllers\Admin\Payment\Master\CommissionController as AdminCommissionController;
+use App\Http\Controllers\Admin\Payment\Master\HulayatiController as AdminHulayatiController;
+use App\Http\Controllers\Admin\Payment\Master\CapitalController as AdminCapitalController;
+use App\Http\Controllers\Admin\Payment\Master\AdjustmentMasterController as AdminAdjustmentMasterController;
+use App\Http\Controllers\Admin\Payment\Master\FareExpenseController as AdminFareExpenseController;
+use App\Http\Controllers\Admin\Payment\Master\SkExpenseController as AdminSkExpenseController;
+use App\Http\Controllers\Admin\Payment\Master\AgentPaymentMasterController as AdminAgentPaymentMasterController;
+use App\Http\Controllers\Admin\Payment\Master\WashingMasterController as AdminWashingMasterController;
+use App\Http\Controllers\Admin\Payment\Master\CuttingPaymentMasterController as AdminCuttingPaymentMasterController;
+use App\Http\Controllers\Admin\Payment\PaymentAdjustmentController as AdminPaymentAdjustmentController;
+use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 
 ///// Reports
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\PackingController as AdminPackingController;
 use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
 use App\Http\Controllers\Admin\AgentOrderController as AdminAgentOrderController;
+use App\Http\Controllers\Admin\Master\SalesAgentController as AdminSalesAgentController;
+use App\Http\Controllers\Admin\Master\BrandController as AdminBrandController;
+use App\Http\Controllers\Admin\Master\CompanyController as AdminCompanyController;
 
 
 
@@ -153,10 +180,7 @@ Route::prefix('agent')->group(function () {
 
 ////////////  Admin Routes
 
-use App\Http\Controllers\Admin\Master\SalesAgentController as AdminSalesAgentController;
-use App\Http\Controllers\Admin\Master\InventoryPriceController as AdminInventoryPriceController;
-
-Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
+Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], function () {
     Route::get('/', [AdminLoginController::class, 'login'])->name('login');
     Route::post('/post-admin', [AdminLoginController::class, 'postLogin'])->name('postLogin');
 
@@ -175,6 +199,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/update', [AdminPurchaseOrderController::class, 'update'])->name('update');
             Route::get('/delete', [AdminPurchaseOrderController::class, 'delete'])->name('delete');
             Route::get('/view', [AdminPurchaseOrderController::class, 'view'])->name('view');
+            Route::get('/download-report', [AdminPurchaseOrderController::class, 'downloadReport'])->name('download_report');
+
 
             Route::get('/estimation', [AdminPurchaseOrderController::class, 'estimation'])->name('estimation');
             Route::post('/estimation-store', [AdminPurchaseOrderController::class, 'estimation_store'])->name('estimation_store');
@@ -192,19 +218,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
         });
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Admin Agent Order Management
-        |--------------------------------------------------------------------------
-        */
-        Route::get('agent-orders', [App\Http\Controllers\Admin\AgentOrderController::class, 'index'])->name('agent-orders.index');
-        Route::get('agent-orders/{id}', [App\Http\Controllers\Admin\AgentOrderController::class, 'show'])->name('agent-orders.show');
-        Route::get('agent-orders/{id}/invoice', [App\Http\Controllers\Admin\AgentOrderController::class, 'downloadInvoice'])->name('agent-orders.invoice');
-        Route::post('agent-orders/{id}/dispatch', [App\Http\Controllers\Admin\AgentOrderController::class, 'dispatchOrder'])->name('agent-orders.dispatch');
-        Route::get('agent-orders/{id}/edit', [App\Http\Controllers\Admin\AgentOrderController::class, 'edit'])->name('agent-orders.edit');
-        Route::put('agent-orders/{id}', [App\Http\Controllers\Admin\AgentOrderController::class, 'update'])->name('agent-orders.update');
-        Route::get('agent-orders/{id}/dispatch-scan', [App\Http\Controllers\Admin\AgentOrderController::class, 'dispatchScan'])->name('agent-orders.dispatch-scan');
-        Route::post('agent-orders/{id}/process-scan', [App\Http\Controllers\Admin\AgentOrderController::class, 'processScan'])->name('agent-orders.process-scan');
 
         Route::prefix('/purchase-order-material')->name('purchase_order_material.')->group(function () {
             Route::get('/index', [AdminPurchaseOrderMaterialController::class, 'index'])->name('index');
@@ -232,6 +245,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
             Route::get('/vendor_fabrics/{vendor}', [AdminFabricReceiptController::class, 'vendorFabrics'])->name('vendor_fabrics');
             Route::post('/check-roll-no', [AdminFabricReceiptController::class, 'checkRollNo'])->name('check-roll-no');
+            Route::post('/check-bill-no', [AdminFabricReceiptController::class, 'checkBillNo'])->name('check-bill-no');
+            Route::get('/download-report', [AdminFabricReceiptController::class, 'downloadReport'])->name('download_report');
         });
 
         Route::prefix('/item-receipt')->name('item_receipt.')->group(function () {
@@ -276,8 +291,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
         Route::prefix('/sales-order')->name('sales_order.')->group(function () {
             Route::get('/create', [AdminProductOrderController::class, 'create'])->name('create');
+            Route::get('/create-domestic', [AdminProductOrderController::class, 'createDomestic'])->name('create_domestic');
             Route::get('/master-data', [AdminProductOrderController::class, 'master_data'])->name('master_data');
             Route::post('/store', [AdminProductOrderController::class, 'store'])->name('store');
+            Route::post('/store-domestic', [AdminProductOrderController::class, 'storeDomestic'])->name('store_domestic');
             Route::get('/getCustomerSizes', [AdminProductOrderController::class, 'getCustomerSizes'])->name('getCustomerSizes');
             Route::get('/getCustomerDesign', [AdminProductOrderController::class, 'getCustomerDesign'])->name('getCustomerDesign');
             Route::post('/saveCustomSetSize', [AdminProductOrderController::class, 'saveCustomSetSize'])->name('saveCustomSetSize');
@@ -298,7 +315,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
             Route::get('/edit', [AdminProductOrderController::class, 'edit'])->name('edit');
             Route::post('/update', [AdminProductOrderController::class, 'update'])->name('update');
+            Route::get('/edit-order-main/{id}', [AdminProductOrderController::class, 'editOrderMain'])->name('editOrderMain');
+            Route::post('/update-order-main/{id}', [AdminProductOrderController::class, 'updateOrderMain'])->name('updateOrderMain');
             Route::get('/delete', [AdminProductOrderController::class, 'delete'])->name('delete');
+            Route::get('/deleteOrderMain', [AdminProductOrderController::class, 'deleteOrderMain'])->name('deleteOrderMain');
             Route::get('/view', [AdminProductOrderController::class, 'view'])->name('view');
             Route::post('/transfer', [AdminProductOrderController::class, 'transfer'])->name('transfer');
             Route::get('/produce', [AdminProductOrderController::class, 'produce'])->name('produce');
@@ -318,12 +338,29 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
             Route::get('/index', [AdminPackingController::class, 'index'])->name('index');
             Route::get('/process/{id}', [AdminPackingController::class, 'process'])->name('process');
+            Route::get('/process-domestic/{id}', [AdminPackingController::class, 'processDomestic'])->name('processDomestic');
             Route::post('/finalize', [AdminPackingController::class, 'finalize'])->name('finalize');
+            Route::get('/download-slip-barcode/{id}', [AdminPackingController::class, 'downloadSlipBarcodeTxt'])->name('downloadSlipBarcode');
             Route::post('/box/save', [AdminPackingController::class, 'saveBox'])->name('saveBox');
             Route::post('/carton/save', [AdminPackingController::class, 'saveCarton'])->name('saveCarton');
             Route::get('/order-details/{id}', [AdminPackingController::class, 'getOrderDetailsJson'])->name('orderDeps');
             Route::get('check-carton-no', [AdminPackingController::class, 'checkCartonNo'])->name('check-carton-no');
             Route::post('/bulk-save', [AdminPackingController::class, 'bulkSaveCarton'])->name('bulk-save');
+            Route::post('/save-multi-plan', [AdminPackingController::class, 'saveMultiCartonPlan'])->name('saveMultiCartonPlan');
+            Route::post('/save-domestic-box', [AdminPackingController::class, 'saveDomesticBox'])->name('saveDomesticBox');
+            Route::post('/save-domestic-bulk', [AdminPackingController::class, 'saveDomesticBulk'])->name('saveDomesticBulk');
+            Route::post('/delete-domestic-box/{id}', [AdminPackingController::class, 'deleteDomesticBox'])->name('deleteDomesticBox');
+            Route::post('/delete-outflow/{id}', [AdminPackingController::class, 'deleteOutflow'])->name('deleteOutflow');
+            Route::post('/delete-rework/{id}', [AdminPackingController::class, 'deleteRework'])->name('deleteRework');
+            Route::get('/download-outflow-barcode/{id}', [AdminPackingController::class, 'downloadOutflowBarcode'])->name('downloadOutflowBarcode');
+            
+            // Rework Routes
+            Route::post('/reassign-rework', [AdminPackingController::class, 'reassignRework'])->name('reassignRework');
+            Route::post('/record-dead-stock', [AdminPackingController::class, 'recordDeadStock'])->name('recordDeadStock');
+            Route::post('/record-sampling-stock', [AdminPackingController::class, 'recordSamplingStock'])->name('recordSamplingStock');
+            Route::post('/record-unit-debit', [AdminPackingController::class, 'recordUnitDebit'])->name('recordUnitDebit');
+            Route::get('/rework-stages', [AdminPackingController::class, 'getReworkStages'])->name('reworkStages');
+            Route::get('/stage-units/{stageId}', [AdminPackingController::class, 'getStageUnits'])->name('stageUnits');
         });
 
         Route::prefix('/inventory')->name('inventory.')->group(function () {
@@ -416,6 +453,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/getOrderPackingData', [AdminOrderDispatchController::class, 'getOrderPackingData'])->name('getOrderPackingData');
             Route::get('/getOrdersByCustomer', [AdminOrderDispatchController::class, 'getOrdersByCustomer'])->name('getOrdersByCustomer');
             Route::get('/comppleteOrder', [AdminOrderDispatchController::class, 'comppleteOrder'])->name('comppleteOrder');
+            Route::get('/download-pdf', [AdminOrderDispatchController::class, 'downloadPdf'])->name('download-pdf');
         });
         Route::prefix('master/vendors')->name('master.vendor.')->group(function () {
             Route::get('/index', [AdminVendorController::class, 'index'])->name('index');
@@ -429,10 +467,14 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
         Route::prefix('agent-orders')->name('agent-orders.')->group(function () {
             Route::get('/', [AdminAgentOrderController::class, 'index'])->name('index');
+            Route::get('/create', [AdminAgentOrderController::class, 'create'])->name('create');
+            Route::post('/store', [AdminAgentOrderController::class, 'store'])->name('store');
+            Route::get('/get-shops', [AdminAgentOrderController::class, 'getShops'])->name('get-shops');
             Route::get('/{id}/show', [AdminAgentOrderController::class, 'show'])->name('show');
             Route::get('/{id}/edit', [AdminAgentOrderController::class, 'edit'])->name('edit');
             Route::put('/{id}/update', [AdminAgentOrderController::class, 'update'])->name('update');
             Route::get('/{id}/download-invoice', [AdminAgentOrderController::class, 'downloadInvoice'])->name('download-invoice');
+            Route::get('/{id}/download-packing-slip', [AdminAgentOrderController::class, 'downloadPackingSlip'])->name('download-packing-slip');
             Route::get('/{id}/dispatch-scan', [AdminAgentOrderController::class, 'dispatchScan'])->name('dispatch-scan');
             Route::post('/{id}/process-scan', [AdminAgentOrderController::class, 'processScan'])->name('process-scan');
             Route::post('/{id}/remove-scan', [AdminAgentOrderController::class, 'removeScan'])->name('remove-scan');
@@ -584,13 +626,52 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/finalize', [AdminPackingController::class, 'finalize'])->name('finalize');
             Route::get('/view/{order}', [AdminPackingController::class, 'view'])->name('view');
             Route::get('/print/{main}', [AdminPackingController::class, 'print'])->name('print');
-            Route::get('/labels/{type}/{id}', [AdminPackingController::class, 'labels'])->name('labels');
         });
 
         Route::prefix('/inventory')->name('inventory.')->group(function () {
             Route::get('/index', [AdminInventoryController::class, 'index'])->name('index');
             Route::get('/list', [AdminInventoryController::class, 'indexList'])->name('list');
+            Route::post('/update-attributes', [AdminInventoryController::class, 'updateAttributes'])->name('update_attributes');
+            Route::post('/delete-boxes', [AdminInventoryController::class, 'deleteBoxes'])->name('delete_boxes');
             Route::get('/show', [AdminInventoryController::class, 'show'])->name('show');
+            Route::get('/create', [AdminInventoryController::class, 'create'])->name('create');
+            
+            // Warehouse Stock Routes
+            Route::get('/warehouse-stock', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'index'])->name('warehouse_stock');
+            Route::get('/warehouse-stock/list', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'indexList'])->name('warehouse_stock.list');
+            Route::get('/warehouse-stock/history', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'history'])->name('warehouse_stock.history');
+            Route::get('/warehouse-stock/history-list', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'indexHistoryList'])->name('warehouse_stock.history.list');
+            Route::post('/warehouse-stock/transfer', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'transfer'])->name('warehouse_stock.transfer');
+            Route::get('/warehouse-stock/racks/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'getRacksByStoreroom']);
+            Route::get('/warehouse-stock/download-slip/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'downloadSlip'])->name('warehouse_stock.download_slip');
+
+            Route::post('/store', [AdminInventoryController::class, 'store'])->name('store');
+            Route::get('/get-size-set-info/{id}', [AdminInventoryController::class, 'getSizeSetInfo'])->name('get_size_set_info');
+            Route::get('/get-product-full-details', [AdminInventoryController::class, 'getProductFullDetails'])->name('get_product_full_details');
+            Route::get('/get-pricing-info', [AdminInventoryController::class, 'getPricingInfo'])->name('get_pricing_info');
+            Route::get('/barcode-generator', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'index'])->name('barcode-generator.index');
+            Route::post('/barcode-generator/generate', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generate'])->name('barcode-generator.generate');
+            Route::post('/barcode-generator/generate-tspl', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateTspl'])->name('barcode-generator.generate-tspl');
+            Route::post('/barcode-generator/generate-bulk', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateBulk'])->name('barcode-generator.generate-bulk');
+            Route::post('/barcode-generator/generate-bulk-tspl', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateBulkTspl'])->name('barcode-generator.generate-bulk-tspl');
+            
+            Route::get('/get-products-by-series', [AdminInventoryController::class, 'getProductsBySeries'])->name('get_products_by_series');
+            Route::get('/get-product-details', [AdminInventoryController::class, 'getProductDetails'])->name('get_product_details');
+            Route::get('/get-size-sets-by-product/{product_id}', [AdminInventoryController::class, 'getSizeSetsByProduct'])->name('get_size_sets_by_product');
+            Route::get('/get-colors-by-product-size/{product_id}/{size_set_id}', [AdminInventoryController::class, 'getColorsByProductSize'])->name('get_colors_by_product_size');
+
+            // Outflow / Loss Reporting
+            Route::prefix('/outflow')->name('outflow.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'index'])->name('index');
+                Route::get('/list', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'indexList'])->name('list');
+            });
+        });
+
+        Route::prefix('/inventory-prices')->name('inventory-prices.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\InventoryPriceController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\InventoryPriceController::class, 'create'])->name('create');
+            Route::post('/store', [\App\Http\Controllers\Admin\InventoryPriceController::class, 'store'])->name('store');
+            Route::post('/update-price', [\App\Http\Controllers\Admin\InventoryPriceController::class, 'updatePrice'])->name('update-price');
         });
 
         Route::prefix('master/size')->name('master.size.')->group(function () {
@@ -600,6 +681,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/store', [AdminSizeController::class, 'store'])->name('store');
             Route::get('/edit', [AdminSizeController::class, 'edit'])->name('edit');
             Route::post('/update', [AdminSizeController::class, 'update'])->name('update');
+            Route::get('/delete', [AdminSizeController::class, 'delete'])->name('delete');
         });
 
         Route::prefix('master/product-stage')->name('master.product_stage.')->group(function () {
@@ -637,6 +719,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/update', [AdminProductionGoodsController::class, 'update'])->name('update');
             Route::get('/delete', [AdminProductionGoodsController::class, 'delete'])->name('delete');
             Route::get('/view', [AdminProductionGoodsController::class, 'view'])->name('view');
+            Route::get('/get-next-product-name', [AdminProductionGoodsController::class, 'getNextProductName'])->name('get-next-product-name');
         });
 
         Route::prefix('master/production-goods-item')->name('master.production-goods-item.')->group(function () {
@@ -659,6 +742,15 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/edit', [AdminMasterColorController::class, 'edit'])->name('edit');
             Route::post('/update', [AdminMasterColorController::class, 'update'])->name('update');
             Route::get('/delete', [AdminMasterColorController::class, 'delete'])->name('delete');
+        });
+        Route::prefix('master/series')->name('master.series.')->group(function () {
+            Route::get('/index', [AdminMasterSeriesController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminMasterSeriesController::class, 'indexList'])->name('indexList');
+            Route::get('/create', [AdminMasterSeriesController::class, 'create'])->name('create');
+            Route::post('/store', [AdminMasterSeriesController::class, 'store'])->name('store');
+            Route::get('/edit', [AdminMasterSeriesController::class, 'edit'])->name('edit');
+            Route::post('/update', [AdminMasterSeriesController::class, 'update'])->name('update');
+            Route::get('/delete', [AdminMasterSeriesController::class, 'delete'])->name('delete');
         });
         Route::prefix('master/fitting')->name('master.fitting.')->group(function () {
             Route::get('/index', [AdminMasterFittingController::class, 'index'])->name('index');
@@ -699,16 +791,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/update', [AdminMasterWarehouseController::class, 'update'])->name('update');
             Route::get('/delete', [AdminMasterWarehouseController::class, 'delete'])->name('delete');
         });
-        Route::prefix('master/inventory-price')->name('master.inventory-price.')->group(function () {
-            Route::get('/index', [AdminInventoryPriceController::class, 'index'])->name('index');
-            Route::get('/indexList', [AdminInventoryPriceController::class, 'indexList'])->name('indexList');
-            Route::get('/create', [AdminInventoryPriceController::class, 'create'])->name('create');
-            Route::post('/store', [AdminInventoryPriceController::class, 'store'])->name('store');
-            Route::get('/edit', [AdminInventoryPriceController::class, 'edit'])->name('edit');
-            Route::post('/update', [AdminInventoryPriceController::class, 'update'])->name('update');
-            Route::get('/delete', [AdminInventoryPriceController::class, 'delete'])->name('delete');
-            Route::post('/image-delete', [\App\Http\Controllers\Admin\Master\InventoryPriceImageController::class, 'delete'])->name('image-delete');
-        });
 
         Route::prefix('master/sales-agent')->name('master.sales-agent.')->group(function () {
             Route::get('/index', [AdminSalesAgentController::class, 'index'])->name('index');
@@ -719,6 +801,16 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::post('/update', [AdminSalesAgentController::class, 'update'])->name('update');
             Route::get('/delete', [AdminSalesAgentController::class, 'delete'])->name('delete');
         });
+
+        Route::prefix('master/sales-agent-shops')->name('master.sales-agent-shops.')->group(function () {
+            Route::get('/{agent_id}', [\App\Http\Controllers\Admin\Master\SalesAgentShopController::class, 'index'])->name('index');
+            Route::get('/{agent_id}/indexList', [\App\Http\Controllers\Admin\Master\SalesAgentShopController::class, 'indexList'])->name('indexList');
+            Route::get('/{agent_id}/create', [\App\Http\Controllers\Admin\Master\SalesAgentShopController::class, 'create'])->name('create');
+            Route::post('/{agent_id}/store', [\App\Http\Controllers\Admin\Master\SalesAgentShopController::class, 'store'])->name('store');
+            Route::get('/{agent_id}/edit/{id}', [\App\Http\Controllers\Admin\Master\SalesAgentShopController::class, 'edit'])->name('edit');
+            Route::post('/{agent_id}/update/{id}', [\App\Http\Controllers\Admin\Master\SalesAgentShopController::class, 'update'])->name('update');
+        });
+
 
         Route::prefix('master/fabric-warehouse')->name('master.fabric_warehouse.')->group(function () {
             Route::get('/index', [AdminMasterFabricWarehouseController::class, 'index'])->name('index');
@@ -738,6 +830,26 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/edit', [AdminMasterDesignController::class, 'edit'])->name('edit');
             Route::post('/update', [AdminMasterDesignController::class, 'update'])->name('update');
             Route::get('/delete', [AdminMasterDesignController::class, 'delete'])->name('delete');
+        });
+
+        Route::prefix('master/brand')->name('master.brand.')->group(function () {
+            Route::get('/index', [AdminBrandController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminBrandController::class, 'indexList'])->name('indexList');
+            Route::get('/create', [AdminBrandController::class, 'create'])->name('create');
+            Route::post('/store', [AdminBrandController::class, 'store'])->name('store');
+            Route::get('/edit', [AdminBrandController::class, 'edit'])->name('edit');
+            Route::post('/update', [AdminBrandController::class, 'update'])->name('update');
+            Route::post('/delete', [AdminBrandController::class, 'delete'])->name('delete');
+        });
+
+        Route::prefix('master/company')->name('master.company.')->group(function () {
+            Route::get('/index', [AdminCompanyController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminCompanyController::class, 'indexList'])->name('indexList');
+            Route::get('/create', [AdminCompanyController::class, 'create'])->name('create');
+            Route::post('/store', [AdminCompanyController::class, 'store'])->name('store');
+            Route::get('/edit', [AdminCompanyController::class, 'edit'])->name('edit');
+            Route::post('/update', [AdminCompanyController::class, 'update'])->name('update');
+            Route::post('/delete', [AdminCompanyController::class, 'delete'])->name('delete');
         });
         Route::prefix('master/materials')->name('master.materials.')->group(function () {
             Route::get('/index', [AdminMasterMaterialController::class, 'index'])->name('index');
@@ -763,14 +875,32 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/index', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'index'])->name('index');
             Route::get('/indexList', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'indexList'])->name('indexList');
             Route::post('/store', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'store'])->name('store');
-            Route::get('/edit/{id}', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'edit'])->name('edit'); // Changed to get with Param
+            Route::get('/edit', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'edit'])->name('edit'); 
             Route::post('/update', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'update'])->name('update');
-            Route::get('/delete/{id}', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'delete'])->name('delete');
+            Route::get('/delete', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'delete'])->name('delete');
 
             // Rack AJAX
             Route::post('/rack/store', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'storeRack'])->name('rack.store');
             Route::post('/rack/update', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'updateRack'])->name('rack.update');
             Route::get('/rack/delete/{id}', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'deleteRack'])->name('rack.delete');
+        });
+
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/index', [AdminUserController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminUserController::class, 'indexList'])->name('indexList');
+            Route::get('/create', [AdminUserController::class, 'create'])->name('create');
+            Route::post('/store', [AdminUserController::class, 'store'])->name('store');
+            Route::get('/edit/{id}', [AdminUserController::class, 'edit'])->name('edit');
+            Route::post('/update/{id}', [AdminUserController::class, 'update'])->name('update');
+            Route::get('/delete/{id}', [AdminUserController::class, 'delete'])->name('delete');
+        });
+        Route::prefix('roles')->name('roles.')->group(function () {
+            Route::get('/index', [AdminRoleController::class, 'index'])->name('index');
+            Route::get('/create', [AdminRoleController::class, 'create'])->name('create');
+            Route::post('/store', [AdminRoleController::class, 'store'])->name('store');
+            Route::get('/edit/{role}', [AdminRoleController::class, 'edit'])->name('edit');
+            Route::post('/update/{role}', [AdminRoleController::class, 'update'])->name('update');
+            Route::get('/delete/{role}', [AdminRoleController::class, 'delete'])->name('delete');
         });
 
         Route::get('edit-profile', [AdminUserController::class, 'profileEdit'])->name('user.profileEdit');
@@ -808,6 +938,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
 
             Route::get('/dispatch-order', [AdminReportController::class, 'dispatchOrder'])->name('dispatch-order');
 
+            // Agent Ledger Report
+            Route::prefix('agent-ledger')->name('agent-ledger.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\Report\AgentLedgerReportController::class, 'index'])->name('index');
+                Route::get('/{id}', [\App\Http\Controllers\Admin\Report\AgentLedgerReportController::class, 'show'])->name('show');
+            });
         });
 
         Route::prefix('/reports')->name('reports.')->group(function () {
@@ -857,57 +992,295 @@ Route::prefix('admin')->name('admin.')->middleware(['web'])->group(function () {
             Route::get('/stages', [AdminReportController::class, 'stages'])->name('stages');
             Route::get('stages-list', [AdminReportController::class, 'stagesList'])->name('stagesList');
             Route::post('/stages-excel', [AdminReportController::class, 'generateStagesReportExcel'])->name('stagesExcel');
+
+            Route::get('/unit-assignments', [AdminReportController::class, 'unitAssignments'])->name('unit-assignments');
+            Route::get('/unit-assignments/export', [AdminReportController::class, 'unitAssignmentsExport'])->name('unit-assignments.export');
+            Route::post('/unit-assignments/{type}/{id}/close', [AdminReportController::class, 'closeUnitAssignment'])->name('unit-assignments.close');
+            Route::post('/unit-assignments/{type}/{id}/reopen', [AdminReportController::class, 'reopenUnitAssignment'])->name('unit-assignments.reopen');
+
+            Route::get('/design-wip', [AdminReportController::class, 'designWip'])->name('design-wip');
         });
     });
 
-    Route::prefix('payment')->name('payment.')->group(function () {
-        Route::prefix('fabric-shipment')->name('fabric-shipment.')->group(function () {
-            Route::get('/create', [FabricShipmentPaymentController::class, 'create'])->name('create');
-            Route::get('/get-shipments', [FabricShipmentPaymentController::class, 'getShipments'])->name('get-shipments');
-            Route::post('/store', [FabricShipmentPaymentController::class, 'store'])->name('store');
+    Route::middleware(['checkAdminLogin'])->group(function () {
+
+        Route::prefix('payment')->name('payment.')->group(function () {
+            Route::prefix('fabric-shipment')->name('fabric-shipment.')->group(function () {
+                Route::get('/create', [FabricShipmentPaymentController::class, 'create'])->name('create');
+                Route::get('/get-shipments', [FabricShipmentPaymentController::class, 'getShipments'])->name('get-shipments');
+                Route::post('/store', [FabricShipmentPaymentController::class, 'store'])->name('store');
+            });
+
+            Route::prefix('agent-order')->name('agent-order.')->group(function () {
+                Route::get('/create', [\App\Http\Controllers\Admin\Payment\AgentOrderPaymentController::class, 'create'])->name('create');
+                Route::get('/get-orders', [\App\Http\Controllers\Admin\Payment\AgentOrderPaymentController::class, 'getOrders'])->name('get-orders');
+                Route::post('/store', [\App\Http\Controllers\Admin\Payment\AgentOrderPaymentController::class, 'store'])->name('store');
+            });
+
+            Route::get('/pending', [\App\Http\Controllers\Admin\Payment\PendingPaymentController::class, 'index'])->name('pending.index');
+
+            Route::prefix('corporate-order')->name('corporate-order.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\Payment\CorporateOrderPaymentController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Admin\Payment\CorporateOrderPaymentController::class, 'create'])->name('create');
+                Route::get('/get-dispatches', [\App\Http\Controllers\Admin\Payment\CorporateOrderPaymentController::class, 'getDispatches'])->name('get-dispatches');
+                Route::post('/store', [\App\Http\Controllers\Admin\Payment\CorporateOrderPaymentController::class, 'store'])->name('store');
+            });
+
+            Route::prefix('master')->name('master.')->group(function () {
+                Route::prefix('cash-payment')->name('cash_payment.')->group(function () {
+                    Route::get('/index', [AdminCashPaymentController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminCashPaymentController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminCashPaymentController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminCashPaymentController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminCashPaymentController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminCashPaymentController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminCashPaymentController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('bank-account')->name('bank_account.')->group(function () {
+                    Route::get('/index', [AdminBankAccountController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminBankAccountController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminBankAccountController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminBankAccountController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminBankAccountController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminBankAccountController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminBankAccountController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('payment-type')->name('payment_type.')->group(function () {
+                    Route::get('/index', [AdminPaymentTypeController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminPaymentTypeController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminPaymentTypeController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminPaymentTypeController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminPaymentTypeController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminPaymentTypeController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminPaymentTypeController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('tax')->name('tax.')->group(function () {
+                    Route::get('/index', [AdminTaxController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminTaxController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminTaxController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminTaxController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminTaxController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminTaxController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminTaxController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('interest')->name('interest.')->group(function () {
+                    Route::get('/index', [AdminInterestController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminInterestController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminInterestController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminInterestController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminInterestController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminInterestController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminInterestController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('tour_expense')->name('tour_expense.')->group(function () {
+                    Route::get('/index', [AdminTourExpenseController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminTourExpenseController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminTourExpenseController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminTourExpenseController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminTourExpenseController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminTourExpenseController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminTourExpenseController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('fare_expense')->name('fare_expense.')->group(function () {
+                    Route::get('/index', [AdminFareExpenseController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminFareExpenseController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminFareExpenseController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminFareExpenseController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminFareExpenseController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminFareExpenseController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminFareExpenseController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('sk_expense')->name('sk_expense.')->group(function () {
+                    Route::get('/index', [AdminSkExpenseController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminSkExpenseController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminSkExpenseController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminSkExpenseController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminSkExpenseController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminSkExpenseController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminSkExpenseController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('agent_payment')->name('agent_payment.')->group(function () {
+                    Route::get('/index', [AdminAgentPaymentMasterController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminAgentPaymentMasterController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminAgentPaymentMasterController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminAgentPaymentMasterController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminAgentPaymentMasterController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminAgentPaymentMasterController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminAgentPaymentMasterController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('washing_master')->name('washing_master.')->group(function () {
+                    Route::get('/index', [AdminWashingMasterController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminWashingMasterController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminWashingMasterController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminWashingMasterController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminWashingMasterController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminWashingMasterController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminWashingMasterController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('cutting_payment')->name('cutting_payment.')->group(function () {
+                    Route::get('/index', [AdminCuttingPaymentMasterController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminCuttingPaymentMasterController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminCuttingPaymentMasterController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminCuttingPaymentMasterController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminCuttingPaymentMasterController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminCuttingPaymentMasterController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminCuttingPaymentMasterController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('contractor')->name('contractor.')->group(function () {
+                    Route::get('/index', [AdminContractorController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminContractorController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminContractorController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminContractorController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminContractorController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminContractorController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminContractorController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('consumable_good')->name('consumable_good.')->group(function () {
+                    Route::get('/index', [AdminConsumableGoodController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminConsumableGoodController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminConsumableGoodController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminConsumableGoodController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminConsumableGoodController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminConsumableGoodController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminConsumableGoodController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('committee')->name('committee.')->group(function () {
+                    Route::get('/index', [\App\Http\Controllers\Admin\Payment\Master\CommitteeController::class, 'index'])->name('index');
+                    Route::get('/indexList', [\App\Http\Controllers\Admin\Payment\Master\CommitteeController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [\App\Http\Controllers\Admin\Payment\Master\CommitteeController::class, 'create'])->name('create');
+                    Route::post('/store', [\App\Http\Controllers\Admin\Payment\Master\CommitteeController::class, 'store'])->name('store');
+                    Route::get('/edit', [\App\Http\Controllers\Admin\Payment\Master\CommitteeController::class, 'edit'])->name('edit');
+                    Route::post('/update', [\App\Http\Controllers\Admin\Payment\Master\CommitteeController::class, 'update'])->name('update');
+                    Route::get('/delete', [\App\Http\Controllers\Admin\Payment\Master\CommitteeController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('company_capital')->name('company_capital.')->group(function () {
+                    Route::get('/index', [\App\Http\Controllers\Admin\Payment\Master\CompanyCapitalController::class, 'index'])->name('index');
+                    Route::get('/indexList', [\App\Http\Controllers\Admin\Payment\Master\CompanyCapitalController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [\App\Http\Controllers\Admin\Payment\Master\CompanyCapitalController::class, 'create'])->name('create');
+                    Route::post('/store', [\App\Http\Controllers\Admin\Payment\Master\CompanyCapitalController::class, 'store'])->name('store');
+                });
+                Route::prefix('general_expense')->name('general_expense.')->group(function () {
+                    Route::get('/index', [AdminGeneralExpenseController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminGeneralExpenseController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminGeneralExpenseController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminGeneralExpenseController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminGeneralExpenseController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminGeneralExpenseController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminGeneralExpenseController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('electricity_expense')->name('electricity_expense.')->group(function () {
+                    Route::get('/index', [AdminElectricityExpenseController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminElectricityExpenseController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminElectricityExpenseController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminElectricityExpenseController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminElectricityExpenseController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminElectricityExpenseController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminElectricityExpenseController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('rent')->name('rent.')->group(function () {
+                    Route::get('/index', [AdminRentController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminRentController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminRentController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminRentController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminRentController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminRentController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminRentController::class, 'delete'])->name('delete');
+                });
+                Route::prefix('telephone_expense')->name('telephone_expense.')->group(function () {
+                    Route::get('/index', [AdminTelephoneExpenseController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminTelephoneExpenseController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminTelephoneExpenseController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminTelephoneExpenseController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminTelephoneExpenseController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminTelephoneExpenseController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminTelephoneExpenseController::class, 'delete'])->name('delete');
+                });
+
+                Route::prefix('commission')->name('commission.')->group(function () {
+                    Route::get('/index', [AdminCommissionController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminCommissionController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminCommissionController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminCommissionController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminCommissionController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminCommissionController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminCommissionController::class, 'delete'])->name('delete');
+                });
+
+                Route::prefix('hulayati')->name('hulayati.')->group(function () {
+                    Route::get('/index', [AdminHulayatiController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminHulayatiController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminHulayatiController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminHulayatiController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminHulayatiController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminHulayatiController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminHulayatiController::class, 'delete'])->name('delete');
+                });
+
+                Route::prefix('capital')->name('capital.')->group(function () {
+                    Route::get('/index', [AdminCapitalController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminCapitalController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminCapitalController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminCapitalController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminCapitalController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminCapitalController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminCapitalController::class, 'delete'])->name('delete');
+                });
+
+                Route::prefix('adjustment_master')->name('adjustment_master.')->group(function () {
+                    Route::get('/index', [AdminAdjustmentMasterController::class, 'index'])->name('index');
+                    Route::get('/create', [AdminAdjustmentMasterController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminAdjustmentMasterController::class, 'store'])->name('store');
+                    Route::get('/edit/{id}', [AdminAdjustmentMasterController::class, 'edit'])->name('edit');
+                    Route::post('/update/{id}', [AdminAdjustmentMasterController::class, 'update'])->name('update');
+                    Route::get('/delete/{id}', [AdminAdjustmentMasterController::class, 'delete'])->name('delete');
+                });
+            });
+
+            Route::prefix('adjustment')->name('adjustment.')->group(function () {
+                Route::get('/index', [AdminPaymentAdjustmentController::class, 'index'])->name('index');
+                Route::get('/create', [AdminPaymentAdjustmentController::class, 'create'])->name('create');
+                Route::post('/store', [AdminPaymentAdjustmentController::class, 'store'])->name('store');
+                Route::get('/show/{batchId}', [AdminPaymentAdjustmentController::class, 'show'])->name('show');
+                Route::get('/getSubMasters', [AdminPaymentAdjustmentController::class, 'getSubMasters'])->name('getSubMasters');
+                Route::get('/getVendorShipments', [AdminPaymentAdjustmentController::class, 'getVendorShipments'])->name('getVendorShipments');
+                Route::get('/getAccounts', [AdminPaymentAdjustmentController::class, 'getAccounts'])->name('getAccounts');
+            });
         });
 
-        Route::prefix('agent-order')->name('agent-order.')->group(function () {
-            Route::get('/create', [\App\Http\Controllers\Admin\Payment\AgentOrderPaymentController::class, 'create'])->name('create');
-            Route::get('/get-orders', [\App\Http\Controllers\Admin\Payment\AgentOrderPaymentController::class, 'getOrders'])->name('get-orders');
-            Route::post('/store', [\App\Http\Controllers\Admin\Payment\AgentOrderPaymentController::class, 'store'])->name('store');
+        // Packing Module Routes
+        Route::prefix('/packing')->name('packing.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\PackingController::class, 'index'])->name('index');
+            Route::get('/indexList', [\App\Http\Controllers\Admin\PackingController::class, 'indexList'])->name('indexList');
+            Route::get('/process/{slip_id}', [\App\Http\Controllers\Admin\PackingController::class, 'process'])->name('process');
+            Route::get('/view/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'view'])->name('view');
+            Route::post('/save-carton', [\App\Http\Controllers\Admin\PackingController::class, 'saveCarton'])->name('saveCarton');
+            Route::post('/save-box', [\App\Http\Controllers\Admin\PackingController::class, 'saveBox'])->name('saveBox');
+            Route::post('/finalize', [\App\Http\Controllers\Admin\PackingController::class, 'finalize'])->name('finalize');
+            Route::post('/create-set', [\App\Http\Controllers\Admin\PackingController::class, 'createSet'])->name('createSet');
+            Route::post('/delete-carton', [\App\Http\Controllers\Admin\PackingController::class, 'deleteCarton'])->name('deleteCarton');
+            Route::post('/delete-domestic-box/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'deleteDomesticBox'])->name('deleteDomesticBox');
+            Route::post('/save-domestic-box', [\App\Http\Controllers\Admin\PackingController::class, 'saveDomesticBox'])->name('saveDomesticBox');
+            Route::get('/process-domestic/{slip_id}', [\App\Http\Controllers\Admin\PackingController::class, 'processDomestic'])->name('processDomestic');
+            Route::get('/download-domestic-barcode-txt/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'downloadDomesticBarcodeTxt'])->name('downloadDomesticBarcodeTxt');
+            Route::get('/download-all-domestic-txt/{slip_id}', [\App\Http\Controllers\Admin\PackingController::class, 'downloadAllDomesticTxt'])->name('downloadAllDomesticTxt');
         });
 
-        Route::get('/pending', [\App\Http\Controllers\Admin\Payment\PendingPaymentController::class, 'index'])->name('pending.index');
+    }); // end checkAdminLogin for payment & packing
 
-        Route::prefix('corporate-order')->name('corporate-order.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\Payment\CorporateOrderPaymentController::class, 'index'])->name('index');
-            Route::get('/create', [\App\Http\Controllers\Admin\Payment\CorporateOrderPaymentController::class, 'create'])->name('create');
-            Route::get('/get-dispatches', [\App\Http\Controllers\Admin\Payment\CorporateOrderPaymentController::class, 'getDispatches'])->name('get-dispatches');
-            Route::post('/store', [\App\Http\Controllers\Admin\Payment\CorporateOrderPaymentController::class, 'store'])->name('store');
-        });
-    });
-
-    // Packing Module Routes
-    Route::prefix('/packing')->name('packing.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\PackingController::class, 'index'])->name('index');
-        Route::get('/indexList', [\App\Http\Controllers\Admin\PackingController::class, 'indexList'])->name('indexList');
-        Route::get('/process/{slip_id}', [\App\Http\Controllers\Admin\PackingController::class, 'process'])->name('process');
-        Route::get('/view/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'view'])->name('view');
-        Route::post('/save-carton', [\App\Http\Controllers\Admin\PackingController::class, 'saveCarton'])->name('saveCarton');
-        Route::post('/save-box', [\App\Http\Controllers\Admin\PackingController::class, 'saveBox'])->name('saveBox');
-        Route::post('/finalize', [\App\Http\Controllers\Admin\PackingController::class, 'finalize'])->name('finalize');
-        Route::post('/create-set', [\App\Http\Controllers\Admin\PackingController::class, 'createSet'])->name('createSet');
-        Route::post('/delete-carton', [\App\Http\Controllers\Admin\PackingController::class, 'deleteCarton'])->name('deleteCarton');
-    });
 });
 
 
 
-Route::prefix('/admin/uploaded-slips')->name('admin.uploaded-slips.')->group(function () {
-    Route::get('/', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'index'])->name('index');
-    Route::get('/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'show'])->name('show');
-    Route::delete('/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'destroy'])->name('destroy');
-    Route::get(
-        '/{id}/download',
-        [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'download']
-    )->name('download');
-
+Route::prefix('/admin')->name('admin.')->middleware(['web', 'checkAdminLogin'])->group(function () {
+    Route::prefix('/uploaded-slips')->name('uploaded-slips.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'index'])->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'show'])->name('show');
+        Route::post('/{id}/finalize', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'finalize'])->name('finalize');
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'destroy'])->name('destroy');
+        Route::get('/{id}/download', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'download'])->name('download');
+        Route::get('/outflow-receipt/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'downloadOutflowReceipt'])->name('outflow-receipt');
+        Route::post('/corporate-excel/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'corporateExcel'])->name('corporate-excel');
+    });
 });
 
 

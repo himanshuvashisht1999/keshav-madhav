@@ -8,6 +8,8 @@ use App\Models\MasterDesignPattern;
 use App\Http\DataTable\Admin\Master\MasterDesignPatternDataTable as DataTable;
 use DB;
 class DesignPatternService {
+    protected $datatable;
+    protected $pattern;
     public function __construct(
         DataTable $datatable,
         MasterDesignPattern $pattern
@@ -27,17 +29,15 @@ class DesignPatternService {
     public function store(Request $request){
         DB::beginTransaction();
         try {  
-             
-            
             $save_data = new MasterDesignPattern;
             $save_data->name = $request->name;
-            $save_data->sku = $request->sku;
-            $save_data->status = 1;
+            $save_data->sku = NULL;
+            $save_data->status = $request->status;
             // upload pattern image
             if($request->file('pattern_img')){
                 $imagePattern = $request->file('pattern_img');
                 $extImage = $imagePattern->getClientOriginalExtension();
-                $pattern_img = strtolower($request->sku."-".time().".".$extImage);
+                $pattern_img = strtolower(Str::slug($request->name)."-".time().".".$extImage);
                 $destinationPath = public_path().'/assets/pattern-img';
                 $imagePattern->move($destinationPath, $pattern_img);
                 $save_data->pattern_img = $pattern_img;
@@ -67,14 +67,14 @@ class DesignPatternService {
 
             // Base data (always updated)
             $pattern->name   = $request->name;
-            $pattern->sku    = $request->sku;
-            $pattern->status = 1;
+            $pattern->sku    = NULL;
+            $pattern->status = $request->status;
         
             // upload pattern image
             if($request->file('pattern_img')){
                 $imagePattern = $request->file('pattern_img');
                 $extImage = $imagePattern->getClientOriginalExtension();
-                $pattern_img = strtolower($request->sku."-".time().".".$extImage);
+                $pattern_img = strtolower(Str::slug($request->name)."-".time().".".$extImage);
                 $destinationPath = public_path().'/assets/pattern-img';
                 $imagePattern->move($destinationPath, $pattern_img);
                 $pattern->pattern_img = $pattern_img;
@@ -91,7 +91,7 @@ class DesignPatternService {
 
     public function delete(Request $request){
         $data = MasterDesignPattern::where('id',$request->id)->update([
-            'status' => 0,
+            'status' => 3,
         ]);
         return $data;
     }

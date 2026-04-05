@@ -25,6 +25,7 @@ class ProductionSlipDigitization extends Model
         'order_product_set_id',
         'remarks',
         'status',
+        'type',
         'created_at',
         'updated_at'
     ];
@@ -47,13 +48,48 @@ class ProductionSlipDigitization extends Model
         return $this->belongsTo(\App\Models\MasterProductStage::class, 'from_stage_id', 'id');
     }
 
+    public function toStage()
+    {
+        return $this->belongsTo(\App\Models\MasterProductStage::class, 'to_stage_id', 'id');
+    }
+
     public function packingMain()
     {
         return $this->hasOne('App\Models\PackingMain', 'slip_id', 'id');
     }
 
+    public function orderLots()
+    {
+        return $this->hasMany(\App\Models\OrderLot::class, 'production_slip_digitization_id', 'id');
+    }
+
+    public function orderStageTransaction()
+    {
+        return $this->hasMany(\App\Models\OrderStageTransaction::class, 'production_slip_digitization_id', 'id');
+    }
+
+    public function orderPrintingStageTransaction()
+    {
+        return $this->hasMany(\App\Models\OrderPrintingStageTransaction::class, 'production_slip_digitization_id', 'id');
+    }
+
+    public function orderPrintingToStichingTransaction()
+    {
+        return $this->hasMany(\App\Models\OrderPrintingToStichingTransaction::class, 'production_slip_digitization_id', 'id');
+    }
+
     public function fabricRollAssignings()
     {
         return $this->hasMany(\App\Models\FabricRollAssigning::class, 'production_slip_digitization_id', 'id');
+    }
+
+    public function orderProductSet()
+    {
+        return $this->belongsTo(OrderProductSet::class, 'order_product_set_id');
+    }
+
+    public function parts()
+    {
+        return $this->hasMany(\App\Models\ProductionSlipDigitizationParts::class, 'production_slip_digitization_id', 'id');
     }
 }

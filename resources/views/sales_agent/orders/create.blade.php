@@ -102,7 +102,9 @@
                                     <th>Size Set</th>
                                     <th class="text-center">Pcs/Box</th>
                                     <th class="text-center">Available</th>
-                                    <th class="text-right">Price</th>
+                                    @if(Auth::guard('sales_agent')->user()->see_price)
+                                        <th class="text-right">Price</th>
+                                    @endif
                                     <th width="150" class="text-center px-4">Order Qty (Boxes)</th>
                                 </tr>
                             </thead>
@@ -147,11 +149,13 @@
                                             <span class="badge badge-info px-2 py-1">{{ $variation->available_boxes }}
                                                 Boxes</span>
                                         </td>
-                                        <td class="text-right">
-                                            <div class="text-dark font-weight-bold">
-                                                ₹{{ number_format($variation->unit_price, 2) }}</div>
-                                            <small class="text-muted">per pc</small>
-                                        </td>
+                                        @if(Auth::guard('sales_agent')->user()->see_price)
+                                            <td class="text-right">
+                                                <div class="text-dark font-weight-bold">
+                                                    ₹{{ number_format($variation->unit_price, 2) }}</div>
+                                                <small class="text-muted">per pc</small>
+                                            </td>
+                                        @endif
                                         <td class="text-center px-4">
                                             <div class="input-group input-group-sm quantity-control">
                                                 <div class="input-group-prepend">
@@ -224,10 +228,12 @@
                                                         {{ $variation->color_name }} • {{ $variation->size_set_name }}
                                                     </small>
                                                 </div>
-                                                <div class="text-right">
-                                                    <div class="font-weight-bold text-dark">₹{{ number_format($variation->unit_price, 0) }}</div>
-                                                    <small class="text-muted" style="font-size: 10px;">/pc</small>
-                                                </div>
+                                                @if(Auth::guard('sales_agent')->user()->see_price)
+                                                    <div class="text-right">
+                                                        <div class="font-weight-bold text-dark">₹{{ number_format($variation->unit_price, 0) }}</div>
+                                                        <small class="text-muted" style="font-size: 10px;">/pc</small>
+                                                    </div>
+                                                @endif
                                             </div>
                                             
                                             <div class="d-flex justify-content-between align-items-end mt-2">
@@ -292,30 +298,29 @@
                     <span class="h5 font-weight-bold text-dark mb-0" id="selectedCountDesktop">0</span>
                     <small class="text-muted ml-1">Boxes</small>
                 </div>
-                <div class="col-md-3 border-right">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small class="text-muted font-weight-bold">Subtotal:</small>
-                        <span class="font-weight-bold">₹<span id="subTotalAmountDesktop">0</span></span>
+                @if(Auth::guard('sales_agent')->user()->see_price)
+                    <div class="col-md-3 border-right">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted font-weight-bold">Subtotal:</small>
+                            <span class="font-weight-bold">₹<span id="subTotalAmountDesktop">0</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted font-weight-bold">GST ({{ $gst_percentage }}%):</small>
+                            <span class="font-weight-bold text-danger">+₹<span id="gstAmountDesktop">0</span></span>
+                        </div>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small class="text-muted font-weight-bold">Discount (%):</small>
-                        <input type="number" id="discountInputDesktop" class="form-control form-control-sm text-right p-1 py-0 discount-input"
-                            style="width: 60px; height: 24px;" value="0" min="0" max="100">
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted font-weight-bold">GST ({{ $gst_percentage }}%):</small>
-                        <span class="font-weight-bold text-danger">+₹<span id="gstAmountDesktop">0</span></span>
-                    </div>
-                </div>
+                @endif
                 <div class="col-md-2 border-right">
                     <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Expected Dispatch</small>
                     <input type="date" id="expectedDispatchDateDesktop" class="form-control form-control-sm mt-1" 
                         value="{{ date('Y-m-d', strtotime('+3 days')) }}" min="{{ date('Y-m-d') }}">
                 </div>
-                <div class="col-md-2 text-center pl-4">
-                    <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Grand Total</small>
-                    <span class="h4 font-weight-bold text-primary mb-0">₹<span id="grandTotalAmountDesktop">0</span></span>
-                </div>
+                @if(Auth::guard('sales_agent')->user()->see_price)
+                    <div class="col-md-2 text-center pl-4">
+                        <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Grand Total</small>
+                        <span class="h4 font-weight-bold text-primary mb-0">₹<span id="grandTotalAmountDesktop">0</span></span>
+                    </div>
+                @endif
                 <div class="col-md-3">
                     <button type="button" class="btn btn-success btn-block btn-lg py-2 font-weight-bold shadow-sm place-order-btn">
                         Confirm Order <i class="fas fa-check-circle ml-2"></i>
@@ -331,30 +336,29 @@
         <div class="p-2">
             <!-- Summary Info -->
             <div class="row mb-1">
-                <div class="col-6">
-                    <small class="text-muted d-block" style="font-size: 11px;">Subtotal</small>
-                    <span class="font-weight-bold text-dark">₹<span id="subTotalAmountMobile">0</span></span>
-                </div>
-                <div class="col-6 text-right">
+                @if(Auth::guard('sales_agent')->user()->see_price)
+                    <div class="col-6">
+                        <small class="text-muted d-block" style="font-size: 11px;">Subtotal</small>
+                        <span class="font-weight-bold text-dark">₹<span id="subTotalAmountMobile">0</span></span>
+                    </div>
+                @endif
+                <div class="col-{{Auth::guard('sales_agent')->user()->see_price ? '6' : '12'}} text-right">
                     <small class="text-muted d-block" style="font-size: 11px;">Boxes</small>
                     <span class="font-weight-bold text-dark"><span id="selectedCountMobile">0</span></span>
                 </div>
             </div>
 
             <!-- Discount & GST Row -->
-            <div class="row mb-1">
-                <div class="col-6">
-                    <div class="d-flex align-items-center">
-                        <small class="text-muted mr-2" style="font-size: 11px;">Discount %</small>
-                        <input type="number" id="discountInputMobile" class="form-control form-control-sm text-center discount-input"
-                            style="width: 50px; height: 28px; font-size: 13px;" value="0" min="0" max="100">
+            @if(Auth::guard('sales_agent')->user()->see_price)
+                <div class="row mb-1">
+                    <div class="col-6">
+                    </div>
+                    <div class="col-6 text-right">
+                        <small class="text-muted d-block" style="font-size: 11px;">GST ({{ $gst_percentage }}%)</small>
+                        <span class="text-success font-weight-bold">+₹<span id="gstAmountMobile">0</span></span>
                     </div>
                 </div>
-                <div class="col-6 text-right">
-                    <small class="text-muted d-block" style="font-size: 11px;">GST ({{ $gst_percentage }}%)</small>
-                    <span class="text-success font-weight-bold">+₹<span id="gstAmountMobile">0</span></span>
-                </div>
-            </div>
+            @endif
 
             <!-- Expected Dispatch Row -->
             <div class="row mb-1 align-items-center">
@@ -370,12 +374,14 @@
 
             <!-- Grand Total & Button -->
             <div class="d-flex justify-content-between align-items-center pt-1 border-top">
-                <div>
-                    <small class="text-muted d-block" style="font-size: 11px;">Grand Total</small>
-                    <span class="h5 font-weight-bold text-primary mb-0">₹<span id="grandTotalAmountMobile">0</span></span>
-                </div>
-                <div>
-                    <button type="button" class="btn btn-success px-4 py-2 font-weight-bold shadow-sm place-order-btn">
+                @if(Auth::guard('sales_agent')->user()->see_price)
+                    <div>
+                        <small class="text-muted d-block" style="font-size: 11px;">Grand Total</small>
+                        <span class="h5 font-weight-bold text-primary mb-0">₹<span id="grandTotalAmountMobile">0</span></span>
+                    </div>
+                @endif
+                <div class="{{Auth::guard('sales_agent')->user()->see_price ? '' : 'w-100'}}">
+                    <button type="button" class="btn btn-success px-4 py-2 font-weight-bold shadow-sm place-order-btn {{Auth::guard('sales_agent')->user()->see_price ? '' : 'w-100'}}">
                         Confirm <i class="fas fa-check ml-1"></i>
                     </button>
                 </div>
@@ -467,19 +473,11 @@
                     }
                 });
 
-                // Get discount from whichever input is visible or has value
+                // No separate manual discount, already baked into unit_price
                 let discountPercent = 0;
-                if ($('#discountInputDesktop').is(':visible')) {
-                    discountPercent = parseFloat($('#discountInputDesktop').val()) || 0;
-                } else {
-                    discountPercent = parseFloat($('#discountInputMobile').val()) || 0;
-                }
 
-                // Sync discount inputs
-                $('.discount-input').val(discountPercent);
-
-                const discountAmount = subTotal * (discountPercent / 100);
-                const taxableAmount = subTotal - discountAmount;
+                const discountAmount = 0;
+                const taxableAmount = subTotal;
                 const gstPercent = {{ $gst_percentage }};
                 const gstAmount = taxableAmount * (gstPercent / 100);
                 const grandTotal = taxableAmount + gstAmount;
@@ -569,18 +567,6 @@
                 updateUI();
             });
 
-            // Discount Input Change
-            $('.discount-input').on('input change', function () {
-                let val = parseFloat($(this).val());
-                if (val < 0) $(this).val(0);
-                if (val > 100) $(this).val(100);
-                
-                // Sync other discount inputs
-                $('.discount-input').not(this).val($(this).val());
-                
-                updateUI();
-            });
-
 
 
             // Plus/Minus Buttons
@@ -622,14 +608,12 @@
                     return;
                 }
 
-                // Get discount and expected date from visible input
+                // Get expected date from visible input
                 let discountPercent = 0;
                 let expectedDate = '';
                 if ($('#summaryBarDesktop').is(':visible')) {
-                    discountPercent = parseFloat($('#discountInputDesktop').val()) || 0;
                     expectedDate = $('#expectedDispatchDateDesktop').val();
                 } else {
-                    discountPercent = parseFloat($('#discountInputMobile').val()) || 0;
                     expectedDate = $('#expectedDispatchDateMobile').val();
                 }
 

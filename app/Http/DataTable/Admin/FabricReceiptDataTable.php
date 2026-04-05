@@ -32,6 +32,9 @@ class FabricReceiptDataTable
                 if ($request->has('shipment_id') && !empty($request->shipment_id)) {
                     $query->where('shipment_id', $request->get('shipment_id'));
                 }
+                if ($request->has('bill_no') && !empty($request->bill_no)) {
+                    $query->where('bill_no', 'like', "%{$request->get('bill_no')}%");
+                }
                 if ($request->has('truck_number') && !empty($request->truck_number)) {
                     $query->where('truck_number', 'like', "%{$request->get('truck_number')}%");
                 }
@@ -69,7 +72,7 @@ class FabricReceiptDataTable
                 }
             })
             ->editColumn('time', function ($queue) {
-                return getformatDateTime($queue->time);
+                return getformatDate($queue->time);
             })
 
             ->editColumn('master_fabric_warehouse_id', function ($queue) {
@@ -92,9 +95,17 @@ class FabricReceiptDataTable
 
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
-                return '
-                <a href="' . route('admin.fabric_receipt.view', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted"></i></a>
-                ';
+                $paid = $queue->paid_amount;
+                $total = $queue->total_amount;
+                $is_paid = ($paid >= $total && $total > 0);
+
+                $action = '<a href="' . route('admin.fabric_receipt.view', ['id' => $parameter]) . '" class="mr-2" data-toggle="tooltip" data-placement="top" title="View"><i class="fas fa-eye text-muted"></i></a>';
+                
+                if (!$is_paid) {
+                    $action .= '<a href="' . route('admin.fabric_receipt.edit', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-primary"></i></a>';
+                }
+
+                return $action;
             })
 
             ->rawColumns(['action', 'status', 'vendor_id', 'payment_status'])

@@ -182,6 +182,13 @@
                         </select>
                     </div>
 
+                    <!-- ASSIGN QTY -->
+                    <div class="form-group" id="assign_qty_group">
+                        <label>Total Pieces to Assign</label>
+                        <input type="number" id="assign_quantity" name="assign_quantity" class="form-control" placeholder="Enter quantity">
+                        <small class="text-muted">Current remaining pieces: <span id="current_remain_qty"></span></small>
+                    </div>
+
                     <!-- REMARK -->
                     <div class="form-group">
                         <label>Remark</label>
@@ -221,7 +228,15 @@ $(document).ready(function () {
         $('#modal_set_size').text($(this).data('set-size'));
         $('#modal_set_size_group').text($(this).data('set-size-group'));
         $('#modal_color').text($(this).data('color'));
-        $('#modal_total_qty').text($(this).data('total'));
+        
+        const total = $(this).data('total');
+        const remain = $(this).data('remain');
+        
+        $('#modal_total_qty').text(total);
+        $('#current_remain_qty').text(remain);
+        $('#assign_quantity').val(remain); // Default to full remaining
+        $('#assign_qty_group').show();
+
         $('#assignModal').modal('show');
     });
 
@@ -309,6 +324,8 @@ $(document).ready(function () {
         $('#modal_color').text('-');
         $('#modal_total_qty').text('-');
 
+        $('#assign_qty_group').hide(); // Hide for bulk assignment for now
+
         $('#assignModal').modal('show');
     });
 
@@ -336,13 +353,31 @@ function warehouseChange(warehouse_id) {
 $('#assignForm').on('submit', function (e) {
     e.preventDefault();
 
+    // Basic validation for quantity
+    if ($('#modal_order_set_id').val()) {
+        const qty = parseInt($('#assign_quantity').val()) || 0;
+        const remain = parseInt($('#current_remain_qty').text()) || 0;
+        if (qty <= 0) {
+            alert('Please enter a valid quantity.');
+            return;
+        }
+        if (qty > remain) {
+            alert('Quantity exceeds remaining pieces.');
+            return;
+        }
+    }
+
     $.ajax({
         url: "{{ route('admin.product_order.assign_to') }}",
         type: "POST",
         data: $(this).serialize(),
-        success: function () {
-            $('#assignModal').modal('hide');
-            $('#customers').DataTable().ajax.reload(null, false);
+        success: function (res) {
+            if (res.status) {
+                $('#assignModal').modal('hide');
+                $('#customers').DataTable().ajax.reload(null, false);
+            } else {
+                alert(res.message);
+            }
         },
         error: function () {
             alert('Something went wrong');

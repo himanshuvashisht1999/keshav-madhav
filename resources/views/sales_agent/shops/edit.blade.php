@@ -26,6 +26,19 @@
                 </div>
 
                 <div class="form-group mb-3">
+                    <label class="small font-weight-bold text-muted">Opening Balance</label>
+                    <input type="number" name="balance" step="0.01" class="form-control rounded-lg" value="{{ old('balance', abs($shop->balance)) }}" placeholder="e.g. 0.00">
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="small font-weight-bold text-muted">Balance Type</label>
+                    <select name="balance_type" class="form-control rounded-lg" required>
+                        <option value="Credit" {{ old('balance_type', ($shop->balance >= 0 ? 'Credit' : 'Debit')) == 'Credit' ? 'selected' : '' }}>Credit</option>
+                        <option value="Debit" {{ old('balance_type', ($shop->balance >= 0 ? 'Credit' : 'Debit')) == 'Debit' ? 'selected' : '' }}>Debit</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-3">
                     <label class="small font-weight-bold text-muted">Email Address (Optional)</label>
                     <input type="email" name="email" class="form-control rounded-lg"
                         value="{{ old('email', $shop->email) }}" placeholder="shop@example.com">

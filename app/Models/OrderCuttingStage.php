@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class OrderCuttingStage extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackCreator;
     protected $table= 'order_cutting_stage';
     protected $fillable = [
         'id',
@@ -31,6 +31,7 @@ class OrderCuttingStage extends Model
         'processed_by',
         'remarks',
         'status',
+        'created_by',
         'created_at',
         'updated_at'
     ];

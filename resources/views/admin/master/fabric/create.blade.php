@@ -147,9 +147,8 @@
                                             @foreach ($fab_composition_data as $single_data)
                                                 <option value="{{ $single_data->id }}"
                                                     {{ old('composition_id') == $single_data->id ? 'selected' : '' }}>
-                                                    {{ $single_data->sku }}</option>
+                                                    {{ $single_data->name }}</option>
                                             @endforeach
-
                                         </select>
                                         @if ($errors->has('composition_id'))
                                             <span class="invalid-feedback d-block">
@@ -158,19 +157,20 @@
                                         @endif
                                     </div>
                                 </div>
-
-                                {{-- <div class="col-md-6">
+                                <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="sku">SKU</label>
-                                        <input type="text" name="sku" id="sku" class="form-control"
-                                            placeholder="Auto-generated SKU">
-                                        @if ($errors->has('sku'))
+                                        <label for="status">Status</label>
+                                        <select name="status" id="status" class="form-control">
+                                            <option value="1" {{ old('status') == '1' ? 'selected' : '' }}>Active</option>
+                                            <option value="0" {{ old('status') == '0' ? 'selected' : '' }}>Inactive</option>
+                                        </select>
+                                        @if ($errors->has('status'))
                                             <span class="invalid-feedback d-block">
-                                                {{ $errors->first('sku') }}
+                                                {{ $errors->first('status') }}
                                             </span>
                                         @endif
                                     </div>
-                                </div> --}}
+                                </div>
 
                                 <div class="col-md-4">
                                     <div class="form-group">
@@ -225,45 +225,10 @@
     
 
     <script>
-        function generateSKU() {
-            let name = $("input[name='name']").val().trim();
-
-            // Get selected options' text
-            // let dye = $("select[name='dye_id'] option:selected").text().trim();
-            // let width = $("select[name='width_id'] option:selected").text().trim();
-            // let weave = $("select[name='weave_type_id'] option:selected").text().trim();
-            // let gsm = $("select[name='gsm_id'] option:selected").text().trim();
-            // let comp = $("select[name='composition_id'] option:selected").text().trim();
-
-            // Remove special characters and uppercase
-            let partName = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            // let partDye = dye.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            // let partWidth = width.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            // let partWeave = weave.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            // let partGsm = gsm.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            // let partComp = comp.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-
-            // let sku = partName + '-' + partDye + '-' + partWidth + '-' + partWeave + '-' + partGsm + '-' + partComp;
-            let sku = partName;
-            let skuInput = $("#sku");
-            if (!skuInput.data('edited') || skuInput.val() === "") {
-                skuInput.val(sku);
-            }
-        }
-
         $(document).ready(function() {
-            // Name input
-            $("input[name='name']").on("input", generateSKU);
-
-            // // All select fields
-            // $("select[name='dye_id'], select[name='width_id'], select[name='weave_type_id'], select[name='gsm_id'], select[name='composition_id']")
-            //     .on("change", generateSKU);
-
-            // Mark SKU as manually edited
-            $("#sku").on("input", function() {
-                $(this).data('edited', true);
-            });
-        });</script>
+            // Script logic if any
+        });
+    </script>
 
     <script>
     function previewImage() {

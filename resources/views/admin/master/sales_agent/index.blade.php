@@ -40,12 +40,14 @@
                                     <td></td>
                                     <td></td>
                                     <td></td>
+                                    <td></td>
                                 </tr>
                                 <tr>
                                     <th width="60">ID</th>
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Phone</th>
+                                    <th>Total Balance</th>
                                     <th width="100">Status</th>
                                     <th width="100">Action</th>
                                 </tr>
@@ -80,6 +82,7 @@
                     { data: 'name', name: 'name' },
                     { data: 'email', name: 'email' },
                     { data: 'phone', name: 'phone' },
+                    { data: 'total_balance', name: 'total_balance' },
                     { data: 'status', name: 'status' },
                     { data: 'action', name: 'action', searchable: false }
                 ],

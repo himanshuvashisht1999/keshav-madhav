@@ -27,7 +27,19 @@ class PaymentHistoryController extends Controller
             $query->where('payment_category', $request->payment_category);
         }
         if ($request->has('payment_mode') && $request->payment_mode) {
-            $query->where('payment_mode', $request->payment_mode);
+            $mode = $request->payment_mode;
+            if (str_contains($mode, ':')) {
+                // New format: "Type:ID" (e.g., "Bank:1" or "Cash:2")
+                [$type, $id] = explode(':', $mode);
+                $query->where('payment_method_type', $type)
+                    ->where('payment_method_id', $id);
+            } else {
+                // Legacy format or general type (e.g., "Bank" or "Cash")
+                $query->where(function ($q) use ($mode) {
+                    $q->where('payment_method_type', $mode)
+                        ->orWhere('payment_mode', 'LIKE', $mode . '%');
+                });
+            }
         }
         if ($request->has('payment_type') && $request->payment_type) {
             $query->where('payment_type', $request->payment_type);
@@ -41,7 +53,7 @@ class PaymentHistoryController extends Controller
 
         $payments = $query->get();
 
-        // Fixed list of all possible categories and modes
+        // Dynamic categories
         $categories = [
             'fabric_shipment',
             'agent_order',
@@ -50,19 +62,16 @@ class PaymentHistoryController extends Controller
             'other'
         ];
 
-        $modes = [
-            'cash',
-            'bank_transfer',
-            'cheque',
-            'upi'
-        ];
+        // Dynamic modes grouped by type
+        $banks = \App\Models\BankAccount::where('status', 1)->orderBy('bank_name')->get();
+        $cashAccounts = \App\Models\CashPayment::where('status', 1)->orderBy('name')->get();
 
         $types = [
             'received',
             'paid'
         ];
 
-        return view('admin.payment.index', compact('payments', 'categories', 'modes', 'types', 'layout', 'homeRoute', 'routePrefix', 'isOwner'));
+        return view('admin.payment.index', compact('payments', 'categories', 'banks', 'cashAccounts', 'types', 'layout', 'homeRoute', 'routePrefix', 'isOwner'));
     }
 
     public function show(Payment $payment)

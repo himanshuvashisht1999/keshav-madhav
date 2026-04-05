@@ -43,11 +43,16 @@
                         <td>
                             <input type="text" class="form-control" name="name" id="name" autocomplete="off">
                         </td>
-                        <td>
-                            <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
-                        </td>
+
 
                         
+                        <td>
+                            <select class="form-control" name="status" id="status" autocomplete="off">
+                                <option value="">Select Status</option>
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
+                            </select>
+                        </td>
                         <td>
                        
                        </td>
@@ -55,8 +60,8 @@
                   <tr>
                     <th>ID</th>
                     <th>Name</th>
-                    <th>SKU</th>
-                    
+
+                    <th>Status</th>
                     <th>Action</th>
                   </tr>
                   </thead>
@@ -93,7 +98,8 @@
                 data: function (d) {
                     d.id = $('#id').val();
                     d.name = $('#name').val();
-                    d.sku = $('#sku').val();
+
+                    d.status = $('#status').val();
                   
                 },
                 orderable: false
@@ -101,7 +107,8 @@
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'name', name: 'name'},
-                {data: 'sku', name: 'sku'},
+
+                {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
@@ -130,7 +137,9 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#sku').on('keyup', function (e) {
+
+
+        $('#status').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
@@ -155,7 +164,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.master.item.delete', ['id' => '']) }}" + id;
+                window.location.href = "{{ route('admin.master.fabric_composition.delete', ['id' => '']) }}" + id;
             }
         });
     }

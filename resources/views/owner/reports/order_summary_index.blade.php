@@ -54,6 +54,11 @@
                 color: #64748b;
             }
 
+            .sp-partial {
+                background: #fef9c3;
+                color: #854d0e;
+            }
+
             .card-grid {
                 display: grid;
                 grid-template-columns: 1.2fr 1fr;
@@ -131,24 +136,45 @@
         <div class="app-container" style="padding-top: 20px;">
             <h5 class="mb-4 font-weight-bold" style="color: #1e293b;">Order Summary</h5>
 
-            <!-- Search Area -->
-            <div class="mb-3">
-                <form action="{{ route('owner.order-summary.index') }}" method="GET">
-                    <div class="input-group"
-                        style="background: white; border-radius: 10px; border: 1px solid #eee; overflow: hidden;">
-                        <span class="input-group-text bg-white border-0"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" name="order_no" class="form-control border-0 py-2" style="font-size: 13px;"
-                            placeholder="Search Order SKU..." value="{{ request('order_no') }}">
-                    </div>
-                </form>
+            <!-- Mobile Filters -->
+            <div class="card mb-3" style="border-radius: 12px; border: 1px solid #f1f5f9;">
+                <div class="card-body p-3">
+                    <form action="{{ route('owner.order-summary.index') }}" method="GET">
+                        <div class="mb-2">
+                            <label class="small font-weight-bold text-muted mb-1 d-block">Order SKU</label>
+                            <input type="text" name="order_no" class="form-control" style="border-radius: 8px; font-size: 13px;"
+                                placeholder="Search Order SKU..." value="{{ request('order_no') }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="small font-weight-bold text-muted mb-1 d-block">Customer</label>
+                            <select name="customer_id" class="form-control" style="border-radius: 8px; font-size: 13px;">
+                                <option value="">All Customers</option>
+                                @foreach($customers as $customer)
+                                    <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
+                                        {{ $customer->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm flex-fill" style="border-radius: 8px;">Search</button>
+                            <a href="{{ route('owner.order-summary.index') }}" class="btn btn-light btn-sm flex-fill" style="border-radius: 8px;">Reset</a>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             @foreach ($salesOrders as $row)
                 <div class="order-card">
                     <div class="card-header-top">
                         <div class="sku-label">#{{ $row['order_no'] }}</div>
-                        <div class="status-pill {{ $row['status'] == 3 ? 'sp-closed' : 'sp-active' }}">
-                            {{ $row['status'] == 3 ? 'CLOSED' : 'ACTIVE' }}
+                        @php
+                            $remaining = $row['total_pcs'] - $row['scanned_pcs'];
+                        @endphp
+                        <div
+                            class="status-pill 
+                                            @if($remaining <= 0) sp-closed @elseif($row['scanned_pcs'] > 0) sp-partial @else sp-active @endif">
+                            @if($remaining <= 0) COMPLETED @elseif($row['scanned_pcs'] > 0) PARTIAL @else ACTIVE @endif
                         </div>
                     </div>
 
@@ -158,8 +184,16 @@
                             <div class="value">{{ \Illuminate\Support\Str::limit($row['customer'], 20) }}</div>
                         </div>
                         <div class="info-item">
+                            <label>Type</label>
+                            <div class="value">{{ ucfirst($row['order_type']) }}</div>
+                        </div>
+                        <div class="info-item">
                             <label>Quantity</label>
                             <div class="value">{{ $row['total_pcs'] }} Pcs</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Scanned</label>
+                            <div class="value progress-value">{{ $row['scanned_pcs'] }}</div>
                         </div>
                     </div>
 
@@ -186,6 +220,35 @@
             <h2 style="font-weight: 800; color: var(--text-main);">Order Manifest Reports</h2>
         </div>
 
+        <!-- Desktop Filters -->
+        <div class="card mb-4" style="border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <div class="card-body p-4">
+                <form action="{{ route('owner.order-summary.index') }}" method="GET">
+                    <div class="row align-items-end">
+                        <div class="col-md-5">
+                            <label class="small font-weight-bold text-muted mb-2 d-block">ORDER SKU</label>
+                            <input type="text" name="order_no" class="form-control" value="{{ request('order_no') }}" placeholder="Enter SKU..." style="height: 38px;">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="small font-weight-bold text-muted mb-2 d-block">CUSTOMER</label>
+                            <select name="customer_id" class="form-control select2">
+                                <option value="">All Customers</option>
+                                @foreach($customers as $customer)
+                                    <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
+                                        {{ $customer->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary px-4 mr-2" style="border-radius: 8px; height: 38px;">Search</button>
+                            <a href="{{ route('owner.order-summary.index') }}" class="btn btn-outline-secondary px-4" style="border-radius: 8px; height: 38px; line-height: 24px;">Reset</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div class="card table-card">
             <div class="card-body">
                 <div class="table-responsive">
@@ -195,10 +258,11 @@
                                 <th>Date</th>
                                 <th>Order No</th>
                                 <th>Customer</th>
-                                <th>Set Type</th>
+                                <th>Order Type</th>
                                 <th>Total Pcs</th>
                                 <th>Scanned</th>
                                 <th>Balance</th>
+                                <th>Status</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -208,10 +272,22 @@
                                     <td>{{ date('d-m-Y', strtotime($row['created_at'])) }}</td>
                                     <td><b>{{ $row['order_no'] }}</b></td>
                                     <td>{{ $row['customer'] }}</td>
-                                    <td><span class="badge badge-light">{{ $row['set_type'] }}</span></td>
+                                    <td><span class="badge badge-light">{{ ucfirst($row['order_type']) }}</span></td>
                                     <td>{{ $row['total_pcs'] }}</td>
                                     <td class="text-success"><b>{{ $row['scanned_pcs'] }}</b></td>
                                     <td class="text-danger"><b>{{ $row['total_pcs'] - $row['scanned_pcs'] }}</b></td>
+                                    <td>
+                                        @php
+                                            $remaining = $row['total_pcs'] - $row['scanned_pcs'];
+                                        @endphp
+                                        @if($remaining <= 0)
+                                            <span class="badge badge-success">Completed</span>
+                                        @elseif($row['scanned_pcs'] > 0)
+                                            <span class="badge badge-warning">Partial</span>
+                                        @else
+                                            <span class="badge badge-primary">In Progress</span>
+                                        @endif
+                                    </td>
                                     <td>
                                         <a href="{{ route('owner.order-summary.view', $row['id']) }}"
                                             class="btn btn-sm btn-primary" style="border-radius: 6px;">
@@ -229,4 +305,16 @@
             </div>
         </div>
     </div>
+@endsection
+@section('scripts')
+    <script>
+        $(document).ready(function() {
+            if ($.fn.select2) {
+                $('.select2').select2({
+                    placeholder: "Select Customer",
+                    allowClear: true
+                });
+            }
+        });
+    </script>
 @endsection

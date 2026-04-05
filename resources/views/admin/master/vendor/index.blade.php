@@ -5,15 +5,15 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-12">
-                    <h1 class="text-center">List of Available Vendors</h1>
+                <div class="col-sm-6">
+                    <h1>Manage Vendor</h1>
                 </div>
-                {{-- <div class="col-sm-6">
+                <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Vendors</li>
+                        <li class="breadcrumb-item active">Manage Vendor</li>
                     </ol>
-                </div> --}}
+                </div>
             </div>
         </div>
     </section>
@@ -37,23 +37,16 @@
                   <thead>
                     <tr role="row" class="filter">
                         <td>
-                            <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
                         </td>
                         <td>
                             <input type="text" class="form-control" name="name" id="name" autocomplete="off">
                         </td>
-                        <td>
-                            <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
-                        </td>
-
                         <td>
                             <input type="text" class="form-control" name="phone" id="phone" autocomplete="off">
                         </td>
                         <td>
                             <input type="text" class="form-control" name="email" id="email" autocomplete="off">
                         </td>
-                       
-                        
                         <td>
                             <select class="form-control" name="status" id="status" autocomplete="off">
                                 <option value="">ALL</option>
@@ -62,15 +55,16 @@
                             </select>
                         </td>
                         <td>
-                       
-                       </td>
+                        </td>
+                        <td>
+                        </td>
                     </tr>
                   <tr>
                     <th>ID</th>
                     <th>Name</th>
-                    <th>Sku</th>
                     <th>Phone</th>
                     <th>Email</th>
+                    <th>Balance</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
@@ -108,7 +102,6 @@
                 data: function (d) {
                     d.id = $('#id').val();
                     d.name = $('#name').val();
-                    d.sku = $('#sku').val();
                     d.phone = $('#phone').val();
                     d.email = $('#email').val();
 					d.status = $('#status').val();
@@ -118,9 +111,9 @@
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'name', name: 'name'},
-                {data: 'sku', name: 'sku'},
                 {data: 'phone', name: 'phone'},
                 {data: 'email', name: 'email'},
+                {data: 'balance', name: 'balance'},
                 {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', searchable: false}
             ],
@@ -159,10 +152,6 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#sku').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
      
 
         $('#status').on('change', function (e) {
@@ -189,7 +178,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.master.vendor.delete', ['id' => '']) }}" + id;
+                window.location.href = "{{ route('admin.master.vendor.delete') }}?id=" + id;
             }
         });
     }

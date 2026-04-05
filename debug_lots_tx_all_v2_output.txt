@@ -1,0 +1,9 @@
+--- Stage Transactions ---
+ID: 60, FromU: 2, ToU: 3, Qty: 0, Image: NULL
+ID: 61, FromU: 3, ToU: 4, Qty: 0, Image: NULL
+ID: 62, FromU: 4, ToU: 5, Qty: 0, Image: NULL
+ID: 63, FromU: 5, ToU: 6, Qty: 100, Image: NULL
+--- Printing Transactions ---
+ID: 7, FromU: 2, ToU: 1, Qty: 0, Image: NULL
+--- PrintingToStitching Transactions ---
+ID: 7, FromU: 1, ToU: 3, Qty: 100, Image: NULL

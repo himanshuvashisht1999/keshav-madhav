@@ -9,19 +9,22 @@ use Yajra\DataTables\Facades\DataTables;
 class MasterFittingDataTable  {
 
     public function indexList($request){
-        $queue = MasterProductFitting::query();
+        $queue = MasterProductFitting::where('status', '!=', 3);
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $query->orderBy('id','asc');
-                $query->orWhere('name', 'like', "%{$request->get('search')['value']}%");
+                if (!empty($request->get('search')['value'])) {
+                    $query->where('name', 'like', "%{$request->get('search')['value']}%");
+                }
                 if ($request->has('name') && !empty($request->name)) {
                     $query->where('name', 'like', "%{$request->get('name')}%");
                 }
-                if ($request->has('sku') && !empty($request->sku)) {
-                    $query->where('sku', 'like', "%{$request->get('sku')}%");
+                if ($request->has('status') && ($request->status === '0' || !empty($request->status))) {
+                    $query->where('status', $request->status);
                 }
-                
+            }) 
+            ->order(function ($query) {
+                $query->orderBy('id', 'asc');
             }) 
          
             ->editColumn('status', function ($queue) {
@@ -32,6 +35,7 @@ class MasterFittingDataTable  {
 				$parameter= $queue->id;
                 return '
                 <a href="' . route('admin.master.fitting.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete"><i class="fas fa-trash text-danger"></i></a>
                 ';
             })
             

@@ -21,10 +21,12 @@ class MasterFabricWarehouseStoreRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'cutting_master_name' => 'required',
-            'sku'    => 'required|unique:master_fabric_warehouse,sku',
-            // 'address' => 'required',
-            // 'status' =>'required',
+            'cutting_master_name' => [
+                'required',
+                \Illuminate\Validation\Rule::unique('master_fabric_warehouse', 'cutting_master_name')->whereNot('status', 3)
+            ],
+            'status' =>'required',
+            'sku'    => 'nullable',
         ];
     }
 

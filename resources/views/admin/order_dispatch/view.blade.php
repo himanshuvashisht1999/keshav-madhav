@@ -15,9 +15,9 @@
                         <a href="{{ route('admin.order-dispatch.index') }}" class="btn btn-secondary mr-2">
                             <i class="fas fa-arrow-left mr-1"></i> Back
                         </a>
-                        <button onclick="window.print()" class="btn btn-primary">
-                            <i class="fas fa-print mr-1"></i> Print Slip
-                        </button>
+                        <a href="{{ route('admin.order-dispatch.download-pdf', ['id' => $order_dispatch_data['id']]) }}" class="btn btn-primary">
+                            <i class="fas fa-download mr-1"></i> Download PDF
+                        </a>
                     </div>
                 </div>
             </div>

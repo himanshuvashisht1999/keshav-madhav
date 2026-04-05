@@ -7,10 +7,14 @@
         <section class="content-header">
             <div class="container-fluid">
                 <div class="row mb-2">
-                    <div class="col-sm-12">
-                        <h1 class="text-center">
-                            Fabric Shipment Details ({{ $data->shipment_id }})
-                        </h1>
+                    <div class="col-sm-6">
+                        <h1>Fabric Shipment Details ({{ $data->shipment_id }})</h1>
+                    </div>
+                    <div class="col-sm-6 text-right">
+                        <a href="{{ route('admin.fabric_receipt.download_report', ['id' => $data->id]) }}"
+                            class="btn btn-success">
+                            <i class="fas fa-download"></i> Download Report
+                        </a>
                     </div>
                 </div>
             </div>
@@ -21,113 +25,213 @@
             <div class="container-fluid">
 
                 <!-- ================= Receipt Information ================= -->
-                <div class="card card-primary">
-                    <div class="card-header">
-                        <h3 class="card-title">Receipt Information</h3>
+                <div class="card card-outline card-primary shadow-sm">
+                    <div class="card-header bg-white border-bottom-0 pt-4 px-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="card-title font-weight-bold text-dark">
+                                <i class="fas fa-file-invoice text-primary mr-2"></i>
+                                Receipt Information
+                            </h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="card-body">
-
-                        {{-- Summary Cards --}}
-                        <div class="row text-center mb-3">
-
-                            <div class="col-md-3 mb-2">
-                                <div class="border rounded p-2 bg-light">
-                                    <small class="text-muted d-block">Amount</small>
-                                    <h5 class="mb-0">
-                                        ₹ {{ number_format($data->amount ?? 0, 2) }}
-                                    </h5>
+                    <div class="card-body px-4 pb-4">
+                        {{-- Metric Summary --}}
+                        <div class="row mb-4">
+                            <div class="col-lg-3 col-6 mb-3 mb-lg-0">
+                                <div class="p-3 border rounded bg-light h-100 shadow-xs">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fas fa-coins text-secondary mr-2"></i>
+                                        <small class="text-uppercase font-weight-bold text-muted"
+                                            style="letter-spacing: 0.5px; font-size: 10px;">Base Amount</small>
+                                    </div>
+                                    <h4 class="mb-0 font-weight-bold">₹ {{ number_format($data->amount ?? 0, 2) }}</h4>
                                 </div>
                             </div>
-
-                            <div class="col-md-3 mb-2">
-                                <div class="border rounded p-2 bg-light">
-                                    <small class="text-muted d-block">GST</small>
-                                    <h5 class="mb-0 text-warning">
-                                        {{ $data->gst_percentage ?? 0 }}%
-                                        (₹ {{ number_format($data->gst_amount ?? 0, 2) }})
-                                    </h5>
+                            <div class="col-lg-2 col-6 mb-3 mb-lg-0">
+                                <div class="p-3 border rounded bg-light h-100 shadow-xs">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fas fa-percentage text-warning mr-2"></i>
+                                        <small class="text-uppercase font-weight-bold text-muted"
+                                            style="letter-spacing: 0.5px; font-size: 10px;">GST
+                                            ({{ $data->gst_percentage ?? 0 }}%)</small>
+                                    </div>
+                                    <h4 class="mb-0 font-weight-bold text-warning">₹
+                                        {{ number_format($data->gst_amount ?? 0, 2) }}</h4>
                                 </div>
                             </div>
-
-                            <div class="col-md-3 mb-2">
-                                <div class="border rounded p-2 bg-light">
-                                    <small class="text-muted d-block">Total Amount</small>
-                                    <h5 class="mb-0 text-success font-weight-bold">
-                                        ₹ {{ number_format($data->total_amount ?? 0, 2) }}
-                                    </h5>
+                            <div class="col-lg-2 col-6 mb-3 mb-lg-0">
+                                <div class="p-3 border rounded bg-light h-100 shadow-xs">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fas fa-truck-loading text-info mr-2"></i>
+                                        <small class="text-uppercase font-weight-bold text-muted"
+                                            style="letter-spacing: 0.5px; font-size: 10px;">Others</small>
+                                    </div>
+                                    <h4 class="mb-0 font-weight-bold text-info">₹
+                                        {{ number_format($data->other_charges ?? 0, 2) }}</h4>
                                 </div>
                             </div>
-
-                            <div class="col-md-3 mb-2">
-                                <div class="border rounded p-2 bg-light">
-                                    <small class="text-muted d-block">Total Rolls</small>
-                                    <h5 class="mb-0">
-                                        {{ $data->details->count() }}
-                                    </h5>
+                            <div class="col-lg-3 col-6 mb-3 mb-lg-0">
+                                <div class="p-3 border rounded bg-success-light h-100 shadow-xs"
+                                    style="background-color: rgba(40, 167, 69, 0.05); border-color: rgba(40, 167, 69, 0.2) !important;">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fas fa-receipt text-success mr-2"></i>
+                                        <small class="text-uppercase font-weight-bold text-success"
+                                            style="letter-spacing: 0.5px; font-size: 10px;">Total Amount</small>
+                                    </div>
+                                    <h4 class="mb-0 font-weight-bold text-success">₹
+                                        {{ number_format($data->total_amount ?? 0, 0) }}</h4>
                                 </div>
                             </div>
-
+                            <div class="col-lg-2 col-12">
+                                <div class="p-3 border rounded bg-light h-100 shadow-xs text-center border-primary"
+                                    style="border-style: dashed !important; background-color: rgba(0, 123, 255, 0.02);">
+                                    <small class="text-uppercase font-weight-bold text-muted d-block"
+                                        style="letter-spacing: 0.5px; font-size: 10px;">Total Rolls</small>
+                                    <h3 class="mb-0 font-weight-bold text-primary">{{ $data->details->count() }}</h3>
+                                </div>
+                            </div>
                         </div>
 
-                        <hr>
-
-                        {{-- Detailed Info --}}
-                        <div class="row">
-
-                            <div class="col-md-4 mb-2">
-                                <strong>Shipment Number:</strong><br>
-                                {{ $data->shipment_id }}
+                        <div class="row pt-2 border-top">
+                            <div class="col-md-3 col-sm-6 mb-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mr-3"
+                                        style="width: 40px; height: 40px;">
+                                        <i class="fas fa-hashtag"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted text-uppercase font-weight-bold"
+                                            style="font-size: 10px;">Shipment Number</small>
+                                        <div class="font-weight-bold text-dark">{{ $data->shipment_id }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center mr-3"
+                                        style="width: 40px; height: 40px;">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted text-uppercase font-weight-bold"
+                                            style="font-size: 10px;">Bill Number</small>
+                                        <div class="font-weight-bold text-dark">{{ $data->bill_no ?? 'N/A' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center mr-3"
+                                        style="width: 40px; height: 40px;">
+                                        <i class="fas fa-store"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted text-uppercase font-weight-bold"
+                                            style="font-size: 10px;">Vendor</small>
+                                        <div class="font-weight-bold text-dark text-truncate" style="max-width: 180px;">
+                                            {{ $data->vendor->name ?? 'N/A' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light text-dark rounded-circle d-flex align-items-center justify-content-center mr-3 border"
+                                        style="width: 40px; height: 40px;">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted text-uppercase font-weight-bold"
+                                            style="font-size: 10px;">Date</small>
+                                        <div class="font-weight-bold text-dark">
+                                            {{ \Carbon\Carbon::parse($data->time)->format('d M Y') }}</div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="col-md-4 mb-2">
-                                <strong>Vendor:</strong><br>
-                                {{ $data->vendor->name ?? '-' }}
+                            <div class="col-md-3 col-sm-6 mb-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center mr-3"
+                                        style="width: 40px; height: 40px;">
+                                        <i class="fas fa-warehouse"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted text-uppercase font-weight-bold"
+                                            style="font-size: 10px;">Warehouse</small>
+                                        <div class="font-weight-bold text-dark">
+                                            {{ $data->cutting_master->cutting_master_name ?? 'N/A' }}</div>
+                                    </div>
+                                </div>
                             </div>
-
-                            <div class="col-md-4 mb-2">
-                                <strong>Warehouse:</strong><br>
-                                {{ $data->cutting_master->cutting_master_name ?? '-' }}
+                            <div class="col-md-3 col-sm-6 mb-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center mr-3"
+                                        style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user-check"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted text-uppercase font-weight-bold"
+                                            style="font-size: 10px;">Received By</small>
+                                        <div class="font-weight-bold text-dark">{{ $data->received_by ?? 'N/A' }}</div>
+                                    </div>
+                                </div>
                             </div>
-
-                            <div class="col-md-4 mb-2">
-                                <strong>Date & Time:</strong><br>
-                                {{ \Carbon\Carbon::parse($data->time)->format('j M Y, h:i A') }}
+                            <div class="col-md-3 col-sm-6 mb-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="{{ ($data->paid_amount >= $data->total_amount && $data->total_amount > 0) ? 'bg-success' : 'bg-danger' }} text-white rounded-circle d-flex align-items-center justify-content-center mr-3"
+                                        style="width: 40px; height: 40px;">
+                                        <i class="fas fa-hand-holding-usd"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted text-uppercase font-weight-bold"
+                                            style="font-size: 10px;">Payment Status</small>
+                                        <div>
+                                            @php
+                                                $paid = $data->paid_amount;
+                                                $total = $data->total_amount;
+                                            @endphp
+                                            @if($paid >= $total && $total > 0)
+                                                <a
+                                                    href="{{ route('admin.payment.history.index', ['paymentable_type' => 'App\Models\FabricReceipt', 'paymentable_id' => $data->id]) }}">
+                                                    <span class="badge badge-success px-3 py-1 shadow-xs">PAID</span>
+                                                </a>
+                                            @else
+                                                <span class="badge badge-danger px-3 py-1 shadow-xs">UNPAID</span>
+                                                <small class="text-muted d-block mt-1 font-weight-bold"
+                                                    style="font-size: 9px;">Paid: ₹{{ number_format($paid, 2) }}</small>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-
-                            <div class="col-md-4 mb-2">
-                                <strong>Received By:</strong><br>
-                                {{ $data->received_by ?? '-' }}
+                            <div class="col-md-3 col-sm-6 mb-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="bg-light text-dark rounded-circle d-flex align-items-center justify-content-center mr-3 border"
+                                        style="width: 40px; height: 40px;">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted text-uppercase font-weight-bold"
+                                            style="font-size: 10px;">Challan Photo</small>
+                                        <div class="mt-1">
+                                            @if($data->challan_photo)
+                                                <a href="#"
+                                                    onclick="openChallanModal('{{ $data->challan_photo }}'); return false;">
+                                                    <img src="{{ $data->challan_photo }}" height="60"
+                                                        class="border rounded shadow-sm hover-brighten" alt="Challan Photo">
+                                                </a>
+                                            @else
+                                                <div class="text-muted italic" style="font-size: 13px;">No photo attached</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-
-                            <div class="col-md-4 mb-2">
-                                <strong>Payment Status:</strong><br>
-                                @php
-                                    $paid = $data->paid_amount;
-                                    $total = $data->total_amount;
-                                @endphp
-                                @if($paid >= $total && $total > 0)
-                                    <a
-                                        href="{{ route('admin.payment.history.index', ['paymentable_type' => 'App\Models\FabricReceipt', 'paymentable_id' => $data->id]) }}">
-                                        <span class="badge badge-success">Paid</span>
-                                    </a>
-                                @else
-                                    <span class="badge badge-danger">Unpaid</span>
-                                    <small class="text-muted">(Paid: ₹{{ number_format($paid, 2) }})</small>
-                                @endif
-                            </div>
-
-                            <div class="col-md-4 mb-2">
-                                <strong>Challan Photo:</strong><br>
-
-                                @if($data->challan_photo)
-                                    <img src="{{ $data->challan_photo }}" height="110" class="border rounded shadow-sm mt-1"
-                                        alt="Challan Photo">
-                                @else
-                                    -
-                                @endif
-                            </div>
-
                         </div>
                     </div>
                 </div>
@@ -144,53 +248,86 @@
                             <thead class="thead-dark">
                                 <tr>
                                     <th>#</th>
-                                    <th>Fabric</th>
-                                    <th>Price (per Meter)</th>
-                                    <th>Roll No</th>
-                                    <th>Meter</th>
-                                    <th>QR Code</th>
-                                    <th>Barcode</th>
+                                    <th>Fabric Name</th>
+                                    <th>Total Rolls</th>
+                                    <th>Total Meters</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
 
                             <tbody>
-                                @forelse($data->details as $key => $detail)
-                                    <tr>
-                                        <td>{{ $key + 1 }}</td>
+                                @php
+                                    $groupedDetails = $data->details->groupBy('fabric_id');
+                                @endphp
 
-                                        <td>{{ $detail->fabric->name ?? '-' }}</td>
-
-                                        <td>Rs. {{ $detail->price_per_meter ?? 0 }}</td>
-
-                                        <td>{{ $detail->roll_number }}</td>
-
-                                        <td>{{ $detail->meter }}</td>
-
+                                @forelse($groupedDetails as $fabricId => $rolls)
+                                    @php
+                                        $fabric = $rolls->first()->fabric;
+                                        $totalRolls = $rolls->count();
+                                        $totalMeters = $rolls->sum('meter');
+                                    @endphp
+                                    <tr class="fabric-row" data-fabric-id="{{ $fabricId }}">
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $fabric->name ?? '-' }}</td>
+                                        <td><span class="badge badge-info">{{ $totalRolls }} Rolls</span></td>
+                                        <td><strong>{{ number_format($totalMeters, 2) }} Mtr</strong></td>
                                         <td>
-                                            <img src="{{ $detail->qrcode }}" width="80" height="80" class="border rounded"
-                                                alt="QR Code">
+                                            <button type="button" class="btn btn-sm btn-primary toggle-rolls"
+                                                data-target="rolls-{{ $fabricId }}">
+                                                <i class="fas fa-eye"></i> View Rolls
+                                            </button>
                                         </td>
-
-                                        <td>
-                                            <div style="display:flex; flex-direction:column; align-items:center;">
-                                                <img src="{{ $detail->barcode }}" width="160" height="60" class="border rounded"
-                                                    alt="Barcode">
-
-                                                <small style="margin-top:4px; font-weight:600; letter-spacing:1px;">
-                                                    {{ $detail->qrcode_number }}
-                                                </small>
+                                    </tr>
+                                    <tr id="rolls-{{ $fabricId }}" class="roll-details-row" style="display: none;">
+                                        <td colspan="6" class="p-0">
+                                            <div class="p-3 bg-light border-bottom">
+                                                <h6 class="text-left font-weight-bold mb-2">Roll Details for
+                                                    {{ $fabric->name ?? '-' }}</h6>
+                                                <table class="table table-sm table-bordered bg-white mb-0">
+                                                    <thead class="bg-secondary text-white">
+                                                        <tr>
+                                                            <th>#</th>
+                                                            <th>Roll No</th>
+                                                            <th>Meter</th>
+                                                            <th>Price/Mtr</th>
+                                                            <th>QR Code</th>
+                                                            <th>Barcode</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($rolls as $rollKey => $roll)
+                                                            <tr>
+                                                                <td>{{ $rollKey + 1 }}</td>
+                                                                <td>{{ $roll->roll_number }}</td>
+                                                                <td>{{ $roll->meter }}</td>
+                                                                <td>Rs. {{ $roll->price_per_meter }}</td>
+                                                                <td>
+                                                                    <img src="{{ $roll->qrcode }}" width="60" height="60"
+                                                                        class="border rounded shadow-sm">
+                                                                </td>
+                                                                <td>
+                                                                    <div class="d-flex flex-column align-items-center">
+                                                                        <img src="{{ $roll->barcode }}" width="120" height="40"
+                                                                            class="border rounded mb-1">
+                                                                        <small
+                                                                            class="font-weight-bold">{{ $roll->qrcode_number }}</small>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted">
+                                        <td colspan="6" class="text-center text-muted py-4">
                                             No details found
                                         </td>
                                     </tr>
                                 @endforelse
                             </tbody>
-
                         </table>
 
                     </div>
@@ -199,11 +336,161 @@
                 <!-- ================= Back Button ================= -->
                 <div class="mt-3">
                     <a href="{{ route('admin.fabric_receipt.index') }}" class="btn btn-primary">
-                        Back to List
+                        <i class="fas fa-arrow-left"></i> Back to List
                     </a>
                 </div>
-
             </div>
         </section>
     </div>
+
+    <!-- Challan Preview Modal -->
+    <div class="modal fade shadow" id="challanPreviewModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-image mr-2"></i>Challan Preview</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-0 bg-dark d-flex align-items-center justify-content-center"
+                    style="min-height: 400px; overflow: auto;">
+                    <img id="challan-modal-image" src="" class="img-fluid shadow"
+                        style="max-height: 80vh; transition: transform 0.3s ease;">
+                </div>
+                <div class="modal-footer bg-light justify-content-between">
+                    <div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomOutChallan()"><i
+                                class="fas fa-search-minus"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetZoomChallan()"><i
+                                class="fas fa-sync-alt"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomInChallan()"><i
+                                class="fas fa-search-plus"></i></button>
+                    </div>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@section('scripts')
+    <style>
+        .shadow-xs {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.045) !important;
+        }
+
+        .hover-brighten:hover {
+            filter: brightness(1.1);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-color: #007bff !important;
+        }
+
+        .bg-success-light {
+            background-color: rgba(40, 167, 69, 0.05);
+        }
+
+        .italic {
+            font-style: italic;
+        }
+
+        .fabric-row {
+            background-color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .fabric-row:hover {
+            background-color: #f1f4f9;
+        }
+
+        .roll-details-row {
+            background-color: #fdfdfd;
+        }
+
+        /* Custom Scrollbar for Modal Body */
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: #343a40;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #6c757d;
+            border-radius: 4px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #adb5bd;
+        }
+    </style>
+
+    <script>
+        $(document).ready(function () {
+            $('.toggle-rolls').on('click', function (e) {
+                e.stopPropagation();
+                let targetId = $(this).data('target');
+                let targetRow = $('#' + targetId);
+                let icon = $(this).find('i');
+
+                targetRow.fadeToggle(200);
+
+                $(this).toggleClass('btn-primary btn-secondary');
+                icon.toggleClass('fa-eye fa-eye-slash');
+
+                // Use a timeout to ensure visibility check works after animation starts
+                setTimeout(() => {
+                    let isVisible = $('#' + targetId).is(':visible');
+                    if (isVisible) {
+                        $(this).html('<i class="fas fa-eye-slash"></i> Hide Rolls');
+                    } else {
+                        $(this).html('<i class="fas fa-eye"></i> View Rolls');
+                    }
+                }, 220);
+            });
+
+            // Also toggle on row click
+            $('.fabric-row').on('click', function () {
+                $(this).find('.toggle-rolls').trigger('click');
+            });
+        });
+
+        let challanZoom = 1;
+
+        function openChallanModal(src) {
+            if (!src) return;
+            challanZoom = 1;
+            let img = document.getElementById('challan-modal-image');
+            if (img) {
+                img.src = src;
+                img.style.transform = 'scale(1)';
+            }
+            $('#challanPreviewModal').modal('show');
+        }
+
+        function zoomInChallan() {
+            challanZoom += 0.2;
+            applyChallanZoom();
+        }
+
+        function zoomOutChallan() {
+            if (challanZoom > 0.4) {
+                challanZoom -= 0.2;
+                applyChallanZoom();
+            }
+        }
+
+        function resetZoomChallan() {
+            challanZoom = 1;
+            applyChallanZoom();
+        }
+
+        function applyChallanZoom() {
+            let img = document.getElementById('challan-modal-image');
+            if (img) img.style.transform = `scale(${challanZoom})`;
+        }
+    </script>
 @endsection

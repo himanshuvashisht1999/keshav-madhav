@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Master;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\Master\SalesAgentService as Service;
+use App\Models\Brand;
 use App\Requests\Admin\Master\SalesAgentStoreRequest;
 use App\Requests\Admin\Master\SalesAgentUpdateRequest;
 use Auth;
@@ -26,7 +27,8 @@ class SalesAgentController extends Controller
     }
     public function create()
     {
-        return view('admin.master.sales_agent.create');
+        $response['brands'] = Brand::where('status', 1)->get();
+        return view('admin.master.sales_agent.create', $response);
     }
     public function store(SalesAgentStoreRequest $request)
     {
@@ -41,6 +43,7 @@ class SalesAgentController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        $response['brands'] = Brand::where('status', 1)->get();
         return view('admin.master.sales_agent.edit', $response);
     }
     public function update(SalesAgentUpdateRequest $request)

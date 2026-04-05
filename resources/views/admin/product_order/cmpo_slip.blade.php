@@ -128,9 +128,22 @@
         </tr>
     </table>
 
+    <!-- ===================== SIMPLIFIED SIZE SET INFO ===================== -->
+    <div style="margin-top: 15px; border: 1.5px solid #000; padding: 10px; background: #f9f9f9;">
+        <table width="100%" style="border: none;">
+            <tr>
+                <td style="font-weight: bold; width: 30%;">SIZE SET:</td>
+                <td style="font-size: 16px;">{{ $header['size_set'] ?? '-' }}</td>
+                
+                <td style="font-weight: bold; width: 35%;">TOTAL PIECE IN SET:</td>
+                <td style="font-size: 16px;">{{ $header['pcs_in_set'] ?? 0 }}</td>
+            </tr>
+        </table>
+    </div>
+
     <!-- ===================== PRODUCT TABLE HEADING ===================== -->
     <div class="section-title">
-        Product & Quantity Details
+        Product Details
     </div>
 
     <!-- ===================== PRODUCT TABLE ===================== -->
@@ -138,32 +151,29 @@
         <thead>
             <tr>
                 <th style="width:6%;">#</th>
-                <th style="width:30%;">Design No</th>
+                <th style="width:34%;">Design No</th>
                 <th style="width:20%;">Color</th>
                 <th style="width:20%;">Size</th>
-                <th style="width:14%;">PCS</th>
+                <th style="width:20%;">Total PCS</th>
             </tr>
         </thead>
 
         <tbody>
-            {{-- @php $totalPcs = 0; @endphp --}}
-
             @foreach ($sizeData as $row)
-                {{-- @php $totalPcs += $row['pcs']; @endphp --}}
                 <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $row['design_no'] }} ({{ $header['fitting'] }})</td>
                     <td>{{ $row['color'] }}</td>
                     <td>{{ $row['size'] }}</td>
-                    <td>{{ $row['pcs'] }}</td>
+                    <td>{{ number_format($row['pcs'], 0) }}</td>
                 </tr>
             @endforeach
         </tbody>
 
         <tfoot>
             <tr>
-                <th colspan="4" style="text-align:right;">Total</th>
-                <th>{{ $header['total_pcs'] }}</th>
+                <th colspan="4" style="text-align:right;">Grand Total</th>
+                <th>{{ number_format($header['total_pcs'] ?? array_sum(array_column($sizeData, 'pcs')), 0) }}</th>
             </tr>
         </tfoot>
     </table>

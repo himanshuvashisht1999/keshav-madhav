@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Stock extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackCreator;
     protected $table= 'stocks';
     protected $fillable = [
         'id',
@@ -22,6 +22,7 @@ class Stock extends Model
         'roll',
         'purchase_order_id',
         'status',
+        'created_by',
         'created_at',
         'updated_at',
         'roll_no',

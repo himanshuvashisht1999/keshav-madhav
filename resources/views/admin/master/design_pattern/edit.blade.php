@@ -45,11 +45,14 @@
 
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="sku">SKU</label>
-                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}" readonly>
-                                    @if ($errors->has('sku'))
+                                    <label>Status</label>
+                                    <select name="status" class="form-control select2" style="width: 100%;">
+                                        <option value="1" {{optional($data)->status == '1' ? 'selected' : ''}}>Active</option>
+                                        <option value="0" {{optional($data)->status == '0' ? 'selected' : ''}}>Inactive</option>
+                                    </select>
+                                    @if ($errors->has('status'))
                                         <span class="invalid-feedback d-block">
-                                            {{ $errors->first('sku') }}
+                                        {{ $errors->first('status') }}
                                         </span>
                                     @endif
                                 </div>
@@ -77,7 +80,6 @@
                         </div>
                         <br/>
 
-                        <br/><br/>
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="mt-2" style="float:right">
@@ -86,7 +88,6 @@
                             </div>
                         </div>
                     </div>
-                    
                 </form>
             </div>
         </div>
@@ -109,35 +110,6 @@
             imagePreview.src = "";
         }
     }
-
-    //  function generateSKU() {
-    //     let name = document.querySelector("input[name='name']").value.trim();
-    //     let part1 = name.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toUpperCase();
-    //     let part2 = Math.floor(1000 + Math.random() * 9000);
-    //     // let sku = 'pattern-' + part1 + "-" + part2;
-    //     let rows = $("#items-container .item-row");
-    //     // let sku = part1 + "-" + rows.length ;
-    //     let sku = part1 ;
-    //     let skuInput = document.getElementById("sku");
-    //     if (!skuInput.dataset.edited || skuInput.value === "") {
-    //         skuInput.value = sku;
-    //     }
-    // }
-
-    // Attach auto-generate on typing (name, phone, address)
-    // document.querySelector("input[name='name']").addEventListener("input", function() {
-    //     let skuInput = document.getElementById("sku");
-    //     if (!skuInput.dataset.edited) {
-    //         generateSKU();
-    //     }
-    // });
-
-    // // Mark as manually edited when user types in SKU
-    // document.getElementById("sku").addEventListener("input", function() {
-    //     this.dataset.edited = true;
-    // });
-
-
 </script>
 
 @endsection

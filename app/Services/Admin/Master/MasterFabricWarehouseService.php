@@ -8,6 +8,8 @@ use App\Models\MasterFabricWarehouse;
 use App\Http\DataTable\Admin\Master\MasterFabricWarehouseDataTable as DataTable;
 
 class MasterFabricWarehouseService {
+    protected $datatable;
+    protected $warehouse;
     public function __construct(
         DataTable $datatable,
         MasterFabricWarehouse $warehouse
@@ -25,41 +27,36 @@ class MasterFabricWarehouseService {
     }
 
     public function store(Request $request){
-        // if($request->file('image')){
-        //     $image = $request->file('image');
-        //     $extImage = $image->getClientOriginalExtension();
-        //     $imgName = "service-".rand()."_".time().".".$extImage;
-        //     $destinationPath = public_path().'/assets/services';
-        //     $image->move($destinationPath, $imgName);
-        // }
         $save_data = new MasterFabricWarehouse;
         $save_data->cutting_master_name = $request->cutting_master_name;
-        $save_data->sku = $request->sku;
+        $save_data->sku = NULL;
         $save_data->address = $request->address;
-        $save_data->status = 1;
+        $save_data->status = $request->status;
         $save_data->save();
         return true;
     }
 
     public function edit(Request $request){
-        $data = MasterFabricWarehouse::where('id',$request->id)->first();
+        $data = $this->warehouse->where('id',$request->id)->first();
         return $data;
     }
     public function update(Request $request){
-        $update_data = MasterFabricWarehouse::find($request->id);
+        $update_data = $this->warehouse->find($request->id);
         $update_data->cutting_master_name = $request->cutting_master_name;
+        $update_data->sku = NULL;
         $update_data->address = $request->address;
+        $update_data->status = $request->status;
         $update_data->save();
         return true;
     }
 
     public function delete(Request $request){
-        $data = MasterFabricWarehouse::where('id',$request->id)->update([
-            'status' => 0,
+        $data = $this->warehouse->where('id',$request->id)->update([
+            'status' => 3,
         ]);
         return $data;
     }
     public function getMasterWarehouse(){
-        return MasterFabricWarehouse::where('status',1)->get();
+        return $this->warehouse->where('status',1)->get();
     }
 }

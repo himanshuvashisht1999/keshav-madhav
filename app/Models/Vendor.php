@@ -19,6 +19,7 @@ class Vendor extends Model
         'phone', 
         'email', 
         'address',
+        'balance',
         'items',
         'status',
         'created_at',

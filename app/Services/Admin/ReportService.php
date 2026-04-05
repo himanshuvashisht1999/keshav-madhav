@@ -1202,4 +1202,412 @@ class ReportService
         return $data;
     }
 
+    public function unitAssignments(Request $request)
+    {
+        $assignments = [];
+        $type = '';
+        $unitId = $request->get('unit_id');
+        $stageId = $request->get('stage_id');
+        $view = $request->get('view', 'open') === 'closed' ? 'closed' : 'open';
+
+        $lotNo = $request->get('lot_no');
+        $orderNo = $request->get('order_no');
+
+        $isCutting = $stageId == 3;
+        $isPacking = $stageId == 11;
+        $canCloseTasks = $isCutting || $isPacking;
+
+
+        if ($unitId) {
+            $selectedUnit = \App\Models\StageMasterUnit::find($unitId);
+            $unitIds = [$unitId];
+            if ($selectedUnit) {
+                $unitIds = \App\Models\StageMasterUnit::where('name', $selectedUnit->name)
+                    ->where('master_stage_id', $selectedUnit->master_stage_id)
+                    ->pluck('id')
+                    ->toArray();
+            }
+        }
+
+        if ($stageId == 3) {
+            $type = 'cutting';
+
+            $query = OrderProductSet::with(['orderMain.customer', 'fabric', 'colors', 'master_design_pattern', 'stage_master_unit'])
+                ->orderBy('created_at', 'desc');
+
+            if ($unitId) {
+                $query->whereIn('stage_master_unit_id', $unitIds);
+            } else {
+                $query->whereHas('stage_master_unit', function ($q) {
+                    $q->where('master_stage_id', 3);
+                });
+            }
+
+            if ($lotNo) {
+                $query->where('design_number', 'like', '%' . $lotNo . '%');
+            }
+
+            if ($orderNo) {
+                $query->whereHas('orderMain', function ($q) use ($orderNo) {
+                    $q->where('sku', 'like', '%' . $orderNo . '%');
+                });
+            }
+
+            $sets = $query->get();
+
+            foreach ($sets as $item) {
+                $timeTracking = OrderStageWiseTimeTracking::where('lot_no', $item->design_number)->first();
+                $eta = $timeTracking ? ($timeTracking->stage_id_3 ? \Carbon\Carbon::parse($timeTracking->stage_id_3) : null) : null;
+
+                $assignedQty = $item->total_quantity;
+                $pendingQty = (int) $item->remain_total_quantity;
+                $isClosed = $item->is_closed_for_unit == 1;
+
+                // Status Logic
+                if ($isClosed || $pendingQty <= 0) {
+                    $item->status_text = 'Done';
+                    $item->status_class = 'success';
+                    $endTime = $item->updated_at;
+                    if ($eta && $endTime->gt($eta)) {
+                        $item->status_text = 'Delayed Done';
+                        $item->status_class = 'danger';
+                    }
+                } elseif ($eta && now()->gt($eta)) {
+                    $item->status_text = 'Delayed';
+                    $item->status_class = 'danger';
+                } else {
+                    $item->status_text = 'Pending';
+                    $item->status_class = 'warning';
+                }
+
+                if ($view === 'closed' && !($item->status_text === 'Done' || $item->status_text === 'Delayed Done')) {
+                    continue;
+                }
+                if ($view === 'open' && ($item->status_text === 'Done' || $item->status_text === 'Delayed Done')) {
+                    continue;
+                }
+
+                $item->start_time = $item->created_at;
+                $item->end_time = ($isClosed || $pendingQty <= 0) ? $item->updated_at : null;
+                $item->estimated_time = $eta;
+                $item->assigned_qty = $assignedQty;
+                $item->pending_qty = $pendingQty;
+                $assignments[] = $item;
+            }
+
+        } elseif ($stageId) {
+            $type = 'other';
+
+            $ass1Query = \App\Models\OrderStageTransaction::with(['from_stage', 'to_stage', 'getFromUnitMaster', 'getToUnitMaster']);
+            $ass2Query = \App\Models\OrderPrintingStageTransaction::with(['from_stage', 'to_stage', 'getFromUnitMaster', 'getToUnitMaster']);
+            $ass3Query = \App\Models\OrderPrintingToStichingTransaction::with(['from_stage', 'to_stage', 'getFromUnitMaster', 'getToUnitMaster']);
+
+            $stageFilter = function ($q) use ($stageId) {
+                $q->where('to_stage_id', $stageId);
+            };
+
+            if ($unitId) {
+                $ass1Query->whereIn('sub_stage_id_to', $unitIds);
+                $ass2Query->whereIn('sub_stage_id_to', $unitIds);
+                $ass3Query->whereIn('sub_stage_id_to', $unitIds);
+            } else {
+                $ass1Query->where($stageFilter);
+                $ass2Query->where($stageFilter);
+                $ass3Query->where($stageFilter);
+            }
+
+            if ($lotNo) {
+                $ass1Query->where('lot_no', 'like', '%' . $lotNo . '%');
+                $ass2Query->where('lot_no', 'like', '%' . $lotNo . '%');
+                $ass3Query->where('lot_no', 'like', '%' . $lotNo . '%');
+            }
+
+            if ($orderNo) {
+                $orderFilter = function ($q) use ($orderNo) {
+                    $q->where('sku', 'like', '%' . $orderNo . '%')
+                        ->orWhereHas('orderProduct.orderMain', function ($sq) use ($orderNo) {
+                            $sq->where('sku', 'like', '%' . $orderNo . '%');
+                        });
+                };
+                $ass1Query->where($orderFilter);
+                $ass2Query->where($orderFilter);
+                $ass3Query->where($orderFilter);
+            }
+
+            $results1 = $ass1Query->get()->map(function ($item) {
+                $item->transaction_type = 'stage';
+                return $item;
+            });
+            $results2 = $ass2Query->get()->map(function ($item) {
+                $item->transaction_type = 'printing';
+                return $item;
+            });
+            $results3 = $ass3Query->get()->map(function ($item) {
+                $item->transaction_type = 'printing_to_stitching';
+                return $item;
+            });
+
+            $allTransactions = $results1->merge($results2)->merge($results3);
+
+            foreach ($allTransactions as $item) {
+                $t_stage_id = $item->to_stage_id;
+                $column_namevar = 'stage_id_' . $t_stage_id;
+                $timeTracking = OrderStageWiseTimeTracking::where('lot_no', $item->lot_no)->first();
+                $eta = $timeTracking && isset($timeTracking->$column_namevar) ? \Carbon\Carbon::parse($timeTracking->$column_namevar) : null;
+
+                $assignedQty = $item->quantity;
+                $pendingQty = (int) $item->remaining_quantity;
+                $isClosed = $item->is_closed_for_unit == 1;
+
+                // Status Logic
+                if ($isClosed || $pendingQty <= 0) {
+                    $item->status_text = 'Done';
+                    $item->status_class = 'success';
+                    $endTime = $item->updated_at;
+                    if ($eta && $endTime->gt($eta)) {
+                        $item->status_text = 'Delayed Done';
+                        $item->status_class = 'danger';
+                    }
+                } elseif ($eta && now()->gt($eta)) {
+                    $item->status_text = 'Delayed';
+                    $item->status_class = 'danger';
+                } else {
+                    $item->status_text = 'Pending';
+                    $item->status_class = 'warning';
+                }
+
+                if ($view === 'closed' && !($item->status_text === 'Done' || $item->status_text === 'Delayed Done')) {
+                    continue;
+                }
+                if ($view === 'open' && ($item->status_text === 'Done' || $item->status_text === 'Delayed Done')) {
+                    continue;
+                }
+
+                $item->start_time = $item->created_at;
+                $item->end_time = ($isClosed || $pendingQty <= 0) ? $item->updated_at : null;
+                $item->estimated_time = $eta;
+                $item->assigned_qty = $assignedQty;
+                $item->pending_qty = $pendingQty;
+                $assignments[] = $item;
+            }
+            $assignments = collect($assignments)->sortByDesc('created_at');
+        } else {
+            $type = 'none';
+        }
+
+        $stages = \App\Models\MasterProductStage::where('status', 1)->orderBy('sequence', 'asc')->get();
+        // Return only unit persons for the selected stage, or all if none
+        $unitsQuery = \App\Models\StageMasterUnit::where('status', 1);
+        if ($stageId) {
+            $unitsQuery->where('master_stage_id', $stageId);
+        }
+        $units = $unitsQuery->get()->unique('name');
+
+        return [
+            'assignments' => collect($assignments),
+            'type' => $type,
+            'view' => $view,
+            'canCloseTasks' => $canCloseTasks,
+            'stages' => $stages,
+            'units' => $units,
+            'selectedStage' => $stageId,
+            'selectedUnit' => $unitId,
+            'lotNo' => $lotNo,
+            'orderNo' => $orderNo
+        ];
+    }
+
+    public function closeUnitAssignment($type, $id)
+    {
+        $record = $this->findAssignmentRecordForAdmin($type, $id);
+        if ($record) {
+            $record->is_closed_for_unit = 1;
+            $record->save();
+            return true;
+        }
+        return false;
+    }
+
+    public function reopenUnitAssignment($type, $id)
+    {
+        $record = $this->findAssignmentRecordForAdmin($type, $id);
+        if ($record) {
+            $record->is_closed_for_unit = 0;
+            $record->save();
+            return true;
+        }
+        return false;
+    }
+
+    protected function findAssignmentRecordForAdmin(string $type, int $id)
+    {
+        switch ($type) {
+            case 'cutting':
+                return OrderProductSet::find($id);
+            case 'stage':
+                return \App\Models\OrderStageTransaction::find($id);
+            case 'printing':
+                return \App\Models\OrderPrintingStageTransaction::find($id);
+            case 'printing_to_stitching':
+                return \App\Models\OrderPrintingToStichingTransaction::find($id);
+            default:
+                return null;
+        }
+    }
+
+    public function designWip(Request $request)
+    {
+        $designNo = $request->get('design_no');
+        $colorId = $request->get('color_id');
+        $patternId = $request->get('pattern_id');
+        $fittingId = $request->get('fitting_id');
+
+        $query = \App\Models\OrderProductSet::with(['colors', 'master_design_pattern', 'master_product_fitting', 'stage_master_unit']);
+
+        if ($designNo) {
+            $query->where('design_number', 'like', '%' . $designNo . '%');
+        }
+        if ($colorId) {
+            $query->where('color_id', $colorId);
+        }
+        if ($patternId) {
+            $query->where('master_design_pattern_id', $patternId);
+        }
+        if ($fittingId) {
+            $query->where('master_product_fitting_id', $fittingId);
+        }
+
+        $perPage = 10;
+        $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+
+        // Fetch just the distinct design numbers to paginate them, rather than fetching all product sets
+        $baseQuery = clone $query;
+        $filteredDesignNumbers = $baseQuery->select('design_number')->distinct()->pluck('design_number');
+
+        $total = $filteredDesignNumbers->count();
+        $paginatedDesignNumbers = $filteredDesignNumbers->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $setsQuery = clone $query;
+        $sets = $setsQuery->whereIn('design_number', $paginatedDesignNumbers)->get()->groupBy('design_number');
+
+        $reportData = [];
+
+        foreach ($paginatedDesignNumbers as $designNumber) {
+            if (!$sets->has($designNumber))
+                continue;
+            $designSets = $sets->get($designNumber);
+
+            $firstSet = $designSets->first();
+            $itemBase = [
+                'design_no' => $designNumber,
+                'color' => $firstSet->colors->name ?? '-',
+                'pattern' => $firstSet->master_design_pattern->name ?? '-',
+                'fitting' => $firstSet->master_product_fitting->name ?? '-',
+            ];
+
+            // 1. Cutting Tasks
+            $cuttingPending = $designSets->sum('remain_total_quantity');
+            if ($cuttingPending > 0) {
+                // Group by unit person
+                $groupedCutting = $designSets->where('remain_total_quantity', '>', 0)->groupBy('stage_master_unit_id');
+                foreach ($groupedCutting as $unitId => $unitSets) {
+                    $qty = $unitSets->sum('remain_total_quantity');
+                    $unitName = $unitSets->first()->stage_master_unit->name ?? 'Unknown Unit';
+                    $itemStage = 'Cutting';
+                    if ($request->filled('stage') && $request->stage !== $itemStage) {
+                        continue;
+                    }
+
+                    $reportData[] = array_merge($itemBase, [
+                        'stage' => $itemStage,
+                        'location' => $unitName,
+                        'quantity' => $qty
+                    ]);
+                }
+            }
+
+            // 2. Other Stages
+            $stageTransactions = \App\Models\OrderStageTransaction::with(['to_stage', 'getToUnitMaster'])
+                ->where('lot_no', $designNumber)
+                ->where('remaining_quantity', '>', 0)
+                ->get();
+            $printingTransactions = \App\Models\OrderPrintingStageTransaction::with(['to_stage', 'getToUnitMaster'])
+                ->where('lot_no', $designNumber)
+                ->where('remaining_quantity', '>', 0)
+                ->get();
+            $printToStitchTransactions = \App\Models\OrderPrintingToStichingTransaction::with(['to_stage', 'getToUnitMaster'])
+                ->where('lot_no', $designNumber)
+                ->where('remaining_quantity', '>', 0)
+                ->get();
+
+            $allTransactions = $stageTransactions->concat($printingTransactions)->concat($printToStitchTransactions);
+
+            // Group by Stage AND Unit Person
+            $groupedTransactions = $allTransactions->groupBy(function ($item) {
+                return $item->to_stage_id . '_' . $item->sub_stage_id_to;
+            });
+
+            foreach ($groupedTransactions as $groupKey => $transGroup) {
+                $firstTrans = $transGroup->first();
+                $qty = $transGroup->sum('remaining_quantity');
+                $stageName = $firstTrans->to_stage->name ?? 'Unknown Stage';
+                $unitName = $firstTrans->getToUnitMaster->name ?? 'Unknown Unit';
+
+                $itemStage = $stageName;
+                if ($request->filled('stage') && $request->stage !== $itemStage) {
+                    continue;
+                }
+
+                $reportData[] = array_merge($itemBase, [
+                    'stage' => $itemStage,
+                    'location' => $unitName,
+                    'quantity' => $qty
+                ]);
+            }
+
+            // 3. Domestic Inventory
+            $inventoryQty = \App\Models\DomesticInventory::where('design_number', $designNumber)
+                ->sum('quantity');
+
+            if ($inventoryQty > 0) {
+                $itemStage = 'Inventory';
+                if ($request->filled('stage') && $request->stage !== $itemStage) {
+                    continue;
+                }
+
+                $reportData[] = array_merge($itemBase, [
+                    'stage' => $itemStage,
+                    'location' => 'Main Warehouse',
+                    'quantity' => $inventoryQty
+                ]);
+            }
+        }
+
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            collect($reportData),
+            $total,
+            $perPage,
+            $page,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+        );
+        $paginator->appends($request->all());
+
+        $colors = \App\Models\MasterColor::where('status', 1)->get();
+        $patterns = \App\Models\MasterDesignPattern::where('status', 1)->get();
+        $fittings = \App\Models\MasterProductFitting::where('status', 1)->get();
+
+        // Dynamically get available stages for filter
+        $stages = collect(['Cutting', 'Inventory']);
+        $masterStages = \App\Models\MasterProductStage::where('status', 1)->pluck('name');
+        $stages = $stages->concat($masterStages)->unique()->sort()->values();
+
+        return [
+            'reportData' => $paginator,
+            'colors' => $colors,
+            'patterns' => $patterns,
+            'fittings' => $fittings,
+            'stages' => $stages,
+            'filters' => $request->all(),
+        ];
+    }
 }

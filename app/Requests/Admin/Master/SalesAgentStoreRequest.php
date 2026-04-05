@@ -26,9 +26,11 @@ class SalesAgentStoreRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:sales_agents,email',
-            'phone' => 'nullable|string|max:20',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'password' => 'required|string|min:6',
             'address' => 'nullable|string',
+            'brand_discounts' => 'nullable|array',
+            'brand_discounts.*' => 'nullable|numeric|min:0|max:100',
         ];
     }
 }

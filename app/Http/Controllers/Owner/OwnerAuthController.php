@@ -72,6 +72,10 @@ class OwnerAuthController extends Controller
         });
         $data['total_payable'] = $fabricReceipts->sum('balance_amount');
 
+        // Transacted Totals (matching Admin Payment Dashboard)
+        $data['total_received'] = \App\Models\Payment::where('payment_type', 'received')->sum('amount');
+        $data['total_paid'] = \App\Models\Payment::where('payment_type', 'paid')->sum('amount');
+
         return view('owner.dashboard', $data);
     }
 
@@ -117,7 +121,7 @@ class OwnerAuthController extends Controller
     /* Detailed Reports - Mirroring Admin */
     public function orderSummary(Request $request)
     {
-        $salesOrders = OrderMain::with(['customer', 'orderProductSets'])
+        $salesOrders = OrderMain::with(['customer', 'OrderProductSets'])
             ->when($request->filled('order_no'), function ($q) use ($request) {
                 $q->where('sku', 'like', '%' . $request->order_no . '%');
             })
@@ -129,16 +133,16 @@ class OwnerAuthController extends Controller
             ->withQueryString();
 
         $salesOrders->getCollection()->transform(function ($order) {
-            $total_pcs = $order->orderProductSets->sum('no_of_pcs');
+            $stats = getOrderDispatchData($order->id);
             return [
                 'id' => $order->id,
                 'order_no' => $order->sku,
                 'created_at' => $order->created_at,
                 'customer' => $order->customer->name ?? 'N/A',
                 'status' => $order->status,
-                'total_pcs' => $total_pcs,
-                'scanned_pcs' => 0, // Current logic doesn't summarize scanned_pcs easily at this level
-                'set_type' => $order->set_type ?? 'N/A',
+                'order_type' => $order->order_type ?? '-',
+                'total_pcs' => $stats['total'],
+                'scanned_pcs' => $stats['packed'],
                 'lots' => [] // Optional: if we need lot count
             ];
         });
@@ -199,5 +203,18 @@ class OwnerAuthController extends Controller
         }
 
         return view('owner.reports.lot_details', $response);
+    }
+
+    public function lotDetailsPdf(Request $request)
+    {
+        $response['data'] = $this->reportService->lotDetails($request->lot_no);
+        $response['master_stages'] = $this->reportService->master_stages();
+
+        if (!$response['data']) {
+            return redirect()->back()->with('error', 'Lot not found');
+        }
+
+        $pdf = PDF::loadView('owner.reports.lot_details_pdf', $response)->setPaper('A4', 'portrait');
+        return $pdf->download('lot-details-' . $request->lot_no . '.pdf');
     }
 }

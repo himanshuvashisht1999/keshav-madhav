@@ -1,0 +1,69 @@
+{
+    "storerooms": [
+        {
+            "id": 1,
+            "name": "Finished Goods A",
+            "description": "Main storage for ready-to-dispatch jeans.",
+            "status": 1,
+            "created_at": "2026-02-24 14:46:30",
+            "updated_at": "2026-02-24 14:46:30"
+        }
+    ],
+    "racks": [
+        {
+            "id": 1,
+            "storeroom_id": 1,
+            "name": "A-1",
+            "capacity": 189,
+            "status": 1,
+            "created_at": "2026-02-24 14:46:30",
+            "updated_at": "2026-02-24 14:46:30"
+        }
+    ],
+    "cartons": [
+        {
+            "id": 1,
+            "packing_main_id": 1,
+            "carton_no": "1",
+            "rack_id": 2,
+            "barcode": null,
+            "weight": null,
+            "dimensions": null,
+            "note": null,
+            "created_at": "2026-03-16 16:20:45",
+            "updated_at": "2026-03-16 16:21:16",
+            "status": 3
+        }
+    ],
+    "inventory_sample": [
+        {
+            "id": 511,
+            "order_main_id": 5,
+            "packing_main_id": 1,
+            "packing_carton_id": 1,
+            "packing_box_id": 1,
+            "product_id": 5,
+            "product_name": "Super 2",
+            "color_id": 1,
+            "fitting_id": 1,
+            "pattern_id": 1,
+            "color_name": "Indigo Blue",
+            "size_set_id": 12,
+            "size_set_name": "14-22",
+            "design_number": "DSGN-005",
+            "fitting_name": "Slim Fit",
+            "pattern_name": "Solid",
+            "quantity": 7,
+            "price": null,
+            "mrp": null,
+            "selling_price": null,
+            "box_no": "BX-260316-0001",
+            "carton_no": "1",
+            "barcode": "BX-260316-0001",
+            "qrcode": "BX-260316-0001",
+            "status": 1,
+            "created_at": "2026-03-16 16:21:16",
+            "updated_at": "2026-03-16 16:21:16"
+        }
+    ]
+}

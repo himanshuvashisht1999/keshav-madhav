@@ -8,6 +8,8 @@ use App\Models\MasterColor;
 use App\Http\DataTable\Admin\Master\MasterColorsDataTable as DataTable;
 
 class MasterColorsService {
+    protected $datatable;
+    protected $masterColor;
     public function __construct(
         DataTable $datatable,
         MasterColor $masterColor
@@ -34,8 +36,8 @@ class MasterColorsService {
         // }
         $save_data = new MasterColor;
         $save_data->name = $request->name;
-        $save_data->sku = $request->sku;
-        $save_data->status = 1;
+        $save_data->sku = null;
+        $save_data->status = $request->status ?? 1;
         $save_data->save();
         return true;
     }
@@ -62,14 +64,15 @@ class MasterColorsService {
         //     $update_data->image = $imgName;
         // }
         $update_data->name = $request->name;
-        // $update_data->sku = $request->sku;
+        $update_data->sku = null;
+        $update_data->status = $request->status;
         $update_data->save();
         return true;
     }
 
     public function delete(Request $request){
         $data = MasterColor::where('id',$request->id)->update([
-            'status' => 0,
+            'status' => 3,
         ]);
         return $data;
     }

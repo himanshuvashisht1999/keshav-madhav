@@ -8,6 +8,8 @@ use App\Models\MasterProductFitting;
 use App\Http\DataTable\Admin\Master\MasterFittingDataTable as DataTable;
 
 class MasterFittingService {
+    protected $datatable;
+    protected $MasterProductFitting;
     public function __construct(
         DataTable $datatable,
         MasterProductFitting $MasterProductFitting
@@ -28,8 +30,8 @@ class MasterFittingService {
 
         $save_data = new MasterProductFitting;
         $save_data->name = $request->name;
-        $save_data->sku = $request->sku;
-        $save_data->status = 1;
+        $save_data->sku = null;
+        $save_data->status = $request->status ?? 1;
         $save_data->save();
         return true;
     }
@@ -56,14 +58,15 @@ class MasterFittingService {
         //     $update_data->image = $imgName;
         // }
         $update_data->name = $request->name;
-        // $update_data->sku = $request->sku;
+        $update_data->sku = null;
+        $update_data->status = $request->status;
         $update_data->save();
         return true;
     }
 
     public function delete(Request $request){
         $data = MasterProductFitting::where('id',$request->id)->update([
-            'status' => 0,
+            'status' => 3,
         ]);
         return $data;
     }

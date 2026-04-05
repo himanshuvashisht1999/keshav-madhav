@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class FabricReceipt extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackCreator;
     protected $table = 'fabric_receipts';
     protected $fillable = [
         'id',
@@ -16,6 +16,7 @@ class FabricReceipt extends Model
         'project_id',
         'sku',
         'shipment_id',
+        'bill_no',
         'vendor_id',
         'truck_number',
         'time',
@@ -28,7 +29,10 @@ class FabricReceipt extends Model
         'gst_amount',
         'gst_percentage',
         'total_amount',
+        'other_charges',
+        'total_meter',
         'status',
+        'created_by',
         'created_at',
         'updated_at'
     ];

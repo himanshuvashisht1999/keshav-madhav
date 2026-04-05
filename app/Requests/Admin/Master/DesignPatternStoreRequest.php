@@ -21,9 +21,12 @@ class DesignPatternStoreRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'name' => 'required',
-            'sku'    => 'required|unique:master_patterns,sku',
-            // 'status' =>'required',
+            'name' => [
+                'required',
+                \Illuminate\Validation\Rule::unique('master_design_patterns', 'name')->whereNot('status', 3)
+            ],
+            'sku'    => 'nullable',
+            'status' =>'required',
         ];
     }
 

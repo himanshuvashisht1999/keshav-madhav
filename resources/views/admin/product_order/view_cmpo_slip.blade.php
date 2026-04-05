@@ -139,27 +139,68 @@
                         <th>Design No</th>
                         <th>Color</th>
                         <th>Size</th>
-                        <th>PCS</th>
+                        <th>QTY (Per Size)</th>
                     </tr>
                 </thead>
                 <tbody>
+                    @php 
+                        $totalHeaderPcs = 0; 
+                    @endphp
                     @foreach ($sizeData as $row)
+                        @php $totalHeaderPcs += $row['pcs']; @endphp
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ $row['design_no'] }} ({{ $header['fitting'] }})</td>
+                            <td>{{ $row['design_no'] }}</td>
                             <td>{{ $row['color'] }}</td>
                             <td>{{ $row['size'] }}</td>
-                            <td>{{ $row['pcs'] }}</td>
+                            <td>{{ number_format($row['pcs'], 0) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
                     <tr>
                         <th colspan="4" style="text-align:right;">Total</th>
-                        <th>{{ $header['total_pcs'] }}</th>
+                        <th>{{ number_format($totalHeaderPcs, 0) }}</th>
                     </tr>
                 </tfoot>
             </table>
+
+            <!-- ================= ASSIGNMENTS HISTORY ================= -->
+            @if(count($assignments) > 0)
+                <div class="section-title">
+                    Assignments History
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>SKU</th>
+                            <th>Cutting Master</th>
+                            <th>Assigned QTY</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($assignments as $assignment)
+                            <tr>
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $assignment->sku }}</td>
+                                <td>{{ $assignment->cutting_master->name ?? '-' }} ({{ $assignment->cutting_master->masterFabricWarehouse->cutting_master_name ?? '-' }})</td>
+                                <td>{{ $assignment->quantity }}</td>
+                                <td>{{ $assignment->created_at->format('d-m-Y') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3" style="text-align:right;">Total Assigned</th>
+                            <th>{{ $assignments->sum('quantity') }}</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            @endif
 
             <!-- ================= SIGNATURE ================= -->
             <table class="signature-table" width="100%">

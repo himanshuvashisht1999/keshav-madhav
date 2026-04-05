@@ -23,14 +23,8 @@ class FabricStoreRequest extends FormRequest{
         return [
             'name' => 'required',
             'vendor_id' => 'required',
-            // 'sku'    => 'required|unique:fabrics,sku',
-            // 'dye_id' => 'required',
-            // 'width_id' => 'required',
-            // 'weave_type_id' => 'required',
-            // 'gsm_id' => 'required',
-            // 'composition_id' => 'required',
-            // 'image' => 'required',
-            // 'status' =>'required',
+            'sku'    => 'nullable',
+            'status' =>'required',
         ];
     }
 

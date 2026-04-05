@@ -21,12 +21,14 @@ class VendorStoreRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'name' => 'required',
-            // 'phone' => 'required|unique:vendors,phone',
-            // 'email' => 'required|unique:vendors,email',
-            // 'image' => 'required',
+            'name' => [
+                'required',
+                \Illuminate\Validation\Rule::unique('vendors', 'name')->whereNot('status', 3)
+            ],
             'status' =>'required',
-            'sku'    => 'required|unique:vendors,sku',
+            'sku'    => 'nullable',
+            'balance' => 'nullable|numeric',
+            'type' => 'required|in:Credit,Debit',
         ];
     }
 

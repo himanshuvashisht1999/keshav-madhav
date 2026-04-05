@@ -36,10 +36,17 @@
                                             <input type="text" id="barcode_input"
                                                 class="form-control form-control-lg border-left-0"
                                                 placeholder="Ready for input..." autofocus autocomplete="off">
+                                            <div class="input-group-append">
+                                                <button class="btn btn-primary px-4" type="button" id="submit_barcode">
+                                                    <i class="fas fa-search-plus mr-1"></i> SCAN
+                                                </button>
+                                            </div>
                                         </div>
                                         <small class="text-muted mt-2 d-block">
-                                            <i class="fas fa-info-circle mr-1"></i> Field auto-focuses; simply scan or type
-                                            and press Enter.
+                                            <i class="fas fa-info-circle mr-1 text-primary"></i>
+                                            Scan a barcode or QR code. Each scan assigns <strong>one available box</strong>
+                                            of that type from inventory.
+                                            The same barcode/QR applies to all boxes of the same design, color &amp; size.
                                         </small>
                                     </div>
                                     <div class="col-md-4">
@@ -81,7 +88,7 @@
                                                         <div class="font-weight-bold">{{ $group['product_name'] }}</div>
                                                         <small class="text-muted">
                                                             D: {{ $group['design_number'] }} | C: {{ $group['color_name'] }} |
-                                                            S: {{ $group['size_set_name'] }}
+                                                            S: {{ $group['size_set_name'] }} | P: {{ $group['pattern_name'] }} | F: {{ $group['fitting_name'] }}
                                                         </small>
                                                     </td>
                                                     <td class="vertical-align-middle">
@@ -121,7 +128,7 @@
                                     onsubmit="return confirm('Ensure all items are scanned. Proceed?')">
                                     @csrf
                                     <button type="submit" class="btn btn-success btn-lg px-5 shadow rounded-pill">
-                                        <i class="fas fa-truck mr-2"></i> COMPLETE DISPATCH
+                                        <i class="fas fa-truck mr-2"></i> DISPATCH SCANNED ITEMS
                                     </button>
                                 </form>
                             </div>
@@ -138,7 +145,7 @@
                                 <div id="scan_history" class="list-group list-group-flush"
                                     style="max-height: 600px; overflow-y: auto;">
                                     @forelse($scannedBoxes as $box)
-                                        <div class="list-group-item" id="history_{{ $box->packing_box_id }}">
+                                        <div class="list-group-item" id="history_{{ $box->box_no }}">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div>
                                                     <div class="font-weight-bold">Box #{{ $box->box_no }}</div>
@@ -147,7 +154,7 @@
                                                         {{ $box->quantity }}</small>
                                                 </div>
                                                 <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
-                                                    data-id="{{ $box->packing_box_id }}" title="Undo this scan">
+                                                    data-id="{{ $box->box_no }}" title="Undo this scan">
                                                     <i class="fas fa-undo"></i>
                                                 </button>
                                             </div>
@@ -207,25 +214,82 @@
             // Auto-focus on load
             barcodeInput.focus();
 
-            // Refocus if focus is lost (except if scanning is already happening)
+            // Aggressive refocus and global input capture
+            // If user types/scans anywhere on the page, send it to the input field
+            $(document).on('keydown', function (e) {
+                console.log('Global KeyDown:', e.key, 'code:', e.which);
+
+                // Ignore if we're already in an input field (could be another field we added later)
+                if ($(e.target).is('input, textarea, select')) return;
+
+                // Ignore function keys, modifier keys, etc.
+                if (e.ctrlKey || e.altKey || e.metaKey || e.which < 32 || e.which > 126) return;
+
+                console.log('Redirecting focus to barcode input...');
+                barcodeInput.focus();
+            });
+
+            // Refocus if focus is lost on click
             $(document).on('click', function (e) {
-                if (!$(e.target).closest('.input-group').length) {
+                if (!$(e.target).closest('.input-group, .undo-btn, button, a').length) {
                     barcodeInput.focus();
                 }
             });
 
-            barcodeInput.on('keypress', function (e) {
-                if (e.which == 13) { // Enter key
-                    const barcode = $(this).val().trim();
-                    if (barcode) {
-                        processScan(barcode);
+            let scanTimer;
+            barcodeInput.on('input', function () {
+                const val = $(this).val().trim();
+                console.log('Input Received:', val);
+
+                // Visual feedback that input is being received
+                $('.input-group-text i').addClass('fa-spin text-warning').removeClass('text-primary');
+                setTimeout(() => {
+                    $('.input-group-text i').removeClass('fa-spin text-warning').addClass('text-primary');
+                }, 100);
+
+                // Auto-submit after 400ms of no typing (useful for scanners that don't send Enter)
+                clearTimeout(scanTimer);
+                scanTimer = setTimeout(function () {
+                    if (val.length >= 4) { // Trigger only if length is 4 or more
+                        console.log('Auto-submitting due to inactivity timeout (400ms)...');
+                        triggerScan();
                     }
-                    $(this).val('');
+                }, 400);
+            });
+
+            barcodeInput.on('keydown', function (e) {
+                console.log('Input KeyDown:', e.key, 'code:', e.which);
+                // Handle Enter (13), Line Feed (10), or Tab (9)
+                if (e.which == 13 || e.which == 10 || e.which == 9) {
+                    e.preventDefault();
+                    console.log('Manual Submit Key Detected:', e.key);
+                    clearTimeout(scanTimer);
+                    triggerScan();
                 }
             });
 
+            $('#submit_barcode').on('click', function () {
+                console.log('Scan Button Clicked');
+                clearTimeout(scanTimer);
+                triggerScan();
+            });
+
+            function triggerScan() {
+                const barcode = barcodeInput.val().trim();
+                console.log('--- TRIGGERING SCAN ---');
+                console.log('Raw Val:', barcode);
+                if (barcode) {
+                    processScan(barcode);
+                } else {
+                    console.warn('Scan canceled: Input is empty');
+                }
+                barcodeInput.val('');
+                barcodeInput.focus();
+            }
+
             function processScan(barcode) {
                 setLoadingStatus(barcode);
+                console.log('AJAX Start: processing barcode', barcode);
 
                 $.ajax({
                     url: "{{ route('admin.agent-orders.process-scan', $order->id) }}",
@@ -235,17 +299,19 @@
                         barcode: barcode
                     },
                     success: function (response) {
+                        console.log('AJAX Success:', response);
                         barcodeInput.focus(); // Ensure focus after AJAX
                         if (response.success) {
                             setSuccessStatus(response.message);
-                            updateUI(response.variation_key, barcode);
+                            updateUI(response.variation_key, response);
                             playBeep(true);
                         } else {
                             setErrorStatus(response.message);
                             playBeep(false);
                         }
                     },
-                    error: function () {
+                    error: function (xhr) {
+                        console.error('AJAX Error:', xhr.status, xhr.responseText);
                         barcodeInput.focus();
                         setErrorStatus('Server error occurred.');
                         playBeep(false);
@@ -255,7 +321,7 @@
 
             // Remove Scan Logic
             $(document).on('click', '.undo-btn', function () {
-                const boxId = $(this).data('id');
+                const boxNo = $(this).data('id');
                 const btn = $(this);
 
                 if (!confirm('Are you sure you want to remove this scan?')) return;
@@ -267,12 +333,12 @@
                     method: 'POST',
                     data: {
                         _token: "{{ csrf_token() }}",
-                        packing_box_id: boxId
+                        box_no: boxNo
                     },
                     success: function (response) {
                         if (response.success) {
                             setSuccessStatus("Scan removed successfully");
-                            revertUI(response.variation_key, boxId);
+                            revertUI(response.variation_key, boxNo);
                             playBeep(true);
                         } else {
                             setErrorStatus(response.message);
@@ -286,7 +352,7 @@
                 });
             });
 
-            function updateUI(key, barcode) {
+            function updateUI(key, response) {
                 const countSpan = $(`#count_${key}`);
                 const progressBar = $(`#progress_bar_${key}`);
                 const statusIcon = $(`#status_icon_${key}`);
@@ -310,27 +376,33 @@
                     progressBar.addClass('pulse');
                 }
 
-                // Append to history (we don't have all details here, but we can fetch them or just show barcode)
+                // Append to history with box info from response
+                const boxNo = response.box_no || 'N/A';
+                const productName = response.product_name || '';
+                const designNumber = response.design_number || '';
+                const qty = response.quantity || '';
+
                 $('#no_scans_msg').hide();
                 const historyItem = `
-                            <div class="list-group-item animate__animated animate__fadeInDown" id="history_${barcode}">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="font-weight-bold">Box # ${barcode}</div>
-                                        <small class="text-white bg-success px-2 rounded small">Just Scanned</small>
+                                <div class="list-group-item animate__animated animate__fadeInDown" id="history_${boxNo}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="font-weight-bold">Box #${boxNo}</div>
+                                            <small class="text-muted d-block">${productName}</small>
+                                            <small class="text-muted">Design: ${designNumber} | Qty: ${qty}</small>
+                                            <small class="text-white bg-success px-2 rounded">Just Scanned</small>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
+                                            data-id="${boxNo}" title="Undo this scan">
+                                            <i class="fas fa-undo"></i>
+                                        </button>
                                     </div>
-                                    <button type="button" class="btn btn-sm btn-outline-danger undo-btn" 
-                                            data-id="${barcode}" 
-                                            title="Undo this scan">
-                                        <i class="fas fa-undo"></i>
-                                    </button>
                                 </div>
-                            </div>
-                        `;
+                            `;
                 $('#scan_history').prepend(historyItem);
             }
 
-            function revertUI(key, boxId) {
+            function revertUI(key, boxNo) {
                 const countSpan = $(`#count_${key}`);
                 const progressBar = $(`#progress_bar_${key}`);
                 const statusIcon = $(`#status_icon_${key}`);
@@ -351,7 +423,7 @@
                     row.removeClass('bg-light-success');
                 }
 
-                $(`#history_${CSS.escape(boxId)}`).addClass('animate__animated animate__fadeOutRight').fadeOut(function () {
+                $(`#history_${CSS.escape(boxNo)}`).addClass('animate__animated animate__fadeOutRight').fadeOut(function () {
                     $(this).remove();
                     if ($('#scan_history .list-group-item').length === 0) {
                         $('#no_scans_msg').show();
@@ -362,21 +434,21 @@
             function setLoadingStatus(barcode) {
                 scanStatus.removeClass('alert-secondary alert-success alert-danger').addClass('alert-info');
                 scanStatus.html(`
-                                    <div class="text-center">
-                                        <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
-                                        <div>Processing: <strong>${barcode}</strong></div>
-                                    </div>
-                                `);
+                                                <div class="text-center">
+                                                    <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+                                                    <div>Processing: <strong>${barcode}</strong></div>
+                                                </div>
+                                            `);
             }
 
             function setSuccessStatus(message) {
                 scanStatus.removeClass('alert-info alert-danger alert-secondary').addClass('alert-success border-success');
                 scanStatus.html(`
-                                    <div class="text-center animate__animated animate__fadeIn">
-                                        <i class="fas fa-check-circle fa-2x mb-2 text-white"></i>
-                                        <div class="h5 font-weight-bold text-white mb-0">${message}</div>
-                                    </div>
-                                `);
+                                                <div class="text-center animate__animated animate__fadeIn">
+                                                    <i class="fas fa-check-circle fa-2x mb-2 text-white"></i>
+                                                    <div class="h5 font-weight-bold text-white mb-0">${message}</div>
+                                                </div>
+                                            `);
 
                 // Reset status to "Ready" after 3 seconds
                 setTimeout(() => {
@@ -389,21 +461,21 @@
             function setErrorStatus(message) {
                 scanStatus.removeClass('alert-info alert-success alert-secondary').addClass('alert-danger border-danger');
                 scanStatus.html(`
-                                    <div class="text-center animate__animated animate__shakeX">
-                                        <i class="fas fa-exclamation-circle fa-2x mb-2 text-white"></i>
-                                        <div class="h5 font-weight-bold text-white mb-0">${message}</div>
-                                    </div>
-                                `);
+                                                <div class="text-center animate__animated animate__shakeX">
+                                                    <i class="fas fa-exclamation-circle fa-2x mb-2 text-white"></i>
+                                                    <div class="h5 font-weight-bold text-white mb-0">${message}</div>
+                                                </div>
+                                            `);
             }
 
             function resetToReady() {
                 scanStatus.removeClass('alert-success alert-danger alert-info').addClass('alert-secondary border-secondary');
                 scanStatus.html(`
-                                    <div class="text-center">
-                                        <i class="fas fa-qrcode fa-2x mb-2 text-white opacity-50"></i>
-                                        <div class="font-weight-bold text-white">Ready to Scan</div>
-                                    </div>
-                                `);
+                                                <div class="text-center">
+                                                    <i class="fas fa-qrcode fa-2x mb-2 text-white opacity-50"></i>
+                                                    <div class="font-weight-bold text-white">Ready to Scan</div>
+                                                </div>
+                                            `);
             }
 
             function playBeep(success) {

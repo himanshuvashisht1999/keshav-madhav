@@ -23,6 +23,13 @@
         overflow: hidden;
     }
 
+    .sticky-wrapper {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 80px;
+        z-index: 100;
+    }
+
     .image-wrapper img {
         max-width: 100%;
         max-height: 100%;
@@ -107,7 +114,23 @@
                                     </div>
                                    
 
-                                    {{-- STAGE INFO --}}
+                                    {{-- MOVEMENT TYPE & STAGE INFO --}}
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label class="d-block">Movement Type</label>
+                                            <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+                                                <label class="btn btn-outline-primary active w-50">
+                                                    <input type="radio" name="movement_type" value="1" id="type_regular" autocomplete="off" checked> 
+                                                    <i class="fas fa-arrow-right mr-1"></i> Regular
+                                                </label>
+                                                <label class="btn btn-outline-danger w-50">
+                                                    <input type="radio" name="movement_type" value="2" id="type_damage" autocomplete="off"> 
+                                                    <i class="fas fa-undo mr-1"></i> Damage (Return)
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="row">
                                         <div class="col-md-6">
                                             <label>From Stage</label>
@@ -118,7 +141,6 @@
                                         <div class="col-md-6">
                                             <label>To Stage</label>
                                             <select name="to_stage_id" class="form-control select2" id="to_stage_id" required>
-                                                <option value="">Select Stage</option>
                                                 @foreach($slip_data['unit_master_data'] as $unit)
                                                     <option value="{{ $unit['id'] }}">{{ $unit['name'] }} ({{ $unit['master_stage_name'] }})</option>
                                                 @endforeach
@@ -130,7 +152,12 @@
                                 {{-- LOT DETAILS & INVENTORY (Dynamic) --}}
                                 <div id="lotDetailsCard" class="card p-3 border d-none">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h5 class="text-primary mb-0">Lot Inventory Details</h5>
+                                        <div class="d-flex align-items-center">
+                                            <h5 class="text-primary mb-0 mr-3">Lot Inventory Details</h5>
+                                            <button type="button" id="toggleBasicInfo" class="btn btn-xs btn-outline-info">
+                                                <i class="fas fa-eye mr-1"></i> Show Details
+                                            </button>
+                                        </div>
 
                                         <div class="d-flex align-items-center gap-3">
                                             <!-- TOTAL PIECES -->
@@ -150,7 +177,7 @@
                                         </div>
                                     </div>
                                     
-                                    <div id="basicInfo" class="mb-3 p-2 bg-light rounded">
+                                    <div id="basicInfo" class="mb-3 p-2 bg-light rounded" style="display:none;">
                                         <!-- Basic API info here -->
                                     </div>
 
@@ -173,34 +200,49 @@
                                         </tfoot>
                                     </table>
                                 </div>
+
+                                {{-- ACTION BUTTONS --}}
+                                <div class="mt-4 row">
+                                    <input type="hidden" name="is_final" id="is_final_input" value="1">
+                                    <div class="col-md-6 mb-2">
+                                        <button type="submit" class="btn btn-success btn-lg w-100 font-weight-bold" onclick="$('#is_final_input').val(1)">
+                                            <i class="fas fa-check-double mr-1"></i> Final Submission
+                                        </button>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <button type="submit" class="btn btn-outline-success btn-lg w-100 font-weight-bold" onclick="$('#is_final_input').val(0)">
+                                            <i class="fas fa-plus-circle mr-1"></i> Save & Add More
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <p class="text-muted small text-center mt-2">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            <strong>Save & Add More</strong> keeps it pending. 
+                                            <strong>Final Submission</strong> marks it as complete.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
 
                             {{-- RIGHT PANEL (Image) --}}
                             <div class="col-md-5">
-                                <div class="card p-3 border text-center">
-                                    <button type="button"
-                                        class="btn btn-primary btn-sm position-absolute rotate-btn"
-                                        onclick="rotateImage()">
-                                        Rotate ↻
-                                    </button>
-                                    <div class="image-wrapper">
-                                        <img id="slipImage"
-                                            src="{{ asset('assets/production_slips/'.$slip_data['slip_file']) }}" 
-                                            class="slip-image"
-                                            ondblclick="openImageInNewTab(this)">
+                                <div class="sticky-wrapper">
+                                    <div class="card p-3 border text-center">
+                                        <button type="button"
+                                            class="btn btn-primary btn-sm position-absolute rotate-btn"
+                                            onclick="rotateImage()">
+                                            Rotate ↻
+                                        </button>
+                                        <div class="image-wrapper">
+                                            <img id="slipImage"
+                                                src="{{ asset('assets/production_slips/'.$slip_data['slip_file']) }}" 
+                                                class="slip-image"
+                                                ondblclick="openImageInNewTab(this)">
+                                        </div>
                                     </div>
-                                    {{-- <img src="{{ asset('assets/production_slips/'.$slip_data['slip_file']) }}" 
-                                         class="img-fluid rounded shadow-sm" style="max-height: 600px;"> --}}
                                 </div>
-                            </div>
-                        </div>
-
-                        {{-- SUBMIT --}}
-                        <div class="row mt-3">
-                            <div class="col-12 text-right">
-                                <button type="submit" class="btn btn-success btn-lg">Process Slip</button>
-                            </div>
-                        </div>
+                        </div> {{-- End row --}}
 
                         </form>
                     </div>
@@ -229,18 +271,20 @@ $(function(){
         fetchLotDetails();
     });
 
-    // $('#fetchLotBtn').click(function(){
-    //     fetchLotDetails();
-    // }); 
+    // Toggle Movement Type logic
+    $('input[name="movement_type"]').on('change', function(){
+        fetchLotDetails();
+    });
 
     function fetchLotDetails() {
         let lotNo = $('#lot_no_input').val();
         let fromStageId = $('input[name="from_stage_id_ajax"]').val();
+        let movementType = $('input[name="movement_type"]:checked').val();
 
-        if(!lotNo) {
-            alert('Please enter a Lot Number');
-            return;
-        }
+        // if(!lotNo) {
+        //     // alert('Please enter a Lot Number');
+        //     return;
+        // }
 
         $.ajax({
             url: "{{ route('admin.order_digitalization.get-lot-details-for-hand-slip') }}",
@@ -248,60 +292,86 @@ $(function(){
             data: {
                 _token: "{{ csrf_token() }}",
                 lot_no: lotNo,
-                from_stage_id: fromStageId
+                from_stage_id: fromStageId,
+                movement_type: movementType,
+                production_slip_digitization_id: $('input[name="production_slip_digitization_id"]').val()
             },
             success: function(response){
                 if(response.inventory && Object.keys(response.inventory).length > 0) {
                     renderInventory(response.inventory);
                     renderBasicInfo(response.basic_info);
                     $('#lotDetailsCard').removeClass('d-none');
-                    updateToStage(response.godam_stage);
-                    console.log(response.godam_stage);
                 } else {
                     $('#lotDetailsCard').addClass('d-none');
-                    alert('No inventory found for this Lot at current stage.');
+                    if($('#lot_no_input').val()) {
+                        alert('No inventory found for this Lot at current stage.');
+                    }
+                }
+
+                if(response.available_units) {
+                    updateToStage(response.available_units);
                 }
             },
             error: function(xhr){
-                alert('Error fetching details.');
+                console.error('Error fetching details.');
             }
         });
     }
 
-    function updateToStage(godamStage) {
-        if (godamStage && godamStage.length > 0) {
+    function updateToStage(units) {
+        let $toStage = $('#to_stage_id');
+        $toStage.empty();
 
-            let $toStage = $('#to_stage_id');
-
-            // Clear old options
-            $toStage.empty();
-
-            // ✅ Use GODAM STAGE from AJAX
-            $.each(godamStage, function (index, stage) {
+        if (units && units.length > 0) {
+            $.each(units, function (index, unit) {
                 $toStage.append(`
-                    <option value="${stage.id}">
-                        ${stage.name} (${stage.master_stage.name})
+                    <option value="${unit.id}">
+                        ${unit.name} (${unit.master_stage_name})
                     </option>
                 `);
             });
-            $toStage.trigger('change.select2');
-
-        } else {
-
-            
         }
-
-        
+        $toStage.trigger('change.select2');
     }
 
     function renderBasicInfo(info) {
         let html = '';
         if(info) {
-             if(info.fabric_names) html += `<div><strong>Fabric:</strong> ${info.fabric_names}</div>`;
-             if(info.order_numbers) html += `<div><strong>Orders:</strong> ${info.order_numbers}</div>`;
+             html += `<div class="row">
+                        <div class="col-md-6">
+                            ${info.fabric_names && info.fabric_names.length > 0 ? `<div><strong>Fabric:</strong> ${info.fabric_names.join(', ')}</div>` : ''}
+                            ${info.order_numbers && info.order_numbers.length > 0 ? `<div><strong>Orders:</strong> ${info.order_numbers.join(', ')}</div>` : ''}
+                            ${info.design_numbers && info.design_numbers.length > 0 ? `<div><strong>Design:</strong> ${info.design_numbers.join(', ')}</div>` : ''}
+                        </div>
+                        <div class="col-md-6">
+                            ${info.fitting_names && info.fitting_names.length > 0 ? `<div><strong>Fitting:</strong> ${info.fitting_names.join(', ')}</div>` : ''}
+                            ${info.color_names && info.color_names.length > 0 ? `<div><strong>Color:</strong> ${info.color_names.join(', ')}</div>` : ''}
+                            ${info.pattern_names && info.pattern_names.length > 0 ? `<div><strong>Pattern:</strong> ${info.pattern_names.join(', ')}</div>` : ''}
+                        </div>
+                    </div>
+                    <hr class="my-2">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="text-success"><strong>Total in Stage:</strong> ${info.total_inflow || 0}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-danger"><strong>Total Remaining:</strong> ${info.total_remaining || 0}</div>
+                        </div>
+                    </div>`;
         }
         $('#basicInfo').html(html);
     }
+
+    $(document).on('click', '#toggleBasicInfo', function(){
+        let $info = $('#basicInfo');
+        if($info.is(':visible')){
+            $info.slideUp();
+            $(this).html('<i class="fas fa-eye mr-1"></i> Show Details');
+        } else {
+            $info.slideDown();
+            $(this).html('<i class="fas fa-eye-slash mr-1"></i> Hide Details');
+        }
+    });
 
     function renderInventory(inventory) { 
         let tbody = $('#inventoryTableBody');
@@ -316,7 +386,7 @@ $(function(){
                         <td>
                             <input type="number" name="sizes[${size}]" 
                                    class="form-control form-control-sm send-qty" 
-                                   min="0" max="${qty}" 
+                                   min="0" 
                                    placeholder="0">
                         </td>
                     </tr>
@@ -381,22 +451,70 @@ $(document).on('input', '#totalPieces', function () {
     isAutoFilling = true;
     $('#sendAllQty').prop('checked', false);
 
-    let sizeCount = rows.length;
-    let baseQty = Math.floor(totalPieces / sizeCount);
-    let remainder = totalPieces % sizeCount;
+        // First, calculate total available pieces to establish fractions
+        let totalAvailable = 0;
+        let proportions = [];
+        
+        rows.each(function (index) {
+            let maxQty = parseInt($(this).find('.available-qty').data('qty')) || 0;
+            totalAvailable += maxQty;
+            proportions.push({
+                index: index,
+                maxQty: maxQty,
+                row: $(this)
+            });
+        });
+        
+        if (totalAvailable === 0) {
+            isAutoFilling = false;
+            return;
+        }
 
-    rows.each(function (index) {
-        let maxQty = parseInt($(this).find('.available-qty').data('qty')) || 0;
-        let qty = baseQty + (index < remainder ? 1 : 0);
+        // We can't distribute more than we have (Disabled for flexibility)
+        // totalPieces = Math.min(totalPieces, totalAvailable);
 
-        // ❗ Respect available qty
-        qty = Math.min(qty, maxQty);
+        // Calculate initial fair shares and remainders
+        let allocatedCount = 0;
+        let remains = [];
 
-        $(this).find('.send-qty').val(qty);
-    });
+        proportions.forEach(item => {
+            let exactShare = (item.maxQty / totalAvailable) * totalPieces;
+            let intShare = Math.floor(exactShare);
+            let fractionalPart = exactShare - intShare;
 
-    updateTotalMoving();
-    isAutoFilling = false;
+            item.allocated = intShare;
+            allocatedCount += intShare;
+
+            remains.push({
+                index: item.index,
+                fraction: fractionalPart,
+                maxQty: item.maxQty
+            });
+        });
+
+        // Distribute remainder (Largest Remainder Method)
+        let remainderToDistribute = totalPieces - allocatedCount;
+        
+        // Sort by highest fractional remainder first
+        remains.sort((a, b) => b.fraction - a.fraction);
+
+        for (let i = 0; i < remainderToDistribute; i++) {
+            // Give 1 extra to the top remainders
+            let targetIndex = remains[i % remains.length].index;
+            let targetItem = proportions.find(p => p.index === targetIndex);
+            targetItem.allocated += 1;
+        }
+
+        // Apply calculated allocations
+        proportions.forEach(item => {
+            // Apply bounds check (though math prevents exceeding maxQty initially)
+            let safeQty = Math.min(item.allocated, item.maxQty);
+            item.row.find('.send-qty').val(safeQty);
+        });
+
+        // Update UI
+        updateTotalMoving();
+        isAutoFilling = false;
 });
 
 /* SEND QTY ➜ TOTAL PIECES */

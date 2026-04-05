@@ -41,8 +41,14 @@
                             <div class="flex-grow-1">
                                 <h6 class="font-weight-bold mb-1">{{ $shop->name }}</h6>
                                 <p class="text-muted small mb-2"><i class="fas fa-phone-alt mr-1"></i> {{ $shop->phone }}</p>
-                                <p class="text-secondary small mb-0"><i class="fas fa-map-marker-alt mr-1"></i>
+                                <p class="text-secondary small mb-2"><i class="fas fa-map-marker-alt mr-1"></i>
                                     {{ Str::limit($shop->address, 50) }}</p>
+                                <div class="bg-light p-2 rounded small d-inline-block">
+                                    <span class="text-muted font-weight-bold mr-2">Balance:</span>
+                                    <span class="font-weight-bolder {{ $shop->balance >= 0 ? 'text-success' : 'text-danger' }}">
+                                        ₹{{ number_format(abs($shop->balance), 2) }} ({{ $shop->balance >= 0 ? 'Credit' : 'Debit' }})
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         <hr class="my-3">

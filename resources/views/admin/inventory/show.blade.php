@@ -44,21 +44,51 @@
                                         <td class="py-3"><span class="badge badge-light border">{{ $group_info->size_set_name }}</span></td>
                                     </tr>
                                     <tr>
+                                        <th class="pl-4 py-3 text-muted small text-uppercase">Color</th>
+                                        <td class="py-3"><span class="badge badge-info shadow-sm">{{ $group_info->color_name ?? 'N/A' }}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="pl-4 py-3 text-muted small text-uppercase">Fitting</th>
+                                        <td class="py-3 font-weight-bold">{{ $group_info->fitting_name ?? 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="pl-4 py-3 text-muted small text-uppercase">Pattern</th>
+                                        <td class="py-3 font-weight-bold">{{ $group_info->pattern_name ?? 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
                                         <th class="pl-4 py-3 text-muted small text-uppercase">MRP</th>
                                         <td class="py-3 font-weight-bold text-dark">₹{{ number_format($group_info->mrp, 2) }}</td>
                                     </tr>
                                     <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Selling Price</th>
-                                        <td class="py-3 font-weight-bold text-dark">₹{{ number_format($group_info->selling_price, 2) }}</td>
-                                    </tr>
-                                    <tr>
                                         <th class="pl-4 py-3 text-muted small text-uppercase">Total Boxes</th>
-                                        <td class="py-3 font-weight-bold">{{ $items->unique('packing_box_id')->count() }}</td>
+                                        <td class="py-3 font-weight-bold">{{ $items->unique('box_no')->count() }}</td>
                                     </tr>
                                     <tr>
                                         <th class="pl-4 py-3 text-muted small text-uppercase">Total Quantity</th>
                                         <td class="py-3 font-weight-bold text-primary" style="font-size: 1.2rem;">{{ $items->sum('quantity') }} <small>Pcs</small></td>
                                     </tr>
+                                    @if($group_info->barcode)
+                                        <tr>
+                                            <th class="pl-4 py-3 text-muted small text-uppercase align-middle">Group Barcode</th>
+                                            <td class="py-3">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="text-center mr-3">
+                                                        <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($group_info->barcode, 'C128', 1.2, 45) }}" alt="barcode" style="max-width: 150px;" />
+                                                        <div class="small font-weight-bold mt-1">{{ $group_info->barcode }}</div>
+                                                    </div>
+                                                    <form action="{{ route('admin.inventory.barcode-generator.generate-bulk-tspl') }}" method="POST" target="_blank">
+                                                        @csrf
+                                                        @foreach($items as $item)
+                                                            <input type="hidden" name="ids[]" value="{{ $item->id }}">
+                                                        @endforeach
+                                                        <button type="submit" class="btn btn-primary btn-sm rounded-circle shadow-sm" title="Print All Barcodes for this Group">
+                                                            <i class="fas fa-print"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endif
                                 </table>
                             </div>
                         </div>
@@ -76,9 +106,10 @@
                                         <tr>
                                             <th class="pl-4 py-3">Box No</th>
                                             <th class="py-3">Carton No</th>
+                                            <th class="py-3">Date</th>
                                             <th class="py-3">Order No</th>
                                             <th class="py-3">Color</th>
-                                            <th class="text-center py-3">Qty</th>
+                                            <th class="text-center py-3">Total Qty</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -92,9 +123,12 @@
                                                     @endif
                                                 </td>
                                                 <td class="py-3">{{ $item->carton_no ?? 'N/A' }}</td>
+                                                <td class="py-3">
+                                                    {{ $item->created_at->format('d M Y') }}
+                                                </td>
                                                 <td class="py-3 font-weight-bold text-primary">{{ $item->orderMain->sku ?? 'N/A' }}</td>
                                                 <td class="py-3">{{ $item->color_name ?? 'N/A' }}</td>
-                                                <td class="text-center py-3 font-weight-bold text-success">{{ $item->quantity }}</td>
+                                                <td class="text-center py-3 font-weight-bold text-success" style="font-size: 1.1rem;">{{ $item->quantity }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>

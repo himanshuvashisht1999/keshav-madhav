@@ -30,6 +30,38 @@
                                 <h3 class="card-title">Create Payment</h3>
                             </div>
                             <div class="card-body">
+                                @if (session('success'))
+                                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                        <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
+                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                @endif
+
+                                @if (session('error'))
+                                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                        <i class="fas fa-exclamation-triangle mr-2"></i> {{ session('error') }}
+                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                @endif
+
+                                @if ($errors->any())
+                                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                        <i class="fas fa-exclamation-circle mr-2"></i> <strong>Please fix the
+                                            following errors:</strong>
+                                        <ul class="mb-0 mt-2">
+                                            @foreach ($errors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                @endif
                                 <form action="{{ route('admin.payment.fabric-shipment.store') }}" method="POST"
                                     enctype="multipart/form-data">
                                     @csrf
@@ -89,38 +121,78 @@
                                                     <div class="input-group-prepend">
                                                         <span class="input-group-text">₹</span>
                                                     </div>
-                                                    <input type="number" step="0.01" class="form-control" name="amount"
-                                                        id="amount" required>
+                                                    <input type="number" step="0.01" class="form-control @error('amount') is-invalid @enderror" name="amount"
+                                                        id="amount" value="{{ old('amount') }}" required>
                                                 </div>
+                                                @error('amount')
+                                                    <span class="invalid-feedback d-block">{{ $message }}</span>
+                                                @enderror
                                             </div>
 
                                             <div class="col-md-4 mb-3">
                                                 <label for="payment_date" class="form-label">Payment Date <span
                                                         class="text-danger">*</span></label>
-                                                <input type="date" class="form-control" name="payment_date"
-                                                    id="payment_date" value="{{ date('Y-m-d') }}" required>
+                                                <input type="date" class="form-control @error('payment_date') is-invalid @enderror" name="payment_date"
+                                                    id="payment_date" value="{{ old('payment_date', date('Y-m-d')) }}" required>
+                                                @error('payment_date')
+                                                    <span class="invalid-feedback d-block">{{ $message }}</span>
+                                                @enderror
                                             </div>
 
                                             <div class="col-md-4 mb-3">
                                                 <label for="payment_mode" class="form-label">Payment Mode <span
                                                         class="text-danger">*</span></label>
-                                                <select class="form-control" name="payment_mode" id="payment_mode" required>
-                                                    <option value="Cash">Cash</option>
-                                                    <option value="Cheque">Cheque</option>
-                                                    <option value="Online">Online</option>
-                                                    <option value="UPI">UPI</option>
-                                                    <option value="Other">Other</option>
+                                                <select class="form-control @error('payment_mode') is-invalid @enderror" name="payment_mode" id="payment_mode" required>
+                                                    <option value="">Select Mode</option>
+                                                    <option value="Bank" {{ old('payment_mode') == 'Bank' ? 'selected' : '' }}>Bank</option>
+                                                    <option value="Cash" {{ old('payment_mode') == 'Cash' ? 'selected' : '' }}>Cash</option>
                                                 </select>
+                                                @error('payment_mode')
+                                                    <span class="invalid-feedback d-block">{{ $message }}</span>
+                                                @enderror
                                             </div>
 
-                                            <div class="col-md-6 mb-3">
+                                            <div class="col-md-4 mb-3" id="bank_account_div" style="display:none;">
+                                                <label for="bank_account_id" class="form-label">Bank Account <span
+                                                        class="text-danger">*</span></label>
+                                                <select name="payment_method_id" id="bank_account_id"
+                                                    class="form-control select2 @error('payment_method_id') is-invalid @enderror" style="width: 100%;">
+                                                    <option value="">Select Bank Account</option>
+                                                    @foreach($bank_accounts as $bank)
+                                                        <option value="{{ $bank->id }}" {{ old('payment_method_id') == $bank->id ? 'selected' : '' }}>{{ $bank->bank_name }}
+                                                            ({{ $bank->account_number }}) - Bal:
+                                                            ₹{{ number_format($bank->balance, 2) }}</option>
+                                                    @endforeach
+                                                </select>
+                                                @error('payment_method_id')
+                                                    <span class="invalid-feedback d-block">{{ $message }}</span>
+                                                @enderror
+                                            </div>
+
+                                            <div class="col-md-4 mb-3" id="cash_account_div" style="display:none;">
+                                                <label for="cash_account_id" class="form-label">Cash Account <span
+                                                        class="text-danger">*</span></label>
+                                                <select name="payment_method_id" id="cash_account_id"
+                                                    class="form-control select2 @error('payment_method_id') is-invalid @enderror" style="width: 100%;">
+                                                    <option value="">Select Cash Account</option>
+                                                    @foreach($cash_accounts as $cash)
+                                                        <option value="{{ $cash->id }}" {{ old('payment_method_id') == $cash->id ? 'selected' : '' }}>{{ $cash->name }} - Bal:
+                                                            ₹{{ number_format($cash->balance, 2) }}</option>
+                                                    @endforeach
+                                                </select>
+                                                @error('payment_method_id')
+                                                    <span class="invalid-feedback d-block">{{ $message }}</span>
+                                                @enderror
+                                            </div>
+
+                                            <div class="col-md-4 mb-3" id="reference_id_div">
                                                 <label for="reference_id" class="form-label">Reference ID / Cheque
                                                     No.</label>
                                                 <input type="text" class="form-control" name="reference_id"
                                                     id="reference_id" placeholder="e.g. UPI Ref, Cheque Number">
                                             </div>
 
-                                            <div class="col-md-6 mb-3">
+                                            <div class="col-md-4 mb-3">
                                                 <label for="image" class="form-label">Payment Proof (Image)</label>
                                                 <input type="file" class="form-control" name="image" id="image">
                                             </div>
@@ -168,32 +240,32 @@
                                 $.each(response.shipments, function (key, shipment) {
                                     var isChecked = (selectedReceiptId == shipment.id) ? 'checked' : '';
                                     var row = `
-                                                                    <tr>
-                                                                        <td>
-                                                                            <input type="radio" name="selected_shipment" class="shipment_radio" 
-                                                                                data-id="${shipment.id}"
-                                                                                data-balance="${shipment.balance_amount}"
-                                                                                data-total="${shipment.total_amount}"
-                                                                                data-paid="${shipment.paid_amount}"
-                                                                                data-challan="${shipment.shipment_id || 'N/A'}"
-                                                                                data-date="${shipment.created_at}"
-                                                                                data-shipment-photo="${shipment.shipment_photo}"
-                                                                                data-challan-photo="${shipment.challan_photo}"
-                                                                                ${isChecked}
-                                                                            >
-                                                                        </td>
-                                                                        <td>${new Date(shipment.created_at).toLocaleDateString()}</td>
-                                                                        <td>${shipment.shipment_id || '-'}</td>
-                                                                        <td>${parseFloat(shipment.total_amount).toFixed(2)}</td>
-                                                                        <td>${parseFloat(shipment.paid_amount || 0).toFixed(2)}</td>
-                                                                        <td>${parseFloat(shipment.balance_amount || 0).toFixed(2)}</td>
-                                                                        <td>
-                                                                            <a href="{{ url('admin/fabric-receipt/view') }}?id=${shipment.id}" target="_blank" class="btn btn-sm btn-info" title="View Details">
-                                                                                <i class="fas fa-eye"></i>
-                                                                            </a>
-                                                                        </td>
-                                                                    </tr>
-                                                                `;
+                                                                                <tr>
+                                                                                    <td>
+                                                                                        <input type="radio" name="selected_shipment" class="shipment_radio" 
+                                                                                            data-id="${shipment.id}"
+                                                                                            data-balance="${shipment.balance_amount}"
+                                                                                            data-total="${shipment.total_amount}"
+                                                                                            data-paid="${shipment.paid_amount}"
+                                                                                            data-challan="${shipment.shipment_id || 'N/A'}"
+                                                                                            data-date="${shipment.created_at}"
+                                                                                            data-shipment-photo="${shipment.shipment_photo}"
+                                                                                            data-challan-photo="${shipment.challan_photo}"
+                                                                                            ${isChecked}
+                                                                                        >
+                                                                                    </td>
+                                                                                    <td>${new Date(shipment.created_at).toLocaleDateString()}</td>
+                                                                                    <td>${shipment.shipment_id || '-'}</td>
+                                                                                    <td>${parseFloat(shipment.total_amount).toFixed(2)}</td>
+                                                                                    <td>${parseFloat(shipment.paid_amount || 0).toFixed(2)}</td>
+                                                                                    <td>${parseFloat(shipment.balance_amount || 0).toFixed(2)}</td>
+                                                                                    <td>
+                                                                                        <a href="{{ url('admin/fabric-receipt/view') }}?id=${shipment.id}" target="_blank" class="btn btn-sm btn-info" title="View Details">
+                                                                                            <i class="fas fa-eye"></i>
+                                                                                        </a>
+                                                                                    </td>
+                                                                                </tr>
+                                                                            `;
                                     $('#shipments_table_body').append(row);
                                 });
                             } else {
@@ -223,13 +295,13 @@
 
                 // Show Details
                 var detailsHtml = `
-                                                <div class="row">
-                                                    <div class="col-md-3"><strong>Date:</strong> ${new Date(date).toLocaleDateString()}</div>
-                                                    <div class="col-md-3"><strong>Shipment No:</strong> ${challan}</div>
-                                                    <div class="col-md-3"><strong>Total Amount:</strong> ${parseFloat(total).toFixed(2)}</div>
-                                                    <div class="col-md-3"><strong>Balance:</strong> <span class="text-danger">${parseFloat(balance).toFixed(2)}</span></div>
-                                                </div>
-                                            `;
+                                                            <div class="row">
+                                                                <div class="col-md-3"><strong>Date:</strong> ${new Date(date).toLocaleDateString()}</div>
+                                                                <div class="col-md-3"><strong>Shipment No:</strong> ${challan}</div>
+                                                                <div class="col-md-3"><strong>Total Amount:</strong> ${parseFloat(total).toFixed(2)}</div>
+                                                                <div class="col-md-3"><strong>Balance:</strong> <span class="text-danger">${parseFloat(balance).toFixed(2)}</span></div>
+                                                            </div>
+                                                        `;
                 $('#selected_shipment_details').html(detailsHtml);
 
                 $('#payment_section').slideDown();
@@ -252,6 +324,30 @@
                     clearInterval(checkExist);
                 }, 3000);
             }
+            $('#payment_mode').on('change', function () {
+                var mode = $(this).val();
+                if (mode == 'Bank') {
+                    $('#bank_account_div').show();
+                    $('#bank_account_id').attr('required', true).prop('disabled', false);
+                    $('#cash_account_div').hide();
+                    $('#cash_account_id').attr('required', false).prop('disabled', true);
+                    $('#cash_account_id').val('').trigger('change');
+                } else if (mode == 'Cash') {
+                    $('#cash_account_div').show();
+                    $('#cash_account_id').attr('required', true).prop('disabled', false);
+                    $('#bank_account_div').hide();
+                    $('#bank_account_id').attr('required', false).prop('disabled', true);
+                    $('#bank_account_id').val('').trigger('change');
+                } else {
+                    $('#bank_account_div').hide();
+                    $('#cash_account_div').hide();
+                    $('#bank_account_id').attr('required', false).prop('disabled', true);
+                    $('#cash_account_id').attr('required', false).prop('disabled', true);
+                }
+            });
+
+            // Trigger on load for old values
+            $('#payment_mode').trigger('change');
         });
     </script>
 @endsection

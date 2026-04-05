@@ -107,23 +107,29 @@
                     </div>
 
                     <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="datetime">Date & Time</label>
-                            <!-- <input type="datetime-local" name="time" id="datetime" class="form-control" value="{{ now()->setTimezone('Asia/Kolkata')->format('Y-m-d\TH:i') }}"> -->
+                        <div class="col-md-4">
+                            <label for="datetime">Date</label>
+                            <!-- <input type="date" name="time" id="datetime" class="form-control" value="{{ now()->setTimezone('Asia/Kolkata')->format('Y-m-d') }}"> -->
 
                             <input type="text"
                                 id="datetime"
                                 class="form-control"
-                                placeholder="Select date & time">
+                                placeholder="Select date">
 
                             <input type="hidden"
                                 name="time"
                                 id="datetime_hidden">
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="received_by">Received By</label>
                             <input type="text" name="received_by" id="received_by" class="form-control" placeholder="Enter received by">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="bill_no">Bill No</label>
+                            <input type="text" name="bill_no" id="bill_no" class="form-control" placeholder="Enter bill number">
+                            <span id="bill_no_error" class="text-danger" style="display: none;">Bill Number already exists!</span>
                         </div>
                         <div class="col-md-6 mt-2">
                             <label>Challan Slip</label>
@@ -132,7 +138,7 @@
                                 <div class="custom-file">
                                     <input type="file"
                                         id="challan-input"
-                                        name="challan_slip"
+                                        name="challan_photo"
                                         accept="image/*,.pdf"
                                         class="custom-file-input">
 
@@ -184,6 +190,15 @@
                                 id="gst_amount"
                                 class="form-control"
                                 readonly>
+                        </div>
+
+                        <div class="col-md-3 mt-2">
+                            <label>Other Charges</label>
+                            <input type="number" step="0.01"
+                                name="other_charges"
+                                id="other_charges"
+                                class="form-control"
+                                placeholder="Other Charges">
                         </div>
 
                         <div class="col-md-3 mt-2">
@@ -296,6 +311,7 @@
                                 <table class="table table-bordered table-striped text-center align-middle mb-2" id="fabric-table">
                                     <thead class="thead-light">
                                         <tr>
+                                            <th style="width: 5%;">#</th>
                                             <th style="min-width: 45%;">Fabric</th>
                                             <th style="width:20%;">Price (per meter)</th>
                                             <th style="width:20%;">Roll No</th>
@@ -453,15 +469,14 @@ $(document).ready(function() {
         if (totalMeter !== rollMeterSum) {
             e.preventDefault();
 
-            $('#total-meter-error').removeClass('d-none');
             $('#total_meter').addClass('is-invalid');
-
+            $('#submit-btn').prop('disabled', false);
+            $('#fabric-receipt-form').data('submitted', false);
             alert(
                 "Meter mismatch!\n\n" +
                 "Total Meter: " + totalMeter + "\n" +
                 "Selected Fabric Meter Sum: " + rollMeterSum
             );
-
             return false;
         } else {
             $('#total-meter-error').addClass('d-none');
@@ -480,7 +495,8 @@ $(document).ready(function() {
             e.preventDefault();
 
             $('#total_roll').addClass('is-invalid');
-
+            $('#submit-btn').prop('disabled', false);
+            $('#fabric-receipt-form').data('submitted', false);
             alert(
                 "Roll mismatch!\n\n" +
                 "Total Roll: " + totalRoll + "\n" +
@@ -490,12 +506,32 @@ $(document).ready(function() {
         } else {
             $('#total_roll').removeClass('is-invalid');
         }
+
+        let amountField = parseFloat($('#amount').val()) || 0;
+        let rollAmountSum = 0;
+        $('#roll-details-body .roll-amount').each(function () {
+            let val = parseFloat($(this).val());
+            if (!isNaN(val)) rollAmountSum += val;
+        });
+        amountField = Number(amountField.toFixed(2));
+        rollAmountSum = Number(rollAmountSum.toFixed(2));
+
+        if (amountField !== rollAmountSum) {
+            e.preventDefault();
+            $('#amount').addClass('is-invalid');
+            $('#submit-btn').prop('disabled', false);
+            $('#fabric-receipt-form').data('submitted', false);
+            alert("Amount mismatch!\n\nAmount: " + amountField + "\nRoll Amount Sum: " + rollAmountSum);
+            return false;
+        }
+
         this.form.submit();
     });
 
     $(document).on('input change', '#fabric-receipt-form input, #fabric-receipt-form select', function () {
         $(this).removeClass('is-invalid');
         $('#submit-btn').prop('disabled', false);
+        $('#fabric-receipt-form').data('submitted', false);
     });
     // ---------------------------
     // Initial fabrics list (server-provided for initially selected vendor)
@@ -895,11 +931,11 @@ $(document).ready(function() {
             totalMeter += meter;
         });
 
-        $('#amount').val(totalAmount.toFixed(2));
+        // $('#amount').val(totalAmount.toFixed(2));
        // $('#total_meter').val(totalMeter.toFixed(2));
         // $('#total_roll').val($('#roll-details-body tr').length);
 
-        calculateGST();
+        // calculateGST();
     }
 
     /* ===============================
@@ -997,6 +1033,7 @@ $(document).ready(function() {
 
             rowsHtml += `
                 <tr>
+                    <td>${rollIndex + 1}</td>
                     <td>
                         <span class="font-weight-bold">${fabricName}</span>
                         <input type="hidden"
@@ -1034,7 +1071,7 @@ $(document).ready(function() {
             `;
         }
         tbody.append(rowsHtml);
-        calculateRollAmounts();
+        // calculateRollAmounts();
     }
 
 });
@@ -1106,34 +1143,34 @@ $(document).ready(function() {
 function calculateGST() {
     let amount = parseFloat($('#amount').val()) || 0;
     let gst = parseFloat($('#gst_percentage').val()) || 0;
+    let otherCharges = parseFloat($('#other_charges').val()) || 0;
 
     let gstAmount = (amount * gst) / 100;
-    let total = amount + gstAmount;
+    let total = amount + gstAmount + otherCharges;
 
     $('#gst_amount').val(gstAmount.toFixed(2));
-    $('#total_amount').val(total.toFixed(2));
+    $('#total_amount').val(Math.round(total));
 }
 
-$(document).on('input', '#amount, #gst_percentage', calculateGST);
+$(document).on('input', '#amount, #gst_percentage, #other_charges', calculateGST);
 </script>
 <script>
 flatpickr("#datetime", {
-    enableTime: true,
-    dateFormat: "d M Y, h:i K",      // what user sees (example: 7 Jan 2025, 10:30 AM)
+    enableTime: false,
+    dateFormat: "d M Y",      // what user sees (example: 7 Jan 2025)
     altInput: false,
-    time_24hr: false,
-    defaultDate: "{{ now()->setTimezone('Asia/Kolkata')->format('Y-m-d H:i') }}",
+    defaultDate: "{{ now()->setTimezone('Asia/Kolkata')->format('Y-m-d') }}",
 
     onChange: function(selectedDates, dateStr, instance) {
-        // store ISO format for DB
-        const formatted = flatpickr.formatDate(selectedDates[0], "Y-m-d H:i");
+        // store format for DB
+        const formatted = flatpickr.formatDate(selectedDates[0], "Y-m-d");
         document.getElementById("datetime_hidden").value = formatted;
     }
 });
 
 // set hidden field on load
 document.getElementById("datetime_hidden").value =
-    flatpickr.formatDate(new Date("{{ now()->setTimezone('Asia/Kolkata')->format('Y-m-d H:i') }}"), "Y-m-d H:i");
+    flatpickr.formatDate(new Date("{{ now()->setTimezone('Asia/Kolkata')->format('Y-m-d') }}"), "Y-m-d");
     
 </script>
 
@@ -1156,5 +1193,36 @@ document.getElementById("datetime_hidden").value =
 
         $('#total_meter').val(totalMeter.toFixed(2));
     }
+</script>
+
+<script>
+$(document).on('change', '#bill_no', function () {
+    let bill_no = $(this).val();
+    let bill_no_error = $('#bill_no_error');
+    let submit_btn = $('button[type="submit"]');
+
+    if (bill_no) {
+        $.ajax({
+            url: "{{ route('admin.fabric_receipt.check-bill-no') }}",
+            type: 'POST',
+            data: {
+                _token: "{{ csrf_token() }}",
+                bill_no: bill_no
+            },
+            success: function (response) {
+                if (response.exists) {
+                    bill_no_error.show();
+                    submit_btn.attr('disabled', true);
+                } else {
+                    bill_no_error.hide();
+                    submit_btn.attr('disabled', false);
+                }
+            }
+        });
+    } else {
+        bill_no_error.hide();
+        submit_btn.attr('disabled', false);
+    }
+});
 </script>
 @endsection

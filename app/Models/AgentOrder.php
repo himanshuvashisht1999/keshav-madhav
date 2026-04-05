@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AgentOrder extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackCreator;
 
     protected $fillable = [
         'sales_agent_id',
@@ -20,6 +20,7 @@ class AgentOrder extends Model
         'discount_amount',
         'grand_total',
         'status',
+        'created_by',
         'order_date'
     ];
 

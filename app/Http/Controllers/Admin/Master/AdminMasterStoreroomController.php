@@ -18,15 +18,21 @@ class AdminMasterStoreroomController extends Controller
     public function indexList(Request $request)
     {
         if ($request->ajax()) {
-            $data = Storeroom::select('id', 'name', 'description', 'status', 'created_at');
+            $data = Storeroom::where('status', '!=', 3)->select('id', 'name', 'description', 'status', 'created_at');
             return Datatables::of($data)
                 ->addIndexColumn()
-                ->addColumn('action', function($row){
-                    $actionBtn = '<a href="'.route('admin.master.storeroom.edit', $row->id).'" class="btn btn-primary btn-sm btn-edit">Edit</a> ';
-                    $actionBtn .= '<a href="'.route('admin.master.storeroom.delete', $row->id).'" class="btn btn-danger btn-sm" onclick="return confirm(\'Are you sure?\')">Delete</a>';
-                    return $actionBtn;
+                ->editColumn('status', function ($row) {
+                    $status = $row->status;
+                    return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
                 })
-                ->rawColumns(['action'])
+                ->addColumn('action', function($row){
+                    $parameter = $row->id;
+                    return '
+                    <a href="' . route('admin.master.storeroom.edit', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                    <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash text-danger"></i></a>
+                    ';
+                })
+                ->rawColumns(['action', 'status'])
                 ->make(true);
         }
     }
@@ -43,11 +49,12 @@ class AdminMasterStoreroomController extends Controller
             'status' => 1
         ]);
 
-        return redirect()->route('admin.master.storeroom.index')->with('success', 'Storeroom created successfully.');
+        return redirect()->route('admin.master.storeroom.index')->with('success', 'The storeroom has been successfully created.');
     }
 
-    public function edit($id)
+    public function edit(Request $request)
     {
+        $id = $request->id;
         $storeroom = Storeroom::with('racks')->findOrFail($id);
         return view('admin.master.storeroom.edit', compact('storeroom'));
     }
@@ -66,14 +73,14 @@ class AdminMasterStoreroomController extends Controller
             'status' => $request->status ?? 1
         ]);
 
-        return redirect()->route('admin.master.storeroom.index')->with('success', 'Storeroom updated successfully.');
+        return redirect()->route('admin.master.storeroom.index')->with('success', 'The storeroom has been successfully updated.');
     }
 
-    public function delete($id)
+    public function delete(Request $request)
     {
-        $store = Storeroom::findOrFail($id);
-        $store->delete(); // This will cascade delete racks if DB FK set, otherwise we should check
-        return redirect()->route('admin.master.storeroom.index')->with('success', 'Storeroom deleted successfully.');
+        $id = $request->id;
+        $store = Storeroom::where('id', $id)->update(['status' => 3]);
+        return redirect()->route('admin.master.storeroom.index')->with('success', 'The storeroom has been successfully deleted.');
     }
 
     // Rack Methods

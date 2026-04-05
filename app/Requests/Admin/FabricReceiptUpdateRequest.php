@@ -18,15 +18,18 @@ class FabricReceiptUpdateRequest extends FormRequest{
      *
      * @return array
      */
-    public function rules(Request $request){
-        // dd($this);
+    public function rules()
+    {
         return [
-            // 'sku'    => 'required|unique:fabric_receipts,sku,' . $request->id,
+            'receipt_id' => 'required',
             'vendor_id' => 'required',
-            'truck_number' => 'required',
+            'bill_no' => 'required|string|unique:fabric_receipts,bill_no,' . $this->receipt_id,
             'time' => 'required',
-            'roll' => 'required',
-            'received_by' => 'required',
+            'amount' => 'required',
+            'gst_percentage' => 'required',
+            // 'truck_number' => 'required',
+            // 'roll' => 'required',
+            // 'received_by' => 'required',
         ];
     }
 

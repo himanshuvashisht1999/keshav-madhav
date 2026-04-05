@@ -1,0 +1,53 @@
+<?php
+
+namespace App\Services\Admin\Payment\Master;
+
+use Illuminate\Http\Request;
+use App\Models\Committee;
+use App\Http\DataTable\Admin\Payment\Master\CommitteeDataTable as DataTable;
+
+class CommitteeService
+{
+    protected $datatable;
+
+    public function __construct(DataTable $datatable)
+    {
+        $this->datatable = $datatable;
+    }
+
+    public function indexList(Request $request)
+    {
+        return $this->datatable->indexList($request);
+    }
+
+    public function store(Request $request)
+    {
+        $committee = new Committee();
+        $committee->name = $request->name;
+        $committee->amount = $request->amount;
+        $committee->period = $request->period;
+        $committee->status = 1;
+        $committee->save();
+        return true;
+    }
+
+    public function edit(Request $request)
+    {
+        return Committee::find($request->id);
+    }
+
+    public function update(Request $request)
+    {
+        $committee = Committee::find($request->id);
+        $committee->name = $request->name;
+        $committee->amount = $request->amount;
+        $committee->period = $request->period;
+        $committee->save();
+        return true;
+    }
+
+    public function delete(Request $request)
+    {
+        return Committee::where('id', $request->id)->update(['status' => 0]);
+    }
+}

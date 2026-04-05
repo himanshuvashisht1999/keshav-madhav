@@ -78,6 +78,43 @@
                                         @error('address')<span class="text-danger small">{{ $message }}</span>@enderror
                                     </div>
                                 </div>
+                                <div class="col-md-12 mt-4">
+                                    <h5>Per Brand Discounts</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>Brand Name</th>
+                                                    <th>Discount Percentage (%)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($brands as $brand)
+                                                    @php
+                                                        $brandDiscount = $data->brandDiscounts->where('brand_id', $brand->id)->first();
+                                                        $discountValue = $brandDiscount ? $brandDiscount->discount_percentage : '';
+                                                    @endphp
+                                                    <tr>
+                                                        <td>{{ $brand->name }}</td>
+                                                        <td>
+                                                            <input type="number" step="0.01" min="0" max="100" 
+                                                                name="brand_discounts[{{ $brand->id }}]" 
+                                                                class="form-control" 
+                                                                placeholder="Enter discount for {{ $brand->name }}"
+                                                                value="{{ old('brand_discounts.' . $brand->id, $discountValue) }}">
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group custom-control custom-checkbox mt-2">
+                                        <input class="custom-control-input" type="checkbox" id="see_price" name="see_price" value="1" {{ old('see_price', $data->see_price) ? 'checked' : '' }}>
+                                        <label for="see_price" class="custom-control-label">Show Pricing Info (Prices, GST, Totals)</label>
+                                    </div>
+                                </div>
                             </div>
                             <div class="mt-2" style="float:right">
                                 <button type="submit" class="btn btn-primary">Update</button>

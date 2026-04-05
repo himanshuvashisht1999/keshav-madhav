@@ -9,21 +9,46 @@ class MasterCustomer extends Model
     use HasFactory;
     protected $table = 'master_customers';
     protected $fillable = [
-        'id',
-        'sno',
-        'company_id',
-        'sub_company_id',
-        'project_id',
-        'sku',
         'name',
         'email',
         'phone',
         'address',
         'status',
+        'type',
+        'subtype',
+        'parent_id',
         'sales_agent_id',
-        'created_at',
-        'updated_at'
+        'see_price',
+        'balance',
+        'password',
     ];
+
+    public function brandDiscounts()
+    {
+        return $this->hasMany(CustomerBrandDiscount::class, 'customer_id');
+    }
+
+    public function setPasswordAttribute($value)
+    {
+        if (!empty($value)) {
+            $this->attributes['password'] = \Hash::make($value);
+        }
+    }
+
+    public function agent()
+    {
+        return $this->belongsTo(SalesAgent::class, 'sales_agent_id');
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(MasterCustomer::class, 'parent_id');
+    }
+
+    public function shops()
+    {
+        return $this->hasMany(MasterCustomer::class, 'parent_id');
+    }
 
     public function orders()
     {

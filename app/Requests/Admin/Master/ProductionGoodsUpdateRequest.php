@@ -24,8 +24,8 @@ class ProductionGoodsUpdateRequest extends FormRequest
 
         // Base rules common for all companies
         $rules = [
-            'design_number'    => 'required',
-            'name_of_garment'  => 'required',
+            'design_number' => 'required',
+            //'name_of_garment'  => 'required',
             // 'sku'              => 'required|unique:production_goods,sku,' . $request->id,
         ];
 
@@ -34,7 +34,7 @@ class ProductionGoodsUpdateRequest extends FormRequest
             $rules = array_merge($rules, [
                 'type_of_garment' => 'required',
                 'garment_pattern' => 'required',
-                'master_size_id'  => 'required',
+                'master_size_id' => 'required',
                 'master_color_id' => 'required',
             ]);
         }
@@ -48,14 +48,14 @@ class ProductionGoodsUpdateRequest extends FormRequest
     public function messages()
     {
         return [
-            'design_number.required'     => 'Design number is required.',
-            'name_of_garment.required'   => 'Product name is required.',
-            'type_of_garment.required'   => 'Product type is required for General company.',
-            'garment_pattern.required'   => 'Product pattern is required for General company.',
-            'master_size_id.required'    => 'Product size is required for General company.',
-            'master_color_id.required'   => 'Product color is required for General company.',
-            'sku.required'               => 'SKU is required.',
-            'sku.unique'                 => 'This SKU is already used by another product.',
+            'design_number.required' => 'Design number is required.',
+            'name_of_garment.required' => 'Product name is required.',
+            'type_of_garment.required' => 'Product type is required for General company.',
+            'garment_pattern.required' => 'Product pattern is required for General company.',
+            'master_size_id.required' => 'Product size is required for General company.',
+            'master_color_id.required' => 'Product color is required for General company.',
+            'sku.required' => 'SKU is required.',
+            'sku.unique' => 'This SKU is already used by another product.',
         ];
     }
 
@@ -63,13 +63,13 @@ class ProductionGoodsUpdateRequest extends FormRequest
     {
         return [
             // optional: pretty labels
-            'design_number'    => 'design number',
-            'name_of_garment'  => 'product name',
-            'type_of_garment'  => 'product type',
-            'garment_pattern'  => 'product pattern',
-            'master_size_id'   => 'product size',
-            'master_color_id'  => 'product color',
-            'sku'              => 'SKU',
+            'design_number' => 'design number',
+            'name_of_garment' => 'product name',
+            'type_of_garment' => 'product type',
+            'garment_pattern' => 'product pattern',
+            'master_size_id' => 'product size',
+            'master_color_id' => 'product color',
+            'sku' => 'SKU',
         ];
     }
 }

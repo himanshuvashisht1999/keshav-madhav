@@ -4,6 +4,7 @@ namespace App\Services\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Auth;
+use DB;
 use App\Models\PurchaseOrder;
 use App\Models\FabricReceipt;
 use App\Models\FabricReceiptDetail;
@@ -19,47 +20,56 @@ use Carbon\Carbon;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
 use Picqer\Barcode\BarcodeGeneratorPNG;
+use PDF;
 
-class FabricReceiptService {
+class FabricReceiptService
+{
+    protected $datatable;
+    protected $fabric_receipt;
+
     public function __construct(
         DataTable $datatable,
         FabricReceipt $fabric_receipt
     ) {
-        $this->datatable= $datatable;
+        $this->datatable = $datatable;
         $this->fabric_receipt = $fabric_receipt;
     }
 
-    public function index(Request $request){
+    public function index(Request $request)
+    {
         return true;
     }
 
-    public function indexList(Request $request){
-       
+    public function indexList(Request $request)
+    {
+
         return $this->datatable->indexList($request);
     }
 
-    public function store(Request $request){
+    public function store(Request $request)
+    {
 
         // dd($request->all());
         $imgName = '';
-        if($request->file('shipment_photo')){
+        if ($request->file('shipment_photo')) {
             $image = $request->file('shipment_photo');
             $extImage = $image->getClientOriginalExtension();
-            $imgName = "shipment-image-".rand()."_".time().".".$extImage;
-            $destinationPath = public_path().'/assets/receipts/shipment-image';
+            $imgName = "shipment-image-" . rand() . "_" . time() . "." . $extImage;
+            $destinationPath = public_path() . '/assets/receipts/shipment-image';
             $image->move($destinationPath, $imgName);
         }
         $imgName2 = '';
-        if($request->file('challan_photo')){
+        if ($request->file('challan_photo')) {
             $image = $request->file('challan_photo');
             $extImage = $image->getClientOriginalExtension();
-            $imgName2 = "challan-image-".rand()."_".time().".".$extImage;
-            $destinationPath = public_path().'/assets/receipts/challan-image';
+            $imgName2 = "challan-image-" . rand() . "_" . time() . "." . $extImage;
+            $destinationPath = public_path() . '/assets/receipts/challan-image';
             $image->move($destinationPath, $imgName2);
         }
         $save_data = new FabricReceipt;
-        $save_data->sku = ''; 
+        $save_data->sku = '';
         $save_data->vendor_id = $request->vendor_id;
+        $save_data->bill_no = $request->bill_no;
         $save_data->truck_number = $request->truck_number ?? '';
         $save_data->time = $request->time;
         $save_data->roll = count($request->roll_details);
@@ -68,13 +78,15 @@ class FabricReceiptService {
         $save_data->gst_amount = $request->gst_amount ?? 0.00;
         $save_data->gst_percentage = $request->gst_percentage ?? 1;
         $save_data->total_amount = $request->total_amount ?? 0.00;
+        $save_data->other_charges = $request->other_charges ?? 0.00;
+        $save_data->total_meter = $request->total_meter ?? 0.00;
         $save_data->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
         $save_data->shipment_photo = $imgName;
         $save_data->challan_photo = $imgName2;
         $save_data->status = 1;
         $save_data->save();
 
-        $date = \Carbon\Carbon::parse($request->date)->format('dmY');  
+        $date = \Carbon\Carbon::parse($request->date)->format('dmY');
         $sku = "FR/" . $date . "/" . $save_data->id;
         $shipment_id = "SHP/" . $date . "/" . $save_data->id;
         $save_data->update([
@@ -82,12 +94,20 @@ class FabricReceiptService {
             'shipment_id' => $shipment_id
         ]);
 
-        foreach($request->roll_details as $single_data){
-            $fab_data = Fabric::where('id',$single_data['fabric_id'])->first();
-            if($fab_data){
+        if ($save_data->vendor_id) {
+            $vendor = Vendor::find($save_data->vendor_id);
+            if ($vendor) {
+                $vendor->balance += $save_data->total_amount;
+                $vendor->save();
+            }
+        }
+
+        foreach ($request->roll_details as $single_data) {
+            $fab_data = Fabric::where('id', $single_data['fabric_id'])->first();
+            if ($fab_data) {
                 $fabric_sku = $fab_data->sku;
                 $fabric_id = $fab_data->id;
-                
+
                 $meter = $single_data['meter'];
                 $roll_number = $single_data['roll_no'];
                 $price = $single_data['price'];
@@ -109,11 +129,11 @@ class FabricReceiptService {
 
                 $fileName = $qrcode_number . '.png';
                 $qrData = json_encode([
-                    'fabric_id'   => $fabric_id,
+                    'fabric_id' => $fabric_id,
                     'shipment_id' => $shipment_id,
                     'roll_number' => $roll_number,
-                    'price'       => $price
-                ]); 
+                    'price' => $price
+                ]);
 
                 $destinationPath = public_path('assets/qrcodes');
 
@@ -155,104 +175,216 @@ class FabricReceiptService {
                 $save_data_detail->shipment_number = $shipment_id;
                 $save_data_detail->save();
 
-                
-
-                // $save_stock = new Stock;
-                // $save_stock->sku = $fabric_sku;
-                // $save_stock->fabric_id = $fabric_id;
-                // $save_stock->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
-                // $save_stock->date = Carbon::now()->format('Y-m-d');
-                // $save_stock->goods_entry_number = $save_data_detail->id;
-                // $save_stock->meter = $meter;
-                // $save_stock->roll = count($request->rolls);
-                // /// new col
-                // $save_stock->roll_no = $single_data['roll'];
-                // $save_stock->qrcode = $fileName;
-                // $save_stock->unique_number = $unique_number;
-                // $save_stock->batch_no = '';
-
-                // $save_stock->purchase_order_id = null;
-                // $save_stock->save();
-
             }
-            
 
         }
-        
+
         return $save_data->id;
     }
-    
-    public function view(Request $request){
-        $data = FabricReceipt::with('vendor','details.purchase_order','details.purchase_order_item','details.fabric')->where('id',$request->id)->first();
+
+    public function view(Request $request)
+    {
+        $data = FabricReceipt::with('vendor', 'details.purchase_order', 'details.purchase_order_item', 'details.fabric')->where('id', $request->id)->first();
         return $data;
     }
 
-    public function edit(Request $request){
-        $data = FabricReceipt::where('id',$request->id)->first();
-        return $data;
+    public function downloadReport(Request $request)
+    {
+        $data = $this->view($request);
+        $pdf = PDF::loadView('admin.fabric_receipt.report_pdf', compact('data'));
+
+        $fileName = 'Fabric_Shipment_' . str_replace('/', '_', $data->shipment_id) . '.pdf';
+        return $pdf->download($fileName);
     }
-    
-    public function update(Request $request){
-        $update_data = FabricReceipt::find($request->id);
-        $update_data->sku = $request->sku;
+
+    public function edit(Request $request)
+    {
+        return FabricReceipt::with('details.fabric')->find($request->id);
+    }
+
+    public function update(Request $request)
+    {
+        $update_data = FabricReceipt::find($request->receipt_id);
+        
+        if ($request->hasFile('shipment_photo')) {
+            $image = $request->file('shipment_photo');
+            $extImage = $image->getClientOriginalExtension();
+            $imgName = "shipment-image-" . rand() . "_" . time() . "." . $extImage;
+            $destinationPath = public_path() . '/assets/receipts/shipment-image';
+            $image->move($destinationPath, $imgName);
+            $update_data->shipment_photo = $imgName;
+        }
+
+        if ($request->hasFile('challan_photo')) {
+            $image = $request->file('challan_photo');
+            $extImage = $image->getClientOriginalExtension();
+            $imgName = "challan-image-" . rand() . "_" . time() . "." . $extImage;
+            $destinationPath = public_path() . '/assets/receipts/challan-image';
+            $image->move($destinationPath, $imgName);
+            $update_data->challan_photo = $imgName;
+        }
+
+        $old_total = $update_data->total_amount;
+        $old_vendor_id = $update_data->vendor_id;
+
         $update_data->vendor_id = $request->vendor_id;
-        $update_data->truck_number = $request->truck_number;
+        $update_data->bill_no = $request->bill_no;
+        $update_data->truck_number = $request->truck_number ?? '';
         $update_data->time = $request->time;
-        $update_data->roll = $request->roll;
-        $update_data->received_by = $request->received_by;
-        // $update_data->status = 1;
+        $update_data->received_by = $request->received_by ?? '';
+        $update_data->amount = $request->amount ?? 0.00;
+        $update_data->gst_amount = $request->gst_amount ?? 0.00;
+        $update_data->gst_percentage = $request->gst_percentage ?? 1;
+        $update_data->total_amount = $request->total_amount ?? 0.00;
+        $update_data->other_charges = $request->other_charges ?? 0.00;
+        $update_data->total_meter = $request->total_meter ?? 0.00;
+        $update_data->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
         $update_data->save();
+
+        if ($old_vendor_id) {
+            $old_vendor = Vendor::find($old_vendor_id);
+            if ($old_vendor) {
+                $old_vendor->balance -= $old_total;
+                $old_vendor->save();
+            }
+        }
+
+        if ($update_data->vendor_id) {
+            $new_vendor = Vendor::find($update_data->vendor_id);
+            if ($new_vendor) {
+                $new_vendor->balance += $update_data->total_amount;
+                $new_vendor->save();
+            }
+        }
+
+        $shipment_id = $update_data->shipment_id;
+
+        if ($request->has('roll_details')) {
+            $received_ids = [];
+            foreach ($request->roll_details as $single_data) {
+                $fab_data = Fabric::where('id', $single_data['fabric_id'])->first();
+                if (!$fab_data) continue;
+
+                if (isset($single_data['detail_id']) && !empty($single_data['detail_id'])) {
+                    $received_ids[] = $single_data['detail_id'];
+                    $detail = FabricReceiptDetail::find($single_data['detail_id']);
+                } else {
+                    $detail = new FabricReceiptDetail();
+                    $detail->fabric_receipt_id = $update_data->id;
+                    $qrcode_number = $this->generateUniqueQrNumber();
+                    $detail->qrcode_number = $qrcode_number;
+
+                    // Generate Barcode
+                    $barcodeGenerator = new \Picqer\Barcode\BarcodeGeneratorPNG();
+                    $barcodeFileName = $qrcode_number . '_barcode.png';
+                    $barcodePath = public_path('assets/barcodes');
+                    if (!file_exists($barcodePath)) { mkdir($barcodePath, 0777, true); }
+                    file_put_contents($barcodePath . '/' . $barcodeFileName, $barcodeGenerator->getBarcode($qrcode_number, $barcodeGenerator::TYPE_CODE_128, 3, 80));
+                    $detail->barcode = $barcodeFileName;
+
+                    // Generate QR
+                    $fileName = $qrcode_number . '.png';
+                    $qrData = json_encode([
+                        'fabric_id' => $fab_data->id,
+                        'shipment_id' => $shipment_id,
+                        'roll_number' => $single_data['roll_no'],
+                        'price' => $single_data['price']
+                    ]);
+                    $destinationPath = public_path('assets/qrcodes');
+                    if (!file_exists($destinationPath)) { mkdir($destinationPath, 0777, true); }
+                    $result = \Endroid\QrCode\Builder\Builder::create()
+                        ->writer(new \Endroid\QrCode\Writer\PngWriter())
+                        ->data($qrData)
+                        ->size(300)
+                        ->margin(10)
+                        ->build();
+                    $result->saveToFile($destinationPath . '/' . $fileName);
+                    $detail->qrcode = $fileName;
+                }
+
+                $detail->fabric_sku = $fab_data->sku;
+                $detail->fabric_id = $fab_data->id;
+                $detail->roll_number = $single_data['roll_no'];
+                $detail->price_per_meter = $single_data['price'];
+                $detail->meter = $single_data['meter'];
+                $detail->remaining_quantity = $single_data['meter'];
+                $detail->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
+                $detail->shipment_number = $shipment_id;
+                $detail->status = 1;
+                $detail->save();
+                $received_ids[] = $detail->id;
+            }
+
+            // Delete removed rolls
+            $update_data->details()->whereNotIn('id', $received_ids)->delete();
+            $update_data->update(['roll' => count($request->roll_details)]);
+        }
 
         return true;
     }
 
-    public function delete(Request $request){
-        $data = FabricReceipt::where('id',$request->id)->update([
-            'status' => 0,
-        ]);
+    public function delete(Request $request)
+    {
+        $receipt = FabricReceipt::find($request->id);
+        if ($receipt && $receipt->status != 0) {
+            if ($receipt->vendor_id) {
+                $vendor = Vendor::find($receipt->vendor_id);
+                if ($vendor) {
+                    $vendor->balance -= $receipt->total_amount;
+                    $vendor->save();
+                }
+            }
+            $receipt->status = 0;
+            $receipt->save();
+            return true;
+        }
+        return false;
+    }
+    public function vendors()
+    {
+        $data = Vendor::where('status', 1)->get();
         return $data;
     }
-    public function vendors(){
-        $data = Vendor::where('status',1)->get();
+    public function purchase_orders(Request $request)
+    {
+        $data = PurchaseOrder::where('vendor_id', $request->vendor_id)->orderBy('id', 'desc')->get();
         return $data;
     }
-    public function purchase_orders(Request $request){
-        $data = PurchaseOrder::where('vendor_id',$request->vendor_id)->orderBy('id','desc')->get();
-        return $data;
-    }
-    public function purchase_order_items($purchase_order_id){
-        $data = PurchaseOrderItem::where('purchase_order_id',$purchase_order_id)->where('status',1)->get();
+    public function purchase_order_items($purchase_order_id)
+    {
+        $data = PurchaseOrderItem::where('purchase_order_id', $purchase_order_id)->where('status', 1)->get();
         return $data;
     }
 
 
-    public function storeDetail(Request $request){ 
-        $fab_receipt_update = FabricReceipt::where('id',$request->id)->update([
+    public function storeDetail(Request $request)
+    {
+        $fab_receipt_update = FabricReceipt::where('id', $request->id)->update([
             'roll' => count($request->rolls),
         ]);
-        $fab_rec_data = FabricReceipt::where('id',$request->id)->first();
+        $fab_rec_data = FabricReceipt::where('id', $request->id)->first();
         $master_fabric_warehouse_id = $fab_rec_data->master_fabric_warehouse_id;
 
-        foreach($request->rolls as $single_data){
-        
-            $fab_data = Fabric::where('id',$single_data['fabric_sku'])->first();
-            if($fab_data){ 
-                
+        foreach ($request->rolls as $single_data) {
+
+            $fab_data = Fabric::where('id', $single_data['fabric_sku'])->first();
+            if ($fab_data) {
+
 
                 $fabric_sku = $fab_data->sku;
                 $fabric_id = $fab_data->id;
-                
-                
+
+
                 $meter = $single_data['meter'];
                 $roll_number = $single_data['roll'];
                 $purchase_order_id = $request->purchase_order_id;
                 $purchase_order_item_id = 0;
-                $purchase_order_data = PurchaseOrder::where('id',$purchase_order_id)->first();
-                if($purchase_order_data){
-                    $purchase_order_item_data = PurchaseOrderItem::where('purchase_order_id',$purchase_order_data->id)->where('fabric_sku',$fabric_sku)->first();
-                    if($purchase_order_item_data){
+                $purchase_order_data = PurchaseOrder::where('id', $purchase_order_id)->first();
+                if ($purchase_order_data) {
+                    $purchase_order_item_data = PurchaseOrderItem::where('purchase_order_id', $purchase_order_data->id)->where('fabric_sku', $fabric_sku)->first();
+                    if ($purchase_order_item_data) {
                         $purchase_order_item_id = $purchase_order_item_data->id;
-                    }else{
+                    } else {
                         $total_meter = $meter;
                         $price_static = 100;
                         $total_price = $total_meter * $price_static;
@@ -269,8 +401,8 @@ class FabricReceiptService {
                         $purchase_order_item_id = $save_purchase_order_item->id;
                     }
 
-                }else{
-                    $receipt_data = FabricReceipt::where('id',$request->id)->first();
+                } else {
+                    $receipt_data = FabricReceipt::where('id', $request->id)->first();
                     $save_data_purchase = new PurchaseOrder;
                     $save_data_purchase->sku = '';
                     $save_data_purchase->date = Carbon::now()->format('Y-m-d'); /////We have no date
@@ -278,11 +410,11 @@ class FabricReceiptService {
                     $save_data_purchase->delivery_date = Carbon::now()->format('Y-m-d'); /// we have no delivery date
                     $save_data_purchase->status = 1;
                     $save_data_purchase->save();
-                    $sku_update = PurchaseOrder::where('id',$save_data_purchase->id)->update([
-                        'sku' => 'PO-'.$save_data_purchase->id,
+                    $sku_update = PurchaseOrder::where('id', $save_data_purchase->id)->update([
+                        'sku' => 'PO-' . $save_data_purchase->id,
                     ]);
 
-                    $total_meter =  $meter;
+                    $total_meter = $meter;
                     $price_static = 100;
                     $total_price = $total_meter * $price_static;
 
@@ -299,12 +431,12 @@ class FabricReceiptService {
 
 
                 }
-                $receipt_data = FabricReceipt::where('id',$request->id)->first();
+                $receipt_data = FabricReceipt::where('id', $request->id)->first();
                 $total_roll = $receipt_data->roll;
                 $roll_no = $single_data['roll'];
 
-                $purchase_order_item_data = PurchaseOrderItem::where('id',$purchase_order_item_id)->first();
-                if($purchase_order_item_data){
+                $purchase_order_item_data = PurchaseOrderItem::where('id', $purchase_order_item_id)->first();
+                if ($purchase_order_item_data) {
                     $save_data = new FabricReceiptDetail;
                     // $save_data->sku = $fabric_sku;
                     $save_data->fabric_receipt_id = $request->id;
@@ -320,7 +452,7 @@ class FabricReceiptService {
                     $save_data->status = 1;
                     $save_data->save();
 
-                    $fabric_receipt_status_update = FabricReceipt::where('id',$request->id)->update([
+                    $fabric_receipt_status_update = FabricReceipt::where('id', $request->id)->update([
                         'status' => 1,
                     ]);
 
@@ -363,8 +495,8 @@ class FabricReceiptService {
                     $save_stock->purchase_order_id = $purchase_order_item_data->purchase_order_id;
                     $save_stock->save();
 
-                    
-                    $update_purchase_order_item = PurchaseOrderItem::where('id',$purchase_order_item_data->id)->update([
+
+                    $update_purchase_order_item = PurchaseOrderItem::where('id', $purchase_order_item_data->id)->update([
                         'status' => 2,
                     ]);
 
@@ -372,19 +504,22 @@ class FabricReceiptService {
 
             }
         }
-                
+
         return true;
     }
 
-    public function fabrics(){
-        $data = Fabric::where('status',1)->get();
+    public function fabrics()
+    {
+        $data = Fabric::where('status', 1)->get();
         return $data;
     }
-    public function fabric_list_by_vendor($vendor_id){
-        $data = Fabric::where('status',1)->where('vendor_id',$vendor_id)->get();
+    public function fabric_list_by_vendor($vendor_id)
+    {
+        $data = Fabric::where('status', 1)->where('vendor_id', $vendor_id)->get();
         return $data;
     }
-    public function new_batch_no(){
+    public function new_batch_no()
+    {
         // $data = FabricReceiptDetail::orderBy('id','desc')->first();
         // if($data){
         //     $new_batch_no = $data->batch_no + 1;
@@ -396,8 +531,9 @@ class FabricReceiptService {
         return $new_batch_no;
     }
 
-    public function cutting_units(){
-        $data = MasterFabricWarehouse::where('status',1)->get();
+    public function cutting_units()
+    {
+        $data = MasterFabricWarehouse::where('status', 1)->get();
         return $data;
     }
 
@@ -439,7 +575,21 @@ class FabricReceiptService {
 
     public function checkRollNo($request)
     {
-        $exists = FabricReceiptDetail::where('roll_number', $request->roll_no)->exists();
+        $query = FabricReceiptDetail::where('roll_number', $request->roll_no);
+        if (isset($request->receipt_id) && !empty($request->receipt_id)) {
+            $query->where('fabric_receipt_id', '!=', $request->receipt_id);
+        }
+        $exists = $query->exists();
+        return $exists;
+    }
+
+    public function checkBillNo($request)
+    {
+        $query = FabricReceipt::where('bill_no', $request->bill_no);
+        if (isset($request->receipt_id) && !empty($request->receipt_id)) {
+            $query->where('id', '!=', $request->receipt_id);
+        }
+        $exists = $query->whereNotNull('bill_no')->where('bill_no', '!=', '')->exists();
         return $exists;
     }
 }

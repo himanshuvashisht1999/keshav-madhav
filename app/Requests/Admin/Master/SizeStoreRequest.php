@@ -21,9 +21,11 @@ class SizeStoreRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'size' => 'required|unique:master_size,size',
+            'size' => [
+                'required',
+                \Illuminate\Validation\Rule::unique('master_size', 'size')->whereNot('status', 3),
+            ],
             'status' =>'required',
-            // 'sku'    => 'required|unique:fabric_dye,sku',
         ];
     }
 

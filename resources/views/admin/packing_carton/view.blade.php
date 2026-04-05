@@ -11,6 +11,9 @@
                     <h1 class="mb-0">Packing Carton Details</h1>
                 </div>
                 <div class="col-sm-6 text-right">
+                    <a href="{{ route('admin.packing-carton.download-pdf', ['id' => $data['cartons_session_data']['id']]) }}" class="btn btn-primary">
+                        <i class="fas fa-file-pdf mr-1"></i> Download PDF
+                    </a>
                     <a href="{{ route('admin.packing-carton.index') }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left mr-1"></i> Back
                     </a>

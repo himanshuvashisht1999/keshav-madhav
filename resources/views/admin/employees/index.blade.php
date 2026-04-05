@@ -57,8 +57,16 @@
                                                 </td>
                                                 <td>
                                                     <a href="{{ route('admin.master.employees.edit', $employee->id) }}"
-                                                        class="btn btn-sm btn-info"><i class="fas fa-edit"></i></a>
-                                                    <!-- Delete Form -->
+                                                        class="btn btn-sm btn-info" title="Edit"><i class="fas fa-edit"></i></a>
+                                                    
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteEmployee({{ $employee->id }})" title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+
+                                                    <form id="delete-form-{{ $employee->id }}" action="{{ route('admin.master.employees.destroy', $employee->id) }}" method="POST" style="display: none;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                    </form>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -71,4 +79,23 @@
             </div>
         </section>
     </div>
+
+    <!-- SweetAlert Script -->
+    <script>
+        function deleteEmployee(id) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-form-' + id).submit();
+                }
+            })
+        }
+    </script>
 @endsection

@@ -10,6 +10,7 @@ use App\Models\OrderDispatch;
 use App\Models\SalesAgent;
 use App\Models\Vendor;
 use App\Models\MasterCustomer;
+use App\Models\OrderMain;
 
 class PendingPaymentController extends Controller
 {
@@ -38,6 +39,14 @@ class PendingPaymentController extends Controller
             $q->where('order_type', 'corporate');
         })->get();
 
+        // Fetch Shops if an Agent is selected
+        $shops = collect();
+        if ($request->agent_id) {
+            $shops = MasterCustomer::where('sales_agent_id', $request->agent_id)
+                ->where('status', 1)
+                ->get();
+        }
+
         // Logic for Agent Orders (Receivable)
         $agentOrdersQuery = AgentOrder::with(['agent', 'shop'])->latest();
         if ($request->from_date)
@@ -46,6 +55,8 @@ class PendingPaymentController extends Controller
             $agentOrdersQuery->whereDate('order_date', '<=', $request->to_date);
         if ($request->agent_id)
             $agentOrdersQuery->where('sales_agent_id', $request->agent_id);
+        if ($request->shop_id)
+            $agentOrdersQuery->where('master_customer_id', $request->shop_id);
 
         $agentOrders = $agentOrdersQuery->get()->filter(function ($order) {
             return $order->balance_amount > 0;
@@ -66,8 +77,9 @@ class PendingPaymentController extends Controller
         });
         $totalPayable += $fabricReceipts->sum('balance_amount');
 
-        // Logic for Corporate Dispatches (Receivable)
+        // Logic for Corporate Orders & Dispatches (Receivable)
         $corporateDispatchesQuery = OrderDispatch::with(['customer', 'orderMain'])
+            ->where('is_paid', 0)
             ->whereHas('orderMain', function ($q) {
                 $q->where('order_type', 'corporate');
             })->latest();
@@ -83,14 +95,33 @@ class PendingPaymentController extends Controller
         });
         $totalReceivable += $corporateDispatches->sum('balance_amount');
 
+        // Logic for Corporate Orders without dispatches yet
+        $corporateOrdersQuery = OrderMain::with('customer')
+            ->where('order_type', 'corporate')
+            ->where('is_paid', 0)
+            // Ideally only orders WITHOUT any dispatch or if we want to show all pending orders
+            ->latest();
+
+        if ($request->from_date)
+            $corporateOrdersQuery->whereDate('created_at', '>=', $request->from_date);
+        if ($request->to_date)
+            $corporateOrdersQuery->whereDate('created_at', '<=', $request->to_date);
+        if ($request->customer_id)
+            $corporateOrdersQuery->where('master_customer_id', $request->customer_id);
+
+        $corporateOrders = $corporateOrdersQuery->get();
+        // Since we don't have total_amount for orders, we can't easily add to totalReceivable unless we calculate it
+
         return view('admin.payment.pending.index', compact(
             'agentOrders',
             'fabricReceipts',
             'corporateDispatches',
+            'corporateOrders',
             'totalReceivable',
             'totalPayable',
             'activeTab',
             'agents',
+            'shops',
             'vendors',
             'customers',
             'layout',

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PackingBox extends Model
 {
     protected $fillable = [
-        'packing_main_id', 'packing_carton_id', 'box_no', 'box_type'
+        'packing_main_id', 'packing_carton_id', 'box_no', 'box_type', 'barcode'
     ];
 
     public function carton()
@@ -19,5 +19,15 @@ class PackingBox extends Model
     public function items()
     {
         return $this->hasMany(PackingItem::class, 'packing_box_id');
+    }
+
+    public function packingMain()
+    {
+        return $this->belongsTo(PackingMain::class, 'packing_main_id');
+    }
+
+    public function domesticInventory()
+    {
+        return $this->hasOne(DomesticInventory::class, 'packing_box_id');
     }
 }

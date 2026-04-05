@@ -36,5 +36,9 @@ class SizeController extends Controller {
         $data = $this->service->update($request);
         return redirect()->route('admin.master.size.index')->withSuccess('The size has been successfully updated.');
     }
+    public function delete(Request $request){
+        $data = $this->service->delete($request);
+        return redirect()->route('admin.master.size.index')->withSuccess('The size has been successfully deleted.');
+    }
 
 }

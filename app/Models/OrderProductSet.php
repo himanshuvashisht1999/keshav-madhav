@@ -8,6 +8,7 @@ class OrderProductSet extends Model
 {
     use HasFactory;
     protected $table = 'order_products_sets';
+    protected $appends = ['size_set_name', 'color_name'];
     protected $fillable = [
         'id',
         'sno',
@@ -45,6 +46,10 @@ class OrderProductSet extends Model
     {
         return $this->hasMany(OrderCuttingStage::class, 'set_product_id');
     }
+    public function orderCuttingStages()
+    {
+        return $this->hasMany(OrderCuttingStage::class, 'set_product_id');
+    }
     public function order_cutting_stage()
     {
         return $this->hasOne(OrderCuttingStage::class, 'set_product_id');
@@ -72,7 +77,7 @@ class OrderProductSet extends Model
     }
     public function size_measurement()
     {
-        return $this->hasOne(MasterSizeMeasurement::class, 'id', 'set_size');
+        return $this->belongsTo(MasterSizeMeasurement::class, 'set_size');
     }
 
     public function sizeMeasurement()
@@ -104,5 +109,15 @@ class OrderProductSet extends Model
     public function product_set_details()
     {
         return $this->hasMany(OrderProductSetDetail::class, 'order_products_set_id');
+    }
+
+    public function getSizeSetNameAttribute()
+    {
+        return $this->size_measurement ? $this->size_measurement->name : 'N/A';
+    }
+
+    public function getColorNameAttribute()
+    {
+        return $this->colors ? $this->colors->name : 'N/A';
     }
 }

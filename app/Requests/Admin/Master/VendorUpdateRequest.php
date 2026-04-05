@@ -22,12 +22,14 @@ class VendorUpdateRequest extends FormRequest{
         // dd($this);
         $id = $request->id;
         return [
-            'name' => 'required',
-            // 'phone' => 'required|unique:vendors,phone,' . $id,
-            // 'email' => 'required|unique:vendors,email,' . $id,
-            // 'image' => 'required',
+            'name' => [
+                'required',
+                \Illuminate\Validation\Rule::unique('vendors', 'name')->whereNot('status', 3)->ignore($id)
+            ],
             'status' =>'required',
-            'sku'    => 'required|unique:vendors,sku,' . $id,
+            'sku'    => 'nullable',
+            'balance' => 'nullable|numeric',
+            'type' => 'required|in:Credit,Debit',
         ];
     }
 

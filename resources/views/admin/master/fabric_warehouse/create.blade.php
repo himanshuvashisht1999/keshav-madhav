@@ -5,15 +5,16 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-12">
-                    <h1 class="text-center">Add Fabric Warehouse</h1>
+                <div class="col-sm-6">
+                    <h1>Add Fabric Warehouse</h1>
                 </div>
-                <!-- <div class="col-sm-6">
+                <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Create Warehouse</li>
+                        <li class="breadcrumb-item"><a href="{{route('admin.master.fabric_warehouse.index')}}">Fabric Warehouse</a></li>
+                        <li class="breadcrumb-item active">Add Fabric Warehouse</li>
                     </ol>
-                </div> -->
+                </div>
             </div>
         </div>
     </section>
@@ -23,9 +24,6 @@
         <div class="container-fluid">
             <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
-                <!-- <div class="card-header">
-                    <h3 class="card-title">Create Warehouse</h3>
-                </div> -->
                 <form action="{{route('admin.master.fabric_warehouse.store')}}" method="post" enctype="multipart/form-data">
                     @csrf
                     <div class="card-body">
@@ -43,11 +41,14 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="sku">SKU</label>
-                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU">
-                                    @if ($errors->has('sku'))
+                                    <label>Status</label>
+                                    <select name="status" class="form-control select2" style="width: 100%;">
+                                        <option value="1" {{old('status') == '1' ? 'selected' : ''}}>Active</option>
+                                        <option value="0" {{old('status') == '0' ? 'selected' : ''}}>Inactive</option>
+                                    </select>
+                                    @if ($errors->has('status'))
                                         <span class="invalid-feedback d-block">
-                                            {{ $errors->first('sku') }}
+                                        {{ $errors->first('status') }}
                                         </span>
                                     @endif
                                 </div>
@@ -77,30 +78,6 @@
     </section>
 </div>
 <script>
-    function generateSKU() {
-        let name = document.querySelector("input[name='cutting_master_name']").value.trim();
-        let part1 = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        let part2 = Math.floor(1000 + Math.random() * 9000);
-        // let sku = 'FABRIC-WEAVE-' + part1 + "-" + part2;
-        let sku = part1;
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited || skuInput.value === "") {
-            skuInput.value = sku;
-        }
-    }
-
-    // Attach auto-generate on typing (name, phone, address)
-    document.querySelector("input[name='cutting_master_name']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
-
-    // Mark as manually edited when user types in SKU
-    document.getElementById("sku").addEventListener("input", function() {
-        this.dataset.edited = true;
-    });
 </script>
 
 @endsection

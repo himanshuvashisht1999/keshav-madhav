@@ -80,6 +80,29 @@
                                     id="delivery_date_hidden">
                             </div>
 
+                            {{-- Company --}}
+                            <div class="col-md-6 mt-2">
+                                <label>Company</label>
+                                <select name="master_company_id" class="form-control select2">
+                                    <option value="">Select Company</option>
+                                    @foreach($companies as $c)
+                                        <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Transport --}}
+                            <div class="col-md-6 mt-2">
+                                <label>Transport</label>
+                                <input type="text" name="transport" class="form-control" placeholder="Enter Transport Details">
+                            </div>
+
+                            {{-- Remark --}}
+                            <div class="col-md-12 mt-2">
+                                <label>Remark</label>
+                                <textarea name="remark" class="form-control" rows="2" placeholder="Enter Remark"></textarea>
+                            </div>
+
                             {{-- Hidden SKU --}}
                             <input type="hidden" name="sku" id="sku">
 

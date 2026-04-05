@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class FabricRollAssigning extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackCreator;
     protected $table = 'production_fabric_roll_assigning';
     protected $fillable = [
         'id',
@@ -29,6 +29,7 @@ class FabricRollAssigning extends Model
         'slip_create_date_time',
         'slip_file',
         'status',
+        'created_by',
         'created_at',
         'updated_at'
     ];

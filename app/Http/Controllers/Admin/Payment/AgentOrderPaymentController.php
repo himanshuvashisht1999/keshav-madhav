@@ -7,18 +7,30 @@ use Illuminate\Http\Request;
 use App\Models\SalesAgent;
 use App\Models\AgentOrder;
 use App\Models\Payment;
+use App\Models\BankAccount;
+use App\Models\CashPayment;
+use App\Services\Admin\BalanceService;
 use Illuminate\Support\Facades\DB;
 use Auth;
 
 class AgentOrderPaymentController extends Controller
 {
+    protected $balanceService;
+
+    public function __construct(BalanceService $balanceService)
+    {
+        $this->balanceService = $balanceService;
+    }
+
     public function create(Request $request)
     {
         $agents = SalesAgent::where('status', 1)->get();
         $selectedAgentId = $request->get('agent_id');
         $selectedOrderId = $request->get('order_id');
+        $bank_accounts = BankAccount::where('status', 1)->orderBy('bank_name')->get();
+        $cash_accounts = CashPayment::where('status', 1)->orderBy('name')->get();
 
-        return view('admin.payment.agent_order.create', compact('agents', 'selectedAgentId', 'selectedOrderId'));
+        return view('admin.payment.agent_order.create', compact('agents', 'selectedAgentId', 'selectedOrderId', 'bank_accounts', 'cash_accounts'));
     }
 
     public function getOrders(Request $request)
@@ -46,7 +58,8 @@ class AgentOrderPaymentController extends Controller
             'agent_order_id' => 'required|exists:agent_orders,id',
             'amount' => 'required|numeric|min:1',
             'payment_date' => 'required|date',
-            'payment_mode' => 'required|string',
+            'payment_mode' => 'required|string|in:Bank,Cash',
+            'payment_method_id' => 'required|integer',
         ]);
 
         $order = AgentOrder::findOrFail($request->agent_order_id);
@@ -58,6 +71,16 @@ class AgentOrderPaymentController extends Controller
         try {
             DB::beginTransaction();
 
+            // Get method name for record description
+            $methodName = '';
+            if ($request->payment_mode === 'Bank') {
+                $account = BankAccount::find($request->payment_method_id);
+                $methodName = $account ? "Bank: {$account->bank_name} ({$account->account_number})" : "Bank";
+            } else {
+                $account = CashPayment::find($request->payment_method_id);
+                $methodName = $account ? "Cash: {$account->name}" : "Cash";
+            }
+
             $payment = Payment::create([
                 'payment_category' => 'agent_order',
                 'payment_type' => 'received',
@@ -67,11 +90,16 @@ class AgentOrderPaymentController extends Controller
                 'paymentable_id' => $request->agent_order_id,
                 'amount' => $request->amount,
                 'payment_date' => $request->payment_date,
-                'payment_mode' => $request->payment_mode,
+                'payment_mode' => $methodName,
+                'payment_method_type' => $request->payment_mode,
+                'payment_method_id' => $request->payment_method_id,
                 'reference_id' => $request->reference_id,
                 'remarks' => $request->remarks,
                 'created_by' => Auth::id(),
             ]);
+
+            // Update Balance (Agent Order is always 'received' -> add)
+            $this->balanceService->updateBalance($request->payment_mode, $request->payment_method_id, $request->amount, 'add');
 
             // Handle Image Upload if any
             if ($request->hasFile('image')) {

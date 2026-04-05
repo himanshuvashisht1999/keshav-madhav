@@ -45,7 +45,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Phone</label>
-                                    <input type="number" name="phone" class="form-control" placeholder="Enter phone" value="{{old('name')}}">
+                                    <input type="number" name="phone" class="form-control" placeholder="Enter phone" value="{{old('phone')}}">
                                     @if ($errors->has('phone'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('phone') }}
@@ -56,7 +56,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Email</label>
-                                    <input type="text" name="email" class="form-control" placeholder="Enter email" value="{{old('name')}}">
+                                    <input type="text" name="email" class="form-control" placeholder="Enter email" value="{{old('email')}}">
                                     @if ($errors->has('email'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('email') }}
@@ -97,35 +97,13 @@
 
                             
 
-                            <!-- <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputFile">Upload Image (Recommended size: 500 × 300 px)</label>
-                                    <div class="input-group">
-                                        <div class="custom-file">
-                                            <input type="file" name="image" class="custom-file-input" id="image-input" onchange="previewImage()"  accept=".jpg,.jpeg,.png">
-                                            <label class="custom-file-label" for="exampleInputFile">Choose file</label>
-                                        </div>
-                                        
-                                        @if ($errors->has('image'))
-                                            <span class="invalid-feedback d-block">
-                                            {{ $errors->first('image') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div> -->
-
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>Status</label>
-                                    <select name="status" class="form-control select2" style="width: 100%;">
-                                        <!-- <option value="">Select</option> -->
-                                        <option value="1" {{old('status') == '1' ? 'selected' : ''}}>Active</option>
-                                        <option value="0" {{old('status') == '0' ? 'selected' : ''}}>Inactive</option>
-                                    </select>
-                                    @if ($errors->has('status'))
+                                    <label for="exampleInputEmail1">Balance</label>
+                                    <input type="number" step="0.01" name="balance" class="form-control" placeholder="Enter balance" value="{{old('balance', 0)}}">
+                                    @if ($errors->has('balance'))
                                         <span class="invalid-feedback d-block">
-                                        {{ $errors->first('status') }}
+                                        {{ $errors->first('balance') }}
                                         </span>
                                     @endif
                                 </div>
@@ -133,18 +111,33 @@
 
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="sku">SKU</label>
-                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU">
-                                    @if ($errors->has('sku'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('sku') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                            <!-- <div class="col-md-6">
-                                <img class="" src="{{asset('images/image-placeholder.png')}}" alt="Preview" id="image-preview" height="80px" width="80px">
-                            </div> -->
+                                     <label>Type</label>
+                                     <select name="type" class="form-control select2" style="width: 100%;">
+                                         <option value="Credit" {{old('type') == 'Credit' ? 'selected' : ''}}>Credit</option>
+                                         <option value="Debit" {{old('type') == 'Debit' ? 'selected' : ''}}>Debit</option>
+                                     </select>
+                                     @if ($errors->has('type'))
+                                         <span class="invalid-feedback d-block">
+                                         {{ $errors->first('type') }}
+                                         </span>
+                                     @endif
+                                 </div>
+                             </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                     <label>Status</label>
+                                     <select name="status" class="form-control select2" style="width: 100%;">
+                                         <option value="1" {{old('status') == '1' ? 'selected' : ''}}>Active</option>
+                                         <option value="0" {{old('status') == '0' ? 'selected' : ''}}>Inactive</option>
+                                     </select>
+                                     @if ($errors->has('status'))
+                                         <span class="invalid-feedback d-block">
+                                         {{ $errors->first('status') }}
+                                         </span>
+                                     @endif
+                                 </div>
+                             </div>
 
                             <div class="col-md-12">
                                 <div class="form-group">
@@ -173,75 +166,6 @@
     </section>
 </div>
 <script>
-        // function previewImage() {
-        //     var imageInput = document.getElementById('image-input');
-        //     var imagePreview = document.getElementById('image-preview');
-            
-        //     if (imageInput.files && imageInput.files[0]) {
-        //         var reader = new FileReader();
-        //         reader.onload = function(e) {
-        //             imagePreview.src = e.target.result;
-        //         };
-                
-        //         reader.readAsDataURL(imageInput.files[0]);
-        //     } else {
-        //         // If no file is selected or supported, clear the preview
-        //         imagePreview.src = "";
-        //     }
-        // }
-
-</script>
-<script>
-    function generateSKU() {
-        let name = document.querySelector("input[name='name']").value.trim();
-        let phone = document.querySelector("input[name='phone']").value.trim();
-        let address = document.querySelector("input[name='address']").value.trim();
-        
-        // Get first 4 letters of name (fresh every time)
-        let part1 = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-
-        // Get last 3 digits of phone
-        let part2 = phone.replace(/[^0-9]/g, '');
-        part2 = part2.length >= 3 ? part2.slice(-3) : part2;
-
-        // Combine
-        // let sku = 'VENDOR-' + part1 + "-" + part2;
-        let sku = part1;
-
-        let skuInput = document.getElementById("sku");
-
-        // Only overwrite if user has not manually typed in SKU
-        if (!skuInput.dataset.edited || skuInput.value === "") {
-            skuInput.value = sku;
-        }
-    }
-
-    // Attach auto-generate on typing (name, phone, address)
-    document.querySelector("input[name='name']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
-
-    document.querySelector("input[name='phone']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
-
-    document.querySelector("input[name='address']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
-
-    // Mark as manually edited when user types in SKU
-    document.getElementById("sku").addEventListener("input", function() {
-        this.dataset.edited = true;
-    });
 </script>
 
 

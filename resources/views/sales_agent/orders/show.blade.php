@@ -18,41 +18,48 @@
                     <h4 class="font-weight-bold mb-0 text-uppercase">{{ $order->status }}</h4>
                 </div>
                 <div class="text-right">
-                    <p class="small mb-1 opacity-75">Grand Total</p>
-                    <h3 class="font-weight-bold mb-0">₹{{ number_format($order->grand_total, 2) }}</h3>
-                    <a href="{{ route('agent.orders.invoice', $order->id) }}"
-                        class="btn btn-sm btn-light mt-2 text-primary font-weight-bold">
-                        <i class="fas fa-download mr-1"></i> Invoice
-                    </a>
+                    @if(Auth::guard('sales_agent')->user()->see_price)
+                        <p class="small mb-1 opacity-75">Grand Total</p>
+                        <h3 class="font-weight-bold mb-0">₹{{ number_format($order->grand_total, 2) }}</h3>
+                        <a href="{{ route('agent.orders.invoice', $order->id) }}"
+                            class="btn btn-sm btn-light mt-2 text-primary font-weight-bold">
+                            <i class="fas fa-download mr-1"></i> Invoice
+                        </a>
+                    @else
+                        <p class="small mb-1 opacity-75">Items</p>
+                        <h3 class="font-weight-bold mb-0">{{ $order->total_qty }} pcs</h3>
+                    @endif
                 </div>
             </div>
         </div>
 
         <div class="app-card shadow-sm border-0 mb-4 bg-white">
             <div class="row">
-                <div class="col-6 border-right">
+                <div class="col-{{Auth::guard('sales_agent')->user()->see_price ? '6' : '12'}} bor-{{Auth::guard('sales_agent')->user()->see_price ? 'right' : '0'}}">
                     <h6 class="font-weight-bold text-muted small uppercase mb-1 text-secondary">Shipping to:</h6>
                     <h5 class="font-weight-bold mb-1">{{ $order->shop_name }}</h5>
                     <p class="text-muted small mb-0">{{ \Carbon\Carbon::parse($order->order_date)->format('d M Y, h:i A') }}
                     </p>
                 </div>
-                <div class="col-6">
-                    <h6 class="font-weight-bold text-muted small uppercase mb-1 text-secondary">Bill Summary:</h6>
-                    <div class="d-flex justify-content-between small mb-1">
-                        <span class="text-muted">Subtotal:</span>
-                        <span class="font-weight-bold text-dark">₹{{ number_format($order->total_amount, 2) }}</span>
-                    </div>
-                    @if($order->discount_amount > 0)
-                        <div class="d-flex justify-content-between small mb-1 text-success">
-                            <span>Discount ({{ number_format($order->discount_percentage, 0) }}%):</span>
-                            <span>-₹{{ number_format($order->discount_amount, 2) }}</span>
+                @if(Auth::guard('sales_agent')->user()->see_price)
+                    <div class="col-6">
+                        <h6 class="font-weight-bold text-muted small uppercase mb-1 text-secondary">Bill Summary:</h6>
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted">Subtotal:</span>
+                            <span class="font-weight-bold text-dark">₹{{ number_format($order->total_amount, 2) }}</span>
                         </div>
-                    @endif
-                    <div class="d-flex justify-content-between small text-danger">
-                        <span>GST ({{ number_format($order->gst_percentage, 0) }}%):</span>
-                        <span>+₹{{ number_format($order->gst_amount, 2) }}</span>
+                        @if($order->discount_amount > 0)
+                            <div class="d-flex justify-content-between small mb-1 text-success">
+                                <span>Discount ({{ number_format($order->discount_percentage, 0) }}%):</span>
+                                <span>-₹{{ number_format($order->discount_amount, 2) }}</span>
+                            </div>
+                        @endif
+                        <div class="d-flex justify-content-between small text-danger">
+                            <span>GST ({{ number_format($order->gst_percentage, 0) }}%):</span>
+                            <span>+₹{{ number_format($order->gst_amount, 2) }}</span>
+                        </div>
                     </div>
-                </div>
+                @endif
             </div>
         </div>
 
@@ -71,12 +78,25 @@
                 data-target="#modal_{{ $key }}">
                 <div class="d-flex justify-content-between mb-2">
                     <h6 class="font-weight-bold mb-0 text-primary">{{ $group->product_name }}</h6>
-                    <span class="badge badge-primary">{{ $group->box_count }} Boxes</span>
+                    <div>
+                        @if($group->status == 'Dispatched')
+                            <span class="badge badge-success mr-2"><i class="fas fa-check mr-1"></i>DISPATCHED</span>
+                        @else
+                            <span class="badge badge-secondary mr-2">PENDING</span>
+                        @endif
+                        <span class="badge badge-primary">{{ $group->box_count }} Boxes</span>
+                    </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2 mb-2">
                     <span class="text-muted small bg-light px-2 rounded mr-2">Des: {{ $group->design_number }}</span>
                     <span class="text-muted small bg-light px-2 rounded mr-2">Col: {{ $group->color_name }}</span>
-                    <span class="text-muted small bg-light px-2 rounded">Set: {{ $group->size_set_name }}</span>
+                    <span class="text-muted small bg-light px-2 rounded mr-2">Set: {{ $group->size_set_name }}</span>
+                    @if($group->fitting_name)
+                        <span class="text-muted small bg-light px-2 rounded mr-2">Fit: {{ $group->fitting_name }}</span>
+                    @endif
+                    @if($group->pattern_name)
+                        <span class="text-muted small bg-light px-2 rounded">Pat: {{ $group->pattern_name }}</span>
+                    @endif
                 </div>
                 <div class="d-flex justify-content-between align-items-end border-top pt-2 mt-1">
                     <div>
@@ -85,9 +105,13 @@
                             box</small>
                     </div>
                     <div class="text-right">
-                        <span class="text-primary font-weight-bold d-block">₹{{ number_format($group->selling_price, 2) }} /
-                            pc</span>
-                        <small class="text-muted">MRP: ₹{{ number_format($group->mrp, 2) }}</small>
+                        @if(Auth::guard('sales_agent')->user()->see_price)
+                            <span class="text-primary font-weight-bold d-block">₹{{ number_format($group->selling_price, 2) }} /
+                                pc</span>
+                        @else
+                            <span class="text-primary font-weight-bold d-block">Packed</span>
+                            <small class="text-muted">Ready</small>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -107,6 +131,8 @@
                                 <h6 class="font-weight-bold mb-1">{{ $group->product_name }}</h6>
                                 <p class="small text-muted mb-0">
                                     {{ $group->design_number }} | {{ $group->color_name }} | {{ $group->size_set_name }}
+                                    @if($group->fitting_name) | {{ $group->fitting_name }} @endif
+                                    @if($group->pattern_name) | {{ $group->pattern_name }} @endif
                                 </p>
                             </div>
                             <div class="table-responsive">

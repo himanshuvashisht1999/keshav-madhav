@@ -236,4 +236,60 @@ class ReportController extends Controller
         // dd($response['data']);
         return view('admin.report.lot_details', $response);
     }
+
+    public function lotDetailsPdf(Request $request)
+    {
+        $response['data'] = $this->service->lotDetails($request->lot_no);
+        $response['master_stages'] = $this->service->master_stages();
+
+        if (!$response['data']) {
+            return redirect()->back()->with('error', 'Lot not found');
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('owner.reports.lot_details_pdf', $response)->setPaper('A4', 'portrait');
+        return $pdf->download('lot-details-' . $request->lot_no . '.pdf');
+    }
+
+    public function unitAssignments(Request $request)
+    {
+        $response = $this->service->unitAssignments($request);
+        return view('admin.report.unit_assignments', $response);
+    }
+
+    public function closeUnitAssignment(Request $request, $type, $id)
+    {
+        $success = $this->service->closeUnitAssignment($type, $id);
+        if ($success) {
+            return redirect()->route('admin.reports.unit-assignments', $request->query())->with('success', 'Task closed successfully.');
+        }
+        return redirect()->back()->with('error', 'Assignment not found.');
+    }
+
+    public function reopenUnitAssignment(Request $request, $type, $id)
+    {
+        $success = $this->service->reopenUnitAssignment($type, $id);
+        if ($success) {
+            return redirect()->route('admin.reports.unit-assignments', ['view' => 'open'] + $request->query())->with('success', 'Task re-opened successfully.');
+        }
+        return redirect()->back()->with('error', 'Assignment not found.');
+    }
+
+    public function unitAssignmentsExport(Request $request)
+    {
+        $response = $this->service->unitAssignments($request);
+
+        return response()
+            ->view('admin.report.unit_assignments_export', $response)
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header(
+                'Content-Disposition',
+                'attachment; filename="unit-assignments-report-' . now()->format('d-m-Y_H-i') . '.xls"'
+            );
+    }
+
+    public function designWip(Request $request)
+    {
+        $response = $this->service->designWip($request);
+        return view('admin.report.design_wip', $response);
+    }
 }

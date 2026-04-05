@@ -8,17 +8,16 @@ use Yajra\DataTables\Facades\DataTables;
 
 class VendorDataTable  {
 
+    protected $vendor;
     public function __construct(Vendor $vendor) {
         $this->vendor = $vendor;
     }
 
     public function indexList($request){
-        $queue = Vendor::query();
+        $queue = Vendor::where('status', '!=', 3);
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $query->orderBy('id','asc');
-                $query->orWhere('name', 'like', "%{$request->get('search')['value']}%");
                 if ($request->has('name') && !empty($request->name)) {
                     $query->where('name', 'like', "%{$request->get('name')}%");
                 }
@@ -28,17 +27,20 @@ class VendorDataTable  {
                 if ($request->has('email') && !empty($request->email)) {
                     $query->where('email', 'like', "%{$request->get('email')}%");
                 }
-                if ($request->has('sku') && !empty($request->sku)) {
-                    $query->where('sku', 'like', "%{$request->get('sku')}%");
-                }
 
                 if ($request->has('status') && $request->filled('status')) {
                     $query->where('status', $request->get('status'));
                 }
-
-                
             }) 
-         
+            ->order(function ($query) {
+                $query->orderBy('id', 'asc');
+            })
+            ->editColumn('balance', function ($queue) {
+                $balance = $queue->balance;
+                $color = ($balance >= 0) ? 'green' : 'red';
+                $type = ($balance >= 0) ? 'Credit' : 'Debit';
+                return '<span style="color:' . $color . '; font-weight:bold;">' . number_format(abs($balance), 2) . ' (' . $type . ')</span>';
+            })
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
@@ -46,11 +48,12 @@ class VendorDataTable  {
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
                 return '
-                <a href="' . route('admin.master.vendor.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                <a href="' . route('admin.master.vendor.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash text-danger"></i></a>
                 ';
             })
             
-            ->rawColumns(['action', 'status'])
+            ->rawColumns(['action', 'status', 'balance'])
             ->make(true);
     }
 }

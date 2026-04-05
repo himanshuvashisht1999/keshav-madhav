@@ -13,7 +13,8 @@ class PackingItem extends Model
         'packing_box_id',
         'size_id',
         'quantity',
-        'selling_price'
+        'selling_price',
+        'mrp'
     ];
 
     public function size()
@@ -24,5 +25,10 @@ class PackingItem extends Model
     public function detail()
     {
         return $this->belongsTo(OrderProductSetDetail::class, 'size_id');
+    }
+
+    public function box()
+    {
+        return $this->belongsTo(PackingBox::class, 'packing_box_id');
     }
 }

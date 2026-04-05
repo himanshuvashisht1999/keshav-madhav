@@ -20,7 +20,7 @@
 
                     <div class="row mb-2">
                         <div class="col-md-6">
-                            <label>Fabric Warehouse</label>
+                            <label>Production Warehouse</label>
 
                             <select class="form-control select2" id="warehouseSelect"
                                 onchange="changeWarehouse(this.value)">

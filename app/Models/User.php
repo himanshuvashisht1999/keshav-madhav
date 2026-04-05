@@ -9,9 +9,12 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Carbon;
 
+use Spatie\Permission\Traits\HasRoles;
+
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    protected $guard_name = 'admin';
 
     /**
      * The attributes that are mass assignable.
@@ -22,7 +25,6 @@ class User extends Authenticatable
         'id',
         'first_name',
         'last_name',
-        'title',
         'email',
         'phone',
         'gender',
@@ -72,12 +74,13 @@ class User extends Authenticatable
     public function getImageAttribute($value)
     {
         if ($value) {
-            return asset('assets/user-image/'. $value);
+            return asset('assets/user-image/' . $value);
         } else {
             return asset('assets/user-image/default-image.png');
         }
-    } 
-    public function getCategoryData(){
-        return $this->hasMany('App\Models\UserCategory','user_id','id')->with('getCategoryData');
+    }
+    public function getCategoryData()
+    {
+        return $this->hasMany('App\Models\UserCategory', 'user_id', 'id')->with('getCategoryData');
     }
 }

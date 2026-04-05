@@ -36,6 +36,9 @@ class ProductionGoodsController extends Controller {
         $response['garment_patterns'] = $this->service->garment_patterns();
         $response['colors'] = $this->service->colors();
         $response['product_stages'] = $this->service->product_stages();
+        $response['series_names'] = $this->service->series();
+        $response['brands'] = $this->service->brands();
+        $response['fittings'] = $this->service->fittings();
         return view('admin.master.production-goods.create',$response);
     }
     public function store(ProductionGoodsStoreRequest $request){
@@ -54,6 +57,9 @@ class ProductionGoodsController extends Controller {
         $response['garment_patterns'] = $this->service->garment_patterns();
         $response['colors'] = $this->service->colors();
         $response['product_stages'] = $this->service->product_stages();
+        $response['series_names'] = $this->service->series();
+        $response['brands'] = $this->service->brands();
+        $response['fittings'] = $this->service->fittings();
         return view('admin.master.production-goods.edit',$response);
     }
     public function view(Request $request){
@@ -64,11 +70,18 @@ class ProductionGoodsController extends Controller {
         $response['garment_patterns'] = $this->service->garment_patterns();
         $response['colors'] = $this->service->colors();
         $response['product_stages'] = $this->service->product_stages();
+        $response['series_names'] = $this->service->series();
+        $response['brands'] = $this->service->brands();
+        $response['fittings'] = $this->service->fittings();
         return view('admin.master.production-goods.view',$response);
     }
     public function update(ProductionGoodsUpdateRequest $request){
         $data = $this->service->update($request);
         return redirect()->route('admin.master.production-goods.index')->withSuccess('The product has been successfully updated.');
+    }
+    public function getNextProductName(Request $request){
+        $nextName = $this->service->getNextProductName($request->master_series_id);
+        return response()->json(['next_name' => $nextName]);
     }
 
 }

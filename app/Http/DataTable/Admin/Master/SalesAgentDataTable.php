@@ -11,7 +11,7 @@ class SalesAgentDataTable
 
     public function indexList($request)
     {
-        $queue = SalesAgent::query();
+        $queue = SalesAgent::withSum('shops as total_balance', 'balance');
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -36,6 +36,12 @@ class SalesAgentDataTable
                 $status = $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
             })
+            ->editColumn('total_balance', function ($queue) {
+                $balance = $queue->total_balance ?? 0;
+                $color = ($balance >= 0) ? 'green' : 'red';
+                $type = ($balance >= 0) ? 'Credit' : 'Debit';
+                return '<span style="color:' . $color . '; font-weight:bold;">' . number_format(abs($balance), 2) . ' (' . $type . ')</span>';
+            })
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
                 return '
@@ -44,7 +50,7 @@ class SalesAgentDataTable
                 ';
             })
 
-            ->rawColumns(['action', 'status'])
+            ->rawColumns(['action', 'status', 'total_balance'])
             ->make(true);
     }
 }

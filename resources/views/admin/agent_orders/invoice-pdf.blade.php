@@ -5,234 +5,290 @@
     <meta charset="utf-8">
     <title>Invoice #ORD-{{ $order->id }}</title>
     <style>
-        body {
-            font-family: 'DejaVu Sans', sans-serif;
-            font-size: 10px;
-            color: #333;
+        @page {
             margin: 0;
-            padding: 20px;
         }
 
-        .header {
-            border-bottom: 2px solid #4f46e5;
-            padding-bottom: 20px;
-            margin-bottom: 20px;
-        }
-
-        .header table {
-            width: 100%;
-        }
-
-        .logo {
-            max-width: 150px;
-        }
-
-        .title {
-            text-align: right;
-            font-size: 24px;
-            color: #4f46e5;
-            text-transform: uppercase;
-        }
-
-        .info-section {
-            width: 100%;
-            margin-bottom: 30px;
-        }
-
-        .info-section td {
-            vertical-align: top;
-            width: 50%;
-        }
-
-        .info-box h3 {
-            margin-top: 0;
-            margin-bottom: 5px;
-            font-size: 14px;
-            color: #4f46e5;
-            text-transform: uppercase;
-        }
-
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
-
-        .items-table th {
-            background-color: #4f46e5;
-            color: #fff;
-            padding: 10px;
-            text-align: left;
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 11px;
-            text-transform: uppercase;
+            color: #222;
+            margin: 0;
+            padding: 30px;
+            line-height: 1.4;
         }
 
-        .items-table td {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .items-table tr:nth-child(even) {
-            background-color: #f9fafb;
-        }
-
-        .summary-table {
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        .summary-table td {
-            padding: 5px 10px;
-        }
-
-        .summary-label {
-            text-align: right;
-            font-weight: bold;
-            width: 80%;
-        }
-
-        .summary-value {
-            text-align: right;
-            font-weight: bold;
-            color: #4f46e5;
-            font-size: 14px;
-        }
-
-        .footer {
-            position: fixed;
-            bottom: 0px;
-            left: 0px;
-            right: 0px;
-            height: 50px;
-            text-align: center;
-            font-size: 10px;
-            color: #999;
-            border-top: 1px solid #eee;
-            padding-top: 10px;
-        }
-
-        .text-right {
-            text-align: right;
+        .main-container {
+            border: 2px solid #000;
+            min-height: 1000px;
+            position: relative;
         }
 
         .text-center {
             text-align: center;
         }
 
+        .text-right {
+            text-align: right;
+        }
+
         .font-weight-bold {
             font-weight: bold;
+        }
+
+        .header-section {
+            border-bottom: 2px solid #000;
+            padding: 8px;
+            background-color: #f8f9fa;
+        }
+
+        .estimate-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 2px;
+            text-decoration: underline;
+        }
+
+        .company-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+
+        .info-table {
+            width: 100%;
+            border-bottom: 1px solid #000;
+            border-collapse: collapse;
+        }
+
+        .info-table td {
+            vertical-align: top;
+            padding: 10px;
+            border-right: 1px solid #000;
+        }
+
+        .info-table td:last-child {
+            border-right: none;
+        }
+
+        .party-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .party-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .items-table th {
+            border-bottom: 2px solid #000;
+            border-right: 1px solid #000;
+            padding: 8px 5px;
+            background-color: #f2f2f2;
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+
+        .items-table td {
+            border-right: 1px solid #000;
+            padding: 8px 10px;
+            vertical-align: top;
+        }
+
+        .items-table th:last-child,
+        .items-table td:last-child {
+            border-right: none;
+        }
+
+        .total-row td {
+            border-top: 2px solid #000;
+            border-bottom: 1px solid #000;
+            font-weight: bold;
+            padding: 8px;
+        }
+
+        .summary-row td {
+            font-weight: bold;
+            padding: 5px 8px;
+        }
+
+        .amount-in-words {
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 8px 15px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            padding: 10px 15px;
+            vertical-align: top;
         }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <table>
+    <div class="main-container">
+        <div class="header-section text-center">
+            <div class="estimate-title">ESTIMATE</div>
+            <div class="company-name">{{ $settings->website_name ?? 'SURGICAL JEANS' }}</div>
+            <div style="font-size: 10px;">{{ $settings->address ?? '' }}</div>
+        </div>
+
+        <table class="info-table">
             <tr>
-                <td>
-                    @if(isset($settings->logo) && $settings->logo)
-                        <img src="{{ public_path('storage/' . $settings->logo) }}" class="logo">
-                    @else
-                        <h2 style="margin:0; color:#4f46e5;">{{ $settings->website_name ?? 'Snapkid' }}</h2>
-                    @endif
+                <td width="60%">
+                    <div class="party-label">Party Details :</div>
+                    <div class="party-name">{{ $order->shop_name }}</div>
+                    <div>{{ $order->shop_address }}</div>
+                    <div>Phone: {{ $order->shop_phone }}</div>
                 </td>
-                <td class="title">Invoice</td>
+                <td width="40%">
+                    <table width="100%" style="border-collapse: collapse;">
+                        <tr>
+                            <td width="45%" style="padding: 2px 0; border:none; font-weight:bold;">Invoice No</td>
+                            <td style="padding: 2px 0; border:none;">: <strong>{{ $settings->website_name ?? 'SURGICAL' }}/{{ $order->id }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 2px 0; border:none; font-weight:bold;">Dated</td>
+                            <td style="padding: 2px 0; border:none;">: <strong>{{ date('d-m-Y') }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 2px 0; border:none; font-weight:bold;">Bill</td>
+                            <td style="padding: 2px 0; border:none;">: </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 2px 0; border:none; font-weight:bold;">AG</td>
+                            <td style="padding: 2px 0; border:none;">: {{ $order->agent_name }}</td>
+                        </tr>
+                    </table>
+                </td>
             </tr>
         </table>
-    </div>
 
-    <table class="info-section">
-        <tr>
-            <td>
-                <div class="info-box">
-                    <h3>From:</h3>
-                    <strong>{{ $settings->website_name ?? 'Snapkid' }}</strong><br>
-                    {{ $settings->address ?? '' }}<br>
-                    Phone: {{ $settings->phone ?? '' }}<br>
-                    Email: {{ $settings->email ?? '' }}
-                </div>
-            </td>
-            <td>
-                <div class="info-box" style="text-align: right;">
-                    <h3>Bill To:</h3>
-                    <strong>{{ $order->shop_name }}</strong><br>
-                    {{ $order->shop_address ?? '' }}<br>
-                    Phone: {{ $order->shop_phone ?? '' }}<br>
-                    Email: {{ $order->shop_email ?? '' }}
-                </div>
-            </td>
-        </tr>
-    </table>
-
-    <table class="info-section" style="margin-bottom: 15px;">
-        <tr>
-            <td>
-                <strong>Order ID:</strong> #ORD-{{ $order->id }}<br>
-                <strong>Order Date:</strong> {{ date('d M Y', strtotime($order->order_date)) }}
-            </td>
-            <td style="text-align: right;">
-                <strong>Status:</strong> <span style="text-transform: uppercase;">{{ $order->status }}</span><br>
-                <strong>Agent:</strong> {{ $order->agent_name }}
-            </td>
-        </tr>
-    </table>
-
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th width="5%">#</th>
-                <th width="50%">Product Details</th>
-                <th width="15%" class="text-center">Qty (Pcs)</th>
-                <th width="15%" class="text-right">Price</th>
-                <th width="15%" class="text-right">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($items as $index => $item)
+        <table class="items-table">
+            <thead>
                 <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td>
-                        <div class="font-weight-bold">{{ $item->product_name }}</div>
-                        <small style="color:#666;">
-                            Design: {{ $item->design_number }} | Color: {{ $item->color_name }} | Set:
-                            {{ $item->size_set_name }} | Box: {{ $item->box_no }}
-                        </small>
-                    </td>
-                    <td class="text-center">{{ $item->quantity }}</td>
-                    <td class="text-right">&#8377;{{ number_format($item->selling_price, 2) }}</td>
-                    <td class="text-right font-weight-bold">
-                        &#8377;{{ number_format($item->quantity * $item->selling_price, 2) }}</td>
+                    <th width="5%" class="text-center">S.N.</th>
+                    <th width="35%">Description of Goods</th>
+                    <th width="10%" class="text-center">PCs Qty.</th>
+                    <th width="10%" class="text-center">BoX Qty.</th>
+                    <th width="10%" class="text-center">Unit</th>
+                    <th width="12%" class="text-right">Price</th>
+                    <th width="18%" class="text-right">Total Amount</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @php 
+                    $total_pcs = 0; 
+                    $total_boxes = 0;
+                    $subtotal = 0;
+                @endphp
+                @foreach($items as $index => $item)
+                    <tr>
+                        <td class="text-center">{{ $index + 1 }}.</td>
+                        <td><strong>{{ $item->product_name }} {{ $item->size_set_name }} {{ $item->color_name }}</strong></td>
+                        <td class="text-right">{{ number_format($item->total_qty, 2) }}</td>
+                        <td class="text-right">{{ number_format($item->box_count, 2) }}</td>
+                        <td class="text-center">BOX</td>
+                        <td class="text-right">{{ number_format($item->selling_price, 2) }}</td>
+                        <td class="text-right">{{ number_format($item->total_qty * $item->selling_price, 2) }}</td>
+                    </tr>
+                    @php 
+                        $total_pcs += $item->total_qty; 
+                        $total_boxes += $item->box_count;
+                        $subtotal += ($item->total_qty * $item->selling_price);
+                    @endphp
+                @endforeach
 
-    <table class="summary-table">
-        <tr>
-            <td class="summary-label">Total Quantity:</td>
-            <td class="summary-value" style="color: #333;">{{ $order->total_qty }} pcs</td>
-        </tr>
-        <tr>
-            <td class="summary-label">Subtotal:</td>
-            <td class="summary-value" style="color: #333;">&#8377;{{ number_format($order->total_amount, 2) }}</td>
-        </tr>
-        <tr>
-            <td class="summary-label">Discount ({{ number_format($order->discount_percentage, 0) }}%):</td>
-            <td class="summary-value" style="color: #28a745;">-&#8377;{{ number_format($order->discount_amount, 2) }}
-            </td>
-        </tr>
-        <tr>
-            <td class="summary-label">GST ({{ number_format($order->gst_percentage, 0) }}%):</td>
-            <td class="summary-value" style="color: #dc3545;">+&#8377;{{ number_format($order->gst_amount, 2) }}</td>
-        </tr>
-        <tr>
-            <td class="summary-label" style="font-size: 16px;">Grand Total:</td>
-            <td class="summary-value" style="font-size: 16px;">&#8377;{{ number_format($order->grand_total, 2) }}</td>
-        </tr>
-    </table>
+                {{-- Filling empty space --}}
+                @for ($i = count($items); $i < 12; $i++)
+                    <tr>
+                        <td style="height: 25px;"></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                @endfor
 
-    <div class="footer">
-        {{ $settings->copy_right ?? '© ' . date('Y') . ' Snapkid. All rights reserved.' }}
+                <tr class="total-row">
+                    <td></td>
+                    <td class="text-right"></td>
+                    <td class="text-right">{{ number_format($total_pcs, 2) }}Pcs.</td>
+                    <td class="text-right">{{ number_format($total_boxes, 2) }}</td>
+                    <td class="text-center">Box.</td>
+                    <td></td>
+                    <td class="text-right">{{ number_format($subtotal, 2) }}</td>
+                </tr>
+
+                @if($order->discount_percentage > 0)
+                <tr class="summary-row">
+                    <td colspan="5" class="text-right">Less : Discount</td>
+                    <td class="text-right">@ {{ number_format($order->discount_percentage, 2) }} %</td>
+                    <td class="text-right">{{ number_format($order->discount_amount, 2) }}</td>
+                </tr>
+                @endif
+
+                @if($order->gst_amount > 0)
+                <tr class="summary-row">
+                    <td colspan="5" class="text-right">GST</td>
+                    <td class="text-right">@ {{ number_format($order->gst_percentage, 2) }} %</td>
+                    <td class="text-right">{{ number_format($order->gst_amount, 2) }}</td>
+                </tr>
+                @endif
+
+                <tr class="summary-row" style="background-color: #f8f9fa; border-top: 2px solid #000;">
+                    <td colspan="6" class="text-right" style="font-size: 13px;">Grand Total :</td>
+                    <td class="text-right" style="font-size: 13px;">{{ number_format($order->grand_total, 2) }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        @php
+            $f = new \NumberFormatter("en", \NumberFormatter::SPELLOUT);
+            $amountInWords = ucwords($f->format($order->grand_total));
+        @endphp
+        <div class="amount-in-words">
+            Rupees {{ $amountInWords }} Only
+        </div>
+
+        <table class="footer-table">
+            <tr>
+                <td width="60%">
+                    <div style="margin-bottom: 10px;"><strong>Remarks :</strong> {{ $order->remarks ?? '' }}</div>
+                    <strong>Terms & Conditions</strong><br>
+                    E.& O.E.<br>
+                    1. Goods once sold will not be taken back.<br>
+                    2.FOR ANY ACCOUNT RELATED INFORMATION-8094409864(DEVA NAYAK)
+                </td>
+                <td width="40%" class="text-right">
+                    <strong>Receiver's Signature :</strong><br><br><br><br>
+                    <div style="margin-top: 20px;">
+                        For <strong>{{ $settings->website_name ?? 'SURGICAL JEANS' }}</strong><br>
+                        <strong>Authorised Signatory</strong>
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 

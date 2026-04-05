@@ -24,8 +24,8 @@
         }
 
         /* =========================================
-                           MOBILE APP STYLES (Screen < 992px)
-                        ========================================= */
+                               MOBILE APP STYLES (Screen < 992px)
+                            ========================================= */
         @media (max-width: 991.98px) {
             .app-hero {
                 background: var(--KM-purple);
@@ -183,8 +183,8 @@
         }
 
         /* =========================================
-                           DESKTOP ADMIN STYLES (Screen >= 992px)
-                        ========================================= */
+                               DESKTOP ADMIN STYLES (Screen >= 992px)
+                            ========================================= */
         @media (min-width: 992px) {
             .desktop-wrapper {
                 padding: 40px;
@@ -349,12 +349,12 @@
             </div>
             <div class="app-stats-grid mt-3">
                 <div class="app-stat-card border-success" style="grid-column: span 1.5; border: 1px solid #28a745;">
-                    <span class="app-stat-value text-success">₹{{ number_format($total_receivable, 0) }}</span>
-                    <span class="app-stat-label">Receivable</span>
+                    <span class="app-stat-value text-success">₹{{ number_format($total_received, 0) }}</span>
+                    <span class="app-stat-label">Total Received</span>
                 </div>
                 <div class="app-stat-card border-danger" style="grid-column: span 1.5; border: 1px solid #dc3545;">
-                    <span class="app-stat-value text-danger">₹{{ number_format($total_payable, 0) }}</span>
-                    <span class="app-stat-label">Payable</span>
+                    <span class="app-stat-value text-danger">₹{{ number_format($total_paid, 0) }}</span>
+                    <span class="app-stat-label">Total Paid</span>
                 </div>
             </div>
         </div>
@@ -475,8 +475,8 @@
                     <i class="fas fa-hand-holding-usd"></i>
                 </div>
                 <div class="stat-info-desktop">
-                    <span class="stat-label">Receivable</span>
-                    <span class="stat-value text-success">₹{{ number_format($total_receivable, 2) }}</span>
+                    <span class="stat-label">Total Received</span>
+                    <span class="stat-value text-success">₹{{ number_format($total_received, 2) }}</span>
                 </div>
             </div>
             <div class="stat-card-desktop border-danger">
@@ -484,8 +484,8 @@
                     <i class="fas fa-file-invoice-dollar"></i>
                 </div>
                 <div class="stat-info-desktop">
-                    <span class="stat-label">Payable</span>
-                    <span class="stat-value text-danger">₹{{ number_format($total_payable, 2) }}</span>
+                    <span class="stat-label">Total Paid</span>
+                    <span class="stat-value text-danger">₹{{ number_format($total_paid, 2) }}</span>
                 </div>
             </div>
         </div>

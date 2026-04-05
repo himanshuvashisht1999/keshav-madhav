@@ -56,7 +56,7 @@ class OrderDispatchService
             $data_save->main_order_id = $request->final_order_no ?? $request->order_no;
             $data_save->dispatch_date = now();
             $data_save->total_quantity = count($request->cartons);
-            $data_save->gst_percentage = $request->gst_percentage ?? 5.00;
+            $data_save->gst_percentage = $request->gst_percentage ?? 0.00;
             $data_save->discount_percentage = $request->discount_percentage ?? 0.00;
             $data_save->total_amount = $request->total_amount ?? 0.00;
             $data_save->status = 1;
@@ -65,24 +65,16 @@ class OrderDispatchService
             $data_save->sku = date('d/m/Y') . '/' . $data_save->main_order_id . "/" . $data_save->customer_id . "/" . $data_save->id ?? $data_save->id;
             $data_save->save();
 
-            // ================= UPDATE ITEM PRICES (GLOBAL SET-WISE) =================
-            if ($request->has('global_prices') && is_array($request->global_prices)) {
-                $selectedCartonIds = $request->cartons;
-
-                // Get all items in selected cartons with their set IDs
-                $itemsToUpdate = PackingItem::whereIn('packing_carton_id', $selectedCartonIds)
-                    ->with('detail')
-                    ->get();
-
-                foreach ($itemsToUpdate as $item) {
-                    $setId = $item->detail->order_products_set_id ?? 0;
-                    if ($setId && isset($request->global_prices[$setId])) {
-                        $item->update([
-                            'selling_price' => $request->global_prices[$setId]
-                        ]);
-                    }
-                }
+            // Update Customer Balance (Subtraction means they owe the admin more)
+            $customer = \App\Models\MasterCustomer::find($data_save->customer_id);
+            if ($customer) {
+                $customer->balance -= $data_save->total_amount;
+                $customer->save();
             }
+
+            // ================= UPDATE ITEM PRICES (GLOBAL SET-WISE) =================
+            // Pricing update during dispatch removed as per requirement.
+            // Items now carry prices assigned during the packing stage.
             // ================= DETAILS =================
             $detailsData = [];
 
@@ -174,7 +166,10 @@ class OrderDispatchService
         // Fetch Cartons with Items and Details
         $cartons_data = PackingCarton::with([
             'items.detail.orderProductSet.colors',
-            'items.detail.orderProductSet.size_measurement', // Added
+            'items.detail.orderProductSet.size_measurement',
+            'items.box.domesticInventory.product',
+            'items.box.domesticInventory.color',
+            'items.box.domesticInventory.sizeSet',
             'rack.storeroom'
         ])->whereIn('id', $dispatch_carton_ids)->get()->toArray();
 
@@ -190,7 +185,16 @@ class OrderDispatchService
             if (isset($carton['items']) && is_array($carton['items'])) {
                 foreach ($carton['items'] as $item) {
                     $qty = $item['quantity'];
+                    
+                    // Fallback to order basic price if selling_price is zero
                     $price = $item['selling_price'] ?? 0;
+                    if ($price == 0) {
+                        $ops = $item['detail']['order_product_set'] ?? null;
+                        if ($ops && ($ops['total_quantity'] ?? 0) > 0) {
+                            $price = ($ops['basic_amount'] ?? 0) / $ops['total_quantity'];
+                        }
+                    }
+
                     $total_items_in_carton += $qty;
                     $total_items_dispatch += $qty;
                     $total_dispatch_amount += ($qty * $price);
@@ -198,9 +202,9 @@ class OrderDispatchService
                     $setId = $item['detail']['order_products_set_id'] ?? 0;
                     if (!isset($sets[$setId])) {
                         $sets[$setId] = [
-                            'design' => $item['detail']['order_product_set']['design_number'] ?? 'N/A',
-                            'color' => $item['detail']['order_product_set']['colors']['name'] ?? 'N/A',
-                            'size_set' => $item['detail']['order_product_set']['size_measurement']['name'] ?? 'N/A',
+                            'design' => $item['box']['domestic_inventory']['product']['design_number'] ?? ($item['detail']['order_product_set']['design_number'] ?? 'N/A'),
+                            'color' => $item['box']['domestic_inventory']['color']['name'] ?? ($item['detail']['order_product_set']['colors']['name'] ?? 'N/A'),
+                            'size_set' => $item['box']['domestic_inventory']['size_set']['name'] ?? ($item['detail']['order_product_set']['size_measurement']['name'] ?? 'N/A'),
                             'price' => $price,
                             'total_qty' => 0,
                             'sizes_text' => []
@@ -238,37 +242,78 @@ class OrderDispatchService
     function getOrderPackingData($request)
     {
         $search_order_no = $request->search_order_no ?? "";
+        $all_unique_sets = [];
 
         $results = OrderMain::with([
             'customer',
             'dispatchCartons' => function ($q) {
-                $q->where('packing_cartons.status', 1)
-                    ->where('packing_mains.status', 1);
+                $q->where('packing_cartons.status', 1);
+                // Removed packing_mains.status check here to avoid complex join issues in hasManyThrough filters if not strictly joined
             },
+            'dispatchCartons.boxes',
             'dispatchCartons.items.detail.orderProductSet.colors',
-            'dispatchCartons.items.detail.orderProductSet.size_measurement', // Added for size set name
+            'dispatchCartons.items.detail.orderProductSet.size_measurement', 
+            'dispatchCartons.items.box.domesticInventory.product',
+            'dispatchCartons.items.box.domesticInventory.color',
+            'dispatchCartons.items.box.domesticInventory.sizeSet',
         ])
             ->where('sku', $search_order_no)
             ->whereIn('status', [1, 2])
             ->orderBy('id', 'asc')
-            ->get()
-            ->toArray();
-        // dd($results);
+            ->get();
+
         $data = [];
         foreach ($results as $val) {
             $cartons = [];
-            foreach ($val['dispatch_cartons'] as $value) {
+            foreach ($val->dispatchCartons as $value) {
 
                 // Aggregate items
                 $summary = [];
                 $pcs_in_carton = 0;
-                if (isset($value['items']) && is_array($value['items'])) {
-                    foreach ($value['items'] as $item) {
-                        $sizeName = $item['detail']['size'] ?? 'ID:' . $item['size_id'];
-                        $qty = $item['quantity'];
-                        if (!isset($summary[$sizeName]))
-                            $summary[$sizeName] = 0;
+                $sets_list = [];
+
+                if ($value->items) {
+                    foreach ($value->items as $item) {
+                        $sizeName = $item->detail->size ?? ($item->size->name ?? 'N/A');
+                        $qty = $item->quantity;
+                        $pcs_in_carton += $qty;
+
+                        // Summary Text
+                        if (!isset($summary[$sizeName])) $summary[$sizeName] = 0;
                         $summary[$sizeName] += $qty;
+
+                        // Set info logic 
+                        $orderSet = $item->detail->orderProductSet ?? null;
+                        $setId = $orderSet->id ?? 0;
+
+                        if ($setId && !isset($all_unique_sets[$setId])) {
+                            $fallbackPrice = ($orderSet->total_quantity > 0) ? ($orderSet->basic_amount / $orderSet->total_quantity) : 0;
+                            $all_unique_sets[$setId] = [
+                                'set_id' => $setId,
+                                'design' => $orderSet->design_number ?? 'N/A',
+                                'color' => $orderSet->colors->name ?? 'N/A',
+                                'size_set' => $orderSet->size_measurement->name ?? 'N/A',
+                                'suggested_price' => $item->selling_price ?: $fallbackPrice,
+                            ];
+                        }
+
+                        if ($setId && !isset($sets_list[$setId])) {
+                            $fallbackPrice = ($orderSet->total_quantity > 0) ? ($orderSet->basic_amount / $orderSet->total_quantity) : 0;
+                            $sets_list[$setId] = [
+                                'set_id' => $setId,
+                                'design' => $orderSet->design_number ?? 'N/A',
+                                'color' => $orderSet->colors->name ?? 'N/A',
+                                'size_set' => $orderSet->size_measurement->name ?? 'N/A',
+                                'suggested_price' => $item->selling_price ?: $fallbackPrice,
+                                'total_qty' => 0,
+                                'sizes_text' => []
+                            ];
+                        }
+                        
+                        if($setId) {
+                            $sets_list[$setId]['total_qty'] += $qty;
+                            $sets_list[$setId]['sizes_text'][] = "$sizeName ($qty)";
+                        }
                     }
                 }
 
@@ -277,63 +322,25 @@ class OrderDispatchService
                     $contents_text[] = "$size ($qty)";
                 }
 
-                $sets_list = [];
-                if (isset($value['items']) && is_array($value['items'])) {
-                    foreach ($value['items'] as $item) {
-                        $setId = $item['detail']['order_products_set_id'] ?? 0;
-                        if ($setId) {
-                            if (!isset($all_unique_sets[$setId])) {
-                                $all_unique_sets[$setId] = [
-                                    'set_id' => $setId,
-                                    'design' => $item['detail']['order_product_set']['design_number'] ?? 'N/A',
-                                    'color' => $item['detail']['order_product_set']['colors']['name'] ?? 'N/A',
-                                    'size_set' => $item['detail']['order_product_set']['size_measurement']['name'] ?? 'N/A',
-                                    'suggested_price' => $item['detail']['order_product_set']['basic_amount'] ?? 0,
-                                ];
-                            }
-                        }
-
-                        if (!isset($sets_list[$setId])) {
-                            $sets_list[$setId] = [
-                                'set_id' => $setId,
-                                'design' => $item['detail']['order_product_set']['design_number'] ?? 'N/A',
-                                'color' => $item['detail']['order_product_set']['colors']['name'] ?? 'N/A',
-                                'size_set' => $item['detail']['order_product_set']['size_measurement']['name'] ?? 'N/A',
-                                'suggested_price' => $item['detail']['order_product_set']['basic_amount'] ?? 0,
-                                'total_qty' => 0,
-                                'item_ids' => [],
-                                'sizes_text' => []
-                            ];
-                        }
-                        $qty = $item['quantity'];
-                        $pcs_in_carton += $qty;
-                        $sets_list[$setId]['total_qty'] += $qty;
-                        $sets_list[$setId]['item_ids'][] = $item['id'];
-                        $sets_list[$setId]['sizes_text'][] = ($item['detail']['size'] ?? 'N/A') . " (" . $qty . ")";
-                    }
-                }
-
                 $cartons[] = [
-                    'id' => $value['id'] ?? '',
-                    'carton_no' => $value['carton_no'] ?? '',
-                    'carton_packing_session_id' => $value['carton_packing_session_id'] ?? '',
-                    'boxes_in_carton' => count($value['items']) ?? 0,
+                    'id' => $value->id,
+                    'carton_no' => $value->carton_no,
+                    'boxes_in_carton' => $value->boxes->count(),
                     'contents' => implode(', ', $contents_text),
-                    'pcs_in_carton' => $pcs_in_carton ?? 0,
-                    'sets' => array_values($sets_list), // Grouped by set
+                    'pcs_in_carton' => $pcs_in_carton,
+                    'sets' => array_values($sets_list), 
                 ];
             }
+
             $data[] = [
-                'id' => $val['id'],
-                // 'order_main_id'         => $val['order_main_id'],
-                'sku' => $val['sku'] ?? '',
-                'master_customer_id' => $val['master_customer_id'],
-                'customer' => $val['customer']['name'],
-                'slip_file' => $val['corporate_order_file'],
-                'address' => $val['customer']['address'] ?? '',
-                'total_quantity' => count($val['dispatch_cartons']),
+                'id' => $val->id,
+                'sku' => $val->sku ?? '',
+                'master_customer_id' => $val->master_customer_id,
+                'customer' => $val->customer->name ?? 'N/A',
+                'address' => $val->customer->address ?? '',
+                'total_quantity' => $val->dispatchCartons->count(),
                 'cartons' => $cartons,
-                'unique_sets' => array_values($all_unique_sets) // Added global unique sets
+                'unique_sets' => array_values($all_unique_sets)
             ];
         }
         return $data;
@@ -348,7 +355,6 @@ class OrderDispatchService
                 $q->where('packing_cartons.status', 1)
                     ->where('packing_mains.status', 1);
             })
-            ->where('order_type', 'corporate')
             ->orderBy('id', 'DESC')
             ->get(['id', 'sku as order_no']);
 
@@ -363,7 +369,6 @@ class OrderDispatchService
                 $q->where('packing_cartons.status', 1)
                     ->where('packing_mains.status', 1);
             })
-            ->where('order_type', 'corporate')
             ->orderBy('id', 'DESC')
             ->get(['id', 'sku as order_no']);
         return $data;
@@ -371,14 +376,7 @@ class OrderDispatchService
 
     public function comppleteOrder()
     {
-        // $data =  OrderMain::where('status', 1)->where('id' , 10)
-        //         ->orderBy('id', 'DESC')
-        //         ->get(['id', 'sku as order_no', 'order_type'])->first();
-        //     if ($data->order_type){
-
-        //     }
-        //         dd($data->order_type);
-        // return $data;
+        return true;
     }
     public function getOrderDispatchData($orderMainId)
     {
@@ -386,16 +384,17 @@ class OrderDispatchService
             ->where('order_main_id', $orderMainId)
             ->sum('total_quantity');
 
-        $pack_items = PackingMain::with([
+        $pack_mains = PackingMain::with([
             'cartons' => function ($q) {
-                $q->where('status', 2)
+                $q->where('status', 2) // Dispatched
                     ->withSum('items', 'quantity');
             }
-        ])->where('order_main_id', $orderMainId)
-            ->first();
+        ])->where('order_main_id', $orderMainId)->get();
 
-        // safe check
-        $packed = $pack_items ? $pack_items->cartons->sum('items_sum_quantity') : 0;
+        $packed = 0;
+        foreach($pack_mains as $session) {
+            $packed += $session->cartons->sum('items_sum_quantity');
+        }
 
         return [
             'total' => (int) $total,

@@ -52,6 +52,14 @@
                        
                         
                         <td>
+                            <select class="form-control" name="type" id="type" autocomplete="off">
+                                <option value="">ALL</option>
+                                <option value="corporate">Corporate</option>
+                                <option value="domestic">Domestic</option>
+                            </select>
+                        </td>
+                        <td></td>
+                        <td>
                             <select class="form-control" name="status" id="status" autocomplete="off">
                                 <option value="">ALL</option>
                                 <option value="1">Active</option>
@@ -62,11 +70,13 @@
                        
                        </td>
                     </tr>
-                  <tr>
+                   <tr>
                     <th>ID</th>
                     <th>Name</th>
                     <th>Phone</th>
                     <th>Email</th>
+                    <th>Type</th>
+                    <th>Balance</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
@@ -106,6 +116,7 @@
                     d.name = $('#name').val();
                     d.phone = $('#phone').val();
                     d.email = $('#email').val();
+                    d.type = $('#type').val();
 					d.status = $('#status').val();
                 },
                 orderable: false
@@ -115,6 +126,8 @@
                 {data: 'name', name: 'name'},
                 {data: 'phone', name: 'phone'},
                 {data: 'email', name: 'email'},
+                {data: 'type', name: 'type'},
+                {data: 'balance', name: 'balance'},
                 {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', searchable: false}
             ],
@@ -160,6 +173,11 @@
             e.preventDefault();
         });
 
+        $('#type').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+
 
     });
 
@@ -179,7 +197,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.master.customer.delete', ['id' => '']) }}" + id;
+                window.location.href = "{{ route('admin.master.customer.delete') }}?id=" + id;
             }
         });
     }

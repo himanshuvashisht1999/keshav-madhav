@@ -137,21 +137,53 @@
             <h5 class="mb-4 font-weight-bold" style="color: #1e293b;">Fabric Inventory</h5>
 
             <!-- Mobile Filters -->
-            <div class="mb-3">
-                <form action="{{ route('owner.stock') }}" method="GET">
-                    <div class="input-group"
-                        style="background: white; border-radius: 10px; border: 1px solid #eee; overflow: hidden;">
-                        <select name="fabric_sku" class="form-control border-0" onchange="this.form.submit()"
-                            style="font-size: 13px;">
-                            <option value="">All Fabrics</option>
-                            @foreach ($fabrics as $fabric)
-                                <option value="{{ $fabric->sku }}" {{ request('fabric_sku') == $fabric->sku ? 'selected' : '' }}>
-                                    {{ $fabric->sku }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </form>
+            <div class="card mb-3" style="border-radius: 12px; border: 1px solid #f1f5f9;">
+                <div class="card-body p-3">
+                    <form action="{{ route('owner.stock') }}" method="GET">
+                        <div class="mb-2">
+                            <label class="small font-weight-bold text-muted mb-1 d-block">Warehouse</label>
+                            <select name="warehouse_id" class="form-control" style="border-radius: 8px; font-size: 13px;">
+                                <option value="">All Warehouses</option>
+                                @foreach($warehouses as $warehouse)
+                                    <option value="{{ $warehouse->id }}" {{ ($filters['warehouse_id'] ?? '') == $warehouse->id ? 'selected' : '' }}>
+                                        {{ $warehouse->cutting_master_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="small font-weight-bold text-muted mb-1 d-block">Fabric SKU</label>
+                            <select name="fabric_sku" class="form-control" style="border-radius: 8px; font-size: 13px;">
+                                <option value="">All Fabrics</option>
+                                @foreach ($fabrics as $fabric)
+                                    <option value="{{ $fabric->sku }}" {{ ($filters['fabric_sku'] ?? '') == $fabric->sku ? 'selected' : '' }}>
+                                        {{ $fabric->sku }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="small font-weight-bold text-muted mb-1 d-block">Qty From</label>
+                                <input type="number" name="meter_from" class="form-control"
+                                    style="border-radius: 8px; font-size: 13px;" value="{{ $filters['meter_from'] ?? '' }}"
+                                    placeholder="0">
+                            </div>
+                            <div class="col-6">
+                                <label class="small font-weight-bold text-muted mb-1 d-block">Qty To</label>
+                                <input type="number" name="meter_to" class="form-control"
+                                    style="border-radius: 8px; font-size: 13px;" value="{{ $filters['meter_to'] ?? '' }}"
+                                    placeholder="Max">
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm flex-fill" style="border-radius: 8px;">Apply
+                                Filter</button>
+                            <a href="{{ route('owner.stock') }}" class="btn btn-light btn-sm flex-fill"
+                                style="border-radius: 8px;">Reset</a>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             @foreach ($stocks as $sku => $whStocks)
@@ -195,6 +227,54 @@
     <div class="desktop-only desktop-wrapper">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 style="font-weight: 800; color: var(--text-main);">Fabric Stock Report</h2>
+        </div>
+
+        <!-- Desktop Filters -->
+        <div class="card mb-4" style="border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <div class="card-body p-4">
+                <form action="{{ route('owner.stock') }}" method="GET">
+                    <div class="row align-items-end">
+                        <div class="col-md-3">
+                            <label class="small font-weight-bold text-muted mb-2 d-block">WAREHOUSE</label>
+                            <select name="warehouse_id" class="form-control select2">
+                                <option value="">All Warehouses</option>
+                                @foreach($warehouses as $warehouse)
+                                    <option value="{{ $warehouse->id }}" {{ ($filters['warehouse_id'] ?? '') == $warehouse->id ? 'selected' : '' }}>
+                                        {{ $warehouse->cutting_master_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="small font-weight-bold text-muted mb-2 d-block">FABRIC SKU</label>
+                            <select name="fabric_sku" class="form-control select2">
+                                <option value="">All Fabrics</option>
+                                @foreach($fabrics as $fabric)
+                                    <option value="{{ $fabric->sku }}" {{ ($filters['fabric_sku'] ?? '') == $fabric->sku ? 'selected' : '' }}>
+                                        {{ $fabric->sku }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="small font-weight-bold text-muted mb-2 d-block">QTY FROM</label>
+                            <input type="number" name="meter_from" class="form-control"
+                                value="{{ $filters['meter_from'] ?? '' }}" placeholder="0" style="height: 38px;">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="small font-weight-bold text-muted mb-2 d-block">QTY TO</label>
+                            <input type="number" name="meter_to" class="form-control"
+                                value="{{ $filters['meter_to'] ?? '' }}" placeholder="Max" style="height: 38px;">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary px-3 mr-1"
+                                style="border-radius: 8px; height: 38px;">Filter</button>
+                            <a href="{{ route('owner.stock') }}" class="btn btn-outline-secondary px-2"
+                                style="border-radius: 8px; height: 38px; line-height: 24px;">Reset</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div class="card table-card">
@@ -255,6 +335,16 @@
 
 @section('scripts')
     <script>
+        $(document).ready(function () {
+            // Initialize Select2 if exists
+            if ($.fn.select2) {
+                $('.select2').select2({
+                    placeholder: "Select an option",
+                    allowClear: true
+                });
+            }
+        });
+
         function viewRollDetails(sku, whId) {
             $('#rollModalTitle').text(`SKU: ${sku} - Details`);
             $('#rollDetailsContent').html(
@@ -270,42 +360,42 @@
                         data.forEach(shipment => {
                             shipment.rolls.forEach(roll => {
                                 html += `
-                                        <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <div class="font-weight-bold" style="font-size:14px;">Roll #${roll.roll_number}</div>
-                                                <div class="text-xs text-muted">PO: ${shipment.po_number || 'N/A'}</div>
-                                            </div>
-                                            <div class="text-right">
-                                                <div class="font-weight-bold text-primary">${roll.remaining_quantity}</div>
-                                                <div class="text-xs text-muted">Meters</div>
-                                            </div>
-                                        </div>
-                                    `;
+                                                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <div class="font-weight-bold" style="font-size:14px;">Roll #${roll.roll_number}</div>
+                                                        <div class="text-xs text-muted">PO: ${shipment.po_number || 'N/A'}</div>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <div class="font-weight-bold text-primary">${roll.remaining_quantity}</div>
+                                                        <div class="text-xs text-muted">Meters</div>
+                                                    </div>
+                                                </div>
+                                            `;
                             });
                         });
                     } else {
                         // Desktop Table for Modal
                         html = `
-                                <div class="p-3">
-                                    <table class="table table-sm table-bordered">
-                                        <thead>
-                                            <tr class="bg-light">
-                                                <th>Roll No</th>
-                                                <th>PO No</th>
-                                                <th class="text-right">Quantity</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                            `;
+                                        <div class="p-3">
+                                            <table class="table table-sm table-bordered">
+                                                <thead>
+                                                    <tr class="bg-light">
+                                                        <th>Roll No</th>
+                                                        <th>PO No</th>
+                                                        <th class="text-right">Quantity</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                    `;
                         data.forEach(shipment => {
                             shipment.rolls.forEach(roll => {
                                 html += `
-                                        <tr>
-                                            <td>${roll.roll_number}</td>
-                                            <td>${shipment.po_number || 'N/A'}</td>
-                                            <td class="text-right font-weight-bold">${roll.remaining_quantity}</td>
-                                        </tr>
-                                    `;
+                                                <tr>
+                                                    <td>${roll.roll_number}</td>
+                                                    <td>${shipment.po_number || 'N/A'}</td>
+                                                    <td class="text-right font-weight-bold">${roll.remaining_quantity}</td>
+                                                </tr>
+                                            `;
                             });
                         });
                         html += '</tbody></table></div>';

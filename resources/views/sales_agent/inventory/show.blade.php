@@ -45,7 +45,9 @@
 
                 <div class="bg-light p-2 rounded d-flex justify-content-between align-items-center mt-2">
                     <span class="small text-muted">Box ID: {{ $item->packing_box_id }}</span>
-                    <span class="h6 font-weight-bold text-primary mb-0">₹{{ number_format($item->price, 2) }}</span>
+                    @if(Auth::guard('sales_agent')->user()->see_price)
+                        <span class="h6 font-weight-bold text-primary mb-0">₹{{ number_format($item->price, 2) }}</span>
+                    @endif
                 </div>
             </div>
         @endforeach

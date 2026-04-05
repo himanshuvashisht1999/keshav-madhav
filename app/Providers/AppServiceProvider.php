@@ -26,5 +26,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Paginator::useBootstrap();
+
+        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'Bank' => \App\Models\BankAccount::class,
+            'Cash' => \App\Models\CashPayment::class,
+        ]);
     }
 }

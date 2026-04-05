@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProductionGoods extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackCreator;
     protected $table= 'production_goods';
     protected $fillable = [
         'id',
@@ -17,6 +17,7 @@ class ProductionGoods extends Model
         'sku',
         'type_of_garment',
         'name_of_garment',
+        'master_series_id',
         'master_material_id',
         'master_color_id',
         'master_size_id',
@@ -25,7 +26,11 @@ class ProductionGoods extends Model
         'is_printing',
         'is_embroidery',
         'design_number',
+        'brand_id',
+        'master_product_fitting_id',
+        'master_pattern_id',
         'status',
+        'created_by',
         'created_at',
         'updated_at'
     ];
@@ -40,6 +45,21 @@ class ProductionGoods extends Model
     }
     public function color(){
         return $this->hasOne('App\Models\MasterColor','id','master_color_id');
+    }
+    public function series(){
+        return $this->hasOne(\App\Models\MasterSeries::class, 'id', 'master_series_id');
+    }
+    public function brand(){
+        return $this->belongsTo(\App\Models\Brand::class, 'brand_id');
+    }
+    public function fitting(){
+        return $this->belongsTo(\App\Models\MasterProductFitting::class, 'master_product_fitting_id');
+    }
+    public function pattern(){
+        return $this->belongsTo(\App\Models\MasterDesignPattern::class, 'master_pattern_id');
+    }
+    public function variants(){
+        return $this->hasMany(\App\Models\ProductionGoodVariant::class, 'production_goods_id');
     }
     public function bill_of_materials(){
         return $this->hasMany('App\Models\BillOfMaterial','product_id','id')->where('status',1);

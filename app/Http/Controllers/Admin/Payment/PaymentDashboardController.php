@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Payment;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Models\CompanyCapital;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -52,8 +53,37 @@ class PaymentDashboardController extends Controller
 
         $payments = $query->get();
 
+        // Query Company Capital with same filters
+        $capQuery = CompanyCapital::query();
+        if ($request->has('date_from') && $request->date_from) {
+            $capQuery->whereDate('transaction_date', '>=', $request->date_from);
+        }
+        if ($request->has('date_to') && $request->date_to) {
+            $capQuery->whereDate('transaction_date', '<=', $request->date_to);
+        }
+        if ($filter !== 'all' && $filter !== 'custom') {
+            switch ($filter) {
+                case 'today':
+                    $capQuery->whereDate('transaction_date', Carbon::today());
+                    break;
+                case 'yesterday':
+                    $capQuery->whereDate('transaction_date', Carbon::yesterday());
+                    break;
+                case 'week':
+                    $capQuery->whereBetween('transaction_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                    break;
+                case 'month':
+                    $capQuery->whereMonth('transaction_date', Carbon::now()->month)->whereYear('transaction_date', Carbon::now()->year);
+                    break;
+                case 'year':
+                    $capQuery->whereYear('transaction_date', Carbon::now()->year);
+                    break;
+            }
+        }
+        $capitals = $capQuery->get();
+
         // Summary Data
-        $totalReceived = $payments->where('payment_type', 'received')->sum('amount');
+        $totalReceived = $payments->where('payment_type', 'received')->sum('amount') + $capitals->sum('amount');
         $totalPaid = $payments->where('payment_type', 'paid')->sum('amount');
         $balance = $totalReceived - $totalPaid;
 
@@ -65,6 +95,13 @@ class PaymentDashboardController extends Controller
             ];
         });
 
+        if ($capitals->isNotEmpty()) {
+            $categoryData['capital_addition'] = [
+                'received' => $capitals->sum('amount'),
+                'paid' => 0
+            ];
+        }
+
         // Monthly Trend (Last 6 Months)
         $trendData = [];
         for ($i = 5; $i >= 0; $i--) {
@@ -73,10 +110,11 @@ class PaymentDashboardController extends Controller
             $monthEnd = $month->copy()->endOfMonth();
 
             $monthPayments = Payment::whereBetween('payment_date', [$monthStart, $monthEnd])->get();
+            $monthCapitals = CompanyCapital::whereBetween('transaction_date', [$monthStart, $monthEnd])->get();
 
             $trendData[] = [
                 'month' => $month->format('M Y'),
-                'received' => $monthPayments->where('payment_type', 'received')->sum('amount'),
+                'received' => $monthPayments->where('payment_type', 'received')->sum('amount') + $monthCapitals->sum('amount'),
                 'paid' => $monthPayments->where('payment_type', 'paid')->sum('amount')
             ];
         }

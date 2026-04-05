@@ -7,7 +7,7 @@
                 <div class="row mb-2">
                     <div class="col-sm-6">
                         <h1 class="m-0 text-dark font-weight-bold">Edit Order #ORD-{{ $order->id }}</h1>
-                        <p class="text-muted small mb-0"><i class="fas fa-store mr-1"></i> {{ $shop->name }} | <i class="fas fa-user mr-1"></i> Agent: {{ $order->agent_name }}</p>
+                        <p class="text-muted small mb-0"><i class="fas fa-store mr-1"></i> {{ $shop->name ?? 'N/A' }} | <i class="fas fa-user mr-1"></i> Agent: {{ $order->agent->name ?? 'N/A' }}</p>
                     </div>
                     <div class="col-sm-6">
                         <ol class="breadcrumb float-sm-right">
@@ -199,7 +199,7 @@
                             <small class="text-muted font-weight-bold">Discount (%):</small>
                             <input type="number" id="discountInput"
                                 class="form-control form-control-sm text-right p-1 py-0"
-                                style="width: 60px; height: 24px;" value="{{ $order->discount_percentage }}" min="0" max="100">
+                                style="width: 60px; height: 24px;" value="{{ $order->discount_percentage }}" min="0" max="100" step="0.1">
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted font-weight-bold">GST (%):</small>

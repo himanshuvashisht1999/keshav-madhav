@@ -19,7 +19,7 @@ class ProductionGoodsStoreRequest extends FormRequest
         // BASE RULES — always required
         $rules = [
             'design_number'    => 'required',
-            'name_of_garment'  => 'required',
+            //'name_of_garment'  => 'required',
             // 'main_image'  => 'required',
             // 'sku'              => 'required|unique:production_goods,sku',
         ];

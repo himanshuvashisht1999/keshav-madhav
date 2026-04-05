@@ -9,46 +9,60 @@ use App\Requests\Admin\AdminProfileUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
 use Auth;
 use Illuminate\Support\Facades\Hash;
- 
-class UserController extends Controller { 
+
+class UserController extends Controller
+{
     protected $service;
-    public function __construct(Service $service) {
+    public function __construct(Service $service)
+    {
         $this->service = $service;
     }
-    public function index(){
+    public function index()
+    {
         return view('admin.user.index');
     }
-    public function indexList(Request $request){
+    public function indexList(Request $request)
+    {
         return $this->service->indexList($request);
     }
-    public function create(){
-        $response['branches'] = $this->service->branches();
-        return view('admin.user.create',$response);
+    public function create()
+    {
+        $response['roles'] = \Spatie\Permission\Models\Role::where('guard_name', 'admin')->get();
+        return view('admin.user.create', $response);
     }
-    public function store(UserStoreRequest $request){
-        $data = $this->service->store($request); 
-        return redirect()->route('admin.doctor.index')->withSuccess('The doctor has been successfully created.');
+    public function store(UserStoreRequest $request)
+    {
+        $data = $this->service->store($request);
+        return redirect()->route('admin.users.index')->withSuccess('The user has been successfully created.');
     }
-    public function delete(Request $request){
+    public function delete($id)
+    {
+        $request = new Request(['id' => $id]);
         $data = $this->service->delete($request);
-        return redirect()->route('admin.doctor.index')->withSuccess('The doctor has been successfully deleted.'); 
+        return redirect()->route('admin.users.index')->withSuccess('The user has been successfully deleted.');
     }
-    public function edit(Request $request){
+    public function edit($id)
+    {
+        $request = new Request(['id' => $id]);
         $response['data'] = $this->service->getSingleData($request);
-        $response['branches'] = $this->service->branches();
-        return view('admin.user.edit',$response);
+        $response['roles'] = \Spatie\Permission\Models\Role::where('guard_name', 'admin')->get();
+        return view('admin.user.edit', $response);
     }
-    public function update(UserUpdateRequest $request){
-        $data = $this->service->update($request); 
-        return redirect()->route('admin.doctor.index')->withSuccess('The doctor’s information has been successfully updated.');
+    public function update(UserUpdateRequest $request, $id)
+    {
+        $request->merge(['id' => $id]);
+        $data = $this->service->update($request);
+        return redirect()->route('admin.users.index')->withSuccess('The user’s information has been successfully updated.');
     }
-    
-    public function profileEdit(Request $request){
+
+    public function profileEdit(Request $request)
+    {
         $response['data'] = $this->service->getAdminData($request);
-        return view('admin.user.profile_edit',$response);
+        return view('admin.user.profile_edit', $response);
     }
-    public function profileUpdate(AdminProfileUpdateRequest $request){
-        $data = $this->service->adminUpdate($request); 
+    public function profileUpdate(AdminProfileUpdateRequest $request)
+    {
+        $data = $this->service->adminUpdate($request);
         return redirect()->route('admin.dashboard')->withSuccess('Your profile has been successfully updated.');
     }
 

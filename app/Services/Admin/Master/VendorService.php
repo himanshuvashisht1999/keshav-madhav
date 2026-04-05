@@ -9,6 +9,8 @@ use App\Models\Item;
 use App\Http\DataTable\Admin\Master\VendorDataTable as DataTable;
 
 class VendorService {
+    protected $datatable;
+    protected $vendor;
     public function __construct(
         DataTable $datatable,
         Vendor $vendor
@@ -26,22 +28,22 @@ class VendorService {
     }
 
     public function store(Request $request){
-        // if($request->file('image')){
-        //     $image = $request->file('image');
-        //     $extImage = $image->getClientOriginalExtension();
-        //     $imgName = "service-".rand()."_".time().".".$extImage;
-        //     $destinationPath = public_path().'/assets/services';
-        //     $image->move($destinationPath, $imgName);
-        // }
         $save_data = new Vendor;
         $save_data->name = $request->name;
-        ////// 0 for fabric //////
         $save_data->items = serialize($request->items);
         $save_data->phone = $request->phone;
         $save_data->email = $request->email;
         $save_data->address = $request->address;
-        $save_data->sku = $request->sku;
-        // $save_data->image = $imgName;
+        
+        $balance = $request->balance ?? 0;
+        if ($request->type == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+        $save_data->balance = $balance;
+        
+        $save_data->sku = NULL;
         $save_data->status = $request->status;
         $save_data->description = $request->description;
         $save_data->save();
@@ -49,33 +51,27 @@ class VendorService {
     }
 
     public function edit(Request $request){
-        $data = Vendor::where('id',$request->id)->first();
+        $data = $this->vendor->where('id',$request->id)->first();
         return $data;
     }
     public function update(Request $request){
-        $update_data = Vendor::find($request->id);
-        // if($request->file('image')){
-        //     $oldImageName = $update_data->getRawOriginal('image');
-        //     if ($oldImageName) {
-        //         $oldImagePath = public_path('assets/services/' . $oldImageName);
-        //         if (file_exists($oldImagePath)) {
-        //             unlink($oldImagePath);
-        //         }
-        //     }
-        //     $image = $request->file('image');
-        //     $extImage = $image->getClientOriginalExtension();
-        //     $imgName = "service-".rand()."_".time().".".$extImage;
-        //     $destinationPath = public_path().'/assets/services';
-        //     $image->move($destinationPath, $imgName);
-        //     $update_data->image = $imgName;
-        // }
+        $update_data = $this->vendor->find($request->id);
+        
         $update_data->name = $request->name;
-        //////// 0 for fabric //////
         $update_data->items = serialize($request->items);
         $update_data->phone = $request->phone;
         $update_data->email = $request->email;
-        // $update_data->sku = $request->sku;
         $update_data->address = $request->address;
+        
+        $balance = $request->balance ?? 0;
+        if ($request->type == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+        $update_data->balance = $balance;
+        
+        $update_data->sku = NULL;
         $update_data->status = $request->status;
         $update_data->description = $request->description;
         $update_data->save();
@@ -83,8 +79,8 @@ class VendorService {
     }
 
     public function delete(Request $request){
-        $data = Vendor::where('id',$request->id)->update([
-            'status' => 0,
+        $data = $this->vendor->where('id',$request->id)->update([
+            'status' => 3,
         ]);
         return $data;
     }

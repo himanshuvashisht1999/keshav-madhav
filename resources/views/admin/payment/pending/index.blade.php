@@ -404,6 +404,19 @@
                                                     @endforeach
                                                 </select>
                                             </div>
+                                            @if(isset($shops) && $shops->count() > 0)
+                                                <div class="col-12 col-md-3 mb-3">
+                                                    <label
+                                                        class="small font-weight-800 text-muted uppercase letter-spacing-1">Shop</label>
+                                                    <select name="shop_id" class="form-control select2"
+                                                        onchange="this.form.submit()">
+                                                        <option value="">All Shops</option>
+                                                        @foreach ($shops as $shop)
+                                                            <option value="{{ $shop->id }}" {{ request('shop_id') == $shop->id ? 'selected' : '' }}>{{ $shop->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            @endif
                                             <div class="col-6 col-md-2 mb-3">
                                                 <label
                                                     class="small font-weight-800 text-muted uppercase letter-spacing-1">From</label>
@@ -675,7 +688,7 @@
                                     id="corporateFilterDrawer">
                                     @if($isOwner)
                                         <div class="d-flex justify-content-between align-items-center mb-4">
-                                            <h5 class="m-0 font-weight-900">Filter Corporate</h5>
+                                            <h5 class="m-0 font-weight-900">Filter Corporate Orders</h5>
                                             <button type="button" class="btn btn-light rounded-circle"
                                                 onclick="toggleFilters()">
                                                 <i class="fas fa-times"></i>
@@ -724,37 +737,44 @@
                                 <div class="table-responsive {{ $isOwner ? 'desktop-only px-3' : '' }}">
                                     <table class="table table-hover mb-0 datatable-pending" style="width:100%">
                                         <thead class="bg-light">
-                                            <tr>
-                                                <th
-                                                    class="border-top-0 py-3 px-4 text-muted small font-weight-800 uppercase">
-                                                    Dispatch Date</th>
-                                                <th class="border-top-0 py-3 text-muted small font-weight-800 uppercase">
-                                                    Customer</th>
-                                                <th class="border-top-0 py-3 text-muted small font-weight-800 uppercase">SKU
-                                                </th>
-                                                <th class="border-top-0 py-3 text-muted small font-weight-800 uppercase">
-                                                    Total</th>
-                                                <th class="border-top-0 py-3 text-muted small font-weight-800 uppercase">
-                                                    Balance</th>
-                                                <th
-                                                    class="border-top-0 py-3 px-4 text-center text-muted small font-weight-800 uppercase">
-                                                    Action</th>
-                                            </tr>
+                                                    <tr>
+                                                        <th class="border-top-0 py-3 px-4 text-muted small font-weight-800 uppercase">Type</th>
+                                                        <th class="border-top-0 py-3 text-muted small font-weight-800 uppercase">Date</th>
+                                                        <th class="border-top-0 py-3 text-muted small font-weight-800 uppercase">Customer</th>
+                                                        <th class="border-top-0 py-3 text-muted small font-weight-800 uppercase">SKU / ID</th>
+                                                        <th class="border-top-0 py-3 text-muted small font-weight-800 uppercase">Total</th>
+                                                        <th class="border-top-0 py-3 text-muted small font-weight-800 uppercase">Balance</th>
+                                                        <th class="border-top-0 py-3 px-4 text-center text-muted small font-weight-800 uppercase">Action</th>
+                                                    </tr>
                                         </thead>
                                         <tbody>
+                                            @foreach($corporateOrders as $order)
+                                                <tr>
+                                                    <td class="px-4 align-middle"><span class="badge badge-info shadow-sm">Order</span></td>
+                                                    <td class="align-middle">{{ \Carbon\Carbon::parse($order->created_at)->format('d-m-Y') }}</td>
+                                                    <td class="align-middle font-weight-600">{{ $order->customer->name ?? '-' }}</td>
+                                                    <td class="align-middle"><span class="badge badge-light border">{{ $order->sku }}</span></td>
+                                                    <td class="align-middle">-</td>
+                                                    <td class="align-middle text-info font-weight-800">₹{{ number_format($order->paid_amount, 2) }} <small>(Paid)</small></td>
+                                                    <td class="px-4 align-middle text-center">
+                                                        @if(!$isOwner)
+                                                            <a href="{{ route('admin.payment.corporate-order.create', ['customer_id' => $order->master_customer_id, 'order_id' => $order->id]) }}"
+                                                                class="btn btn-sm btn-success-gradient rounded-pill px-3">
+                                                                <i class="fas fa-plus mr-1"></i> Receive
+                                                            </a>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                            
                                             @foreach($corporateDispatches as $dispatch)
                                                 <tr>
-                                                    <td class="px-4 align-middle">
-                                                        {{ \Carbon\Carbon::parse($dispatch->dispatch_date)->format('d-m-Y') }}
-                                                    </td>
-                                                    <td class="align-middle font-weight-600">
-                                                        {{ $dispatch->customer->name ?? '-' }}</td>
-                                                    <td class="align-middle"><span
-                                                            class="badge badge-light border">{{ $dispatch->sku }}</span></td>
-                                                    <td class="align-middle">₹{{ number_format($dispatch->total_amount, 2) }}
-                                                    </td>
-                                                    <td class="align-middle text-danger font-weight-800">
-                                                        ₹{{ number_format($dispatch->balance_amount, 2) }}</td>
+                                                    <td class="px-4 align-middle"><span class="badge badge-success shadow-sm">Dispatch</span></td>
+                                                    <td class="align-middle">{{ \Carbon\Carbon::parse($dispatch->dispatch_date)->format('d-m-Y') }}</td>
+                                                    <td class="align-middle font-weight-600">{{ $dispatch->customer->name ?? '-' }}</td>
+                                                    <td class="align-middle"><span class="badge badge-light border">{{ $dispatch->sku }}</span></td>
+                                                    <td class="align-middle">₹{{ number_format($dispatch->total_amount, 2) }}</td>
+                                                    <td class="align-middle text-danger font-weight-800">₹{{ number_format($dispatch->balance_amount, 2) }}</td>
                                                     <td class="px-4 align-middle text-center">
                                                         @if($isOwner)
                                                             <a href="{{ route('owner.order-summary.view', ['id' => $dispatch->order_main_id]) }}"

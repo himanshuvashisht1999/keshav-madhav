@@ -23,6 +23,19 @@
                 </div>
 
                 <div class="form-group mb-3">
+                    <label class="small font-weight-bold text-muted">Opening Balance</label>
+                    <input type="number" name="balance" step="0.01" class="form-control rounded-lg" placeholder="e.g. 0.00">
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="small font-weight-bold text-muted">Balance Type</label>
+                    <select name="balance_type" class="form-control rounded-lg" required>
+                        <option value="Credit">Credit</option>
+                        <option value="Debit">Debit</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-3">
                     <label class="small font-weight-bold text-muted">Email Address (Optional)</label>
                     <input type="email" name="email" class="form-control rounded-lg" placeholder="shop@example.com">
                 </div>

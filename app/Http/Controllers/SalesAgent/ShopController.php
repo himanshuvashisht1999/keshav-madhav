@@ -29,7 +29,6 @@ class ShopController extends Controller
     {
         return view('sales_agent.shops.create');
     }
-
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -37,10 +36,21 @@ class ShopController extends Controller
             'phone' => 'required|string|max:20',
             'address' => 'nullable|string',
             'email' => 'nullable|email|max:255',
+            'balance' => 'nullable|numeric',
+            'balance_type' => 'required|in:Credit,Debit',
         ]);
+        
+        $balance = $validated['balance'] ?? 0;
+        if ($request->balance_type == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+        $validated['balance'] = $balance;
 
         $validated['sales_agent_id'] = Auth::guard('sales_agent')->id();
         $validated['status'] = 1;
+        $validated['type'] = 'domestic';
 
         MasterCustomer::create($validated);
 
@@ -66,7 +76,17 @@ class ShopController extends Controller
             'phone' => 'required|string|max:20',
             'address' => 'nullable|string',
             'email' => 'nullable|email|max:255',
+            'balance' => 'nullable|numeric',
+            'balance_type' => 'required|in:Credit,Debit',
         ]);
+        
+        $balance = $validated['balance'] ?? 0;
+        if ($request->balance_type == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+        $validated['balance'] = $balance;
 
         $shop->update($validated);
 

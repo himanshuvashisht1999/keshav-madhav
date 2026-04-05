@@ -1,0 +1,68 @@
+Columns for packing_mains:
+ - id (bigint(20) unsigned)
+ - order_main_id (bigint(20) unsigned)
+ - slip_id (bigint(20) unsigned)
+ - packing_date (date)
+ - remarks (text)
+ - status (tinyint(4))
+ - created_at (timestamp)
+ - updated_at (timestamp)
+ - created_by (bigint(20) unsigned)
+
+Columns for production_slip_digitization:
+ - id (int(11))
+ - sno (int(11))
+ - company_id (int(11))
+ - sub_company_id (int(11))
+ - project_id (int(11))
+ - sku (varchar(255))
+ - from_stage_id (int(11))
+ - to_stage_id (int(11))
+ - stage_master_unit_id (int(11))
+ - lot_no (varchar(100))
+ - order_product_set_id (bigint(20) unsigned)
+ - slip_file (varchar(255))
+ - remarks (longtext)
+ - status (int(11))
+ - save_type (int(11))
+ - type (tinyint(4))
+ - created_at (timestamp)
+ - updated_at (timestamp)
+ - created_by (bigint(20) unsigned)
+
+Columns for order_stage_transaction_details:
+ - id (bigint(20) unsigned)
+ - order_stage_transaction_id (bigint(20) unsigned)
+ - size (varchar(255))
+ - quantity (int(11))
+ - created_at (timestamp)
+ - updated_at (timestamp)
+
+Columns for order_godam_stage_transaction_details:
+ - id (int(11))
+ - order_godam_stage_transaction_id (int(11))
+ - size (int(11))
+ - quantity (int(11))
+ - remaining_quantity (int(11))
+ - status (int(11))
+ - created_at (timestamp)
+ - updated_at (timestamp)
+
+Columns for order_printing_stage_transaction_details:
+ - id (int(11))
+ - order_printing_stage_transaction_id (int(11))
+ - size (int(11))
+ - quantity (int(11))
+ - status (int(11))
+ - created_at (timestamp)
+ - updated_at (timestamp)
+
+Columns for order_printing_to_stiching_transaction_details:
+ - id (int(11))
+ - order_printing_to_stiching_transaction_id (int(11))
+ - size (int(11))
+ - quantity (int(11))
+ - status (int(11))
+ - created_at (timestamp)
+ - updated_at (timestamp)
+

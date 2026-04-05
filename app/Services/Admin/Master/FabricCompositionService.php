@@ -8,6 +8,8 @@ use App\Models\FabricComposition;
 use App\Http\DataTable\Admin\Master\FabricCompositionDataTable as DataTable;
 
 class FabricCompositionService {
+    protected $datatable;
+    protected $fabric_composition;
     public function __construct(
         DataTable $datatable,
         FabricComposition $fabric_composition
@@ -25,17 +27,10 @@ class FabricCompositionService {
     }
 
     public function store(Request $request){
-        // if($request->file('image')){
-        //     $image = $request->file('image');
-        //     $extImage = $image->getClientOriginalExtension();
-        //     $imgName = "service-".rand()."_".time().".".$extImage;
-        //     $destinationPath = public_path().'/assets/services';
-        //     $image->move($destinationPath, $imgName);
-        // }
         $save_data = new FabricComposition;
         $save_data->name = $request->name;
-        $save_data->sku = $request->sku;
-        $save_data->status = 1;
+        $save_data->sku = null;
+        $save_data->status = $request->status ?? 1;
         $save_data->save();
         return true;
     }
@@ -46,30 +41,16 @@ class FabricCompositionService {
     }
     public function update(Request $request){
         $update_data = FabricComposition::find($request->id);
-        // if($request->file('image')){
-        //     $oldImageName = $update_data->getRawOriginal('image');
-        //     if ($oldImageName) {
-        //         $oldImagePath = public_path('assets/services/' . $oldImageName);
-        //         if (file_exists($oldImagePath)) {
-        //             unlink($oldImagePath);
-        //         }
-        //     }
-        //     $image = $request->file('image');
-        //     $extImage = $image->getClientOriginalExtension();
-        //     $imgName = "service-".rand()."_".time().".".$extImage;
-        //     $destinationPath = public_path().'/assets/services';
-        //     $image->move($destinationPath, $imgName);
-        //     $update_data->image = $imgName;
-        // }
         $update_data->name = $request->name;
-        // $update_data->sku = $request->sku;
+        $update_data->sku = null;
+        $update_data->status = $request->status;
         $update_data->save();
         return true;
     }
 
     public function delete(Request $request){
         $data = FabricComposition::where('id',$request->id)->update([
-            'status' => 0,
+            'status' => 3,
         ]);
         return $data;
     }

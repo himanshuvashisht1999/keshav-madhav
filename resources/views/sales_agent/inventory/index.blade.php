@@ -90,7 +90,8 @@
                                 <div class="d-flex justify-content-between align-items-start mb-1">
                                     <div>
                                         <h6 class="font-weight-bold mb-0 text-dark">
-                                            {{ $variation->product_name ?: $variation->design_number }}</h6>
+                                            {{ $variation->product_name ?: $variation->design_number }}
+                                        </h6>
                                         <div class="small text-muted mb-1">
                                             <span class="mr-2"><i
                                                     class="fas fa-fingerprint mr-1"></i>{{ $variation->design_number }}</span>
@@ -109,25 +110,20 @@
                                         <span class="badge badge-light border">{{ $variation->size_set_name }}</span>
                                         <span class="ml-2">{{ $variation->total_qty }} Total Pcs</span>
                                     </span>
-                                    <div class="text-right">
-                                        @if($variation->mrp)
-                                            <div class="small text-muted text-decoration-line-through"
-                                                style="font-size: 10px; text-decoration: line-through;">MRP:
-                                                ₹{{ number_format($variation->mrp, 2) }}</div>
-                                        @endif
-                                        <span
-                                            class="h6 font-weight-bold text-primary mb-0">₹{{ number_format($variation->selling_price, 2) }}</span>
-                                        <div class="small text-muted" style="font-size: 10px;">per pc</div>
-                                    </div>
+                                    @if(Auth::guard('sales_agent')->user()->see_price)
+                                        <div class="text-right">
+                                            <span
+                                                class="h6 font-weight-bold text-primary mb-0">₹{{ number_format($variation->selling_price, 2) }}</span>
+                                            <div class="small text-muted" style="font-size: 10px;">per pc</div>
+                                        </div>
+                                    @endif
                                 </div>
 
                                 <a href="{{ route('agent.inventory.show', [
                     'product_name' => $variation->product_name,
                     'design_number' => $variation->design_number,
                     'color_id' => $variation->color_id,
-                    'size_set_id' => $variation->size_set_id,
-                    'mrp' => $variation->mrp,
-                    'selling_price' => $variation->selling_price
+                    'size_set_id' => $variation->size_set_id
                 ]) }}" class="btn btn-light btn-sm btn-block mt-3 rounded-pill py-2 font-weight-bold">
                                     <i class="fas fa-search-plus mr-1 text-primary"></i> View All {{ $variation->available_boxes }}
                                     Boxes

@@ -43,11 +43,14 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="sku">SKU</label>
-                                    <input type="text" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU">
-                                    @if ($errors->has('sku'))
+                                    <label for="status">Status</label>
+                                    <select name="status" id="status" class="form-control">
+                                        <option value="1" {{ old('status') == '1' ? 'selected' : '' }}>Active</option>
+                                        <option value="0" {{ old('status') == '0' ? 'selected' : '' }}>Inactive</option>
+                                    </select>
+                                    @if ($errors->has('status'))
                                         <span class="invalid-feedback d-block">
-                                            {{ $errors->first('sku') }}
+                                            {{ $errors->first('status') }}
                                         </span>
                                     @endif
                                 </div>
@@ -68,30 +71,6 @@
         </div>
     </section>
 </div>
-<script>
-    function generateSKU() {
-        let name = document.querySelector("input[name='name']").value.trim();
-        let part1 = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        let part2 = Math.floor(1000 + Math.random() * 9000);
-        let sku = part1;
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited || skuInput.value === "") {
-            skuInput.value = sku;
-        }
-    }
 
-    // Attach auto-generate on typing (name, phone, address)
-    document.querySelector("input[name='name']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
-
-    // Mark as manually edited when user types in SKU
-    document.getElementById("sku").addEventListener("input", function() {
-        this.dataset.edited = true;
-    });
-</script>
 
 @endsection

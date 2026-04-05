@@ -9,6 +9,8 @@ use App\Models\MasterSizeSelection;
 use App\Http\DataTable\Admin\Master\SizeMeasurementDataTable as DataTable;
 
 class SizeMeasurementService {
+    protected $datatable;
+    protected $master_size_measurement;
     public function __construct(
         DataTable $datatable,
         MasterSizeMeasurement $master_size_measurement
@@ -82,7 +84,7 @@ class SizeMeasurementService {
 
     public function delete(Request $request){
         $data = MasterSizeMeasurement::where('id',$request->id)->update([
-            'status' => 0,
+            'status' => 3,
         ]);
         return $data;
     }

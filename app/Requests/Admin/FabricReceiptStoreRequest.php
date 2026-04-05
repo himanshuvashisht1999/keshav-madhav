@@ -23,6 +23,7 @@ class FabricReceiptStoreRequest extends FormRequest{
         return [
             // 'sku'    => 'required|unique:fabric_receipts,sku',
             'vendor_id' => 'required',
+            'bill_no' => 'required|string|unique:fabric_receipts,bill_no',
             // 'truck_number' => 'required',
             'time' => 'required',
             'amount' => 'required',

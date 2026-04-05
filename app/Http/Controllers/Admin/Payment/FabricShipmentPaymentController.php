@@ -7,18 +7,30 @@ use Illuminate\Http\Request;
 use App\Models\Vendor;
 use App\Models\FabricReceipt;
 use App\Models\Payment;
+use App\Models\BankAccount;
+use App\Models\CashPayment;
+use App\Services\Admin\BalanceService;
 use Illuminate\Support\Facades\DB;
 use Auth;
 
 class FabricShipmentPaymentController extends Controller
 {
+    protected $balanceService;
+
+    public function __construct(BalanceService $balanceService)
+    {
+        $this->balanceService = $balanceService;
+    }
+
     public function create(Request $request)
     {
         $vendors = Vendor::where('status', 1)->get();
         $selectedVendorId = $request->get('vendor_id');
         $selectedReceiptId = $request->get('receipt_id');
+        $bank_accounts = BankAccount::where('status', 1)->orderBy('bank_name')->get();
+        $cash_accounts = CashPayment::where('status', 1)->orderBy('name')->get();
 
-        return view('admin.payment.fabric_shipment.create', compact('vendors', 'selectedVendorId', 'selectedReceiptId'));
+        return view('admin.payment.fabric_shipment.create', compact('vendors', 'selectedVendorId', 'selectedReceiptId', 'bank_accounts', 'cash_accounts'));
     }
 
     public function getShipments(Request $request)
@@ -46,7 +58,8 @@ class FabricShipmentPaymentController extends Controller
             'fabric_receipt_id' => 'required|exists:fabric_receipts,id',
             'amount' => 'required|numeric|min:1',
             'payment_date' => 'required|date',
-            'payment_mode' => 'required|string',
+            'payment_mode' => 'required|string|in:Bank,Cash',
+            'payment_method_id' => 'required|integer',
         ]);
 
         $receipt = FabricReceipt::findOrFail($request->fabric_receipt_id);
@@ -59,6 +72,16 @@ class FabricShipmentPaymentController extends Controller
         try {
             DB::beginTransaction();
 
+            // Get method name for record description
+            $methodName = '';
+            if ($request->payment_mode === 'Bank') {
+                $account = BankAccount::find($request->payment_method_id);
+                $methodName = $account ? "Bank: {$account->bank_name} ({$account->account_number})" : "Bank";
+            } else {
+                $account = CashPayment::find($request->payment_method_id);
+                $methodName = $account ? "Cash: {$account->name}" : "Cash";
+            }
+
             $payment = Payment::create([
                 'payment_category' => 'fabric_shipment',
                 'payment_type' => 'paid',
@@ -68,11 +91,21 @@ class FabricShipmentPaymentController extends Controller
                 'paymentable_id' => $request->fabric_receipt_id,
                 'amount' => $request->amount,
                 'payment_date' => $request->payment_date,
-                'payment_mode' => $request->payment_mode,
+                'payment_mode' => $methodName,
+                'payment_method_type' => $request->payment_mode,
+                'payment_method_id' => $request->payment_method_id,
                 'reference_id' => $request->reference_id,
                 'remarks' => $request->remarks,
                 'created_by' => Auth::id(),
             ]);
+
+            // Update Balance (Fabric Shipment is always 'paid' -> deduct from bank/cash)
+            $this->balanceService->updateBalance($request->payment_mode, $request->payment_method_id, $request->amount, 'deduct');
+
+            // Update Vendor Balance (Deduct from what we owe)
+            $vendor = Vendor::findOrFail($request->vendor_id);
+            $vendor->balance -= $request->amount;
+            $vendor->save();
 
             // Handle Image Upload if any
             if ($request->hasFile('image')) {

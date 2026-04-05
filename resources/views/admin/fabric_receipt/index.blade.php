@@ -49,6 +49,10 @@
                                         <input type="text" class="form-control" name="shipment_id" id="shipment_id"
                                             autocomplete="off">
                                     </td>
+                                    <td>
+                                        <input type="text" class="form-control" name="bill_no" id="bill_no"
+                                            autocomplete="off">
+                                    </td>
 
                                     <td>
                                         <select class="form-control select2" name="vendor_id" id="vendor_id"
@@ -103,10 +107,11 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Shippment Number</th>
+                                    <th>Bill No</th>
                                     <th>Vendor</th>
                                     <th>Warehouse</th>
                                     <!-- <th>Truck Number</th> -->
-                                    <th>Date & Time</th>
+                                    <th>Date</th>
                                     <th>Rolls</th>
                                     <th>Total Amount</th>
                                     <th>Payment Status</th>
@@ -146,6 +151,7 @@
                     data: function (d) {
                         d.id = $('#id').val();
                         d.shipment_id = $('#shipment_id').val();
+                        d.bill_no = $('#bill_no').val();
                         d.vendor_id = $('#vendor_id').val();
                         // d.truck_number = $('#truck_number').val();
                         d.time = $('#time').val();
@@ -160,6 +166,7 @@
                 columns: [
                     { data: 'DT_RowIndex', name: 'id' },
                     { data: 'shipment_id', name: 'shipment_id' },
+                    { data: 'bill_no', name: 'bill_no' },
                     { data: 'vendor_id', name: 'vendor_id' },
                     { data: 'master_fabric_warehouse_id', name: 'master_fabric_warehouse_id' },
                     // {data: 'truck_number', name: 'truck_number'},
@@ -172,7 +179,7 @@
                 dom: 'lBfrtip',
                 buttons: [
                     {
-                        text: 'Add Fabric Shipment',
+                        text: 'Add Fabric Purchase',
                         className: 'btn-datatable',
                         action: function (e, dt, node, config) {
                             window.location.href = "{{ route('admin.fabric_receipt.create') }}";
@@ -191,6 +198,10 @@
                 e.preventDefault();
             });
             $('#shipment_id').on('keyup', function (e) {
+                oTable.draw();
+                e.preventDefault();
+            });
+            $('#bill_no').on('keyup', function (e) {
                 oTable.draw();
                 e.preventDefault();
             });

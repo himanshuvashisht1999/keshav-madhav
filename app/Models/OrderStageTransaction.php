@@ -27,17 +27,28 @@ class OrderStageTransaction extends Model
         'remarks',
         'production_datetime',
         'production_slip_digitization_id',
+        'image',
         'status',
+        'type',
         'created_at',
         'updated_at'
     ];
 
+    public function productionSlipDigitization()
+    {
+        return $this->belongsTo(ProductionSlipDigitization::class, 'production_slip_digitization_id');
+    }
+
     public function from_stage(){
-        return $this->hasOne('App\Models\MasterProductStage','id','from_stage_id');
+        return $this->belongsTo(MasterProductStage::class, 'from_stage_id');
     }
     public function to_stage(){
-        return $this->hasOne('App\Models\MasterProductStage','id','to_stage_id');
+        return $this->belongsTo(MasterProductStage::class, 'to_stage_id');
     }
+
+    public function fromStage() { return $this->from_stage(); }
+    public function toStage() { return $this->to_stage(); }
+
     public function orderProduct()
     {
         return $this->belongsTo(OrderProduct::class, 'order_product_id');
@@ -59,5 +70,13 @@ class OrderStageTransaction extends Model
             'sub_stage_id',
             'id'
         );
+    }
+
+    public function fromUnit() { return $this->getFromUnitMaster(); }
+    public function toUnit() { return $this->getToUnitMaster(); }
+
+    public function details()
+    {
+        return $this->hasMany(OrderStageTransactionDetail::class, 'order_stage_transaction_id', 'id');
     }
 }

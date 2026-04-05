@@ -18,6 +18,7 @@ class SalesAgent extends Authenticatable
         'password',
         'address',
         'status',
+        'see_price',
         'remember_token',
     ];
 
@@ -34,5 +35,20 @@ class SalesAgent extends Authenticatable
         if (!empty($value)) {
             $this->attributes['password'] = Hash::make($value);
         }
+    }
+
+    public function shops()
+    {
+        return $this->hasMany(MasterCustomer::class, 'sales_agent_id');
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(AgentOrder::class, 'sales_agent_id');
+    }
+
+    public function brandDiscounts()
+    {
+        return $this->hasMany(SalesAgentBrandDiscount::class, 'sales_agent_id');
     }
 }

@@ -92,7 +92,7 @@
                                             @foreach ($fab_composition_data as $single_data)
                                                 <option value="{{ $single_data->id }}"
                                                     {{ $data->composition_id == $single_data->id ? 'selected' : '' }}>
-                                                    {{ $single_data->sku }}</option>
+                                                    {{ $single_data->name }}</option>
                                             @endforeach
 
                                         </select>
@@ -104,18 +104,20 @@
                                     </div>
                                 </div>
 
-                                {{-- <div class="col-md-6">
+                                <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="sku">SKU</label>
-                                        <input type="text" name="sku" id="sku_n" class="form-control"
-                                            placeholder="Auto-generated SKU" value="{{ $data->sku }}" readonly>
-                                        @if ($errors->has('sku'))
+                                        <label for="status">Status</label>
+                                        <select name="status" id="status" class="form-control">
+                                            <option value="1" {{ $data->status == '1' ? 'selected' : '' }}>Active</option>
+                                            <option value="0" {{ $data->status == '0' ? 'selected' : '' }}>Inactive</option>
+                                        </select>
+                                        @if ($errors->has('status'))
                                             <span class="invalid-feedback d-block">
-                                                {{ $errors->first('sku') }}
+                                                {{ $errors->first('status') }}
                                             </span>
                                         @endif
                                     </div>
-                                </div> --}}
+                                </div>
 
                                 <div class="col-md-4">
                                     <div class="form-group">

@@ -28,9 +28,16 @@ class OrderPrintingStageTransaction extends Model
         'status',
         'production_datetime',
         'production_slip_digitization_id',
+        'image',
+        'type',
         'created_at',
         'updated_at'
     ];
+
+    public function productionSlipDigitization()
+    {
+        return $this->belongsTo(ProductionSlipDigitization::class, 'production_slip_digitization_id');
+    }
 
     public function from_stage(){
         return $this->hasOne('App\Models\MasterProductStage','id','from_stage_id');
@@ -44,6 +51,11 @@ class OrderPrintingStageTransaction extends Model
     }
 
     public function printingDetails()
+    {
+        return $this->hasMany(OrderPrintingStageTransactionDetail::class, 'order_printing_stage_transaction_id', 'id');
+    }
+
+    public function details()
     {
         return $this->hasMany(OrderPrintingStageTransactionDetail::class, 'order_printing_stage_transaction_id', 'id');
     }

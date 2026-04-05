@@ -54,15 +54,33 @@
                         </div>
 
                         {{-- DESIGN NUMBER (Shown for both companies) --}}
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="font-weight-bold d-block">Design Number</label>
                             <p class="mb-0">{{ $data->design_number ?? '-' }}</p>
                         </div>
 
+                        {{-- BRAND --}}
+                        <div class="col-md-4 mb-3">
+                            <label class="font-weight-bold d-block">Brand</label>
+                            <p class="mb-0">{{ $data->brand->name ?? '-' }}</p>
+                        </div>
+
                         {{-- PRODUCT NAME --}}
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="font-weight-bold d-block">Product Name</label>
                             <p class="mb-0">{{ $data->name_of_garment ?? '-' }}</p>
+                        </div>
+
+                        {{-- FITTING --}}
+                        <div class="col-md-4 mb-3">
+                            <label class="font-weight-bold d-block">Fitting</label>
+                            <p class="mb-0">{{ $data->fitting->name ?? '-' }}</p>
+                        </div>
+
+                        {{-- PATTERN --}}
+                        <div class="col-md-4 mb-3">
+                            <label class="font-weight-bold d-block">Pattern</label>
+                            <p class="mb-0">{{ $data->pattern->name ?? '-' }}</p>
                         </div>
 
                         {{-- ============================= --}}
@@ -106,12 +124,6 @@
                         @endif
                         {{-- END GENERAL FIELDS --}}
 
-                        {{-- SKU --}}
-                        <!-- <div class="col-md-6 mb-3">
-                            <label class="font-weight-bold d-block">SKU</label>
-                            <p class="mb-0">{{ $data->sku }}</p>
-                        </div> -->
-
                         {{-- STATUS --}}
                         <div class="col-md-6 mb-3">
                             <label class="font-weight-bold d-block">Status</label>
@@ -124,6 +136,61 @@
                             </p>
                         </div>
 
+                    </div>
+
+                    <hr>
+
+                    {{-- ============================= --}}
+                    {{-- PRODUCT VARIANTS (SIZE SETS) --}}
+                    {{-- ============================= --}}
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5 class="font-weight-bold mb-3">Size Sets & Pricing</h5>
+                            @if($data->variants && $data->variants->count() > 0)
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-striped">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th style="width: 20%">Size Set</th>
+                                                <th style="width: 50%">Colors</th>
+                                                <th style="width: 30%">MRP (₹)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($data->variants as $variant)
+                                                <tr>
+                                                    <td>
+                                                        @if($variant->sizeSet)
+                                                            <strong>{{ $variant->sizeSet->name }}</strong> ({{ $variant->sizeSet->set_size }})
+                                                        @else
+                                                            <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if($variant->colors && $variant->colors->count() > 0)
+                                                            <div class="d-flex flex-wrap" style="gap: 5px;">
+                                                                @foreach($variant->colors as $clr)
+                                                                    <span class="badge badge-pill border shadow-sm" style="background-color: #f8f9fa; color: #333; font-size: 0.9em; padding: 5px 10px;">
+                                                                        {{ $clr->name }}
+                                                                    </span>
+                                                                @endforeach
+                                                            </div>
+                                                        @else
+                                                            <span class="text-muted">No colors specified</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        <span class="font-weight-bold text-success">{{ number_format($variant->mrp, 2) }}</span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <p class="text-muted border p-3 rounded bg-light">No size sets defined for this product.</p>
+                            @endif
+                        </div>
                     </div>
 
                     <hr>

@@ -9,9 +9,10 @@ use App\Models\PackingBox;
 use App\Models\PackingItem;
 use App\Models\OrderMain;
 use App\Models\OrderStageTransaction;
+use App\Models\OrderStageTransactionDetail;
 use App\Models\OrderLot;
 use App\Models\DomesticInventory;
-use App\Models\InventoryPrice;
+use App\Models\DomesticInventoryImage;
 use Illuminate\Support\Facades\DB;
 
 class PackingService
@@ -90,8 +91,13 @@ class PackingService
             'customer',
             'packingMains.cartons.boxes.items.detail.orderProductSet.product',
             'packingMains.cartons.boxes.items.detail.orderProductSet.colors',
+            'packingMains.cartons.boxes.items.detail.orderProductSet.size_measurement',
+            'packingMains.cartons.boxes.domesticInventory.product',
+            'packingMains.cartons.boxes.domesticInventory.color',
+            'packingMains.cartons.boxes.domesticInventory.sizeSet',
             'packingMains.cartons.items.detail.orderProductSet.product',
             'packingMains.cartons.items.detail.orderProductSet.colors',
+            'packingMains.cartons.items.detail.orderProductSet.size_measurement',
             'packingMains.cartons.rack.storeroom'
         ])->findOrFail($order_id);
     }
@@ -117,7 +123,7 @@ class PackingService
     public function getOrderDetails($sku)
     {
         return OrderMain::where('sku', $sku)
-            ->with(['OrderProductSets.product_set_details', 'OrderProductSets.colors'])
+            ->with(['OrderProductSets.product_set_details', 'OrderProductSets.colors', 'OrderProductSets.size_measurement'])
             ->first();
     }
 
@@ -140,12 +146,92 @@ class PackingService
         return PackingMain::where('slip_id', $slip_id)
             ->with([
                 'boxes' => function ($q) {
-                    $q->whereNull('packing_carton_id'); // Only unpacked boxes
+                    $q->whereNull('packing_carton_id')
+                      ->with(['domesticInventory.product', 'domesticInventory.color', 'domesticInventory.sizeSet', 'domesticInventory.pattern', 'domesticInventory.fitting']);
                 },
-                'cartons.boxes',
+                'cartons.boxes' => function($q) {
+                    $q->with(['domesticInventory.product', 'domesticInventory.color', 'domesticInventory.sizeSet', 'domesticInventory.pattern', 'domesticInventory.fitting']);
+                },
                 'cartons.items'
             ])
             ->first();
+    }
+
+    public function getAvailableQuantitiesAtUnit($order_id, $unit_id)
+    {
+        // 1. Get all lot numbers for this order to trace pieces (including Pending status 0)
+        $lots = \App\Models\OrderLot::where('order_main_id', $order_id)
+            ->pluck('lot_no')
+            ->toArray();
+
+        if (empty($lots)) {
+            return [];
+        }
+
+        // 2. Sum incoming quantities from OrderStageTransaction to this specific unit (Including Status 0)
+        $incoming = DB::table('order_stage_transactions as tx')
+            ->join('order_stage_transaction_details as det', 'tx.id', '=', 'det.order_stage_transaction_id')
+            ->whereIn('tx.lot_no', $lots)
+            ->where('tx.to_stage_id', 11) // Packing Stage
+            ->where('tx.sub_stage_id_to', $unit_id)
+            ->where('tx.type', '!=', 'damage')
+            ->select('det.size', DB::raw('SUM(det.quantity) as total_incoming'))
+            ->groupBy('det.size')
+            ->pluck('total_incoming', 'det.size')
+            ->toArray();
+
+        // 2.1 Subtract outgoing quantities (ALL Transfers Out - including outflows)
+        $outgoing = DB::table('order_stage_transactions as tx')
+            ->join('order_stage_transaction_details as det', 'tx.id', '=', 'det.order_stage_transaction_id')
+            ->whereIn('tx.lot_no', $lots)
+            ->where('tx.from_stage_id', 11) // From Packing
+            ->where('tx.sub_stage_id', $unit_id)
+            ->where('tx.status', '>=', 0) // ALL moves out
+            ->select('det.size', DB::raw('SUM(det.quantity) as total_outgoing'))
+            ->groupBy('det.size')
+            ->pluck('total_outgoing', 'det.size')
+            ->toArray();
+
+        // 3. Sum already packed quantities (Corporate via packing_items)
+        $corporatePacked = DB::table('packing_items as pi')
+            ->join('packing_mains as pm', 'pi.packing_main_id', '=', 'pm.id')
+            ->join('production_slip_digitization as psd', 'pm.slip_id', '=', 'psd.id')
+            ->where('pm.order_main_id', $order_id)
+            ->where('psd.stage_master_unit_id', $unit_id)
+            ->select('pi.size_id', DB::raw('SUM(pi.quantity) as total_packed'))
+            ->groupBy('pi.size_id')
+            ->pluck('total_packed', 'pi.size_id')
+            ->toArray();
+
+        // 3. Sum Domestic Packed ONLY (via ProductionOutflowInventory type='packing')
+        // This is necessary because domestic packing does NOT create a mirrored transaction.
+        $domesticPacked = DB::table('production_outflow_inventories')
+            ->where('order_main_id', $order_id)
+            ->where('responsible_unit_id', $unit_id)
+            ->where('type', 'packing')
+            ->select('size_id', DB::raw('SUM(quantity) as total_packed'))
+            ->groupBy('size_id')
+            ->pluck('total_packed', 'size_id')
+            ->toArray();
+
+        // 4. Map size names and calculate availability
+        $available = [];
+        $details = \App\Models\OrderProductSetDetail::join('order_products_sets as ops', 'order_products_set_details.order_products_set_id', '=', 'ops.id')
+            ->where('ops.order_main_id', $order_id)
+            ->select('order_products_set_details.*')
+            ->get();
+
+        foreach ($details as $detail) {
+            $inQty = $incoming[$detail->size] ?? 0;
+            $outQty = $outgoing[$detail->size] ?? 0;
+            $corpQty = $corporatePacked[$detail->id] ?? 0;
+            $domQty = $domesticPacked[$detail->id] ?? 0;
+
+            // Available = [In] - [Out (Mirror)] - [Packed Corporate] - [Packed Domestic (Log)]
+            $available[$detail->id] = (int) max(0, $inQty - $outQty - $corpQty - $domQty);
+        }
+
+        return $available;
     }
 
     public function bulkSaveCarton($data)
@@ -154,14 +240,19 @@ class PackingService
         try {
             $main = $this->getOrCreatePackingMain($data['slip_id'], $data['order_id']);
             $boxes_per_carton = (int) ($data['boxes_per_carton'] ?? 1);
-            $rack_id = $data['rack_id'] ?? null;
+            $global_rack_id = $data['rack_id'] ?? null;
+            $set_racks = $data['set_racks'] ?? []; // [set_id => rack_id]
             $packed_quantities = $this->getPackedQuantitiesForOrder($data['order_id']);
+
+            // Get unit details for validation
+            $slip_details = ProductionSlipDigitization::find($data['slip_id']);
+            $unit_available = $this->getAvailableQuantitiesAtUnit($data['order_id'], $slip_details->stage_master_unit_id);
 
             // Auto-generate start carton sequence
             $max_carton = PackingCarton::selectRaw('MAX(CAST(carton_no AS UNSIGNED)) as max_no')->value('max_no');
             $next_available_no = ($max_carton ?: 0) + 1;
 
-            // box_plan: [[ {detail_id, qty}, ... ], ...] -> Each element is a BOX
+            // box_plan: [[ 'composition' => [ {id, qty}, ... ], 'rack_id' => ... ], ...]
             $box_plan = [];
 
             if (isset($data['mode']) && $data['mode'] == 'full_loose') {
@@ -171,7 +262,10 @@ class PackingService
                     foreach ($set->product_set_details as $detail) {
                         $remaining = $detail->total_quantity - ($packed_quantities[$detail->id] ?? 0);
                         for ($i = 0; $i < $remaining; $i++) {
-                            $box_plan[] = [['id' => $detail->id, 'qty' => 1]];
+                            $box_plan[] = [
+                                'composition' => [['id' => $detail->id, 'qty' => 1]],
+                                'rack_id' => $global_rack_id
+                            ];
                         }
                     }
                 }
@@ -197,8 +291,12 @@ class PackingService
                         }
                     }
 
+                    $set_rack_id = $set_racks[$set->id] ?? $global_rack_id;
                     for ($i = 0; $i < $min_remaining_sets; $i++) {
-                        $box_plan[] = $composition;
+                        $box_plan[] = [
+                            'composition' => $composition,
+                            'rack_id' => $set_rack_id
+                        ];
                     }
                 }
             } elseif (!empty($data['items'])) {
@@ -209,7 +307,10 @@ class PackingService
                     $qty_per_box = (int) $item['qty_per_box'];
                     if ($qty_per_box > 0) {
                         for ($i = 0; $i < $total_boxes; $i++) {
-                            $box_plan[] = [['id' => $did, 'qty' => $qty_per_box]];
+                            $box_plan[] = [
+                                'composition' => [['id' => $did, 'qty' => $qty_per_box]],
+                                'rack_id' => $global_rack_id
+                            ];
                         }
                     }
                 }
@@ -244,8 +345,12 @@ class PackingService
                     }
                 }
 
+                $set_rack_id = $set_racks[$set_id] ?? $global_rack_id;
                 for ($i = 0; $i < $total_boxes; $i++) {
-                    $box_plan[] = $composition;
+                    $box_plan[] = [
+                        'composition' => $composition,
+                        'rack_id' => $set_rack_id
+                    ];
                 }
             }
 
@@ -256,8 +361,9 @@ class PackingService
             // Global Validation & Total Calculation
             $total_items_to_pack = 0;
             $items_summary = []; // [detail_id => total_qty]
-            foreach ($box_plan as $box_items) {
-                foreach ($box_items as $item) {
+            $items_summary = []; // [detail_id => total_qty]
+            foreach ($box_plan as $plan_item) {
+                foreach ($plan_item['composition'] as $item) {
                     $items_summary[$item['id']] = ($items_summary[$item['id']] ?? 0) + $item['qty'];
                     $total_items_to_pack += $item['qty'];
                 }
@@ -268,70 +374,95 @@ class PackingService
                 if (!$detail)
                     throw new \Exception("Item detail not found for ID: $did");
 
-                $available = $detail->total_quantity - ($packed_quantities[$did] ?? 0);
-                if ($total_needed > $available) {
-                    throw new \Exception("Insufficient quantity for size '{$detail->size}'. Needed: $total_needed, Available: $available");
+                // HARD LIMIT: Cannot pack more than what was delivered to the unit
+                $avl_at_unit = $unit_available[$did] ?? 0;
+                if ($total_needed > $avl_at_unit) {
+                    throw new \Exception("Insufficient quantity at Unit for '{$detail->size}'. Requested: $total_needed Pcs, Available at Unit: $avl_at_unit Pcs.");
                 }
+
+                // SOFT LIMIT: Overage packing for order is allowed as requested by user
+                /* if ($total_needed > $available_for_order) {
+                    // Just proceed
+                } */
             }
 
-            // Create Cartons and Boxes
-            $total_boxes_to_create = count($box_plan);
-            $boxes_remaining_in_plan = $total_boxes_to_create;
-            $box_index = 0;
+            // Group box_plan by rack_id
+            $grouped_plans = [];
+            foreach ($box_plan as $plan) {
+                $rid = $plan['rack_id'] ?: 0; // Use 0 for no rack
+                $grouped_plans[$rid][] = $plan['composition'];
+            }
+
             $carton_count = 0;
-            while ($boxes_remaining_in_plan > 0) {
-                // Find next truly available numeric carton number
-                while ($this->checkCartonNo((string) $next_available_no)) {
-                    $next_available_no++;
-                }
-                $carton_no_str = (string) $next_available_no;
+            $total_boxes_to_create = count($box_plan);
+            $datePrefix = date('ymd');
 
-                $carton = PackingCarton::create([
-                    'packing_main_id' => $main->id,
-                    'carton_no' => $carton_no_str,
-                    'rack_id' => $rack_id,
-                    'status' => 0, // Draft
-                ]);
+            foreach ($grouped_plans as $rid => $compositions) {
+                $actual_rack_id = $rid ?: null;
+                $boxes_in_group = count($compositions);
+                $boxes_remaining_in_group = $boxes_in_group;
+                $comp_idx = 0;
 
-                $boxes_in_this_carton = min($boxes_per_carton, $boxes_remaining_in_plan);
+                while ($boxes_remaining_in_group > 0) {
+                    $carton_no_str = (string) $next_available_no;
 
-                $datePrefix = date('ymd');
-                $latestBox = PackingBox::where('box_no', 'LIKE', "BX-$datePrefix-%")
-                    ->orderBy('id', 'desc')
-                    ->first();
-                $nextSeq = 1;
-                if ($latestBox) {
-                    $parts = explode('-', $latestBox->box_no);
-                    $nextSeq = (int) end($parts) + 1;
-                }
-
-                for ($b = 0; $b < $boxes_in_this_carton; $b++) {
-                    $box_composition = $box_plan[$box_index];
-
-                    $box_no = "BX-$datePrefix-" . str_pad($nextSeq++, 4, '0', STR_PAD_LEFT);
-
-                    $box = PackingBox::create([
+                    $carton = PackingCarton::create([
                         'packing_main_id' => $main->id,
-                        'packing_carton_id' => $carton->id,
-                        'box_no' => $box_no,
-                        'box_type' => 'bulk'
+                        'carton_no' => $carton_no_str,
+                        'rack_id' => $actual_rack_id,
+                        'status' => 0, // Draft
                     ]);
 
-                    foreach ($box_composition as $item) {
-                        PackingItem::create([
+                    $boxes_in_this_carton = min($boxes_per_carton, $boxes_remaining_in_group);
+
+                    // Box Sequence Reset/Fetch for naming
+                    $latestBox = PackingBox::where('box_no', 'LIKE', "BX-$datePrefix-%")
+                        ->orderBy('id', 'desc')
+                        ->first();
+                    $nextSeq = 1;
+                    if ($latestBox) {
+                        $parts = explode('-', $latestBox->box_no);
+                        $nextSeq = (int) end($parts) + 1;
+                    }
+
+                    for ($b = 0; $b < $boxes_in_this_carton; $b++) {
+                        $box_composition = $compositions[$comp_idx++];
+                        $box_no = "BX-$datePrefix-" . str_pad($nextSeq++, 4, '0', STR_PAD_LEFT);
+
+                        $box = PackingBox::create([
                             'packing_main_id' => $main->id,
                             'packing_carton_id' => $carton->id,
-                            'packing_box_id' => $box->id,
-                            'size_id' => $item['id'],
-                            'quantity' => $item['qty']
+                            'box_no' => $box_no,
+                            'box_type' => 'bulk'
                         ]);
-                    }
-                    $box_index++;
-                }
 
-                $boxes_remaining_in_plan -= $boxes_in_this_carton;
-                $next_available_no++;
-                $carton_count++;
+                        foreach ($box_composition as $item) {
+                            $detail = \App\Models\OrderProductSetDetail::with('orderProductSet')->find($item['id']);
+                            $fallbackPrice = ($detail && $detail->orderProductSet && $detail->orderProductSet->total_quantity > 0) ? ($detail->orderProductSet->basic_amount / $detail->orderProductSet->total_quantity) : 0;
+                            
+                            PackingItem::create([
+                                'packing_main_id' => $main->id,
+                                'packing_carton_id' => $carton->id,
+                                'packing_box_id' => $box->id,
+                                'size_id' => $item['id'],
+                                'quantity' => $item['qty'],
+                                'selling_price' => $fallbackPrice,
+                                'mrp' => 0
+                            ]);
+
+                            $unit_available[$item['id']] -= $item['qty'];
+                            // (Relaxed) Quantity Validation - Allow overages as requested by user
+                            if ($unit_available[$item['id']] < -50) { // Keep a broad limit or just comment? Let's comment.
+                                /* $detail = \App\Models\OrderProductSetDetail::find($item['id']);
+                                throw new \Exception("Insufficient quantity available at unit for size '{$detail->size}'"); */
+                            }
+                        }
+                    }
+
+                    $boxes_remaining_in_group -= $boxes_in_this_carton;
+                    $next_available_no++;
+                    $carton_count++;
+                }
             }
 
             // Adjust remaining Qty in OrderStageTransaction
@@ -374,123 +505,383 @@ class PackingService
         DB::beginTransaction();
         try {
             $packed_pcs = 0;
-            $exists = $this->checkCartonNo($data['carton_no']);
-            if ($exists) {
-                DB::rollBack();
-                return [
-                    'status' => 'exists',
-                    'message' => 'Carton number already exists'
-                ];
-            }
             $main = $this->getOrCreatePackingMain($data['slip_id'], $data['order_id']);
 
             $carton = PackingCarton::create([
                 'packing_main_id' => $main->id,
                 'carton_no' => $data['carton_no'],
-                'rack_id' => $data['rack_id'] ?? null, // Save Rack ID
+                'rack_id' => $data['rack_id'] ?? null,
                 'note' => $data['note'] ?? null,
-                'status' => 0, // Draft
-                // Dimensions etc
+                'status' => 0,
             ]);
 
-            // If direct items provided (Legacy/Manual)
-            if (isset($data['items']) && is_array($data['items']) && count($data['items']) > 0) {
-                foreach ($data['items'] as $item) {
-                    PackingItem::create([
-                        'packing_main_id' => $main->id,
-                        'packing_carton_id' => $carton->id,
-                        'size_id' => $item['size_id'],
-                        'quantity' => $item['quantity']
-                    ]);
-                    $packed_pcs += $item['quantity'];
+            $slip_details = ProductionSlipDigitization::find($data['slip_id']);
+            $unit_available = $this->getAvailableQuantitiesAtUnit($data['order_id'], $slip_details->stage_master_unit_id);
+
+            // If manual items/sets are provided, we wrap them in a single auto-generated box for this carton
+            if ((isset($data['items']) && count($data['items']) > 0) || (isset($data['sets']) && count($data['sets']) > 0)) {
+                $datePrefix = date('ymd');
+                $latestBox = PackingBox::where('box_no', 'LIKE', "BX-$datePrefix-%")->orderBy('id', 'desc')->first();
+                $nextSeq = 1;
+                if ($latestBox) {
+                    $parts = explode('-', $latestBox->box_no);
+                    $nextSeq = (int) end($parts) + 1;
                 }
-            }
+                $box_no = "BX-$datePrefix-" . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
 
-            // If SETS are provided (New)
-            if (isset($data['sets']) && is_array($data['sets'])) {
-                foreach ($data['sets'] as $set_req) {
-                    $set = \App\Models\OrderProductSet::with('product_set_details')->find($set_req['set_id']);
-                    if ($set) {
-                        $pack_qty = $set_req['quantity'];
-                        $set_total_qty = $set->set_quantity > 0 ? $set->set_quantity : 1;
+                $box = PackingBox::create([
+                    'packing_main_id' => $main->id,
+                    'packing_carton_id' => $carton->id,
+                    'box_no' => $box_no,
+                    'box_type' => 'manual'
+                ]);
 
-                        foreach ($set->product_set_details as $detail) {
-                            // Calculate qty per set unit
-                            // If total required is 100 for 100 sets, then 1 per set.
-                            // If total required is 200 for 100 sets, then 2 per set.
-                            $ratio = $detail->total_quantity / $set_total_qty;
+                if (isset($data['items']) && is_array($data['items'])) {
+                    foreach ($data['items'] as $item) {
+                        if ($item['quantity'] <= 0)
+                            continue;
+                        
+                        $detail = \App\Models\OrderProductSetDetail::with('orderProductSet')->find($item['size_id']);
+                        $fallbackPrice = ($detail && $detail->orderProductSet && $detail->orderProductSet->total_quantity > 0) ? ($detail->orderProductSet->basic_amount / $detail->orderProductSet->total_quantity) : 0;
 
-                            $qty_to_pack = ceil($ratio * $pack_qty); // Use ceil to be safe or round? 
-                            // Integer math might key here.
+                        PackingItem::create([
+                            'packing_main_id' => $main->id,
+                            'packing_carton_id' => $carton->id,
+                            'packing_box_id' => $box->id,
+                            'size_id' => $item['size_id'],
+                            'quantity' => $item['quantity'],
+                            'selling_price' => $fallbackPrice,
+                            'mrp' => 0
+                        ]);
+                        // (Relaxed) Quantity Validation - Allow overages as requested by user
+                        /* if (($unit_available[$item['size_id']] ?? 0) < $item['quantity']) {
+                            throw new \Exception("Insufficient quantity available at unit for size ID " . $item['size_id']);
+                        } */
+                        $unit_available[$item['size_id']] -= $item['quantity'];
+                        $packed_pcs += $item['quantity'];
+                    }
+                }
 
-                            if ($qty_to_pack > 0) {
-                                PackingItem::create([
-                                    'packing_main_id' => $main->id,
-                                    'packing_carton_id' => $carton->id,
-                                    'size_id' => $detail->id, // Wait, size_id refers to ORDER_PRODUCT_SET_DETAIL_ID? OR Size Master ID?
-                                    // In current PackingItem, what is 'size_id'?
-                                    // In Controller saveBox, we used $item['size_id']. Frontend passed `item.id`.
-                                    // item.id comes from `OrderProductSetDetail->id`.
-                                    // So `size_id` in PackingItem actually stores `order_product_set_detail_id`.
-                                    // Checking PackingItem model to be sure...
-                                    // Assuming it stores Detail ID for traceability.
-                                    'quantity' => $qty_to_pack
-                                ]);
-                                $packed_pcs += $qty_to_pack;
+                if (isset($data['sets']) && is_array($data['sets'])) {
+                    foreach ($data['sets'] as $set_req) {
+                        $set = \App\Models\OrderProductSet::with('product_set_details')->find($set_req['set_id']);
+                        if ($set) {
+                            $pack_qty = $set_req['quantity'];
+                            $set_total_qty = $set->set_quantity > 0 ? $set->set_quantity : 1;
+                            foreach ($set->product_set_details as $detail) {
+                                $ratio = $detail->total_quantity / $set_total_qty;
+                                $qty_to_pack = ceil($ratio * $pack_qty);
+                                if ($qty_to_pack > 0) {
+                                    $fallbackPrice = ($set && $set->total_quantity > 0) ? ($set->basic_amount / $set->total_quantity) : 0;
+                                    PackingItem::create([
+                                        'packing_main_id' => $main->id,
+                                        'packing_carton_id' => $carton->id,
+                                        'packing_box_id' => $box->id,
+                                        'size_id' => $detail->id,
+                                        'quantity' => $qty_to_pack,
+                                        'selling_price' => $fallbackPrice,
+                                        'mrp' => 0
+                                    ]);
+                                    /* if (($unit_available[$detail->id] ?? 0) < $qty_to_pack) {
+                                        throw new \Exception("Insufficient quantity available at unit for size '{$detail->size}'");
+                                    } */
+                                    $unit_available[$detail->id] -= $qty_to_pack;
+                                    $packed_pcs += $qty_to_pack;
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // If existing boxes are being put into this carton
             if (isset($data['box_ids']) && is_array($data['box_ids'])) {
                 PackingBox::whereIn('id', $data['box_ids'])->update(['packing_carton_id' => $carton->id]);
                 PackingItem::whereIn('packing_box_id', $data['box_ids'])->update(['packing_carton_id' => $carton->id]);
+                // No need to deduct transactions here as boxes should already be deducted when created? 
+                // Actually, saveBox deducts. So we are fine.
             }
 
-            $slip_details = ProductionSlipDigitization::where('id', $data['slip_id'])->first();
+            if ($packed_pcs > 0) {
+                $orderLots = OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
+                $orderStageTransactions = OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
+                    ->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                    ->whereIn('lot_no', $orderLots)->orderBy('id')->get();
 
-            $orderLots = OrderLot::where('order_main_id', $data['order_id'])
-                ->pluck('lot_no')
-                ->toArray();
-
-            $orderStageTransactions = OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
-                ->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
-                ->whereIn('lot_no', $orderLots)
-                ->orderBy('id')
-                ->get();
-
-            if ($orderStageTransactions->isNotEmpty()) {
-                /* ADJUST REMAINING QTY */
-                foreach ($orderStageTransactions as $transaction) {
-
-                    if ($packed_pcs <= 0) {
+                $rem = $packed_pcs;
+                foreach ($orderStageTransactions as $tx) {
+                    if ($rem <= 0)
                         break;
-                    }
-
-                    if ($transaction->remaining_quantity <= 0) {
+                    if ($tx->remaining_quantity <= 0)
                         continue;
-                    }
-
-                    if ($transaction->remaining_quantity > $packed_pcs) {
-
-                        $transaction->remaining_quantity -= $packed_pcs;
-                        $packed_pcs = 0;
-
+                    if ($tx->remaining_quantity > $rem) {
+                        $tx->remaining_quantity -= $rem;
+                        $rem = 0;
                     } else {
-
-                        $packed_pcs -= $transaction->remaining_quantity;
-                        $transaction->remaining_quantity = 0;
+                        $rem -= $tx->remaining_quantity;
+                        $tx->remaining_quantity = 0;
                     }
-
-                    $transaction->save();
+                    $tx->save();
                 }
             }
-            // (int) $packed_pcs;
 
             DB::commit();
             return ['status' => 'success', 'carton' => $carton];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function saveMultiCartonPlan($data)
+    {
+        DB::beginTransaction();
+        try {
+            $main = $this->getOrCreatePackingMain($data['slip_id'], $data['order_id']);
+            $order = \App\Models\OrderMain::find($data['order_id']);
+            $is_domestic = $order && strtolower(trim($order->order_type)) === 'domestic';
+            $plan = $data['plan'] ?? [];
+            if (empty($plan))
+                throw new \Exception("Empty plan provided.");
+
+            $slip_details = ProductionSlipDigitization::find($data['slip_id']);
+            $unit_available = $this->getAvailableQuantitiesAtUnit($data['order_id'], $slip_details->stage_master_unit_id);
+
+            $carton_groups = [];
+            $requested_pcs = []; // To track total pieces needed per size detail for validation
+            foreach ($plan as $entry) {
+                $carton_groups[$entry['carton_no']][] = $entry;
+
+                // Pre-calculate needed pieces
+                if ($entry['type'] === 'set' || $entry['type'] === 'domestic') {
+                    $set = \App\Models\OrderProductSet::with('product_set_details')->find($entry['content_id']);
+                    if ($set) {
+                        $set_total_qty = $set->set_quantity > 0 ? $set->set_quantity : 1;
+                        foreach ($set->product_set_details as $detail) {
+                            $pcs_per_set = ceil($detail->total_quantity / $set_total_qty);
+                            $requested_pcs[$detail->id] = ($requested_pcs[$detail->id] ?? 0) + ($pcs_per_set * $entry['quantity']);
+                        }
+                    }
+                } else {
+                    $did = $entry['content_id'];
+                    $requested_pcs[$did] = ($requested_pcs[$did] ?? 0) + $entry['quantity'];
+                }
+            }
+
+            // Hard Limit Validation: Compare against Unit availability
+            foreach ($requested_pcs as $did => $needed) {
+                $avl = $unit_available[$did] ?? 0;
+                if ($needed > $avl) {
+                    $detail = \App\Models\OrderProductSetDetail::find($did);
+                    $sz = $detail ? $detail->size : 'N/A';
+                    throw new \Exception("Insufficient quantity at Unit for '{$sz}'. Needed: $needed Pcs, Available at Unit: $avl Pcs.");
+                }
+            }
+
+            $total_pcs = 0;
+            $carton_count = 0;
+            $datePrefix = date('ymd');
+
+            foreach ($carton_groups as $cno => $entries) {
+                $rack_id = $entries[0]['rack_id'] ?? null;
+                $carton = PackingCarton::create([
+                    'packing_main_id' => $main->id,
+                    'carton_no' => $cno,
+                    'rack_id' => $rack_id,
+                    'status' => 0
+                ]);
+
+                foreach ($entries as $entry) {
+                    $qty = (int) $entry['quantity'];
+                    $barcode = $entry['barcode'] ?? null;
+
+                    if ($barcode && !$carton->barcode) {
+                        $carton->update(['barcode' => $barcode]);
+                    }
+
+                    if ($is_domestic && $entry['type'] === 'domestic') {
+                        // Create specified number of domestic boxes
+                        $stockSet = \App\Models\OrderProductSet::with('product_set_details')->find($entry['content_id']);
+                        if (!$stockSet)
+                            throw new \Exception("Stock Set not found for domestic entry.");
+
+                        $ss_total = $stockSet->set_quantity > 0 ? $stockSet->set_quantity : 1;
+                        $pcs_per_box = 0;
+                        foreach ($stockSet->product_set_details as $detail) {
+                            $pcs_per_box += ceil($detail->total_quantity / $ss_total);
+                        }
+
+                        for ($i = 0; $i < $qty; $i++) {
+                            $box_no = "BX-$datePrefix-" . str_pad($this->getNextBoxSeq($datePrefix), 4, '0', STR_PAD_LEFT);
+                            $box = PackingBox::create([
+                                'packing_main_id' => $main->id,
+                                'packing_carton_id' => $carton->id,
+                                'box_no' => $box_no,
+                                'box_type' => 'domestic_planner',
+                                'barcode' => $barcode
+                            ]);
+
+                            $gen_barcode = 'D' . $entry['product_id'] . 'S' . $entry['size_set_id'] . 'C' . $entry['color_id'] . 'P' . ($entry['pattern_id'] ?? 0) . 'F' . ($entry['fitting_id'] ?? 0);
+
+                            \App\Models\DomesticInventory::create([
+                                'order_main_id' => $data['order_id'],
+                                'packing_main_id' => $main->id,
+                                'packing_carton_id' => $carton->id,
+                                'packing_box_id' => $box->id,
+                                'rack_id' => $rack_id,
+                                'product_id' => $entry['product_id'],
+                                'color_id' => $entry['color_id'],
+                                'fitting_id' => $entry['fitting_id'] ?? null,
+                                'pattern_id' => $entry['pattern_id'] ?? null,
+                                'size_set_id' => $entry['size_set_id'],
+                                'quantity' => $pcs_per_box,
+                                'box_no' => $box_no,
+                                'carton_no' => $cno,
+                                'barcode' => $barcode ?: $gen_barcode,
+                                'status' => 1
+                            ]);
+
+                            // 4. Create PackingItem records for DISPATCH compatibility
+                            foreach ($stockSet->product_set_details as $detail) {
+                                $pcs = ceil($detail->total_quantity / $ss_total);
+
+                                // Map by Size Name string to the Order's record ID
+                                $mappedItem = $orderEntries->where('size', $detail->size)->first();
+                                $finalSizeId = $mappedItem ? $mappedItem->id : $detail->id;
+
+                                // Calculate fallback price from order
+                                $fallbackPrice = 0;
+                                if ($mappedItem && $mappedItem->orderProductSet && $mappedItem->orderProductSet->total_quantity > 0) {
+                                    $fallbackPrice = $mappedItem->orderProductSet->basic_amount / $mappedItem->orderProductSet->total_quantity;
+                                }
+
+                                \App\Models\PackingItem::create([
+                                    'packing_main_id' => $main->id,
+                                    'packing_carton_id' => $carton->id,
+                                    'packing_box_id' => $box->id,
+                                    'size_id' => $finalSizeId,
+                                    'quantity' => $pcs,
+                                    'selling_price' => $fallbackPrice,
+                                    'mrp' => 0
+                                ]);
+                            }
+
+                            // DEDUCT FROM UNIT STOCK
+                            // We must map sizes from the PACKED set to the IDs of the ORDERED set
+                            $orderEntries = \App\Models\OrderProductSetDetail::join('order_products_sets as ops', 'order_products_set_details.order_products_set_id', '=', 'ops.id')
+                                ->where('ops.order_main_id', $data['order_id'])
+                                ->select('order_products_set_details.*')
+                                ->get();
+
+                            foreach ($stockSet->product_set_details as $detail) {
+                                $pcs = ceil($detail->total_quantity / $ss_total);
+
+                                // Map by Size Name string to the Order's record ID
+                                $mappedItem = $orderEntries->where('size', $detail->size)->first();
+                                $finalSizeId = $mappedItem ? $mappedItem->id : $detail->id;
+
+                                \App\Models\ProductionOutflowInventory::create([
+                                    'order_main_id' => $data['order_id'],
+                                    'slip_id' => $data['slip_id'],
+                                    'product_id' => $entry['product_id'],
+                                    'color_id' => $entry['color_id'],
+                                    'size_id' => $finalSizeId,
+                                    'quantity' => $pcs,
+                                    'type' => 'packing',
+                                    'responsible_unit_id' => $slip_details->stage_master_unit_id,
+                                    'remarks' => "Domestic Packing: Box $box_no",
+                                ]);
+                                $total_pcs += $pcs;
+                            }
+                        }
+                    } else if ($entry['type'] === 'set') {
+                        $set = \App\Models\OrderProductSet::with('product_set_details')->find($entry['content_id']);
+                        if (!$set)
+                            throw new \Exception("Set Pattern not found.");
+                        $set_total_qty = $set->set_quantity > 0 ? $set->set_quantity : 1;
+
+                        // Create specified number of sets as separate boxes
+                        for ($i = 0; $i < $qty; $i++) {
+                            $box_no = "BX-$datePrefix-" . str_pad($this->getNextBoxSeq($datePrefix), 4, '0', STR_PAD_LEFT);
+                            $box = PackingBox::create([
+                                'packing_main_id' => $main->id,
+                                'packing_carton_id' => $carton->id,
+                                'box_no' => $box_no,
+                                'box_type' => 'planner',
+                                'barcode' => $barcode // Link barcode to each box from this row
+                            ]);
+
+                            foreach ($set->product_set_details as $detail) {
+                                $ratio = $detail->total_quantity / $set_total_qty;
+                                $count = ceil($ratio * 1); // 1 set per box
+
+                                if ($count > 0) {
+                                    PackingItem::create([
+                                        'packing_main_id' => $main->id,
+                                        'packing_carton_id' => $carton->id,
+                                        'packing_box_id' => $box->id,
+                                        'size_id' => $detail->id,
+                                        'quantity' => $count,
+                                        'selling_price' => $entry['price'] ?? 0,
+                                        'mrp' => $entry['mrp'] ?? 0
+                                    ]);
+                                    $unit_available[$detail->id] = ($unit_available[$detail->id] ?? 0) - $count;
+                                    $total_pcs += $count;
+                                }
+                            }
+                        }
+                    } else {
+                        // Loose: Pack all qty pieces into one planner box for this entry
+                        $did = $entry['content_id'];
+                        $box_no = "BX-$datePrefix-" . str_pad($this->getNextBoxSeq($datePrefix), 4, '0', STR_PAD_LEFT);
+                        $box = PackingBox::create([
+                            'packing_main_id' => $main->id,
+                            'packing_carton_id' => $carton->id,
+                            'box_no' => $box_no,
+                            'box_type' => 'planner_loose',
+                            'barcode' => $barcode
+                        ]);
+
+                        PackingItem::create([
+                            'packing_main_id' => $main->id,
+                            'packing_carton_id' => $carton->id,
+                            'packing_box_id' => $box->id,
+                            'size_id' => $did,
+                            'quantity' => $qty,
+                            'selling_price' => $entry['price'] ?? 0,
+                            'mrp' => $entry['mrp'] ?? 0
+                        ]);
+                        $unit_available[$did] = ($unit_available[$did] ?? 0) - $qty;
+                        $total_pcs += $qty;
+                    }
+                }
+                $carton_count++;
+            }
+
+            if ($total_pcs > 0) {
+                $orderLots = OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
+                $orderStageTransactions = OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
+                    ->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                    ->whereIn('lot_no', $orderLots)->orderBy('id')->get();
+
+                $rem = $total_pcs;
+                foreach ($orderStageTransactions as $tx) {
+                    if ($rem <= 0)
+                        break;
+                    if ($tx->remaining_quantity <= 0)
+                        continue;
+                    if ($tx->remaining_quantity > $rem) {
+                        $tx->remaining_quantity -= $rem;
+                        $rem = 0;
+                    } else {
+                        $rem -= $tx->remaining_quantity;
+                        $tx->remaining_quantity = 0;
+                    }
+                    $tx->save();
+                }
+            }
+
+            DB::commit();
+            return ['status' => 'success', 'message' => "Successfully processed $carton_count cartons ($total_pcs pieces total)."];
         } catch (\Exception $e) {
             DB::rollBack();
             return ['status' => 'error', 'message' => $e->getMessage()];
@@ -526,6 +917,9 @@ class PackingService
             ]);
 
             if (isset($data['items']) && is_array($data['items'])) {
+                $slip_details = ProductionSlipDigitization::find($data['slip_id']);
+                $unit_available = $this->getAvailableQuantitiesAtUnit($data['order_id'], $slip_details->stage_master_unit_id);
+
                 foreach ($data['items'] as $item) {
                     PackingItem::create([
                         'packing_main_id' => $main->id,
@@ -533,6 +927,12 @@ class PackingService
                         'size_id' => $item['size_id'],
                         'quantity' => $item['quantity']
                     ]);
+
+                    // (Relaxed) Quantity Validation - Allow overages as requested by user
+                    /* if (($unit_available[$item['size_id']] ?? 0) < $item['quantity']) {
+                        throw new \Exception("Insufficient quantity available at unit for size ID " . $item['size_id']);
+                    } */
+                    $unit_available[$item['size_id']] -= $item['quantity'];
                 }
             }
 
@@ -571,45 +971,44 @@ class PackingService
             if ($is_domestic) {
                 foreach ($packing_main->cartons as $carton) {
                     foreach ($carton->boxes as $box) {
-                        // Group packing items by their variations
+                        // Group packing items by their variations AND pricing
                         $box_variations = [];
                         foreach ($box->items as $item) {
                             $detail = \App\Models\OrderProductSetDetail::find($item->size_id);
                             if ($detail) {
                                 $set_id = $detail->order_products_set_id;
-                                $box_variations[$set_id] = ($box_variations[$set_id] ?? 0) + $item->quantity;
+                                $key = "{$set_id}";
+                                if (!isset($box_variations[$key])) {
+                                    $box_variations[$key] = [
+                                        'set_id' => $set_id,
+                                        'quantity' => 0
+                                    ];
+                                }
+                                $box_variations[$key]['quantity'] += $item->quantity;
                             }
                         }
 
-                        foreach ($box_variations as $set_id => $qty) {
-                            $set = \App\Models\OrderProductSet::with('colors', 'product', 'size_measurement')->find($set_id);
+                        foreach ($box_variations as $var) {
+                            $set_id = $var['set_id'];
+                            $qty = $var['quantity'];
+                            $set = \App\Models\OrderProductSet::with(['colors', 'product.series', 'size_measurement', 'master_product_fitting', 'master_design_pattern'])->find($set_id);
                             if ($set) {
-                                // Lookup Inventory Pricing
-                                $price_record = InventoryPrice::where('design_id', $set->production_goods_id)
-                                    ->where('color_id', $set->color_id)
-                                    ->where('size_set_id', $set->set_size)
-                                    ->first();
-
+                                $final_barcode = $box->barcode ?: $box->box_no;
                                 DomesticInventory::create([
                                     'order_main_id' => $order->id,
                                     'packing_main_id' => $packing_main->id,
                                     'packing_carton_id' => $carton->id,
                                     'packing_box_id' => $box->id,
+                                    'rack_id' => $carton->rack_id,
                                     'product_id' => $set->production_goods_id,
-                                    'product_name' => ($price_record && $price_record->name) ? $price_record->name : ($set->product ? $set->product->name_of_garment : null),
                                     'color_id' => $set->color_id,
-                                    'color_name' => $set->colors ? $set->colors->name : null,
+                                    'fitting_id' => $set->master_product_fitting_id,
+                                    'pattern_id' => $set->master_design_pattern_id,
                                     'size_set_id' => $set->set_size,
-                                    'size_set_name' => $set->size_measurement ? $set->size_measurement->name : null,
-                                    'design_number' => $set->design_number,
                                     'quantity' => $qty,
-                                    'mrp' => $price_record ? $price_record->mrp : null,
-                                    'selling_price' => $price_record ? $price_record->selling_price : null,
-                                    'price' => $price_record ? $price_record->price : null,
                                     'box_no' => $box->box_no,
                                     'carton_no' => $carton->carton_no,
-                                    'barcode' => $box->box_no,
-                                    'qrcode' => $box->box_no,
+                                    'barcode' => $final_barcode,
                                     'status' => 1
                                 ]);
                             }
@@ -627,40 +1026,38 @@ class PackingService
                             $detail = \App\Models\OrderProductSetDetail::find($item->size_id);
                             if ($detail) {
                                 $set_id = $detail->order_products_set_id;
-                                $carton_variations[$set_id] = ($carton_variations[$set_id] ?? 0) + $item->quantity;
+                                $key = "{$set_id}";
+                                if (!isset($carton_variations[$key])) {
+                                    $carton_variations[$key] = [
+                                        'set_id' => $set_id,
+                                        'quantity' => 0
+                                    ];
+                                }
+                                $carton_variations[$key]['quantity'] += $item->quantity;
                             }
                         }
 
-                        foreach ($carton_variations as $set_id => $qty) {
-                            $set = \App\Models\OrderProductSet::with('colors', 'product', 'size_measurement')->find($set_id);
+                        foreach ($carton_variations as $var) {
+                            $set_id = $var['set_id'];
+                            $qty = $var['quantity'];
+                            $set = \App\Models\OrderProductSet::with(['colors', 'product.series', 'size_measurement', 'master_product_fitting', 'master_design_pattern'])->find($set_id);
                             if ($set) {
-                                // Lookup Inventory Pricing
-                                $price_record = InventoryPrice::where('design_id', $set->production_goods_id)
-                                    ->where('color_id', $set->color_id)
-                                    ->where('size_set_id', $set->set_size)
-                                    ->first();
-
                                 $box_code = $carton->barcode ?: 'C' . $carton->carton_no;
                                 DomesticInventory::create([
                                     'order_main_id' => $order->id,
                                     'packing_main_id' => $packing_main->id,
                                     'packing_carton_id' => $carton->id,
                                     'packing_box_id' => null,
+                                    'rack_id' => $carton->rack_id,
                                     'product_id' => $set->production_goods_id,
-                                    'product_name' => ($price_record && $price_record->name) ? $price_record->name : ($set->product ? $set->product->name_of_garment : null),
                                     'color_id' => $set->color_id,
-                                    'color_name' => $set->colors ? $set->colors->name : null,
+                                    'fitting_id' => $set->master_product_fitting_id,
+                                    'pattern_id' => $set->master_design_pattern_id,
                                     'size_set_id' => $set->set_size,
-                                    'size_set_name' => $set->size_measurement ? $set->size_measurement->name : null,
-                                    'design_number' => $set->design_number,
                                     'quantity' => $qty,
-                                    'mrp' => $price_record ? $price_record->mrp : null,
-                                    'selling_price' => $price_record ? $price_record->selling_price : null,
-                                    'price' => $price_record ? $price_record->price : null,
                                     'box_no' => null,
                                     'carton_no' => $carton->carton_no,
                                     'barcode' => $box_code,
-                                    'qrcode' => $box_code,
                                     'status' => 1
                                 ]);
                             }
@@ -808,10 +1205,361 @@ class PackingService
         }
     }
 
+    public function reassignRework($data)
+    {
+        DB::beginTransaction();
+        try {
+            $orderMainId = $data['order_id'];
+            $slipId = $data['slip_id'];
+            $toStageId = $data['to_stage_id'];
+            $toUnitId = $data['to_unit_id'];
+            $items = $data['items']; // [{detail_id, qty}]
+            $remarks = $data['remarks'] ?? 'Defect return for rework';
+
+            $slipMain = ProductionSlipDigitization::findOrFail($slipId);
+
+            // 1. Calculate Total Pcs to return
+            $totalPcs = 0;
+            foreach ($items as $item) {
+                $totalPcs += (int) $item['qty'];
+            }
+
+            if ($totalPcs <= 0) {
+                throw new \Exception("Quantity must be greater than zero.");
+            }
+
+            // 2. Identify the source Lot Number
+            // We'll pick the most recent lot number received at this unit for this order
+            $orderLots = \App\Models\OrderLot::where('order_main_id', $orderMainId)->pluck('lot_no')->toArray();
+
+            $sourceTx = OrderStageTransaction::where('to_stage_id', 11) // Packing
+                ->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                ->whereIn('lot_no', $orderLots)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if (!$sourceTx) {
+                throw new \Exception("No incoming production pieces found to return.");
+            }
+
+            // 3. Create NEW OrderStageTransaction for REWORK
+            $newTx = OrderStageTransaction::create([
+                'company_id' => $sourceTx->company_id,
+                'sub_company_id' => $sourceTx->sub_company_id,
+                'project_id' => $sourceTx->project_id,
+                'sku' => $sourceTx->sku,
+                'order_product_id' => $sourceTx->order_product_id,
+                'from_stage_id' => 11, // From Packing
+                'to_stage_id' => $toStageId,
+                'sub_stage_id' => $slipMain->stage_master_unit_id,
+                'sub_stage_id_to' => $toUnitId,
+                'lot_no' => $sourceTx->lot_no,
+                'quantity' => $totalPcs,
+                'remaining_quantity' => $totalPcs,
+                'remarks' => $remarks,
+                'production_datetime' => now(),
+                'status' => 1,
+                'type' => 'rework' // KEY: mark as rework
+            ]);
+
+            // 4. Create Transaction Details
+            foreach ($items as $item) {
+                $qty = (int) $item['qty'];
+                if ($qty <= 0)
+                    continue;
+
+                $detail = \App\Models\OrderProductSetDetail::find($item['detail_id']);
+
+                OrderStageTransactionDetail::create([
+                    'order_stage_transaction_id' => $newTx->id,
+                    'size' => $detail->size ?? 'N/A',
+                    'quantity' => $qty
+                ]);
+
+                // 5. DEDUCT from current unit's availability
+                // We do this by reducing the 'remaining_quantity' of incoming transactions 
+                $incomingTxs = OrderStageTransaction::where('to_stage_id', 11)
+                    ->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                    ->where('lot_no', $sourceTx->lot_no)
+                    ->get();
+
+                $rem = $qty;
+                foreach ($incomingTxs as $itx) {
+                    if ($rem <= 0)
+                        break;
+                    if ($itx->remaining_quantity <= 0)
+                        continue;
+
+                    $deduct = min($itx->remaining_quantity, $rem);
+                    $itx->remaining_quantity -= $deduct;
+                    $itx->save();
+                    $rem -= $deduct;
+                }
+            }
+
+            DB::commit();
+            return ['status' => 'success', 'message' => "Successfully reassigned $totalPcs pieces for rework."];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function recordDeadStock($data)
+    {
+        return $this->recordConsolidatedOutflow('dead', $data);
+    }
+
+
+
     public function checkCartonNo($carton_no)
     {
         $exists = PackingCarton::where('carton_no', $carton_no)->exists();
         return $exists;
     }
 
+    private function getNextBoxSeq($datePrefix)
+    {
+        $latestBox = PackingBox::where('box_no', 'LIKE', "BX-$datePrefix-%")
+            ->orderBy('id', 'desc')
+            ->first();
+        $nextSeq = 1;
+        if ($latestBox) {
+            $parts = explode('-', $latestBox->box_no);
+            $nextSeq = (int) end($parts) + 1;
+        }
+        return $nextSeq;
+    }
+
+    public function recordSamplingStock($data)
+    {
+        return $this->recordConsolidatedOutflow('sampling', $data);
+    }
+    public function recordUnitDebit($data)
+    {
+        return $this->recordConsolidatedOutflow('debit', $data);
+    }
+
+    private function recordConsolidatedOutflow($type, $data)
+    {
+        DB::beginTransaction();
+        try {
+            $orderMainId = $data['order_id'];
+            $slipId = $data['slip_id'];
+            $rackId = $data['rack_id'] ?? null;
+            $items = $data['items']; // [{detail_id, qty}]
+            $remarks = $data['remarks'] ?? ($type . ' outflow');
+
+            $slipMain = \App\Models\ProductionSlipDigitization::findOrFail($slipId);
+
+            // 1. Identify valid Lot for this order at this unit
+            $orderLots = \App\Models\OrderLot::where('order_main_id', $orderMainId)->pluck('lot_no')->toArray();
+
+            foreach ($items as $item) {
+                $qty = (int) $item['qty'];
+                if ($qty <= 0)
+                    continue;
+
+                $detail = \App\Models\OrderProductSetDetail::findOrFail($item['detail_id']);
+                $set = \App\Models\OrderProductSet::findOrFail($detail->order_products_set_id);
+
+                // Find a source transaction that contains pieces for this specific SKU (or at least this Lot)
+                $sourceTx = OrderStageTransaction::where('to_stage_id', 11)
+                    ->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                    ->whereIn('lot_no', $orderLots)
+                    ->where(function ($q) use ($set) {
+                        $q->where('sku', $set->sku)->orWhereNull('sku');
+                    })
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                if (!$sourceTx) {
+                    // Fallback to ANY transaction for this lot if SKU mismatch (common in Domestic)
+                    $sourceTx = OrderStageTransaction::where('to_stage_id', 11)
+                        ->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                        ->whereIn('lot_no', $orderLots)
+                        ->orderBy('id', 'desc')
+                        ->first();
+                }
+
+                if (!$sourceTx)
+                    throw new \Exception("No incoming production pieces found for piece: " . $detail->size);
+
+                // 2. Create Log Record
+                $outflowLog = \App\Models\ProductionOutflowInventory::create([
+                    'type' => $type,
+                    'order_main_id' => $orderMainId,
+                    'slip_id' => $slipId,
+                    'lot_no' => $sourceTx->lot_no,
+                    'rack_id' => $rackId,
+                    'product_id' => $set->production_goods_id,
+                    'color_id' => $set->color_id,
+                    'fitting_id' => $set->master_product_fitting_id,
+                    'pattern_id' => $set->master_design_pattern_id,
+                    'size_id' => $detail->id,
+                    'quantity' => $qty,
+                    'per_piece_amount' => $item['per_piece_amount'] ?? $data['per_piece_amount'] ?? null,
+                    'total_amount' => $data['total_amount'] ?? null,
+                    'discount' => $data['discount'] ?? null,
+                    'responsible_stage_id' => $data['stage_id'] ?? 11, // Packing
+                    'responsible_unit_id' => $data['unit_id'] ?? $slipMain->stage_master_unit_id,
+                    'barcode' => strtoupper($type) . '-' . $detail->id . '-' . uniqid(),
+                    'remarks' => $remarks
+                ]);
+
+                // 3. DEDUCT from current unit (validation pool)
+                $incomingTxs = OrderStageTransaction::where('sku', $sourceTx->sku)
+                    ->where('to_stage_id', 11)
+                    ->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                    ->get();
+
+                $rem = $qty;
+                foreach ($incomingTxs as $itx) {
+                    if ($rem <= 0)
+                        break;
+                    if ($itx->remaining_quantity <= 0)
+                        continue;
+                    $deduct = min($itx->remaining_quantity, $rem);
+                    $itx->remaining_quantity -= $deduct;
+                    $itx->save();
+                    $rem -= $deduct;
+                }
+
+                if ($rem > 0) {
+                    throw new \Exception("Insufficient stock at unit for size '{$detail->size}'. Required: $qty, Available: " . ($qty - $rem));
+                }
+
+                // 4. Create Mirror TX (Linked by Barcode in Remarks for precise restoration)
+                $outflowType = ($type === 'dead') ? 'damage' : $type;
+                $outflowTx = OrderStageTransaction::create([
+                    'company_id' => $sourceTx->company_id,
+                    'sub_company_id' => $sourceTx->sub_company_id,
+                    'project_id' => $sourceTx->project_id,
+                    'sku' => $sourceTx->sku,
+                    'order_product_id' => $sourceTx->order_product_id,
+                    'from_stage_id' => 11,
+                    'to_stage_id' => 13, // Virtual Stage for Outflows
+                    'sub_stage_id' => $slipMain->stage_master_unit_id,
+                    'lot_no' => $sourceTx->lot_no,
+                    'quantity' => $qty,
+                    'remaining_quantity' => 0,
+                    'remarks' => $remarks . " [MirrorLink:" . $outflowLog->barcode . "]",
+                    'production_datetime' => now(),
+                    'status' => 1,
+                    'type' => $outflowType
+                ]);
+
+                \App\Models\OrderStageTransactionDetail::create([
+                    'order_stage_transaction_id' => $outflowTx->id,
+                    'order_products_set_id' => $detail->order_products_set_id,
+                    'size' => $detail->size,
+                    'quantity' => $qty
+                ]);
+            }
+            DB::commit();
+            return ['status' => 'success', 'message' => "Successfully recorded $type outflow."];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+    public function deleteOutflow($id)
+    {
+        DB::beginTransaction();
+        try {
+            $outflow = \App\Models\ProductionOutflowInventory::with('orderMain')->findOrFail($id);
+            $slip = \App\Models\ProductionSlipDigitization::find($outflow->slip_id);
+            $unitId = $outflow->responsible_unit_id ?: $slip->stage_master_unit_id;
+
+            // 1. MIRROR REMOVAL (Linked by Barcode for precise size-wise restoration)
+            $mirror = \App\Models\OrderStageTransaction::where('remarks', 'LIKE', "%[MirrorLink:" . $outflow->barcode . "]%")->first();
+
+            if (!$mirror) {
+                // Fallback for older records or failed links
+                $mirrorType = ($outflow->type == 'dead' ? 'damage' : $outflow->type);
+                $mirror = \App\Models\OrderStageTransaction::where('sku', $outflow->orderMain->sku)
+                    ->where('sub_stage_id', $unitId)
+                    ->where('type', $mirrorType)
+                    ->where('quantity', '>=', $outflow->quantity)
+                    ->orderBy('id', 'desc')->first();
+            }
+
+            if ($mirror) {
+                if ($mirror->quantity <= $outflow->quantity) {
+                    $mirror->details()->delete();
+                    $mirror->delete();
+                } else {
+                    $mirror->quantity -= $outflow->quantity;
+                    $mirror->save();
+                    $det = $mirror->details()->first();
+                    if ($det) {
+                        $det->quantity = max(0, $det->quantity - $outflow->quantity);
+                        $det->save();
+                    }
+                }
+            }
+
+            // 2. Revert Deduction from available transactions (for backend validation pool)
+            $receivedTxs = \App\Models\OrderStageTransaction::where('sku', $outflow->orderMain->sku)
+                ->where('to_stage_id', 11) // In Packing
+                ->where('sub_stage_id_to', $unitId)
+                ->where('status', 1)
+                ->orderBy('id', 'desc')
+                ->get();
+
+            $rem = $outflow->quantity;
+            foreach ($receivedTxs as $tx) {
+                if ($rem <= 0)
+                    break;
+                // Add back to remaining_quantity
+                $tx->remaining_quantity += $rem;
+                $tx->save();
+                $rem = 0;
+            }
+
+            $outflow->delete();
+            DB::commit();
+            return ['status' => 'success', 'message' => 'Record deleted and stock restored.'];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function deleteRework($id)
+    {
+        DB::beginTransaction();
+        try {
+            $rework = \App\Models\OrderStageTransaction::findOrFail($id);
+            if ($rework->type !== 'rework') {
+                throw new \Exception("Only rework movement records can be deleted from here.");
+            }
+
+            // 1. Revert Deduction from Incoming Packing pool
+            $sourceTxs = \App\Models\OrderStageTransaction::where('sku', $rework->sku)
+                ->where('to_stage_id', 11)
+                ->where('sub_stage_id_to', $rework->sub_stage_id)
+                ->orderBy('id', 'desc')
+                ->get();
+
+            $rem = $rework->quantity;
+            foreach ($sourceTxs as $tx) {
+                if ($rem <= 0)
+                    break;
+                $tx->remaining_quantity += $rem;
+                $tx->save();
+                $rem = 0;
+            }
+
+            // 2. Delete the rework record (which is itself an 'outgoing' record in board display)
+            $rework->delete();
+
+            DB::commit();
+            return ['status' => 'success', 'message' => 'Rework deleted and pieces reverted to stock.'];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
 }

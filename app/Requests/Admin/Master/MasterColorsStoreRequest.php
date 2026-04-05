@@ -22,8 +22,8 @@ class MasterColorsStoreRequest extends FormRequest{
         // dd($this);
         return [
             'name' => 'required',
-            'sku'    => 'required|unique:master_colors,sku',
-            // 'status' =>'required',
+            'sku'    => 'nullable',
+            'status' =>'required',
         ];
     }
 

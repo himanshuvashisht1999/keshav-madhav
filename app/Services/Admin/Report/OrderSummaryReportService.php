@@ -13,7 +13,7 @@ class OrderSummaryReportService
     public function indexList($request)
     {
         $query = OrderMain::with(['customer'])
-            ->select('order_main.*')->orderBy('id','desc');
+            ->select('order_main.*')->orderBy('id', 'desc');
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -31,10 +31,29 @@ class OrderSummaryReportService
             ->addColumn('customer_name', function ($row) {
                 return $row->customer->name ?? 'N/A';
             })
+            ->addColumn('total_pcs', function ($row) {
+                return getOrderDispatchData($row->id)['total'] ?? 0;
+            })
+            ->addColumn('scanned_pcs', function ($row) {
+                return getOrderDispatchData($row->id)['packed'] ?? 0;
+            })
+            ->addColumn('status', function ($row) {
+                $stats = getOrderDispatchData($row->id);
+
+                if ($stats['remaining'] === 0) {
+                    return '<span class="badge badge-success">Completed</span>';
+                }
+
+                if ($stats['packed'] > 0) {
+                    return '<span class="badge badge-warning">Partial</span>';
+                }
+
+                return '<span class="badge badge-primary">In Progress</span>';
+            })
             ->addColumn('action', function ($row) {
                 return '<a href="' . route('admin.report.order-summary.view', ['id' => $row->id]) . '" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i> View Summary</a>';
             })
-            ->rawColumns(['action'])
+            ->rawColumns(['action', 'status'])
             ->make(true);
     }
 
@@ -51,7 +70,8 @@ class OrderSummaryReportService
             'orderProductSets.product_set_details'
         ])->find($id);
 
-        if (!$order) return null;
+        if (!$order)
+            return null;
 
         // 1. Production Stages (Lots)
         // Assuming OrderStage or FabricRollAssigning links to OrderMain. 
@@ -61,14 +81,14 @@ class OrderSummaryReportService
         // CHECK: OrderMain doesn't seem to have direct Stage link in previous files, but ProductOrderService used OrderStage.
         // Usage: `OrderStage::where('order_main_id', $id)->get()`?
         // Let's try to fetch generic stages if specific ones aren't linked, or check if we can find lot details.
-        
+
         // For now, let's look for "Lots" which seem to be FabricRollAssigning or similar.
         // Actually, let's load what we can find. Users mentioned "orders lot details".
-        
+
         // 2. Packing Details
         // OrderMain -> PackingMain -> PackingCarton
         // We need to fetch all cartons for this order.
-        $cartons = PackingCarton::whereHas('main', function($q) use ($id) {
+        $cartons = PackingCarton::whereHas('main', function ($q) use ($id) {
             $q->where('order_main_id', $id);
         })->with(['items.detail'])->get();
         // dd($cartons);
@@ -81,11 +101,19 @@ class OrderSummaryReportService
 
         // lot details 
 
+        $stats = getOrderDispatchData($id);
+        $status = '<span class="badge badge-primary px-3">In Progress</span>';
+        if ($stats['remaining'] === 0) {
+            $status = '<span class="badge badge-success px-3">Completed</span>';
+        } elseif ($stats['packed'] > 0) {
+            $status = '<span class="badge badge-warning px-3">Partial</span>';
+        }
+
         return [
             'order' => $order,
             'cartons' => $cartons,
-            'dispatches' => $dispatches
-            // 'lots' => $lots // Placeholder until we confirm relation
+            'dispatches' => $dispatches,
+            'status' => $status
         ];
     }
 
@@ -124,11 +152,11 @@ class OrderSummaryReportService
             $orderMain = $lot->orderProductSet?->orderMain;
 
             return [
-                'order_id'      => $orderMain->id ?? null,
-                'order_no'      => $orderMain->sku ?? '',
+                'order_id' => $orderMain->id ?? null,
+                'order_no' => $orderMain->sku ?? '',
                 'customer_name' => $orderMain->customer->name ?? '',
-                'lot_no'        => $lot->lot_no,
-                'lot_quantity'  => $lot->lot_quantity ?? 0,
+                'lot_no' => $lot->lot_no,
+                'lot_quantity' => $lot->lot_quantity ?? 0,
             ];
         });
 

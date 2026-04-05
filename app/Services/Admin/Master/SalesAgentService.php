@@ -4,6 +4,7 @@ namespace App\Services\Admin\Master;
 
 use Illuminate\Http\Request;
 use App\Models\SalesAgent;
+use App\Models\SalesAgentBrandDiscount;
 use App\Http\DataTable\Admin\Master\SalesAgentDataTable as DataTable;
 
 class SalesAgentService
@@ -33,13 +34,27 @@ class SalesAgentService
         $save_data->password = $request->password;
         $save_data->address = $request->address;
         $save_data->status = 1;
+        $save_data->see_price = $request->see_price ? 1 : 0;
         $save_data->save();
+
+        if ($request->has('brand_discounts')) {
+            foreach ($request->brand_discounts as $brand_id => $discount) {
+                if ($discount !== null && $discount !== '') {
+                    SalesAgentBrandDiscount::create([
+                        'sales_agent_id' => $save_data->id,
+                        'brand_id' => $brand_id,
+                        'discount_percentage' => $discount,
+                    ]);
+                }
+            }
+        }
+
         return true;
     }
 
     public function edit(Request $request)
     {
-        $data = SalesAgent::where('id', $request->id)->first();
+        $data = SalesAgent::with('brandDiscounts')->where('id', $request->id)->first();
         return $data;
     }
 
@@ -54,7 +69,23 @@ class SalesAgentService
         }
         $update_data->address = $request->address;
         $update_data->status = $request->status ?? 1;
+        $update_data->see_price = $request->see_price ? 1 : 0;
         $update_data->save();
+
+        if ($request->has('brand_discounts')) {
+            // Delete existing ones first or use sync logic
+            SalesAgentBrandDiscount::where('sales_agent_id', $update_data->id)->delete();
+            foreach ($request->brand_discounts as $brand_id => $discount) {
+                if ($discount !== null && $discount !== '') {
+                    SalesAgentBrandDiscount::create([
+                        'sales_agent_id' => $update_data->id,
+                        'brand_id' => $brand_id,
+                        'discount_percentage' => $discount,
+                    ]);
+                }
+            }
+        }
+
         return true;
     }
 

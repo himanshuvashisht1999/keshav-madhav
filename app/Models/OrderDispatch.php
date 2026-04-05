@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class OrderDispatch extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackCreator;
     protected $table = 'order_dispatch';
     protected $fillable = [
         'id',
@@ -24,6 +24,8 @@ class OrderDispatch extends Model
         'discount_percentage',
         'total_amount',
         'status',
+        'is_paid',
+        'created_by',
         'created_at',
         'updated_at'
     ];

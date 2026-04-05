@@ -44,6 +44,11 @@
                                         <span class="badge badge-soft-info p-2 px-3" style="background: #e1f5fe; color: #01579b; border-radius: 20px;">
                                             {{ ucwords(str_replace('_', ' ', $payment->payment_category)) }}
                                         </span>
+                                        @if($payment->payment_category == 'other' && $payment->paymentType)
+                                            <span class="badge badge-soft-primary p-2 px-3 ml-1" style="background: #e3f2fd; color: #1565c0; border-radius: 20px;">
+                                                <i class="fas fa-tag mr-1"></i> {{ $payment->paymentType->name }}
+                                            </span>
+                                        @endif
                                         @if($payment->payment_type == 'received')
                                             <span class="badge badge-success p-2 px-3 ml-1" style="border-radius: 20px;">
                                                 <i class="fas fa-arrow-down mr-1"></i> Received
@@ -61,6 +66,12 @@
                                         <span class="text-muted"><i class="fas fa-calendar-day mr-2"></i> Date</span>
                                         <span class="font-weight-500">{{ \Carbon\Carbon::parse($payment->payment_date)->format('d F, Y') }}</span>
                                     </li>
+                                    @if($payment->paymentType)
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                                        <span class="text-muted"><i class="fas fa-tag mr-2"></i> Type</span>
+                                        <span class="font-weight-500 text-info">{{ $payment->paymentType->name }}</span>
+                                    </li>
+                                    @endif
                                     <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
                                         <span class="text-muted"><i class="fas fa-wallet mr-2"></i> Mode</span>
                                         <span class="font-weight-500">{{ ucwords(str_replace('_', ' ', $payment->payment_mode)) }}</span>

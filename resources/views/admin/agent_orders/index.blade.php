@@ -3,9 +3,16 @@
 @section('content')
     <div class="content-wrapper">
         <div class="content-header">
-            <div class="container-fluid">
-                <h1 class="m-0 font-weight-bold text-dark"><i class="fas fa-shopping-cart mr-2"></i>Sales Agent Orders</h1>
-                <p class="text-muted">Review and dispatch orders placed by sales agents.</p>
+            <div class="container-fluid d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="m-0 font-weight-bold text-dark"><i class="fas fa-shopping-cart mr-2"></i>Sales Agent Orders</h1>
+                    <p class="text-muted">Review and dispatch orders placed by sales agents.</p>
+                </div>
+                <div>
+                    <a href="{{ route('admin.agent-orders.create') }}" class="btn btn-primary shadow-sm px-4" style="border-radius: 8px;">
+                        <i class="fas fa-plus mr-2"></i> CREATE NEW ORDER
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -17,18 +24,19 @@
                         <form action="{{ route('admin.agent-orders.index') }}" method="GET" class="row align-items-end">
                             <div class="col-md-3">
                                 <label class="small text-muted font-weight-bold">Filter by Agent</label>
-                                <select name="agent_id" class="form-control select2">
+                                <select name="agent_id" id="agent_id" class="form-control select2">
                                     <option value="">All Agents</option>
                                     @foreach($agents as $agent)
                                         <option value="{{ $agent->id }}" {{ request('agent_id') == $agent->id ? 'selected' : '' }}>
                                             {{ $agent->name }}
                                         </option>
                                     @endforeach
+                                    <option value="direct" {{ request('agent_id') == 'direct' ? 'selected' : '' }}>Direct (No Agent)</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
                                 <label class="small text-muted font-weight-bold">Filter by Shop</label>
-                                <select name="shop_id" class="form-control select2">
+                                <select name="shop_id" id="shop_id" class="form-control select2">
                                     <option value="">All Shops</option>
                                     @foreach($shops as $shop)
                                         <option value="{{ $shop->id }}" {{ request('shop_id') == $shop->id ? 'selected' : '' }}>
@@ -88,8 +96,8 @@
                                         <td>#ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</td>
                                         <td><span class="badge badge-info">{{ $order->agent_name }}</span></td>
                                         <td><strong>{{ $order->shop_name }}</strong></td>
-                                        <td>
-                                            {{ $order->expected_dispatch_date ? \Carbon\Carbon::parse($order->expected_dispatch_date)->format('d-m-Y') : 'N/A' }}
+                                        <td class="text-nowrap">
+                                            {{ $order->expected_dispatch_date ? \Carbon\Carbon::parse($order->expected_dispatch_date)->format('d M Y') : 'N/A' }}
                                             @if($order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d'))
                                                 <div class="mt-1">
                                                     <span class="badge bg-danger animate__animated animate__flash animate__infinite">DELAYED</span>
@@ -116,12 +124,21 @@
                                                 <br><small class="text-muted">₹{{ number_format($order->total_paid, 2) }}</small>
                                             @endif
                                         </td>
-                                        <td>{{ date('d-m-Y H:i', strtotime($order->order_date)) }}</td>
-                                        <td class="text-right">
+                                        <td class="text-nowrap">
+                                            <div class="text-dark">{{ date('d M Y', strtotime($order->order_date)) }}</div>
+                                            <small class="text-muted">{{ date('h:i A', strtotime($order->order_date)) }}</small>
+                                        </td>
+                                        <td class="text-right text-nowrap">
                                             <a href="{{ route('admin.agent-orders.show', $order->id) }}"
-                                                class="btn btn-primary btn-sm rounded-pill px-3">
-                                                <i class="fas fa-eye mr-1"></i> View & Dispatch
+                                                class="btn btn-primary btn-sm px-3 shadow-sm" style="border-radius: 6px;">
+                                                <i class="fas fa-eye mr-1"></i> View
                                             </a>
+                                            @if($order->status == 'pending')
+                                            <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
+                                                class="btn btn-info btn-sm px-3 shadow-sm" style="border-radius: 6px;">
+                                                <i class="fas fa-edit mr-1"></i> Edit
+                                            </a>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty
@@ -142,3 +159,27 @@
         </section>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    $('#agent_id').on('change', function() {
+        var agent_id = $(this).val();
+        $.ajax({
+            url: "{{ route('admin.agent-orders.get-shops') }}",
+            type: "GET",
+            data: { agent_id: agent_id },
+            success: function(data) {
+                var shopSelect = $('#shop_id');
+                shopSelect.empty();
+                shopSelect.append('<option value="">All Shops</option>');
+                $.each(data, function(index, shop) {
+                    shopSelect.append('<option value="' + shop.id + '">' + shop.name + '</option>');
+                });
+                shopSelect.trigger('change');
+            }
+        });
+    });
+});
+</script>
+@endpush

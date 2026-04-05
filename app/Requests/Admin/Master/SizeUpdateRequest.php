@@ -21,10 +21,11 @@ class SizeUpdateRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'size' => 'required|unique:master_size,size,' . $request->id,
-            // 'measurement' => 'required',
+            'size' => [
+                'required',
+                \Illuminate\Validation\Rule::unique('master_size', 'size')->ignore($request->id)->whereNot('status', 3),
+            ],
             'status' =>'required',
-            // 'sku'    => 'required|unique:fabric_dye,sku,' . $request->id,
         ];
     }
 

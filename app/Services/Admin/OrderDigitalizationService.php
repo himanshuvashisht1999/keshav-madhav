@@ -133,7 +133,10 @@ class OrderDigitalizationService {
                     if ($key === 0 && isset($request->size_details[$key])) {
                         $sizeArray = json_decode($request->size_details[$key], true);
                         if (is_array($sizeArray)) {
+                            $totalQtyCut = 0;
                             foreach ($sizeArray as $sizeItem) {
+                                $totalQtyCut += $sizeItem['qty'];
+                                
                                 // Create Detail Record
                                 $detail = new \App\Models\FabricRollAssigningsDetail();
                                 $detail->production_fabric_roll_assigning_id = $save_data_main->id;
@@ -152,6 +155,26 @@ class OrderDigitalizationService {
                                     }
                                 }
                             }
+
+                            // Update OrderCuttingStage Remaining Quantity (Handle Split Assignments)
+                            $remainingToDecrement = $totalQtyCut;
+                            $cuttingStages = OrderCuttingStage::where('set_product_id', $request->design_id)
+                                ->where('to_assign_id', $slip->stage_master_unit_id)
+                                ->where('remaining_quantity', '>', 0)
+                                ->orderBy('created_at', 'asc')
+                                ->get();
+
+                            foreach ($cuttingStages as $cs) {
+                                if ($remainingToDecrement <= 0) break;
+                                
+                                $decrement = min($cs->remaining_quantity, $remainingToDecrement);
+                                $cs->remaining_quantity -= $decrement;
+                                if ($cs->remaining_quantity <= 0) {
+                                    $cs->status = 2; // Completed
+                                }
+                                $cs->save();
+                                $remainingToDecrement -= $decrement;
+                            }
                         }
                     }
                 }
@@ -159,10 +182,22 @@ class OrderDigitalizationService {
 
             $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
 
-            $slip->update([
-                'status'  => 1,
-                'save_type'  => 1
-            ]);
+            $slipUpdate = [
+                'save_type'  => 1,
+                'lot_no' => $lotNos[0] ?? null
+            ];
+            
+            // Only set status to 1 if user explicitly marks it as final
+            if ($request->is_final == 1) {
+                $slipUpdate['status'] = 1;
+            } else {
+                // If it's already 1, keep it 1. If not, keep it 0.
+                if ($slip->status != 1) {
+                    $slipUpdate['status'] = 0;
+                }
+            }
+
+            $slip->update($slipUpdate);
 
             // Commit everything if all successful
             DB::commit();
@@ -433,19 +468,22 @@ class OrderDigitalizationService {
             ->first();
         }
         $from_stage_id = $results->from_stage_id;
-        // if($from_stage_id == 3)}{
-        //     $data_check = OrderStageTransaction::where('from_stage_id',3)->where('to_stage_id',4)->where('lot_no',)
-        // }
-        if($from_stage_id == 1){$to_stage_id = 4;}
-        if($from_stage_id == 3){$to_stage_id = 4;}
-        if($from_stage_id == 4){$to_stage_id = 5;}
-        if($from_stage_id == 5){$to_stage_id = 6;}
-        if($from_stage_id == 6){$to_stage_id = 7;}
-        if($from_stage_id == 7){$to_stage_id = 8;}
-        if($from_stage_id == 8){$to_stage_id = 9;}
-        if($from_stage_id == 9){$to_stage_id = 10;}
-        if($from_stage_id == 10){$to_stage_id = 11;}
-        if($from_stage_id == 11){$to_stage_id = 12;}
+        
+        // Default to packing (11) if it's a rework slip
+        if ($results->type === 'rework') {
+            $to_stage_id = 11; 
+        } else {
+            if($from_stage_id == 1){$to_stage_id = 4;}
+            if($from_stage_id == 3){$to_stage_id = 4;}
+            if($from_stage_id == 4){$to_stage_id = 5;}
+            if($from_stage_id == 5){$to_stage_id = 6;}
+            if($from_stage_id == 6){$to_stage_id = 7;}
+            if($from_stage_id == 7){$to_stage_id = 8;}
+            if($from_stage_id == 8){$to_stage_id = 9;}
+            if($from_stage_id == 9){$to_stage_id = 10;}
+            if($from_stage_id == 10){$to_stage_id = 11;}
+            if($from_stage_id == 11){$to_stage_id = 12;}
+        }
             
         $data = [];
         if ($results){
@@ -859,12 +897,22 @@ class OrderDigitalizationService {
     {
         $main_orders = OrderMain::query()
             ->orderByDesc('id')
-            ->whereHas('OrderProductSets', function ($q) use ($stage_master_unit_id) {
-                $q->where('stage_master_unit_id', $stage_master_unit_id);
+            ->where(function ($query) use ($stage_master_unit_id) {
+                $query->whereHas('OrderProductSets', function ($q) use ($stage_master_unit_id) {
+                    $q->where('stage_master_unit_id', $stage_master_unit_id);
+                })
+                ->orWhereHas('orderCuttingStages', function ($q) use ($stage_master_unit_id) {
+                    $q->where('to_assign_id', $stage_master_unit_id);
+                });
             })
             ->with([
                 'OrderProductSets' => function ($q) use ($stage_master_unit_id) {
-                    $q->where('stage_master_unit_id', $stage_master_unit_id)
+                    $q->where(function ($subQ) use ($stage_master_unit_id) {
+                        $subQ->where('stage_master_unit_id', $stage_master_unit_id)
+                            ->orWhereHas('orderCuttingStages', function ($oc) use ($stage_master_unit_id) {
+                                $oc->where('to_assign_id', $stage_master_unit_id);
+                            });
+                    })
                     ->with([
                         'fabric.receiptDetails',
                         'colors',
@@ -873,6 +921,10 @@ class OrderDigitalizationService {
                         'size_measurement',
                         'stage_master_unit',
                         'product_set_details',
+                        'orderCuttingStages' => function ($oc) use ($stage_master_unit_id) {
+                            $oc->where('to_assign_id', $stage_master_unit_id)
+                               ->with(['fabric.receiptDetails', 'pattern', 'master_fitting', 'cutting_master']);
+                        }
                     ]);
                 }
             ])
@@ -903,6 +955,23 @@ class OrderDigitalizationService {
         /** Attach fallback data correctly */
         foreach ($main_orders as $order) {
             foreach ($order->OrderProductSets as $set) {
+                // FALLBACK: Populate design info from assignments if primary fields are null (happens in partial assignment)
+                if ($set->orderCuttingStages->isNotEmpty()) {
+                    $firstOsc = $set->orderCuttingStages->first();
+                    if (!$set->fabric_id && $firstOsc->fabric) {
+                        $set->setRelation('fabric', $firstOsc->fabric);
+                    }
+                    if (!$set->master_design_pattern_id && $firstOsc->pattern) {
+                        $set->setRelation('master_design_pattern', $firstOsc->pattern);
+                    }
+                    if (!$set->master_product_fitting_id && $firstOsc->master_fitting) {
+                        $set->setRelation('master_product_fitting', $firstOsc->master_fitting);
+                    }
+                    if (!$set->stage_master_unit_id && $firstOsc->cutting_master) {
+                        $set->setRelation('stage_master_unit', $firstOsc->cutting_master);
+                    }
+                }
+
                 if ($set->product_set_details->isEmpty()) {
                     if (isset($fallbackDetails[$set->id])) {
                         $set->setRelation(
@@ -1007,25 +1076,32 @@ class OrderDigitalizationService {
                 }
                 $sizeWiseQuantities[$size] += $detail->quantity;
 
-                // Collect fabric and order info with proper null checks
+                // Collect fabric, order, design, color, fitting, and pattern info
                 if ($detail->orderProductSetDetail) {
                     $productSet = $detail->orderProductSetDetail->orderProductSet;
-                    //dd($detail->orderProductSetDetail->orderProductSet);
                     if ($productSet) {
-                        // Get fabric name - try both relationship methods
+                        // Get fabric name
                         if ($productSet->fabric) {
-                            $fabricName = $productSet->fabric->name ?? null;
-                            if ($fabricName) {
-                                $fabricNames[$fabricName] = true;
-                            }
+                            $fabricNames[$productSet->fabric->name] = true;
                         }
                         
-                        // Get order SKU - try both relationship methods
+                        // Get order SKU
                         if ($productSet->orderMain) {
-                            $orderSku = $productSet->orderMain->sku ?? null;
-                            if ($orderSku) {
-                                $orderNumbers[$orderSku] = true;
-                            }
+                            $orderNumbers[$productSet->orderMain->sku] = true;
+                        }
+
+                        // NEW: Get design number, color, fitting, and pattern
+                        if ($productSet->design_number) {
+                            $designNumbers[$productSet->design_number] = true;
+                        }
+                        if ($productSet->colors) {
+                            $colorNames[$productSet->colors->name] = true;
+                        }
+                        if ($productSet->master_product_fitting) {
+                            $fittingNames[$productSet->master_product_fitting->name] = true;
+                        }
+                        if ($productSet->master_design_pattern) {
+                            $patternNames[$productSet->master_design_pattern->name] = true;
                         }
                     }
                 }
@@ -1047,17 +1123,14 @@ class OrderDigitalizationService {
             ],
             'fabric_names' => array_keys($fabricNames),
             'order_numbers' => array_keys($orderNumbers),
+            'design_numbers' => array_keys($designNumbers ?? []),
+            'color_names' => array_keys($colorNames ?? []),
+            'fitting_names' => array_keys($fittingNames ?? []),
+            'pattern_names' => array_keys($patternNames ?? []),
             'total_meters' => $totalMeters,
             'total_rolls' => $rollAssignments->count(),
             'size_wise_quantities' => $sizeWiseQuantities,
-            'rolls' => $rollsData,
-            'debug' => [
-                'fabric_count' => count($fabricNames),
-                'order_count' => count($orderNumbers),
-                'size_details_count' => $rollAssignments->sum(function($r) {
-                    return \App\Models\FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id', $r->id)->count();
-                })
-            ]
+            'rolls' => $rollsData
         ];
     }
 
@@ -1131,11 +1204,21 @@ class OrderDigitalizationService {
                 throw new \Exception('Production slip not found');
             }
 
-            // Update slip status to mark as processed for stitching
-            $slip->update([
-                'status' => 1, // Processed for stitching
-                'lot_no' => $request->lot_no
-            ]);
+            // Update slip status based on is_final flag
+            $slipUpdate = [
+                'lot_no' => $request->lot_no,
+                'to_stage_id' => $request->to_stage_id ?? 4
+            ];
+
+            if ($request->is_final == 1) {
+                $slipUpdate['status'] = 1;
+            } else {
+                if ($slip->status != 1) {
+                    $slipUpdate['status'] = 0;
+                }
+            }
+
+            $slip->update($slipUpdate);
 
             $order_lot_update = OrderLot::where('lot_no',$request->lot_no)->update([
                 'is_stitching' => 1
@@ -1154,12 +1237,16 @@ class OrderDigitalizationService {
 
             $this->createTransactionWithDetails($request->lot_no, 3, 4, $slip->id,$fab_roll_assigning->order_products_set_id,$slip->stage_master_unit_id,$request->to_stage_unit_id,$fab_roll_assigning->id,$request->production_datetime);
 
+            if ($request->is_final == 1) {
+                // Close ANY incoming assignments for this lot and this unit to hide from Unit assignments list
+                $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file);
+            }
+
             /////new code
             
             $godamIds = OrderGodamStageTransaction::where('lot_no', $request->lot_no)->pluck('id');
-
+            
             if ($godamIds->isNotEmpty()) {
-
                 // 2️⃣ Main table bulk update (single query)
                 OrderGodamStageTransaction::whereIn('id', $godamIds)
                     ->update([
@@ -1174,8 +1261,6 @@ class OrderDigitalizationService {
                     'remaining_quantity' => 0
                 ]);
             }
-
-
 
             /////////// end code
             
@@ -1203,12 +1288,22 @@ class OrderDigitalizationService {
                 throw new \Exception('Production slip not found');
             }
 
-            // Update slip status to mark as processed for printing
-            $slip->update([
-                'status' => 1, // Processed for printing
+            // Update slip status based on is_final flag
+            $slipUpdate = [
                 'lot_no' => $request->lot_no,
-                'save_type' => 2
-            ]);
+                'save_type' => 2,
+                'to_stage_id' => $request->to_stage_id ?? 1
+            ];
+
+            if ($request->is_final == 1) {
+                $slipUpdate['status'] = 1;
+            } else {
+                if ($slip->status != 1) {
+                    $slipUpdate['status'] = 0;
+                }
+            }
+
+            $slip->update($slipUpdate);
 
             $order_lot_update = OrderLot::where('lot_no',$request->lot_no)->update([
                 'is_printing' => 1
@@ -1225,11 +1320,32 @@ class OrderDigitalizationService {
                 ->where('stage_master_unit_id', $slip->stage_master_unit_id)
                 ->first();
 
+            // Save Digitized Parts (Size-wise) from the request
+            if ($request->sizes) {
+                foreach ($request->sizes as $size => $qty) {
+                    if ($qty > 0) {
+                        \App\Models\ProductionSlipDigitizationParts::create([
+                            'production_slip_digitization_id' => $slip->id,
+                            'lot_no' => $request->lot_no,
+                            'to_unit_id' => $request->to_stage_unit_id,
+                            'single_size' => $size,
+                            'single_quantity' => $qty,
+                            'status' => 1
+                        ]);
+                    }
+                }
+            }
+
             // Create Transaction with Details (Cutting -> Printing)
-            // Stage 3 is Cutting. Stage 1 is Printing.
-            $this->createTransactionWithDetails($request->lot_no, 3, 1, $slip->id,$fab_roll_assigning->order_products_set_id,$slip->stage_master_unit_id,$request->to_stage_unit_id,$fab_roll_assigning->id,$request->production_datetime);
-            
-            DB::commit();
+             // Stage 3 is Cutting. Stage 1 is Printing.
+             $this->createTransactionWithDetails($request->lot_no, 3, 1, $slip->id,$fab_roll_assigning->order_products_set_id,$slip->stage_master_unit_id,$request->to_stage_unit_id,$fab_roll_assigning->id,$request->production_datetime, $request->sizes);
+             
+             if ($request->is_final == 1) {
+                // Close ANY incoming assignments for this lot and this unit
+                $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file);
+             }
+             
+             DB::commit();
             return [
                 'status_code' => 1,
                 'message' => 'Lot successfully sent to Printing stage.'
@@ -1243,13 +1359,19 @@ class OrderDigitalizationService {
         }
     }
 
-    private function createTransactionWithDetails($lot_no, $from_stage_id, $to_stage_id, $slip_id = null,$order_products_set_id,$sub_stage_id,$sub_stage_id_to,$production_fabric_roll_assigning_id,$production_datetime)
+    private function createTransactionWithDetails($lot_no, $from_stage_id, $to_stage_id, $slip_id = null,$order_products_set_id,$sub_stage_id,$sub_stage_id_to,$production_fabric_roll_assigning_id,$production_datetime, $newSizes = null)
     {
-
         $production_fabric_roll_assigning = FabricRollAssigning::where('id',$production_fabric_roll_assigning_id)->first();
 
-        $totalQuantity = FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id',$production_fabric_roll_assigning_id)->sum('quantity');
-        $production_fabric_roll_assigning_detail = FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id',$production_fabric_roll_assigning_id)->get();
+        // Determine pieces: Use provided newSizes if available, else copy from original cutting slip
+        if ($newSizes) {
+            $totalQuantity = array_sum($newSizes);
+            $detailsSource = [];
+            foreach($newSizes as $s => $q) { if($q > 0) $detailsSource[] = (object)['size' => $s, 'quantity' => $q]; }
+        } else {
+            $totalQuantity = FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id',$production_fabric_roll_assigning_id)->sum('quantity');
+            $detailsSource = FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id',$production_fabric_roll_assigning_id)->get();
+        }
 
         if($to_stage_id == 1){
             $transaction = OrderPrintingStageTransaction::create([
@@ -1257,7 +1379,7 @@ class OrderDigitalizationService {
                 'to_stage_id' => $to_stage_id, 
                 'lot_no' => $lot_no,
                 'quantity' => $totalQuantity,
-                'remaining_quantity' => $totalQuantity, // Initially full
+                'remaining_quantity' => $totalQuantity, 
                 'status' => 1,
                 'sub_stage_id' => $sub_stage_id,
                 'sub_stage_id_to' => $sub_stage_id_to,
@@ -1265,12 +1387,11 @@ class OrderDigitalizationService {
                 'production_slip_digitization_id' => $slip_id,
             ]);
 
-            // 3. Create Transaction Details (Size-wise)
-            foreach ($production_fabric_roll_assigning_detail as $production_fabric_roll_assigning_single) {
+            foreach ($detailsSource as $item) {
                 OrderPrintingStageTransactionDetail::create([
                     'order_printing_stage_transaction_id' => $transaction->id,
-                    'size' => $production_fabric_roll_assigning_single->size,
-                    'quantity' => $production_fabric_roll_assigning_single->quantity
+                    'size' => $item->size,
+                    'quantity' => $item->quantity
                 ]);
             }
         }else{
@@ -1279,7 +1400,7 @@ class OrderDigitalizationService {
                 'to_stage_id' => $to_stage_id, 
                 'lot_no' => $lot_no,
                 'quantity' => $totalQuantity,
-                'remaining_quantity' => $totalQuantity, // Initially full
+                'remaining_quantity' => $totalQuantity, 
                 'status' => 1,
                 'sub_stage_id' => $sub_stage_id,
                 'sub_stage_id_to' => $sub_stage_id_to,
@@ -1287,18 +1408,14 @@ class OrderDigitalizationService {
                 'production_slip_digitization_id' => $slip_id,
             ]);
 
-            // 3. Create Transaction Details (Size-wise)
-            foreach ($production_fabric_roll_assigning_detail as $production_fabric_roll_assigning_single) {
+            foreach ($detailsSource as $item) {
                 OrderStageTransactionDetail::create([
                     'order_stage_transaction_id' => $transaction->id,
-                    'size' => $production_fabric_roll_assigning_single->size,
-                    'quantity' => $production_fabric_roll_assigning_single->quantity
+                    'size' => $item->size,
+                    'quantity' => $item->quantity
                 ]);
             }
-
         }
-        
-        ///////////end code
         
         return $transaction;
     }
@@ -1359,83 +1476,199 @@ class OrderDigitalizationService {
         return $availableLots;
     }
 
-    public function getLotDetailsForHandSlip($lot_no, $current_stage_id)
+    public function getLotDetailsForHandSlip($lot_no, $current_stage_id, $movement_type = 1)
     {
-        // 1. Calculate Inflow (What came INTO this stage) per size
-        if($current_stage_id == 1){
-            $inflow = OrderPrintingStageTransactionDetail::join('order_printing_stage_transactions', 'order_printing_stage_transactions.id', '=', 'order_printing_stage_transaction_details.order_printing_stage_transaction_id')
-            ->where('order_printing_stage_transactions.to_stage_id', $current_stage_id)
-            ->where('order_printing_stage_transactions.lot_no', $lot_no)
-            ->select('order_printing_stage_transaction_details.size', 'order_printing_stage_transaction_details.quantity')
-            ->get();
+        // 1. Calculate Inflow (Total Items entered this stage) per size
+        $inflowData = collect();
 
+        // Standard stage transactions (To current stage)
+        $inflowData = $inflowData->concat(
+            OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transactions.id', '=', 'order_stage_transaction_details.order_stage_transaction_id')
+                ->where('order_stage_transactions.to_stage_id', $current_stage_id)
+                ->where('order_stage_transactions.lot_no', $lot_no)
+                ->select('order_stage_transaction_details.size', 'order_stage_transaction_details.quantity')
+                ->get()
+        );
 
-            // 2. Calculate Outflow (What already LEFT this stage) per size
-            // $outflow = OrderPrintingStageTransactionDetail::join('order_printing_stage_transactions', 'order_printing_stage_transactions.id', '=', 'order_printing_stage_transaction_details.order_printing_stage_transaction_id')
-            //     ->where('order_printing_stage_transactions.from_stage_id', $current_stage_id)
-            //     ->where('order_printing_stage_transactions.lot_no', $lot_no)
-            //     ->select('order_printing_stage_transaction_details.size', 'order_printing_stage_transaction_details.quantity')
-            //     ->get();
-            $outflow = OrderPrintingToStichingTransactionDetail::join('order_printing_to_stiching_transactions', 'order_printing_to_stiching_transactions.id', '=', 'order_printing_to_stiching_transaction_details.order_printing_to_stiching_transaction_id')
-                ->where('order_printing_to_stiching_transactions.from_stage_id', $current_stage_id)
-                ->where('order_printing_to_stiching_transactions.lot_no', $lot_no)
-                ->select('order_printing_to_stiching_transaction_details.size', 'order_printing_to_stiching_transaction_details.quantity')
-                ->get();
-            // dd($outflow);
+        // Printing specific transactions (If stage is Printing)
+        if ($current_stage_id == 1) {
+            $inflowData = $inflowData->concat(
+                OrderPrintingStageTransactionDetail::join('order_printing_stage_transactions', 'order_printing_stage_transactions.id', '=', 'order_printing_stage_transaction_details.order_printing_stage_transaction_id')
+                    ->where('order_printing_stage_transactions.to_stage_id', $current_stage_id)
+                    ->where('order_printing_stage_transactions.lot_no', $lot_no)
+                    ->select('order_printing_stage_transaction_details.size', 'order_printing_stage_transaction_details.quantity')
+                    ->get()
+            );
+        }
 
-        }else{
-            $inflow = OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transactions.id', '=', 'order_stage_transaction_details.order_stage_transaction_id')
-            ->where('order_stage_transactions.to_stage_id', $current_stage_id)
-            ->where('order_stage_transactions.lot_no', $lot_no)
-            ->select('order_stage_transaction_details.size', 'order_stage_transaction_details.quantity')
-            ->get();
+        // 2. Calculate Outflow (What already LEFT this stage) per size
+        $outflowData = collect();
 
-            // 2. Calculate Outflow (What already LEFT this stage) per size
-            $outflow = OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transactions.id', '=', 'order_stage_transaction_details.order_stage_transaction_id')
+        // Standard stage transactions (From current stage)
+        $outflowData = $outflowData->concat(
+            OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transactions.id', '=', 'order_stage_transaction_details.order_stage_transaction_id')
                 ->where('order_stage_transactions.from_stage_id', $current_stage_id)
                 ->where('order_stage_transactions.lot_no', $lot_no)
                 ->select('order_stage_transaction_details.size', 'order_stage_transaction_details.quantity')
-                ->get();
+                ->get()
+        );
 
+        // Movement to Printing (Stage 3 outflow)
+        if ($current_stage_id == 3) {
+            $outflowData = $outflowData->concat(
+                OrderPrintingStageTransactionDetail::join('order_printing_stage_transactions', 'order_printing_stage_transactions.id', '=', 'order_printing_stage_transaction_details.order_printing_stage_transaction_id')
+                    ->where('order_printing_stage_transactions.from_stage_id', $current_stage_id)
+                    ->where('order_printing_stage_transactions.lot_no', $lot_no)
+                    ->select('order_printing_stage_transaction_details.size', 'order_printing_stage_transaction_details.quantity')
+                    ->get()
+            );
         }
-        
+
+        // Movement from Printing to Stitching (Stage 1 outflow)
+        if ($current_stage_id == 1) {
+            $outflowData = $outflowData->concat(
+                OrderPrintingToStichingTransactionDetail::join('order_printing_to_stiching_transactions', 'order_printing_to_stiching_transactions.id', '=', 'order_printing_to_stiching_transaction_details.order_printing_to_stiching_transaction_id')
+                    ->where('order_printing_to_stiching_transactions.from_stage_id', $current_stage_id)
+                    ->where('order_printing_to_stiching_transactions.lot_no', $lot_no)
+                    ->select('order_printing_to_stiching_transaction_details.size', 'order_printing_to_stiching_transaction_details.quantity')
+                    ->get()
+            );
+        }
+
+        // Movement to Godam (any stage to 13)
+        $outflowData = $outflowData->concat(
+            OrderGodamStageTransactionDetail::join('order_godam_stage_transactions', 'order_godam_stage_transactions.id', '=', 'order_godam_stage_transaction_details.order_godam_stage_transaction_id')
+                ->where('order_godam_stage_transactions.from_stage_id', $current_stage_id)
+                ->where('order_godam_stage_transactions.lot_no', $lot_no)
+                ->select('order_godam_stage_transaction_details.size', 'order_godam_stage_transaction_details.quantity')
+                ->get()
+        );
 
         $inventory = [];
-
-        foreach ($inflow as $item) {
-            if (!isset($inventory[$item->size])) {
-                $inventory[$item->size] = 0;
-            }
-            $inventory[$item->size] += $item->quantity;
+        foreach ($inflowData as $item) {
+            $inventory[$item->size] = ($inventory[$item->size] ?? 0) + $item->quantity;
         }
 
-        foreach ($outflow as $item) {
+        foreach ($outflowData as $item) {
             if (isset($inventory[$item->size])) {
                 $inventory[$item->size] -= $item->quantity;
             }
         }
-
+        
         // 3. Filter out zero quantities (optional, but cleaner)
         // $inventory = array_filter($inventory, function($qty) { return $qty > 0; });
         
         // 4. Get Basic Lot Info (Cutting Master Info)
-        // We can reuse getLotDetailsForUser logic or just fetch basics
-        $basicInfo = $this->getLotDetailsForDisplay(['lot_no' => $lot_no], true); // true for basic only? Adjust later if needed 
-        // Or simply:
-
-        $stage_check = OrderStageTransaction::where('from_stage_id',3)->where('to_stage_id',4)->where('lot_no',$lot_no)->first();
-        if($stage_check){
-            $godam_stage = '';
-        }else{
-            $godam_stage = \App\Models\StageMasterUnit::with('masterStage')->where('master_stage_id',13)->get();
+        $basicInfo = $this->getLotDetailsForDisplay($lot_no); 
+        if ($basicInfo) {
+            $basicInfo['total_inflow'] = $inflowData->sum('quantity');
+            $basicInfo['total_remaining'] = array_sum($inventory);
         }
-         
-         return [
-             'lot_no' => $lot_no,
-             'inventory' => $inventory,
-             'basic_info' => $basicInfo,
-             'godam_stage' => $godam_stage
-         ];
+
+        // Determine next/previous stage units
+        $available_units = [];
+        $slip_id = request()->production_slip_digitization_id;
+        $slip = ProductionSlipDigitization::find($slip_id);
+        $warehouse_id = $slip->getUnitMaster->master_fabric_warehouse_id ?? 0;
+
+        if ($movement_type == 2) {
+            // Damage Movement (Backward) - Allow any stage
+            $available_units = StageMasterUnit::with('masterStage')
+                ->where('master_fabric_warehouse_id', $warehouse_id)
+                ->where('status', 1)
+                ->get()
+                ->map(function($u) {
+                    return [
+                        'id' => $u->id,
+                        'name' => $u->name,
+                        'master_stage_name' => $u->masterStage->name
+                    ];
+                });
+        } else {
+            // Regular Movement (Forward)
+            // Existing logic to determine to_stage_id
+            $to_stage_id = 0;
+            if($current_stage_id == 1){$to_stage_id = 4;}
+            elseif($current_stage_id == 3){$to_stage_id = 4;}
+            elseif($current_stage_id == 4){$to_stage_id = 5;}
+            elseif($current_stage_id == 5){$to_stage_id = 6;}
+            elseif($current_stage_id == 6){$to_stage_id = 7;}
+            elseif($current_stage_id == 7){$to_stage_id = 8;}
+            elseif($current_stage_id == 8){$to_stage_id = 9;}
+            elseif($current_stage_id == 9){$to_stage_id = 10;}
+            elseif($current_stage_id == 10){$to_stage_id = 11;}
+            elseif($current_stage_id == 11){$to_stage_id = 12;}
+            
+            if ($to_stage_id > 0) {
+                // $available_units = StageMasterUnit::with('masterStage')
+                //     ->where('master_stage_id', $to_stage_id)
+                //     ->where('master_fabric_warehouse_id', $warehouse_id)
+                //     ->where('status', 1)
+                //     ->get()
+                //     ->map(function($u) {
+                //         return [
+                //             'id' => $u->id,
+                //             'name' => $u->name,
+                //             'master_stage_name' => $u->masterStage->name
+                //         ];
+                //     });
+
+                $filtered = StageMasterUnit::with('masterStage')
+                    ->where('master_stage_id', $to_stage_id)
+                    ->where('master_fabric_warehouse_id', $warehouse_id)
+                    ->where('status', 1)
+                    ->get();
+
+                // Second: without that stage (exclude already fetched)
+                $others = StageMasterUnit::with('masterStage')
+                    ->where('master_stage_id', '!=', $to_stage_id)
+                    ->where('master_fabric_warehouse_id', $warehouse_id)
+                    ->where('status', 1)
+                    ->get();
+
+                // Merge both (filtered first)
+                $available_units = $filtered->concat($others)->map(function($u) {
+                    return [
+                        'id' => $u->id,
+                        'name' => $u->name,
+                        'master_stage_name' => $u->masterStage->name ?? null
+                    ];
+                });
+
+            
+            }
+
+            // Also check for Godam if applicable
+            $stage_check = OrderStageTransaction::where('lot_no',$lot_no)->where(function($q){
+                $q->where('from_stage_id', 3)->orWhere('to_stage_id', 4);
+            })->first();
+
+            if(!$stage_check) {
+                $stage_check = OrderPrintingToStichingTransaction::where('lot_no', $lot_no)->first();
+            }
+
+            if(!$stage_check){
+                $godam_units = StageMasterUnit::with('masterStage')
+                    ->where('master_stage_id', 13)
+                    ->where('master_fabric_warehouse_id', $warehouse_id)
+                    ->get()
+                    ->map(function($u) {
+                        return [
+                            'id' => $u->id,
+                            'name' => $u->name,
+                            'master_stage_name' => $u->masterStage->name
+                        ];
+                    });
+                $available_units = array_merge($available_units->toArray(), $godam_units->toArray());
+            }
+        }
+
+        return [
+            'lot_no' => $lot_no,
+            'inventory' => $inventory,
+            'basic_info' => $basicInfo,
+            'available_units' => $available_units
+        ];
     }
 
     public function storeHandSlip(Request $request)
@@ -1448,13 +1681,16 @@ class OrderDigitalizationService {
             $stage_master_unit_from = StageMasterUnit::where('id',$request->from_stage_id)->first();
             $stage_master_unit_to = StageMasterUnit::where('id',$request->to_stage_id)->first();
 
-            $from_stage_id = $stage_master_unit_from->master_stage_id; // Current Stage
-            $to_stage_id = $stage_master_unit_to->master_stage_id;     // Next Stage
+            $from_stage_id = $stage_master_unit_from->master_stage_id;
+            $to_stage_id = $stage_master_unit_to->master_stage_id;
             $lot_no = $request->lot_no;
-            $sizes = $request->sizes; // Array of [size => qty]
+            $sizes = $request->sizes;
 
-            // Validate Inventory
-            $currentInventory = $this->getLotDetailsForHandSlip($lot_no, $from_stage_id)['inventory'];
+            $movement_type = $request->movement_type ?? 1;
+
+            // 1. Validate Inventory (using new core logic)
+            $inventoryData = $this->getLotDetailsForHandSlip($lot_no, $from_stage_id, $movement_type);
+            $currentInventory = $inventoryData['inventory'];
             $totalMoved = 0;
 
             foreach ($sizes as $size => $qty) {
@@ -1468,34 +1704,82 @@ class OrderDigitalizationService {
 
             if ($totalMoved == 0) throw new \Exception('No quantity selected to move.');
 
-            // Create Transaction
-            if($from_stage_id == 1){
-                $update_order_stage_trans = OrderPrintingStageTransaction::where('to_stage_id',$from_stage_id)->where('sub_stage_id_to',$stage_master_unit_from?->id)->where('lot_no',$lot_no)->first();
-            }else{
-                $update_order_stage_trans = OrderStageTransaction::where('to_stage_id',$from_stage_id)->where('sub_stage_id_to',$stage_master_unit_from?->id)->where('lot_no',$lot_no)->first();
-            }
+            // 2. Identify and Update Source Transactions (Loop for multiple split assignments)
+            $remainingToDecrement = $totalMoved;
             
-            if($update_order_stage_trans){
-                $update_order_stage_trans->remaining_quantity = $update_order_stage_trans->remaining_quantity - $totalMoved;
-                $update_order_stage_trans->update();
-            }
-            
-            if($from_stage_id == 1){
+            // Try Standard Transactions
+            $standardTx = OrderStageTransaction::where('to_stage_id', $from_stage_id)
+                ->where('sub_stage_id_to', $stage_master_unit_from->id)
+                ->where('lot_no', $lot_no)
+                ->where('remaining_quantity', '>', 0)
+                ->orderBy('id', 'asc')
+                ->get();
 
+            foreach ($standardTx as $tx) {
+                if ($remainingToDecrement <= 0) break;
+                $decrement = min($tx->remaining_quantity, $remainingToDecrement);
+                $tx->remaining_quantity -= $decrement;
+                if ($tx->remaining_quantity <= 0) $tx->status = 2; // Completed
+                $tx->save();
+                $remainingToDecrement -= $decrement;
+            }
+
+            // Check Printing specific (If still more to decrement)
+            if ($remainingToDecrement > 0 && $from_stage_id == 1) {
+                $printingTx = OrderPrintingStageTransaction::where('to_stage_id', $from_stage_id)
+                    ->where('sub_stage_id_to', $stage_master_unit_from->id)
+                    ->where('lot_no', $lot_no)
+                    ->where('remaining_quantity', '>', 0)
+                    ->orderBy('id', 'asc')
+                    ->get();
+
+                foreach ($printingTx as $tx) {
+                    if ($remainingToDecrement <= 0) break;
+                    $decrement = min($tx->remaining_quantity, $remainingToDecrement);
+                    $tx->remaining_quantity -= $decrement;
+                    if ($tx->remaining_quantity <= 0) $tx->status = 2;
+                    $tx->save();
+                    $remainingToDecrement -= $decrement;
+                }
+            }
+
+            // Check Transition specific (If still more to decrement)
+            if ($remainingToDecrement > 0 && $from_stage_id == 4) {
+                $transitionTx = OrderPrintingToStichingTransaction::where('to_stage_id', $from_stage_id)
+                    ->where('sub_stage_id_to', $stage_master_unit_from->id)
+                    ->where('lot_no', $lot_no)
+                    ->where('remaining_quantity', '>', 0)
+                    ->orderBy('id', 'asc')
+                    ->get();
+
+                foreach ($transitionTx as $tx) {
+                    if ($remainingToDecrement <= 0) break;
+                    $decrement = min($tx->remaining_quantity, $remainingToDecrement);
+                    $tx->remaining_quantity -= $decrement;
+                    if ($tx->remaining_quantity <= 0) $tx->status = 2;
+                    $tx->save();
+                    $remainingToDecrement -= $decrement;
+                }
+            }
+
+            // 3. Create Target Transaction
+            $transaction = null;
+            if ($from_stage_id == 1 && $to_stage_id == 4) {
+                // Printing -> Stitching
                 $transaction = OrderPrintingToStichingTransaction::create([
                     'from_stage_id' => $from_stage_id,
                     'to_stage_id' => $to_stage_id,
-                    'sub_stage_id' => $stage_master_unit_from?->id,
-                    'sub_stage_id_to' => $stage_master_unit_to?->id,
+                    'sub_stage_id' => $stage_master_unit_from->id,
+                    'sub_stage_id_to' => $stage_master_unit_to->id,
                     'lot_no' => $lot_no,
                     'quantity' => $totalMoved,
                     'remaining_quantity' => $totalMoved, 
                     'production_datetime' => $request->production_datetime, 
                     'production_slip_digitization_id' => $slip->id,
                     'status' => 1,
+                    'type' => $movement_type,
                 ]);
 
-                // Create Details
                 foreach ($sizes as $size => $qty) {
                     if ($qty > 0) {
                         OrderPrintingToStichingTransactionDetail::create([
@@ -1505,51 +1789,75 @@ class OrderDigitalizationService {
                         ]);
                     }
                 }
-
-                if($to_stage_id == 13){
-
-                    $transaction = OrderGodamStageTransaction::create([
-                        'from_stage_id' => $from_stage_id,
-                        'to_stage_id' => $to_stage_id,
-                        'sub_stage_id' => $stage_master_unit_from?->id,
-                        'sub_stage_id_to' => $stage_master_unit_to?->id,
-                        'lot_no' => $lot_no,
-                        'quantity' => $totalMoved,
-                        'remaining_quantity' => $totalMoved, 
-                        'production_datetime' => $request->production_datetime, 
-                        'production_slip_digitization_id' => $slip->id,
-                        'status' => 1,
-                    ]);
-
-                    // Create Details
-                    foreach ($sizes as $size => $qty) {
-                        if ($qty > 0) {
-                            OrderGodamStageTransactionDetail::create([
-                                'order_godam_stage_transaction_id' => $transaction->id,
-                                'size' => $size,
-                                'quantity' => $qty,
-                                'remaining_quantity' => $qty,
-                            ]);
-                        }
-                    }
-
-                }
-
-            }else{
-                $transaction = OrderStageTransaction::create([
+            } elseif ($to_stage_id == 1) {
+                // To Printing
+                $transaction = OrderPrintingStageTransaction::create([
                     'from_stage_id' => $from_stage_id,
                     'to_stage_id' => $to_stage_id,
-                    'sub_stage_id' => $stage_master_unit_from?->id,
-                    'sub_stage_id_to' => $stage_master_unit_to?->id,
+                    'sub_stage_id' => $stage_master_unit_from->id,
+                    'sub_stage_id_to' => $stage_master_unit_to->id,
                     'lot_no' => $lot_no,
                     'quantity' => $totalMoved,
                     'remaining_quantity' => $totalMoved, 
                     'production_datetime' => $request->production_datetime, 
                     'production_slip_digitization_id' => $slip->id,
                     'status' => 1,
+                    'type' => $movement_type,
                 ]);
 
-                // Create Details
+                foreach ($sizes as $size => $qty) {
+                    if ($qty > 0) {
+                        OrderPrintingStageTransactionDetail::create([
+                            'order_printing_stage_transaction_id' => $transaction->id,
+                            'size' => $size,
+                            'quantity' => $qty
+                        ]);
+                    }
+                }
+            } elseif ($to_stage_id == 13) {
+                // To Godam
+                $transaction = OrderGodamStageTransaction::create([
+                    'from_stage_id' => $from_stage_id,
+                    'to_stage_id' => $to_stage_id,
+                    'sub_stage_id' => $stage_master_unit_from->id,
+                    'sub_stage_id_to' => $stage_master_unit_to->id,
+                    'lot_no' => $lot_no,
+                    'quantity' => $totalMoved,
+                    'remaining_quantity' => $totalMoved, 
+                    'production_datetime' => $request->production_datetime, 
+                    'production_slip_digitization_id' => $slip->id,
+                    'status' => 1,
+                    'type' => $movement_type,
+                ]);
+
+                foreach ($sizes as $size => $qty) {
+                    if ($qty > 0) {
+                        OrderGodamStageTransactionDetail::create([
+                            'order_godam_stage_transaction_id' => $transaction->id,
+                            'size' => $size,
+                            'quantity' => $qty,
+                            'remaining_quantity' => $qty,
+                        ]);
+                    }
+                }
+            }
+
+            if (!$transaction) {
+                // Default Standard Movement
+                $transaction = OrderStageTransaction::create([
+                    'from_stage_id' => $from_stage_id,
+                    'to_stage_id' => $to_stage_id,
+                    'sub_stage_id' => $stage_master_unit_from->id,
+                    'sub_stage_id_to' => $stage_master_unit_to->id,
+                    'lot_no' => $lot_no,
+                    'quantity' => $totalMoved,
+                    'remaining_quantity' => $totalMoved, 
+                    'production_datetime' => $request->production_datetime, 
+                    'production_slip_digitization_id' => $slip->id,
+                    'status' => 1,
+                    'type' => $movement_type,
+                ]);
+
                 foreach ($sizes as $size => $qty) {
                     if ($qty > 0) {
                         OrderStageTransactionDetail::create([
@@ -1561,11 +1869,28 @@ class OrderDigitalizationService {
                 }
             }
             
-                        
-            $slip->update(['status' => 1, 'lot_no' => $lot_no]); // Mark as processed
+            $slipUpdate = [
+                'lot_no' => $lot_no, 
+                'type' => $movement_type, 
+                'to_stage_id' => $to_stage_id
+            ];
+            
+            if ($request->is_final == 1) {
+                $slipUpdate['status'] = 1;
+            } else {
+                if ($slip->status != 1) {
+                    $slipUpdate['status'] = 0;
+                }
+            }
+
+            $slip->update($slipUpdate);
+            if ($request->is_final == 1) {
+                $this->closeIncomingAssignments($lot_no, $slip->stage_master_unit_id, $slip->slip_file);
+            }
 
             DB::commit();
             return ['status_code' => 1, 'message' => 'Hand Slip Processed Successfully'];
+
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -1603,4 +1928,33 @@ class OrderDigitalizationService {
     //         'remaining' => max(0, $total - $packed),
     //     ];
     // }
+
+    /**
+     * Core logic to mark incoming assignments as consumed after admin digitization.
+     */
+    private function closeIncomingAssignments($lot_no, $unit_id, $slip_file)
+    {
+        $update = [
+            'image' => $slip_file,
+            'remaining_quantity' => 0
+        ];
+
+        // 1. Regular/Legacy stage transfers
+        \App\Models\OrderStageTransaction::where('lot_no', $lot_no)
+            ->where('sub_stage_id_to', $unit_id)
+            ->whereNull('image')
+            ->update($update);
+
+        // 2. Transferred from Printing Stage
+        \App\Models\OrderPrintingStageTransaction::where('lot_no', $lot_no)
+            ->where('sub_stage_id_to', $unit_id)
+            ->whereNull('image')
+            ->update($update);
+
+        // 3. Printing unit sending directly to Stitching
+        \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lot_no)
+            ->where('sub_stage_id_to', $unit_id)
+            ->whereNull('image')
+            ->update($update);
+    }
 }

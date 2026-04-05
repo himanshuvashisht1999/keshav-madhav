@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class OrderMain extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackCreator;
     protected $table = 'order_main';
     protected $fillable = [
         'id',
@@ -20,9 +20,13 @@ class OrderMain extends Model
         'master_customer_id',
         'total_amount',
         'status',
+        'is_paid',
+        'created_by',
         'created_at',
         'updated_at'
     ];
+
+    protected $appends = ['paid_amount', 'balance_amount'];
 
     public function customer()
     {
@@ -51,6 +55,11 @@ class OrderMain extends Model
         return $this->hasMany('App\Models\OrderProductSet', 'order_main_id', 'id');
     }
 
+    public function orderCuttingStages()
+    {
+        return $this->hasMany('App\Models\OrderCuttingStage', 'order_main_id', 'id');
+    }
+
     public function dispatchCartons()
     {
         return $this->hasManyThrough(
@@ -66,6 +75,23 @@ class OrderMain extends Model
     public function packingMains()
     {
         return $this->hasMany(PackingMain::class, 'order_main_id');
+    }
+
+    public function payments()
+    {
+        return $this->morphMany('App\Models\Payment', 'paymentable');
+    }
+
+    public function getPaidAmountAttribute()
+    {
+        return $this->payments()->sum('amount');
+    }
+
+    public function getBalanceAmountAttribute()
+    {
+        // For orders, we don't have a definitive 'total_amount' in DB, 
+        // but we can track payments. If user marks as paid, balance is 0.
+        return $this->is_paid ? 0 : null;
     }
 
 }

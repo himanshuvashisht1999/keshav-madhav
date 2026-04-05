@@ -21,395 +21,308 @@
     <!-- Main content -->
     <section class="content">
         <div class="container-fluid">
-            <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
-                <!-- <div class="card-header">
-                    <h3 class="card-title">Create Product Specification</h3>
-                </div> -->
                 <form action="{{route('admin.master.production-goods.store')}}" method="post" enctype="multipart/form-data">
                     @csrf
                     <div class="card-body">
                         <div class="row">
                             <input type="hidden" name="company_id" value="2" id="company_id">
 
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Design Number</label>
+                                    <label>Design Number</label>
                                     <input type="text" name="design_number" class="form-control" placeholder="Enter design number" value="{{old('design_number')}}">
                                     @if ($errors->has('design_number'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('design_number') }}
-                                        </span>
+                                        <span class="invalid-feedback d-block">{{ $errors->first('design_number') }}</span>
                                     @endif
                                 </div>
                             </div>
-                            
-                            <div class="col-md-6">
+
+                            <div class="col-md-3">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Product Name</label>
+                                    <label>Series Name</label>
+                                    <select name="master_series_id" id="master_series_id" class="form-control select2" style="width: 100%;">
+                                        <option value="">Select Series</option>
+                                        @foreach($series_names as $series)
+                                            <option value="{{ $series->id }}" {{ old('master_series_id') == $series->id ? 'selected' : '' }}>{{ $series->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Brand</label>
+                                    <select name="brand_id" id="brand_id" class="form-control select2" style="width: 100%;">
+                                        <option value="">Select Brand</option>
+                                        @foreach($brands as $brand)
+                                            <option value="{{ $brand->id }}" {{ old('brand_id') == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Product Name</label>
                                     <input type="text" name="name_of_garment" class="form-control" placeholder="Enter name of product" value="{{old('name_of_garment')}}">
-                                    @if ($errors->has('name_of_garment'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('name_of_garment') }}
-                                        </span>
-                                    @endif
                                 </div>
                             </div>
-                            <input type="hidden" name="is_printing" value="1">
-                            <input type="hidden" name="is_embroidery" value="1">
-                            
-                            <input type="hidden" name="sku" id="sku" class="form-control" placeholder="Auto-generated SKU" >
-                            
 
-                            {{-- Main Image --}}
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <div class="form-group">
-                                    <label for="main_image">Main Image</label>
-                                    <input type="file" name="main_image" id="main_image" class="form-control" accept="image/*">
-                                    @if ($errors->has('main_image'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('main_image') }}
-                                        </span>
-                                    @endif
-
-                                    
+                                    <label>Fitting</label>
+                                    <select name="master_product_fitting_id" class="form-control select2" style="width: 100%;">
+                                        <option value="">Select Fitting</option>
+                                        @foreach($fittings as $fitting)
+                                            <option value="{{ $fitting->id }}">{{ $fitting->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mt-2">
-                                    <img id="main_image_preview" src="#" alt="Main image preview"
-                                        class="img-thumbnail" style="max-height: 160px; display:none;">
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Pattern</label>
+                                    <select name="master_pattern_id" class="form-control select2" style="width: 100%;">
+                                        <option value="">Select Pattern</option>
+                                        @foreach($garment_patterns as $p)
+                                            <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
-
                             </div>
-                                                                      
-                           
-                            <div class="col-md-12">
-                                <div class="mt-2" style="float:right">
-                                    <button type="submit" class="btn btn-primary">Submit</button>
+
+                            <div class="col-md-12 mt-3">
+                                <div class="card card-secondary">
+                                    <div class="card-header">
+                                        <h3 class="card-title">Size Sets & Pricing</h3>
+                                        <div class="card-tools">
+                                            <button type="button" class="btn btn-primary btn-sm add-size-set">Add More Size Set</button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body" id="size-set-container">
+                                        {{-- Row Template Start --}}
+                                        <div class="size-set-block mb-4 p-3 border rounded bg-light">
+                                            <div class="row align-items-end mb-3">
+                                                <div class="col-md-4">
+                                                    <div class="form-group mb-0">
+                                                        <label>Size Set</label>
+                                                        <select name="size_sets[]" class="form-control select2 size-set-select" style="width: 100%;">
+                                                            <option value="">Select Size Set</option>
+                                                            @foreach($sizes as $size)
+                                                                <option value="{{ $size->id }}">{{ $size->name }} ({{ $size->set_size }})</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                 <div class="col-md-3">
+                                                    <div class="form-group mb-0">
+                                                        <label>MRP (for this set)</label>
+                                                        <input type="number" name="mrps[]" class="form-control mrp-input" placeholder="0.00" step="0.01">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-group mb-0">
+                                                        <label>Set Image</label>
+                                                        <input type="file" name="size_set_images[]" class="form-control-file size-set-image-input" accept="image/*">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-2 text-right">
+                                                    <button type="button" class="btn btn-danger btn-sm remove-size-set" disabled><i class="fa fa-trash"></i> Remove Set</button>
+                                                </div>
+                                            </div>
+
+                                            <div class="color-items-container ml-4">
+                                                <h6>Colors & Images</h6>
+                                                <div class="color-item-row row mb-2 align-items-center border-bottom pb-2">
+                                                    <div class="col-md-4">
+                                                        <label class="small">Color</label>
+                                                        <select name="variant_colors[0][0]" class="form-control select2 color-select" style="width: 100%;">
+                                                            <option value="">Select Color</option>
+                                                            @foreach($colors as $color)
+                                                                <option value="{{ $color->id }}">{{ $color->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="small text-muted">Upload Image for this Color</label>
+                                                        <input type="file" name="variant_images[0][0]" class="form-control-file variant-image-input" accept="image/*">
+                                                    </div>
+                                                    <div class="col-md-2 text-right">
+                                                        <button type="button" class="btn btn-warning btn-sm remove-color-item" disabled><i class="fa fa-times"></i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="ml-4 mt-2">
+                                                <button type="button" class="btn btn-info btn-sm add-color-item" data-set-index="0"><i class="fa fa-plus"></i> Add Another Color</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
+
+                            <div class="col-md-12 text-right mt-3">
+                                <button type="submit" class="btn btn-success btn-lg px-5 shadow">Submit Product Specification</button>
                             </div>
                         </div>
                     </div>
-                    
                 </form>
             </div>
         </div>
     </section>
 </div>
+
+<script src="{{ asset('admin/plugins/jquery/jquery.min.js') }}"></script>
 <script>
-    function normalizeSKU(text) {
-        return text
-            ? text.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
-            : '';
-    }
-
-    function generateSKU() {
-        let companyId      = $('#company_id').val();
-        let nameOfGarment  = $("input[name='name_of_garment']").val().trim();
-        let designNumber   = $("input[name='design_number']").val().trim();
-        let typeText       = $("#type_of_garment option:selected").text().trim();
-        let colorText      = $("#master_color_id option:selected").text().trim();
-        let sizeText       = $("select[name='master_size_id'] option:selected").text().trim();
-        let patternText    = $("#garment_pattern option:selected").text().trim();
-
-        // Normalise all parts
-        nameOfGarment = normalizeSKU(nameOfGarment);
-        designNumber  = normalizeSKU(designNumber);
-        typeText      = normalizeSKU(typeText);
-        colorText     = normalizeSKU(colorText);
-        sizeText      = normalizeSKU(sizeText);
-        patternText   = normalizeSKU(patternText);
-
-        let sku = '';
-
-        if (companyId === '2') {
-            // Royal Jeans: DESIGN-NAME
-            sku = [designNumber, nameOfGarment].filter(Boolean).join('-');
-        } else if (companyId === '1') {
-            // General: TYPE-NAME-PATTERN-COLOR-SIZE
-            sku = [typeText, nameOfGarment, patternText, colorText, sizeText]
-                    .filter(Boolean)
-                    .join('-');
-        } else {
-            // fallback (treat like General)
-            sku = [typeText, nameOfGarment, patternText, colorText, sizeText]
-                    .filter(Boolean)
-                    .join('-');
-        }
-
-        let skuInput = $("#sku");
-        if (!skuInput.data('edited') || skuInput.val() === "") {
-            skuInput.val(sku);
-        }
-    }
-
     $(document).ready(function() {
-        // Trigger SKU generation on relevant field changes
-        $("#company_id").on("change", generateSKU);
-        $("input[name='design_number']").on("input", generateSKU);
-        $("input[name='name_of_garment']").on("input", generateSKU);
-        $("#type_of_garment").on("change", generateSKU);
-        $("#garment_pattern").on("change", generateSKU);
-        $("#master_color_id").on("change", generateSKU);
-        $("select[name='master_size_id']").on("change", generateSKU);
-
-        // Mark SKU as manually edited
-        $("#sku").on("input", function() {
-            $(this).data('edited', true);
-        });
-
-        // Initial generation on page load
-        generateSKU();
-    });
-</script>
-
-<script>
-    $(document).ready(function () {
-
-    // Add More Fabric
-    $(document).on('click', '.add-fabric', function () {
-        let newRow = `
-            <div class="fabric-row row mb-2">
-                <div class="col-md-5">
-                    <div class="form-group">
-                        <select name="fabric_sku[]" class="form-control select2" style="width: 100%;" required>
-                            <option value="">Select Fabric</option>
-                            @foreach($fabrics as $single_data)
-                                <option value="{{$single_data->sku}}">{{$single_data->sku}}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-5">
-                    <input type="number" name="fabric_meter[]" class="form-control" placeholder="Enter meter" step="0.01" min="0" required>
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-danger remove-fabric"><i class="fa fa-minus"></i></button>
-                </div>
-            </div>
-        `;
-        $('#fabric-container').append(newRow);
-        $('.select2').select2(); // reinitialize Select2 for new elements
-    });
-
-    // Remove Fabric Row
-    $(document).on('click', '.remove-fabric', function () {
-        $(this).closest('.fabric-row').remove();
-    });
-
-});
-
-</script>
-<script>
-    // make indexRow/global so all functions can use it
-    let indexRow = 0;
-
-    // Template for a single stage row
-    function addStageRowTemplate() {
-        indexRow++;
-        return `
-            <div class="stage-row row mb-2">
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <select name="product_stage_id[]" class="form-control select2 stage-select" style="width: 100%;" required>
-                            <option value="">Select Stage</option>
-                            @foreach($product_stages as $stage)
-                                <option value="{{ $stage->id }}">{{ $stage->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <input type="radio" name="printing_stage_after" class="printing-radio" id="is_printing_${indexRow}">
-                        <label for="is_printing_${indexRow}">Printing</label>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <input type="radio" class="embroidery-radio" name="embroidery_stage_after" id="is_embroidery_${indexRow}">
-                        <label for="is_embroidery_${indexRow}">Embroidery</label>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-danger remove-stage"><i class="fa fa-minus"></i></button>
-                </div>
-            </div>
-        `;
-    }
-
-    // Auto-fill all stages for Royal
-    function autoFillRoyalStages() {
-        // clear existing rows
-        $('#stages-container').empty();
-
-        const productStages = @json($product_stages);
-
-        productStages.forEach(function (stage, idx) {
-            let rowHtml = addStageRowTemplate();
-            $('#stages-container').append(rowHtml);
-
-            let $row = $('#stages-container .stage-row').last();
-
-            // Set the select value to this stage
-            $row.find('.stage-select').val(stage.id).trigger('change');
-
-            // For the first row: auto check both printing & embroidery
-            if (idx === 0) {
-                $row.find('.printing-radio').prop('checked', true);
-                $row.find('.embroidery-radio').prop('checked', true);
+        // Series to Product Name Auto-fill
+        $('#master_series_id').on('change', function() {
+            var seriesId = $(this).val();
+            if (seriesId) {
+                $.ajax({
+                    url: "{{ route('admin.master.production-goods.get-next-product-name') }}",
+                    type: "GET",
+                    data: { master_series_id: seriesId },
+                    success: function (data) {
+                        $('input[name="name_of_garment"]').val(data.next_name);
+                    }
+                });
             }
         });
 
-        // Re-init select2 for new selects
-        $('.select2').select2();
-    }
+        // Dynamic Rows Logic
+        function reindexAll() {
+            $('.size-set-block').each(function(sIdx) {
+                $(this).find('.add-color-item').attr('data-set-index', sIdx);
+                $(this).find('.size-set-select').attr('name', 'size_sets[]');
+                $(this).find('.mrp-input').attr('name', 'mrps[]');
+                $(this).find('.size-set-image-input').attr('name', 'size_set_images[]');
+                
+                $(this).find('.color-item-row').each(function(cIdx) {
+                    $(this).find('.color-select').attr('name', `variant_colors[${sIdx}][${cIdx}]`);
+                    $(this).find('.variant-image-input').attr('name', `variant_images[${sIdx}][${cIdx}]`);
+                });
 
-    $(document).ready(function () {
-        // Initialize Select2 for existing selects
-        $('.select2').select2();
+                // Update remove buttons for color items
+                let colorRows = $(this).find('.color-item-row');
+                colorRows.find('.remove-color-item').prop('disabled', colorRows.length === 1);
+            });
 
-        // Add new stage row manually (for General or if needed)
-        $(document).on('click', '.add-stage', function () {
-            let newRow = addStageRowTemplate();
-            $('#stages-container').append(newRow);
-            $('.select2').select2(); // re-init Select2 for new rows
-        });
-
-        // Remove stage row
-        $(document).on('click', '.remove-stage', function () {
-            $(this).closest('.stage-row').remove();
-        });
-
-        // When clicking printing/embroidery radio, set its value to current row stage id
-        $(document).on('click', '.printing-radio, .embroidery-radio', function () {
-            let row = $(this).closest('.stage-row');
-            let stageId = row.find('.stage-select').val();  // correct stage value
-            $(this).val(stageId);
-        });
-
-        // When changing stage select, update radio values for that row
-        $(document).on('change', '.stage-select', function () {
-            let stageId = $(this).val();
-            let row = $(this).closest('.stage-row'); // <-- correct row
-
-            // ONLY this row's radio values update
-            row.find('.printing-radio').val(stageId);
-            row.find('.embroidery-radio').val(stageId);
-        });
-    });
-</script>
-
-
-<script>
-    $(document).ready(function () {
-
-        function toggleCompanyFields() {
-            var companyId = $('#company_id').val();
-
-            if (companyId == '2') { 
-                // ROYAL JEANS
-
-                // Hide and disable all general fields
-                $('.general')
-                    .hide()
-                    .find('input, select, textarea')
-                    .prop('disabled', true);
-
-                // Hide Production Stages (because they will auto-fill)
-                $('.stages-wrapper').hide();
-
-                // Auto-fill Royal stages
-                autoFillRoyalStages();
-
-            } else if (companyId == '1') { 
-                // GENERAL
-
-                // Show general fields
-                $('.general')
-                    .show()
-                    .find('input, select, textarea')
-                    .prop('disabled', false);
-
-                // Show Production Stages again
-                $('.stages-wrapper').show();
-
-            } else {
-                // Default fallback
-                $('.general')
-                    .show()
-                    .find('input, select, textarea')
-                    .prop('disabled', false);
-
-                $('.stages-wrapper').show();
-            }
+            // Update remove buttons for size sets
+            let setBlocks = $('.size-set-block');
+            setBlocks.find('.remove-size-set').prop('disabled', setBlocks.length === 1);
         }
 
-        $('#company_id').on('change', function () {
-            toggleCompanyFields();
-            generateSKU();
+        // Add Size Set
+        $('.add-size-set').on('click', function() {
+            let sIdx = $('.size-set-block').length;
+            let blockHtml = `
+                <div class="size-set-block mb-4 p-3 border rounded bg-light">
+                    <div class="row align-items-end mb-3">
+                        <div class="col-md-4">
+                            <div class="form-group mb-0">
+                                <label>Size Set</label>
+                                <select name="size_sets[]" class="form-control select2 size-set-select" style="width: 100%;">
+                                    <option value="">Select Size Set</option>
+                                    @foreach($sizes as $size)
+                                        <option value="{{ $size->id }}">{{ $size->name }} ({{ $size->set_size }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group mb-0">
+                                <label>MRP (for this set)</label>
+                                <input type="number" name="mrps[]" class="form-control mrp-input" placeholder="0.00" step="0.01">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                             <div class="form-group mb-0">
+                                <label>Set Image</label>
+                                <input type="file" name="size_set_images[]" class="form-control-file size-set-image-input" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-right">
+                            <button type="button" class="btn btn-danger btn-sm remove-size-set"><i class="fa fa-trash"></i> Remove Set</button>
+                        </div>
+                    </div>
+
+                    <div class="color-items-container ml-4">
+                        <h6>Colors & Images</h6>
+                        <div class="color-item-row row mb-2 align-items-center border-bottom pb-2">
+                            <div class="col-md-4">
+                                <label class="small">Color</label>
+                                <select name="variant_colors[${sIdx}][0]" class="form-control select2 color-select" style="width: 100%;">
+                                    <option value="">Select Color</option>
+                                    @foreach($colors as $color)
+                                        <option value="{{ $color->id }}">{{ $color->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted d-block">Upload Image for this Color</label>
+                                <input type="file" name="variant_images[${sIdx}][0]" class="form-control-file variant-image-input" accept="image/*">
+                            </div>
+                            <div class="col-md-2 text-right">
+                                <button type="button" class="btn btn-warning btn-sm remove-color-item" disabled><i class="fa fa-times"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ml-4 mt-2">
+                        <button type="button" class="btn btn-info btn-sm add-color-item" data-set-index="${sIdx}"><i class="fa fa-plus"></i> Add Another Color</button>
+                    </div>
+                </div>
+            `;
+            $('#size-set-container').append(blockHtml);
+            $('#size-set-container .size-set-block:last .select2').select2({ theme: 'bootstrap4' });
+            reindexAll();
         });
 
-        toggleCompanyFields();
-    });
-</script>
+        // Add Color Row
+        $(document).on('click', '.add-color-item', function() {
+            let sIdx = $(this).attr('data-set-index');
+            let container = $(this).closest('.size-set-block').find('.color-items-container');
+            let cIdx = container.find('.color-item-row').length;
+            
+            let rowHtml = `
+                <div class="color-item-row row mb-2 align-items-center border-bottom pb-2">
+                    <div class="col-md-4">
+                        <select name="variant_colors[${sIdx}][${cIdx}]" class="form-control select2 color-select" style="width: 100%;">
+                            <option value="">Select Color</option>
+                            @foreach($colors as $color)
+                                <option value="{{ $color->id }}">{{ $color->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small text-muted d-block">Upload Image for this Color</label>
+                        <input type="file" name="variant_images[${sIdx}][${cIdx}]" class="form-control-file variant-image-input" accept="image/*">
+                    </div>
+                    <div class="col-md-2 text-right">
+                        <button type="button" class="btn btn-warning btn-sm remove-color-item"><i class="fa fa-times"></i></button>
+                    </div>
+                </div>
+            `;
+            container.append(rowHtml);
+            container.find('.color-item-row:last .select2').select2({ theme: 'bootstrap4' });
+            reindexAll();
+        });
 
-<script>
-    $(document).ready(function () {
-        // Main image preview
-        $('#main_image').on('change', function (e) {
-            const input = this;
-            const preview = $('#main_image_preview');
-
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    preview.attr('src', e.target.result)
-                           .show();
-                };
-                reader.readAsDataURL(input.files[0]);
-            } else {
-                preview.hide().attr('src', '#');
+        $(document).on('click', '.remove-size-set', function() {
+            if ($('.size-set-block').length > 1) {
+                $(this).closest('.size-set-block').remove();
+                reindexAll();
             }
         });
 
-        // Other images preview
-        $('#other_images').on('change', function () {
-            const container = $('#other_images_preview');
-            container.empty();
-
-            const files = this.files;
-            if (!files || !files.length) {
-                return;
+        $(document).on('click', '.remove-color-item', function() {
+            let container = $(this).closest('.color-items-container');
+            if (container.find('.color-item-row').length > 1) {
+                $(this).closest('.color-item-row').remove();
+                reindexAll();
             }
-
-            Array.from(files).forEach(function (file) {
-                if (!file.type.match('image.*')) return;
-
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const img = $('<img>')
-                        .attr('src', e.target.result)
-                        .addClass('img-thumbnail')
-                        .css({
-                            maxHeight: '120px',
-                            maxWidth: '120px',
-                            objectFit: 'cover'
-                        });
-
-                    const wrapper = $('<div>').css({
-                        position: 'relative'
-                    }).append(img);
-
-                    container.append(wrapper);
-                };
-                reader.readAsDataURL(file);
-            });
         });
     });
 </script>
-
-
-
 @endsection

@@ -22,8 +22,8 @@ class MasterFittingUpdateRequest extends FormRequest{
         // dd($this);
         return [
             'name' => 'required',
-            'sku'    => 'required|unique:master_product_fittings,sku,' . $request->id,
-            // 'status' =>'required',
+            'sku'    => 'nullable',
+            'status' =>'required',
         ];
     }
 

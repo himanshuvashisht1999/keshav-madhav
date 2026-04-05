@@ -7,24 +7,19 @@ use App\Models\MasterSizeMeasurement;
 use Yajra\DataTables\Facades\DataTables;
 
 class SizeMeasurementDataTable  {
-
+    protected $master_size_measurement;
     public function __construct(MasterSizeMeasurement $master_size_measurement) {
         $this->master_size_measurement = $master_size_measurement;
     }
 
     public function indexList($request){
-        $queue = MasterSizeMeasurement::query();
+        $queue = MasterSizeMeasurement::where('status', '!=', 3);
         
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $query->orderBy('id','asc');
-                
                 if ($request->has('customer_id') && $request->filled('customer_id')) {
                     $query->where('corporate_company_id', $request->get('customer_id'));
                 }
-                // if ($request->has('name') && !empty($request->name)) {
-                //     $query->where('name', 'like', "%{$request->get('name')}%");
-                // }
                 if ($request->has('design_number') && !empty($request->design_number)) {
                     $query->where('design_number', 'like', "%{$request->get('design_number')}%");
                 }
@@ -40,7 +35,9 @@ class SizeMeasurementDataTable  {
                 if ($request->has('status') && $request->filled('status')) {
                     $query->where('status', $request->get('status'));
                 }
-                
+            }) 
+            ->order(function ($query) {
+                $query->orderBy('id', 'asc');
             }) 
             ->editColumn('customer_id', function ($queue) {
                 return $queue->customer ? $queue->customer->name : '';
@@ -53,6 +50,7 @@ class SizeMeasurementDataTable  {
 				$parameter= $queue->id;
                 return '
                 <a href="' . route('admin.master.size-measurement.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete"><i class="fas fa-trash text-danger"></i></a>
                 ';
             })
             

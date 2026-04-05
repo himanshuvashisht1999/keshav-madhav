@@ -7,9 +7,13 @@
                 <div class="d-flex justify-content-between">
                     <h1 class="m-0 font-weight-bold text-dark">Order Details #ORD-{{ $order->id }}</h1>
                     <div class="btn-group">
-                        <a href="{{ route('admin.agent-orders.invoice', $order->id) }}"
+                        <a href="{{ route('admin.agent-orders.download-invoice', $order->id) }}"
                             class="btn btn-primary rounded-pill px-4 mr-2">
                             <i class="fas fa-file-invoice mr-1"></i> Download Invoice
+                        </a>
+                        <a href="{{ route('admin.agent-orders.download-packing-slip', $order->id) }}"
+                            class="btn btn-info rounded-pill px-4 mr-2">
+                            <i class="fas fa-box mr-1"></i> Download Packing Slip
                         </a>
                         @if($order->status == 'pending')
                             <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
@@ -76,7 +80,7 @@
                                         <span class="text-muted">Subtotal:</span>
                                         <span class="font-weight-bold">₹{{ number_format($order->total_amount, 2) }}</span>
                                     </li>
-                                    <li class="list-group-item d-flex justify-content-between p-2">
+                                    <li class="list-group-item d-flex justify-content-between p-2 {{ $order->discount_amount > 0 ? '' : 'd-none' }}">
                                         <span class="text-muted">Discount
                                             ({{ number_format($order->discount_percentage, 0) }}%):</span>
                                         <span
@@ -110,25 +114,30 @@
                                     </div>
                                 @endif
 
-                                @if($order->status == 'pending')
+                                @if(in_array($order->status, ['pending', 'partially_dispatched']))
                                     <hr>
                                     <div class="alert alert-info small mb-3">
-                                        <i class="fas fa-barcode mr-1"></i> Scan-based dispatch is required for this order.
+                                        <i class="fas fa-barcode mr-1"></i> 
+                                        @if($order->status == 'partially_dispatched')
+                                            Order is partially dispatched. Continue scanning remaining items.
+                                        @else
+                                            Scan-based dispatch is required for this order.
+                                        @endif
                                     </div>
                                     <a href="{{ route('admin.agent-orders.dispatch-scan', $order->id) }}"
                                         class="btn btn-primary btn-block btn-lg shadow-sm mb-2">
-                                        <i class="fas fa-barcode mr-2"></i> START DISPATCH SCAN
+                                        <i class="fas fa-barcode mr-2"></i> CONTINUE DISPATCH SCAN
                                     </a>
                                     <form action="{{ route('admin.agent-orders.dispatch', $order->id) }}" method="POST"
-                                        onsubmit="return confirm('Note: Dispatching will PERMANENTLY remove scanned boxes from current inventory. All items must be scanned first. Proceed?')">
+                                        onsubmit="return confirm('Note: Dispatching will PERMANENTLY remove scanned boxes from current inventory. All currently scanned items will be marked as dispatched. Proceed?')">
                                         @csrf
                                         <button type="submit" class="btn btn-success btn-block btn-lg shadow-sm">
-                                            <i class="fas fa-truck mr-2"></i> COMPLETE DISPATCH
+                                            <i class="fas fa-truck mr-2"></i> DISPATCH SCANNED ITEMS
                                         </button>
                                     </form>
                                 @else
                                     <div class="alert alert-success mt-3 text-center">
-                                        <i class="fas fa-check-circle mr-1"></i> This order was dispatched.
+                                        <i class="fas fa-check-circle mr-1"></i> This order has been fully dispatched.
                                     </div>
                                 @endif
                             </div>
@@ -145,26 +154,47 @@
                                 <table class="table table-striped mb-0">
                                     <thead>
                                         <tr>
-                                            <th>Box #</th>
+                                            <th width="10%">Boxes</th>
                                             <th>Product Details</th>
-                                            <th class="text-center">Qty</th>
+                                            <th class="text-center">Total Qty</th>
                                             <th class="text-right">Price</th>
                                             <th class="text-right">Total</th>
+                                            <th class="text-right">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($items as $item)
                                             <tr>
-                                                <td><span class="badge badge-secondary">Box {{ $item->box_no }}</span></td>
+                                                <td>
+                                                    <span class="badge badge-primary">{{ $item->box_count }} Boxes</span>
+                                                    @if(!empty($item->box_nos))
+                                                        <div class="small mt-1 text-muted">B#: {{ implode(', ', $item->box_nos) }}</div>
+                                                    @endif
+                                                </td>
                                                 <td>
                                                     <strong>{{ $item->product_name }}</strong><br>
-                                                    <small class="text-muted">D: {{ $item->design_number }} | C:
-                                                        {{ $item->color_name }} | S: {{ $item->size_set_name }}</small>
+                                                    <small style="color:#666;">
+                                                        Design: {{ $item->design_number }} | Color: {{ $item->color_name }} | Set:
+                                                        {{ $item->size_set_name }}
+                                                        @if(isset($item->fitting_name) && $item->fitting_name) | Fit:
+                                                            {{ $item->fitting_name }} @endif
+                                                        @if(isset($item->pattern_name) && $item->pattern_name) | Pat:
+                                                            {{ $item->pattern_name }} @endif
+                                                    </small>
                                                 </td>
-                                                <td class="text-center">{{ $item->quantity }}</td>
+                                                <td class="text-center font-weight-bold">{{ $item->total_qty }} pcs</td>
                                                 <td class="text-right">₹{{ number_format($item->selling_price, 2) }}</td>
                                                 <td class="text-right font-weight-bold text-primary">
-                                                    ₹{{ number_format($item->quantity * $item->selling_price, 2) }}</td>
+                                                    ₹{{ number_format($item->total_qty * $item->selling_price, 2) }}</td>
+                                                <td class="text-right">
+                                                    @if($item->status == 'Dispatched')
+                                                        <span class="badge badge-success"><i class="fas fa-check mr-1"></i>{{ $item->status }}</span>
+                                                    @elseif($item->status == 'Scanned')
+                                                        <span class="badge badge-info"><i class="fas fa-barcode mr-1"></i>{{ $item->status }}</span>
+                                                    @else
+                                                        <span class="badge badge-secondary">{{ $item->status }}</span>
+                                                    @endif
+                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>

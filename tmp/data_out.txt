@@ -1,0 +1,5 @@
+ID: 2, Prod: 1, Color: 3, SizeSet: 3, Cart: 2
+ID: 3, Prod: 1, Color: 3, SizeSet: 3, Cart: 3
+ID: 4, Prod: 1, Color: 3, SizeSet: 3, Cart: 4
+ID: 5, Prod: 1, Color: 3, SizeSet: 3, Cart: 5
+ID: 6, Prod: 1, Color: 8, SizeSet: 3, Cart: 6

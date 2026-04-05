@@ -66,6 +66,10 @@ class ProductOrderController extends Controller {
         $response['products'] = $this->service->products();
         $response['sizes'] = $this->service->product_sizes();
         $response['colours'] = $this->service->getColours();
+        $response['cutting_units'] = $this->service->cutting_units();
+        $response['fabrics'] = $this->service->fabrics();
+        $response['fittings'] = $this->service->fittings();
+        $response['patterns'] = $this->service->getPatterns();
         return response()->json($response);
     }
     public function store(ProductOrderStoreRequest $request){
@@ -78,15 +82,49 @@ class ProductOrderController extends Controller {
         }
         
     }
+
+    public function createDomestic(){
+        $response['cutting_units'] = $this->service->cutting_units();
+        $response['fabrics'] = $this->service->fabrics();
+        $response['fittings'] = $this->service->fittings();
+        $response['patterns'] = $this->service->getPatterns();
+        $response['sizes'] = $this->service->product_sizes();
+        $response['colours'] = $this->service->getColours();
+        return view('admin.product_order.create_domestic', $response);
+    }
+
+    public function storeDomestic(Request $request){
+        $data = $this->service->storeDomestic($request);
+        if($data['status_code'] == 1){
+            return redirect()->route('admin.product_order.indexOrder')->withSuccess($data['message']);
+        }else{
+            return redirect()->back()->withError($data['message']);
+        }
+    }
     
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
         $response['products'] = $this->service->products();
         return view('admin.product_order.edit',$response);
     }
-    public function update(ProductOrderUpdateRequest $request){
-        $data = $this->service->update($request);
-        return redirect()->route('admin.product_order.index')->withSuccess('The product order has been successfully updated.');
+    public function update(Request $request){
+        $response = $this->service->update($request);
+        return redirect()->route('admin.product_order.index');
+    }
+
+    public function editOrderMain($id){
+        $response['data'] = $this->service->editOrderMain($id);
+        $response['customers'] = $this->service->customers();
+        return view('admin.product_order.edit-order-main',$response);
+    }
+
+    public function updateOrderMain(Request $request, $id){
+        $response = $this->service->updateOrderMain($request, $id);
+        if($response['status_code'] == 1){
+            return redirect()->route('admin.product_order.indexOrder')->with('success', $response['message']);
+        }else{
+            return back()->with('error', $response['message']);
+        }
     }
     public function view(Request $request){
         $response['data'] = $this->service->view($request);
@@ -95,6 +133,11 @@ class ProductOrderController extends Controller {
     public function delete(Request $request){
         $data = $this->service->delete($request);
         return redirect()->route('admin.product_order.index')->withSuccess('The product order has been successfully deleted.'); 
+    }
+
+    public function deleteOrderMain(Request $request){
+        $data = $this->service->deleteOrderMain($request);
+        return redirect()->route('admin.product_order.indexOrder')->withSuccess('The sales order has been successfully deleted.'); 
     }
 
     public function transfer(Request $request)
@@ -177,13 +220,16 @@ class ProductOrderController extends Controller {
     
     public function assign_to(Request $request){
         $response = $this->service->assign_to($request);
+
+        if ($request->ajax()) {
+            return response()->json($response);
+        }
+
         if($response['status'] == true){
             return redirect()->back()->with('success', $response['message']);
         }else{
             return redirect()->back()->withError($response['message']);
         }
-        
-        
     }
 
     public function indexOrderSetDownload(Request $request)
@@ -248,8 +294,9 @@ class ProductOrderController extends Controller {
         $pdf = Pdf::loadView(
             'admin.product_order.cmpo_slip',
              [
-                'header'   => $slip_data['cmpoHeader'],
-                'sizeData' => $slip_data['sizeData'],
+                'header'      => $slip_data['cmpoHeader'],
+                'sizeData'    => $slip_data['sizeData'],
+                'assignments' => $slip_data['assignments'],
             ]
         )->setPaper('a4', 'portrait');
 
@@ -259,8 +306,9 @@ class ProductOrderController extends Controller {
     public function viewCuttingSlip(Request $request){
         $slip_data = $this->buildCmpoData($request->id);
         $response = [
-                'header'   => $slip_data['cmpoHeader'],
-                'sizeData' => $slip_data['sizeData'],
+                'header'      => $slip_data['cmpoHeader'],
+                'sizeData'    => $slip_data['sizeData'],
+                'assignments' => $slip_data['assignments'],
             ];
         return view('admin.product_order.view_cmpo_slip', $response);
     }
@@ -367,7 +415,12 @@ class ProductOrderController extends Controller {
             'colors',
             'size_measurement',
             'master_product_fitting',
+            'orderCuttingStages.cutting_master',
         ])->findOrFail($id);
+
+        $assignments = $data->orderCuttingStages;
+
+        $firstAssignment = $assignments->first();
 
         // ================= HEADER =================
         $cmpoHeader = [
@@ -377,13 +430,14 @@ class ProductOrderController extends Controller {
             'customer'    => $data->orderMain->customer->name ?? '-',
             'design_no'   => $data->design_number ?? '-',
             'color'       => $data->colors->name ?? '-',
-            'fabric'      => $data->fabric->name ?? '-',
-            'pattern'     => $data->master_design_pattern->name ?? '-',
-            'warehouse_name' => $data->stage_master_unit->masterFabricWarehouse->cutting_master_name ?? '-',
-            'cuttingMaster' => $data->stage_master_unit->name ?? '-',
-            'cuttingMasterAddress' => $data->stage_master_unit->masterFabricWarehouse->address ?? '-',
-            'fitting' => $data->master_product_fitting?->name ?? '-',
-            'remark' => $data->remark ?? '-',
+            // Fallback for fields blank until 100% assignment
+            'fabric'      => $data->fabric->name ?? ($firstAssignment->fabric->name ?? '-'),
+            'pattern'     => $data->master_design_pattern->name ?? ($firstAssignment->pattern->name ?? '-'),
+            'warehouse_name' => $data->stage_master_unit->masterFabricWarehouse->cutting_master_name ?? ($firstAssignment->cutting_master->masterFabricWarehouse->cutting_master_name ?? '-'),
+            'cuttingMaster' => $data->stage_master_unit->name ?? ($firstAssignment->cutting_master->name ?? '-'),
+            'cuttingMasterAddress' => $data->stage_master_unit->masterFabricWarehouse->address ?? ($firstAssignment->cutting_master->masterFabricWarehouse->address ?? '-'),
+            'fitting' => $data->master_product_fitting?->name ?? ($firstAssignment->master_fitting?->name ?? '-'),
+            'remark' => $data->remark ?? ($firstAssignment->remarks ?? '-'),
             'total_pcs' => $data->total_quantity ?? 0,
         ];
 
@@ -397,6 +451,7 @@ class ProductOrderController extends Controller {
         }
 
         /* size count */
+        $totalInRatio = count($sizes);
         $sizeCounts = array_count_values($sizes);
 
         foreach ($sizeCounts as $size => $count) {
@@ -404,11 +459,15 @@ class ProductOrderController extends Controller {
                 'design_no' => $data->design_number,
                 'color'     => $data->colors->name,
                 'size'      => $size,
-                'pcs'       => $count * $data->set_quantity,
+                'pcs'       => $totalInRatio > 0 ? ($count * $data->total_quantity) / $totalInRatio : 0,
             ];
         }
 
-        return ['cmpoHeader' => $cmpoHeader, 'sizeData' => $sizeData];
+        return [
+            'cmpoHeader'  => $cmpoHeader,
+            'sizeData'    => $sizeData,
+            'assignments' => $assignments
+        ];
     }
 
 }

@@ -4,13 +4,15 @@ namespace App\Requests\Admin\Master;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Http\FormRequest;
 
-class CustomerUpdateRequest extends FormRequest{
+class CustomerUpdateRequest extends FormRequest
+{
     /**
      * Determine if the user is authorized to make this request.
      *
      * @return bool
      */
-    public function authorize(){
+    public function authorize()
+    {
         return true;
     }
     /**
@@ -18,26 +20,40 @@ class CustomerUpdateRequest extends FormRequest{
      *
      * @return array
      */
-    public function rules(Request $request){
-        // dd($this);
-        $id = $request->id;
-        return [
+    public function rules(Request $request)
+    {
+        $rules = [
             'name' => 'required',
-            // 'phone'  => 'required|digits:10',
-            // 'email' => 'required',
-            // 'email'  => 'required|email|unique:master_customers,email,' . $request->id,
-            // 'image' => 'required',
-            // 'status' =>'required',
+            'balance' => 'nullable|numeric',
+            'balance_type' => 'required|in:Credit,Debit',
         ];
+
+        // If it's an existing record, we might need to check if it's a shop (parent_id exists)
+        $customer = \App\Models\MasterCustomer::find($this->id);
+
+        if (($this->type == 'domestic' && $this->subtype == 'agent') || ($customer && $customer->parent_id)) {
+            $rules['name'] = 'nullable';
+            $rules['shop_name'] = 'required';
+            // $rules['shop_phone'] = 'required';
+        }
+
+        if ($this->type == 'domestic' && $this->subtype == 'direct') {
+            $rules['brand_discounts'] = 'nullable|array';
+            $rules['brand_discounts.*'] = 'nullable|numeric|min:0|max:100';
+        }
+
+        return $rules;
     }
 
-    public function messages(){
+    public function messages()
+    {
         return [
 
         ];
     }
 
-    public function attributes(){
+    public function attributes()
+    {
         return [
         ];
     }

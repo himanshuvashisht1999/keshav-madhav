@@ -66,6 +66,13 @@
                                             @endforeach
                                         </select>
                                     </td>
+                                    <td>
+                                        <select class="form-control" name="status" id="status" autocomplete="off">
+                                            <option value="">Select Status</option>
+                                            <option value="1">Active</option>
+                                            <option value="0">Inactive</option>
+                                        </select>
+                                    </td>
                                     <td></td>
 
                                 </tr>
@@ -75,6 +82,7 @@
                                     <th>Name</th>
                                     <th>Supplier Name</th>
                                     <th>Composition</th>
+                                    <th>Status</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -131,8 +139,7 @@
                         d.id = $('#id').val();
                         d.name = $('#name').val();
                         d.vendor_id = $('#vendor_id').val();
-                        // d.dye_id = $('#dye_id').val();
-                        // d.gsm_id = $('#gsm_id').val();
+                        d.status = $('#status').val();
                         d.composition_id = $('#composition_id').val();
 
                     },
@@ -158,7 +165,10 @@
                         data: 'composition_id',
                         name: 'composition_id'
                     },
-                    
+                    {
+                        data: 'status',
+                        name: 'status'
+                    },
                     {
                         data: 'action',
                         name: 'action',
@@ -200,6 +210,10 @@
                 oTable.draw();
                 e.preventDefault();
             });
+            $('#status').on('change', function(e) {
+                oTable.draw();
+                e.preventDefault();
+            });
 
 
         });
@@ -220,7 +234,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     // If user confirms, trigger the delete route
-                    window.location.href = "{{ route('admin.master.fabric.delete', ['id' => '']) }}" + id;
+                    window.location.href = "{{ route('admin.master.fabric.delete') }}?id=" + id;
                 }
             });
         }

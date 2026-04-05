@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Http\Controllers\Admin\Payment\Master;
+
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Services\Admin\Payment\Master\TaxService as Service;
+use App\Requests\Admin\Master\TaxStoreRequest;
+use App\Requests\Admin\Master\TaxUpdateRequest;
+use Auth;
+
+class TaxController extends Controller
+{
+    protected $service;
+
+    public function __construct(Service $service)
+    {
+        $this->service = $service;
+    }
+
+    public function index()
+    {
+        return view('admin.payment.master.tax.index');
+    }
+
+    public function indexList(Request $request)
+    {
+        return $this->service->indexList($request);
+    }
+
+    public function create()
+    {
+        return view('admin.payment.master.tax.create');
+    }
+
+    public function store(TaxStoreRequest $request)
+    {
+        $this->service->store($request);
+        return redirect()->route('admin.payment.master.tax.index')->withSuccess('The tax has been successfully created.');
+    }
+
+    public function edit(Request $request)
+    {
+        $response['data'] = $this->service->edit($request);
+        return view('admin.payment.master.tax.edit', $response);
+    }
+
+    public function update(TaxUpdateRequest $request)
+    {
+        $this->service->update($request);
+        return redirect()->route('admin.payment.master.tax.index')->withSuccess('The tax has been successfully updated.');
+    }
+
+    public function delete(Request $request)
+    {
+        $this->service->delete($request);
+        return redirect()->route('admin.payment.master.tax.index')->withSuccess('The tax has been successfully deleted/deactivated.');
+    }
+}

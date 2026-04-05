@@ -86,8 +86,8 @@
                         </div>
                     </div>
 
-                    <!-- PRICE SETUP (GLOBAL) -->
-                    <div id="priceSetupContainer"></div>
+                    <!-- PRICE SETUP (GLOBAL summary only) -->
+                    <div id="priceSetupContainer" style="display:none;"></div>
 
                     <!-- ORDER DATA -->
                     <div id="orderContainer"></div>
@@ -95,13 +95,13 @@
                     <!-- DISPATCH SUMMARY & CALCULATIONS -->
                     <div class="row mt-4 d-none" id="summaryContainer">
                         <div class="col-md-6 offset-md-6">
-                            <div class="card shadow-sm border-success">
+                            <div class="card shadow-sm border-success bg-light">
                                 <div class="card-header bg-success text-white py-2">
-                                    <strong><i class="fas fa-calculator mr-2"></i> Dispatch Summary</strong>
+                                    <strong><i class="fas fa-truck-loading mr-2"></i> Final Confirmation</strong>
                                 </div>
                                 <div class="card-body p-3">
                                     <div class="row mb-2">
-                                        <div class="col-7 text-right align-middle"><strong>Subtotal (₹)</strong></div>
+                                        <div class="col-7 text-right align-middle"><strong>Packed Value (₹)</strong></div>
                                         <div class="col-5">
                                             <input type="text" id="calc_subtotal"
                                                 class="form-control form-control-sm text-right font-weight-bold" readonly
@@ -111,18 +111,17 @@
 
                                     <div class="row mb-2">
                                         <div class="col-7 text-right align-middle">
-                                            <strong>Discount (%)</strong>
+                                            <strong>Add Discount (%)</strong>
                                         </div>
                                         <div class="col-5">
                                             <input type="number" name="discount_percentage" id="calc_discount_p"
                                                 class="form-control form-control-sm text-right" step="0.01" min="0"
-                                                max="100" >
+                                                max="100" value="0.00">
                                         </div>
                                     </div>
 
                                     <div class="row mb-2">
-                                        <div class="col-7 text-right align-middle text-muted"><small>Discount Amount
-                                                (₹)</small></div>
+                                        <div class="col-7 text-right align-middle text-muted"><small>Discount Amt</small></div>
                                         <div class="col-5">
                                             <input type="text" id="calc_discount_v"
                                                 class="form-control form-control-sm text-right text-muted" readonly
@@ -137,17 +136,7 @@
                                         <div class="col-5">
                                             <input type="number" name="gst_percentage" id="calc_gst_p"
                                                 class="form-control form-control-sm text-right" step="0.01" min="0"
-                                                max="100" value="5.00">
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <div class="col-7 text-right align-middle text-muted"><small>GST Amount (₹)</small>
-                                        </div>
-                                        <div class="col-5">
-                                            <input type="text" id="calc_gst_v"
-                                                class="form-control form-control-sm text-right text-muted" readonly
-                                                >
+                                                max="100" value="0.00">
                                         </div>
                                     </div>
 
@@ -155,7 +144,7 @@
 
                                     <div class="row">
                                         <div class="col-7 text-right align-middle">
-                                            <h5 class="mb-0 font-weight-bold">Grand Total (₹)</h5>
+                                            <h5 class="mb-0 font-weight-bold">Final Dispatch Amount (₹)</h5>
                                         </div>
                                         <div class="col-5">
                                             <input type="hidden" name="total_amount" id="final_total_amount_hidden">
@@ -168,6 +157,7 @@
                             </div>
                         </div>
                     </div>
+
 
                     <!-- SUBMIT -->
                     <div class="row mt-4">
@@ -478,16 +468,17 @@
                 globalPrices[setId] = parseFloat($(this).val()) || 0;
             });
 
-            // Iterate all cartons and sum based on selected ones
-            // We need the raw data available or we can traverse the DOM carton summaries
-            // Best to use raw data but since it's grouped, we can sum from the UI 'sets' display if we add data attributes
-
+            // Use carton summaries
             $('.carton-checkbox:checked').each(function () {
                 let row = $(this).closest('tr');
                 row.find('.carton-set-row').each(function () {
                     let setId = $(this).data('set-id');
                     let qty = parseFloat($(this).data('qty')) || 0;
                     let price = globalPrices[setId] || 0;
+                    if(!price) {
+                         // Fallback to searching item level price if not in global mapper (safety)
+                         price = parseFloat($(this).data('price')) || 0;
+                    }
                     subtotal += (price * qty);
                 });
             });
@@ -517,55 +508,53 @@
             $('#summaryContainer').removeClass('d-none');
 
             let pricingHtml = '';
-            // ... (rest of renderOrderData logic)
             if (data[0].unique_sets && data[0].unique_sets.length > 0) {
                 pricingHtml = `
-                                <div class="card shadow-sm mb-3 border-left-success">
-                                    <div class="card-header bg-white py-3">
-                                        <h5 class="mb-0 font-weight-bold text-success">
-                                            <i class="fas fa-tag mr-2"></i> Price Setup (Set-wise)
-                                        </h5>
-                                        <small class="text-muted">Enter prices for unique sets across all cartons below</small>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered mb-0">
-                                                <thead class="bg-light">
-                                                    <tr>
-                                                        <th>Design - Color</th>
-                                                        <th class="text-center">Size Set</th>
-                                                        <th width="200">Selling Price (₹)</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                            `;
+                    <div class="card shadow-sm mb-3 border-left-success">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="mb-0 font-weight-bold text-success">
+                                <i class="fas fa-tag mr-2"></i> Pricing Overview
+                            </h5>
+                            <small class="text-muted">Prices shown below are retrieved from the packing stage</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Design - Color</th>
+                                            <th class="text-center">Size Set</th>
+                                            <th width="200">Selling Price (₹)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                `;
 
                 data[0].unique_sets.forEach(set => {
                     pricingHtml += `
-                                    <tr>
-                                        <td class="align-middle">
-                                            <strong>${set.design}</strong> | ${set.color}
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <span class="badge badge-info">${set.size_set}</span>
-                                        </td>
-                                        <td>
-                                            <div class="input-group input-group-sm">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text font-weight-bold">₹</span>
-                                                </div>
-                                                <input type="number" 
-                                                   name="global_prices[${set.set_id}]" 
-                                                   class="form-control font-weight-bold global-price-input" 
-                                                   step="0.01" 
-                                                   min="0" 
-                                                   placeholder="0.00"
-                                                   value="${set.suggested_price || ''}"
-                                                   required>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                `;
+                        <tr>
+                            <td class="align-middle">
+                                <strong>${set.design}</strong> | ${set.color}
+                            </td>
+                            <td class="text-center align-middle">
+                                <span class="badge badge-info">${set.size_set}</span>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text font-weight-bold">₹</span>
+                                    </div>
+                                    <input type="number" 
+                                       name="global_prices[${set.set_id}]" 
+                                       class="form-control font-weight-bold global-price-input" 
+                                       step="0.01" 
+                                       min="0" 
+                                       value="${set.suggested_price || 0}"
+                                       required>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
                 });
 
                 pricingHtml += `</tbody></table></div></div></div>`;
@@ -651,7 +640,7 @@
 
                         carton.sets.forEach(set => {
                             itemsHtml += `
-                                <tr class="carton-set-row" data-set-id="${set.set_id}" data-qty="${set.total_qty}">
+                                <tr class="carton-set-row" data-set-id="${set.set_id}" data-qty="${set.total_qty}" data-price="${set.suggested_price}">
                                     <td>
                                         <strong>${set.design}</strong> 
                                         <span class="text-secondary">| ${set.color}</span>

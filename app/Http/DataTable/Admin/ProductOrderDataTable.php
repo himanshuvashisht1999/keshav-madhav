@@ -76,7 +76,7 @@ class ProductOrderDataTable  {
     }
 
     public function indexListOrder($request){
-        $queue = OrderMain::query();
+        $queue = OrderMain::query()->where('order_main.status', '!=', 0);
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -142,12 +142,20 @@ class ProductOrderDataTable  {
             //     return number_format($queue->total_amount, 2) ?? '0.00';
             // })
             ->addColumn('action', function ($queue) {
-				$parameter = $queue->id;
+                $parameter = $queue->id;
+
+                $view = '<a href="' . route('admin.product_order.indexOrderSet',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="View"><i class="fas fa-eye text-muted" title="View"></i></a>';
+                $report = '<a href="' . route('admin.report.order-summary.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Report" data-original-title="Report"><i class="fas fa-chart-bar text-muted" title="Report"></i></a>';
                 
-                $view = '<a href="' . route('admin.product_order.indexOrderSet',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>
-                <a href="' . route('admin.report.order-summary.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Report" data-original-title="Report"><i class="fas fa-chart-bar text-muted" title="Report"></i></a>
-                ';
-                return $view;
+                $edit = '';
+                $delete = '';
+                
+                if ($queue->orderCuttingStages()->count() == 0) {
+                    $edit = '<a href="' . route('admin.product_order.editOrderMain',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted" title="Edit"></i></a>';
+                    $delete = '<a href="javascript:void(0);" onclick="deleteOrder('.$parameter.')" class="" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash text-danger" title="Delete"></i></a>';
+                }
+
+                return $view . ' ' . $edit . ' ' . $report . ' ' . $delete;
             })
             
             ->rawColumns(['action','master_customer_id', 'total_pcs', 'dispatch_pcs', 'created_at','status'])
@@ -206,52 +214,50 @@ class ProductOrderDataTable  {
                 return $name ?? '';
             })
             ->addColumn('assign_to', function ($queue) {
-                $assign = $queue->stage_master_unit_id;
-                if ($assign) {
-                    
-                    return '<span class="badge badge-success">'.$queue->stage_master_unit?->name.'</span>';
+                // If the entire set is NOT assigned, or IF there's still partial remaining
+                if ($queue->remain_total_quantity <= 0) {
+                    return '<span class="badge badge-success">Fully Assigned</span>';
                 }
-                $color = $queue->colors->name;
+
+                $color = $queue->colors->name ?? '';
                 $set_size = $queue->size_measurement;
                 return '
                     <button 
                         class="btn btn-sm btn-primary assign-btn"
                         data-id="'.$queue->id.'"
                         data-design="'.$queue->design_number.'"
-                        data-set-size="'.$set_size->set_size.'"
-                        data-set-size-group="'.$set_size->size_group.'"
+                        data-set-size="'.$set_size?->set_size.'"
+                        data-set-size-group="'.$set_size?->size_group.'"
                         data-color="'.$color.'"
-                        data-total="'.$queue->set_quantity * $queue->no_of_pcs.'">
+                        data-total="'.$queue->total_quantity.'"
+                        data-remain="'.$queue->remain_total_quantity.'">
                         Assign
                     </button>';
             })
 
             ->addColumn('status', function ($queue) {
-
-                $status = $queue->status;
-
-                if ($status == 2) {
+                if ($queue->remain_total_quantity <= 0) {
                     return '<span class="badge badge-success">Assigned</span>';
-                }else{
+                } elseif ($queue->remain_total_quantity < $queue->total_quantity) {
+                    return '<span class="badge badge-warning">Partial</span>';
+                } else {
                     return '<span class="badge badge-primary">Not Assigned</span>';
                 }
-
             })
 
             ->addColumn('total_qty', function ($queue) {
-                return $queue->set_quantity * $queue->no_of_pcs;
+                return $queue->total_quantity;
             })
             
             ->addColumn('action', function ($queue) {
-				$parameter = $queue->id;
-                $status = $queue->status;
-
-                if ($status == 2) {
-                    $view = '<a href="' . route('admin.product_order.viewCuttingSlip',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Download">View</a>';
-                }else{
+                $parameter = $queue->id;
+                
+                // Show View/Download if at least some quantity has been assigned
+                if ($queue->remain_total_quantity < $queue->total_quantity || $queue->status == 2) {
+                    $view = '<a href="' . route('admin.product_order.viewCuttingSlip', ['id' => $parameter]) . '" class="btn btn-xs btn-info" data-toggle="tooltip" title="View Assignments">View</a>';
+                } else {
                     $view = '';
                 }
-                
                 
                 return $view;
             })

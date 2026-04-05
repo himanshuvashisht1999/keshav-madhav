@@ -180,6 +180,13 @@
     @endphp
 
     {{-- ================= INFO HEADER ================= --}}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0 font-weight-bold" style="color: #1e293b;">Lot Details</h4>
+        <a href="{{ route('owner.lot-details.pdf', ['lot_no' => $lot_no]) }}" class="btn btn-primary px-4 shadow-sm" style="border-radius: 8px;">
+            <i class="fas fa-file-pdf mr-2"></i> Download PDF
+        </a>
+    </div>
+
     <div class="info-app-grid">
         <div class="info-app-card">
             <label>Lot Number</label>

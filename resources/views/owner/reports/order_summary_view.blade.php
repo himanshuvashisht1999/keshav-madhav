@@ -349,10 +349,7 @@
                         <div class="small text-muted font-weight-bold text-uppercase mb-1">Expected Delivery Date</div>
                         <div class="font-weight-bold text-dark">{{ date('d M, Y', strtotime($data['order']->expected_delivery_date ?? $data['order']->created_at)) }}</div>
                     </div>
-                    <div class="col-md-2">
-                        <div class="small text-muted font-weight-bold text-uppercase mb-1">Order Type</div>
-                        <div class="font-weight-bold text-dark">{{ ucfirst($data['order']->order_type ?? '-') }}</div>
-                    </div>
+
                     <div class="col-md-2">
                         <div class="small text-muted font-weight-bold text-uppercase mb-1">Order File</div>
                         <div class="font-weight-bold text-dark">-</div>

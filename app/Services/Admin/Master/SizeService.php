@@ -9,6 +9,8 @@ use App\Models\MasterSizeSelection;
 use App\Http\DataTable\Admin\Master\SizeDataTable as DataTable;
 
 class SizeService {
+    protected $datatable;
+    protected $master_size;
     public function __construct(
         DataTable $datatable,
         MasterSize $master_size
@@ -50,6 +52,12 @@ class SizeService {
 
     public function getSizes(){
         $data = MasterSize::where('status',1)->get();
+        return $data;
+    }
+    public function delete(Request $request){
+        $data = MasterSize::where('id',$request->id)->update([
+            'status' => 3,
+        ]);
         return $data;
     }
 

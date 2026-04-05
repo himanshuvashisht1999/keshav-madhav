@@ -10,7 +10,7 @@ class EmployeeController extends Controller
 {
     public function index()
     {
-        $employees = Employee::orderBy('name')->get();
+        $employees = Employee::where('status', '!=', 3)->orderBy('name')->get();
         return view('admin.employees.index', compact('employees'));
     }
 
@@ -24,6 +24,7 @@ class EmployeeController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
+            'status' => 'required'
         ]);
 
         Employee::create($request->all());
@@ -41,6 +42,7 @@ class EmployeeController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
+            'status' => 'required'
         ]);
 
         $employee->update($request->all());
@@ -50,7 +52,7 @@ class EmployeeController extends Controller
 
     public function destroy(Employee $employee)
     {
-        $employee->delete();
+        $employee->update(['status' => 3]);
         return redirect()->route('admin.master.employees.index')->with('success', 'Employee deleted successfully.');
     }
 }

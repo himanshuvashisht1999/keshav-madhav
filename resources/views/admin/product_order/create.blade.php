@@ -62,14 +62,14 @@
 
                     <div class="row">
 
-                        <div class="col-md-12 mb-3">
+                        <div class="col-md-12 mb-3 d-none">
                             <label class="d-block">Order Type</label>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="order_type" id="order_type_domestic" value="domestic" checked>
+                                <input class="form-check-input" type="radio" name="order_type" id="order_type_domestic" value="domestic">
                                 <label class="form-check-label" for="order_type_domestic">Domestic</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="order_type" id="order_type_corporate" value="corporate">
+                                <input class="form-check-input" type="radio" name="order_type" id="order_type_corporate" value="corporate" checked>
                                 <label class="form-check-label" for="order_type_corporate">Corporate</label>
                             </div>
                         </div>
@@ -714,8 +714,10 @@ function loadSalesOrderMasterData() {
             designSelect.empty().append('<option value="">Select Design</option>');
 
             res.products.forEach(item => {
+                let seriesName = item.series ? item.series.name : '';
+                let garmentName = item.name_of_garment ? item.name_of_garment : '';
                 designSelect.append(
-                    `<option value="${item.id}">${item.design_number}</option>`
+                    `<option value="${item.id}">${item.design_number} (${seriesName} ${garmentName})</option>`
                 );
             });
 
@@ -741,7 +743,7 @@ function loadSalesOrderMasterData() {
 
             res.colours.forEach(item => {
                 colourSelect.append(
-                    `<option value="${item.id}">${item.sku}</option>`
+                    `<option value="${item.id}">${item.name}</option>`
                 );
             });
 

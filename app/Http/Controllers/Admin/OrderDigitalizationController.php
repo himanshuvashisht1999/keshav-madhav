@@ -69,7 +69,11 @@ class OrderDigitalizationController extends Controller
     {
         $data = $this->service->storeRollsAssign($request);
         if ($data['status_code'] == 1) {
-            return redirect()->route('admin.uploaded-slips.index')->withSuccess($data['message']);
+            if ($request->is_final == 1) {
+                return redirect()->route('admin.uploaded-slips.index')->withSuccess($data['message']);
+            } else {
+                return redirect()->back()->withSuccess($data['message']);
+            }
         } else {
             return redirect()->back()->withError($data['message']);
         }
@@ -168,9 +172,7 @@ class OrderDigitalizationController extends Controller
         $production_slip_digitization = $this->service->cutting_slip($request);
 
         if ($production_slip_digitization) {
-            if ($production_slip_digitization->status == 1) {
-                return redirect()->back()->withError('Already digitized slip.');
-            }
+            // Remove the block that redirects if status is 1
             $response['orders'] = $this->service->orders($production_slip_digitization->stage_master_unit_id);
             $response['lots_stitching'] = $this->service->getLotsBySlip(4, $request->slip_id);
             $response['lots_printing'] = $this->service->getLotsBySlip(1, $request->slip_id);
@@ -220,9 +222,11 @@ class OrderDigitalizationController extends Controller
         $result = $this->service->storeStitching($request);
 
         if ($result['status_code'] == 1) {
-            return redirect()->route('admin.uploaded-slips.index')->withSuccess($result['message']);
-            // return redirect()->route('admin.order_digitalization.cutting-master')
-            //     ->with('success', $result['message']);
+            if ($request->is_final == 1) {
+                return redirect()->route('admin.uploaded-slips.index')->withSuccess($result['message']);
+            } else {
+                return redirect()->back()->withSuccess($result['message']);
+            }
         } else {
             return redirect()->back()
                 ->with('error', $result['message']);
@@ -234,9 +238,11 @@ class OrderDigitalizationController extends Controller
         $result = $this->service->storePrinting($request);
 
         if ($result['status_code'] == 1) {
-            return redirect()->route('admin.uploaded-slips.index')->withSuccess($result['message']);
-            // return redirect()->route('admin.order_digitalization.cutting-master')
-            //     ->with('success', $result['message']);
+            if ($request->is_final == 1) {
+                return redirect()->route('admin.uploaded-slips.index')->withSuccess($result['message']);
+            } else {
+                return redirect()->back()->withSuccess($result['message']);
+            }
         } else {
             return redirect()->back()
                 ->with('error', $result['message']);
@@ -278,7 +284,7 @@ class OrderDigitalizationController extends Controller
 
     public function getLotDetailsForHandSlip(Request $request)
     {
-        $details = $this->service->getLotDetailsForHandSlip($request->lot_no, $request->from_stage_id);
+        $details = $this->service->getLotDetailsForHandSlip($request->lot_no, $request->from_stage_id, $request->movement_type);
         return response()->json($details);
     }
 
@@ -286,8 +292,11 @@ class OrderDigitalizationController extends Controller
     {
         $result = $this->service->storeHandSlip($request);
         if ($result['status_code'] == 1) {
-            return redirect()->route('admin.uploaded-slips.index')->withSuccess($result['message']);
-            // return redirect()->route('admin.order_digitalization.create-slips-production')->withSuccess($result['message']);
+            if ($request->is_final == 1) {
+                return redirect()->route('admin.uploaded-slips.index')->withSuccess($result['message']);
+            } else {
+                return redirect()->back()->withSuccess($result['message']);
+            }
         } else {
             return redirect()->back()->withError($result['message']);
         }

@@ -109,8 +109,35 @@
                                 </div>
                             </div>
                             <?php
-                                $selectedItems = unserialize($data->items);
+                                $selectedItems = unserialize(optional($data)->items);
                             ?>
+                             <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">Balance</label>
+                                    <input type="number" step="0.01" name="balance" class="form-control" placeholder="Enter balance" value="{{ old('balance', abs($data->balance)) }}">
+                                    @if ($errors->has('balance'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('balance') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                     <label>Type</label>
+                                     <select name="type" class="form-control select2" style="width: 100%;">
+                                         <option value="Credit" {{ old('type', ($data->balance >= 0 ? 'Credit' : 'Debit')) == 'Credit' ? 'selected' : '' }}>Credit</option>
+                                         <option value="Debit" {{ old('type', ($data->balance >= 0 ? 'Credit' : 'Debit')) == 'Debit' ? 'selected' : '' }}>Debit</option>
+                                     </select>
+                                     @if ($errors->has('type'))
+                                         <span class="invalid-feedback d-block">
+                                         {{ $errors->first('type') }}
+                                         </span>
+                                     @endif
+                                 </div>
+                             </div>
+
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Items</label>
@@ -132,9 +159,8 @@
                                 <div class="form-group">
                                     <label>Status</label>
                                     <select name="status" class="form-control select2" style="width: 100%;">
-                                        <!-- <option value="">Select</option> -->
-                                        <option value="1" {{$data->status == 1 ? 'selected' : ''}}>Active</option>
-                                        <option value="0" {{$data->status == 0 ? 'selected' : ''}}>Inactive</option>
+                                        <option value="1" {{optional($data)->status == 1 ? 'selected' : ''}}>Active</option>
+                                        <option value="0" {{optional($data)->status == 0 ? 'selected' : ''}}>Inactive</option>
                                     </select>
                                     @if ($errors->has('status'))
                                         <span class="invalid-feedback d-block">
@@ -143,20 +169,7 @@
                                     @endif
                                 </div>
                             </div>
-                            <!-- <div class="col-md-6">
-                                <img class="" src="{{$data->image}}" alt="Preview" id="image-preview" height="80px" width="80px">
-                            </div> -->
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="sku">SKU</label>
-                                    <input type="text" name="sku" id="sku_n" class="form-control" placeholder="Auto-generated SKU" value="{{$data->sku}}" readonly>
-                                    @if ($errors->has('sku'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('sku') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
+
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">Description</label>
@@ -184,74 +197,6 @@
     </section>
 </div>
 <script>
-    function previewImage() {
-        var imageInput = document.getElementById('image-input');
-        var imagePreview = document.getElementById('image-preview');
-        
-        if (imageInput.files && imageInput.files[0]) {
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                imagePreview.src = e.target.result;
-            };
-            
-            reader.readAsDataURL(imageInput.files[0]);
-        } else {
-            // If no file is selected or supported, clear the preview
-            imagePreview.src = "";
-        }
-    }
-
-</script>
-<script>
-    function generateSKU() {
-        let name = document.querySelector("input[name='name']").value.trim();
-        let phone = document.querySelector("input[name='phone']").value.trim();
-        let address = document.querySelector("input[name='address']").value.trim();
-        
-        // Get first 4 letters of name (fresh every time)
-        let part1 = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-
-        // Get last 3 digits of phone
-        let part2 = phone.replace(/[^0-9]/g, '');
-        part2 = part2.length >= 3 ? part2.slice(-3) : part2;
-
-        // Combine
-        let sku = 'VENDOR-' + part1 + "-" + part2;
-
-        let skuInput = document.getElementById("sku");
-
-        // Only overwrite if user has not manually typed in SKU
-        if (!skuInput.dataset.edited || skuInput.value === "") {
-            skuInput.value = sku;
-        }
-    }
-
-    // Attach auto-generate on typing (name, phone, address)
-    document.querySelector("input[name='name']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
-
-    document.querySelector("input[name='phone']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
-
-    document.querySelector("input[name='address']").addEventListener("input", function() {
-        let skuInput = document.getElementById("sku");
-        if (!skuInput.dataset.edited) {
-            generateSKU();
-        }
-    });
-
-    // Mark as manually edited when user types in SKU
-    document.getElementById("sku").addEventListener("input", function() {
-        this.dataset.edited = true;
-    });
 </script>
 
 @endsection

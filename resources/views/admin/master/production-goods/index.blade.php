@@ -46,6 +46,9 @@
                         <td>
                             <input type="text" class="form-control" name="name_of_garment" id="name_of_garment" autocomplete="off">
                         </td>
+                        <td>
+                            <input type="text" class="form-control" name="series_name" id="series_name" autocomplete="off">
+                        </td>
                         {{-- <td>
                             <select class="form-control" name="status" id="status" autocomplete="off">
                                 <option value="">ALL</option>
@@ -62,6 +65,7 @@
                     <!-- <th>Image</th> -->
                     <th>Design Number</th>
                     <th>Name</th>
+                    <th>Series Name</th>
                     {{-- <th>Status</th> --}}
                     <th>Action</th>
                   </tr>
@@ -100,6 +104,7 @@
                     d.id = $('#id').val();
                     d.name_of_garment = $('#name_of_garment').val();
                     d.design_number = $('#design_number').val();
+                    d.series_name = $('#series_name').val();
                     d.status = $('#status').val();
                 },
                 orderable: false
@@ -109,6 +114,7 @@
                 // {data: 'main_image', name: 'main_image', orderable: false, searchable: false},
                 {data: 'design_number', name: 'design_number'},
                 {data: 'name_of_garment', name: 'name_of_garment'},
+                {data: 'series_name', name: 'series_name'},
                // {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', searchable: false}
             ],
@@ -135,6 +141,10 @@
         });
 
         $('#name_of_garment').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+        $('#series_name').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });

@@ -41,7 +41,9 @@
                             <hr class="my-2 border-dashed">
                             <div class="d-flex justify-content-between">
                                 <span class="text-muted small">{{ $order->total_qty }} Items</span>
-                                <span class="font-weight-bold text-primary">₹{{ number_format($order->grand_total, 2) }}</span>
+                                @if(Auth::guard('sales_agent')->user()->see_price)
+                                    <span class="font-weight-bold text-primary">₹{{ number_format($order->grand_total, 2) }}</span>
+                                @endif
                             </div>
                         </div>
                     </div>

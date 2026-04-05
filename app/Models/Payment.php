@@ -20,11 +20,30 @@ class Payment extends Model
         'amount',
         'payment_date',
         'payment_mode',
+        'payment_method_type',
+        'payment_method_id',
+        'payment_type_id',
         'reference_id',
         'remarks',
         'image',
         'created_by',
     ];
+
+    /**
+     * Get the payment method (Bank or Cash).
+     */
+    public function paymentMethod()
+    {
+        return $this->morphTo('paymentMethod', 'payment_method_type', 'payment_method_id');
+    }
+
+    /**
+     * Get the payment type (master category).
+     */
+    public function paymentType()
+    {
+        return $this->belongsTo(PaymentType::class, 'payment_type_id');
+    }
 
     /**
      * Get the party that the payment is for (Vendor, SalesAgent, etc.).

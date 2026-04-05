@@ -231,4 +231,27 @@ function getOrderDispatchData($orderMainId)
 
 
 
+function getIndianCurrency($number)
+{
+    $decimal = round($number - floor($number), 2);
+    $money = (string)floor($number);
+    $length = strlen($money);
+    $delimiter = '';
+    $money = strrev($money);
+
+    for ($i = 0; $i < $length; $i++) {
+        if (($i == 3 || ($i > 3 && ($i - 1) % 2 == 0)) && $i != $length) {
+            $delimiter .= ',';
+        }
+        $delimiter .= $money[$i];
+    }
+
+    $result = strrev($delimiter);
+    $decimal_str = ($decimal > 0) ? substr(strrchr((string)($decimal + 1), "."), 1) : '00';
+    if(strlen($decimal_str) == 1) $decimal_str .= '0';
+    if(empty($decimal_str)) $decimal_str = '00';
+
+    return $result . "." . $decimal_str;
+}
+
 ?>

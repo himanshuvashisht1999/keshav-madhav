@@ -144,6 +144,13 @@
                     action: function (e, dt, node, config) {
                         window.location.href = "{{ route('admin.sales_order.create') }}";
                     }
+                },
+                {
+                    text: 'Create Domestic Order',
+                    className: 'btn-datatable btn-success ml-2',
+                    action: function (e, dt, node, config) {
+                        window.location.href = "{{ route('admin.sales_order.create_domestic') }}";
+                    }
                 }
             ]
         });
@@ -182,10 +189,25 @@
             oTable.draw();
             e.preventDefault();
         });
-        
-        
 
     });
+
+    function deleteOrder(id){
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, delete it!"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "{{ route('admin.product_order.deleteOrderMain', ['id' => '']) }}" + id;
+            }
+        });
+    }
+
 
 
 

@@ -1,353 +1,322 @@
 @extends('admin.layouts.app')
 @section('content')
 <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Products Specification</h1>
+                    <h1>Edit Product Specification</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Edit Product Specification</li>
+                        <li class="breadcrumb-item active">Edit Product</li>
                     </ol>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Main content -->
     <section class="content">
         <div class="container-fluid">
-            <!-- SELECT2 EXAMPLE -->
             <div class="card card-default">
-                <!-- <div class="card-header">
-                    <h3 class="card-title">Edit Product Specification</h3>
-                </div> -->
                 <form action="{{route('admin.master.production-goods.update')}}" method="post" enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="id" value="{{$data->id}}">
+                    <input type="hidden" name="id" value="{{ $data->id }}">
                     <div class="card-body">
                         <div class="row">
-                            <input type="hidden" name="company_id" id="company_id" value="2">
+                            <input type="hidden" name="company_id" value="2" id="company_id">
 
-                            {{-- Design Number --}}
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <div class="form-group">
-                                    <label for="design_number">Design Number</label>
-                                    <input type="text" name="design_number" id="design_number" class="form-control"
-                                           placeholder="Enter design number" value="{{$data->design_number}}">
-                                    @if ($errors->has('design_number'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('design_number') }}
-                                        </span>
-                                    @endif
+                                    <label>Design Number</label>
+                                    <input type="text" name="design_number" class="form-control" value="{{ $data->design_number }}">
                                 </div>
                             </div>
 
-                            {{-- Product Name --}}
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <div class="form-group">
-                                    <label for="name_of_garment">Product Name</label>
-                                    <input type="text" name="name_of_garment" id="name_of_garment" class="form-control"
-                                           placeholder="Enter name of garment" value="{{$data->name_of_garment}}">
-                                    @if ($errors->has('name_of_garment'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('name_of_garment') }}
-                                        </span>
-                                    @endif
+                                    <label>Series Name</label>
+                                    <select name="master_series_id" id="master_series_id" class="form-control select2" style="width: 100%;">
+                                        <option value="">Select Series</option>
+                                        @foreach($series_names as $series)
+                                            <option value="{{ $series->id }}" {{ $data->master_series_id == $series->id ? 'selected' : '' }}>{{ $series->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
 
-                            <input type="hidden" name="is_printing" value="{{$data->is_printing}}">
-                            <input type="hidden" name="is_embroidery" value="{{$data->is_embroidery}}">
-
-                           
-                            <input type="hidden" name="sku" value="{{$data->sku}}">
-
-                            {{-- Main Image (Edit) --}}
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <div class="form-group">
-                                    <label for="main_image">Main Image</label>
-                                    <input type="file" name="main_image" id="main_image" class="form-control" accept="image/*">
-
-                                    @if ($errors->has('main_image'))
-                                        <span class="invalid-feedback d-block">
-                                            {{ $errors->first('main_image') }}
-                                        </span>
-                                    @endif
-
-                                    
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                
-
-                                {{-- OLD stored main image (under the preview) --}}
-                                @php
-                                    $mainImage = optional($data->images->where('is_main', 1)->first());
-                                @endphp
-                                <div class="mt-2">
-                                    <!-- <label class="d-block mb-1">Current Main Image</label> -->
-                                    <img
-                                        src="{{ $mainImage ? $mainImage->image : asset('assets/products/default-image.png') }}"
-                                        alt="Current main image"
-                                        class="img-thumbnail"
-                                        id="main_image_preview"
-                                        style="max-height: 160px;">
+                                    <label>Brand</label>
+                                    <select name="brand_id" class="form-control select2" style="width: 100%;">
+                                        <option value="">Select Brand</option>
+                                        @foreach($brands as $brand)
+                                            <option value="{{ $brand->id }}" {{ $data->brand_id == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
 
-                            <div class="col-md-12">
-                                <div class="mt-2" style="float:right">
-                                    <button type="submit" class="btn btn-primary">Submit</button>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Product Name</label>
+                                    <input type="text" name="name_of_garment" class="form-control" value="{{ $data->name_of_garment }}">
                                 </div>
                             </div>
 
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Fitting</label>
+                                    <select name="master_product_fitting_id" class="form-control select2" style="width: 100%;">
+                                        <option value="">Select Fitting</option>
+                                        @foreach($fittings as $fit)
+                                            <option value="{{ $fit->id }}" {{ $data->master_product_fitting_id == $fit->id ? 'selected' : '' }}>{{ $fit->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Pattern</label>
+                                    <select name="master_pattern_id" class="form-control select2" style="width: 100%;">
+                                        <option value="">Select Pattern</option>
+                                        @foreach($garment_patterns as $p)
+                                            <option value="{{ $p->id }}" {{ $data->master_pattern_id == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-md-12 mt-3">
+                                <div class="card card-secondary">
+                                    <div class="card-header">
+                                        <h3 class="card-title">Size Sets & Pricing</h3>
+                                        <div class="card-tools">
+                                            <button type="button" class="btn btn-primary btn-sm add-size-set">Add More Size Set</button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body" id="size-set-container">
+                                        @php $sIdx = 0; @endphp
+                                        @forelse($data->variants as $variant)
+                                            <div class="size-set-block mb-4 p-3 border rounded bg-light">
+                                                <div class="row align-items-end mb-3">
+                                                    <div class="col-md-4">
+                                                        <input type="hidden" name="variant_ids[]" value="{{ $variant->id }}">
+                                                        <div class="form-group mb-0">
+                                                            <label>Size Set</label>
+                                                            <select name="size_sets[]" class="form-control select2 size-set-select">
+                                                                <option value="">Select Size Set</option>
+                                                                @foreach($sizes as $size)
+                                                                    <option value="{{ $size->id }}" {{ $variant->master_size_measurement_id == $size->id ? 'selected' : '' }}>
+                                                                        {{ $size->name }} ({{ $size->set_size }})
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="form-group mb-0">
+                                                            <label>MRP (for this set)</label>
+                                                            <input type="number" name="mrps[]" class="form-control mrp-input" value="{{ $variant->mrp }}" step="0.01">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="form-group mb-0">
+                                                            <label>Set Image</label>
+                                                            <input type="file" name="size_set_images[]" class="form-control-file size-set-image-input" accept="image/*">
+                                                            @if($variant->image)
+                                                                <a href="{{ asset('assets/products/'.$variant->image) }}" target="_blank">
+                                                                    <img src="{{ asset('assets/products/'.$variant->image) }}" class="img-thumbnail mt-1" style="max-height: 40px;">
+                                                                </a>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-2 text-right">
+                                                        <button type="button" class="btn btn-danger btn-sm remove-size-set"><i class="fa fa-trash"></i> Remove Set</button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="color-items-container ml-4">
+                                                    <h6>Colors & Images</h6>
+                                                    @php $cIdx = 0; @endphp
+                                                    @foreach($variant->items as $item)
+                                                        <div class="color-item-row row mb-2 align-items-center border-bottom pb-2">
+                                                            <input type="hidden" name="variant_item_ids[{{ $sIdx }}][{{ $cIdx }}]" value="{{ $item->id }}">
+                                                            <div class="col-md-4">
+                                                                <label class="small">Color</label>
+                                                                <select name="variant_colors[{{ $sIdx }}][{{ $cIdx }}]" class="form-control select2 color-select">
+                                                                    <option value="">Select Color</option>
+                                                                    @foreach($colors as $color)
+                                                                        <option value="{{ $color->id }}" {{ $item->master_color_id == $color->id ? 'selected' : '' }}>
+                                                                            {{ $color->name }}
+                                                                        </option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="small text-muted d-block">Change Image</label>
+                                                                <input type="file" name="variant_images[{{ $sIdx }}][{{ $cIdx }}]" class="form-control-file d-inline variant-image-input" accept="image/*" style="width: auto;">
+                                                                @if($item->image)
+                                                                    <a href="{{ asset('assets/products/'.$item->image) }}" target="_blank">
+                                                                        <img src="{{ asset('assets/products/'.$item->image) }}" class="img-thumbnail ml-2" style="max-height: 40px;">
+                                                                    </a>
+                                                                @endif
+                                                            </div>
+                                                            <div class="col-md-2 text-right">
+                                                                <button type="button" class="btn btn-warning btn-sm remove-color-item"><i class="fa fa-times"></i></button>
+                                                            </div>
+                                                        </div>
+                                                        @php $cIdx++; @endphp
+                                                    @endforeach
+                                                </div>
+                                                <div class="ml-4 mt-2">
+                                                    <button type="button" class="btn btn-info btn-sm add-color-item" data-set-index="{{ $sIdx }}"><i class="fa fa-plus"></i> Add Another Color</button>
+                                                </div>
+                                            </div>
+                                            @php $sIdx++; @endphp
+                                        @empty
+                                            <div class="size-set-block mb-4 p-3 border rounded bg-light">
+                                                <p class="text-muted">No variants defined. Click "Add More" to create one.</p>
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-12 text-right mt-3">
+                                <button type="submit" class="btn btn-primary btn-lg px-5 shadow">Update Product Specification</button>
+                            </div>
                         </div>
                     </div>
-
                 </form>
             </div>
         </div>
     </section>
 </div>
 
-{{-- FABRIC JS --}}
+<script src="{{ asset('admin/plugins/jquery/jquery.min.js') }}"></script>
 <script>
-    $(document).ready(function () {
+    $(document).ready(function() {
+        function reindexAll() {
+            $('.size-set-block').each(function(sIdx) {
+                $(this).find('.add-color-item').attr('data-set-index', sIdx);
+                $(this).find('input[name="variant_ids[]"]').val($(this).find('input[name="variant_ids[]"]').val() || ''); // Keep if exists, else empty
+                $(this).find('.size-set-select').attr('name', 'size_sets[]');
+                $(this).find('.mrp-input').attr('name', 'mrps[]');
+                $(this).find('.size-set-image-input').attr('name', 'size_set_images[]');
 
-        // Add More Fabric
-        $(document).on('click', '.add-fabric', function () {
-            let newRow = `
-                <div class="fabric-row row mb-2">
-                    <input type="hidden" name="bom_id[]" value="">
-                    <div class="col-md-5">
-                        <div class="form-group">
-                            <select name="fabric_sku[]" class="form-control select2" style="width: 100%;" required>
-                                <option value="">Select Fabric</option>
-                                @foreach($fabrics as $single_data)
-                                    <option value="{{$single_data->sku}}">{{$single_data->sku}}</option>
+                $(this).find('.color-item-row').each(function(cIdx) {
+                    $(this).find('input[name^="variant_item_ids"]').attr('name', `variant_item_ids[${sIdx}][${cIdx}]`);
+                    $(this).find('.color-select').attr('name', `variant_colors[${sIdx}][${cIdx}]`);
+                    $(this).find('.variant-image-input').attr('name', `variant_images[${sIdx}][${cIdx}]`);
+                });
+                let colorRows = $(this).find('.color-item-row');
+                colorRows.find('.remove-color-item').prop('disabled', colorRows.length === 1);
+            });
+            let setBlocks = $('.size-set-block');
+            setBlocks.find('.remove-size-set').prop('disabled', setBlocks.length === 1);
+        }
+
+        $('.add-size-set').on('click', function() {
+            let sIdx = $('.size-set-block').length;
+            let blockHtml = `
+                <div class="size-set-block mb-4 p-3 border rounded bg-light">
+                    <div class="row align-items-end mb-3">
+                        <div class="col-md-4 text-left">
+                            <input type="hidden" name="variant_ids[]" value="">
+                            <label>Size Set</label>
+                            <select name="size_sets[]" class="form-control select2 size-set-select">
+                                <option value="">Select Size Set</option>
+                                @foreach($sizes as $size)
+                                    <option value="{{ $size->id }}">{{ $size->name }} ({{ $size->set_size }})</option>
                                 @endforeach
                             </select>
                         </div>
+                        <div class="col-md-3">
+                             <label>MRP</label>
+                            <input type="number" name="mrps[]" class="form-control mrp-input" placeholder="0.00" step="0.01">
+                        </div>
+                        <div class="col-md-3">
+                             <label>Set Image</label>
+                            <input type="file" name="size_set_images[]" class="form-control-file size-set-image-input" accept="image/*">
+                        </div>
+                        <div class="col-md-2 text-right">
+                            <button type="button" class="btn btn-danger btn-sm remove-size-set"><i class="fa fa-trash"></i> Remove Set</button>
+                        </div>
                     </div>
-                    <div class="col-md-5">
-                        <input type="number" name="fabric_meter[]" class="form-control" placeholder="Enter meter" step="0.01" min="0" required>
+                    <div class="color-items-container ml-4">
+                        <h6>Colors & Images</h6>
+                        <div class="color-item-row row mb-2 align-items-center border-bottom pb-2">
+                            <div class="col-md-4">
+                                <select name="variant_colors[${sIdx}][0]" class="form-control select2 color-select">
+                                    <option value="">Select Color</option>
+                                    @foreach($colors as $color)
+                                        <option value="{{ $color->id }}">{{ $color->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="file" name="variant_images[${sIdx}][0]" class="form-control-file variant-image-input" accept="image/*">
+                            </div>
+                            <div class="col-md-2 text-right">
+                                <button type="button" class="btn btn-warning btn-sm remove-color-item" disabled><i class="fa fa-times"></i></button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-2">
-                        <button type="button" class="btn btn-danger remove-fabric"><i class="fa fa-minus"></i></button>
+                    <div class="ml-4 mt-2">
+                        <button type="button" class="btn btn-info btn-sm add-color-item" data-set-index="${sIdx}"><i class="fa fa-plus"></i> Add Another Color</button>
                     </div>
                 </div>
             `;
-            $('#fabric-container').append(newRow);
-            $('.select2').select2(); // reinitialize Select2 for new elements
+            $('#size-set-container').append(blockHtml);
+            $('#size-set-container .size-set-block:last .select2').select2({ theme: 'bootstrap4' });
+            reindexAll();
         });
 
-        // Remove Fabric Row
-        $(document).on('click', '.remove-fabric', function () {
-            $(this).closest('.fabric-row').remove();
-        });
-
-    });
-</script>
-
-{{-- STAGES + RADIO INIT --}}
-<script>
-$(document).ready(function () {
-    // Initialize Select2 for existing selects
-    $('.select2').select2();
-
-    // Add new stage row
-    let indexRow = {{ $data->product_stages->whereNotIn('master_stage_id',[1,2])->count() }};
-    $(document).on('click', '.add-stage', function () {
-        indexRow++;
-        let newRow = `
-            <div class="stage-row row mb-2">
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <select name="product_stage_id[]" class="form-control select2 stage-select" style="width: 100%;" required>
-                            <option value="">Select Stage</option>
-                            @foreach($product_stages as $stage)
-                                <option value="{{ $stage->id }}">{{ $stage->name }}</option>
+        $(document).on('click', '.add-color-item', function() {
+            let sIdx = $(this).attr('data-set-index');
+            let container = $(this).closest('.size-set-block').find('.color-items-container');
+            let cIdx = container.find('.color-item-row').length;
+            let rowHtml = `
+                <div class="color-item-row row mb-2 align-items-center border-bottom pb-2">
+                    <input type="hidden" name="variant_item_ids[${sIdx}][${cIdx}]" value="">
+                    <div class="col-md-4">
+                        <select name="variant_colors[${sIdx}][${cIdx}]" class="form-control select2 color-select">
+                            <option value="">Select Color</option>
+                            @foreach($colors as $color)
+                                <option value="{{ $color->id }}">{{ $color->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <input type="radio" name="printing_stage_after" class="printing-radio" id="is_printing_${indexRow}">
-                        <label for="is_printing_${indexRow}">Printing</label>
+                    <div class="col-md-6">
+                        <input type="file" name="variant_images[${sIdx}][${cIdx}]" class="form-control-file variant-image-input" accept="image/*">
+                    </div>
+                    <div class="col-md-2 text-right">
+                        <button type="button" class="btn btn-warning btn-sm remove-color-item"><i class="fa fa-times"></i></button>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <input type="radio" class="embroidery-radio" name="embroidery_stage_after" id="is_embroidery_${indexRow}">
-                        <label for="is_embroidery_${indexRow}">Embroidery</label>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-danger remove-stage"><i class="fa fa-minus"></i></button>
-                </div>
-            </div>
-        `;
-        $('#stages-container').append(newRow);
-        $('.select2').select2(); // re-init Select2 for new rows
-    });
+            `;
+            container.append(rowHtml);
+            container.find('.color-item-row:last .select2').select2({ theme: 'bootstrap4' });
+            reindexAll();
+        });
 
-    // Remove stage row
-    $(document).on('click', '.remove-stage', function () {
-        $(this).closest('.stage-row').remove();
-    });
-
-    // When clicking printing/embroidery radio, set value = current row stage id
-    $(document).on('click', '.printing-radio, .embroidery-radio', function () {
-        let row = $(this).closest('.stage-row');
-        let stageId = row.find('.stage-select').val();
-        $(this).val(stageId);
-    });
-
-    // When changing stage select, update radio values for that row
-    $(document).on('change', '.stage-select', function () {
-        let stageId = $(this).val();
-        let row = $(this).closest('.stage-row');
-
-        row.find('.printing-radio').val(stageId);
-        row.find('.embroidery-radio').val(stageId);
-    });
-
-    // After edit load: pre-check saved printing/embroidery stages
-    $('.stage-row').each(function () {
-        let row = $(this);
-        let stageId = row.find('.stage-select').val();
-
-        row.find('.printing-radio').val(stageId);
-        row.find('.embroidery-radio').val(stageId);
-
-        let savedPrint = row.data('printing');
-        let savedEmb   = row.data('embroidery');
-
-        if (savedPrint == stageId) {
-            row.find('.printing-radio').prop('checked', true);
-        }
-        if (savedEmb == stageId) {
-            row.find('.embroidery-radio').prop('checked', true);
-        }
-    });
-});
-</script>
-
-{{-- COMPANY TOGGLE (Royal vs General) --}}
-<script>
-    $(document).ready(function () {
-        function toggleCompanyFields() {
-            var companyId = $('#company_id').val();
-
-            if (companyId == '2') { // Royal Jeans
-                $('.general')
-                    .hide()
-                    .find('input, select, textarea')
-                    .prop('disabled', true);
-
-                // hide stages section (they are auto on Royal)
-                $('.stages-wrapper').hide();
-            } else { // General or others
-                $('.general')
-                    .show()
-                    .find('input, select, textarea')
-                    .prop('disabled', false);
-
-                $('.stages-wrapper').show();
-            }
-        }
-
-        $('#company_id').on('change', toggleCompanyFields);
-
-        // Initial state on load
-        toggleCompanyFields();
-    });
-</script>
-
-<script>
-    $(document).ready(function () {
-        // Main image preview
-        $('#main_image').on('change', function () {
-            const input = this;
-            const preview = $('#main_image_preview');
-
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    preview.attr('src', e.target.result)
-                           .show();
-                };
-                reader.readAsDataURL(input.files[0]);
-            } else {
-                preview.hide().attr('src', '#');
+        $(document).on('click', '.remove-size-set', function() {
+            if ($('.size-set-block').length > 1) {
+                $(this).closest('.size-set-block').remove();
+                reindexAll();
             }
         });
 
-        // Other images preview
-        $('#other_images').on('change', function () {
-            const container = $('#other_images_preview');
-            container.empty();
-
-            const files = this.files;
-            if (!files || !files.length) {
-                return;
+        $(document).on('click', '.remove-color-item', function() {
+            let container = $(this).closest('.color-items-container');
+            if (container.find('.color-item-row').length > 1) {
+                $(this).closest('.color-item-row').remove();
+                reindexAll();
             }
-
-            Array.from(files).forEach(function (file) {
-                if (!file.type.match('image.*')) return;
-
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const img = $('<img>')
-                        .attr('src', e.target.result)
-                        .addClass('img-thumbnail')
-                        .css({
-                            maxHeight: '120px',
-                            maxWidth: '120px',
-                            objectFit: 'cover'
-                        });
-
-                    const wrapper = $('<div>')
-                        .css({ position: 'relative' })
-                        .append(img);
-
-                    container.append(wrapper);
-                };
-                reader.readAsDataURL(file);
-            });
         });
     });
 </script>
-<script>
-    $(document).ready(function () {
-        // Click on cross button to delete existing image
-        $(document).on('click', '.existing-image-delete-btn', function () {
-            const id = $(this).data('id');
-            if (!id) return;
-
-            // Append hidden input once per image ID
-            if ($('#delete_image_' + id).length === 0) {
-                $('<input>').attr({
-                    type: 'hidden',
-                    name: 'delete_image_ids[]',
-                    value: id,
-                    id: 'delete_image_' + id
-                }).appendTo('form');
-            }
-
-            // Remove image from UI
-            $(this).closest('.existing-image-wrapper').fadeOut(200, function () {
-                $(this).remove();
-            });
-        });
-    });
-</script>
-
-
 @endsection
