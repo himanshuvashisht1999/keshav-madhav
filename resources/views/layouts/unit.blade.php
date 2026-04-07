@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -90,6 +91,7 @@
             .app-header {
                 padding-top: max(16px, env(safe-area-inset-top));
             }
+
             .bottom-nav {
                 padding-bottom: max(24px, env(safe-area-inset-bottom));
             }
@@ -179,14 +181,14 @@
             background: #1f2937;
             color: #e5e7eb;
         }
-        
+
         #modalPreview {
             width: 100%;
             border-radius: 16px;
             display: none;
             margin-bottom: 12px;
         }
-        
+
         #videoContainer {
             width: 100%;
             border-radius: 16px;
@@ -194,7 +196,7 @@
             background: #000;
             margin-bottom: 12px;
         }
-        
+
         #videoElement {
             width: 100%;
             display: block;
@@ -205,10 +207,11 @@
     @stack('styles')
     @php
         $stageId = session('unit_auth')['stage_id'] ?? 0;
-        $uploadLabel = ($stageId == 3) ? 'Fabric' : 'Piece'; 
+        $uploadLabel = ($stageId == 3) ? 'Fabric' : 'Piece';
         $uploadIcon = ($stageId == 3) ? 'fa-cut' : 'fa-tshirt';
     @endphp
 </head>
+
 <body>
 
     <div class="app-header">
@@ -231,17 +234,19 @@
 
     <!-- Bottom Navigation -->
     <div class="bottom-nav">
-        <a href="{{ route('unit.dashboard') }}" class="nav-item {{ request()->routeIs('unit.dashboard') ? 'active' : '' }}">
+        <a href="{{ route('unit.dashboard') }}"
+            class="nav-item {{ request()->routeIs('unit.dashboard') ? 'active' : '' }}">
             <i class="fas fa-home"></i>
             <span>Home</span>
         </a>
-        <a href="{{ route('unit.assignments') }}" class="nav-item {{ request()->routeIs('unit.assignments') ? 'active' : '' }}">
+        <a href="{{ route('unit.assignments') }}"
+            class="nav-item {{ request()->routeIs('unit.assignments') ? 'active' : '' }}">
             <i class="fas fa-clipboard-list"></i>
             <span>Tasks</span>
         </a>
-        <a href="javascript:void(0)" class="nav-item open-upload-modal" 
-           data-type="{{ (session('unit_auth')['stage_id'] ?? 0) == 3 ? '1' : '2' }}" 
-           data-product-set-id="" data-transaction-id="" data-transaction-type="production">
+        <a href="javascript:void(0)" class="nav-item open-upload-modal"
+            data-type="{{ (session('unit_auth')['stage_id'] ?? 0) == 3 ? '1' : '2' }}" data-product-set-id=""
+            data-transaction-id="" data-transaction-type="production">
             <i class="fas fa-camera"></i>
             <span>Upload</span>
         </a>
@@ -263,38 +268,43 @@
             <div class="camera-modal-body">
                 <form action="{{ route('unit.submit') }}" method="POST" id="quickUploadForm">
                     @csrf
-                    <input type="hidden" name="stage_master_unit_id" value="{{ \Illuminate\Support\Facades\Crypt::encryptString(session('unit_auth')['id']) }}">
+                    <input type="hidden" name="stage_master_unit_id"
+                        value="{{ \Illuminate\Support\Facades\Crypt::encryptString(session('unit_auth')['id']) }}">
                     <input type="hidden" name="type" id="modal_type" value="">
                     <input type="hidden" name="order_product_set_id" id="modal_product_set_id" value="">
                     <input type="hidden" name="transaction_id" id="modal_transaction_id" value="">
                     <input type="hidden" name="transaction_type" id="modal_transaction_type" value="">
                     @if($stageId == 3)
-                    <div style="margin-bottom: 16px;">
-                        <label class="camera-modal-title" style="display:block; margin-bottom:10px; font-size:12px;">Select Slip Type:</label>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <label style="flex: 1; min-width: 100px; background: #1e293b; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; border: 1px solid #334155;">
-                                <input type="radio" name="save_type" value="1" checked style="accent-color: #667eea;">
-                                <span style="font-size: 12px; font-weight: 600;">Rolls Allot</span>
-                            </label>
-                            <label style="flex: 1; min-width: 100px; background: #1e293b; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; border: 1px solid #334155;">
-                                <input type="radio" name="save_type" value="3" style="accent-color: #667eea;">
-                                <span style="font-size: 12px; font-weight: 600;">Stitching</span>
-                            </label>
-                            <label style="flex: 1; min-width: 100px; background: #1e293b; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; border: 1px solid #334155;">
-                                <input type="radio" name="save_type" value="2" style="accent-color: #667eea;">
-                                <span style="font-size: 12px; font-weight: 600;">Printing</span>
-                            </label>
+                        <div style="margin-bottom: 16px;">
+                            <label class="camera-modal-title"
+                                style="display:block; margin-bottom:10px; font-size:12px;">Select Slip Type:</label>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <label
+                                    style="flex: 1; min-width: 100px; background: #1e293b; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; border: 1px solid #334155;">
+                                    <input type="radio" name="save_type" value="1" checked style="accent-color: #667eea;">
+                                    <span style="font-size: 12px; font-weight: 600;">Rolls Allot</span>
+                                </label>
+                                <label
+                                    style="flex: 1; min-width: 100px; background: #1e293b; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; border: 1px solid #334155;">
+                                    <input type="radio" name="save_type" value="3" style="accent-color: #667eea;">
+                                    <span style="font-size: 12px; font-weight: 600;">Stitching</span>
+                                </label>
+                                <label
+                                    style="flex: 1; min-width: 100px; background: #1e293b; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; border: 1px solid #334155;">
+                                    <input type="radio" name="save_type" value="2" style="accent-color: #667eea;">
+                                    <span style="font-size: 12px; font-weight: 600;">Printing</span>
+                                </label>
+                            </div>
                         </div>
-                    </div>
                     @endif
                     <input type="hidden" name="photo_data" id="quickPhotoData">
                     <input type="file" id="quickFileInput" accept="image/*" style="display: none;">
-                    
+
                     <div id="videoContainer">
                         <video id="videoElement" autoplay playsinline></video>
                         <canvas id="canvasElement"></canvas>
                     </div>
-                    
+
                     <img id="modalPreview" src="" alt="Preview">
                 </form>
             </div>
@@ -308,7 +318,7 @@
                         <i class="fas fa-image"></i> Gallery
                     </button>
                 </div>
-                
+
                 <div id="modalConfirmControls" style="display: none; gap: 10px; width: 100%;">
                     <button type="button" class="btn-modal btn-modal-capture" id="submitQuickBtn">
                         <i class="fas fa-check"></i> Submit
@@ -344,8 +354,8 @@
 
             async function startStream() {
                 try {
-                    stream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { facingMode: 'environment' } 
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'environment' }
                     });
                     video.srcObject = stream;
                     videoContainer.show();
@@ -358,28 +368,28 @@
                 }
             }
 
-            $('.open-upload-modal').on('click', function() {
+            $('.open-upload-modal').on('click', function () {
                 const btn = $(this);
                 $('#modal_type').val(btn.data('type'));
                 $('#modal_product_set_id').val(btn.data('product-set-id'));
                 $('#modal_transaction_id').val(btn.data('transaction-id'));
                 $('#modal_transaction_type').val(btn.data('transaction-type'));
-                
+
                 modal.css('display', 'flex');
                 startStream();
             });
 
-            $('#closeQuickModal').on('click', function() {
+            $('#closeQuickModal').on('click', function () {
                 modal.hide();
                 stopStream();
             });
 
-            $('#captureQuickBtn').on('click', function() {
+            $('#captureQuickBtn').on('click', function () {
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 canvas.getContext('2d').drawImage(video, 0, 0);
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                
+
                 $('#quickPhotoData').val(dataUrl);
                 preview.attr('src', dataUrl).show();
                 videoContainer.hide();
@@ -388,15 +398,15 @@
                 stopStream();
             });
 
-            $('#browseQuickBtn').on('click', function() {
+            $('#browseQuickBtn').on('click', function () {
                 $('#quickFileInput').trigger('click');
             });
 
-            $('#quickFileInput').on('change', function(e) {
+            $('#quickFileInput').on('change', function (e) {
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onload = function(event) {
+                    reader.onload = function (event) {
                         const dataUrl = event.target.result;
                         $('#quickPhotoData').val(dataUrl);
                         preview.attr('src', dataUrl).show();
@@ -409,13 +419,13 @@
                 }
             });
 
-            $('#retakeQuickBtn').on('click', function() {
+            $('#retakeQuickBtn').on('click', function () {
                 startStream();
             });
 
-            $('#submitQuickBtn').on('click', function() {
+            $('#submitQuickBtn').on('click', function () {
                 const btn = $(this);
-                
+
                 // If cutting master, sync radio selection to hidden type if needed
                 if ($('input[name="save_type"]:checked').length > 0) {
                     $('#modal_type').val($('input[name="save_type"]:checked').val());
@@ -445,4 +455,5 @@
     </script>
     @stack('scripts')
 </body>
+
 </html>
