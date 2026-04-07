@@ -427,6 +427,7 @@
 
             // Populate Edit Modal on Open
             $('#editAttributesModal').on('show.bs.modal', function (event) {
+                console.log('asdsads');
                 var button = $(event.relatedTarget);
                 var productId = button.data('product-id');
                 var sizeSetId = button.data('size-set-id');
@@ -442,7 +443,7 @@
                 $('#old_pattern_id').val(patternId);
                 $('#old_rack_id').empty().append('<option value="">Loading...</option>').trigger('change');
                 $('#rack_available_display').hide();
-
+                console.log(productId, sizeSetId, colorId, fittingId, patternId, '2342342343');
                 // Fetch locations-wise quantity
                 $.get("{{ route('admin.inventory.get_locations') }}", {
                     product_id: productId,
@@ -451,10 +452,12 @@
                     fitting_id: fittingId,
                     pattern_id: patternId
                 }, function (data) {
+                    console.log(data, 'sdfsdfsdfsd');
                     var rackSelect = $('#old_rack_id');
                     rackSelect.empty().append('<option value="">Select Source Rack</option>');
 
                     data.forEach(function (row) {
+                        console.log(row, 'sdfsdfsdfsd');
                         rackSelect.append(`<option value="${row.rack_id}" data-available="${row.available_boxes}">${row.storeroom_name} -> ${row.rack_name} (${row.available_boxes} Boxes)</option>`);
                     });
 

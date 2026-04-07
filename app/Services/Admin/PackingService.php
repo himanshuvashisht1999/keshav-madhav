@@ -89,6 +89,15 @@ class PackingService
     {
         return OrderMain::with([
             'customer',
+            'packingMains.cartons' => function($q) {
+                // Filter to only include cartons that contain corporate boxes (exclude domestic/manual)
+                $q->whereHas('boxes', function($bq) {
+                    $bq->whereNotIn('box_type', ['domestic', 'manual', 'corporate_domestic']);
+                });
+            },
+            'packingMains.cartons.boxes' => function($q) {
+                $q->whereNotIn('box_type', ['domestic', 'manual', 'corporate_domestic']);
+            },
             'packingMains.cartons.boxes.items.detail.orderProductSet.product',
             'packingMains.cartons.boxes.items.detail.orderProductSet.colors',
             'packingMains.cartons.boxes.items.detail.orderProductSet.size_measurement',

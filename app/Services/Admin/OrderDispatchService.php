@@ -248,7 +248,10 @@ class OrderDispatchService
             'customer',
             'dispatchCartons' => function ($q) {
                 $q->where('packing_cartons.status', 1);
-                // Removed packing_mains.status check here to avoid complex join issues in hasManyThrough filters if not strictly joined
+                // Filter to only include cartons that contain corporate boxes
+                $q->whereHas('boxes', function($bq) {
+                    $bq->whereNotIn('box_type', ['domestic', 'manual', 'corporate_domestic']);
+                });
             },
             'dispatchCartons.boxes',
             'dispatchCartons.items.detail.orderProductSet.colors',
@@ -353,7 +356,9 @@ class OrderDispatchService
             ->whereIn('status', [1, 2])
             ->whereHas('dispatchCartons', function ($q) {
                 $q->where('packing_cartons.status', 1)
-                    ->where('packing_mains.status', 1);
+                    ->whereHas('boxes', function ($bq) {
+                        $bq->whereNotIn('box_type', ['domestic', 'manual', 'corporate_domestic']);
+                    });
             })
             ->orderBy('id', 'DESC')
             ->get(['id', 'sku as order_no']);
@@ -367,7 +372,9 @@ class OrderDispatchService
         $data = OrderMain::whereIn('status', [1, 2])
             ->whereHas('dispatchCartons', function ($q) {
                 $q->where('packing_cartons.status', 1)
-                    ->where('packing_mains.status', 1);
+                    ->whereHas('boxes', function ($bq) {
+                        $bq->whereNotIn('box_type', ['domestic', 'manual', 'corporate_domestic']);
+                    });
             })
             ->orderBy('id', 'DESC')
             ->get(['id', 'sku as order_no']);

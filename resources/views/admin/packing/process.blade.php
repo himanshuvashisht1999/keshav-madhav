@@ -218,9 +218,9 @@
                                             <i class="fas fa-layer-group mr-1"></i> Multi-Carton Planner
                                         </button>
                                     @else
-                                        <button class="btn btn-outline-info btn-sm rounded-pill px-3 mr-2 d-none"
+                                        <button class="btn btn-outline-info btn-sm rounded-pill px-3 mr-2"
                                             id="btnDomesticPacking" onclick="openDomesticPackingModal()">
-                                            <i class="fas fa-box mr-1"></i> Domestic Packing
+                                            <i class="fas fa-random mr-1"></i> Divert to Domestic
                                         </button>
                                         <button class="btn btn-outline-info btn-sm rounded-pill px-3 mr-2"
                                             id="btnCorporatePacking" onclick="openMultiCartonPlanner()">
@@ -1000,13 +1000,12 @@
                                     <div class="row g-2">
                                         <div class="col-md-2">
                                             <label class="small font-weight-bold mb-0">Design</label>
-                                            <select id="domDesign" class="form-control form-control-sm"
+                                            <select id="domDesign" class="form-control form-control-sm select2"
                                                 onchange="updateDomSizeSets()"></select>
                                         </div>
                                         <div class="col-md-2">
                                             <label class="small font-weight-bold mb-0">Size Set</label>
-                                            <select id="domSizeSet" class="form-control form-control-sm"
-                                                onchange="updateDomColors()"></select>
+                                            <select id="domSizeSet" class="form-control form-control-sm"></select>
                                         </div>
                                         <div class="col-md-2">
                                             <label class="small font-weight-bold mb-0">Color</label>
@@ -1588,6 +1587,12 @@
                     $domDesign.append(`<option value="${p.id}" data-design="${dNum}">${dLabel}</option>`);
                 });
 
+                // Initialize select2
+                $domDesign.select2({
+                    dropdownParent: $('#domesticPackingModal'),
+                    width: '100%'
+                });
+
                 $('#domesticTableBody').empty();
                 $('#domesticPackingModal').modal('show');
             }
@@ -1646,8 +1651,13 @@
 
                 $.get("{{ route('admin.inventory.get_colors_by_product_size', ['', '']) }}/" + productId + "/" + sizeSetId, function (res) {
                     if (res.status === 'success') {
+                        let seen = new Set();
                         res.colors.forEach(c => {
-                            $color.append(`<option value="${c.id}">${c.name}</option>`);
+                            let colorName = (c.name || '').trim().toUpperCase();
+                            if (!seen.has(colorName)) {
+                                seen.add(colorName);
+                                $color.append(`<option value="${c.id}">${c.name}</option>`);
+                            }
                         });
                     }
                 });
@@ -1731,36 +1741,41 @@
                 let rows = $('#domesticTableBody tr');
                 if (rows.length === 0) { alert("Please add at least one box to the plan."); return; }
 
-                let $btn = $(event.target);
-                $btn.prop('disabled', true).text('Processing...');
+                let $btn = $('button[onclick="submitDomesticPacking()"]');
+                $btn.prop('disabled', true).text('Saving all boxes...');
 
-                let promises = [];
+                let boxes = [];
                 rows.each(function () {
                     let r = $(this);
-                    promises.push(
-                        $.post("{{ route('admin.packing.saveDomesticBox') }}", {
-                            _token: "{{ csrf_token() }}",
-                            slip_id: SLIP_ID,
-                            order_id: ORDER_ID,
-                            product_id: r.data('pid'),
-                            size_set_id: r.data('ssid'),
-                            color_id: r.data('cid'),
-                            pattern_id: r.data('pattern'),
-                            fitting_id: r.data('fitting'),
-                            mrp: r.data('mrp'),
-                            selling_price: r.data('mrp'),
-                            quantity: r.data('qty'),
-                            rack_id: r.data('rack')
-                        })
-                    );
+                    boxes.push({
+                        product_id: r.data('pid'),
+                        size_set_id: r.data('ssid'),
+                        color_id: r.data('cid'),
+                        pattern_id: r.data('pattern'),
+                        fitting_id: r.data('fitting'),
+                        mrp: r.data('mrp'),
+                        quantity: r.data('qty'),
+                        rack_id: r.data('rack')
+                    });
                 });
 
-                $.when(...promises).done(function () {
-                    toastr.success("All domestic boxes established successfully.");
-                    setTimeout(() => location.reload(), 1000);
-                }).fail(function () {
-                    toastr.error("Error establishing some boxes. Please check carefully.");
-                    $btn.prop('disabled', false).text('Establish Packing Plan');
+                let targetRoute = (ORDER_TYPE === 'domestic') 
+                    ? "{{ route('admin.packing.saveDomesticBulk') }}" 
+                    : "{{ route('admin.packing.saveCorporateDomesticBulk') }}";
+
+                $.post(targetRoute, {
+                    _token: "{{ csrf_token() }}",
+                    slip_id: SLIP_ID,
+                    order_id: ORDER_ID,
+                    boxes: boxes
+                }, function (res) {
+                    if (res.status === 'success') {
+                        toastr.success(res.message);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(res.message);
+                        $btn.prop('disabled', false).text('PROCESS ALL BOXES');
+                    }
                 });
             }
 
@@ -1912,11 +1927,11 @@
 
                         // Update UI mode
                         if (ORDER_TYPE === 'domestic') {
-                            $('#btnDomesticPacking').removeClass('d-none').show();
+                            $('#btnDomesticPacking').removeClass('d-none').show().html('<i class="fas fa-box mr-1"></i> Domestic Packing');
                             $('#btnCorporatePacking').hide();
                         } else {
                             $('#btnCorporatePacking').removeClass('d-none').show();
-                            $('#btnDomesticPacking').hide();
+                            $('#btnDomesticPacking').removeClass('d-none').show().html('<i class="fas fa-random mr-1"></i> Divert to Domestic');
                         }
 
                         // Restore existing packing session if found
@@ -3813,16 +3828,21 @@
                         return;
                     }
 
-                    let $btn = $(this);
-                    $btn.prop('disabled', true).text('Packing...');
+                    let targetRoute = (ORDER_TYPE === 'domestic') 
+                        ? "{{ route('admin.packing.saveDomesticBulk') }}" 
+                        : "{{ route('admin.packing.saveCorporateDomesticBulk') }}";
 
-                    $.post("{{ route('admin.packing.saveDomesticBox') }}", data, function (res) {
+                    $.post(targetRoute, {
+                        _token: "{{ csrf_token() }}",
+                        slip_id: SLIP_ID,
+                        order_id: ORDER_ID,
+                        boxes: [data] // Send as array of 1
+                    }, function (res) {
                         if (res.status === 'success') {
                             toastr.success(res.message);
                             setTimeout(() => location.reload(), 800);
                         } else {
                             toastr.error(res.message);
-                            $btn.prop('disabled', false).text('PACK THIS BOX');
                         }
                     });
                 });

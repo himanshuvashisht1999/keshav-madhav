@@ -348,6 +348,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/bulk-save', [AdminPackingController::class, 'bulkSaveCarton'])->name('bulk-save');
             Route::post('/save-multi-plan', [AdminPackingController::class, 'saveMultiCartonPlan'])->name('saveMultiCartonPlan');
             Route::post('/save-domestic-box', [AdminPackingController::class, 'saveDomesticBox'])->name('saveDomesticBox');
+            Route::post('/save-corporate-domestic-bulk', [AdminPackingController::class, 'saveCorporateDomesticBulk'])->name('saveCorporateDomesticBulk');
             Route::post('/save-domestic-bulk', [AdminPackingController::class, 'saveDomesticBulk'])->name('saveDomesticBulk');
             Route::post('/delete-domestic-box/{id}', [AdminPackingController::class, 'deleteDomesticBox'])->name('deleteDomesticBox');
             Route::post('/delete-outflow/{id}', [AdminPackingController::class, 'deleteOutflow'])->name('deleteOutflow');

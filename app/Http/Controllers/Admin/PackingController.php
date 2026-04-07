@@ -134,11 +134,39 @@ class PackingController extends Controller
                 ->get();
         }
 
+        // Restrict domestic masters products to ONLY designs in the current corporate order
+        $orderDesignNumbers = [];
+        if ($order) {
+            $orderDesignNumbers = $order->OrderProductSets->pluck('design_number')->unique()->toArray();
+        }
+
+        // Restrict domestic masters products, size sets, and colors to ONLY those in the current corporate order
+        $orderDesignNumbers = [];
+        $orderSizeSetIds = [];
+        $orderColorIds = [];
+
+        if ($order) {
+            $orderDesignNumbers = $order->OrderProductSets->pluck('design_number')->unique()->toArray();
+            $orderSizeSetIds = $order->OrderProductSets->pluck('size_measurement_id')->unique()->toArray();
+            $orderColorIds = $order->OrderProductSets->flatMap(function ($set) {
+                return $set->colors->pluck('id');
+            })->unique()->toArray();
+        }
+
         // Always load domestic masters to enable dynamic mode switching in UI
         $domestic_masters = [
-            'products' => \App\Models\ProductionGoods::with('series')->where('status', 1)->get(),
-            'colors' => \App\Models\MasterColor::all(),
-            'size_sets' => \App\Models\MasterSizeMeasurement::all()
+            'products' => \App\Models\ProductionGoods::with('series')
+                ->where('status', 1)
+                ->when(!empty($orderDesignNumbers), function ($q) use ($orderDesignNumbers) {
+                    $q->whereIn('design_number', $orderDesignNumbers);
+                })
+                ->get(),
+            'colors' => \App\Models\MasterColor::when(!empty($orderColorIds), function ($q) use ($orderColorIds) {
+                $q->whereIn('id', $orderColorIds);
+            })->get(),
+            'size_sets' => \App\Models\MasterSizeMeasurement::when(!empty($orderSizeSetIds), function ($q) use ($orderSizeSetIds) {
+                $q->whereIn('id', $orderSizeSetIds);
+            })->get()
         ];
         $order_type = strtolower(trim($order->order_type ?? ''));
 
@@ -209,7 +237,7 @@ class PackingController extends Controller
         }
 
         $storerooms = \App\Models\Storeroom::with('racks')->where('status', 1)->get();
-        
+
         $domestic_masters = [
             'products' => \App\Models\ProductionGoods::with('series')->where('status', 1)->get(),
             'size_sets' => \App\Models\MasterSizeMeasurement::all(),
@@ -265,14 +293,14 @@ class PackingController extends Controller
             $main = $this->service->getOrCreatePackingMain($data['slip_id'], $data['order_id']);
             $slip_details = \App\Models\ProductionSlipDigitization::find($data['slip_id']);
             $sizeSetMaster = \App\Models\MasterSizeMeasurement::find($data['size_set_id']);
-            
+
             if (!$sizeSetMaster) {
                 throw new \Exception("The selected size set does not exist.");
             }
 
             // Total pieces = sets quantity * pieces per set
-            $total_sets = (int)$data['quantity'];
-            $total_pieces_in_box = $total_sets * (int)$sizeSetMaster->no_of_pcs;
+            $total_sets = (int) $data['quantity'];
+            $total_pieces_in_box = $total_sets * (int) $sizeSetMaster->no_of_pcs;
 
             \Log::channel('single')->info('Size Master pieces: ' . $sizeSetMaster->no_of_pcs . ', total sets: ' . $total_sets . ', total pieces in box: ' . $total_pieces_in_box);
 
@@ -308,26 +336,37 @@ class PackingController extends Controller
                 'box_type' => 'domestic'
             ]);
 
-            // Create Domestic Inventory Record (stores total pieces)
+            // Create or Update Domestic Inventory Record (stores total pieces)
             $barcode = 'D' . $data['product_id'] . 'S' . $data['size_set_id'] . 'C' . $data['color_id'] . 'P' . $data['pattern_id'] . 'F' . $data['fitting_id'];
 
-            \App\Models\DomesticInventory::create([
-                'order_main_id' => $data['order_id'],
-                'packing_main_id' => $main->id,
-                'packing_carton_id' => $carton->id,
-                'packing_box_id' => $box->id,
-                'rack_id' => $data['rack_id'],
-                'product_id' => $data['product_id'],
-                'color_id' => $data['color_id'],
-                'fitting_id' => $data['fitting_id'],
-                'pattern_id' => $data['pattern_id'],
-                'size_set_id' => $data['size_set_id'],
-                'quantity' => $total_pieces_in_box,
-                'box_no' => $box_no,
-                'carton_no' => $nextCartonNo,
+            $inventory = \App\Models\DomesticInventory::where([
                 'barcode' => $barcode,
-                'status' => 1
-            ]);
+                // 'quantity' => $total_pieces_in_box,
+                // 'order_main_id' => $data['order_id'],
+                'rack_id' => $data['rack_id'],
+            ])->first();
+
+            if ($inventory) {
+                $inventory->increment('total_boxes');
+            } else {
+                \App\Models\DomesticInventory::create([
+                    'order_main_id' => $data['order_id'],
+                    'packing_main_id' => $main->id,
+                    'packing_carton_id' => $carton->id,
+                    'packing_box_id' => $box->id,
+                    'rack_id' => $data['rack_id'],
+                    'product_id' => $data['product_id'],
+                    'color_id' => $data['color_id'],
+                    'fitting_id' => $data['fitting_id'],
+                    'pattern_id' => $data['pattern_id'],
+                    'size_set_id' => $data['size_set_id'],
+                    'quantity' => $total_pieces_in_box,
+                    'box_no' => $box_no,
+                    'carton_no' => $nextCartonNo,
+                    'barcode' => $barcode,
+                    'status' => 1
+                ]);
+            }
 
             // Granular Deduction logic: Size-wise math for both Order and Unit Stock
             if (!empty($sizeSetMaster->size_group)) {
@@ -345,13 +384,13 @@ class PackingController extends Controller
 
                     // 1. Deduct from Order Balance (OrderProductSetDetail)
                     // Matches by size string. Crucial for domestic orders with placeholder designs.
-                    $orderDetails = \App\Models\OrderProductSetDetail::whereHas('orderProductSet', function($q) use ($data) {
-                            $q->where('order_main_id', $data['order_id']);
-                        })
-                        ->where('size', (string)$sizeName)
+                    $orderDetails = \App\Models\OrderProductSetDetail::whereHas('orderProductSet', function ($q) use ($data) {
+                        $q->where('order_main_id', $data['order_id']);
+                    })
+                        ->where('size', (string) $sizeName)
                         ->where('remaining_quantity', '>', 0)
                         ->get();
-                    
+
                     if ($orderDetails->isEmpty()) {
                         \Log::channel('single')->warning("No order details found for size: $sizeName and order: " . $data['order_id']);
                     }
@@ -360,7 +399,8 @@ class PackingController extends Controller
                     $firstDetailId = 0;
                     $firstDetailRecord = null;
                     foreach ($orderDetails as $od) {
-                        if ($remOrder <= 0) break;
+                        if ($remOrder <= 0)
+                            break;
                         if ($firstDetailId == 0) {
                             $firstDetailId = $od->id;
                             $firstDetailRecord = $od;
@@ -386,7 +426,8 @@ class PackingController extends Controller
 
                     $remTrans = $remToDeduct;
                     foreach ($stockTransactions as $tx) {
-                        if ($remTrans <= 0) break;
+                        if ($remTrans <= 0)
+                            break;
                         $dedTrans = min($tx->remaining_quantity, $remTrans);
                         $tx->remaining_quantity -= $dedTrans;
                         $tx->save();
@@ -435,7 +476,7 @@ class PackingController extends Controller
 
             DB::commit();
             return response()->json([
-                'status' => 'success', 
+                'status' => 'success',
                 'message' => "Successfully packed Box $box_no with $total_sets sets ($total_pieces_in_box pieces)."
             ]);
 
@@ -445,12 +486,203 @@ class PackingController extends Controller
         }
     }
 
+    /**
+     * NEW HYBRID LOGIC FOR CORPORATE ORDERS
+     * This handles domestic-style packing but specifically for a corporate order.
+     * It uses design matching to ensure pieces are deducted from the correct set in the corporate order.
+     */
+    public function saveCorporateDomesticBulk(Request $request)
+    {
+        $data = $request->validate([
+            'order_id' => 'required',
+            'slip_id' => 'required',
+            'boxes' => 'required|array'
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $main = $this->service->getOrCreatePackingMain($data['slip_id'], $data['order_id']);
+            $slip_details = \App\Models\ProductionSlipDigitization::find($data['slip_id']);
+            $orderLots = \App\Models\OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
+
+            // 1. Initial counters matching InventoryController logic
+            $currentCartonNo = (int) \App\Models\DomesticInventory::max('carton_no') ?? 0;
+            $lastBox = \App\Models\PackingBox::orderByRaw('CAST(SUBSTRING(box_no, 4) AS UNSIGNED) DESC')->first();
+            $currentBoxNoInt = $lastBox ? (int) str_replace('BX-', '', $lastBox->box_no) : 0;
+
+            $totalBoxesCreated = 0;
+            foreach ($data['boxes'] as $box_plan) {
+                $productMaster = \App\Models\ProductionGoods::findOrFail($box_plan['product_id']);
+                $designNumber = $productMaster->design_number;
+                $sizeSetMaster = \App\Models\MasterSizeMeasurement::findOrFail($box_plan['size_set_id']);
+
+                $num_boxes_to_create = (int) $box_plan['quantity'];
+                $pcs_per_set = (int) $sizeSetMaster->no_of_pcs;
+
+                for ($i = 0; $i < $num_boxes_to_create; $i++) {
+                    $currentCartonNo++;
+                    $currentBoxNoInt++;
+                    $box_no = 'BX-' . $currentBoxNoInt;
+
+                    // 2. New Carton for EACH box (matching manual entry workflow)
+                    $carton = \App\Models\PackingCarton::create([
+                        'packing_main_id' => $main->id,
+                        'carton_no' => $currentCartonNo,
+                        'rack_id' => $box_plan['rack_id'] ?? null,
+                        'status' => 1
+                    ]);
+
+                    // 3. New Box
+                    $box = \App\Models\PackingBox::create([
+                        'packing_main_id' => $main->id,
+                        'packing_carton_id' => $carton->id,
+                        'box_no' => $box_no,
+                        'box_type' => 'corporate_domestic'
+                    ]);
+
+                    // 4. Consolidated Inventory Record (Unassigned Domestic Stock)
+                    $pattern_id = $box_plan['pattern_id'] ?? 0;
+                    $fitting_id = $box_plan['fitting_id'] ?? 0;
+                    $barcode = 'CD' . $box_plan['product_id'] . 'S' . $box_plan['size_set_id'] . 'C' . $box_plan['color_id'] . 'P' . $pattern_id . 'F' . $fitting_id;
+                    $currentRackId = $box_plan['rack_id'] ?? null;
+
+                    $inventory = \App\Models\DomesticInventory::where([
+                        'barcode' => $barcode,
+                        'rack_id' => $currentRackId
+                    ])->first();
+
+                    if ($inventory) {
+                        $inventory->increment('total_boxes');
+                    } else {
+                        $inventory = \App\Models\DomesticInventory::create([
+                            'order_main_id' => 0,
+                            'packing_main_id' => $main->id,
+                            'packing_carton_id' => $carton->id,
+                            'packing_box_id' => $box->id,
+                            'rack_id' => $currentRackId,
+                            'product_id' => $box_plan['product_id'],
+                            'color_id' => $box_plan['color_id'],
+                            'size_set_id' => $box_plan['size_set_id'],
+                            'pattern_id' => $pattern_id ?: null,
+                            'fitting_id' => $fitting_id ?: null,
+                            'quantity' => $pcs_per_set,
+                            'box_no' => $box_no,
+                            'carton_no' => $currentCartonNo,
+                            'total_boxes' => 1,
+                            'barcode' => $barcode,
+                            'status' => 1
+                        ]);
+                    }
+
+                    // Update box with barcode and domestic inventory link
+                    $box->update([
+                        'barcode' => $barcode,
+                        'domestic_inventory_id' => $inventory->id
+                    ]);
+
+                    // 5. Piece Deductions from Original Corporate Order
+                    if (!empty($sizeSetMaster->size_group)) {
+                        $sizesInSet = array_map('trim', explode(',', $sizeSetMaster->size_group));
+                        $sizeCounts = array_count_values($sizesInSet);
+
+                        foreach ($sizeCounts as $sizeName => $pcsInSet) {
+                            $qtyToDeduct = $pcsInSet;
+
+                            $orderDetails = \App\Models\OrderProductSetDetail::whereHas('orderProductSet', function ($q) use ($data, $designNumber) {
+                                $q->where('order_main_id', $data['order_id'])->where('design_number', $designNumber);
+                            })
+                                ->where('size', (string) $sizeName)
+                                ->where('remaining_quantity', '>', 0)->get();
+
+                            if ($orderDetails->isEmpty()) {
+                                throw new \Exception("Deduction failed for Design #$designNumber Size '$sizeName'.");
+                            }
+
+                            $remVal = $qtyToDeduct;
+                            $usedDetailId = 0;
+                            $priceSource = null;
+                            foreach ($orderDetails as $od) {
+                                if ($remVal <= 0)
+                                    break;
+                                if ($usedDetailId == 0) {
+                                    $usedDetailId = $od->id;
+                                    $priceSource = $od;
+                                }
+                                $canTake = min($od->remaining_quantity, $remVal);
+                                $od->remaining_quantity -= $canTake;
+                                $od->save();
+                                $remVal -= $canTake;
+                            }
+
+                            $sellPrice = 0;
+                            if ($priceSource && $priceSource->orderProductSet && $priceSource->orderProductSet->total_quantity > 0) {
+                                $sellPrice = round($priceSource->orderProductSet->basic_amount / $priceSource->orderProductSet->total_quantity, 2);
+                            }
+
+                            \App\Models\PackingItem::create([
+                                'packing_main_id' => $main->id,
+                                'packing_carton_id' => $carton->id,
+                                'packing_box_id' => $box->id,
+                                'size_id' => $usedDetailId ?: 0,
+                                'quantity' => $qtyToDeduct,
+                                'selling_price' => $sellPrice,
+                                'mrp' => 0
+                            ]);
+
+                            // Outflow logging
+                            \App\Models\ProductionOutflowInventory::create([
+                                'order_main_id' => $data['order_id'],
+                                'slip_id' => $data['slip_id'],
+                                'product_id' => $box_plan['product_id'],
+                                'color_id' => $box_plan['color_id'],
+                                'size_set_id' => $box_plan['size_set_id'],
+                                'size_id' => $usedDetailId ?: 0,
+                                'quantity' => $qtyToDeduct,
+                                'outflow_type' => 'packing_divert',
+                                'responsible_unit_id' => $slip_details->stage_master_unit_id,
+                                'remarks' => "Bulk Divert to Domestic - Box $box_no",
+                            ]);
+
+                            // Stock from Unit stage
+                            $stockTrans = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
+                                ->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                                ->where('remaining_quantity', '>', 0)
+                                ->whereIn('lot_no', $orderLots)
+                                ->get();
+
+                            $remStk = $qtyToDeduct;
+                            foreach ($stockTrans as $tx) {
+                                if ($remStk <= 0)
+                                    break;
+                                $take = min($tx->remaining_quantity, $remStk);
+                                $tx->remaining_quantity -= $take;
+                                $tx->save();
+                                $remStk -= $take;
+                            }
+                        }
+                    }
+                    $totalBoxesCreated++;
+                }
+            }
+
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+                'message' => "Successfully Diverted $totalBoxesCreated boxes."
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
+
     public function deleteDomesticBox($id)
     {
         DB::beginTransaction();
         try {
             $box = \App\Models\PackingBox::with(['domesticInventory', 'packingMain', 'items'])->findOrFail($id);
-            
+
             if ($box->packingMain && $box->packingMain->status == 1) {
                 throw new \Exception("Cannot delete box from a finalized session.");
             }
@@ -464,7 +696,7 @@ class PackingController extends Controller
 
             // 1. Revert Inventories & Deductions using Packing Items
             $packingItems = \App\Models\PackingItem::where('packing_box_id', $box->id)->get();
-            
+
             foreach ($packingItems as $item) {
                 // Return to Order Balance
                 $od = \App\Models\OrderProductSetDetail::find($item->size_id);
@@ -496,7 +728,7 @@ class PackingController extends Controller
             }
 
             \App\Models\PackingItem::where('packing_box_id', $box->id)->delete();
-            
+
             $cartonId = $box->packing_carton_id;
             $box->delete();
 
@@ -748,15 +980,19 @@ class PackingController extends Controller
 
     public function finalize(Request $request)
     {
-        $result = $this->service->finalizePacking($request->packing_main_id);
-        if ($result['status'] === 'success') {
-            $packingMain = \App\Models\PackingMain::find($request->packing_main_id);
-            $order = $packingMain ? $packingMain->order : null;
-            $result['packing_main_id'] = $request->packing_main_id;
-            $result['slip_id'] = $packingMain ? $packingMain->slip_id : null;
-            $result['order_type'] = $order ? strtolower(trim($order->order_type)) : '';
+        try {
+            $result = $this->service->finalizePacking($request->packing_main_id);
+            if ($result['status'] === 'success') {
+                $packingMain = \App\Models\PackingMain::find($request->packing_main_id);
+                $order = $packingMain ? $packingMain->order : null;
+                $result['packing_main_id'] = $request->packing_main_id;
+                $result['slip_id'] = $packingMain ? $packingMain->slip_id : null;
+                $result['order_type'] = $order ? strtolower(trim($order->order_type)) : '';
+            }
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
         }
-        return response()->json($result);
     }
 
     public function createSet(Request $request)
@@ -933,10 +1169,11 @@ class PackingController extends Controller
 
             foreach ($boxesData as $data) {
                 $sizeSetMaster = \App\Models\MasterSizeMeasurement::find($data['size_set_id']);
-                if (!$sizeSetMaster) continue;
+                if (!$sizeSetMaster)
+                    continue;
 
-                $total_sets = (int)$data['quantity'];
-                
+                $total_sets = (int) $data['quantity'];
+
                 // Auto-generate carton no
                 $lastCarton = \App\Models\PackingCarton::orderByRaw('CAST(carton_no AS UNSIGNED) DESC')->first();
                 $nextCartonNo = ($lastCarton ? (int) $lastCarton->carton_no : 0) + 1;
@@ -968,24 +1205,6 @@ class PackingController extends Controller
 
                 $barcode = 'D' . $data['product_id'] . 'S' . $data['size_set_id'] . 'C' . $data['color_id'] . 'P' . ($data['pattern_id'] ?? 0) . 'F' . ($data['fitting_id'] ?? 0);
 
-                $inventory = \App\Models\DomesticInventory::create([
-                    'order_main_id' => $order_id,
-                    'packing_main_id' => $main->id,
-                    'packing_carton_id' => $carton->id,
-                    'packing_box_id' => $box->id,
-                    'rack_id' => $data['rack_id'],
-                    'product_id' => $data['product_id'],
-                    'color_id' => $data['color_id'],
-                    'fitting_id' => $data['fitting_id'] ?? null,
-                    'pattern_id' => $data['pattern_id'] ?? null,
-                    'size_set_id' => $data['size_set_id'],
-                    'quantity' => 0, // Update later
-                    'box_no' => $box_no,
-                    'carton_no' => $nextCartonNo,
-                    'barcode' => $barcode,
-                    'status' => 1
-                ]);
-
                 $actualPiecesInBox = 0;
                 if (!empty($sizeSetMaster->size_group)) {
                     $sizesInSet = array_map('trim', explode(',', $sizeSetMaster->size_group));
@@ -996,18 +1215,19 @@ class PackingController extends Controller
                         $sizePiecesDeducted = 0;
 
                         // 1. Order Deduction
-                        $orderDetails = \App\Models\OrderProductSetDetail::whereHas('orderProductSet', function($q) use ($order_id) {
-                                $q->where('order_main_id', $order_id);
-                            })
-                            ->where('size', (string)$sizeName)
+                        $orderDetails = \App\Models\OrderProductSetDetail::whereHas('orderProductSet', function ($q) use ($order_id) {
+                            $q->where('order_main_id', $order_id);
+                        })
+                            ->where('size', (string) $sizeName)
                             ->where('remaining_quantity', '>', 0)
                             ->get();
-                        
+
                         $remOrder = $remToDeduct;
                         $firstDetailId = 0;
                         $firstDetailRecord = null;
                         foreach ($orderDetails as $od) {
-                            if ($remOrder <= 0) break;
+                            if ($remOrder <= 0)
+                                break;
                             if ($firstDetailId == 0) {
                                 $firstDetailId = $od->id;
                                 $firstDetailRecord = $od;
@@ -1029,14 +1249,15 @@ class PackingController extends Controller
                         $remTrans = $remToDeduct;
                         $sizePiecesDeducted = 0;
                         foreach ($stockTransactions as $tx) {
-                            if ($remTrans <= 0) break;
+                            if ($remTrans <= 0)
+                                break;
                             $dedTrans = min($tx->remaining_quantity, $remTrans);
                             $tx->remaining_quantity -= $dedTrans;
                             $tx->save();
                             $remTrans -= $dedTrans;
                             $sizePiecesDeducted += $dedTrans;
                         }
-                        
+
                         $actualPiecesInBox += $sizePiecesDeducted;
 
                         if ($sizePiecesDeducted > 0) {
@@ -1058,9 +1279,38 @@ class PackingController extends Controller
                         }
                     }
                 }
-                
-                $inventory->quantity = $actualPiecesInBox;
-                $inventory->save();
+
+                // Check for existing record to group
+                $inventoryResult = \App\Models\DomesticInventory::where([
+                    // 'packing_main_id' => $main->id,
+                    // 'packing_carton_id' => $carton->id,
+                    'barcode' => $barcode,
+                    'rack_id' => $data['rack_id']
+                ])->first();
+
+                if ($inventoryResult) {
+                    $inventoryResult->increment('total_boxes');
+                } else {
+                    \App\Models\DomesticInventory::create([
+                        'order_main_id' => $order_id,
+                        'packing_main_id' => $main->id,
+                        'packing_carton_id' => $carton->id,
+                        'packing_box_id' => $box->id,
+                        'rack_id' => $data['rack_id'],
+                        'product_id' => $data['product_id'],
+                        'color_id' => $data['color_id'],
+                        'fitting_id' => $data['fitting_id'] ?? null,
+                        'pattern_id' => $data['pattern_id'] ?? null,
+                        'size_set_id' => $data['size_set_id'],
+                        'quantity' => $actualPiecesInBox,
+                        'box_no' => $box_no,
+                        'carton_no' => $nextCartonNo,
+                        'total_boxes' => 1,
+                        'barcode' => $barcode,
+                        'status' => 1
+                    ]);
+                }
+
                 $totalBoxesProcessed++;
             }
 
@@ -1096,7 +1346,7 @@ class PackingController extends Controller
         }
 
         $fileName = "slip_" . $slip_id . "_all_barcodes.txt";
-        
+
         return response($content)
             ->withHeaders([
                 'Content-Type' => 'text/plain',
