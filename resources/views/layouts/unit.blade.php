@@ -101,12 +101,14 @@
         .camera-modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.7);
+            background: rgba(15, 23, 42, 0.85);
             display: none;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             z-index: 2000;
             padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .camera-modal {
@@ -162,46 +164,90 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 14px;
+            gap: 10px;
+            padding: 14px 18px;
+            border-radius: 14px;
+            font-size: 15px;
             font-weight: 700;
             border: none;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-modal:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
         }
 
         .btn-modal-capture {
-            background: var(--bg-gradient);
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
             color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .btn-modal-secondary {
-            background: #1f2937;
-            color: #e5e7eb;
-        }
-
-        #modalPreview {
-            width: 100%;
-            border-radius: 16px;
-            display: none;
-            margin-bottom: 12px;
+            background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+            color: #f1f5f9;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         #videoContainer {
             width: 100%;
-            border-radius: 16px;
+            border-radius: 20px;
             overflow: hidden;
             background: #000;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
+            max-height: 50vh;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
 
         #videoElement {
             width: 100%;
+            height: auto;
+            min-height: 300px;
+            max-height: 50vh;
             display: block;
+            object-fit: cover;
         }
 
+        #videoElement.mirrored {
+            transform: scaleX(-1);
+        }
+
+        #canvasElement {
+            display: none;
+        }
+
+        #modalPreview {
+            width: 100%;
+            height: auto;
+            max-height: 50vh;
+            border-radius: 20px;
+            display: none;
+            margin: 0 auto 16px;
+            object-fit: cover;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        #toggleCameraBtn {
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #toggleCameraBtn:active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0.9);
         }
     </style>
     @stack('styles')
@@ -263,7 +309,12 @@
                 <div class="camera-modal-title">
                     <i class="fas {{ $uploadIcon }}" style="margin-right:6px;"></i> Capture {{ $uploadLabel }}
                 </div>
-                <button type="button" class="camera-modal-close" id="closeQuickModal">&times;</button>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <button type="button" id="toggleCameraBtn" title="Switch Camera">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button type="button" class="camera-modal-close" id="closeQuickModal">&times;</button>
+                </div>
             </div>
             <div class="camera-modal-body">
                 <form action="{{ route('unit.submit') }}" method="POST" id="quickUploadForm">
@@ -337,6 +388,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Quick Upload Logic
             let stream = null;
+            let currentFacingMode = 'environment';
             const modal = $('#quickUploadModal');
             const video = document.getElementById('videoElement');
             const canvas = document.getElementById('canvasElement');
@@ -353,20 +405,44 @@
             }
 
             async function startStream() {
+                stopStream();
                 try {
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: 'environment' }
-                    });
+                    const constraints = {
+                        video: {
+                            facingMode: { ideal: currentFacingMode },
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        }
+                    };
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
                     video.srcObject = stream;
+
+                    // Apply mirror effect if using front camera
+                    if (currentFacingMode === 'user') {
+                        $(video).addClass('mirrored');
+                    } else {
+                        $(video).removeClass('mirrored');
+                    }
+
                     videoContainer.show();
                     preview.hide();
                     initialControls.show();
                     confirmControls.hide();
                 } catch (err) {
                     console.error("Error accessing camera: ", err);
-                    alert("Unable to access camera. Please use the Gallery option.");
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Camera Access',
+                        text: 'Unable to access the ' + currentFacingMode + ' camera. You can try switching or use the Gallery option.',
+                        confirmButtonText: 'OK'
+                    });
                 }
             }
+
+            $('#toggleCameraBtn').on('click', function () {
+                currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
+                startStream();
+            });
 
             $('.open-upload-modal').on('click', function () {
                 const btn = $(this);
