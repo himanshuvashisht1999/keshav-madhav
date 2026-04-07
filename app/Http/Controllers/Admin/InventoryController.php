@@ -462,10 +462,10 @@ class InventoryController extends Controller
                 'name' => $autoName
             ]);
         }
- 
+
         return response()->json(['success' => false]);
     }
- 
+
     public function getLocations(Request $request)
     {
         $locations = DomesticInventory::where('product_id', $request->product_id)
@@ -483,9 +483,9 @@ class InventoryController extends Controller
                 else
                     $q->whereNull('pattern_id');
             })
-            ->where(function ($q) {
-                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            })
+            // ->where(function ($q) {
+            //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+            // })
             ->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
             ->join('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
             ->select(
@@ -496,10 +496,10 @@ class InventoryController extends Controller
             )
             ->groupBy('domestic_inventories.rack_id', 'racks.name', 'storerooms.name')
             ->get();
- 
+
         return response()->json($locations);
     }
- 
+
     public function updateAttributes(Request $request)
     {
         $request->validate([
@@ -557,17 +557,18 @@ class InventoryController extends Controller
                 ]);
             }
 
-            $to_change = (int)$request->change_quantity;
-            
+            $to_change = (int) $request->change_quantity;
+
             $new_fitting_id = $request->new_fitting_id ?: null;
             $new_pattern_id = $request->new_pattern_id ?: null;
             $new_rack_id = $request->new_rack_id;
-            
+
             // Consistent Barcode Format: D{id}S{id}C{id}P{id}F{id} (using 0 for nulls)
             $new_barcode = 'D' . $request->new_product_id . 'S' . $request->new_size_set_id . 'C' . $request->new_color_id . 'P' . ($new_pattern_id ?: 0) . 'F' . ($new_fitting_id ?: 0);            // Perform Update with Splitting Logic
             foreach ($inventoryItems as $item) {
-                if ($to_change <= 0) break;
-                
+                if ($to_change <= 0)
+                    break;
+
                 $take = min($item->total_boxes, $to_change);
                 $old_barcode = $item->barcode;
 
@@ -589,7 +590,7 @@ class InventoryController extends Controller
                     $to_change -= $take;
                     continue;
                 }
-                
+
                 // 1. Update/Create NEW DomesticInventory row
                 $new_item = DomesticInventory::where('product_id', $request->new_product_id)
                     ->where('size_set_id', $request->new_size_set_id)
@@ -606,7 +607,7 @@ class InventoryController extends Controller
                         $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
                     })
                     ->first();
-                
+
                 if ($new_item) {
                     $new_item->total_boxes += $take;
                     $new_item->save();
@@ -621,10 +622,10 @@ class InventoryController extends Controller
                     $new_item->rack_id = $new_rack_id;
                     $new_item->total_boxes = $take;
                     $new_item->barcode = $new_barcode;
-                    $new_item->qrcode = $new_barcode; 
+                    $new_item->qrcode = $new_barcode;
                     $new_item->save();
                 }
-                
+
                 // 2. Decrement or Delete OLD DomesticInventory row
                 $item->total_boxes -= $take;
                 if ($item->total_boxes <= 0) {
@@ -632,7 +633,7 @@ class InventoryController extends Controller
                 } else {
                     $item->save();
                 }
-  // 3. Update the actual individual PackingBox records
+                // 3. Update the actual individual PackingBox records
                 $assignedBoxNos = DB::table('agent_order_items')
                     ->whereNotNull('box_no')
                     ->pluck('box_no');
@@ -650,7 +651,7 @@ class InventoryController extends Controller
                 }
                 $to_change -= $take;
             }
-                
+
             // Log History
             \App\Models\DomesticInventoryHistory::create([
                 'user_id' => auth()->id(),
@@ -811,19 +812,20 @@ class InventoryController extends Controller
                 ]);
             }
 
-            $to_delete = (int)$request->delete_quantity;
+            $to_delete = (int) $request->delete_quantity;
             foreach ($inventoryItems as $item) {
-                if ($to_delete <= 0) break;
-                
+                if ($to_delete <= 0)
+                    break;
+
                 $take = min($item->total_boxes, $to_delete);
-                
+
                 $item->total_boxes -= $take;
                 if ($item->total_boxes <= 0) {
                     $item->delete();
                 } else {
                     $item->save();
                 }
-                
+
                 $to_delete -= $take;
             }
 
