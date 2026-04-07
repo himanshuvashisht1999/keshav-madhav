@@ -6,12 +6,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Available Products</h1>
+                    <h1>Product Master</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Available Products</li>
+                        <li class="breadcrumb-item active">Product Master</li>
                     </ol>
                 </div>
             </div>
@@ -37,36 +37,24 @@
                   <thead>
                     <tr role="row" class="filter">
                         <td>
-                            <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
-                        </td>
-                        <!-- <td></td> -->
-                        <td>
-                            <input type="text" class="form-control" name="design_number" id="design_number" autocomplete="off">
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="name_of_garment" id="name_of_garment" autocomplete="off">
+                            <input type="text" class="form-control" name="design_number" id="design_number" placeholder="Search Design..." autocomplete="off">
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="series_name" id="series_name" autocomplete="off">
+                            <input type="text" class="form-control" name="brand_name" id="brand_name" placeholder="Search Brand..." autocomplete="off">
                         </td>
-                        {{-- <td>
-                            <select class="form-control" name="status" id="status" autocomplete="off">
-                                <option value="">ALL</option>
-                                <option value="1">Published</option>
-                                <option value="0">Pending</option>
-                            </select>
-                        </td> --}}
                         <td>
-                       
-                       </td>
+                            <input type="text" class="form-control" name="name_of_garment" id="name_of_garment" placeholder="Search Product Name..." autocomplete="off">
+                        </td>
+                        <td>
+                        </td>
                     </tr>
                   <tr>
                     <th>ID</th>
-                    <!-- <th>Image</th> -->
                     <th>Design Number</th>
-                    <th>Name</th>
-                    <th>Series Name</th>
-                    {{-- <th>Status</th> --}}
+                    <th>Brand</th>
+                    <th>Product Name</th>
                     <th>Action</th>
                   </tr>
                   </thead>
@@ -104,18 +92,15 @@
                     d.id = $('#id').val();
                     d.name_of_garment = $('#name_of_garment').val();
                     d.design_number = $('#design_number').val();
-                    d.series_name = $('#series_name').val();
-                    d.status = $('#status').val();
+                    d.brand_name = $('#brand_name').val();
                 },
                 orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                // {data: 'main_image', name: 'main_image', orderable: false, searchable: false},
                 {data: 'design_number', name: 'design_number'},
-                {data: 'name_of_garment', name: 'name_of_garment'},
-                {data: 'series_name', name: 'series_name'},
-               // {data: 'status', name: 'status'},
+                {data: 'brand_name', name: 'brand_name'},
+                {data: 'product_name_display', name: 'product_name_display'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
@@ -144,15 +129,11 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#series_name').on('keyup', function (e) {
+        $('#brand_name').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
         $('#design_number').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#status').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });

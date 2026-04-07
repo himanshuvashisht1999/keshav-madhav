@@ -25,6 +25,7 @@
                         <thead>
                             <tr role="row" class="filter">
                                 <td></td>
+                                <td></td>
                                 <td>
                                     <input type="text" class="form-control" name="name" id="search_name" placeholder="Search Name" autocomplete="off">
                                 </td>
@@ -33,6 +34,7 @@
                             </tr>
                             <tr>
                                 <th>ID</th>
+                                <th>Logo</th>
                                 <th>Name</th>
                                 <th>Status</th>
                                 <th>Action</th>
@@ -64,6 +66,7 @@
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
+                {data: 'logo', name: 'logo'},
                 {data: 'name', name: 'name'},
                 {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', searchable: false}

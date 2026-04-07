@@ -86,8 +86,18 @@
                     @csrf
 
                     <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label>Add Fabric Shipment Receipt Of Warehouse</label>
+                        <div class="col-md-4">
+                            <label>Purchase Order (Optional)</label>
+                            <select name="purchase_order_id" id="po-select" class="form-control select2" style="width: 100%;">
+                                <option value="">-- No PO (Create New) --</option>
+                                @foreach($purchase_orders as $po)
+                                    <option value="{{$po->id}}" data-vendor="{{$po->vendor_id}}">{{$po->sku}} {{$po->vendor ? '('.$po->vendor->name.')' : ''}}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label>Warehouse</label>
                             <select name="master_fabric_warehouse_id" class="form-control select2" style="width: 100%;" required>
                                 @foreach($cutting_units as $single_data)
                                 <option value="{{$single_data->id}}" {{old('master_fabric_warehouse_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->cutting_master_name}}</option>
@@ -95,7 +105,7 @@
                             </select>
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label>Vendor</label>
                             <select name="vendor_id" id="vendor-select" class="form-control select2" style="width: 100%;" required>
                                 <option value="">-- Select vendor --</option>
@@ -250,10 +260,10 @@
                                 </thead>
 
                                 <tbody id="fabric-body">
-                                    <tr data-row="1">
+                                    <tr data-row="1" id="fabric-row">
                                         <td>
-                                            <select name="rolls[1][fabric_sku]"
-                                                    class="form-control select2 fabric-sku"
+                                            <select name="rolls[1][fabric_id]"
+                                                    class="form-control select2 fabric-id-select"
                                                     data-row="1"
                                                     >
                                                 <option value="">Select Fabric</option>
@@ -550,30 +560,90 @@ $(document).ready(function() {
         return html;
     }
 
-    // update all .fabric-sku selects with current fabricOptionsHtml
+    // update all .fabric-id-select selects with current fabricOptionsHtml
     function updateAllFabricSelects() {
-        $('.fabric-sku').each(function(){
+        console.log("Updating selects with:", fabricOptionsHtml);
+        $('.fabric-id-select').each(function(){
             var $sel = $(this);
             var prev = $sel.val();
-            $sel.html(fabricOptionsHtml);
+            
+            // Destroy select2 if initialized to prevent bugs
+            if ($sel.hasClass('select2-hidden-accessible')) {
+                $sel.select2('destroy');
+            }
+            
+            $sel.empty().html(fabricOptionsHtml);
+            
+            // Re-initialize select2
+            $sel.select2({ width: '100%' });
+            
             // restore previous value if exists in new list
             if (prev && $sel.find('option[value="' + prev + '"]').length) {
-                $sel.val(prev);
+                $sel.val(prev).trigger('change.select2');
             } else {
-                $sel.val('');
+                $sel.val('').trigger('change.select2');
             }
-            // update select2 if initialized
-            if ($sel.hasClass('select2-hidden-accessible')) {
-                try { $sel.trigger('change.select2'); } catch(e) {}
-            }
-            $sel.trigger('change');
         });
     }
 
     // ---------------------------
     // Vendor change -> fetch fabrics
     // ---------------------------
+    $(document).on('change', "#po-select", function() {
+        var poId = $(this).val();
+        var vendorSelect = $('#vendor-select');
+        
+        if (poId) {
+            var vendorId = $(this).find(':selected').data('vendor');
+            if (vendorId) {
+                vendorSelect.val(vendorId).trigger('change');
+                vendorSelect.prop('disabled', true);
+                
+                // Add hidden field for vendor_id so it's submitted
+                if (!$('#hidden-vendor-id').length) {
+                    $('<input>').attr({
+                        type: 'hidden',
+                        id: 'hidden-vendor-id',
+                        name: 'vendor_id',
+                        value: vendorId
+                    }).appendTo('#fabric-receipt-form');
+                } else {
+                    $('#hidden-vendor-id').val(vendorId);
+                }
+            }
+            
+            // Fetch PO items (fabrics)
+            var url = "{{ route('admin.fabric_receipt.items', ['id' => 'PO_ID']) }}";
+            url = url.replace('PO_ID', poId);
+            
+            $.ajax({
+                url: url,
+                method: 'GET',
+                dataType: 'json'
+            }).done(function(data) {
+                console.log("PO Fabrics Received:", data);
+                fabricsList = data || [];
+                fabricOptionsHtml = buildOptionsHtml(fabricsList);
+                
+                // Small delay to ensure vendor update is processed
+                setTimeout(function() {
+                    updateAllFabricSelects();
+                }, 200);
+                
+            }).fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("Failed to fetch PO fabrics:", textStatus, errorThrown);
+            });
+            
+        } else {
+            vendorSelect.prop('disabled', false);
+            $('#hidden-vendor-id').remove();
+            vendorSelect.trigger('change');
+        }
+    });
+
     $(document).on('change', "select[name='vendor_id'], #vendor-select", function() {
+        if ($('#po-select').val()) return; // If PO selected, don't trigger normal vendor change logic
+
         var vendorId = $(this).val();
         if (!vendorId) {
             fabricsList = [];
@@ -852,7 +922,7 @@ $(document).ready(function() {
             var rowHtml = `
                 <tr data-row="${rowCount}">
                     <td>
-                        <select name="rolls[${rowCount}][fabric_sku]" class="form-control select2 fabric-sku" data-row="${rowCount}" required>
+                        <select name="rolls[${rowCount}][fabric_id]" class="form-control select2 fabric-id-select" data-row="${rowCount}" required>
                             ${opts}
                         </select>
                         ${ item.fabricId ? '' : `<div style="font-size:12px;color:#666;margin-top:4px;">${escapeHtml(item.fabricName)}</div>` }
@@ -986,9 +1056,9 @@ $(document).ready(function() {
 
     function appendCurrentRowToRollDetails() {
 
-        let $row = $('#fabric-body tr:first');
+        let $row = $('#fabric-row');
 
-        let fabricSelect = $row.find('.fabric-sku');
+        let fabricSelect = $row.find('.fabric-id-select');
         let fabricId   = fabricSelect.val();
         let fabricName = fabricSelect.find('option:selected').text();
 

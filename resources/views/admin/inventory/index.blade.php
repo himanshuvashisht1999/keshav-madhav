@@ -81,7 +81,8 @@
                                         <th class="py-3">MRP</th>
                                         <th class="text-center py-3">Total Boxes</th>
                                         <th class="text-center py-3">Total Order</th>
-                                        <th class="text-center py-3" width="10%">Actions</th>
+                                        <th class="text-center py-3">Available</th>
+                                        <th class="text-center py-3" width="15%">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -94,7 +95,8 @@
     </div>
 
     <!-- Edit Attributes Modal -->
-    <div class="modal fade" id="editAttributesModal" tabindex="-1" role="dialog" aria-labelledby="editAttributesModalLabel" aria-hidden="true">
+    <div class="modal fade" id="editAttributesModal" tabindex="-1" role="dialog" aria-labelledby="editAttributesModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content" style="border-radius: 12px; border: none; overflow: hidden;">
                 <div class="modal-header bg-warning text-dark border-0">
@@ -107,7 +109,8 @@
                 </div>
                 <div class="modal-body p-4 bg-light">
                     <div class="alert alert-info text-sm">
-                        <i class="fas fa-info-circle mr-2"></i> Note: This will update all unassigned boxes matching these specific attributes. Boxes already allocated to an active Agent Order will NOT be modified.
+                        <i class="fas fa-info-circle mr-2"></i> Note: This will update all unassigned boxes matching these
+                        specific attributes. Boxes already allocated to an active Agent Order will NOT be modified.
                     </div>
                     <form id="editAttributesForm">
                         @csrf
@@ -116,21 +119,41 @@
                         <input type="hidden" name="old_color_id" id="old_color_id">
                         <input type="hidden" name="old_fitting_id" id="old_fitting_id">
                         <input type="hidden" name="old_pattern_id" id="old_pattern_id">
-                        
+
                         <div class="row">
                             <div class="col-md-12 form-group">
-                                <label class="small font-weight-bold text-muted">Design Number <span class="text-danger">*</span></label>
-                                <select name="new_product_id" id="new_product_id" class="form-control select2_modal" required>
+                                <div class="bg-light p-3 rounded mb-3 border">
+                                    <label class="small font-weight-bold text-primary"><i
+                                            class="fas fa-map-marker-alt mr-1"></i> Select Source Location <span
+                                            class="text-danger">*</span></label>
+                                    <select name="old_rack_id" id="old_rack_id" class="form-control select2_modal" required>
+                                        <option value="">Select Source Rack</option>
+                                    </select>
+                                    <div id="rack_available_display" class="mt-1 small text-muted font-italic"
+                                        style="display:none;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 form-group">
+                                <label class="small font-weight-bold text-muted">Design Number <span
+                                        class="text-danger">*</span></label>
+                                <select name="new_product_id" id="new_product_id" class="form-control select2_modal"
+                                    required>
                                     <option value="">Select Design</option>
                                     @foreach($master_products as $product)
-                                        <option value="{{ $product->id }}">{{ $product->design_number }} ({{ $product->series->name ?? '' }} {{ $product->name_of_garment }})</option>
+                                        <option value="{{ $product->id }}">{{ $product->design_number }}
+                                            ({{ $product->series->name ?? '' }} {{ $product->name_of_garment }})</option>
                                     @endforeach
                                 </select>
                             </div>
-                            
+
                             <div class="col-md-6 form-group">
-                                <label class="small font-weight-bold text-muted">Fitting <span class="text-danger">*</span></label>
-                                <select name="new_fitting_id" id="new_fitting_id" class="form-control select2_modal" required>
+                                <label class="small font-weight-bold text-muted">Fitting <span
+                                        class="text-danger">*</span></label>
+                                <select name="new_fitting_id" id="new_fitting_id" class="form-control select2_modal"
+                                    required>
                                     <option value="">Select Fitting</option>
                                     @foreach($master_fittings as $f)
                                         <option value="{{ $f->id }}">{{ $f->name }}</option>
@@ -138,8 +161,10 @@
                                 </select>
                             </div>
                             <div class="col-md-6 form-group">
-                                <label class="small font-weight-bold text-muted">Pattern <span class="text-danger">*</span></label>
-                                <select name="new_pattern_id" id="new_pattern_id" class="form-control select2_modal" required>
+                                <label class="small font-weight-bold text-muted">Pattern <span
+                                        class="text-danger">*</span></label>
+                                <select name="new_pattern_id" id="new_pattern_id" class="form-control select2_modal"
+                                    required>
                                     <option value="">Select Pattern</option>
                                     @foreach($master_patterns as $pat)
                                         <option value="{{ $pat->id }}">{{ $pat->name }}</option>
@@ -148,43 +173,74 @@
                             </div>
 
                             <div class="col-md-6 form-group">
-                                <label class="small font-weight-bold text-muted">Size Set <span class="text-danger">*</span></label>
-                                <select name="new_size_set_id" id="new_size_set_id" class="form-control select2_modal" data-placeholder="Select Size Set" required>
+                                <label class="small font-weight-bold text-muted">Size Set <span
+                                        class="text-danger">*</span></label>
+                                <select name="new_size_set_id" id="new_size_set_id" class="form-control select2_modal"
+                                    data-placeholder="Select Size Set" required>
                                     <option value="">Select Size Set</option>
                                 </select>
                             </div>
                             <div class="col-md-6 form-group">
-                                <label class="small font-weight-bold text-muted">Color <span class="text-danger">*</span></label>
-                                <select name="new_color_id" id="new_color_id" class="form-control select2_modal" data-placeholder="Select Color" required>
+                                <label class="small font-weight-bold text-muted">Color <span
+                                        class="text-danger">*</span></label>
+                                <select name="new_color_id" id="new_color_id" class="form-control select2_modal"
+                                    data-placeholder="Select Color" required>
                                     <option value="">Select Color</option>
                                 </select>
                             </div>
-                            
+
+                            <!-- Store & Rack Selection -->
+                            <div class="col-md-6 form-group">
+                                <label class="small font-weight-bold text-muted">Target Store <span
+                                        class="text-danger">*</span></label>
+                                <select name="new_storeroom_id" id="new_storeroom_id" class="form-control select2_modal"
+                                    required>
+                                    <option value="">Select Store</option>
+                                    @foreach($storerooms as $store)
+                                        <option value="{{ $store->id }}">{{ $store->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label class="small font-weight-bold text-muted">Target Rack <span
+                                        class="text-danger">*</span></label>
+                                <select name="new_rack_id" id="new_rack_id" class="form-control select2_modal" required>
+                                    <option value="">Select Rack</option>
+                                </select>
+                            </div>
+
 
                             <div class="col-md-12 form-group">
                                 <hr>
-                                <label class="small font-weight-bold text-dark">Quantity of Boxes to Change <span class="text-danger">*</span></label>
+                                <label class="small font-weight-bold text-dark">Quantity of Boxes to Change <span
+                                        class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control font-weight-bold" name="change_quantity" id="change_quantity" required min="1" value="1">
+                                    <input type="number" class="form-control font-weight-bold" name="change_quantity"
+                                        id="change_quantity" required min="1" value="1">
                                     <div class="input-group-append">
-                                        <span class="input-group-text text-muted bg-white">Total: <strong id="total_boxes_display" class="ml-1 text-dark mr-2">0</strong> | Available: <strong id="max_boxes_display" class="ml-1 text-primary">0</strong></span>
+                                        <span class="input-group-text text-muted bg-white">Total: <strong
+                                                id="total_boxes_display" class="ml-1 text-dark mr-2">0</strong> | Available:
+                                            <strong id="max_boxes_display" class="ml-1 text-primary">0</strong></span>
                                     </div>
                                 </div>
-                                <small class="text-muted italic">Specify how many boxes from the total should be updated to the new attributes.</small>
+                                <small class="text-muted italic">Specify how many boxes from the total should be updated to
+                                    the new attributes.</small>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer bg-white border-0 py-3">
                     <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-warning px-4 font-weight-bold" id="btnSaveAttributes">Update Inventory</button>
+                    <button type="button" class="btn btn-warning px-4 font-weight-bold" id="btnSaveAttributes">Update
+                        Inventory</button>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Delete Boxes Modal -->
-    <div class="modal fade" id="deleteBoxesModal" tabindex="-1" role="dialog" aria-labelledby="deleteBoxesModalLabel" aria-hidden="true">
+    <div class="modal fade" id="deleteBoxesModal" tabindex="-1" role="dialog" aria-labelledby="deleteBoxesModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content" style="border-radius: 12px; border: none; overflow: hidden;">
                 <div class="modal-header bg-danger text-white border-0">
@@ -197,7 +253,8 @@
                 </div>
                 <div class="modal-body p-4 bg-light">
                     <div class="alert alert-warning text-sm">
-                        <i class="fas fa-exclamation-triangle mr-2"></i> <strong>Warning!</strong> This action cannot be undone. Only boxes not assigned to any order can be deleted.
+                        <i class="fas fa-exclamation-triangle mr-2"></i> <strong>Warning!</strong> This action cannot be
+                        undone. Only boxes not assigned to any order can be deleted.
                     </div>
                     <form id="deleteBoxesForm">
                         @csrf
@@ -206,34 +263,53 @@
                         <input type="hidden" name="modal_color_id" id="modal_color_id">
                         <input type="hidden" name="modal_fitting_id" id="modal_fitting_id">
                         <input type="hidden" name="modal_pattern_id" id="modal_pattern_id">
-                        
+
                         <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label class="small font-weight-bold text-muted d-block">Design Number</label>
-                                <div id="modal_design_no_display" class="font-weight-bold text-dark h5"></div>
-                            </div>
-                            
                             <div class="col-md-12 form-group">
-                                <label class="small font-weight-bold text-dark">Quantity of Boxes to Delete <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="number" class="form-control font-weight-bold form-control-lg" name="delete_quantity" id="delete_quantity" required min="1" value="1">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text text-muted bg-white">
-                                            Available: <strong id="modal_available_boxes_display" class="ml-1 text-danger">0</strong>
-                                        </span>
-                                    </div>
+                                <div class="bg-white p-3 rounded mb-3 border shadow-sm">
+                                    <label class="small font-weight-bold text-danger"><i
+                                            class="fas fa-map-marker-alt mr-1"></i> Select Source Location <span
+                                            class="text-danger">*</span></label>
+                                    <select name="modal_old_rack_id" id="modal_old_rack_id"
+                                        class="form-control select2_modal" required>
+                                        <option value="">Select Source Rack</option>
+                                    </select>
+                                    <div id="modal_rack_available_display" class="mt-1 small text-muted font-italic"
+                                        style="display:none;"></div>
                                 </div>
-                                <small class="text-muted italic">Total boxes found: <span id="modal_total_boxes_display">0</span></small>
                             </div>
                         </div>
-                    </form>
+                        <div class="col-md-12 mb-3">
+                            <label class="small font-weight-bold text-muted d-block">Design Number</label>
+                            <div id="modal_design_no_display" class="font-weight-bold text-dark h5"></div>
+                        </div>
+
+                        <div class="col-md-12 form-group">
+                            <label class="small font-weight-bold text-dark">Quantity of Boxes to Delete <span
+                                    class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" class="form-control font-weight-bold form-control-lg"
+                                    name="delete_quantity" id="delete_quantity" required min="1" value="1">
+                                <div class="input-group-append">
+                                    <span class="input-group-text text-muted bg-white">
+                                        Available: <strong id="modal_available_boxes_display"
+                                            class="ml-1 text-danger">0</strong>
+                                    </span>
+                                </div>
+                            </div>
+                            <small class="text-muted italic">Total boxes found: <span
+                                    id="modal_total_boxes_display">0</span></small>
+                        </div>
                 </div>
-                <div class="modal-footer bg-white border-0 py-3">
-                    <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger px-4 font-weight-bold" id="btnConfirmDelete">Confirm Delete</button>
-                </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-white border-0 py-3">
+                <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger px-4 font-weight-bold" id="btnConfirmDelete">Confirm
+                    Delete</button>
             </div>
         </div>
+    </div>
     </div>
 
     <style>
@@ -293,6 +369,7 @@
                     { data: 'mrp_display', name: 'mrp' },
                     { data: 'total_boxes', name: 'total_boxes', className: 'text-center font-weight-bold text-success' },
                     { data: 'total_order', name: 'total_order', className: 'text-center font-weight-bold text-primary' },
+                    { data: 'available_boxes', name: 'available_boxes', className: 'text-center font-weight-bold text-info' },
                     { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
                 ],
                 language: {
@@ -324,40 +401,156 @@
                 });
             });
 
-             // Populate Modal on Open
+            // Store -> Rack dependent logic
+            $('#new_storeroom_id').on('change', function () {
+                var storeId = $(this).val();
+                var rackSelect = $('#new_rack_id');
+                var preselectRack = $('#editAttributesModal').data('preselect-rack');
+
+                rackSelect.empty().append('<option value="">Select Rack</option>').trigger('change.select2');
+
+                if (storeId) {
+                    $.get(`/admin/inventory/warehouse-stock/racks/${storeId}`, function (data) {
+                        data.forEach(function (rack) {
+                            rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
+                        });
+
+                        if (preselectRack) {
+                            rackSelect.val(preselectRack).trigger('change');
+                            $('#editAttributesModal').data('preselect-rack', null);
+                        } else {
+                            rackSelect.trigger('change.select2');
+                        }
+                    });
+                }
+            });
+
+            // Populate Edit Modal on Open
             $('#editAttributesModal').on('show.bs.modal', function (event) {
                 var button = $(event.relatedTarget);
-                var total = button.data('total-boxes');
-                var available = button.data('available-boxes');
                 var productId = button.data('product-id');
                 var sizeSetId = button.data('size-set-id');
                 var colorId = button.data('color-id');
                 var fittingId = button.data('fitting-id');
                 var patternId = button.data('pattern-id');
-                
-                // Set old values for where clause
+
+                // Reset fields
                 $('#old_product_id').val(productId);
                 $('#old_size_set_id').val(sizeSetId);
                 $('#old_color_id').val(colorId);
                 $('#old_fitting_id').val(fittingId);
                 $('#old_pattern_id').val(patternId);
-                
-                $('#change_quantity').val(available).attr('max', available);
-                $('#total_boxes_display').text(total);
-                $('#max_boxes_display').text(available);
+                $('#old_rack_id').empty().append('<option value="">Loading...</option>').trigger('change');
+                $('#rack_available_display').hide();
 
-                // Set initial new values and trigger dependent logic
+                // Fetch locations-wise quantity
+                $.get("{{ route('admin.inventory.get_locations') }}", {
+                    product_id: productId,
+                    size_set_id: sizeSetId,
+                    color_id: colorId,
+                    fitting_id: fittingId,
+                    pattern_id: patternId
+                }, function (data) {
+                    var rackSelect = $('#old_rack_id');
+                    rackSelect.empty().append('<option value="">Select Source Rack</option>');
+
+                    data.forEach(function (row) {
+                        rackSelect.append(`<option value="${row.rack_id}" data-available="${row.available_boxes}">${row.storeroom_name} -> ${row.rack_name} (${row.available_boxes} Boxes)</option>`);
+                    });
+
+                    // If only one rack, auto-select it
+                    if (data.length === 1) {
+                        rackSelect.val(data[0].rack_id).trigger('change');
+                    } else {
+                        rackSelect.trigger('change.select2');
+                    }
+                });
+
+                // Set initial new values
                 $('#new_product_id').val(productId).data('preselect-size', sizeSetId).data('preselect-color', colorId).trigger('change');
             });
 
+            // Update quantities when source rack changes (Edit Modal)
+            $('#old_rack_id').on('change', function () {
+                var selected = $(this).find(':selected');
+                var available = selected.data('available');
+
+                if (available !== undefined) {
+                    $('#change_quantity').val(available).attr('max', available);
+                    $('#max_boxes_display').text(available);
+                    $('#rack_available_display').text(`Current quantity on this rack: ${available} boxes`).show();
+                } else {
+                    $('#rack_available_display').hide();
+                }
+            });
+
+            // Populate Delete Modal on Open
+            $('#deleteBoxesModal').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget);
+                var productId = button.data('product-id');
+                var designNo = button.data('design-no');
+                var sizeSetId = button.data('size-set-id');
+                var colorId = button.data('color-id');
+                var fittingId = button.data('fitting-id');
+                var patternId = button.data('pattern-id');
+                var total = button.data('total-boxes');
+
+                $('#modal_product_id').val(productId);
+                $('#modal_size_set_id').val(sizeSetId);
+                $('#modal_color_id').val(colorId);
+                $('#modal_fitting_id').val(fittingId);
+                $('#modal_pattern_id').val(patternId);
+                $('#modal_design_no_display').text(designNo);
+                $('#modal_total_boxes_display').text(total);
+
+                $('#modal_old_rack_id').empty().append('<option value="">Loading...</option>').trigger('change');
+                $('#modal_rack_available_display').hide();
+
+                // Fetch locations-wise quantity
+                $.get("{{ route('admin.inventory.get_locations') }}", {
+                    product_id: productId,
+                    size_set_id: sizeSetId,
+                    color_id: colorId,
+                    fitting_id: fittingId,
+                    pattern_id: patternId
+                }, function (data) {
+                    var rackSelect = $('#modal_old_rack_id');
+                    rackSelect.empty().append('<option value="">Select Source Rack</option>');
+
+                    data.forEach(function (row) {
+                        rackSelect.append(`<option value="${row.rack_id}" data-available="${row.available_boxes}">${row.storeroom_name} -> ${row.rack_name} (${row.available_boxes} Boxes)</option>`);
+                    });
+
+                    if (data.length === 1) {
+                        rackSelect.val(data[0].rack_id).trigger('change');
+                    } else {
+                        rackSelect.trigger('change.select2');
+                    }
+                });
+            });
+
+            // Update quantities when source rack changes (Delete Modal)
+            $('#modal_old_rack_id').on('change', function () {
+                var selected = $(this).find(':selected');
+                var available = selected.data('available');
+
+                if (available !== undefined) {
+                    $('#delete_quantity').val(1).attr('max', available);
+                    $('#modal_available_boxes_display').text(available);
+                    $('#modal_rack_available_display').text(`Total items on this rack: ${available}`).show();
+                } else {
+                    $('#modal_rack_available_display').hide();
+                }
+            });
+
             // Dependent Dropdowns Logic
-            $('#new_product_id').on('change', function() {
+            $('#new_product_id').on('change', function () {
                 var productId = $(this).val();
                 var fittingSelect = $('#new_fitting_id');
                 var patternSelect = $('#new_pattern_id');
                 var sizeSelect = $('#new_size_set_id');
                 var colorSelect = $('#new_color_id');
-                
+
                 var preselectSize = $(this).data('preselect-size');
                 var preselectColor = $(this).data('preselect-color');
 
@@ -366,7 +559,7 @@
                 colorSelect.empty().append('<option value="">Select Color</option>').trigger('change.select2');
 
                 if (productId) {
-                    $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function(data) {
+                    $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function (data) {
                         if (data.success) {
                             // Only show specific fitting/pattern
                             fittingSelect.empty();
@@ -384,14 +577,14 @@
                                 patternSelect.append('<option value="">No Pattern</option>');
                             }
                             patternSelect.trigger('change.select2');
-                            
+
                             $('#editAttributesModal').data('variants', data.variants);
-                            
+
                             sizeSelect.empty().append('<option value="">Select Size Set</option>');
-                            data.variants.forEach(function(v) {
+                            data.variants.forEach(function (v) {
                                 sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
                             });
-                            
+
                             if (preselectSize) {
                                 sizeSelect.val(preselectSize).trigger('change');
                                 $('#new_product_id').data('preselect-size', null);
@@ -408,16 +601,16 @@
                 var variants = $('#editAttributesModal').data('variants') || [];
                 var colorSelect = $('#new_color_id');
                 var preselectColor = $('#new_product_id').data('preselect-color');
-                
+
                 colorSelect.empty().append('<option value="">Select Color</option>').trigger('change.select2');
 
                 if (sizeSetId) {
                     var variant = variants.find(v => v.size_set_id == sizeSetId);
                     if (variant) {
-                        variant.colors.forEach(function(c) {
+                        variant.colors.forEach(function (c) {
                             colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
                         });
-                        
+
                         if (preselectColor) {
                             colorSelect.val(preselectColor).trigger('change.select2');
                             $('#new_product_id').data('preselect-color', null);
@@ -429,10 +622,11 @@
             });
 
 
+
             // Submit Changes
-            $('#btnSaveAttributes').on('click', function() {
+            $('#btnSaveAttributes').on('click', function () {
                 let form = $('#editAttributesForm');
-                if(!form[0].checkValidity()) {
+                if (!form[0].checkValidity()) {
                     form[0].reportValidity();
                     return;
                 }
@@ -445,9 +639,9 @@
                     url: "{{ route('admin.inventory.update_attributes') }}",
                     type: "POST",
                     data: form.serialize(),
-                    success: function(res) {
+                    success: function (res) {
                         btn.html(originalText).prop('disabled', false);
-                        if(res.success) {
+                        if (res.success) {
                             $('#editAttributesModal').modal('hide');
                             toastr.success(res.message);
                             table.ajax.reload(null, false); // Reload without resetting pagination
@@ -455,7 +649,7 @@
                             toastr.error(res.message || "An error occurred.");
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         btn.html(originalText).prop('disabled', false);
                         toastr.error(xhr.responseJSON?.message || "Failed to update attributes.");
                     }
@@ -479,7 +673,7 @@
                 $('#modal_color_id').val(color_id);
                 $('#modal_fitting_id').val(fitting_id);
                 $('#modal_pattern_id').val(pattern_id);
-                
+
                 $('#modal_design_no_display').text(design_no);
                 $('#modal_total_boxes_display').text(total);
                 $('#modal_available_boxes_display').text(available);
@@ -487,14 +681,14 @@
             });
 
             // Confirm Delete Submit
-            $('#btnConfirmDelete').on('click', function() {
+            $('#btnConfirmDelete').on('click', function () {
                 let form = $('#deleteBoxesForm');
-                if(!form[0].checkValidity()) {
+                if (!form[0].checkValidity()) {
                     form[0].reportValidity();
                     return;
                 }
 
-                if(!confirm('Are you absolutely sure you want to delete these boxes? This cannot be undone.')) {
+                if (!confirm('Are you absolutely sure you want to delete these boxes? This cannot be undone.')) {
                     return;
                 }
 
@@ -506,9 +700,9 @@
                     url: "{{ route('admin.inventory.delete_boxes') }}",
                     type: "POST",
                     data: form.serialize(),
-                    success: function(res) {
+                    success: function (res) {
                         btn.html(originalText).prop('disabled', false);
-                        if(res.success) {
+                        if (res.success) {
                             $('#deleteBoxesModal').modal('hide');
                             toastr.success(res.message);
                             table.ajax.reload(null, false);
@@ -516,7 +710,7 @@
                             toastr.error(res.message || "An error occurred.");
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         btn.html(originalText).prop('disabled', false);
                         toastr.error(xhr.responseJSON?.message || "Failed to delete boxes.");
                     }
@@ -533,6 +727,7 @@
             justify-content: center;
             border-radius: 8px;
         }
+
         .btn-sm.btn-icon {
             width: 32px;
             height: 32px;

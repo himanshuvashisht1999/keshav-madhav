@@ -104,11 +104,11 @@
                                 <table class="table table-striped table-hover mb-0">
                                     <thead class="bg-light contrast-text">
                                         <tr>
-                                            <th class="pl-4 py-3">Box No</th>
-                                            <th class="py-3">Carton No</th>
+                                            <th class="pl-4 py-3">Rack</th>
                                             <th class="py-3">Date</th>
                                             <th class="py-3">Order No</th>
-                                            <th class="py-3">Color</th>
+                                            <th class="py-3">Pcs/Box</th>
+                                            <th class="text-center py-3">Total Boxes</th>
                                             <th class="text-center py-3">Total Qty</th>
                                         </tr>
                                     </thead>
@@ -116,19 +116,19 @@
                                         @foreach($items as $item)
                                             <tr>
                                                 <td class="pl-4 py-3">
-                                                    @if($item->box_no)
-                                                        <span class="badge badge-info">{{ $item->box_no }}</span>
+                                                    @if($item->rack)
+                                                        <span class="badge badge-info">{{ $item->rack->name }}</span>
                                                     @else
-                                                        <span class="text-muted">Direct</span>
+                                                        <span class="text-muted">Unassigned</span>
                                                     @endif
                                                 </td>
-                                                <td class="py-3">{{ $item->carton_no ?? 'N/A' }}</td>
                                                 <td class="py-3">
                                                     {{ $item->created_at->format('d M Y') }}
                                                 </td>
                                                 <td class="py-3 font-weight-bold text-primary">{{ $item->orderMain->sku ?? 'N/A' }}</td>
-                                                <td class="py-3">{{ $item->color_name ?? 'N/A' }}</td>
-                                                <td class="text-center py-3 font-weight-bold text-success" style="font-size: 1.1rem;">{{ $item->quantity }}</td>
+                                                <td class="py-3 text-center">{{ $item->quantity }}</td>
+                                                <td class="text-center py-3 font-weight-bold text-success">{{ $item->total_boxes }}</td>
+                                                <td class="text-center py-3 font-weight-bold text-success" style="font-size: 1.1rem;">{{ $item->quantity * $item->total_boxes }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>

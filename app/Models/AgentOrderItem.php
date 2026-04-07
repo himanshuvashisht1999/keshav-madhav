@@ -31,6 +31,7 @@ class AgentOrderItem extends Model
         'mrp',
         'selling_price',
         'barcode',
+        'box_qty',
         'qrcode'
     ];
 

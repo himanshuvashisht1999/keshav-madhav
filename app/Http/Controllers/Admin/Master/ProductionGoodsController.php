@@ -46,8 +46,12 @@ class ProductionGoodsController extends Controller {
         return redirect()->route('admin.master.production-goods.index')->withSuccess('The product has been successfully created.');
     }
     public function delete(Request $request){
-        $data = $this->service->delete($request);
-        return redirect()->route('admin.master.production-goods.index')->withSuccess('The product has been successfully deleted.'); 
+        $res = $this->service->delete($request);
+        if ($res === true) {
+            return redirect()->route('admin.master.production-goods.index')->withSuccess('The product has been successfully deleted.');
+        } else {
+            return redirect()->route('admin.master.production-goods.index')->withError($res);
+        }
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);

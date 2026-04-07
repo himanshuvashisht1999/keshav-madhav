@@ -1,0 +1,25 @@
+
+   INFO  Running migrations.  
+
+  2016_06_01_000001_create_oauth_auth_codes_table  3ms FAIL
+
+   Illuminate\Database\QueryException 
+
+  SQLSTATE[42S01]: Base table or view already exists: 1050 Table 'oauth_auth_codes' already exists (SQL: create table `oauth_auth_codes` (`id` varchar(100) not null, `user_id` bigint unsigned not null, `client_id` bigint unsigned not null, `scopes` text null, `revoked` tinyint(1) not null, `expires_at` datetime null) default character set utf8mb4 collate 'utf8mb4_unicode_ci')
+
+  at C:\xampp\htdocs\keshav-madhav\vendor\laravel\framework\src\Illuminate\Database\Connection.php:760
+    756???         // If an exception occurs when attempting to run a query, we'll format the error
+    757???         // message to include the bindings with SQL, which will make this exception a
+    758???         // lot more helpful to the developer instead of just the database's errors.
+    759???         catch (Exception $e) {
+  ??? 760???             throw new QueryException(
+    761???                 $query, $this->prepareBindings($bindings), $e
+    762???             );
+    763???         }
+    764???     }
+
+  1   C:\xampp\htdocs\keshav-madhav\vendor\laravel\framework\src\Illuminate\Database\Connection.php:545
+      PDOException::("SQLSTATE[42S01]: Base table or view already exists: 1050 Table 'oauth_auth_codes' already exists")
+
+  2   C:\xampp\htdocs\keshav-madhav\vendor\laravel\framework\src\Illuminate\Database\Connection.php:545
+      PDOStatement::execute()

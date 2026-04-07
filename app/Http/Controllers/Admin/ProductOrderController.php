@@ -90,6 +90,7 @@ class ProductOrderController extends Controller {
         $response['patterns'] = $this->service->getPatterns();
         $response['sizes'] = $this->service->product_sizes();
         $response['colours'] = $this->service->getColours();
+        $response['products'] = $this->service->products();
         return view('admin.product_order.create_domestic', $response);
     }
 

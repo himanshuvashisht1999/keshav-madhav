@@ -30,6 +30,7 @@ class FabricReceiptController extends Controller
     {
         $response['vendors'] = $this->service->vendors();
         $response['cutting_units'] = $this->service->cutting_units();
+        $response['purchase_orders'] = \App\Models\PurchaseOrder::with('vendor')->where('status', 1)->orderBy('id', 'desc')->get(); // Only pending POs
         $vendor_id = 0;
         $response['fabrics'] = $this->service->fabric_list_by_vendor($vendor_id);
         return view('admin.fabric_receipt.create_new', $response);
@@ -68,8 +69,14 @@ class FabricReceiptController extends Controller
     }
     public function getPurchaseOrderItems($id)
     {
-        $items = $this->service->purchase_order_items($id);
-        return response()->json($items);
+        $fabrics = \DB::table('purchase_order_items')
+            ->join('fabrics', 'purchase_order_items.fabric_id', '=', 'fabrics.id')
+            ->where('purchase_order_items.purchase_order_id', $id)
+            ->select('fabrics.id', 'fabrics.name', 'fabrics.sku')
+            ->distinct()
+            ->get();
+        
+        return response()->json($fabrics);
     }
 
     public function edit(Request $request)

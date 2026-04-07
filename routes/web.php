@@ -479,6 +479,13 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/{id}/process-scan', [AdminAgentOrderController::class, 'processScan'])->name('process-scan');
             Route::post('/{id}/remove-scan', [AdminAgentOrderController::class, 'removeScan'])->name('remove-scan');
             Route::post('/{id}/dispatch', [AdminAgentOrderController::class, 'dispatchOrder'])->name('dispatch');
+            
+            // New Dispatch Session Routes
+            Route::get('/dispatches', [AdminAgentOrderController::class, 'indexDispatches'])->name('dispatches.index');
+            Route::get('/dispatches/{id}', [AdminAgentOrderController::class, 'dispatchShow'])->name('dispatches.show');
+            Route::get('/dispatches/{id}/invoice', [AdminAgentOrderController::class, 'downloadDispatchInvoice'])->name('dispatches.download-invoice');
+            Route::get('/dispatches/{id}/packing-slip', [AdminAgentOrderController::class, 'downloadDispatchPackingSlip'])->name('dispatches.download-packing-slip');
+            Route::post('/dispatch-selected', [AdminAgentOrderController::class, 'dispatchSelected'])->name('dispatch-selected');
         });
 
         Route::prefix('master')->name('master.')->group(function () {
@@ -649,6 +656,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/get-size-set-info/{id}', [AdminInventoryController::class, 'getSizeSetInfo'])->name('get_size_set_info');
             Route::get('/get-product-full-details', [AdminInventoryController::class, 'getProductFullDetails'])->name('get_product_full_details');
             Route::get('/get-pricing-info', [AdminInventoryController::class, 'getPricingInfo'])->name('get_pricing_info');
+            Route::get('/get-locations', [AdminInventoryController::class, 'getLocations'])->name('get_locations');
             Route::get('/barcode-generator', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'index'])->name('barcode-generator.index');
             Route::post('/barcode-generator/generate', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generate'])->name('barcode-generator.generate');
             Route::post('/barcode-generator/generate-tspl', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateTspl'])->name('barcode-generator.generate-tspl');
@@ -664,6 +672,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::prefix('/outflow')->name('outflow.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'index'])->name('index');
                 Route::get('/list', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'indexList'])->name('list');
+            });
+
+            // Attribute Change History
+            Route::prefix('/attribute-history')->name('attribute-history.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'attributeHistoryIndex'])->name('index');
+                Route::get('/list', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'attributeHistoryList'])->name('list');
             });
         });
 

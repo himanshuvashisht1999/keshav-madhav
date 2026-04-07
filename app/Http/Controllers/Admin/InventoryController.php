@@ -39,6 +39,7 @@ class InventoryController extends Controller
         $master_fittings = MasterProductFitting::all();
         $master_patterns = MasterDesignPattern::all();
         $master_series = MasterSeries::where('status', 1)->get();
+        $storerooms = \App\Models\Storeroom::where('status', '1')->get();
 
         return view('admin.inventory.index', compact(
             'size_sets',
@@ -49,7 +50,8 @@ class InventoryController extends Controller
             'master_colors',
             'master_fittings',
             'master_patterns',
-            'master_series'
+            'master_series',
+            'storerooms'
         ));
     }
 
@@ -63,6 +65,10 @@ class InventoryController extends Controller
                 'domestic_inventories.fitting_id',
                 'domestic_inventories.pattern_id',
                 'domestic_inventories.product_id',
+                'domestic_inventories.rack_id',
+                'racks.name as rack_name',
+                'racks.storeroom_id',
+                'storerooms.name as storeroom_name',
                 'products.design_number',
                 'products.name_of_garment as product_name',
                 'series.name as series_name',
@@ -71,8 +77,7 @@ class InventoryController extends Controller
                 'fittings.name as fitting_name',
                 'patterns.name as pattern_name',
                 'variants.mrp as mrp',
-                DB::raw('SUM(domestic_inventories.quantity) as total_qty'),
-                DB::raw('COUNT(DISTINCT domestic_inventories.box_no) as total_boxes'),
+                DB::raw('SUM(domestic_inventories.total_boxes) as total_boxes'),
                 DB::raw('MAX(domestic_inventories.created_at) as recent_date')
             )
                 ->leftJoin('production_goods as products', 'domestic_inventories.product_id', '=', 'products.id')
@@ -81,6 +86,8 @@ class InventoryController extends Controller
                 ->leftJoin('master_size_measurements as sizes', 'domestic_inventories.size_set_id', '=', 'sizes.id')
                 ->leftJoin('master_product_fittings as fittings', 'domestic_inventories.fitting_id', '=', 'fittings.id')
                 ->leftJoin('master_design_patterns as patterns', 'domestic_inventories.pattern_id', '=', 'patterns.id')
+                ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
                 ->leftJoin('production_goods_variants as variants', function ($join) {
                     $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                         ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
@@ -133,17 +140,7 @@ class InventoryController extends Controller
                     return trim($row->product_name) ?: $row->design_number;
                 })
                 ->addColumn('mrp_display', function ($row) {
-                    // Try to find consistent MRP from master pricing
-                    $pricing = \App\Models\DomesticInventoryImage::where('color_id', $row->color_id)
-                        ->where('product_id', $row->product_id)
-                        ->where('size_set_id', $row->size_set_id)
-                        ->where('fitting_id', $row->fitting_id)
-                        ->where('pattern_id', $row->pattern_id)
-                        ->where('is_main', 1)
-                        ->first();
-
-                    $mrp = $pricing ? $pricing->mrp : $row->mrp;
-                    return '₹' . number_format($mrp, 2);
+                    return '₹' . number_format($row->mrp ?? 0, 2);
                 })
                 ->addColumn('total_order', function ($row) {
                     $agentOrderBoxes = \App\Models\AgentOrderItem::whereHas(
@@ -175,9 +172,42 @@ class InventoryController extends Controller
                                 return $q->whereNull('pattern_id');
                             }
                         )
-                        ->count();
+                        ->sum('box_qty');
 
                     return (int) $agentOrderBoxes;
+                })
+                ->addColumn('available_boxes', function ($row) {
+                    $total_boxes = $row->total_boxes ?? 0;
+                    $agentOrderBoxes = \App\Models\AgentOrderItem::whereHas(
+                        'order',
+                        function ($q) {
+                            $q->where('status', '!=', 'dispatched');
+                        }
+                    )
+                        ->where('design_number', $row->design_number)
+                        ->where('color_id', $row->color_id)
+                        ->where('size_set_id', $row->size_set_id)
+                        ->when(
+                            $row->fitting_id,
+                            function ($q, $val) {
+                                return $q->where('fitting_id', $val);
+                            },
+                            function ($q) {
+                                return $q->whereNull('fitting_id');
+                            }
+                        )
+                        ->when(
+                            $row->pattern_id,
+                            function ($q, $val) {
+                                return $q->where('pattern_id', $val);
+                            },
+                            function ($q) {
+                                return $q->whereNull('pattern_id');
+                            }
+                        )
+                        ->sum(DB::raw('box_qty - IFNULL(scanned_box_qty, 0)'));
+
+                    return max(0, (int) ($total_boxes - $agentOrderBoxes));
                 })
                 ->addColumn('action', function ($row) {
                     $params = [
@@ -207,7 +237,7 @@ class InventoryController extends Controller
                         ->where(function ($q) {
                             $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
                         })
-                        ->count();
+                        ->sum('total_boxes');
 
                     $seriesId = \App\Models\ProductionGoods::find($row->product_id)->master_series_id ?? '';
 
@@ -219,22 +249,22 @@ class InventoryController extends Controller
                              data-design-no="' . $row->design_number . '"
                              data-size-set-id="' . $row->size_set_id . '"
                              data-color-id="' . $row->color_id . '"
-                             data-fitting-id="' . $row->fitting_id . '"
-                             data-pattern-id="' . $row->pattern_id . '"
+                             data-fitting-id="' . ($row->fitting_id ?? '') . '"
+                             data-pattern-id="' . ($row->pattern_id ?? '') . '"
                              data-total-boxes="' . $row->total_boxes . '"
                              data-available-boxes="' . $availableBoxes . '"
                              title="Change Product Attributes"
                          ><i class="fas fa-edit"></i></button>';
 
-                    $btn .= ' <button type="button" class="btn btn-danger btn-sm btn-icon mb-1" 
+                    $btn .= ' <button type="button" class="btn btn-danger btn-sm btn-icon mb-1 text-white font-weight-bold" 
                              data-toggle="modal" 
                              data-target="#deleteBoxesModal"
                              data-product-id="' . $row->product_id . '"
                              data-design-no="' . $row->design_number . '"
                              data-size-set-id="' . $row->size_set_id . '"
                              data-color-id="' . $row->color_id . '"
-                             data-fitting-id="' . $row->fitting_id . '"
-                             data-pattern-id="' . $row->pattern_id . '"
+                             data-fitting-id="' . ($row->fitting_id ?? '') . '"
+                             data-pattern-id="' . ($row->pattern_id ?? '') . '"
                              data-total-boxes="' . $row->total_boxes . '"
                              data-available-boxes="' . $availableBoxes . '"
                              title="Delete Boxes"
@@ -242,7 +272,7 @@ class InventoryController extends Controller
 
                     return $btn;
                 })
-                ->rawColumns(['box_display', 'action'])
+                ->rawColumns(['action', 'product_name_display'])
                 ->make(true);
         }
     }
@@ -340,16 +370,38 @@ class InventoryController extends Controller
             ]);
 
             foreach ($request->products as $item) {
+                $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'] . 'P' . $item['pattern_id'] . 'F' . $item['fitting_id'];                // Consolidated Inventory Logic: Manage stock as aggregate counts per barcode
+                $inventory = DomesticInventory::where('barcode', $barcode)
+                    ->where('rack_id', $item['rack_id'] ?? null)
+                    ->where('order_main_id', 0) // Unassigned stock
+                    ->first();
+
+                if ($inventory) {
+                    $inventory->total_boxes += $item['total_boxes'];
+                    $inventory->save();
+                } else {
+                    $inventory = DomesticInventory::create([
+                        'product_id' => $item['product_id'],
+                        'color_id' => $item['color_id'],
+                        'size_set_id' => $item['size_set_id'],
+                        'fitting_id' => $item['fitting_id'],
+                        'pattern_id' => $item['pattern_id'],
+                        'quantity' => $item['pieces_per_box'],
+                        'total_boxes' => $item['total_boxes'],
+                        'barcode' => $barcode,
+                        'packing_main_id' => $packingMain->id,
+                        'rack_id' => $item['rack_id'] ?? null,
+                        'order_main_id' => 0,
+                        'status' => 1
+                    ]);
+                }
+
+                $inventoryIds[] = $inventory->id;
+
+                // Support legacy PackingCarton/PackingBox for secondary tracking if needed
                 for ($i = 0; $i < $item['total_boxes']; $i++) {
-                    $currentCartonNo++;
                     $currentBoxNoInt++;
-
                     $box_no = 'BX-' . $currentBoxNoInt;
-
-                    while (DomesticInventory::where('box_no', $box_no)->exists()) {
-                        $currentBoxNoInt++;
-                        $box_no = 'BX-' . $currentBoxNoInt;
-                    }
 
                     $carton = \App\Models\PackingCarton::create([
                         'packing_main_id' => $packingMain->id,
@@ -358,26 +410,16 @@ class InventoryController extends Controller
                         'status' => 1
                     ]);
 
-                    $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'] . 'P' . $item['pattern_id'] . 'F' . $item['fitting_id'];
-
-                    $inventory = DomesticInventory::create([
-                        'product_id' => $item['product_id'],
-                        'color_id' => $item['color_id'],
-                        'size_set_id' => $item['size_set_id'],
-                        'fitting_id' => $item['fitting_id'],
-                        'pattern_id' => $item['pattern_id'],
-                        'quantity' => $item['pieces_per_box'],
-                        'carton_no' => $currentCartonNo,
-                        'box_no' => $box_no,
-                        'barcode' => $barcode,
+                    \App\Models\PackingBox::create([
                         'packing_main_id' => $packingMain->id,
                         'packing_carton_id' => $carton->id,
-                        'rack_id' => $item['rack_id'] ?? null,
-                        'order_main_id' => 0,
-                        'status' => 1
+                        'box_no' => $box_no,
+                        'box_type' => 'manual',
+                        'barcode' => $barcode,
+                        'domestic_inventory_id' => $inventory->id
                     ]);
 
-                    $inventoryIds[] = $inventory->id;
+                    $currentCartonNo++;
                 }
             }
             DB::commit();
@@ -406,12 +448,8 @@ class InventoryController extends Controller
 
     public function getPricingInfo(Request $request)
     {
-        $pricing = \App\Models\DomesticInventoryImage::where('product_id', $request->product_id)
-            ->where('color_id', $request->color_id)
-            ->where('size_set_id', $request->size_set_id)
-            ->where('fitting_id', $request->fitting_id)
-            ->where('pattern_id', $request->pattern_id)
-            ->where('is_main', 1)
+        $pricing = \App\Models\ProductionGoodVariant::where('production_goods_id', $request->product_id)
+            ->where('master_size_measurement_id', $request->size_set_id)
             ->first();
 
         if ($pricing) {
@@ -421,23 +459,58 @@ class InventoryController extends Controller
             return response()->json([
                 'success' => true,
                 'mrp' => $pricing->mrp,
-                'name' => $autoName ?: $pricing->product_name
+                'name' => $autoName
             ]);
         }
-
+ 
         return response()->json(['success' => false]);
     }
-
+ 
+    public function getLocations(Request $request)
+    {
+        $locations = DomesticInventory::where('product_id', $request->product_id)
+            ->where('size_set_id', $request->size_set_id)
+            ->where('color_id', $request->color_id)
+            ->where(function ($q) use ($request) {
+                if ($request->fitting_id)
+                    $q->where('fitting_id', $request->fitting_id);
+                else
+                    $q->whereNull('fitting_id');
+            })
+            ->where(function ($q) use ($request) {
+                if ($request->pattern_id)
+                    $q->where('pattern_id', $request->pattern_id);
+                else
+                    $q->whereNull('pattern_id');
+            })
+            ->where(function ($q) {
+                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+            })
+            ->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+            ->join('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+            ->select(
+                'domestic_inventories.rack_id',
+                'racks.name as rack_name',
+                'storerooms.name as storeroom_name',
+                DB::raw('SUM(domestic_inventories.total_boxes) as available_boxes')
+            )
+            ->groupBy('domestic_inventories.rack_id', 'racks.name', 'storerooms.name')
+            ->get();
+ 
+        return response()->json($locations);
+    }
+ 
     public function updateAttributes(Request $request)
     {
         $request->validate([
             'old_product_id' => 'required',
             'old_size_set_id' => 'required',
             'old_color_id' => 'required',
-
+            'old_rack_id' => 'required',
             'new_product_id' => 'required',
             'new_size_set_id' => 'required',
             'new_color_id' => 'required',
+            'new_rack_id' => 'required|exists:racks,id',
             'change_quantity' => 'required|integer|min:1'
         ]);
 
@@ -446,7 +519,8 @@ class InventoryController extends Controller
 
             $query = DomesticInventory::where('product_id', $request->old_product_id)
                 ->where('size_set_id', $request->old_size_set_id)
-                ->where('color_id', $request->old_color_id);
+                ->where('color_id', $request->old_color_id)
+                ->where('rack_id', $request->old_rack_id);
 
             // Match optional fields if provided initially
             if ($request->filled('old_fitting_id')) {
@@ -466,9 +540,6 @@ class InventoryController extends Controller
                 $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
             });
 
-            // Limit by the quantity specified by user
-            $query->limit($request->change_quantity);
-
             // Check if any loose inventory exists for this combination
             $inventoryItems = $query->get();
             if ($inventoryItems->isEmpty()) {
@@ -478,21 +549,132 @@ class InventoryController extends Controller
                 ]);
             }
 
-            // Perform Update
-            foreach ($inventoryItems as $item) {
-                $item->product_id = $request->new_product_id;
-                $item->size_set_id = $request->new_size_set_id;
-                $item->color_id = $request->new_color_id;
-                $item->fitting_id = $request->new_fitting_id;
-                $item->pattern_id = $request->new_pattern_id;
-                $item->save();
+            $total_available = $inventoryItems->sum('total_boxes');
+            if ($total_available < $request->change_quantity) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only ' . $total_available . ' boxes available to update.'
+                ]);
             }
+
+            $to_change = (int)$request->change_quantity;
+            
+            $new_fitting_id = $request->new_fitting_id ?: null;
+            $new_pattern_id = $request->new_pattern_id ?: null;
+            $new_rack_id = $request->new_rack_id;
+            
+            // Consistent Barcode Format: D{id}S{id}C{id}P{id}F{id} (using 0 for nulls)
+            $new_barcode = 'D' . $request->new_product_id . 'S' . $request->new_size_set_id . 'C' . $request->new_color_id . 'P' . ($new_pattern_id ?: 0) . 'F' . ($new_fitting_id ?: 0);            // Perform Update with Splitting Logic
+            foreach ($inventoryItems as $item) {
+                if ($to_change <= 0) break;
+                
+                $take = min($item->total_boxes, $to_change);
+                $old_barcode = $item->barcode;
+
+                // Optimization: If nothing is changing (attributes AND rack are same), 
+                // and we are taking the WHOLE row, just update this row.
+                $isSameAttributes = (
+                    $item->product_id == $request->new_product_id &&
+                    $item->size_set_id == $request->new_size_set_id &&
+                    $item->color_id == $request->new_color_id &&
+                    $item->fitting_id == $new_fitting_id &&
+                    $item->pattern_id == $new_pattern_id &&
+                    $item->rack_id == $new_rack_id
+                );
+
+                if ($isSameAttributes && $take == $item->total_boxes) {
+                    $item->barcode = $new_barcode;
+                    $item->qrcode = $new_barcode;
+                    $item->save();
+                    $to_change -= $take;
+                    continue;
+                }
+                
+                // 1. Update/Create NEW DomesticInventory row
+                $new_item = DomesticInventory::where('product_id', $request->new_product_id)
+                    ->where('size_set_id', $request->new_size_set_id)
+                    ->where('color_id', $request->new_color_id)
+                    ->where(function ($q) use ($new_fitting_id) {
+                        return $new_fitting_id ? $q->where('fitting_id', $new_fitting_id) : $q->whereNull('fitting_id');
+                    })
+                    ->where(function ($q) use ($new_pattern_id) {
+                        return $new_pattern_id ? $q->where('pattern_id', $new_pattern_id) : $q->whereNull('pattern_id');
+                    })
+                    ->where('rack_id', $new_rack_id)
+                    ->where('id', '!=', $item->id) // CRITICAL: Don't find yourself!
+                    ->where(function ($q) {
+                        $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+                    })
+                    ->first();
+                
+                if ($new_item) {
+                    $new_item->total_boxes += $take;
+                    $new_item->save();
+                } else {
+                    // Replication
+                    $new_item = $item->replicate();
+                    $new_item->product_id = $request->new_product_id;
+                    $new_item->size_set_id = $request->new_size_set_id;
+                    $new_item->color_id = $request->new_color_id;
+                    $new_item->fitting_id = $new_fitting_id;
+                    $new_item->pattern_id = $new_pattern_id;
+                    $new_item->rack_id = $new_rack_id;
+                    $new_item->total_boxes = $take;
+                    $new_item->barcode = $new_barcode;
+                    $new_item->qrcode = $new_barcode; 
+                    $new_item->save();
+                }
+                
+                // 2. Decrement or Delete OLD DomesticInventory row
+                $item->total_boxes -= $take;
+                if ($item->total_boxes <= 0) {
+                    $item->delete();
+                } else {
+                    $item->save();
+                }
+  // 3. Update the actual individual PackingBox records
+                $assignedBoxNos = DB::table('agent_order_items')
+                    ->whereNotNull('box_no')
+                    ->pluck('box_no');
+
+                $boxesToUpdateIds = DB::table('packing_boxes')
+                    ->where('barcode', $old_barcode)
+                    ->whereNotIn('box_no', $assignedBoxNos)
+                    ->limit($take)
+                    ->pluck('id');
+
+                if ($boxesToUpdateIds->isNotEmpty()) {
+                    DB::table('packing_boxes')
+                        ->whereIn('id', $boxesToUpdateIds)
+                        ->update(['barcode' => $new_barcode]);
+                }
+                $to_change -= $take;
+            }
+                
+            // Log History
+            \App\Models\DomesticInventoryHistory::create([
+                'user_id' => auth()->id(),
+                'old_product_id' => $request->old_product_id,
+                'old_size_set_id' => $request->old_size_set_id,
+                'old_color_id' => $request->old_color_id,
+                'old_fitting_id' => $request->old_fitting_id ?: null,
+                'old_pattern_id' => $request->old_pattern_id ?: null,
+                'old_rack_id' => $request->old_rack_id ?: null,
+                'new_product_id' => $request->new_product_id,
+                'new_size_set_id' => $request->new_size_set_id,
+                'new_color_id' => $request->new_color_id,
+                'new_fitting_id' => $new_fitting_id,
+                'new_pattern_id' => $new_pattern_id,
+                'new_rack_id' => $new_rack_id,
+                'box_quantity' => $request->change_quantity,
+                'type' => 'attribute_change'
+            ]);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully updated ' . $inventoryItems->count() . ' items.'
+                'message' => 'Successfully updated ' . $request->change_quantity . ' boxes.'
             ]);
 
         } catch (\Exception $e) {
@@ -590,6 +772,7 @@ class InventoryController extends Controller
             'modal_product_id' => 'required',
             'modal_size_set_id' => 'required',
             'modal_color_id' => 'required',
+            'modal_old_rack_id' => 'required',
             'delete_quantity' => 'required|integer|min:1'
         ]);
 
@@ -598,7 +781,8 @@ class InventoryController extends Controller
 
             $query = DomesticInventory::where('product_id', $request->modal_product_id)
                 ->where('size_set_id', $request->modal_size_set_id)
-                ->where('color_id', $request->modal_color_id);
+                ->where('color_id', $request->modal_color_id)
+                ->where('rack_id', $request->modal_old_rack_id);
 
             if ($request->filled('modal_fitting_id')) {
                 $query->where('fitting_id', $request->modal_fitting_id);
@@ -617,35 +801,37 @@ class InventoryController extends Controller
                 $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
             });
 
-            $inventoryItems = $query->limit($request->delete_quantity)->get();
+            $inventoryItems = $query->get();
 
-            if ($inventoryItems->isEmpty()) {
+            $total_available = $inventoryItems->sum('total_boxes');
+            if ($total_available < $request->delete_quantity) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No available inventory found to delete.'
+                    'message' => 'Only ' . $total_available . ' boxes available to delete.'
                 ]);
             }
 
-            if ($inventoryItems->count() < $request->delete_quantity) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Only ' . $inventoryItems->count() . ' boxes can be deleted.'
-                ]);
-            }
-
+            $to_delete = (int)$request->delete_quantity;
             foreach ($inventoryItems as $item) {
-                // Delete associated PackingCarton if exists
-                if ($item->packing_carton_id) {
-                    \App\Models\PackingCarton::where('id', $item->packing_carton_id)->delete();
+                if ($to_delete <= 0) break;
+                
+                $take = min($item->total_boxes, $to_delete);
+                
+                $item->total_boxes -= $take;
+                if ($item->total_boxes <= 0) {
+                    $item->delete();
+                } else {
+                    $item->save();
                 }
-                $item->delete();
+                
+                $to_delete -= $take;
             }
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully deleted ' . $inventoryItems->count() . ' boxes.'
+                'message' => 'Successfully deleted ' . $request->delete_quantity . ' boxes.'
             ]);
 
         } catch (\Exception $e) {

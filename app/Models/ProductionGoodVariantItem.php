@@ -14,6 +14,7 @@ class ProductionGoodVariantItem extends Model
     protected $fillable = [
         'variant_id',
         'master_color_id',
+        'barcode',
         'image',
     ];
 

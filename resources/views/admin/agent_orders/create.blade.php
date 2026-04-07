@@ -184,7 +184,7 @@
                                                     data-available="{{ $variation->available_boxes }}">
                                                     <td>
                                                         @if($image)
-                                                            <img src="{{ asset('uploads/inventory_prices/' . $image) }}" alt="Product"
+                                                            <img src="{{ asset('assets/products/' . $image) }}" alt="Product"
                                                                 class="rounded border shadow-xs"
                                                                 style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
                                                                 onclick="window.open(this.src)">

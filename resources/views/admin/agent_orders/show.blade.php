@@ -4,31 +4,81 @@
     <div class="content-wrapper">
         <div class="content-header">
             <div class="container-fluid">
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-center mb-2">
                     <h1 class="m-0 font-weight-bold text-dark">Order Details #ORD-{{ $order->id }}</h1>
-                    <div class="btn-group">
-                        <a href="{{ route('admin.agent-orders.download-invoice', $order->id) }}"
-                            class="btn btn-primary rounded-pill px-4 mr-2">
-                            <i class="fas fa-file-invoice mr-1"></i> Download Invoice
-                        </a>
-                        <a href="{{ route('admin.agent-orders.download-packing-slip', $order->id) }}"
-                            class="btn btn-info rounded-pill px-4 mr-2">
-                            <i class="fas fa-box mr-1"></i> Download Packing Slip
-                        </a>
-                        @if($order->status == 'pending')
-                            <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
-                                class="btn btn-warning rounded-pill px-4 mr-2">
-                                <i class="fas fa-edit mr-1"></i> Edit Order
+                    
+                    <div class="d-flex align-items-center">
+                        <!-- Brand Filter Dropdown -->
+                        <div class="input-group input-group-sm mr-2 shadow-sm" style="width: 180px;">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-white border-right-0"><i class="fas fa-tag text-primary"></i></span>
+                            </div>
+                            <select id="brandFilter" class="form-control border-left-0 font-weight-bold" style="height: 31px;">
+                                <option value="">All Brands</option>
+                                <option value="2">SURGICAL</option>
+                                <option value="1">SNAPKID</option>
+                                <option value="actual">ACTUAL</option>
+                            </select>
+                        </div>
+
+                        <div class="btn-group mr-2 shadow-sm" style="height: 31px;">
+                            <a id="btnPacking" href="{{ route('admin.agent-orders.download-packing-slip', $order->id) }}"
+                                class="btn btn-sm btn-outline-dark px-3 font-weight-bold">
+                                <i class="fas fa-file-pdf mr-1 text-danger"></i> Slip
                             </a>
-                        @endif
-                        <a href="{{ route('admin.agent-orders.index') }}"
-                            class="btn btn-outline-secondary rounded-pill px-4">
-                            <i class="fas fa-arrow-left mr-1"></i> Back
-                        </a>
+                            <a id="btnInvoice" href="{{ route('admin.agent-orders.download-invoice', $order->id) }}"
+                                class="btn btn-sm btn-outline-dark px-3 font-weight-bold">
+                                <i class="fas fa-file-pdf mr-1 text-danger"></i> Invoice
+                            </a>
+                        </div>
+
+                        <div class="btn-group">
+                            @php $dispatchRecord = $order->dispatches->last(); @endphp
+                            
+                            @if($dispatchRecord)
+                            <a href="{{ route('admin.agent-orders.dispatches.show', $dispatchRecord->id) }}"
+                                class="btn btn-sm btn-info rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
+                                <i class="fas fa-shipping-fast mr-1"></i> LOG
+                            </a>
+                            @endif
+
+                            @if($order->status == 'pending')
+                                <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
+                                    class="btn btn-sm btn-warning rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
+                                    <i class="fas fa-edit mr-1"></i> Edit
+                                </a>
+                            @endif
+                            <a href="{{ route('admin.agent-orders.index') }}"
+                                class="btn btn-sm btn-outline-secondary rounded-pill px-3 font-weight-bold shadow-sm">
+                                <i class="fas fa-arrow-left mr-1"></i> Back
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const brandFilter = document.getElementById('brandFilter');
+                const btnPacking = document.getElementById('btnPacking');
+                const btnInvoice = document.getElementById('btnInvoice');
+                
+                const basePackingUrl = "{{ route('admin.agent-orders.download-packing-slip', $order->id) }}";
+                const baseInvoiceUrl = "{{ route('admin.agent-orders.download-invoice', $order->id) }}";
+
+                brandFilter.addEventListener('change', function() {
+                    let val = this.value;
+                    let query = val ? `?brand_id=${val}` : '';
+                    if (val === 'actual') {
+                        query = '?type=actual';
+                    }
+                    
+                    btnPacking.href = basePackingUrl + query;
+                    btnInvoice.href = baseInvoiceUrl + query;
+                });
+            });
+        </script>
 
         <section class="content">
             <div class="container-fluid">
@@ -128,13 +178,6 @@
                                         class="btn btn-primary btn-block btn-lg shadow-sm mb-2">
                                         <i class="fas fa-barcode mr-2"></i> CONTINUE DISPATCH SCAN
                                     </a>
-                                    <form action="{{ route('admin.agent-orders.dispatch', $order->id) }}" method="POST"
-                                        onsubmit="return confirm('Note: Dispatching will PERMANENTLY remove scanned boxes from current inventory. All currently scanned items will be marked as dispatched. Proceed?')">
-                                        @csrf
-                                        <button type="submit" class="btn btn-success btn-block btn-lg shadow-sm">
-                                            <i class="fas fa-truck mr-2"></i> DISPATCH SCANNED ITEMS
-                                        </button>
-                                    </form>
                                 @else
                                     <div class="alert alert-success mt-3 text-center">
                                         <i class="fas fa-check-circle mr-1"></i> This order has been fully dispatched.
@@ -166,16 +209,15 @@
                                         @foreach($items as $item)
                                             <tr>
                                                 <td>
-                                                    <span class="badge badge-primary">{{ $item->box_count }} Boxes</span>
-                                                    @if(!empty($item->box_nos))
-                                                        <div class="small mt-1 text-muted">B#: {{ implode(', ', $item->box_nos) }}</div>
-                                                    @endif
+                                                    <span class="badge {{ $item->status == 'Scanned' ? 'badge-success' : ($item->status == 'Partial' ? 'badge-info' : 'badge-primary') }}">
+                                                        {{ $item->scanned_box_qty }} / {{ $item->box_count }} Boxes
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <strong>{{ $item->product_name }}</strong><br>
                                                     <small style="color:#666;">
                                                         Design: {{ $item->design_number }} | Color: {{ $item->color_name }} | Set:
-                                                        {{ $item->size_set_name }}
+                                                        {{ $item->size_set_name }} | Barcode: {{ $item->barcode }}
                                                         @if(isset($item->fitting_name) && $item->fitting_name) | Fit:
                                                             {{ $item->fitting_name }} @endif
                                                         @if(isset($item->pattern_name) && $item->pattern_name) | Pat:

@@ -30,6 +30,10 @@ class BrandDataTable  {
 				$status = $queue->status;
                 return ($status == 'active') ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-primary">Inactive</span>';
             })
+            ->addColumn('logo', function ($queue) {
+                $src = $queue->logo ? asset('assets/brands/' . $queue->logo) : asset('assets/products/default-image.png');
+                return '<img src="'.$src.'" alt="Logo" style="height:40px;width:auto;border-radius:4px;">';
+            })
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;
                 return '
@@ -37,8 +41,7 @@ class BrandDataTable  {
                 <a href="javascript:void(0)" onclick="deleteItem(' . $parameter . ')" class="mx-2" data-toggle="tooltip" title="Delete"><i class="fas fa-trash text-danger"></i></a>
                 ';
             })
-            
-            ->rawColumns(['action', 'status'])
+            ->rawColumns(['action', 'status', 'logo'])
             ->make(true);
     }
 }

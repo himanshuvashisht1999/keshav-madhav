@@ -158,19 +158,88 @@
         <div class="header-section">
             <table width="100%" style="border-collapse: collapse;">
                 <tr>
-                    <td width="20%" class="text-left" style="vertical-align: middle;">
-                        @if($settings && isset($settings->logo) && $settings->logo)
-                            <img src="{{ public_path('assets/general-settings-image/' . $settings->logo) }}" style="height: 50px; max-width: 150px;">
+                    <td width="30%" class="text-left" style="vertical-align: middle;">
+                        @php
+                            $logoData = "";
+                            if(isset($settings->logo) && $settings->logo) {
+                                $logoPath = public_path('assets/general-settings-image/' . $settings->logo);
+                                if(file_exists($logoPath)) {
+                                    $logoData = 'data:image/' . pathinfo($logoPath, PATHINFO_EXTENSION) . ';base64,' . base64_encode(@file_get_contents($logoPath));
+                                }
+                            }
+
+                            $surgicalLogo = "";
+                            $snapkidLogo = "";
+                            $surgical = \App\Models\Brand::where('name', 'SURGICAL')->first();
+                            if($surgical && $surgical->logo) {
+                                $sPath = public_path('assets/brands/' . $surgical->logo);
+                                if(file_exists($sPath)) {
+                                    $surgicalLogo = 'data:image/' . pathinfo($sPath, PATHINFO_EXTENSION) . ';base64,' . base64_encode(@file_get_contents($sPath));
+                                }
+                            }
+                            $snapkid = \App\Models\Brand::where('name', 'SNAPKID')->first();
+                            if($snapkid && $snapkid->logo) {
+                                $skPath = public_path('assets/brands/' . $snapkid->logo);
+                                if(file_exists($skPath)) {
+                                    $snapkidLogo = 'data:image/' . pathinfo($skPath, PATHINFO_EXTENSION) . ';base64,' . base64_encode(@file_get_contents($skPath));
+                                }
+                            }
+                        @endphp
+
+                        @if(isset($type) && $type == 'actual')
+                            <div style="display: inline-block;">
+                                @if($surgicalLogo)
+                                    <img src="{{ $surgicalLogo }}" style="height: 45px; max-width: 100px; margin-right: 5px;">
+                                @endif
+                                @if($snapkidLogo)
+                                    <img src="{{ $snapkidLogo }}" style="height: 45px; max-width: 100px;">
+                                @endif
+                            </div>
+                        @elseif(isset($selectedBrand) && $selectedBrand)
+                            @if($selectedBrand->name == 'SURGICAL' && $surgicalLogo)
+                                <img src="{{ $surgicalLogo }}" style="height: 60px; max-width: 180px;">
+                            @elseif($selectedBrand->name == 'SNAPKID' && $snapkidLogo)
+                                <img src="{{ $snapkidLogo }}" style="height: 60px; max-width: 180px;">
+                            @elseif($logoData)
+                                <img src="{{ $logoData }}" style="height: 60px; max-width: 180px;">
+                            @endif
+                        @elseif($logoData)
+                            <img src="{{ $logoData }}" style="height: 60px; max-width: 180px;">
                         @endif
                     </td>
-                    <td width="60%" class="text-center" style="vertical-align: middle;">
+                    <td width="40%" class="text-center" style="vertical-align: middle;">
                         <div class="estimate-title">PACKING SLIP</div>
-                        <div class="company-name">{{ $settings->website_name ?? 'SURGICAL JEANS' }}</div>
+                        <div class="company-name">
+                             @if(isset($type) && $type == 'actual')
+                                SURGICAL & SNAPKID
+                            @elseif(isset($selectedBrand) && $selectedBrand)
+                                {{ $selectedBrand->name }}
+                            @else
+                                {{ $settings->website_name ?? 'SURGICAL JEANS' }}
+                            @endif
+                        </div>
                         <div style="font-size: 10px;">{{ $settings->address ?? '' }}</div>
                     </td>
-                    <td width="20%" class="text-right" style="vertical-align: middle;">
-                        @if($settings && isset($settings->logo) && $settings->logo)
-                            <img src="{{ public_path('assets/general-settings-image/' . $settings->logo) }}" style="height: 50px; max-width: 150px;">
+                    <td width="30%" class="text-right" style="vertical-align: middle;">
+                         @if(isset($type) && $type == 'actual')
+                            <div style="display: inline-block;">
+                                @if($surgicalLogo)
+                                    <img src="{{ $surgicalLogo }}" style="height: 45px; max-width: 100px; margin-right: 5px;">
+                                @endif
+                                @if($snapkidLogo)
+                                    <img src="{{ $snapkidLogo }}" style="height: 45px; max-width: 100px;">
+                                @endif
+                            </div>
+                        @elseif(isset($selectedBrand) && $selectedBrand)
+                            @if($selectedBrand->name == 'SURGICAL' && $surgicalLogo)
+                                <img src="{{ $surgicalLogo }}" style="height: 60px; max-width: 180px;">
+                            @elseif($selectedBrand->name == 'SNAPKID' && $snapkidLogo)
+                                <img src="{{ $snapkidLogo }}" style="height: 60px; max-width: 180px;">
+                            @elseif($logoData)
+                                <img src="{{ $logoData }}" style="height: 60px; max-width: 180px;">
+                            @endif
+                        @elseif($logoData)
+                            <img src="{{ $logoData }}" style="height: 60px; max-width: 180px;">
                         @endif
                     </td>
                 </tr>

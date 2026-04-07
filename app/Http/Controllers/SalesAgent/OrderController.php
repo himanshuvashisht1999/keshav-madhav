@@ -25,22 +25,39 @@ class OrderController extends Controller
         $agent_id = Auth::guard('sales_agent')->id();
 
         // Fetch Filter Options
-        $designs = DomesticInventory::join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
-            ->whereNotNull('box_no')->distinct()->pluck('production_goods.design_number');
-        $colors = DomesticInventory::join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
-            ->whereNotNull('box_no')->distinct()->pluck('master_colors.name');
-        $size_sets = DomesticInventory::join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
-            ->whereNotNull('box_no')->distinct()->pluck('master_size_measurements.name');
+        $designs = DomesticInventory::where('domestic_inventories.status', 1)
+            ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
+            ->distinct()->pluck('production_goods.design_number');
+        $colors = DomesticInventory::where('domestic_inventories.status', 1)
+            ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
+            ->distinct()->pluck('master_colors.name');
+        $size_sets = DomesticInventory::where('domestic_inventories.status', 1)
+            ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
+            ->distinct()->pluck('master_size_measurements.name');
 
-        // Build Query - Join with production_goods_variants to get mrp
         $prices = DB::table('production_goods_variants')
             ->select('production_goods_id as product_id', 'master_size_measurement_id as size_set_id', DB::raw('MAX(mrp) as mrp'))
             ->groupBy('production_goods_id', 'master_size_measurement_id');
 
-        $query = DomesticInventory::whereNotNull('box_no')
+        // Subquery for globally allocated boxes in PENDING agent orders
+        $allocated = DB::table('agent_order_items')
+            ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+            ->where('agent_orders.status', 'pending')
+            ->select(
+                'product_id', 'color_id', 'size_set_id', 
+                DB::raw('SUM(box_qty) as total_allocated')
+            )
+            ->groupBy('product_id', 'color_id', 'size_set_id');
+
+        $query = DomesticInventory::where('domestic_inventories.status', 1)
+            ->where(function ($q) {
+                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+            })
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
+            ->leftJoin('master_product_fittings', 'domestic_inventories.fitting_id', '=', 'master_product_fittings.id')
+            ->leftJoin('master_design_patterns', 'domestic_inventories.pattern_id', '=', 'master_design_patterns.id')
             ->leftJoinSub($prices, 'ip', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
                     ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
@@ -60,28 +77,40 @@ class OrderController extends Controller
             $query->where('master_size_measurements.name', $request->size_set_name);
         }
 
-        // Get distinct variations with aggregated data
-        $boxes = $query->select(
-            DB::raw('MIN(domestic_inventories.box_no) as example_box_no'),
-            'domestic_inventories.product_id',
-            'domestic_inventories.color_id',
-            'domestic_inventories.size_set_id',
-            'production_goods.design_number',
-            'master_colors.name as color_name',
-            'master_size_measurements.name as size_set_name',
-            DB::raw('COUNT(DISTINCT domestic_inventories.box_no) as available_boxes'),
-            DB::raw('SUM(domestic_inventories.quantity) / COUNT(DISTINCT domestic_inventories.box_no) as pcs_per_box'),
-            DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - COALESCE(sales_agent_brand_discounts.discount_percentage, 0)) / 100) as unit_price'),
-            DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
-            DB::raw('production_goods.name_of_garment as name')
-        )
-            ->groupBy(
+        $query->leftJoinSub($allocated, 'alloc', function ($join) {
+                $join->on('domestic_inventories.product_id', '=', 'alloc.product_id')
+                    ->on('domestic_inventories.color_id', '=', 'alloc.color_id')
+                    ->on('domestic_inventories.size_set_id', '=', 'alloc.size_set_id');
+            })
+            ->select(
+                'domestic_inventories.product_id',
+                'domestic_inventories.color_id',
+                'domestic_inventories.size_set_id',
+                'production_goods.design_number',
+                'master_colors.name as color_name',
+                'master_size_measurements.name as size_set_name',
+                'master_product_fittings.name as fitting_name',
+                'master_design_patterns.name as pattern_name',
+                'domestic_inventories.fitting_id',
+                'domestic_inventories.pattern_id',
+                DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
+                DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
+                DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - COALESCE(sales_agent_brand_discounts.discount_percentage, 0)) / 100) as unit_price'),
+                DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
+                DB::raw('production_goods.name_of_garment as name')
+            );
+
+        $boxes = $query->groupBy(
                 'domestic_inventories.product_id', 
                 'domestic_inventories.color_id', 
                 'domestic_inventories.size_set_id', 
                 'production_goods.design_number', 
                 'master_colors.name', 
                 'master_size_measurements.name',
+                'master_product_fittings.name',
+                'master_design_patterns.name',
+                'domestic_inventories.fitting_id',
+                'domestic_inventories.pattern_id',
                 'production_goods.name_of_garment',
                 'sales_agent_brand_discounts.discount_percentage'
             )
@@ -93,15 +122,56 @@ class OrderController extends Controller
         // Fetch images for the variations
         $boxImages = [];
         foreach ($boxes as $variation) {
-            $image = DB::table('domestic_inventory_images')
-                ->where('product_id', $variation->product_id)
-                ->where('color_id', $variation->color_id)
-                ->where('is_main', 1)
-                ->value('image_path');
+            // First look for color-specific variant image
+            $image = DB::table('production_goods_variant_colors')
+                ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
+                ->where('production_goods_variants.production_goods_id', $variation->product_id)
+                ->where('production_goods_variants.master_size_measurement_id', $variation->size_set_id)
+                ->where('production_goods_variant_colors.master_color_id', $variation->color_id)
+                ->whereNotNull('production_goods_variant_colors.image')
+                ->value('production_goods_variant_colors.image');
+
+            // Fallback to variant image if no color-specific image found
+            if (!$image) {
+                $image = DB::table('production_goods_variants')
+                    ->where('production_goods_id', $variation->product_id)
+                    ->where('master_size_measurement_id', $variation->size_set_id)
+                    ->whereNotNull('image')
+                    ->value('image');
+            }
 
             $key = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
             $boxImages[$key] = $image;
+
+            $agentOrderBoxes = \App\Models\AgentOrderItem::whereHas('order', function ($q) {
+                $q->where('status', '!=', 'dispatched');
+            })
+            ->where('product_id', $variation->product_id)
+            ->where('color_id', $variation->color_id)
+            ->where('size_set_id', $variation->size_set_id)
+            ->where(function($q) use ($variation) {
+                if (isset($variation->fitting_id) && $variation->fitting_id) {
+                    $q->where('fitting_id', $variation->fitting_id);
+                } else {
+                    $q->whereNull('fitting_id');
+                }
+            })
+            ->where(function($q) use ($variation) {
+                if (isset($variation->pattern_id) && $variation->pattern_id) {
+                    $q->where('pattern_id', $variation->pattern_id);
+                } else {
+                    $q->whereNull('pattern_id');
+                }
+            })
+            ->sum(\Illuminate\Support\Facades\DB::raw('box_qty - IFNULL(scanned_box_qty, 0)'));
+
+            $variation->available_boxes = max(0, $variation->available_boxes - $agentOrderBoxes);
         }
+
+        $filteredCollection = $boxes->getCollection()->filter(function ($variation) {
+            return $variation->available_boxes > 0;
+        })->values();
+        $boxes->setCollection($filteredCollection);
 
         // Fetch GST setting
         $gst_percentage = DB::table('settings')->value('gst_order') ?? 5.00;
@@ -147,37 +217,52 @@ class OrderController extends Controller
                 ->first();
 
             $mrp = $variant->mrp ?? 0;
-            $selling_price = $mrp - ($mrp * $brand_discount / 100);
+            
+            // Use unit_price from front-end if available, else calculate
+            $selling_price = isset($var['unit_price']) ? (float)$var['unit_price'] : ($mrp - ($mrp * $brand_discount / 100));
             
             $seriesName = ($product->series) ? $product->series->name : '';
             $product_name = trim($seriesName . ' ' . $product->name_of_garment);
 
-            $avg_qty = (float) DomesticInventory::where('product_id', $var['product_id'])
-                ->where('color_id', $var['color_id'])
-                ->where('size_set_id', $var['size_set_id'])
-                ->avg('quantity') ?? 0;
+            $fitting = $product->master_product_fitting_id ? \App\Models\MasterProductFitting::find($product->master_product_fitting_id) : null;
+            $pattern = $product->master_pattern_id ? \App\Models\MasterDesignPattern::find($product->master_pattern_id) : null;
 
-            for ($i = 0; $i < $var['qty']; $i++) {
-                $items_to_create[] = [
-                    'product_id' => $var['product_id'],
-                    'color_id' => $var['color_id'],
-                    'size_set_id' => $var['size_set_id'],
-                    'product_name' => $product_name ?: 'N/A',
-                    'design_number' => $product->design_number,
-                    'color_name' => $color->name,
-                    'size_set_name' => $sizeSet->name,
-                    'fitting_id' => $product->master_product_fitting_id,
-                    'fitting_name' => $product->fitting->name ?? null,
-                    'pattern_id' => $product->master_pattern_id,
-                    'pattern_name' => $product->pattern->name ?? null,
-                    'quantity' => $avg_qty,
-                    'mrp' => $mrp,
-                    'selling_price' => $selling_price,
-                    'packing_box_id' => null,
-                ];
-                $total_qty += $avg_qty;
-                $total_amount += ($avg_qty * $selling_price);
+            // Determine PCS per Box (Source of Truth: Front-end > Current Inventory > Master Config)
+            $pcs_per_box = isset($var['pcs_per_box']) ? (float)$var['pcs_per_box'] : 0;
+            if ($pcs_per_box <= 0) {
+                $pcs_per_box = (float) DomesticInventory::where('product_id', $var['product_id'])
+                    ->where('color_id', $var['color_id'])
+                    ->where('size_set_id', $var['size_set_id'])
+                    ->avg('quantity') ?? 0;
             }
+            if ($pcs_per_box <= 0) {
+                $pcs_per_box = (float) ($sizeSet->total_pieces ?? 0);
+            }
+
+            $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'] . 'P' . ($product->master_pattern_id ?? 0) . 'F' . ($product->master_product_fitting_id ?? 0);
+            $total_pcs = $var['qty'] * $pcs_per_box;
+
+            $items_to_create[] = [
+                'product_id' => $var['product_id'],
+                'color_id' => $var['color_id'],
+                'size_set_id' => $var['size_set_id'],
+                'product_name' => $product_name ?: 'N/A',
+                'design_number' => $product->design_number,
+                'color_name' => $color->name,
+                'size_set_name' => $sizeSet->name,
+                'fitting_id' => $product->master_product_fitting_id,
+                'fitting_name' => $fitting->name ?? null,
+                'pattern_id' => $product->master_pattern_id,
+                'pattern_name' => $pattern->name ?? null,
+                'box_qty' => $var['qty'],
+                'quantity' => $total_pcs,
+                'mrp' => $mrp,
+                'selling_price' => $selling_price,
+                'barcode' => $barcode,
+                'packing_box_id' => null,
+            ];
+            $total_qty += $total_pcs;
+            $total_amount += ($total_pcs * $selling_price);
         }
 
         if (empty($items_to_create)) {
@@ -230,22 +315,41 @@ class OrderController extends Controller
         $shop = $order->shop;
 
         // Fetch Filter Options
-        $designs = DomesticInventory::join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
-            ->whereNotNull('box_no')->distinct()->pluck('production_goods.design_number');
-        $colors = DomesticInventory::join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
-            ->whereNotNull('box_no')->distinct()->pluck('master_colors.name');
-        $size_sets = DomesticInventory::join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
-            ->whereNotNull('box_no')->distinct()->pluck('master_size_measurements.name');
+        $designs = DomesticInventory::where('domestic_inventories.status', 1)
+            ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
+            ->distinct()->pluck('production_goods.design_number');
+        $colors = DomesticInventory::where('domestic_inventories.status', 1)
+            ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
+            ->distinct()->pluck('master_colors.name');
+        $size_sets = DomesticInventory::where('domestic_inventories.status', 1)
+            ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
+            ->distinct()->pluck('master_size_measurements.name');
 
         // Build Query for All Boxes
         $prices = DB::table('production_goods_variants')
             ->select('production_goods_id as product_id', 'master_size_measurement_id as size_set_id', DB::raw('MAX(mrp) as mrp'))
             ->groupBy('production_goods_id', 'master_size_measurement_id');
 
-        $query = DomesticInventory::whereNotNull('box_no')
+        // Subquery for globally allocated boxes in PENDING agent orders
+        $allocated = DB::table('agent_order_items')
+            ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+            ->where('agent_orders.status', 'pending')
+            ->where('agent_orders.id', '!=', $id) // EXCLUDE CURRENT ORDER
+            ->select(
+                'product_id', 'color_id', 'size_set_id', 
+                DB::raw('SUM(box_qty) as total_allocated')
+            )
+            ->groupBy('product_id', 'color_id', 'size_set_id');
+
+        $query = DomesticInventory::where('domestic_inventories.status', 1)
+            ->where(function ($q) {
+                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+            })
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
+            ->leftJoin('master_product_fittings', 'domestic_inventories.fitting_id', '=', 'master_product_fittings.id')
+            ->leftJoin('master_design_patterns', 'domestic_inventories.pattern_id', '=', 'master_design_patterns.id')
             ->leftJoinSub($prices, 'ip', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
                     ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
@@ -265,16 +369,25 @@ class OrderController extends Controller
             $query->where('master_size_measurements.name', $request->size_set_name);
         }
 
+        $query->leftJoinSub($allocated, 'alloc', function ($join) {
+                $join->on('domestic_inventories.product_id', '=', 'alloc.product_id')
+                    ->on('domestic_inventories.color_id', '=', 'alloc.color_id')
+                    ->on('domestic_inventories.size_set_id', '=', 'alloc.size_set_id');
+            });
+
         $boxes = $query->select(
-            DB::raw('MIN(domestic_inventories.box_no) as example_box_no'),
             'domestic_inventories.product_id',
             'domestic_inventories.color_id',
             'domestic_inventories.size_set_id',
             'production_goods.design_number',
             'master_colors.name as color_name',
             'master_size_measurements.name as size_set_name',
-            DB::raw('COUNT(DISTINCT domestic_inventories.box_no) as available_boxes'),
-            DB::raw('SUM(domestic_inventories.quantity) / COUNT(DISTINCT domestic_inventories.box_no) as pcs_per_box'),
+            'master_product_fittings.name as fitting_name',
+            'master_design_patterns.name as pattern_name',
+            'domestic_inventories.fitting_id',
+            'domestic_inventories.pattern_id',
+            DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
+            DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
             DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - COALESCE(sales_agent_brand_discounts.discount_percentage, 0)) / 100) as unit_price'),
             DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp')
         )
@@ -285,6 +398,10 @@ class OrderController extends Controller
                 'production_goods.design_number', 
                 'master_colors.name', 
                 'master_size_measurements.name',
+                'master_product_fittings.name',
+                'master_design_patterns.name',
+                'domestic_inventories.fitting_id',
+                'domestic_inventories.pattern_id',
                 'sales_agent_brand_discounts.discount_percentage'
             )
             ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
@@ -295,14 +412,31 @@ class OrderController extends Controller
         // Fetch images for the boxes
         $boxImages = [];
         foreach ($boxes as $variation) {
-            $image = DB::table('domestic_inventory_images')
-                ->where('product_id', $variation->product_id)
-                ->where('color_id', $variation->color_id)
-                ->where('is_main', 1)
-                ->value('image_path');
+            // First look for color-specific variant image
+            $image = DB::table('production_goods_variant_colors')
+                ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
+                ->where('production_goods_variants.production_goods_id', $variation->product_id)
+                ->where('production_goods_variants.master_size_measurement_id', $variation->size_set_id)
+                ->where('production_goods_variant_colors.master_color_id', $variation->color_id)
+                ->whereNotNull('production_goods_variant_colors.image')
+                ->value('production_goods_variant_colors.image');
+
+            // Fallback to variant image if no color-specific image found
+            if (!$image) {
+                $image = DB::table('production_goods_variants')
+                    ->where('production_goods_id', $variation->product_id)
+                    ->where('master_size_measurement_id', $variation->size_set_id)
+                    ->whereNotNull('image')
+                    ->value('image');
+            }
             $key = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
             $boxImages[$key] = $image;
         }
+
+        $filteredCollection = $boxes->getCollection()->filter(function ($variation) {
+            return $variation->available_boxes > 0;
+        })->values();
+        $boxes->setCollection($filteredCollection);
 
         // Selected quantities for existing order
         $selected_quantities = AgentOrderItem::where('agent_order_id', $order->id)
@@ -310,8 +444,8 @@ class OrderController extends Controller
                 'product_id',
                 'color_id',
                 'size_set_id',
-                DB::raw('COUNT(id) as box_count'),
-                DB::raw('AVG(quantity) as pcs_per_box'),
+                DB::raw('SUM(box_qty) as total_boxes'),
+                DB::raw('MAX(quantity / box_qty) as pcs_per_box'),
                 DB::raw('MAX(selling_price) as unit_price')
             )
             ->groupBy('product_id', 'color_id', 'size_set_id')
@@ -324,7 +458,7 @@ class OrderController extends Controller
                     'product_id' => $item->product_id,
                     'color_id' => $item->color_id,
                     'size_set_id' => $item->size_set_id,
-                    'qty' => $item->box_count,
+                    'qty' => (int) $item->total_boxes,
                     'pcs_per_box' => (float) $item->pcs_per_box,
                     'unit_price' => (float) $item->unit_price
                 ];
@@ -378,38 +512,62 @@ class OrderController extends Controller
                 ->first();
 
             $mrp = $variant->mrp ?? 0;
-            $selling_price = $mrp - ($mrp * $brand_discount / 100);
+            
+            // Use unit_price from front-end if available, else calculate
+            $selling_price = isset($var['unit_price']) ? (float)$var['unit_price'] : ($mrp - ($mrp * $brand_discount / 100));
             
             $seriesName = ($product->series) ? $product->series->name : '';
             $product_name = trim($seriesName . ' ' . $product->name_of_garment);
 
-            $avg_qty = (float) DomesticInventory::where('product_id', $var['product_id'])
-                ->where('color_id', $var['color_id'])
-                ->where('size_set_id', $var['size_set_id'])
-                ->avg('quantity') ?? 0;
+            $fitting = $product->master_product_fitting_id ? \App\Models\MasterProductFitting::find($product->master_product_fitting_id) : null;
+            $pattern = $product->master_pattern_id ? \App\Models\MasterDesignPattern::find($product->master_pattern_id) : null;
 
-            for ($i = 0; $i < $var['qty']; $i++) {
-                $items_to_create[] = [
-                    'agent_order_id' => $order->id,
-                    'product_id' => $var['product_id'],
-                    'color_id' => $var['color_id'],
-                    'size_set_id' => $var['size_set_id'],
-                    'product_name' => $product_name ?: 'N/A',
-                    'design_number' => $product->design_number,
-                    'color_name' => $color->name,
-                    'size_set_name' => $sizeSet->name,
-                    'fitting_id' => $product->master_product_fitting_id,
-                    'fitting_name' => $product->fitting->name ?? null,
-                    'pattern_id' => $product->master_pattern_id,
-                    'pattern_name' => $product->pattern->name ?? null,
-                    'quantity' => $avg_qty,
-                    'mrp' => $mrp,
-                    'selling_price' => $selling_price,
-                    'packing_box_id' => null,
-                ];
-                $total_qty += $avg_qty;
-                $total_amount += ($avg_qty * $selling_price);
+            // Determine PCS per Box (Source of Truth: Front-end > Current Inventory > Master Config)
+            $pcs_per_box = isset($var['pcs_per_box']) ? (float)$var['pcs_per_box'] : 0;
+            if ($pcs_per_box <= 0) {
+                // Check current status 1 (available) inventory
+                $pcs_per_box = (float) DomesticInventory::where('status', 1)->where('product_id', $var['product_id'])
+                    ->where('color_id', $var['color_id'])
+                    ->where('size_set_id', $var['size_set_id'])
+                    ->avg('quantity') ?? 0;
             }
+            if ($pcs_per_box <= 0) {
+                // Fallback to ANY past inventory if available status is 0
+                $pcs_per_box = (float) DomesticInventory::where('product_id', $var['product_id'])
+                    ->where('color_id', $var['color_id'])
+                    ->where('size_set_id', $var['size_set_id'])
+                    ->avg('quantity') ?? 0;
+            }
+            if ($pcs_per_box <= 0) {
+                // Final fallback to size measurement master
+                $pcs_per_box = (float) ($sizeSet->total_pieces ?? 0);
+            }
+
+            $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'] . 'P' . ($product->master_pattern_id ?? 0) . 'F' . ($product->master_product_fitting_id ?? 0);
+            $total_pcs = $var['qty'] * $pcs_per_box;
+
+            $items_to_create[] = [
+                'agent_order_id' => $order->id,
+                'product_id' => $var['product_id'],
+                'color_id' => $var['color_id'],
+                'size_set_id' => $var['size_set_id'],
+                'product_name' => $product_name ?: 'N/A',
+                'design_number' => $product->design_number,
+                'color_name' => $color->name,
+                'size_set_name' => $sizeSet->name,
+                'fitting_id' => $product->master_product_fitting_id,
+                'fitting_name' => $fitting->name ?? null,
+                'pattern_id' => $product->master_pattern_id,
+                'pattern_name' => $pattern->name ?? null,
+                'box_qty' => $var['qty'],
+                'quantity' => $total_pcs,
+                'mrp' => $mrp,
+                'selling_price' => $selling_price,
+                'barcode' => $barcode,
+                'packing_box_id' => null,
+            ];
+            $total_qty += $total_pcs;
+            $total_amount += ($total_pcs * $selling_price);
         }
 
         $taxable_amount = $total_amount;

@@ -55,4 +55,9 @@ class AgentOrder extends Model
     {
         return $this->grand_total - $this->paid_amount;
     }
+
+    public function dispatches()
+    {
+        return $this->belongsToMany(AgentOrderDispatch::class, 'agent_order_dispatch_items', 'agent_order_id', 'agent_order_dispatch_id');
+    }
 }

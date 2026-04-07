@@ -191,9 +191,11 @@ class ProductionGoodsService
                                 $image->move(public_path('assets/products'), $imagePath);
                             }
 
+                            $barcode = 'D' . $save_data->id . 'S' . $sizeSetId . 'C' . $colorId . 'P' . $save_data->master_pattern_id . 'F' . $save_data->master_product_fitting_id;
                             \App\Models\ProductionGoodVariantItem::create([
                                 'variant_id' => $variant->id,
                                 'master_color_id' => $colorId,
+                                'barcode' => $barcode,
                                 'image' => $imagePath,
                             ]);
                         }
@@ -232,58 +234,28 @@ class ProductionGoodsService
         return true;
     }
 
-    /**
-     * Synchronize MRP and Image to Inventory Prices/Images
-     * (domestic_inventory_images and domestic_inventories)
-     */
-    public function syncToInventory($productId)
-    {
-        $product = ProductionGoods::with('variants.items', 'series')->find($productId);
-        if (!$product)
-            return;
-
-        $seriesName = $product->series ? $product->series->name : '';
-        $productName = trim($seriesName . ' ' . $product->name_of_garment);
-
-        foreach ($product->variants as $variant) {
-            foreach ($variant->items as $item) {
-                // Upsert to domestic_inventory_images (Master Price/Image)
-                \App\Models\DomesticInventoryImage::updateOrCreate(
-                    [
-                        'product_id' => $product->id,
-                        'color_id' => $item->master_color_id,
-                        'size_set_id' => $variant->master_size_measurement_id,
-                        'fitting_id' => $product->master_product_fitting_id,
-                        'pattern_id' => $product->master_pattern_id,
-                    ],
-                    [
-                        'product_name' => $productName,
-                        'image_path' => $item->image ?? $variant->image, // Uses color image, fallback to size set image
-                        'mrp' => $variant->mrp,
-                        'selling_price' => $variant->mrp, // Default to MRP
-                        'status' => 1,
-                        'is_main' => 1,
-                    ]
-                );
-
-                // Update existing stock in domestic_inventories
-                // \App\Models\DomesticInventory::where([
-                //     'product_id' => $product->id,
-                //     'color_id' => $item->master_color_id,
-                //     'size_set_id' => $variant->master_size_measurement_id,
-                //     'fitting_id' => $product->master_product_fitting_id,
-                //     'pattern_id' => $product->master_pattern_id,
-                // ])->update([
-                //     'mrp' => $variant->mrp,
-                //     'selling_price' => $variant->mrp,
-                // ]);
-            }
-        }
-    }
 
     public function edit(Request $request)
     {
         $data = ProductionGoods::with('bill_of_materials', 'product_stages', 'variants.items.color')->where('id', $request->id)->first();
+
+        if ($data) {
+            // Check if ANY variant has stock in inventory to lock product level fields (fitting, pattern)
+            $data->is_locked_in_inventory = \App\Models\DomesticInventory::where('product_id', $data->id)->exists();
+
+            foreach ($data->variants as $variant) {
+                // If any item (color) under this variant is in inventory, the variant (size set) itself is locked
+                $has_item_in_inv = false;
+                foreach ($variant->items as $item) {
+                    $item->is_locked_in_inventory = \App\Models\DomesticInventory::where('barcode', $item->barcode)->exists();
+                    if ($item->is_locked_in_inventory) {
+                        $has_item_in_inv = true;
+                    }
+                }
+                $variant->is_locked_in_inventory = $has_item_in_inv;
+            }
+        }
+
         return $data;
     }
     public function update(Request $request)
@@ -294,9 +266,18 @@ class ProductionGoodsService
 
         $update_data = ProductionGoods::findOrFail($request->id);
 
+        $isProductInInv = \App\Models\DomesticInventory::where('product_id', $update_data->id)->exists();
+
         // Basic fields (common)
         $update_data->company_id = $request->company_id; // from edit form
-        $update_data->design_number = $request->design_number ?? $update_data->design_number;
+
+        // If in inventory, block changes to fitting or pattern as they change all barcodes
+        if (!$isProductInInv) {
+            $update_data->master_product_fitting_id = $request->master_product_fitting_id;
+            $update_data->master_pattern_id = $request->master_pattern_id;
+            $update_data->design_number = $request->design_number ?? $update_data->design_number;
+        }
+
         $update_data->brand_id = $request->brand_id;
         $update_data->name_of_garment = $request->name_of_garment;
         $update_data->master_series_id = $request->master_series_id;
@@ -387,9 +368,11 @@ class ProductionGoodsService
                             $imagePath = $imageName;
                         }
 
+                        $barcode = 'D' . $productId . 'S' . $sizeSetId . 'C' . $colorId . 'P' . $update_data->master_pattern_id . 'F' . $update_data->master_product_fitting_id;
                         $itemData = [
                             'variant_id' => $variant->id,
                             'master_color_id' => $colorId,
+                            'barcode' => $barcode,
                         ];
                         if ($imagePath) {
                             $itemData['image'] = $imagePath;
@@ -411,11 +394,33 @@ class ProductionGoodsService
             }
         }
 
-        // Delete variants/items that are no longer present
-        \App\Models\ProductionGoodVariantItem::whereIn('variant_id', $keepVariantIds)
-            ->whereNotIn('id', $keepItemIds)->delete();
-        \App\Models\ProductionGoodVariant::where('production_goods_id', $productId)
-            ->whereNotIn('id', $keepVariantIds)->delete();
+        // Delete variants/items that are no longer present, BUT ONLY if they are not in inventory
+        $itemsToDelete = \App\Models\ProductionGoodVariantItem::whereIn('variant_id', $keepVariantIds)
+            ->whereNotIn('id', $keepItemIds)->get();
+
+        foreach ($itemsToDelete as $it) {
+            if (!\App\Models\DomesticInventory::where('barcode', $it->barcode)->exists()) {
+                $it->delete();
+            }
+        }
+
+        $variantsToDelete = \App\Models\ProductionGoodVariant::where('production_goods_id', $productId)
+            ->whereNotIn('id', $keepVariantIds)->get();
+
+        foreach ($variantsToDelete as $vt) {
+            // Check if any item of this variant is in inventory
+            reset($vt->items);
+            $hasInInv = false;
+            foreach ($vt->items as $vItem) {
+                if (\App\Models\DomesticInventory::where('barcode', $vItem->barcode)->exists()) {
+                    $hasInInv = true;
+                    break;
+                }
+            }
+            if (!$hasInInv) {
+                $vt->delete();
+            }
+        }
 
         if ($request->file('main_image')) {
             $image = $request->file('main_image');
@@ -617,10 +622,15 @@ class ProductionGoodsService
 
     public function delete(Request $request)
     {
+        $isInInventory = \App\Models\DomesticInventory::where('product_id', $request->id)->exists();
+        if ($isInInventory) {
+            return "Cannot delete product as it has records in domestic inventory.";
+        }
+
         $data = ProductionGoods::where('id', $request->id)->update([
             'status' => 3,
         ]);
-        return $data;
+        return true;
     }
 
     public function colors()
@@ -630,7 +640,7 @@ class ProductionGoodsService
     }
     public function sizes()
     {
-        $data = MasterSizeMeasurement::where('status', 1)->orderBy('sku', 'asc')->get();
+        $data = MasterSizeMeasurement::whereIn('status', [1, 2])->orderBy('sku', 'asc')->get();
         return $data;
     }
     public function designs()

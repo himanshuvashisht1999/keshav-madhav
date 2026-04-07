@@ -29,6 +29,15 @@ class BrandService {
         $brand->name = $request->name;
         $brand->status = $request->status ?? 'active';
         $brand->created_by = Auth::guard('admin')->id();
+
+        if ($request->hasFile('logo')) {
+            $image = $request->file('logo');
+            $name = time() . '_' . $image->getClientOriginalName();
+            $destinationPath = public_path('/assets/brands');
+            $image->move($destinationPath, $name);
+            $brand->logo = $name;
+        }
+
         $brand->save();
         return true;
     }
@@ -41,6 +50,20 @@ class BrandService {
         $brand = Brand::findOrFail($request->id);
         $brand->name = $request->name;
         $brand->status = $request->status;
+
+        if ($request->hasFile('logo')) {
+            // Delete old logo if exists
+            if ($brand->logo && file_exists(public_path('/assets/brands/' . $brand->logo))) {
+                unlink(public_path('/assets/brands/' . $brand->logo));
+            }
+
+            $image = $request->file('logo');
+            $name = time() . '_' . $image->getClientOriginalName();
+            $destinationPath = public_path('/assets/brands');
+            $image->move($destinationPath, $name);
+            $brand->logo = $name;
+        }
+
         $brand->save();
         return true;
     }

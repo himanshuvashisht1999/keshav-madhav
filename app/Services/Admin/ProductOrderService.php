@@ -921,6 +921,7 @@ class ProductOrderService
         $return_data['new_size_group'] = $size_group;
         $return_data['new_size_set_id'] = $new_size_set_id;
         $return_data['no_of_pcs'] = $no_of_pcs;
+        $return_data['new_size_name'] = $set_size;
         return $return_data;
     }
 
@@ -987,15 +988,19 @@ class ProductOrderService
                 $customer->save();
             }
 
-            // 2. Find or Create Design "Domestic Design"
-            $product = ProductionGoods::where('design_number', 'Domestic Design')->first();
-            if (!$product) {
-                $product = new ProductionGoods();
-                $product->design_number = 'Domestic Design';
-                $product->name_of_garment = 'Domestic Garment';
-                $product->sku = 'DM-DESIGN';
-                $product->status = 1;
-                $product->save();
+            // 2. Find or Create Design
+            if ($request->filled('production_goods_id')) {
+                $product = ProductionGoods::find($request->production_goods_id);
+            } else {
+                $product = ProductionGoods::where('design_number', 'Domestic Design')->first();
+                if (!$product) {
+                    $product = new ProductionGoods();
+                    $product->design_number = 'Domestic Design';
+                    $product->name_of_garment = 'Domestic Garment';
+                    $product->sku = 'DM-DESIGN';
+                    $product->status = 1;
+                    $product->save();
+                }
             }
 
             // 2.5 Find or Create Color "No Color"

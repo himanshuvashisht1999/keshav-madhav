@@ -12,7 +12,7 @@ use App\Models\OrderStageTransaction;
 use App\Models\OrderStageTransactionDetail;
 use App\Models\OrderLot;
 use App\Models\DomesticInventory;
-use App\Models\DomesticInventoryImage;
+
 use Illuminate\Support\Facades\DB;
 
 class PackingService
@@ -710,23 +710,22 @@ class PackingService
                             $pcs_per_box += ceil($detail->total_quantity / $ss_total);
                         }
 
-                        for ($i = 0; $i < $qty; $i++) {
-                            $box_no = "BX-$datePrefix-" . str_pad($this->getNextBoxSeq($datePrefix), 4, '0', STR_PAD_LEFT);
-                            $box = PackingBox::create([
-                                'packing_main_id' => $main->id,
-                                'packing_carton_id' => $carton->id,
-                                'box_no' => $box_no,
-                                'box_type' => 'domestic_planner',
-                                'barcode' => $barcode
-                            ]);
+                        $gen_barcode = 'D' . $entry['product_id'] . 'S' . $entry['size_set_id'] . 'C' . $entry['color_id'] . 'P' . ($entry['pattern_id'] ?? 0) . 'F' . ($entry['fitting_id'] ?? 0);
+                        $final_barcode = $barcode ?: $gen_barcode;
 
-                            $gen_barcode = 'D' . $entry['product_id'] . 'S' . $entry['size_set_id'] . 'C' . $entry['color_id'] . 'P' . ($entry['pattern_id'] ?? 0) . 'F' . ($entry['fitting_id'] ?? 0);
+                        // Check for existing consolidated inventory entry
+                        $inventory = \App\Models\DomesticInventory::where('barcode', $final_barcode)
+                            ->where('rack_id', $rack_id)
+                            ->where('order_main_id', $data['order_id'])
+                            ->first();
 
+                        if ($inventory) {
+                            $inventory->total_boxes += $qty;
+                            $inventory->save();
+                        } else {
                             \App\Models\DomesticInventory::create([
                                 'order_main_id' => $data['order_id'],
                                 'packing_main_id' => $main->id,
-                                'packing_carton_id' => $carton->id,
-                                'packing_box_id' => $box->id,
                                 'rack_id' => $rack_id,
                                 'product_id' => $entry['product_id'],
                                 'color_id' => $entry['color_id'],
@@ -734,10 +733,20 @@ class PackingService
                                 'pattern_id' => $entry['pattern_id'] ?? null,
                                 'size_set_id' => $entry['size_set_id'],
                                 'quantity' => $pcs_per_box,
-                                'box_no' => $box_no,
-                                'carton_no' => $cno,
-                                'barcode' => $barcode ?: $gen_barcode,
+                                'total_boxes' => $qty,
+                                'barcode' => $final_barcode,
                                 'status' => 1
+                            ]);
+                        }
+
+                        for ($i = 0; $i < $qty; $i++) {
+                            $box_no = "BX-$datePrefix-" . str_pad($this->getNextBoxSeq($datePrefix), 4, '0', STR_PAD_LEFT);
+                            $box = PackingBox::create([
+                                'packing_main_id' => $main->id,
+                                'packing_carton_id' => $carton->id,
+                                'box_no' => $box_no,
+                                'box_type' => 'domestic_planner',
+                                'barcode' => $final_barcode
                             ]);
 
                             // 4. Create PackingItem records for DISPATCH compatibility
@@ -967,11 +976,12 @@ class PackingService
             // Update all cartons in this session
             PackingCarton::where('packing_main_id', $main_id)->update(['status' => $carton_status]);
 
-            // If Domestic, Move to Inventory table
+            // If Domestic, Move to Inventory table (Consolidated)
             if ($is_domestic) {
+                $overall_inventory = []; // key = barcode|rack_id
+
                 foreach ($packing_main->cartons as $carton) {
                     foreach ($carton->boxes as $box) {
-                        // Group packing items by their variations AND pricing
                         $box_variations = [];
                         foreach ($box->items as $item) {
                             $detail = \App\Models\OrderProductSetDetail::find($item->size_id);
@@ -979,39 +989,36 @@ class PackingService
                                 $set_id = $detail->order_products_set_id;
                                 $key = "{$set_id}";
                                 if (!isset($box_variations[$key])) {
-                                    $box_variations[$key] = [
-                                        'set_id' => $set_id,
-                                        'quantity' => 0
-                                    ];
+                                    $box_variations[$key] = ['set_id' => $set_id, 'quantity' => 0];
                                 }
                                 $box_variations[$key]['quantity'] += $item->quantity;
                             }
                         }
 
                         foreach ($box_variations as $var) {
-                            $set_id = $var['set_id'];
-                            $qty = $var['quantity'];
-                            $set = \App\Models\OrderProductSet::with(['colors', 'product.series', 'size_measurement', 'master_product_fitting', 'master_design_pattern'])->find($set_id);
-                            if ($set) {
-                                $final_barcode = $box->barcode ?: $box->box_no;
-                                DomesticInventory::create([
-                                    'order_main_id' => $order->id,
-                                    'packing_main_id' => $packing_main->id,
-                                    'packing_carton_id' => $carton->id,
-                                    'packing_box_id' => $box->id,
-                                    'rack_id' => $carton->rack_id,
-                                    'product_id' => $set->production_goods_id,
-                                    'color_id' => $set->color_id,
-                                    'fitting_id' => $set->master_product_fitting_id,
-                                    'pattern_id' => $set->master_design_pattern_id,
-                                    'size_set_id' => $set->set_size,
-                                    'quantity' => $qty,
-                                    'box_no' => $box->box_no,
-                                    'carton_no' => $carton->carton_no,
-                                    'barcode' => $final_barcode,
-                                    'status' => 1
-                                ]);
+                            $barcode = $box->barcode ?: $box->box_no;
+                            $rack_id = $carton->rack_id;
+                            $agg_key = "{$barcode}|{$rack_id}";
+
+                            if (!isset($overall_inventory[$agg_key])) {
+                                $overall_inventory[$agg_key] = [
+                                    'barcode' => $barcode,
+                                    'rack_id' => $rack_id,
+                                    'variations' => []
+                                ];
                             }
+                            
+                            $var_key = "{$var['set_id']}";
+                            if (!isset($overall_inventory[$agg_key]['variations'][$var_key])) {
+                                $overall_inventory[$agg_key]['variations'][$var_key] = [
+                                    'set_id' => $var['set_id'],
+                                    'total_qty' => 0,
+                                    'box_count' => 0,
+                                    'carton_id' => $carton->id // reference
+                                ];
+                            }
+                            $overall_inventory[$agg_key]['variations'][$var_key]['total_qty'] += $var['quantity'];
+                            $overall_inventory[$agg_key]['variations'][$var_key]['box_count']++;
                         }
                     }
 
@@ -1028,36 +1035,67 @@ class PackingService
                                 $set_id = $detail->order_products_set_id;
                                 $key = "{$set_id}";
                                 if (!isset($carton_variations[$key])) {
-                                    $carton_variations[$key] = [
-                                        'set_id' => $set_id,
-                                        'quantity' => 0
-                                    ];
+                                    $carton_variations[$key] = ['set_id' => $set_id, 'quantity' => 0];
                                 }
                                 $carton_variations[$key]['quantity'] += $item->quantity;
                             }
                         }
 
                         foreach ($carton_variations as $var) {
-                            $set_id = $var['set_id'];
-                            $qty = $var['quantity'];
-                            $set = \App\Models\OrderProductSet::with(['colors', 'product.series', 'size_measurement', 'master_product_fitting', 'master_design_pattern'])->find($set_id);
-                            if ($set) {
-                                $box_code = $carton->barcode ?: 'C' . $carton->carton_no;
+                            $barcode = $carton->barcode ?: 'C' . $carton->carton_no;
+                            $rack_id = $carton->rack_id;
+                            $agg_key = "{$barcode}|{$rack_id}";
+
+                            if (!isset($overall_inventory[$agg_key])) {
+                                $overall_inventory[$agg_key] = [
+                                    'barcode' => $barcode,
+                                    'rack_id' => $rack_id,
+                                    'variations' => []
+                                ];
+                            }
+
+                            $var_key = "{$var['set_id']}";
+                            if (!isset($overall_inventory[$agg_key]['variations'][$var_key])) {
+                                $overall_inventory[$agg_key]['variations'][$var_key] = [
+                                    'set_id' => $var['set_id'],
+                                    'total_qty' => 0,
+                                    'box_count' => 0,
+                                    'carton_id' => $carton->id
+                                ];
+                            }
+                            $overall_inventory[$agg_key]['variations'][$var_key]['total_qty'] += $var['quantity'];
+                            $overall_inventory[$agg_key]['variations'][$var_key]['box_count']++; // Loose item set counts as 1 box entry
+                        }
+                    }
+                }
+
+                // Final creation/update in DomesticInventory
+                foreach ($overall_inventory as $agg) {
+                    foreach ($agg['variations'] as $v) {
+                        $set = \App\Models\OrderProductSet::with(['colors', 'product.series', 'size_measurement', 'master_product_fitting', 'master_design_pattern'])->find($v['set_id']);
+                        if ($set) {
+                            $inv = DomesticInventory::where('barcode', $agg['barcode'])
+                                ->where('rack_id', $agg['rack_id'])
+                                ->where('order_main_id', $order->id)
+                                ->first();
+
+                            if ($inv) {
+                                $inv->total_boxes += $v['box_count'];
+                                $inv->save();
+                            } else {
                                 DomesticInventory::create([
                                     'order_main_id' => $order->id,
                                     'packing_main_id' => $packing_main->id,
-                                    'packing_carton_id' => $carton->id,
-                                    'packing_box_id' => null,
-                                    'rack_id' => $carton->rack_id,
+                                    'packing_carton_id' => $v['carton_id'],
+                                    'rack_id' => $agg['rack_id'],
                                     'product_id' => $set->production_goods_id,
                                     'color_id' => $set->color_id,
                                     'fitting_id' => $set->master_product_fitting_id,
                                     'pattern_id' => $set->master_design_pattern_id,
                                     'size_set_id' => $set->set_size,
-                                    'quantity' => $qty,
-                                    'box_no' => null,
-                                    'carton_no' => $carton->carton_no,
-                                    'barcode' => $box_code,
+                                    'quantity' => ($v['box_count'] > 0 ? ceil($v['total_qty'] / $v['box_count']) : 0),
+                                    'total_boxes' => $v['box_count'],
+                                    'barcode' => $agg['barcode'],
                                     'status' => 1
                                 ]);
                             }

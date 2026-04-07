@@ -48,8 +48,19 @@ class FabricReceiptService
 
     public function store(Request $request)
     {
+        $po_id = $request->purchase_order_id;
+        if (!$po_id) {
+            $new_po = new PurchaseOrder();
+            $new_po->vendor_id = $request->vendor_id;
+            $new_po->date = date('Y-m-d');
+            $new_po->delivery_date = date('Y-m-d');
+            $new_po->status = 2; // Assuming 2 means received/closed
+            $new_po->sku = 'PO-' . time();
+            $new_po->save();
+            $new_po->update(['sku' => 'PO-' . $new_po->id]);
+            $po_id = $new_po->id;
+        }
 
-        // dd($request->all());
         $imgName = '';
         if ($request->file('shipment_photo')) {
             $image = $request->file('shipment_photo');
@@ -111,6 +122,19 @@ class FabricReceiptService
                 $meter = $single_data['meter'];
                 $roll_number = $single_data['roll_no'];
                 $price = $single_data['price'];
+
+                $po_item_id = 0;
+                if ($po_id > 0) {
+                    // Link to real PO item if it exists
+                    $po_item = PurchaseOrderItem::where('purchase_order_id', $po_id)
+                        ->where('fabric_id', $fabric_id)
+                        ->first();
+                    if ($po_item) {
+                        $po_item_id = $po_item->id;
+                        $po_item->update(['status' => 2]); // Mark as received
+                    }
+                }
+
                 ////////// work for barcode
                 $qrcode_number = $this->generateUniqueQrNumber();
 
@@ -157,8 +181,8 @@ class FabricReceiptService
                 $save_data_detail = new FabricReceiptDetail;
                 $save_data_detail->fabric_receipt_id = $save_data->id;
 
-                $save_data_detail->purchase_order_id = 0;
-                $save_data_detail->purchase_order_item_id = 0;
+                $save_data_detail->purchase_order_id = $po_id;
+                $save_data_detail->purchase_order_item_id = $po_item_id;
                 $save_data_detail->fabric_sku = $fabric_sku;
                 $save_data_detail->fabric_id = $fabric_id;
                 $save_data_detail->roll = 1;
@@ -352,7 +376,7 @@ class FabricReceiptService
     }
     public function purchase_order_items($purchase_order_id)
     {
-        $data = PurchaseOrderItem::where('purchase_order_id', $purchase_order_id)->where('status', 1)->get();
+        $data = PurchaseOrderItem::with('fabric')->where('purchase_order_id', $purchase_order_id)->get();
         return $data;
     }
 

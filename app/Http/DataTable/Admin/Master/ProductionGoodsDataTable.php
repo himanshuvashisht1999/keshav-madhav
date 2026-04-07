@@ -19,25 +19,33 @@ class ProductionGoodsDataTable  {
     }
 
     public function indexList($request){
-        $queue = ProductionGoods::with('series')->where('status', '!=', 3)->orderBy('id','desc');
+        $queue = ProductionGoods::with('series', 'brand')->where('status', '!=', 3)->orderBy('id','desc');
         
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
                 $query->orderBy('id', 'asc');
+                
                 if ($request->has('name_of_garment') && !empty($request->name_of_garment)) {
-                    $query->where('name_of_garment', 'like', "%{$request->get('name_of_garment')}%");
-                }
-                if ($request->has('series_name') && !empty($request->series_name)) {
-                    $query->whereHas('series', function($q) use ($request) {
-                        $q->where('name', 'like', "%{$request->get('series_name')}%");
+                    $searchTerm = $request->get('name_of_garment');
+                    $query->where(function($q) use ($searchTerm) {
+                        $q->where('name_of_garment', 'like', "%{$searchTerm}%")
+                          ->orWhereHas('series', function($sq) use ($searchTerm) {
+                              $sq->where('name', 'like', "%{$searchTerm}%");
+                          });
                     });
                 }
+
+                if ($request->has('brand_name') && !empty($request->brand_name)) {
+                    $brandTerm = $request->get('brand_name');
+                    $query->whereHas('brand', function($q) use ($brandTerm) {
+                        $q->where('name', 'like', "%{$brandTerm}%");
+                    });
+                }
+
                 if ($request->has('design_number') && !empty($request->design_number)) {
                     $query->where('design_number', 'like', "%{$request->get('design_number')}%");
                 }
-                if ($request->has('fabric_sku') && !empty($request->fabric_sku)) {
-                    $query->where('fabric_sku', 'like', "%{$request->get('fabric_sku')}%");
-                }  
+                
                 if ($request->has('status') && ($request->status != '')) {
                     $query->where('status', $request->get('status'));
                 }                            
@@ -49,21 +57,31 @@ class ProductionGoodsDataTable  {
             })
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
+                $isInInv = \App\Models\DomesticInventory::where('product_id', $queue->id)->exists();
+
+                $deleteBtn = '';
+                if (!$isInInv) {
+                    $deleteBtn = '<a href="javascript:void(0);" onclick="deleteData(' . $parameter . ')" class="" title="Delete"><i class="fas fa-trash text-danger"></i></a>';
+                } else {
+                    $deleteBtn = '<a href="javascript:void(0);" class="text-muted" title="Locked (Stock in Inventory)"><i class="fas fa-trash"></i></a>';
+                }
+
                 return '
                 <a href="' . route('admin.master.production-goods.view', ['id' => $parameter]) . '" class="mr-2" title="View"><i class="fas fa-eye text-info"></i></a>
                 <a href="' . route('admin.master.production-goods.edit', ['id' => $parameter]) . '" class="mr-2" title="Edit"><i class="fas fa-edit text-primary"></i></a>
-                <a href="javascript:void(0);" onclick="deleteData(' . $parameter . ')" class="" title="Delete"><i class="fas fa-trash text-danger"></i></a>
-                ';
+                ' . $deleteBtn;
             })
             ->addColumn('main_image', function ($queue) {
                 $img = $queue->mainImage; // relationship
-              
                 $src = $img ? $img->image : asset('assets/products/default-image.png');
-
                 return '<img src="'.$src.'" alt="Main Image" style="height:50px;width:auto;border-radius:4px;">';
             })
-            ->addColumn('series_name', function ($queue) {
-                return $queue->series ? $queue->series->name : '';
+            ->addColumn('brand_name', function ($queue) {
+                return $queue->brand ? $queue->brand->name : '-';
+            })
+            ->addColumn('product_name_display', function ($queue) {
+                $series = $queue->series ? $queue->series->name : '';
+                return trim($series . ' ' . $queue->name_of_garment);
             })
             
             ->rawColumns(['action', 'status','main_image'])

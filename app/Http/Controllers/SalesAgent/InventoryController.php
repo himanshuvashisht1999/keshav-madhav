@@ -19,15 +19,15 @@ class InventoryController extends Controller
 
         $agent_discount = Auth::guard('sales_agent')->user()->discount_percentage ?? 0;
 
-        // Build Query - Join with domestic_inventory_images to get prices
-        $prices = DB::table('domestic_inventory_images')
-            ->select('product_id', 'color_id', 'product_name', DB::raw('MAX(mrp) as mrp'))
-            ->groupBy('product_id', 'color_id', 'product_name');
+        // Build Query - Join with production_goods_variants to get mrp
+        $prices = DB::table('production_goods_variants')
+            ->select('production_goods_id as product_id', 'master_size_measurement_id as size_set_id', DB::raw('MAX(mrp) as mrp'))
+            ->groupBy('production_goods_id', 'master_size_measurement_id');
 
         $query = DomesticInventory::where('domestic_inventories.status', 1)
             ->leftJoinSub($prices, 'ip', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
-                    ->on('domestic_inventories.color_id', '=', 'ip.color_id');
+                    ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
             });
 
         // Apply Filters
@@ -70,11 +70,23 @@ class InventoryController extends Controller
         // Fetch images for the variations
         $boxImages = [];
         foreach ($inventories as $variation) {
-            $image = DB::table('domestic_inventory_images')
-                ->where('product_id', $variation->product_id)
-                ->where('color_id', $variation->color_id)
-                ->where('is_main', 1)
-                ->value('image_path');
+            // First look for color-specific variant image
+            $image = DB::table('production_goods_variant_colors')
+                ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
+                ->where('production_goods_variants.production_goods_id', $variation->product_id)
+                ->where('production_goods_variants.master_size_measurement_id', $variation->size_set_id)
+                ->where('production_goods_variant_colors.master_color_id', $variation->color_id)
+                ->whereNotNull('production_goods_variant_colors.image')
+                ->value('production_goods_variant_colors.image');
+
+            // Fallback to variant image if no color-specific image found
+            if (!$image) {
+                $image = DB::table('production_goods_variants')
+                    ->where('production_goods_id', $variation->product_id)
+                    ->where('master_size_measurement_id', $variation->size_set_id)
+                    ->whereNotNull('image')
+                    ->value('image');
+            }
 
             $key = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
             $boxImages[$key] = $image;
@@ -88,14 +100,14 @@ class InventoryController extends Controller
         $agent_discount = Auth::guard('sales_agent')->user()->discount_percentage ?? 0;
 
         // Join with prices to show correct discounted price per box
-        $prices = DB::table('domestic_inventory_images')
-            ->select('product_id', 'color_id', DB::raw('MAX(mrp) as mrp'))
-            ->groupBy('product_id', 'color_id');
+        $prices = DB::table('production_goods_variants')
+            ->select('production_goods_id as product_id', 'master_size_measurement_id as size_set_id', DB::raw('MAX(mrp) as mrp'))
+            ->groupBy('production_goods_id', 'master_size_measurement_id');
 
         $query = DomesticInventory::where('domestic_inventories.status', 1)
             ->leftJoinSub($prices, 'ip', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
-                    ->on('domestic_inventories.color_id', '=', 'ip.color_id');
+                    ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
             });
 
         if ($request->filled('product_name')) {

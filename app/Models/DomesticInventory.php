@@ -26,6 +26,7 @@ class DomesticInventory extends Model
         'quantity',
         'box_no',
         'carton_no',
+        'total_boxes',
         'barcode',
         'status'
     ];
@@ -108,13 +109,4 @@ class DomesticInventory extends Model
         return $this->color->name ?? '';
     }
 
-    public function master_pricing()
-    {
-        return $this->hasOne(DomesticInventoryImage::class, 'product_id', 'product_id')
-            ->where('color_id', $this->color_id)
-            ->where('size_set_id', $this->size_set_id)
-            ->where('fitting_id', $this->fitting_id)
-            ->where('pattern_id', $this->pattern_id)
-            ->where('is_main', 1);
-    }
 }

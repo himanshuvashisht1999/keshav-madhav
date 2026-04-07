@@ -21,7 +21,18 @@
                                 @csrf
                                 
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-3">
+                                            <label class="font-weight-bold">Select Design (Optional)</label>
+                                            <select name="production_goods_id" id="production_goods_id" class="form-control select2">
+                                                <option value="">-- Use Default Domestic Design --</option>
+                                                @foreach($products as $prod)
+                                                    <option value="{{ $prod->id }}">{{ $prod->design_number }} ({{ $prod->name_of_garment }})</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
                                         <div class="form-group mb-3">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                                 <label class="mb-0 font-weight-bold">Select Size Set</label>
@@ -42,7 +53,7 @@
                                             <input type="hidden" id="no_of_pcs_hidden" name="no_of_pcs_hidden">
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="form-group mb-4">
                                             <label class="font-weight-bold">Quantity (Sets)</label>
                                             <input type="number" name="product_quantity" class="form-control" min="1" required placeholder="Enter number of sets">

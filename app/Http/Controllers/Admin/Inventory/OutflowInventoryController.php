@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Inventory;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\ProductionOutflowInventory;
+use App\Models\DomesticInventoryHistory;
 use Yajra\DataTables\Facades\DataTables;
 
 class OutflowInventoryController extends Controller
@@ -83,6 +84,68 @@ class OutflowInventoryController extends Controller
                 return '<span class="badge ' . $class . '">' . $label . '</span>';
             })
             ->rawColumns(['order_no', 'product_name', 'quantity_display', 'amount_display', 'type_label'])
+            ->make(true);
+    }
+
+    public function attributeHistoryIndex()
+    {
+        return view('admin.inventory.history.index');
+    }
+
+    public function attributeHistoryList(Request $request)
+    {
+        $data = DomesticInventoryHistory::with([
+            'user',
+            'oldProduct', 'newProduct',
+            'oldColor', 'newColor',
+            'oldSizeSet', 'newSizeSet',
+            'oldFitting', 'newFitting',
+            'oldPattern', 'newPattern',
+            'oldRack.storeroom', 'newRack.storeroom'
+        ])->orderBy('created_at', 'desc');
+
+        if ($request->design_search) {
+            $search = $request->design_search;
+            $data->where(function($q) use ($search) {
+                $q->whereHas('oldProduct', function($query) use ($search) {
+                    $query->where('design_number', 'like', "%{$search}%");
+                })->orWhereHas('newProduct', function($query) use ($search) {
+                    $query->where('design_number', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        return DataTables::of($data)
+            ->addIndexColumn()
+            ->addColumn('user_name', function($row){
+                return $row->user ? $row->user->name : 'System';
+            })
+            ->addColumn('old_details', function($row){
+                $design = $row->oldProduct ? $row->oldProduct->design_number : 'N/A';
+                $color = $row->oldColor ? $row->oldColor->name : 'N/A';
+                $size = $row->oldSizeSet ? $row->oldSizeSet->name : 'N/A';
+                $fitting = $row->oldFitting ? $row->oldFitting->name : 'N/A';
+                $pattern = $row->oldPattern ? $row->oldPattern->name : 'N/A';
+                $rack = $row->oldRack ? ($row->oldRack->storeroom->name . '/' . $row->oldRack->name) : 'N/A';
+                
+                return "<strong>D: $design</strong> | C: $color | S: $size<br>
+                        <small>F: $fitting | P: $pattern | R: $rack</small>";
+            })
+            ->addColumn('new_details', function($row){
+                $design = $row->newProduct ? $row->newProduct->design_number : 'N/A';
+                $color = $row->newColor ? $row->newColor->name : 'N/A';
+                $size = $row->newSizeSet ? $row->newSizeSet->name : 'N/A';
+                $fitting = $row->newFitting ? $row->newFitting->name : 'N/A';
+                $pattern = $row->newPattern ? $row->newPattern->name : 'N/A';
+                $rack = $row->newRack ? ($row->newRack->storeroom->name . '/' . $row->newRack->name) : 'N/A';
+                
+                return "<strong>D: $design</strong> | C: $color | S: $size<br>
+                        <small>F: $fitting | P: $pattern | R: $rack</small>";
+            })
+            ->editColumn('box_quantity', function($row){
+                return '<strong>' . $row->box_quantity . '</strong> Boxes';
+            })
+            ->rawColumns(['old_details', 'new_details', 'box_quantity'])
             ->make(true);
     }
 }

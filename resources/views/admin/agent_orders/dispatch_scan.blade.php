@@ -89,6 +89,8 @@
                                                         <small class="text-muted">
                                                             D: {{ $group['design_number'] }} | C: {{ $group['color_name'] }} |
                                                             S: {{ $group['size_set_name'] }} | P: {{ $group['pattern_name'] }} | F: {{ $group['fitting_name'] }}
+                                                            <br>
+                                                            <span class="badge badge-info mt-1">Barcode: {{ $group['barcode'] }}</span>
                                                         </small>
                                                     </td>
                                                     <td class="vertical-align-middle">
@@ -124,13 +126,9 @@
                             <div class="card-footer bg-white text-right">
                                 <p class="small text-muted mb-3">Totals and prices are automatically updated as you scan
                                     actual box quantities.</p>
-                                <form action="{{ route('admin.agent-orders.dispatch', $order->id) }}" method="POST"
-                                    onsubmit="return confirm('Ensure all items are scanned. Proceed?')">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success btn-lg px-5 shadow rounded-pill">
-                                        <i class="fas fa-truck mr-2"></i> DISPATCH SCANNED ITEMS
-                                    </button>
-                                </form>
+                                <a href="{{ route('admin.agent-orders.index') }}" class="btn btn-outline-primary btn-lg px-5 shadow rounded-pill">
+                                    <i class="fas fa-arrow-left mr-2"></i> BACK TO ORDERS
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -145,16 +143,17 @@
                                 <div id="scan_history" class="list-group list-group-flush"
                                     style="max-height: 600px; overflow-y: auto;">
                                     @forelse($scannedBoxes as $box)
-                                        <div class="list-group-item" id="history_{{ $box->box_no }}">
+                                        @php $boxKey = "{$box->product_id}_{$box->color_id}_{$box->size_set_id}"; @endphp
+                                        <div class="list-group-item" id="history_{{ $boxKey }}">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div>
-                                                    <div class="font-weight-bold">Box #{{ $box->box_no }}</div>
+                                                    <div class="font-weight-bold">Scanned: {{ $box->design_number }}</div>
                                                     <small class="text-muted d-block">{{ $box->product_name }}</small>
-                                                    <small class="text-muted">Design: {{ $box->design_number }} | Qty:
-                                                        {{ $box->quantity }}</small>
+                                                    <small class="text-muted">Color: {{ $box->color_name }} | Count:
+                                                        {{ $box->scanned_box_qty }} / {{ $box->box_qty }}</small>
                                                 </div>
                                                 <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
-                                                    data-id="{{ $box->box_no }}" title="Undo this scan">
+                                                    data-id="{{ $box->box_no }}" data-barcode="{{ $box->barcode }}" title="Undo one scan">
                                                     <i class="fas fa-undo"></i>
                                                 </button>
                                             </div>
@@ -333,12 +332,12 @@
                     method: 'POST',
                     data: {
                         _token: "{{ csrf_token() }}",
-                        box_no: boxNo
+                        barcode: $(this).data('barcode')
                     },
                     success: function (response) {
                         if (response.success) {
                             setSuccessStatus("Scan removed successfully");
-                            revertUI(response.variation_key, boxNo);
+                            revertUI(response.variation_key, boxNo, response);
                             playBeep(true);
                         } else {
                             setErrorStatus(response.message);
@@ -358,11 +357,9 @@
                 const statusIcon = $(`#status_icon_${key}`);
                 const row = $(`#row_${key}`);
 
-                let current = parseInt(countSpan.text());
-                const totalText = countSpan.next().text().replace('/ ', '');
-                const total = parseInt(totalText);
+                let current = response.scanned;
+                const total = response.required;
 
-                current++;
                 countSpan.text(current);
 
                 const percentage = (current / total) * 100;
@@ -376,42 +373,48 @@
                     progressBar.addClass('pulse');
                 }
 
-                // Append to history with box info from response
-                const boxNo = response.box_no || 'N/A';
+                // Update OR Append to history
+                const boxNo = response.variation_key; // Use key for stable tracking per design
                 const productName = response.product_name || '';
                 const designNumber = response.design_number || '';
-                const qty = response.quantity || '';
+                const color = response.color_name || '';
 
                 $('#no_scans_msg').hide();
-                const historyItem = `
-                                <div class="list-group-item animate__animated animate__fadeInDown" id="history_${boxNo}">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <div class="font-weight-bold">Box #${boxNo}</div>
-                                            <small class="text-muted d-block">${productName}</small>
-                                            <small class="text-muted">Design: ${designNumber} | Qty: ${qty}</small>
-                                            <small class="text-white bg-success px-2 rounded">Just Scanned</small>
-                                        </div>
-                                        <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
-                                            data-id="${boxNo}" title="Undo this scan">
-                                            <i class="fas fa-undo"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            `;
-                $('#scan_history').prepend(historyItem);
+                const existingHistory = $(`#history_${boxNo}`);
+
+                const historyHTML = `
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <div class="font-weight-bold">Scanned: ${designNumber}</div>
+                                                    <small class="text-muted d-block">${productName}</small>
+                                                    <small class="text-muted">${color} | Count: ${current} / ${total}</small>
+                                                    <div class="mt-1"><small class="text-white bg-success px-2 rounded">Just Scanned</small></div>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
+                                                    data-id="${boxNo}" data-barcode="${response.barcode}" title="Undo one scan">
+                                                    <i class="fas fa-undo"></i>
+                                                </button>
+                                            </div>
+                        `;
+
+                if (existingHistory.length) {
+                    existingHistory.html(historyHTML).addClass('animate__animated animate__pulse');
+                    setTimeout(() => existingHistory.removeClass('animate__animated animate__pulse'), 1000);
+                } else {
+                    const historyItem = `<div class="list-group-item animate__animated animate__fadeInDown" id="history_${boxNo}">${historyHTML}</div>`;
+                    $('#scan_history').prepend(historyItem);
+                }
             }
 
-            function revertUI(key, boxNo) {
+            function revertUI(key, boxNo, response) {
                 const countSpan = $(`#count_${key}`);
                 const progressBar = $(`#progress_bar_${key}`);
                 const statusIcon = $(`#status_icon_${key}`);
                 const row = $(`#row_${key}`);
 
-                let current = parseInt(countSpan.text());
+                let current = response.scanned;
                 const total = parseInt(countSpan.next().text().replace('/ ', ''));
 
-                current = Math.max(0, current - 1);
                 countSpan.text(current);
 
                 const percentage = (current / total) * 100;
@@ -423,12 +426,23 @@
                     row.removeClass('bg-light-success');
                 }
 
-                $(`#history_${CSS.escape(boxNo)}`).addClass('animate__animated animate__fadeOutRight').fadeOut(function () {
-                    $(this).remove();
-                    if ($('#scan_history .list-group-item').length === 0) {
-                        $('#no_scans_msg').show();
+                // If scanned becomes 0, we can remove the history item
+                if (current === 0) {
+                    $(`#history_${CSS.escape(boxNo)}`).addClass('animate__animated animate__fadeOutRight').fadeOut(function () {
+                        $(this).remove();
+                        if ($('#scan_history .list-group-item').length === 0) {
+                            $('#no_scans_msg').show();
+                        }
+                    });
+                } else {
+                    // Update the sidebar text too if it exists
+                    const existingHistory = $(`#history_${boxNo}`);
+                    if (existingHistory.length) {
+                        existingHistory.find('.text-muted:last').text(`${response.color_name || ''} | Count: ${response.scanned} / ${response.required}`);
+                        existingHistory.addClass('animate__animated animate__shakeY');
+                        setTimeout(() => existingHistory.removeClass('animate__animated animate__shakeY'), 1000);
                     }
-                });
+                }
             }
 
             function setLoadingStatus(barcode) {

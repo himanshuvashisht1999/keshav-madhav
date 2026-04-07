@@ -9,6 +9,9 @@
                     <p class="text-muted">Review and dispatch orders placed by sales agents.</p>
                 </div>
                 <div>
+                    <a href="{{ route('admin.agent-orders.dispatches.index') }}" class="btn btn-info shadow-sm px-4 mr-2" style="border-radius: 8px;">
+                        <i class="fas fa-truck mr-2"></i> VIEW DISPATCHES
+                    </a>
                     <a href="{{ route('admin.agent-orders.create') }}" class="btn btn-primary shadow-sm px-4" style="border-radius: 8px;">
                         <i class="fas fa-plus mr-2"></i> CREATE NEW ORDER
                     </a>
@@ -73,16 +76,31 @@
                     </div>
                 </div>
 
+                <form id="dispatchForm" action="{{ route('admin.agent-orders.dispatch-selected') }}" method="POST">
+                @csrf
                 <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 font-weight-bold">Order Records</h5>
+                        <button type="submit" id="dispatchBtn" class="btn btn-success btn-sm px-4 shadow-sm" style="border-radius: 20px; display: none;">
+                            <i class="fas fa-shipping-fast mr-1"></i> DISPATCH SELECTED (<span id="selectedCount">0</span>)
+                        </button>
+                    </div>
                     <div class="card-body p-0">
                         <table class="table table-hover mb-0">
                             <thead class="bg-light">
                                 <tr>
+                                    <th width="40">
+                                        <div class="custom-control custom-checkbox ml-2">
+                                            <input type="checkbox" class="custom-control-input" id="checkAll">
+                                            <label class="custom-control-label" for="checkAll"></label>
+                                        </div>
+                                    </th>
                                     <th>Order ID</th>
                                     <th>Agent</th>
                                     <th>Shop Name</th>
                                     <th>Exp. Dispatch</th>
-                                    <th>Total Items</th>
+                                    <th>Total Pcs</th>
+                                    <th class="text-center">Scanned</th>
                                     <th>Grand Total</th>
                                     <th>Status</th>
                                     <th>Payment</th>
@@ -92,7 +110,15 @@
                             </thead>
                             <tbody>
                                 @forelse($orders as $order)
-                                    <tr>
+                                    <tr data-shop-id="{{ $order->master_customer_id }}">
+                                        <td>
+                                            @if($order->status != 'dispatched')
+                                            <div class="custom-control custom-checkbox ml-2">
+                                                <input type="checkbox" name="order_ids[]" value="{{ $order->id }}" class="custom-control-input order-checkbox" id="check_{{ $order->id }}">
+                                                <label class="custom-control-label" for="check_{{ $order->id }}"></label>
+                                            </div>
+                                            @endif
+                                        </td>
                                         <td>#ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</td>
                                         <td><span class="badge badge-info">{{ $order->agent_name }}</span></td>
                                         <td><strong>{{ $order->shop_name }}</strong></td>
@@ -104,7 +130,12 @@
                                                 </div>
                                             @endif
                                         </td>
-                                        <td>{{ number_format($order->total_qty, 0) }}</td>
+                                        <td>{{ number_format($order->total_qty, 0) }} Pcs</td>
+                                        <td class="text-center">
+                                            <span class="badge {{ $order->scanned_count == $order->total_boxes ? 'badge-success' : 'badge-info' }} px-3 py-2">
+                                                {{ $order->scanned_count }} / {{ $order->total_boxes }}
+                                            </span>
+                                        </td>
                                         <td><span
                                                 class="text-primary font-weight-bold">₹{{ number_format($order->grand_total, 2) }}</span>
                                         </td>
@@ -155,6 +186,7 @@
                         </div>
                     @endif
                 </div>
+                </form>
             </div>
         </section>
     </div>
@@ -179,6 +211,60 @@ $(document).ready(function() {
                 shopSelect.trigger('change');
             }
         });
+    });
+
+    // Multi-dispatch logic
+    const checkAll = $('#checkAll');
+    const checkboxes = $('.order-checkbox');
+    const dispatchBtn = $('#dispatchBtn');
+    const selectedCount = $('#selectedCount');
+
+    function updateBtn() {
+        let checked = $('.order-checkbox:checked');
+        let count = checked.length;
+        selectedCount.text(count);
+        
+        if (count > 0) {
+            dispatchBtn.fadeIn();
+        } else {
+            dispatchBtn.fadeOut();
+        }
+
+        // Shop verification
+        let shopId = null;
+        let diffShop = false;
+        checked.each(function() {
+            let sId = $(this).closest('tr').data('shop-id');
+            if (shopId === null) {
+                shopId = sId;
+            } else if (shopId !== sId) {
+                diffShop = true;
+            }
+        });
+
+        if (diffShop) {
+            dispatchBtn.attr('disabled', true);
+            // Note: setCustomValidity is for native form validation, 
+            // using toastr for UI feedback as requested in logic
+            toastr.warning('Please select orders for the SAME Shop only.');
+        } else {
+            dispatchBtn.attr('disabled', false);
+        }
+    }
+
+    checkAll.on('change', function() {
+        checkboxes.prop('checked', $(this).prop('checked'));
+        updateBtn();
+    });
+
+    checkboxes.on('change', function() {
+        updateBtn();
+    });
+
+    $('#dispatchForm').on('submit', function(e) {
+        if (!confirm('Are you sure you want to dispatch selected orders?')) {
+            e.preventDefault();
+        }
     });
 });
 </script>

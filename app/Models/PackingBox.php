@@ -28,6 +28,6 @@ class PackingBox extends Model
 
     public function domesticInventory()
     {
-        return $this->hasOne(DomesticInventory::class, 'packing_box_id');
+        return $this->belongsTo(DomesticInventory::class, 'barcode', 'barcode');
     }
 }

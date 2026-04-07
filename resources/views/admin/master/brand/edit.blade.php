@@ -21,12 +21,12 @@
     <section class="content">
         <div class="container-fluid">
             <div class="card card-default">
-                <form action="{{ route('admin.master.brand.update') }}" method="POST">
+                <form action="{{ route('admin.master.brand.update') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="id" value="{{ $data->id }}">
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="name">Brand Name</label>
                                     <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $data->name) }}" placeholder="Enter Brand Name">
@@ -35,7 +35,22 @@
                                     @enderror
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="logo">Brand Logo</label>
+                                    <input type="file" name="logo" id="logo" class="form-control-file @error('logo') is-invalid @enderror" accept="image/*">
+                                    @if($data->logo)
+                                        <div class="mt-2">
+                                            <img src="{{ asset('assets/brands/' . $data->logo) }}" alt="Current Logo" class="img-thumbnail" style="max-height: 80px;">
+                                            <p class="small text-muted mb-0">Current Logo</p>
+                                        </div>
+                                    @endif
+                                    @error('logo')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="status">Status</label>
                                     <select name="status" id="status" class="form-control">
