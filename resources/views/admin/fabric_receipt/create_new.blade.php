@@ -327,6 +327,7 @@
                                             <th style="width:20%;">Roll No</th>
                                             <th style="width:20%;">Meter</th>
                                             <th style="width:20%;">Amount</th>
+                                            <th style="width: 5%;">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody id="roll-details-body">
@@ -1001,11 +1002,7 @@ $(document).ready(function() {
             totalMeter += meter;
         });
 
-        // $('#amount').val(totalAmount.toFixed(2));
-       // $('#total_meter').val(totalMeter.toFixed(2));
-        // $('#total_roll').val($('#roll-details-body tr').length);
-
-        // calculateGST();
+        calculateGST();
     }
 
     /* ===============================
@@ -1137,12 +1134,35 @@ $(document).ready(function() {
                             class="form-control roll-amount"
                             readonly tabindex="-1">
                     </td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm remove-roll-detail">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </td>
                 </tr>
             `;
         }
         tbody.append(rowsHtml);
-        // calculateRollAmounts();
+        calculateRollAmounts();
     }
+
+    $(document).on('click', '.remove-roll-detail', function() {
+        $(this).closest('tr').remove();
+        
+        // Re-index sequence numbers AND input names to keep them sequential
+        $('#roll-details-body tr').each(function(index) {
+            $(this).find('td:first').text(index + 1);
+            
+            // Update names for backend consistency
+            $(this).find('input[name*="roll_details"]').each(function() {
+                let name = $(this).attr('name');
+                let newName = name.replace(/roll_details\[\d+\]/, 'roll_details[' + index + ']');
+                $(this).attr('name', newName);
+            });
+        });
+        
+        calculateRollAmounts();
+    });
 
 });
 

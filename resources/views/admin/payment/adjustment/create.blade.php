@@ -103,7 +103,7 @@
                                             <!-- In-line Shipment Picker -->
                                             <div class="shipment-selection-area mt-2" style="display:none; max-height: 200px; overflow-y: auto; background: #fff; border: 1px solid #ced4da; padding: 10px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                                    <p class="mb-0 small font-weight-bold text-muted">Select Shipments for Bulk Amount:</p>
+                                                    <p class="mb-0 small font-weight-bold text-muted shipment-context-label">Select Items for Adjustment:</p>
                                                     <span class="badge badge-info selection-stats">0 selected</span>
                                                 </div>
                                                 <div class="shipment-list">
@@ -150,7 +150,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
-                <h5 class="modal-title">Select Fabric Shipments</h5>
+                <h5 class="modal-title">Select Items</h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -162,7 +162,7 @@
                             <tr>
                                 <th><input type="checkbox" id="select_all_shipments"></th>
                                 <th>Date</th>
-                                <th>Shipment No</th>
+                                <th>Ref No</th>
                                 <th>Total Amount</th>
                                 <th>Balance Amount</th>
                             </tr>
@@ -200,7 +200,7 @@
             <!-- In-line Shipment Picker -->
             <div class="shipment-selection-area mt-2" style="display:none; max-height: 200px; overflow-y: auto; background: #fff; border: 1px solid #ced4da; padding: 10px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <p class="mb-0 small font-weight-bold text-muted">Select Shipments for Bulk Amount:</p>
+                    <p class="mb-0 small font-weight-bold text-muted shipment-context-label">Select Items for Adjustment:</p>
                     <span class="badge badge-info selection-stats">0 selected</span>
                 </div>
                 <div class="shipment-list">

@@ -312,7 +312,7 @@
                                 </div>
                         </div>
 
-                        <div class="right-col d-none" id="ocr-sidebar">
+                        <div class="right-col d-none" id="ocr-sidebar11">
                              <div class="image-preview-box mt-4">
                                 <div class="zoom-container">
                                     <img id="challan-preview" src="{{ asset('images/image-placeholder.png') }}" alt="Challan Slip">
@@ -376,7 +376,11 @@
                                                 <input type="number" class="form-control roll-amount" value="{{ $detail->price_per_meter * $detail->meter }}" readonly tabindex="-1">
                                             </td>
                                             <td>
-                                                <button type="button" class="btn btn-danger btn-sm remove-detail-row"><i class="fas fa-trash"></i></button>
+                                                @if($detail->meter == $detail->remaining_quantity)
+                                                    <button type="button" class="btn btn-danger btn-sm remove-detail-row"><i class="fas fa-trash"></i></button>
+                                                @else
+                                                    <span class="badge badge-warning" title="Consumed in production">Used</span>
+                                                @endif
                                             </td>
                                         </tr>
                                         @endforeach
@@ -668,7 +672,9 @@ $(document).ready(function() {
     }
 
     $(document).on('click', '.remove-detail-row', function() {
-        if(confirm('Are you sure?')) { $(this).closest('tr').remove(); calculateRollAmounts(); updateRowNumbers(); }
+        $(this).closest('tr').remove();
+        calculateRollAmounts();
+        updateRowNumbers();
     });
 
     function updateRowNumbers() {

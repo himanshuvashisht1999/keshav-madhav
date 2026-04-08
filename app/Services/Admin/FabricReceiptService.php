@@ -354,7 +354,7 @@ class FabricReceiptService
     public function delete(Request $request)
     {
         $receipt = FabricReceipt::find($request->id);
-        if ($receipt && $receipt->status != 0) {
+        if ($receipt && $receipt->status != 0 && $receipt->can_delete) {
             if ($receipt->vendor_id) {
                 $vendor = Vendor::find($receipt->vendor_id);
                 if ($vendor) {
@@ -362,8 +362,15 @@ class FabricReceiptService
                     $vendor->save();
                 }
             }
+            // Permanently deleting or soft deleting? 
+            // The original code set status to 0. I'll stick to that but also delete details 
+            // if you want, or just leave them with status 0.
             $receipt->status = 0;
             $receipt->save();
+            
+            // Also mark details as inactive
+            $receipt->details()->update(['status' => 0]);
+            
             return true;
         }
         return false;

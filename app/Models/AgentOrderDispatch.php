@@ -24,9 +24,26 @@ class AgentOrderDispatch extends Model
         'created_by'
     ];
 
+    protected $appends = ['paid_amount', 'balance_amount'];
+
     public function orders()
     {
         return $this->belongsToMany(AgentOrder::class, 'agent_order_dispatch_items', 'agent_order_dispatch_id', 'agent_order_id');
+    }
+
+    public function payments()
+    {
+        return $this->morphMany('App\Models\Payment', 'paymentable');
+    }
+
+    public function getPaidAmountAttribute()
+    {
+        return $this->payments()->sum('amount');
+    }
+
+    public function getBalanceAmountAttribute()
+    {
+        return ($this->grand_total ?? 0) - $this->paid_amount;
     }
 
     public function dispatchItems()

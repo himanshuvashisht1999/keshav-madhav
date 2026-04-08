@@ -42,8 +42,8 @@ class PaymentAdjustmentController extends Controller
     public function create()
     {
         $masters = AdjustmentMaster::where('status', 1)->get();
-        $vendorMaster = AdjustmentMaster::where('name', 'Vendor')->where('status', 1)->first();
         $domesticMaster = AdjustmentMaster::where('name', 'Customer')->where('status', 1)->first();
+        $vendorMaster = AdjustmentMaster::where('name', 'Vendor')->where('status', 1)->first();
         $shipmentMaster = $vendorMaster;
         
         return view('admin.payment.adjustment.create', compact('masters', 'vendorMaster', 'shipmentMaster', 'domesticMaster'));
@@ -92,11 +92,14 @@ class PaymentAdjustmentController extends Controller
                     $actualModel = $model;
                     $actualId = $refId;
                     
-                    // Handle Prefixed IDs for Corporate (if Customer Master)
-                    if ($model == 'App\Models\AgentOrder') {
+                    // Handle Prefixed IDs for Corporate/Domestic Dispatches
+                    if ($model == 'App\Models\AgentOrder' || $model == 'App\Models\MasterCustomer') {
                         if (str_starts_with($refId, 'OD:')) {
                             $actualModel = 'App\Models\OrderDispatch';
                             $actualId = substr($refId, 3);
+                        } elseif (str_starts_with($refId, 'AOD:')) {
+                            $actualModel = 'App\Models\AgentOrderDispatch';
+                            $actualId = substr($refId, 4);
                         } elseif (str_starts_with($refId, 'OR:')) {
                             $actualModel = 'App\Models\OrderMain';
                             $actualId = substr($refId, 3);
@@ -108,7 +111,7 @@ class PaymentAdjustmentController extends Controller
                         $currentAmount = $amountToDistribute;
                         
                         // Handle Distribution (Waterfall) - only if multiple selected
-                        if (($model == 'App\Models\FabricReceipt' || $model == 'App\Models\AgentOrder' || $actualModel == 'App\Models\OrderDispatch') && count($refIds) > 1) {
+                        if (($model == 'App\Models\FabricReceipt' || $model == 'App\Models\AgentOrder' || $actualModel == 'App\Models\OrderDispatch' || $actualModel == 'App\Models\AgentOrderDispatch') && count($refIds) > 1) {
                             $balance = floatval($item->balance_amount ?? 0);
                             if ($balance <= 0) continue;
                             $currentAmount = min($amountToDistribute, $balance);
@@ -171,12 +174,12 @@ class PaymentAdjustmentController extends Controller
                                 'remarks' => '[Salary-Adj] ' . $remarks,
                                 'created_by' => Auth::id(),
                             ]);
-                        } elseif ($model == 'App\Models\AgentOrder' || $actualModel == 'App\Models\OrderDispatch' || $actualModel == 'App\Models\OrderMain') {
-                            $category = ($actualModel == 'App\Models\AgentOrder') ? 'domestic_order' : 'corporate_order';
-                            $prefix = ($actualModel == 'App\Models\AgentOrder') ? 'Customer' : 'Corp';
+                        } elseif ($model == 'App\Models\AgentOrder' || $actualModel == 'App\Models\OrderDispatch' || $actualModel == 'App\Models\OrderMain' || $actualModel == 'App\Models\AgentOrderDispatch') {
+                            $category = ($actualModel == 'App\Models\AgentOrder' || $actualModel == 'App\Models\AgentOrderDispatch') ? 'domestic_order' : 'corporate_order';
+                            $prefix = ($actualModel == 'App\Models\AgentOrder' || $actualModel == 'App\Models\AgentOrderDispatch') ? 'Customer' : 'Corp';
                             
-                            $party_id = ($actualModel == 'App\Models\AgentOrder') 
-                                ? $item->master_customer_id 
+                            $party_id = ($actualModel == 'App\Models\AgentOrder' || $actualModel == 'App\Models\AgentOrderDispatch') 
+                                ? ($item->master_customer_id ?? $item->customer_id) 
                                 : ($actualModel == 'App\Models\OrderDispatch' ? $item->customer_id : $item->master_customer_id);
 
                             \App\Models\Payment::create([
@@ -319,26 +322,26 @@ class PaymentAdjustmentController extends Controller
             if (!$customer) return response()->json([]);
 
             if ($customer->type == 'domestic') {
-                $orders = \App\Models\AgentOrder::where('master_customer_id', $id)
+                $dispatches = \App\Models\AgentOrderDispatch::where('master_customer_id', $id)
                     ->get()
-                    ->filter(function ($ord) {
-                        return $ord->balance_amount > 0;
+                    ->filter(function ($d) {
+                        return $d->balance_amount > 0;
                     })
-                    ->map(function($ord) {
+                    ->map(function($d) {
                         return [
-                            'id' => $ord->id,
-                            'shipment_no' => 'ORD-#' . $ord->id,
-                            'balance' => $ord->balance_amount
+                            'id' => 'AOD:' . $d->id,
+                            'shipment_no' => 'DIS-#' . $d->id,
+                            'balance' => $d->balance_amount
                         ];
                     })
                     ->values();
-                return response()->json($orders);
+                return response()->json($dispatches);
             } else {
-                // Corporate Logic
+                // Corporate Logic - Only show Dispatches with balance
                 $dispatches = \App\Models\OrderDispatch::where('customer_id', $id)
                     ->where('is_paid', 0)
                     ->whereHas('orderMain', function ($q) {
-                        $q->where('order_type', 'corporate'); // Verify it is a corporate dispatch
+                        $q->where('order_type', 'corporate');
                     })
                     ->get()
                     ->filter(function ($d) { return $d->balance_amount > 0; })
@@ -349,21 +352,8 @@ class PaymentAdjustmentController extends Controller
                             'balance' => $d->balance_amount
                         ];
                     });
-
-                $orders = \App\Models\OrderMain::where('master_customer_id', $id)
-                    ->where('order_type', 'corporate')
-                    ->where('is_paid', 0)
-                    ->latest()
-                    ->get()
-                    ->map(function ($o) {
-                        return [
-                            'id' => 'OR:' . $o->id,
-                            'shipment_no' => 'ORD-#' . ($o->order_no ?? $o->id),
-                            'balance' => 0.00 // Orders don't have explicit balance before dispatch
-                        ];
-                    });
                 
-                return response()->json($dispatches->merge($orders)->values());
+                return response()->json($dispatches->values());
             }
         }
 

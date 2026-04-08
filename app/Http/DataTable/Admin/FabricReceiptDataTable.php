@@ -102,7 +102,11 @@ class FabricReceiptDataTable
                 $action = '<a href="' . route('admin.fabric_receipt.view', ['id' => $parameter]) . '" class="mr-2" data-toggle="tooltip" data-placement="top" title="View"><i class="fas fa-eye text-muted"></i></a>';
                 
                 if (!$is_paid) {
-                    $action .= '<a href="' . route('admin.fabric_receipt.edit', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-primary"></i></a>';
+                    $action .= '<a href="' . route('admin.fabric_receipt.edit', ['id' => $parameter]) . '" class="mr-2" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-primary"></i></a>';
+                }
+
+                if ($queue->can_delete) {
+                    $action .= '<a href="javascript:void(0)" onclick="deleteData(\'' . route('admin.fabric_receipt.delete', ['id' => $parameter]) . '\')" class="text-danger" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash"></i></a>';
                 }
 
                 return $action;

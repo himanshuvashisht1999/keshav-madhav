@@ -37,7 +37,14 @@ class FabricReceipt extends Model
         'updated_at'
     ];
 
-    protected $appends = ['paid_amount', 'balance_amount'];
+    protected $appends = ['paid_amount', 'balance_amount', 'can_delete'];
+
+    public function getCanDeleteAttribute()
+    {
+        // A shipment can be deleted only if NONE of its rolls have been used
+        // i.e., remaining_quantity must be equal to the original meter for ALL details
+        return !$this->details()->whereColumn('remaining_quantity', '<', 'meter')->exists();
+    }
 
     public function vendor()
     {
