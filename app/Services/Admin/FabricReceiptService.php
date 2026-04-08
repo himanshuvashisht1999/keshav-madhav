@@ -229,7 +229,7 @@ class FabricReceiptService
     public function update(Request $request)
     {
         $update_data = FabricReceipt::find($request->receipt_id);
-        
+
         if ($request->hasFile('shipment_photo')) {
             $image = $request->file('shipment_photo');
             $extImage = $image->getClientOriginalExtension();
@@ -259,7 +259,6 @@ class FabricReceiptService
         $update_data->amount = $request->amount ?? 0.00;
         $update_data->gst_amount = $request->gst_amount ?? 0.00;
         $update_data->gst_percentage = $request->gst_percentage ?? 1;
-        $update_data->total_amount = $request->total_amount ?? 0.00;
         $update_data->other_charges = $request->other_charges ?? 0.00;
         $update_data->total_meter = $request->total_meter ?? 0.00;
         $update_data->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
@@ -287,7 +286,8 @@ class FabricReceiptService
             $received_ids = [];
             foreach ($request->roll_details as $single_data) {
                 $fab_data = Fabric::where('id', $single_data['fabric_id'])->first();
-                if (!$fab_data) continue;
+                if (!$fab_data)
+                    continue;
 
                 if (isset($single_data['detail_id']) && !empty($single_data['detail_id'])) {
                     $received_ids[] = $single_data['detail_id'];
@@ -302,7 +302,9 @@ class FabricReceiptService
                     $barcodeGenerator = new \Picqer\Barcode\BarcodeGeneratorPNG();
                     $barcodeFileName = $qrcode_number . '_barcode.png';
                     $barcodePath = public_path('assets/barcodes');
-                    if (!file_exists($barcodePath)) { mkdir($barcodePath, 0777, true); }
+                    if (!file_exists($barcodePath)) {
+                        mkdir($barcodePath, 0777, true);
+                    }
                     file_put_contents($barcodePath . '/' . $barcodeFileName, $barcodeGenerator->getBarcode($qrcode_number, $barcodeGenerator::TYPE_CODE_128, 3, 80));
                     $detail->barcode = $barcodeFileName;
 
@@ -315,7 +317,9 @@ class FabricReceiptService
                         'price' => $single_data['price']
                     ]);
                     $destinationPath = public_path('assets/qrcodes');
-                    if (!file_exists($destinationPath)) { mkdir($destinationPath, 0777, true); }
+                    if (!file_exists($destinationPath)) {
+                        mkdir($destinationPath, 0777, true);
+                    }
                     $result = \Endroid\QrCode\Builder\Builder::create()
                         ->writer(new \Endroid\QrCode\Writer\PngWriter())
                         ->data($qrData)

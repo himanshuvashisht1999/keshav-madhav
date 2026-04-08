@@ -56,11 +56,11 @@
             if($selectedBrand->name == 'SNAPKID') $showSnapkid = true;
         }
         
-        $leftLogo = $showSurgical ? $surgicalLogo : ($showSnapkid ? $snapkidLogo : "");
+        $leftLogo = $showSurgical ? $surgicalLogo : ($showSnapkid ? $snapkidLogo : $snapkidLogo);
         $rightLogo = ($showSurgical && $showSnapkid) ? $snapkidLogo : "";
         
-        $brandTitle = "KESHAV MADHAV FASHION";
-        if($showSurgical && $showSnapkid) $brandTitle = "SURGICAL & SNAPKID";
+        $brandTitle = "SNAPKID";
+        if($showSurgical && $showSnapkid) $brandTitle = "SNAPKID";
         elseif($showSurgical) $brandTitle = "SURGICAL";
         elseif($showSnapkid) $brandTitle = "SNAPKID";
     @endphp
@@ -71,7 +71,7 @@
             <div class="estimate-title">PACKING SLIP</div>
             <div class="company-name">{{ $brandTitle }}</div>
             <div style="font-size: 10px;">{{ $settings->address ?? 'TRONIKA CITY GHAZIABAD-201102' }}</div>
-            @if($rightLogo) <img src="{{ $rightLogo }}" class="logo-img" style="right: 15px;"> @endif
+            <!-- @if($rightLogo) <img src="{{ $rightLogo }}" class="logo-img" style="right: 15px;"> @endif -->
         </div>
 
         <table class="info-table" cellpadding="0" cellspacing="0">
@@ -85,7 +85,7 @@
                 <td width="40%">
                     <table width="100%" style="border-collapse: collapse;">
                         <tr>
-                            <td width="40%" style="padding: 2px 0; border:none; font-weight:bold;">Invoice No</td>
+                            <td width="40%" style="padding: 2px 0; border:none; font-weight:bold;">Packing Slip No</td>
                             <td style="padding: 2px 0; border:none;">: <strong>{{ strtoupper($brandTitle) }}/{{ $dispatch->id }}</strong></td>
                         </tr>
                         <tr>

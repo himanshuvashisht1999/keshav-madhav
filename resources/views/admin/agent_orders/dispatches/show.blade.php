@@ -19,6 +19,10 @@
                             <option value="1">Snapkid</option>
                         </select>
                     </div>
+                    <button type="button" class="btn btn-outline-warning shadow-sm px-4 mr-2"
+                        style="border-radius: 8px;" data-toggle="modal" data-target="#editInvoiceModal">
+                        <i class="fas fa-edit mr-2"></i> EDIT INVOICE
+                    </button>
                     <a href="{{ route('admin.agent-orders.dispatches.download-packing-slip', $dispatch->id) }}"
                         id="packingSlipBtn" class="btn btn-outline-info shadow-sm px-4 mr-2" style="border-radius: 8px;">
                         <i class="fas fa-boxes mr-2"></i> PACKING SLIP
@@ -27,6 +31,73 @@
                         class="btn btn-primary shadow-sm px-4" style="border-radius: 8px;">
                         <i class="fas fa-file-invoice mr-2"></i> DOWNLOAD INVOICE
                     </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Invoice Modal -->
+        <div class="modal fade" id="editInvoiceModal" tabindex="-1" role="dialog" aria-labelledby="editInvoiceModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+                    <div class="modal-header bg-warning text-white" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                        <h5 class="modal-title font-weight-bold" id="editInvoiceModalLabel"><i class="fas fa-edit mr-2"></i> Update Dispatch Invoice</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form id="editInvoiceForm">
+                        @csrf
+                        <div class="modal-body p-4">
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold text-muted small text-uppercase">Subtotal Amount (Total Pcs * Price)</label>
+                                <div class="input-group shadow-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-rupee-sign text-primary"></i></span>
+                                    </div>
+                                    <input type="number" step="0.01" class="form-control border-left-0" id="total_amount" name="total_amount" value="{{ $dispatch->total_amount }}" required>
+                                </div>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold text-muted small text-uppercase">Extra Discount</label>
+                                <div class="input-group shadow-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-minus-circle text-danger"></i></span>
+                                    </div>
+                                    <input type="number" step="0.01" class="form-control border-left-0" id="discount_amount" name="discount_amount" value="{{ $dispatch->discount_amount ?? 0 }}">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="font-weight-bold text-muted small text-uppercase">GST %</label>
+                                        <div class="input-group shadow-sm">
+                                            <input type="number" step="0.01" class="form-control" id="gst_percentage" name="gst_percentage" value="{{ $dispatch->gst_percentage ?? 5 }}">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text bg-white"><i class="fas fa-percentage text-secondary"></i></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="font-weight-bold text-muted small text-uppercase">GST Amount</label>
+                                        <div class="input-group shadow-sm">
+                                            <input type="text" class="form-control bg-light" id="gst_amount_display" readonly value="{{ number_format($dispatch->gst_amount, 2) }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="my-4">
+                            <div class="bg-light p-3 rounded-lg text-center shadow-sm border">
+                                <h6 class="text-muted text-uppercase mb-1 small font-weight-bold">Final Grand Total</h6>
+                                <h3 class="mb-0 text-primary font-weight-bold" id="grand_total_display">₹{{ number_format($dispatch->grand_total, 2) }}</h3>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light p-3" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                            <button type="button" class="btn btn-outline-secondary px-4 mr-2" data-dismiss="modal" style="border-radius: 8px;">Cancel</button>
+                            <button type="submit" class="btn btn-warning px-5 font-weight-bold" style="border-radius: 8px;">UPDATE INVOICE</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -68,11 +139,67 @@
                             </div>
                         </div>
                     </div>
+                </div>
+                
+                <!-- Financial Summary Cards -->
+                <div class="row mb-4">
                     <div class="col-md-3">
-                        <div class="card shadow-sm bg-primary border-0 h-100 text-white">
-                            <div class="card-body text-center py-4">
-                                <h6 class="text-white-50 font-weight-bold text-uppercase mb-2">Grand Total</h6>
-                                <h4 class="font-weight-bold mb-0">₹{{ number_format($dispatch->grand_total, 2) }}</h4>
+                        <div class="card shadow-sm border-0 border-left-primary h-100">
+                            <div class="card-body py-3">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Subtotal</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ number_format($dispatch->total_amount, 2) }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-calculator fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card shadow-sm border-0 border-left-danger h-100">
+                            <div class="card-body py-3">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Extra Discount</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ number_format($dispatch->discount_amount ?? 0, 2) }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-tags fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card shadow-sm border-0 border-left-info h-100">
+                            <div class="card-body py-3">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">GST ({{ number_format($dispatch->gst_percentage ?? 5, 1) }}%)</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ number_format($dispatch->gst_amount, 2) }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-percent fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card shadow-sm bg-success border-0 h-100 text-white">
+                            <div class="card-body py-3">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">Final Amount</div>
+                                        <div class="h4 mb-0 font-weight-bold">₹{{ number_format($dispatch->grand_total, 2) }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-check-circle fa-2x text-white-50"></i>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -177,6 +304,50 @@
 
             // 🔥 IMPORTANT: Run once on page load
             updateUrls();
+
+            // Invoice Modal Calculations
+            function calculateInvoice() {
+                const totalAmount = parseFloat($('#total_amount').val()) || 0;
+                const discountAmount = parseFloat($('#discount_amount').val()) || 0;
+                const gstPercentage = parseFloat($('#gst_percentage').val()) || 0;
+
+                const taxableAmount = totalAmount - discountAmount;
+                const gstAmount = taxableAmount * (gstPercentage / 100);
+                const grandTotal = taxableAmount + gstAmount;
+
+                $('#gst_amount_display').val(gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                $('#grand_total_display').text('₹' + grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            }
+
+            $('#total_amount, #discount_amount, #gst_percentage').on('input', calculateInvoice);
+
+            // Invoice Modal Submission
+            $('#editInvoiceForm').on('submit', function(e) {
+                e.preventDefault();
+                const btn = $(this).find('button[type="submit"]');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> UPDATING...');
+
+                $.ajax({
+                    url: "{{ route('admin.agent-orders.dispatches.update-invoice', $dispatch->id) }}",
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            toastr.error(response.message);
+                            btn.prop('disabled', false).text('UPDATE INVOICE');
+                        }
+                    },
+                    error: function(xhr) {
+                        toastr.error('Something went wrong. Please try again.');
+                        btn.prop('disabled', false).text('UPDATE INVOICE');
+                    }
+                });
+            });
         });
     </script>
 @endpush

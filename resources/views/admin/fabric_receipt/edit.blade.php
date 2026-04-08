@@ -112,12 +112,13 @@
                             <input type="text"
                                 id="datetime"
                                 class="form-control"
-                                placeholder="Select date">
+                                placeholder="Select date"
+                                value="{{ $data->time ? \Carbon\Carbon::parse($data->time)->format('d M Y') : date('d M Y') }}">
 
                             <input type="hidden"
                                 name="time"
                                 id="datetime_hidden"
-                                value="{{ date('Y-m-d', strtotime($data->time)) }}">
+                                value="{{ $data->time ? \Carbon\Carbon::parse($data->time)->format('Y-m-d') : date('Y-m-d') }}">
                         </div>
 
                         <div class="col-md-4">

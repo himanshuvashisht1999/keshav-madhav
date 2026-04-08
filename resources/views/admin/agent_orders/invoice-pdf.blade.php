@@ -178,9 +178,9 @@
 
                         @if(isset($type) && $type == 'actual')
                             <div style="display: inline-block;">
-                                @if($surgicalLogo)
+                                <!-- @if($surgicalLogo)
                                     <img src="{{ $surgicalLogo }}" style="height: 45px; max-width: 100px; margin-right: 5px;">
-                                @endif
+                                @endif -->
                                 @if($snapkidLogo)
                                     <img src="{{ $snapkidLogo }}" style="height: 45px; max-width: 100px;">
                                 @endif
@@ -201,7 +201,8 @@
                         <div class="estimate-title">INVOICE</div>
                         <div class="company-name">
                              @if(isset($type) && $type == 'actual')
-                                SURGICAL & SNAPKID
+                                <!-- SURGICAL & SNAPKID -->
+                                SNAPKID
                             @elseif(isset($selectedBrand) && $selectedBrand)
                                 {{ $selectedBrand->name }}
                             @else
@@ -213,9 +214,9 @@
                     <td width="30%" class="text-right" style="vertical-align: middle;">
                          @if(isset($type) && $type == 'actual')
                             <div style="display: inline-block;">
-                                @if($surgicalLogo)
+                                <!-- @if($surgicalLogo)
                                     <img src="{{ $surgicalLogo }}" style="height: 45px; max-width: 100px; margin-right: 5px;">
-                                @endif
+                                @endif -->
                                 @if($snapkidLogo)
                                     <img src="{{ $snapkidLogo }}" style="height: 45px; max-width: 100px;">
                                 @endif

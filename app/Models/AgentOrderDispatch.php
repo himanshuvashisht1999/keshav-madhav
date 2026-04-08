@@ -16,7 +16,9 @@ class AgentOrderDispatch extends Model
         'lr_no',
         'transport_name',
         'total_amount',
+        'discount_amount',
         'gst_amount',
+        'gst_percentage',
         'grand_total',
         'status',
         'created_by'

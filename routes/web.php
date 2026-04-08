@@ -486,6 +486,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/dispatches/{id}', [AdminAgentOrderController::class, 'dispatchShow'])->name('dispatches.show');
             Route::get('/dispatches/{id}/invoice', [AdminAgentOrderController::class, 'downloadDispatchInvoice'])->name('dispatches.download-invoice');
             Route::get('/dispatches/{id}/packing-slip', [AdminAgentOrderController::class, 'downloadDispatchPackingSlip'])->name('dispatches.download-packing-slip');
+            Route::post('/dispatches/{id}/update-invoice', [AdminAgentOrderController::class, 'updateDispatchInvoice'])->name('dispatches.update-invoice');
             Route::post('/dispatch-selected', [AdminAgentOrderController::class, 'dispatchSelected'])->name('dispatch-selected');
         });
 

@@ -6,12 +6,12 @@
             <div class="container-fluid">
                 <div class="row mb-2">
                     <div class="col-sm-6">
-                        <h1>Pattern</h1>
+                        <h1>Product Style</h1>
                     </div>
                     <div class="col-sm-6">
                         <ol class="breadcrumb float-sm-right">
                             <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                            <li class="breadcrumb-item active">Create Pattern</li>
+                            <li class="breadcrumb-item active">Create Product Style</li>
                         </ol>
                     </div>
                 </div>
@@ -24,8 +24,8 @@
                 <!-- SELECT2 EXAMPLE -->
                 <div class="card card-default">
                     <!-- <div class="card-header">
-                        <h3 class="card-title">Create Pattern</h3>
-                    </div> -->
+                            <h3 class="card-title">Create Pattern</h3>
+                        </div> -->
                     <form action="{{route('admin.master.design-pattern.store')}}" method="post"
                         enctype="multipart/form-data" autocomplete="off">
                         @csrf

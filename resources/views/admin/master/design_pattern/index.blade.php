@@ -1,149 +1,149 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Manage Pattern</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Pattern</li>
-                    </ol>
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1>Manage Product Style</h1>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
+                            <li class="breadcrumb-item active">Manage Product Style</li>
+                        </ol>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Main content -->
-    <section class="content">
-        <div class="container-fluid">
-            <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default ">
-                
-                <div class="card-body table-responsive">
-                <table id="customers" class="table table-bordered table-hover">
-                  <thead>
-                    <tr role="row" class="filter">
-                        <td>
-                            <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="name" id="name" autocomplete="off">
-                        </td>
-                        <td>
-                            <select class="form-control" name="status" id="status" autocomplete="off">
-                                <option value="">ALL</option>
-                                <option value="1">Active</option>
-                                <option value="0">Inactive</option>
-                            </select>
-                        </td>
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+                <!-- SELECT2 EXAMPLE -->
+                <div class="card card-default ">
 
-                        
-                        <td>
-                       
-                       </td>
-                    </tr>
-                  <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Status</th>
-                    
-                    <th>Action</th>
-                  </tr>
-                  </thead>
-                  <tbody></tbody>
-                  
-                </table>
-              </div>
+                    <div class="card-body table-responsive">
+                        <table id="customers" class="table table-bordered table-hover">
+                            <thead>
+                                <tr role="row" class="filter">
+                                    <td>
+                                        <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control" name="name" id="name" autocomplete="off">
+                                    </td>
+                                    <td>
+                                        <select class="form-control" name="status" id="status" autocomplete="off">
+                                            <option value="">ALL</option>
+                                            <option value="1">Active</option>
+                                            <option value="0">Inactive</option>
+                                        </select>
+                                    </td>
+
+
+                                    <td>
+
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Status</th>
+
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+
+                        </table>
+                    </div>
+                </div>
             </div>
-        </div>
-    </section>
-</div>
-<script>
-    $(function () {
-        var i = 1;
-        var oTable = $('#customers').DataTable({
-            processing: true,
-            serverSide: true,
-            stateSave: true,
-            searching: true,
-            ordering:false,
-            lengthMenu: [[25, 100, -1], [25, 100, "All"]],
-            "pageLength":25,
-            ajax: {
-                url: '{!! route('admin.master.design-pattern.indexList') !!}',
-                data: function (d) {
-                    d.id = $('#id').val();
-                    d.name = $('#name').val();
-                    d.status = $('#status').val();
-                  
+        </section>
+    </div>
+    <script>
+        $(function () {
+            var i = 1;
+            var oTable = $('#customers').DataTable({
+                processing: true,
+                serverSide: true,
+                stateSave: true,
+                searching: true,
+                ordering: false,
+                lengthMenu: [[25, 100, -1], [25, 100, "All"]],
+                "pageLength": 25,
+                ajax: {
+                    url: '{!! route('admin.master.design-pattern.indexList') !!}',
+                    data: function (d) {
+                        d.id = $('#id').val();
+                        d.name = $('#name').val();
+                        d.status = $('#status').val();
+
+                    },
+                    orderable: false
                 },
-                orderable: false
-            },
-            columns: [
-                {data: 'DT_RowIndex', name: 'id'},
-                {data: 'name', name: 'name'},
-                {data: 'status', name: 'status'},
-                {data: 'action', name: 'action', searchable: false}
-            ],
-            dom: 'lBfrtip',
-            buttons: [
-                {
-                    text: 'Add Pattern',
-                    className: 'btn-datatable',
-                    action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.master.design-pattern.create') }}";
+                columns: [
+                    { data: 'DT_RowIndex', name: 'id' },
+                    { data: 'name', name: 'name' },
+                    { data: 'status', name: 'status' },
+                    { data: 'action', name: 'action', searchable: false }
+                ],
+                dom: 'lBfrtip',
+                buttons: [
+                    {
+                        text: 'Add Product Style',
+                        className: 'btn-datatable',
+                        action: function (e, dt, node, config) {
+                            window.location.href = "{{ route('admin.master.design-pattern.create') }}";
+                        }
                     }
+                ]
+            });
+
+            $('#email-queue-search-form').on('submit', function (e) {
+                oTable.draw();
+                e.preventDefault();
+            });
+
+            $('#id').on('keyup', function (e) {
+                oTable.draw();
+                e.preventDefault();
+            });
+
+            $('#name').on('keyup', function (e) {
+                oTable.draw();
+                e.preventDefault();
+            });
+            $('#status').on('change', function (e) {
+                oTable.draw();
+                e.preventDefault();
+            });
+
+
+        });
+
+        $(document).ready(function () {
+
+        });
+
+        function deleteData(id) {
+            Swal.fire({
+                title: "Are you sure?",
+                text: "You won't be able to revert this!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, delete it!"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // If user confirms, trigger the delete route
+                    window.location.href = "{{ route('admin.master.design-pattern.delete', ['id' => '']) }}" + id;
                 }
-            ]
-        });
-
-        $('#email-queue-search-form').on('submit', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#name').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#status').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        
-
-    });
-
-    $(document).ready(function () {
-        
-    });
-
-    function deleteData(id){
-        Swal.fire({
-            title: "Are you sure?",
-            text: "You won't be able to revert this!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, delete it!"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.master.design-pattern.delete', ['id' => '']) }}" + id;
-            }
-        });
-    }
-</script>
+            });
+        }
+    </script>
 
 @endsection

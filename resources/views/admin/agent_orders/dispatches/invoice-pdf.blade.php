@@ -60,11 +60,11 @@
             if($selectedBrand->name == 'SNAPKID') $showSnapkid = true;
         }
         
-        $leftLogo = $showSurgical ? $surgicalLogo : ($showSnapkid ? $snapkidLogo : "");
+        $leftLogo = $showSurgical ? $surgicalLogo : ($showSnapkid ? $snapkidLogo : $snapkidLogo);
         $rightLogo = ($showSurgical && $showSnapkid) ? $snapkidLogo : "";
         
-        $brandTitle = "KESHAV MADHAV FASHION";
-        if($showSurgical && $showSnapkid) $brandTitle = "SURGICAL & SNAPKID";
+        $brandTitle = "SNAPKID";
+        if($showSurgical && $showSnapkid) $brandTitle = "SNAPKID";
         elseif($showSurgical) $brandTitle = "SURGICAL";
         elseif($showSnapkid) $brandTitle = "SNAPKID";
 
@@ -75,10 +75,10 @@
     <div class="main-container">
         <div class="header-section text-center">
             @if($leftLogo) <img src="{{ $leftLogo }}" class="logo-img" style="left: 15px;"> @endif
-            <div class="estimate-title">ESTIMATE</div>
+            <div class="estimate-title">INVOICE</div>
             <div class="company-name">{{ $brandTitle }}</div>
             <div style="font-size: 10px;">{{ $settings->address ?? 'TRONIKA CITY GHAZIABAD-201102' }}</div>
-            @if($rightLogo) <img src="{{ $rightLogo }}" class="logo-img" style="right: 15px;"> @endif
+            <!-- @if($rightLogo) <img src="{{ $rightLogo }}" class="logo-img" style="right: 15px;"> @endif -->
         </div>
 
         <table class="info-table">
@@ -153,9 +153,16 @@
                     <td class="text-right">{{ number_format($filteredSubtotal, 2) }}</td>
                 </tr>
 
+                @if(isset($discountAmt) && $discountAmt > 0)
+                <tr class="summary-row">
+                    <td colspan="6" class="text-right">Extra Discount</td>
+                    <td class="text-right">- {{ number_format($discountAmt, 2) }}</td>
+                </tr>
+                @endif
+
                 <tr class="summary-row">
                     <td colspan="5" class="text-right">GST</td>
-                    <td class="text-right">@ 5.00 %</td>
+                    <td class="text-right">@ {{ number_format($dispatch->gst_percentage ?? 5, 2) }} %</td>
                     <td class="text-right">{{ number_format($filteredGst, 2) }}</td>
                 </tr>
 

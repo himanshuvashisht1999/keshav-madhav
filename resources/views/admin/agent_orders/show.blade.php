@@ -6,40 +6,40 @@
             <div class="container-fluid">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h1 class="m-0 font-weight-bold text-dark">Order Details #ORD-{{ $order->id }}</h1>
-                    
+
                     <div class="d-flex align-items-center">
                         <!-- Brand Filter Dropdown -->
-                        <div class="input-group input-group-sm mr-2 shadow-sm" style="width: 180px;">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text bg-white border-right-0"><i class="fas fa-tag text-primary"></i></span>
+                        <!-- <div class="input-group input-group-sm mr-2 shadow-sm" style="width: 180px;">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-tag text-primary"></i></span>
+                                </div>
+                                <select id="brandFilter" class="form-control border-left-0 font-weight-bold" style="height: 31px;">
+                                    <option value="">All Brands</option>
+                                    <option value="2">SURGICAL</option>
+                                    <option value="1">SNAPKID</option>
+                                    <option value="actual">ACTUAL</option>
+                                </select>
                             </div>
-                            <select id="brandFilter" class="form-control border-left-0 font-weight-bold" style="height: 31px;">
-                                <option value="">All Brands</option>
-                                <option value="2">SURGICAL</option>
-                                <option value="1">SNAPKID</option>
-                                <option value="actual">ACTUAL</option>
-                            </select>
-                        </div>
 
-                        <div class="btn-group mr-2 shadow-sm" style="height: 31px;">
-                            <a id="btnPacking" href="{{ route('admin.agent-orders.download-packing-slip', $order->id) }}"
-                                class="btn btn-sm btn-outline-dark px-3 font-weight-bold">
-                                <i class="fas fa-file-pdf mr-1 text-danger"></i> Slip
-                            </a>
-                            <a id="btnInvoice" href="{{ route('admin.agent-orders.download-invoice', $order->id) }}"
-                                class="btn btn-sm btn-outline-dark px-3 font-weight-bold">
-                                <i class="fas fa-file-pdf mr-1 text-danger"></i> Invoice
-                            </a>
-                        </div>
+                            <div class="btn-group mr-2 shadow-sm" style="height: 31px;">
+                                <a id="btnPacking" href="{{ route('admin.agent-orders.download-packing-slip', $order->id) }}"
+                                    class="btn btn-sm btn-outline-dark px-3 font-weight-bold">
+                                    <i class="fas fa-file-pdf mr-1 text-danger"></i> Slip
+                                </a>
+                                <a id="btnInvoice" href="{{ route('admin.agent-orders.download-invoice', $order->id) }}"
+                                    class="btn btn-sm btn-outline-dark px-3 font-weight-bold">
+                                    <i class="fas fa-file-pdf mr-1 text-danger"></i> Invoice
+                                </a>
+                            </div> -->
 
                         <div class="btn-group">
                             @php $dispatchRecord = $order->dispatches->last(); @endphp
-                            
+
                             @if($dispatchRecord)
-                            <a href="{{ route('admin.agent-orders.dispatches.show', $dispatchRecord->id) }}"
-                                class="btn btn-sm btn-info rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
-                                <i class="fas fa-shipping-fast mr-1"></i> LOG
-                            </a>
+                                <a href="{{ route('admin.agent-orders.dispatches.show', $dispatchRecord->id) }}"
+                                    class="btn btn-sm btn-info rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
+                                    <i class="fas fa-shipping-fast mr-1"></i> LOG
+                                </a>
                             @endif
 
                             @if($order->status == 'pending')
@@ -59,21 +59,21 @@
         </div>
 
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function () {
                 const brandFilter = document.getElementById('brandFilter');
                 const btnPacking = document.getElementById('btnPacking');
                 const btnInvoice = document.getElementById('btnInvoice');
-                
+
                 const basePackingUrl = "{{ route('admin.agent-orders.download-packing-slip', $order->id) }}";
                 const baseInvoiceUrl = "{{ route('admin.agent-orders.download-invoice', $order->id) }}";
 
-                brandFilter.addEventListener('change', function() {
+                brandFilter.addEventListener('change', function () {
                     let val = this.value;
                     let query = val ? `?brand_id=${val}` : '';
                     if (val === 'actual') {
                         query = '?type=actual';
                     }
-                    
+
                     btnPacking.href = basePackingUrl + query;
                     btnInvoice.href = baseInvoiceUrl + query;
                 });
@@ -130,7 +130,8 @@
                                         <span class="text-muted">Subtotal:</span>
                                         <span class="font-weight-bold">₹{{ number_format($order->total_amount, 2) }}</span>
                                     </li>
-                                    <li class="list-group-item d-flex justify-content-between p-2 {{ $order->discount_amount > 0 ? '' : 'd-none' }}">
+                                    <li
+                                        class="list-group-item d-flex justify-content-between p-2 {{ $order->discount_amount > 0 ? '' : 'd-none' }}">
                                         <span class="text-muted">Discount
                                             ({{ number_format($order->discount_percentage, 0) }}%):</span>
                                         <span
@@ -167,7 +168,7 @@
                                 @if(in_array($order->status, ['pending', 'partially_dispatched']))
                                     <hr>
                                     <div class="alert alert-info small mb-3">
-                                        <i class="fas fa-barcode mr-1"></i> 
+                                        <i class="fas fa-barcode mr-1"></i>
                                         @if($order->status == 'partially_dispatched')
                                             Order is partially dispatched. Continue scanning remaining items.
                                         @else
@@ -209,19 +210,21 @@
                                         @foreach($items as $item)
                                             <tr>
                                                 <td>
-                                                    <span class="badge {{ $item->status == 'Scanned' ? 'badge-success' : ($item->status == 'Partial' ? 'badge-info' : 'badge-primary') }}">
+                                                    <span
+                                                        class="badge {{ $item->status == 'Scanned' ? 'badge-success' : ($item->status == 'Partial' ? 'badge-info' : 'badge-primary') }}">
                                                         {{ $item->scanned_box_qty }} / {{ $item->box_count }} Boxes
                                                     </span>
                                                 </td>
                                                 <td>
                                                     <strong>{{ $item->product_name }}</strong><br>
                                                     <small style="color:#666;">
-                                                        Design: {{ $item->design_number }} | Color: {{ $item->color_name }} | Set:
+                                                        Design: {{ $item->design_number }} | Color: {{ $item->color_name }} |
+                                                        Set:
                                                         {{ $item->size_set_name }} | Barcode: {{ $item->barcode }}
                                                         @if(isset($item->fitting_name) && $item->fitting_name) | Fit:
-                                                            {{ $item->fitting_name }} @endif
+                                                        {{ $item->fitting_name }} @endif
                                                         @if(isset($item->pattern_name) && $item->pattern_name) | Pat:
-                                                            {{ $item->pattern_name }} @endif
+                                                        {{ $item->pattern_name }} @endif
                                                     </small>
                                                 </td>
                                                 <td class="text-center font-weight-bold">{{ $item->total_qty }} pcs</td>
@@ -230,9 +233,11 @@
                                                     ₹{{ number_format($item->total_qty * $item->selling_price, 2) }}</td>
                                                 <td class="text-right">
                                                     @if($item->status == 'Dispatched')
-                                                        <span class="badge badge-success"><i class="fas fa-check mr-1"></i>{{ $item->status }}</span>
+                                                        <span class="badge badge-success"><i
+                                                                class="fas fa-check mr-1"></i>{{ $item->status }}</span>
                                                     @elseif($item->status == 'Scanned')
-                                                        <span class="badge badge-info"><i class="fas fa-barcode mr-1"></i>{{ $item->status }}</span>
+                                                        <span class="badge badge-info"><i
+                                                                class="fas fa-barcode mr-1"></i>{{ $item->status }}</span>
                                                     @else
                                                         <span class="badge badge-secondary">{{ $item->status }}</span>
                                                     @endif

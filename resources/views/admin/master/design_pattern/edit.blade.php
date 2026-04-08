@@ -1,115 +1,121 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Pattern</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Edit Pattern</li>
-                    </ol>
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1>Product Style</h1>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
+                            <li class="breadcrumb-item active">Edit Product Style</li>
+                        </ol>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Main content -->
-    <section class="content">
-        <div class="container-fluid">
-            <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default">
-                <!-- <div class="card-header">
-                    <h3 class="card-title">Edit Pattern</h3>
-                </div> -->
-                <form action="{{route('admin.master.design-pattern.update')}}" method="post" enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" name="id" value="{{$data->id}}">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">Name</label>
-                                    <input type="text" name="name" class="form-control" placeholder="Enter name" value="{{$data->name}}">
-                                    @if ($errors->has('name'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('name') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Status</label>
-                                    <select name="status" class="form-control select2" style="width: 100%;">
-                                        <option value="1" {{optional($data)->status == '1' ? 'selected' : ''}}>Active</option>
-                                        <option value="0" {{optional($data)->status == '0' ? 'selected' : ''}}>Inactive</option>
-                                    </select>
-                                    @if ($errors->has('status'))
-                                        <span class="invalid-feedback d-block">
-                                        {{ $errors->first('status') }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputFile">Pattern Photo</label>
-                                    <div class="input-group">
-                                        <div class="custom-file">
-                                            <input type="file" name="pattern_img" class="custom-file-input" id="image-input2" onchange="previewImage2()"  accept=".jpg,.jpeg,.png">
-                                            <label class="custom-file-label" for="exampleInputFile">Choose file</label>
-                                        </div>
-                                        
-                                        @if ($errors->has('pattern_img'))
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+                <!-- SELECT2 EXAMPLE -->
+                <div class="card card-default">
+                    <!-- <div class="card-header">
+                        <h3 class="card-title">Edit Pattern</h3>
+                    </div> -->
+                    <form action="{{route('admin.master.design-pattern.update')}}" method="post"
+                        enctype="multipart/form-data">
+                        @csrf
+                        <input type="hidden" name="id" value="{{$data->id}}">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="exampleInputEmail1">Name</label>
+                                        <input type="text" name="name" class="form-control" placeholder="Enter name"
+                                            value="{{$data->name}}">
+                                        @if ($errors->has('name'))
                                             <span class="invalid-feedback d-block">
-                                            {{ $errors->first('pattern_img') }}
+                                                {{ $errors->first('name') }}
                                             </span>
                                         @endif
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <img class="" src="{{ asset('assets/pattern-img/' . $data->pattern_img) }}" alt="Preview" id="image-preview-2" height="80px" width="80px">
-                            </div>
-                        </div>
-                        <br/>
 
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="mt-2" style="float:right">
-                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Status</label>
+                                        <select name="status" class="form-control select2" style="width: 100%;">
+                                            <option value="1" {{optional($data)->status == '1' ? 'selected' : ''}}>Active
+                                            </option>
+                                            <option value="0" {{optional($data)->status == '0' ? 'selected' : ''}}>Inactive
+                                            </option>
+                                        </select>
+                                        @if ($errors->has('status'))
+                                            <span class="invalid-feedback d-block">
+                                                {{ $errors->first('status') }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="exampleInputFile">Pattern Photo</label>
+                                        <div class="input-group">
+                                            <div class="custom-file">
+                                                <input type="file" name="pattern_img" class="custom-file-input"
+                                                    id="image-input2" onchange="previewImage2()" accept=".jpg,.jpeg,.png">
+                                                <label class="custom-file-label" for="exampleInputFile">Choose file</label>
+                                            </div>
+
+                                            @if ($errors->has('pattern_img'))
+                                                <span class="invalid-feedback d-block">
+                                                    {{ $errors->first('pattern_img') }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <img class="" src="{{ asset('assets/pattern-img/' . $data->pattern_img) }}"
+                                        alt="Preview" id="image-preview-2" height="80px" width="80px">
+                                </div>
+                            </div>
+                            <br />
+
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mt-2" style="float:right">
+                                        <button type="submit" class="btn btn-primary">Submit</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
-        </div>
-    </section>
-</div>
-<script>
-    function previewImage2() {
-        var imageInput = document.getElementById('image-input2');
-        var imagePreview = document.getElementById('image-preview-2');
-        
-        if (imageInput.files && imageInput.files[0]) {
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                imagePreview.src = e.target.result;
-            };
-            
-            reader.readAsDataURL(imageInput.files[0]);
-        } else {
-            // If no file is selected or supported, clear the preview
-            imagePreview.src = "";
+        </section>
+    </div>
+    <script>
+        function previewImage2() {
+            var imageInput = document.getElementById('image-input2');
+            var imagePreview = document.getElementById('image-preview-2');
+
+            if (imageInput.files && imageInput.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    imagePreview.src = e.target.result;
+                };
+
+                reader.readAsDataURL(imageInput.files[0]);
+            } else {
+                // If no file is selected or supported, clear the preview
+                imagePreview.src = "";
+            }
         }
-    }
-</script>
+    </script>
 
 @endsection

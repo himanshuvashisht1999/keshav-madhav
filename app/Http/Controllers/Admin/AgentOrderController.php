@@ -978,6 +978,7 @@ class AgentOrderController extends Controller
                 'dispatch_date' => now(),
                 'total_amount' => $dispatchSubtotal,
                 'gst_amount' => $dispatchGst,
+                'gst_percentage' => $gstPercentage,
                 'grand_total' => $dispatchTotal,
             ]);
 
@@ -1367,6 +1368,7 @@ class AgentOrderController extends Controller
             // Update Dispatch Totals
             $dispatch->total_amount = $grandTotalSubtotal;
             $dispatch->gst_amount = $grandTotalGst;
+            $dispatch->gst_percentage = $firstOrder->gst_percentage ?? 5;
             $dispatch->grand_total = $grandTotalSubtotal + $grandTotalGst;
             $dispatch->save();
 
@@ -1416,8 +1418,21 @@ class AgentOrderController extends Controller
         }
         $brandCount = count($uniqueBrandIds);
         
-        $filteredGst = $filteredSubtotal * 0.05; 
-        $filteredGrandTotal = $filteredSubtotal + $filteredGst;
+        $gstPercent = $dispatch->gst_percentage ?? 5;
+        $discountAmt = 0;
+        
+        if (!$brandId) {
+            // Full dispatch invoice - use saved values
+            $filteredSubtotal = $dispatch->total_amount;
+            $discountAmt = $dispatch->discount_amount ?? 0;
+            $filteredGst = $dispatch->gst_amount;
+            $filteredGrandTotal = $dispatch->grand_total;
+        } else {
+            // Brand specific - calculate proportionate discount if any? 
+            // For now, just use the GST percentage and no extra discount for brand-specific.
+            $filteredGst = $filteredSubtotal * ($gstPercent / 100);
+            $filteredGrandTotal = $filteredSubtotal + $filteredGst;
+        }
 
         $groupedItems = $items->groupBy(function ($item) {
             return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
@@ -1437,9 +1452,55 @@ class AgentOrderController extends Controller
 
         $pdf = Pdf::loadView('admin.agent_orders.dispatches.invoice-pdf', compact(
             'dispatch', 'groupedItems', 'settings', 'selectedBrand', 'type', 
-            'filteredSubtotal', 'filteredGst', 'filteredGrandTotal', 'brandCount'
+            'filteredSubtotal', 'filteredGst', 'filteredGrandTotal', 'brandCount', 'discountAmt'
         ));
         return $pdf->download('Dispatch_Invoice_' . $dispatch->id . '.pdf');
+    }
+
+    public function updateDispatchInvoice(Request $request, $id)
+    {
+        $request->validate([
+            'total_amount' => 'required|numeric|min:0',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'gst_percentage' => 'nullable|numeric|min:0|max:100',
+        ]);
+
+        $dispatch = \App\Models\AgentOrderDispatch::findOrFail($id);
+        
+        $oldGrandTotal = $dispatch->grand_total;
+        
+        $total_amount = $request->total_amount;
+        $discount_amount = $request->discount_amount ?? 0;
+        $gst_percentage = $request->gst_percentage ?? 5;
+        
+        $taxable_amount = $total_amount - $discount_amount;
+        $gst_amount = $taxable_amount * ($gst_percentage / 100);
+        $grandTotal = $taxable_amount + $gst_amount;
+
+        DB::beginTransaction();
+        try {
+            $dispatch->update([
+                'total_amount' => $total_amount,
+                'discount_amount' => $discount_amount,
+                'gst_percentage' => $gst_percentage,
+                'gst_amount' => $gst_amount,
+                'grand_total' => $grandTotal,
+            ]);
+
+            // Adjust Customer Balance
+            $customer = \App\Models\MasterCustomer::find($dispatch->master_customer_id);
+            if ($customer) {
+                // We subtracted $oldGrandTotal before. Add it back and subtract the new one.
+                $customer->balance = $customer->balance + $oldGrandTotal - $grandTotal;
+                $customer->save();
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Invoice updated successfully!']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Failed to update invoice: ' . $e->getMessage()], 500);
+        }
     }
     public function downloadDispatchPackingSlip(Request $request, $id)
     {
