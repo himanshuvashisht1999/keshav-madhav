@@ -162,7 +162,8 @@
             <div class="container-fluid text-center">
                 <h2 class="mb-3">Production Slip – Cutting Master
                     @if($cutting_slip && $cutting_slip->status == 1)
-                        <span class="badge badge-warning" style="font-size: 14px; vertical-align: middle;">Partially Digitized</span>
+                        <span class="badge badge-warning" style="font-size: 14px; vertical-align: middle;">Partially
+                            Digitized</span>
                     @endif
                 </h2>
 
@@ -184,16 +185,16 @@
 
                     @if(request('is_skip') == 1)
                         <!-- <a href="{{ route('admin.order_digitalization.cutting-master') }}"
-                                                        class="btn btn-secondary">
-                                                            View Normal Slips
-                                                        </a> -->
+                                                                                                                class="btn btn-secondary">
+                                                                                                                    View Normal Slips
+                                                                                                                </a> -->
 
 
                     @else
                         <!-- <a href="{{ route('admin.order_digitalization.cutting-master', ['is_skip' => 1]) }}"
-                                                        class="btn btn-secondary">
-                                                            View Skipped Slips
-                                                        </a> -->
+                                                                                                                class="btn btn-secondary">
+                                                                                                                    View Skipped Slips
+                                                                                                                </a> -->
                     @endif
 
 
@@ -220,6 +221,7 @@
                                         <form method="POST" id="rollAssignForm"
                                             action="{{ route('admin.order_digitalization.store-rolls-assign') }}">
                                             @csrf
+                                            <input type="hidden" name="is_final" class="is_final_input">
                                             <input type="hidden" name="production_slip_digitization_id"
                                                 value="{{ $cutting_slip->id ?? '' }}">
 
@@ -307,9 +309,9 @@
 
                                                 <!-- SIZE ALLOCATION UI (UNCHANGED) -->
                                                 <!-- <div id="size_allocations" class="mt-3 p-2 border rounded bg-white">
-                                                                                    <label class="mb-2">Size Wise Quantity</label>
-                                                                                    <div id="size_inputs_container"></div>
-                                                                                </div> -->
+                                                                                                                                            <label class="mb-2">Size Wise Quantity</label>
+                                                                                                                                            <div id="size_inputs_container"></div>
+                                                                                                                                        </div> -->
                                                 <div id="size_allocations" class="mt-3 p-2 border rounded bg-white">
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                                         <label class="mb-0 font-weight-bold">Size Wise Quantity</label>
@@ -332,17 +334,20 @@
 
 
                                             <div class="row mt-4">
+
                                                 <div class="col-md-6 mb-2">
-                                                    <button type="submit" name="is_final" value="1" class="btn btn-success btn-lg w-100 shadow-sm">
-                                                        <i class="fas fa-check-double mr-2"></i> Final Submission
-                                                    </button>
-                                                </div>
-                                                <div class="col-md-6 mb-2">
-                                                    <button type="submit" name="is_final" value="0" class="btn btn-outline-success btn-lg w-100 shadow-sm border-2">
+                                                    <button type="submit" onclick="setFinal(this,0)"
+                                                        class="btn btn-outline-success btn-lg w-100 shadow-sm border-2">
                                                         <i class="fas fa-plus-circle mr-2"></i> Save & Add More
                                                     </button>
                                                 </div>
-                                                
+                                                <div class="col-md-6 mb-2">
+                                                    <button type="submit" onclick="setFinal(this,1)"
+                                                        class="btn btn-success btn-lg w-100 shadow-sm">
+                                                        <i class="fas fa-check-double mr-2"></i> Final Submission
+                                                    </button>
+                                                </div>
+
                                             </div>
 
                                         </form>
@@ -357,6 +362,7 @@
                                         <form method="POST" id="stitchingForm"
                                             action="{{ route('admin.order_digitalization.store-stitching') }}">
                                             @csrf
+                                            <input type="hidden" name="is_final" class="is_final_input">
                                             <input type="hidden" name="production_slip_digitization_id"
                                                 value="{{ $cutting_slip->id ?? '' }}">
                                             <input type="hidden" name="to_stage_id" value="4">{{-- Stitching stage ID --}}
@@ -405,12 +411,14 @@
 
                                             <div class="row mt-4">
                                                 <div class="col-md-6 mb-2">
-                                                    <button type="submit" name="is_final" value="0" class="btn btn-outline-success btn-lg w-100 shadow-sm border-2">
+                                                    <button type="submit" onclick="setFinal(this,0)"
+                                                        class="btn btn-outline-success btn-lg w-100 shadow-sm border-2">
                                                         <i class="fas fa-plus-circle mr-2"></i> Save & Next
                                                     </button>
                                                 </div>
                                                 <div class="col-md-6 mb-2">
-                                                    <button type="submit" name="is_final" value="1" class="btn btn-success btn-lg w-100 shadow-sm">
+                                                    <button type="submit" onclick="setFinal(this,1)"
+                                                        class="btn btn-success btn-lg w-100 shadow-sm">
                                                         <i class="fas fa-check-double mr-2"></i> Final Submission
                                                     </button>
                                                 </div>
@@ -424,6 +432,7 @@
                                         <form method="POST" id="printingForm"
                                             action="{{ route('admin.order_digitalization.store-printing') }}">
                                             @csrf
+                                            <input type="hidden" name="is_final" class="is_final_input">
                                             <input type="hidden" name="production_slip_digitization_id"
                                                 value="{{ $cutting_slip->id ?? '' }}">
                                             <input type="hidden" name="to_stage_id" value="1">{{-- Printing stage ID --}}
@@ -472,12 +481,14 @@
 
                                             <div class="row mt-4">
                                                 <div class="col-md-6 mb-2">
-                                                    <button type="submit" name="is_final" value="0" class="btn btn-outline-info btn-lg w-100 shadow-sm border-2">
+                                                    <button type="submit" onclick="setFinal(this,0)"
+                                                        class="btn btn-outline-info btn-lg w-100 shadow-sm border-2">
                                                         <i class="fas fa-plus-circle mr-2"></i> Save & Next
                                                     </button>
                                                 </div>
                                                 <div class="col-md-6 mb-2">
-                                                    <button type="submit" name="is_final" value="1" class="btn btn-info btn-lg w-100 shadow-sm">
+                                                    <button type="submit" onclick="setFinal(this,1)"
+                                                        class="btn btn-info btn-lg w-100 shadow-sm">
                                                         <i class="fas fa-check-double mr-2"></i> Final Submission
                                                     </button>
                                                 </div>
@@ -557,21 +568,21 @@
                                                 <h6 class="font-weight-bold text-dark">Time Units</h6>
                                                 <p class="mb-1">0.5 days = <strong>4 hours</strong> (Half day)</p>
                                                 <p class="mb-0">1 day = <strong>8 hours</strong> (Full day)</p>
+                                            </div>
+                                        </div>
+                                    </div> {{-- End sticky-wrapper --}}
+                                </div> {{-- End col-md-5 --}}
+                    @else
+                                <div class="col-md-12">
+                                    <div class="alert alert-info text-center">
+                                        No Production Slip Available
                                     </div>
                                 </div>
-                            </div> {{-- End sticky-wrapper --}}
-                        </div> {{-- End col-md-5 --}}
-                    @else
-                            <div class="col-md-12">
-                                <div class="alert alert-info text-center">
-                                    No Production Slip Available
-                                </div>
-                            </div>
 
-                        @endif
+                            @endif
 
+                        </div>
                     </div>
-                </div>
         </section>
 
     </div>
@@ -638,6 +649,7 @@
         $(function () {
 
             $('#rollAssignForm').on('submit', function (e) {
+
                 let meterValid = true;
                 let totalMeter = parseFloat($('#total_meter').val()) || 0;
                 let usedMeter = 0;
@@ -746,8 +758,8 @@
                 order.order_product_sets.forEach(set => {
                     designSelect.append(
                         `<option value="${set.id}">
-                            ${set.design_number}
-                        </option>`
+                                                        ${set.design_number}
+                                                    </option>`
                     );
                 });
                 designSelect.trigger('change');
@@ -822,21 +834,21 @@
                         let remaining = detail.remaining_lot_allocated;
                         let size = detail.size;
                         $('#size_inputs_container').append(`
-                                        <div class="row mb-2 align-items-center">
-                                            <div class="col-4">
-                                                <span class="font-weight-bold">${size}</span> <br>
-                                                {{-- <small class="text-muted">(Pending: ${remaining})</small>  --}}
-                                            </div>
-                                            <div class="col-8">
-                                                <input type="number" 
-                                                    class="form-control size-qty-input" 
-                                                    data-detail-id="${detail.id}"
-                                                    data-size="${size}"
-                                                    data-pending="${remaining}"
-                                                    placeholder="Qty">
-                                            </div>
-                                        </div>
-                                    `);
+                                                                    <div class="row mb-2 align-items-center">
+                                                                        <div class="col-4">
+                                                                            <span class="font-weight-bold">${size}</span> <br>
+                                                                            {{-- <small class="text-muted">(Pending: ${remaining})</small>  --}}
+                                                                        </div>
+                                                                        <div class="col-8">
+                                                                            <input type="number" 
+                                                                                class="form-control size-qty-input" 
+                                                                                data-detail-id="${detail.id}"
+                                                                                data-size="${size}"
+                                                                                data-pending="${remaining}"
+                                                                                placeholder="Qty">
+                                                                        </div>
+                                                                    </div>
+                                                                `);
                         setTimeout(() => {
                             autoFillSizesFromTotal();
                         }, 0);
@@ -916,11 +928,11 @@
                 let optionsHtml = '';
                 $('#roll_no option').each(function () {
                     optionsHtml += `<option 
-                                    value="${this.value}"
-                                    data-meter="${$(this).attr('data-meter')}"
-                                    data-roll="${$(this).attr('data-roll')}">
-                                    ${$(this).text()}
-                                </option>`;
+                                                                value="${this.value}"
+                                                                data-meter="${$(this).attr('data-meter')}"
+                                                                data-roll="${$(this).attr('data-roll')}">
+                                                                ${$(this).text()}
+                                                            </option>`;
                 });
 
                 // // Trigger Auto-Select if available
@@ -940,27 +952,27 @@
                     let lotNo = $('#lot_no').val();
 
                     container.append(`
-                                    <div class="row mb-2 roll-row">
-                                        <div class="col-md-6">
-                                            <label>Roll No (${i}) *</label>
-                                            <select name="roll_no_list[]" class="form-control select2 roll-select" required>
-                                                ${optionsHtml}
-                                            </select>
-                                        </div>
+                                                                <div class="row mb-2 roll-row">
+                                                                    <div class="col-md-6">
+                                                                        <label>Roll No (${i}) *</label>
+                                                                        <select name="roll_no_list[]" class="form-control select2 roll-select" required>
+                                                                            ${optionsHtml}
+                                                                        </select>
+                                                                    </div>
 
-                                        <div class="col-md-6">
-                                            <label>Meter Used *</label>
-                                            <input type="number"
-                                                name="meter_list[]"
-                                                class="form-control roll-meter"
-                                                disabled
-                                                placeholder="Select roll first">
-                                        </div>
+                                                                    <div class="col-md-6">
+                                                                        <label>Meter Used *</label>
+                                                                        <input type="number"
+                                                                            name="meter_list[]"
+                                                                            class="form-control roll-meter"
+                                                                            disabled
+                                                                            placeholder="Select roll first">
+                                                                    </div>
 
-                                        <input type="hidden" name="lot_no_list[]" value="${lotNo}">
-                                        <input type="hidden" name="size_details[]" class="size-json">
-                                    </div>
-                                `);
+                                                                    <input type="hidden" name="lot_no_list[]" value="${lotNo}">
+                                                                    <input type="hidden" name="size_details[]" class="size-json">
+                                                                </div>
+                                                            `);
                 }
 
                 $('.select2').select2();
@@ -1010,11 +1022,11 @@
 
                 // Show loading
                 detailsContainer.html(`
-                                <div class="text-center py-3">
-                                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-                                    <p class="mt-2">Loading lot details...</p>
-                                </div>
-                            `).show();
+                                                            <div class="text-center py-3">
+                                                                <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                                                                <p class="mt-2">Loading lot details...</p>
+                                                            </div>
+                                                        `).show();
 
                 // Fetch lot details
                 $.ajax({
@@ -1029,20 +1041,20 @@
                             displayLotDetails(data, detailsContainer);
                         } else {
                             detailsContainer.html(`
-                                            <div class="alert alert-warning">
-                                                <i class="fas fa-exclamation-triangle mr-2"></i>
-                                                No details found for this lot.
-                                            </div>
-                                        `);
+                                                                        <div class="alert alert-warning">
+                                                                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                                            No details found for this lot.
+                                                                        </div>
+                                                                    `);
                         }
                     },
                     error: function () {
                         detailsContainer.html(`
-                                        <div class="alert alert-danger">
-                                            <i class="fas fa-times-circle mr-2"></i>
-                                            Error loading lot details. Please try again.
-                                        </div>
-                                    `);
+                                                                    <div class="alert alert-danger">
+                                                                        <i class="fas fa-times-circle mr-2"></i>
+                                                                        Error loading lot details. Please try again.
+                                                                    </div>
+                                                                `);
                     }
                 });
             });
@@ -1083,43 +1095,43 @@
                 if (data.size_wise_quantities && Object.keys(data.size_wise_quantities).length > 0) {
                     for (const [size, qty] of Object.entries(data.size_wise_quantities)) {
                         sizeModalRows += `
-                            <tr>
-                                <td class="font-weight-bold text-primary">${size}</td>
-                                <td>${qty} pcs</td>
-                            </tr>
-                        `;
+                                                        <tr>
+                                                            <td class="font-weight-bold text-primary">${size}</td>
+                                                            <td>${qty} pcs</td>
+                                                        </tr>
+                                                    `;
                     }
                 }
 
                 const uniqueId = `lot_${data.lot_no.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
                 const html = `
-                                <!-- Simplified Lot Details Card -->
-                                <div class="card border-primary shadow-sm mb-3 lot-details-card">
-                                    <div class="card-header bg-gradient-primary text-white p-2 d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-box mr-2"></i>
-                                            <strong>Lot: ${data.lot_no}</strong>
-                                        </div>
-                                        <span class="badge badge-light">${totalPieces} pcs</span>
-                                    </div>
-                                    <div class="card-body p-0">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered mb-0" style="font-size: 0.9rem;">
-                                                <thead class="bg-light text-center">
-                                                    <tr>
-                                                        <th style="width: 40%">Size</th>
-                                                        <th style="width: 60%">Quantity</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody class="text-center">
-                                                    ${sizeModalRows || '<tr><td colspan="2" class="text-muted">No size data</td></tr>'}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
+                                                            <!-- Simplified Lot Details Card -->
+                                                            <div class="card border-primary shadow-sm mb-3 lot-details-card">
+                                                                <div class="card-header bg-gradient-primary text-white p-2 d-flex justify-content-between align-items-center">
+                                                                    <div class="d-flex align-items-center">
+                                                                        <i class="fas fa-box mr-2"></i>
+                                                                        <strong>Lot: ${data.lot_no}</strong>
+                                                                    </div>
+                                                                    <span class="badge badge-light">${totalPieces} pcs</span>
+                                                                </div>
+                                                                <div class="card-body p-0">
+                                                                    <div class="table-responsive">
+                                                                        <table class="table table-sm table-bordered mb-0" style="font-size: 0.9rem;">
+                                                                            <thead class="bg-light text-center">
+                                                                                <tr>
+                                                                                    <th style="width: 40%">Size</th>
+                                                                                    <th style="width: 60%">Quantity</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody class="text-center">
+                                                                                ${sizeModalRows || '<tr><td colspan="2" class="text-muted">No size data</td></tr>'}
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        `;
 
                 container.html(html).show();
             }
@@ -1172,17 +1184,17 @@
                 meterInput.prop('disabled', false);
                 meterInput.attr('max', maxMeter);
                 meterInput.data('max', maxMeter);
-                
+
                 // Auto-fill logic
                 let totalMeter = parseFloat($('#total_meter').val()) || 0;
                 let usedMeterSoFar = 0;
-                $('.roll-meter').not(meterInput).each(function() {
+                $('.roll-meter').not(meterInput).each(function () {
                     usedMeterSoFar += parseFloat($(this).val()) || 0;
                 });
-                
+
                 let remainingNeeded = Math.max(0, totalMeter - usedMeterSoFar);
                 let fillValue = Math.min(maxMeter, remainingNeeded);
-                
+
                 if (fillValue > 0) {
                     meterInput.val(fillValue);
                 } else {
@@ -1258,11 +1270,11 @@
 
             sizeInputs.each(function () {
                 let size = $(this).data('size').toString();
-                let ratio = currentRatioMap[size] || 1; 
+                let ratio = currentRatioMap[size] || 1;
                 targetRatios.push(ratio);
                 ratioSum += ratio;
             });
-            
+
             let allocatedCount = 0;
             let fractionalParts = [];
 
@@ -1270,10 +1282,10 @@
                 let ratio = targetRatios[index];
                 let exactShare = (ratio / ratioSum) * totalPieces;
                 let intShare = Math.floor(exactShare);
-                
+
                 $(this).val(intShare);
                 allocatedCount += intShare;
-                
+
                 fractionalParts.push({
                     index: index,
                     fraction: exactShare - intShare
@@ -1295,20 +1307,20 @@
     </script>
 
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             @if(isset($cutting_slip) && $cutting_slip->save_type)
                 const saveType = "{{ $cutting_slip->save_type }}";
                 let target = null;
-                
+
                 if (saveType == "1") target = "rolls";
                 else if (saveType == "2") target = "printing";
                 else if (saveType == "3") target = "stitching";
-                
+
                 if (target) {
                     $(`.action-btn[data-target="${target}"]`).trigger('click');
                 }
             @endif
-        });
+                                    });
     </script>
 
     <script>
@@ -1322,6 +1334,9 @@
 
         function openImageInNewTab(img) {
             window.open(img.src, '_blank');
+        }
+        function setFinal(btn, val) {
+            $(btn).closest('form').find('.is_final_input').val(val);
         }
     </script>
 

@@ -22,6 +22,7 @@ class OrderDispatch extends Model
         'total_quantity',
         'gst_percentage',
         'discount_percentage',
+        'discount_amount',
         'total_amount',
         'status',
         'is_paid',

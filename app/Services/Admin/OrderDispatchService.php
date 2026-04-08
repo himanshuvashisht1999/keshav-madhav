@@ -12,6 +12,7 @@ use App\Models\OrderProductSet;
 use App\Models\OrderMain;
 use App\Models\PackingMain;
 use App\Models\PackingItem;
+use App\Models\GeneralSettings;
 use PDF;
 
 
@@ -128,18 +129,16 @@ class OrderDispatchService
     public function view(Request $request)
     {
 
-        $order_dispatch = OrderDispatch::with([
+        $order_dispatch_model = OrderDispatch::with([
             'dispatchDetails:id,order_dispatch_id,carton_packing_id',
             'orderMain.customer',
-            // 'orderMain.OrderProductSets.colors', // Not strictly needed if we rely on PackingItem detail
-            // 'orderMain.OrderProductSets.sizeMeasurement'
         ])->where('id', $request->id)->first();
 
-        if (!$order_dispatch) {
+        if (!$order_dispatch_model) {
             return null;
         }
 
-        $order_dispatch = $order_dispatch->toArray();
+        $order_dispatch = $order_dispatch_model->toArray();
 
         // Basic Info
         $order_dispatch_data = [
@@ -151,6 +150,7 @@ class OrderDispatchService
             'dispatch_date' => date("d-m-Y h:i A", strtotime($order_dispatch['dispatch_date'])) ?? '',
             'gst_percentage' => $order_dispatch['gst_percentage'],
             'discount_percentage' => $order_dispatch['discount_percentage'],
+            'discount_amount' => $order_dispatch['discount_amount'] ?? 0,
             'total_amount' => $order_dispatch['total_amount'],
             'total_cartons' => count($order_dispatch['dispatch_details']),
             'total_items_dispatch' => 0,
@@ -175,7 +175,8 @@ class OrderDispatchService
 
         $total_items_dispatch = 0;
         $total_dispatch_amount = 0;
-        $cartonsDetails = [];
+        $finalCartonData = [];
+        $consolidatedGroupedItems = [];
 
         foreach ($cartons_data as $carton) {
             $total_items_in_carton = 0;
@@ -200,11 +201,17 @@ class OrderDispatchService
                     $total_dispatch_amount += ($qty * $price);
 
                     $setId = $item['detail']['order_products_set_id'] ?? 0;
+                    
+                    // Specific design/color identification for CORPORATE orders (via OrderProductSet)
+                    $design = $item['detail']['order_product_set']['design_number'] ?? 'N/A';
+                    $color = $item['detail']['order_product_set']['colors']['name'] ?? 'N/A';
+                    $sizeSet = $item['detail']['order_product_set']['size_measurement']['name'] ?? 'N/A';
+
                     if (!isset($sets[$setId])) {
                         $sets[$setId] = [
-                            'design' => $item['box']['domestic_inventory']['product']['design_number'] ?? ($item['detail']['order_product_set']['design_number'] ?? 'N/A'),
-                            'color' => $item['box']['domestic_inventory']['color']['name'] ?? ($item['detail']['order_product_set']['colors']['name'] ?? 'N/A'),
-                            'size_set' => $item['box']['domestic_inventory']['size_set']['name'] ?? ($item['detail']['order_product_set']['size_measurement']['name'] ?? 'N/A'),
+                            'design' => $design,
+                            'color' => $color,
+                            'size_set' => $sizeSet,
                             'price' => $price,
                             'total_qty' => 0,
                             'sizes_text' => []
@@ -212,10 +219,28 @@ class OrderDispatchService
                     }
                     $sets[$setId]['total_qty'] += $qty;
                     $sets[$setId]['sizes_text'][] = ($item['detail']['size'] ?? 'N/A') . " (" . $qty . ")";
+
+                    // For consolidated grouped items (whole dispatch)
+                    $groupId = $design . '_' . $color . '_' . $sizeSet . '_' . $price;
+                    if(!isset($consolidatedGroupedItems[$groupId])) {
+                        $consolidatedGroupedItems[$groupId] = [
+                            'product_name' => $design,
+                            'color_name' => $color,
+                            'size_set_name' => $sizeSet,
+                            'selling_price' => $price,
+                            'total_qty' => 0,
+                            'box_count' => 0,
+                            'carton_ids' => [],
+                            'box_ids' => []
+                        ];
+                    }
+                    $consolidatedGroupedItems[$groupId]['total_qty'] += $qty;
+                    $consolidatedGroupedItems[$groupId]['carton_ids'][] = $carton['id'];
+                    $consolidatedGroupedItems[$groupId]['box_ids'][] = $item['packing_box_id'];
                 }
             }
 
-            $cartonsDetails[] = [
+            $finalCartonData[] = [
                 'id' => $carton['id'],
                 'carton_no' => $carton['carton_no'] ?? $carton['id'],
                 'storeroom' => $carton['rack']['storeroom']['name'] ?? 'N/A',
@@ -226,13 +251,31 @@ class OrderDispatchService
             ];
         }
 
+        // Box count correction for consolidated items
+        foreach ($consolidatedGroupedItems as $k => $group) {
+             $consolidatedGroupedItems[$k]['box_count'] = count(array_unique($group['box_ids']));
+        }
+
         $order_dispatch_data['total_cartons'] = count($cartons_data);
         $order_dispatch_data['total_items_dispatch'] = $total_items_dispatch;
         $order_dispatch_data['total_dispatch_amount'] = $total_dispatch_amount;
 
+        $filteredSubtotal = $total_dispatch_amount;
+        $discountAmt = $order_dispatch_data['discount_amount'];
+        $gstPercentage = $order_dispatch_model->gst_percentage ?? 5;
+        $filteredGst = (($filteredSubtotal - $discountAmt) * $gstPercentage) / 100;
+        $filteredGrandTotal = ($filteredSubtotal - $discountAmt) + $filteredGst;
+
         $data = [
+            'dispatch' => $order_dispatch_model,
             'order_dispatch_data' => $order_dispatch_data,
-            'cartonsDetails' => $cartonsDetails,
+            'cartonsDetails' => $finalCartonData,
+            'groupedItems' => array_values($consolidatedGroupedItems),
+            'settings' => GeneralSettings::first(),
+            'filteredSubtotal' => $filteredSubtotal,
+            'discountAmt' => $discountAmt,
+            'filteredGst' => $filteredGst,
+            'filteredGrandTotal' => $filteredGrandTotal,
         ];
 
         return $data;
