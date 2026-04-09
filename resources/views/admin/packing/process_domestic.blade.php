@@ -1017,6 +1017,7 @@
             const ALL_STOREROOMS = @json($storerooms);
             let ORDER_TYPE = "{{ strtolower($order->order_type ?? '') }}";
             const DOMESTIC_MASTERS = @json($domestic_masters ?? []);
+            const ALLOWED_SIZE_SET_IDS = @json($order ? $order->OrderProductSets->pluck('set_size')->unique()->toArray() : []);
 
             // --- CORPORATE MULTI-CARTON PLANNER ---
             function openMultiCartonPlanner() {
@@ -3503,7 +3504,11 @@
                             
                             $sizeSet.html('<option value="">-- Select Size Set --</option>');
                             res.variants.forEach(v => {
-                                $sizeSet.append(`<option value="${v.size_set_id}" data-mrp="${v.mrp}" data-colors='${JSON.stringify(v.colors)}'>${v.size_set_name}</option>`);
+                                // Convert both to numbers for reliable comparison
+                                let isAllowed = ALLOWED_SIZE_SET_IDS.map(Number).includes(Number(v.size_set_id));
+                                if (isAllowed) {
+                                    $sizeSet.append(`<option value="${v.size_set_id}" data-mrp="${v.mrp}" data-colors='${JSON.stringify(v.colors)}'>${v.size_set_name}</option>`);
+                                }
                             });
                             $sizeSet.prop('disabled', false).trigger('change');
                             window.dom_variants = res.variants;
