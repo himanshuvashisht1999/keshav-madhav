@@ -336,15 +336,18 @@ class PackingController extends Controller
                 $box_no = "BX-$datePrefix-" . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
             }
 
+            // Calculate barcode BEFORE creating box to link them properly
+            $barcode = 'D' . $data['product_id'] . 'S' . $data['size_set_id'] . 'C' . $data['color_id'] . 'P' . $data['pattern_id'] . 'F' . $data['fitting_id'];
+
             $box = \App\Models\PackingBox::create([
                 'packing_main_id' => $main->id,
                 'packing_carton_id' => $carton->id,
                 'box_no' => $box_no,
-                'box_type' => 'domestic'
+                'box_type' => 'domestic',
+                'barcode' => $barcode
             ]);
 
             // Create or Update Domestic Inventory Record (stores total pieces)
-            $barcode = 'D' . $data['product_id'] . 'S' . $data['size_set_id'] . 'C' . $data['color_id'] . 'P' . $data['pattern_id'] . 'F' . $data['fitting_id'];
 
             $inventory = \App\Models\DomesticInventory::where([
                 'barcode' => $barcode,
