@@ -156,10 +156,18 @@ class PackingService
             ->with([
                 'boxes' => function ($q) {
                     $q->whereNull('packing_carton_id')
-                      ->with(['domesticInventory.product', 'domesticInventory.color', 'domesticInventory.sizeSet', 'domesticInventory.pattern', 'domesticInventory.fitting']);
+                      ->with([
+                          'domesticInventory.product', 'domesticInventory.color', 'domesticInventory.sizeSet', 'domesticInventory.pattern', 'domesticInventory.fitting',
+                          'items.detail.orderProductSet.product', 'items.detail.orderProductSet.colors', 'items.detail.orderProductSet.size_measurement', 
+                          'items.detail.orderProductSet.master_design_pattern', 'items.detail.orderProductSet.master_product_fitting'
+                      ]);
                 },
                 'cartons.boxes' => function($q) {
-                    $q->with(['domesticInventory.product', 'domesticInventory.color', 'domesticInventory.sizeSet', 'domesticInventory.pattern', 'domesticInventory.fitting']);
+                    $q->with([
+                        'domesticInventory.product', 'domesticInventory.color', 'domesticInventory.sizeSet', 'domesticInventory.pattern', 'domesticInventory.fitting',
+                        'items.detail.orderProductSet.product', 'items.detail.orderProductSet.colors', 'items.detail.orderProductSet.size_measurement',
+                        'items.detail.orderProductSet.master_design_pattern', 'items.detail.orderProductSet.master_product_fitting'
+                    ]);
                 },
                 'cartons.items'
             ])
@@ -750,13 +758,14 @@ class PackingService
 
                         for ($i = 0; $i < $qty; $i++) {
                             $box_no = "BX-$datePrefix-" . str_pad($this->getNextBoxSeq($datePrefix), 4, '0', STR_PAD_LEFT);
-                            $box = PackingBox::create([
-                                'packing_main_id' => $main->id,
-                                'packing_carton_id' => $carton->id,
-                                'box_no' => $box_no,
-                                'box_type' => 'domestic_planner',
-                                'barcode' => $final_barcode
-                            ]);
+                            // Create PackingBox with explicit property assignment
+                            $box = new PackingBox();
+                            $box->packing_main_id = $main->id;
+                            $box->packing_carton_id = $carton->id;
+                            $box->box_no = $box_no;
+                            $box->box_type = 'domestic_planner';
+                            $box->barcode = $final_barcode;
+                            $box->save();
 
                             // 4. Create PackingItem records for DISPATCH compatibility
                             foreach ($stockSet->product_set_details as $detail) {

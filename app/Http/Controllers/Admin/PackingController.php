@@ -339,13 +339,19 @@ class PackingController extends Controller
             // Calculate barcode BEFORE creating box to link them properly
             $barcode = 'D' . $data['product_id'] . 'S' . $data['size_set_id'] . 'C' . $data['color_id'] . 'P' . $data['pattern_id'] . 'F' . $data['fitting_id'];
 
-            $box = \App\Models\PackingBox::create([
-                'packing_main_id' => $main->id,
-                'packing_carton_id' => $carton->id,
-                'box_no' => $box_no,
-                'box_type' => 'domestic',
-                'barcode' => $barcode
-            ]);
+            // Create PackingBox with explicit property assignment
+            $box = new \App\Models\PackingBox();
+            $box->packing_main_id = $main->id;
+            $box->packing_carton_id = $carton->id;
+            $box->box_no = $box_no;
+            $box->box_type = 'domestic';
+            $box->barcode = (string)$barcode;
+            $box->save();
+
+            // Direct DB Update as safety measure
+            DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string)$barcode]);
+
+            \Log::channel('single')->info("Created Domestic Box ID: {$box->id} with Barcode: " . (string)$barcode);
 
             // Create or Update Domestic Inventory Record (stores total pieces)
 
@@ -542,18 +548,24 @@ class PackingController extends Controller
                         'status' => 1
                     ]);
 
-                    // 3. New Box
-                    $box = \App\Models\PackingBox::create([
-                        'packing_main_id' => $main->id,
-                        'packing_carton_id' => $carton->id,
-                        'box_no' => $box_no,
-                        'box_type' => 'corporate_domestic'
-                    ]);
-
-                    // 4. Consolidated Inventory Record (Unassigned Domestic Stock)
+                    // 4. Barcode Calculation
                     $pattern_id = $box_plan['pattern_id'] ?? 0;
                     $fitting_id = $box_plan['fitting_id'] ?? 0;
                     $barcode = 'CD' . $box_plan['product_id'] . 'S' . $box_plan['size_set_id'] . 'C' . $box_plan['color_id'] . 'P' . $pattern_id . 'F' . $fitting_id;
+
+                    // 3. New Box
+                    // Create PackingBox with explicit property assignment
+                    $box = new \App\Models\PackingBox();
+                    $box->packing_main_id = $main->id;
+                    $box->packing_carton_id = $carton->id;
+                    $box->box_no = $box_no;
+                    $box->box_type = 'corporate_domestic';
+                    $box->barcode = (string)$barcode;
+                    $box->save();
+
+                    // Direct DB Update as safety measure
+                    DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string)$barcode]);
+
                     $currentRackId = $box_plan['rack_id'] ?? null;
 
                     $inventory = \App\Models\DomesticInventory::where([
@@ -584,11 +596,8 @@ class PackingController extends Controller
                         ]);
                     }
 
-                    // Update box with barcode and domestic inventory link
-                    $box->update([
-                        'barcode' => $barcode,
-                        'domestic_inventory_id' => $inventory->id
-                    ]);
+                    // Redundant but safe
+                    DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string)$barcode]);
 
                     // 5. Piece Deductions from Original Corporate Order
                     if (!empty($sizeSetMaster->size_group)) {
@@ -732,9 +741,13 @@ class PackingController extends Controller
                 }
             }
 
-            // Cleanup linked records
+            // 2. Adjust Domestic Inventory linked to this box
             if ($box->domesticInventory) {
-                $box->domesticInventory->delete();
+                if ($box->domesticInventory->total_boxes > 1) {
+                    $box->domesticInventory->decrement('total_boxes');
+                } else {
+                    $box->domesticInventory->delete();
+                }
             }
 
             \App\Models\PackingItem::where('packing_box_id', $box->id)->delete();
@@ -1206,14 +1219,21 @@ class PackingController extends Controller
                 }
                 $box_no = "BX-$datePrefix-" . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
 
-                $box = \App\Models\PackingBox::create([
-                    'packing_main_id' => $main->id,
-                    'packing_carton_id' => $carton->id,
-                    'box_no' => $box_no,
-                    'box_type' => 'domestic'
-                ]);
-
                 $barcode = 'D' . $data['product_id'] . 'S' . $data['size_set_id'] . 'C' . $data['color_id'] . 'P' . ($data['pattern_id'] ?? 0) . 'F' . ($data['fitting_id'] ?? 0);
+
+                // Create PackingBox with barcode
+                $box = new \App\Models\PackingBox();
+                $box->packing_main_id = $main->id;
+                $box->packing_carton_id = $carton->id;
+                $box->box_no = $box_no;
+                $box->box_type = 'domestic';
+                $box->barcode = (string)$barcode;
+                $box->save();
+
+                // Direct DB Update as safety measure
+                DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string)$barcode]);
+
+                \Log::channel('single')->info("Created Domestic Bulk Box ID: {$box->id} with Barcode: " . (string)$barcode);
 
                 $actualPiecesInBox = 0;
                 if (!empty($sizeSetMaster->size_group)) {

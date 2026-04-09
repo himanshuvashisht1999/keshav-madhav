@@ -1622,6 +1622,15 @@
 
                     html += `<div class="row">`;
                     allBoxes.forEach(box => {
+                        let inv = box.domestic_inventory;
+                        let fallback = (box.items && box.items.length > 0 && box.items[0].detail?.order_product_set) ? box.items[0].detail.order_product_set : null;
+
+                        let design = inv?.product?.design_number || fallback?.product?.design_number || 'N/A';
+                        let sizeSet = inv?.size_set?.name || fallback?.size_measurement?.name || 'N/A';
+                        let color = inv?.color?.name || fallback?.colors?.name || 'N/A';
+                        let pattern = inv?.pattern?.name || fallback?.master_design_pattern?.name || '-';
+                        let fitting = inv?.fitting?.name || fallback?.master_product_fitting?.name || '-';
+
                         html += `
                         <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
                             <div class="card border-0 shadow-sm h-100" style="border-radius: 10px; border-top: 3px solid #17a2b8 !important; background: #ffffff;">
@@ -1633,32 +1642,26 @@
                                         </button>
                                     </div>
                                     
-                                    ${(box.domestic_inventory) ? `
-                                        <div class="box-details-mini" style="font-size: 10.5px; line-height: 1.4;">
-                                            <div class="mb-1 d-flex justify-content-between">
-                                                <span class="text-muted">Design:</span>
-                                                <span class="font-weight-bold text-truncate ml-1" style="max-width: 80px;">${box.domestic_inventory.product?.design_number || 'N/A'}</span>
-                                            </div>
-                                            <div class="mb-1 d-flex justify-content-between">
-                                                <span class="text-muted">Size Set:</span>
-                                                <span class="text-dark ml-1">${box.domestic_inventory.size_set?.name || 'N/A'}</span>
-                                            </div>
-                                            <div class="mb-1 d-flex justify-content-between">
-                                                <span class="text-muted">Color:</span>
-                                                <span class="text-dark ml-1">${box.domestic_inventory.color?.name || 'N/A'}</span>
-                                            </div>
-                                            <div class="mb-1 d-flex justify-content-between border-top pt-1 mt-1">
-                                                <span class="text-muted small">Patt/Fit:</span>
-                                                <span class="text-muted small ml-1 text-truncate" style="max-width: 70px;">
-                                                    ${box.domestic_inventory.pattern?.name || '-'}/${box.domestic_inventory.fitting?.name || '-'}
-                                                </span>
-                                            </div>
+                                    <div class="box-details-mini" style="font-size: 10.5px; line-height: 1.4;">
+                                        <div class="mb-1 d-flex justify-content-between">
+                                            <span class="text-muted">Design:</span>
+                                            <span class="font-weight-bold text-truncate ml-1" style="max-width: 80px;">${design}</span>
                                         </div>
-                                    ` : `
-                                        <div class="text-center py-2">
-                                            <span class="badge badge-warning" style="font-size: 9px;">Unlinked Inventory</span>
+                                        <div class="mb-1 d-flex justify-content-between">
+                                            <span class="text-muted">Size Set:</span>
+                                            <span class="text-dark ml-1">${sizeSet}</span>
                                         </div>
-                                    `}
+                                        <div class="mb-1 d-flex justify-content-between">
+                                            <span class="text-muted">Color:</span>
+                                            <span class="text-dark ml-1">${color}</span>
+                                        </div>
+                                        <div class="mb-1 d-flex justify-content-between border-top pt-1 mt-1">
+                                            <span class="text-muted small">Patt/Fit:</span>
+                                            <span class="text-muted small ml-1 text-truncate" style="max-width: 70px;">
+                                                ${pattern}/${fitting}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>`;
