@@ -198,8 +198,7 @@
 
                             <div class="col-md-3 mt-2">
                                 <label>GST Amount</label>
-                                <input type="number" step="0.01" name="gst_amount" id="gst_amount" class="form-control"
-                                    readonly>
+                                <input type="number" step="0.01" name="gst_amount" id="gst_amount" class="form-control">
                             </div>
 
                             <div class="col-md-3 mt-2">
@@ -210,8 +209,15 @@
 
                             <div class="col-md-3 mt-2">
                                 <label>Total Amount</label>
-                                <input type="number" step="0.01" name="total_amount" id="total_amount" class="form-control"
-                                    readonly>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" name="total_amount" id="total_amount" class="form-control" readonly>
+                                    <div class="input-group-append">
+                                        <div class="input-group-text">
+                                            <input type="checkbox" id="round_off" checked> 
+                                            <small class="ml-1">Round</small>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="col-md-3 mt-2">
@@ -1207,19 +1213,40 @@
         }
     </script>
     <script>
-        function calculateGST() {
+        function calculateTotal() {
             let amount = parseFloat($('#amount').val()) || 0;
-            let gst = parseFloat($('#gst_percentage').val()) || 0;
+            let gstAmt = parseFloat($('#gst_amount').val()) || 0;
             let otherCharges = parseFloat($('#other_charges').val()) || 0;
+            let total = amount + gstAmt + otherCharges;
 
-            let gstAmount = (amount * gst) / 100;
-            let total = amount + gstAmount + otherCharges;
+            if ($('#round_off').is(':checked')) {
+                total = Math.round(total);
+            }
 
-            $('#gst_amount').val(gstAmount.toFixed(2));
-            $('#total_amount').val(total);
+            $('#total_amount').val(total.toFixed(2));
         }
 
-        $(document).on('input', '#amount, #gst_percentage, #other_charges', calculateGST);
+        $(document).on('change', '#round_off', calculateTotal);
+
+        $(document).on('input', '#amount, #gst_percentage', function() {
+            let amount = parseFloat($('#amount').val()) || 0;
+            let gstPercent = parseFloat($('#gst_percentage').val()) || 0;
+            let gstAmt = (amount * gstPercent) / 100;
+            $('#gst_amount').val(gstAmt.toFixed(2));
+            calculateTotal();
+        });
+
+        $(document).on('input', '#gst_amount', function() {
+            let amount = parseFloat($('#amount').val()) || 0;
+            let gstAmt = parseFloat($('#gst_amount').val()) || 0;
+            if (amount > 0) {
+                let gstPercent = (gstAmt * 100) / amount;
+                $('#gst_percentage').val(gstPercent.toFixed(2));
+            }
+            calculateTotal();
+        });
+
+        $(document).on('input', '#other_charges', calculateTotal);
     </script>
 
 

@@ -187,8 +187,7 @@
                                 name="gst_amount"
                                 id="gst_amount"
                                 class="form-control"
-                                value="{{$data->gst_amount}}"
-                                readonly>
+                                value="{{$data->gst_amount}}">
                         </div>
 
                         <div class="col-md-3 mt-2">
@@ -203,12 +202,20 @@
 
                         <div class="col-md-3 mt-2">
                             <label>Total Amount</label>
-                            <input type="number" step="0.01"
-                                name="total_amount"
-                                id="total_amount"
-                                class="form-control"
-                                value="{{$data->total_amount}}"
-                                readonly>
+                            <div class="input-group">
+                                <input type="number" step="0.01"
+                                    name="total_amount"
+                                    id="total_amount"
+                                    class="form-control"
+                                    value="{{$data->total_amount}}"
+                                    readonly>
+                                <div class="input-group-append">
+                                    <div class="input-group-text">
+                                        <input type="checkbox" id="round_off" checked> 
+                                        <small class="ml-1">Round</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="col-md-3 mt-2">
@@ -697,25 +704,42 @@ $(document).ready(function() {
 
     $(document).on('keyup change', '.roll-price, .roll-meter', calculateRollAmounts);
 
-    function calculateGST() {
+    function calculateTotal() {
         let amount = parseFloat($('#amount').val()) || 0;
-        let gst = parseFloat($('#gst_percentage').val()) || 0;
+        let gstAmt = parseFloat($('#gst_amount').val()) || 0;
         let otherCharges = parseFloat($('#other_charges').val()) || 0;
-        let gstAmount = (amount * gst) / 100;
-        let total = amount + gstAmount + otherCharges;
-        $('#gst_amount').val(gstAmount.toFixed(2));
-        $('#total_amount').val(Math.round(total));
-    }
-    $(document).on('input', '#amount, #gst_percentage, #other_charges', calculateGST);
+        let total = amount + gstAmt + otherCharges;
 
-    flatpickr("#datetime", {
-        enableTime: false,
-        dateFormat: "d M Y",
-        defaultDate: "{{ date('Y-m-d', strtotime($data->time)) }}",
-        onChange: function(selectedDates) {
-            document.getElementById("datetime_hidden").value = flatpickr.formatDate(selectedDates[0], "Y-m-d");
+        if ($('#round_off').is(':checked')) {
+            total = Math.round(total);
         }
+
+        $('#total_amount').val(total.toFixed(2));
+    }
+
+    $(document).on('change', '#round_off', calculateTotal);
+
+    $(document).on('input', '#amount, #gst_percentage', function() {
+        let amount = parseFloat($('#amount').val()) || 0;
+        let gstPercent = parseFloat($('#gst_percentage').val()) || 0;
+        let gstAmt = (amount * gstPercent) / 100;
+        $('#gst_amount').val(gstAmt.toFixed(2));
+        calculateTotal();
     });
+
+    $(document).on('input', '#gst_amount', function() {
+        let amount = parseFloat($('#amount').val()) || 0;
+        let gstAmt = parseFloat($('#gst_amount').val()) || 0;
+        if (amount > 0) {
+            let gstPercent = (gstAmt * 100) / amount;
+            $('#gst_percentage').val(gstPercent.toFixed(2));
+        }
+        calculateTotal();
+    });
+
+    $(document).on('input', '#other_charges', calculateTotal);
+
+    
 
     // OCR Logic
     $('#btn-parse').on('click', async function(){
