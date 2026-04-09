@@ -147,9 +147,9 @@ class PackingController extends Controller
 
         if ($order) {
             $orderDesignNumbers = $order->OrderProductSets->pluck('design_number')->unique()->toArray();
-            $orderSizeSetIds = $order->OrderProductSets->pluck('size_measurement_id')->unique()->toArray();
+            $orderSizeSetIds = $order->OrderProductSets->pluck('set_size')->unique()->toArray();
             $orderColorIds = $order->OrderProductSets->flatMap(function ($set) {
-                return $set->colors->pluck('id');
+                return $set->colors ? [$set->colors->id] : [];
             })->unique()->toArray();
         }
 
@@ -157,16 +157,14 @@ class PackingController extends Controller
         $domestic_masters = [
             'products' => \App\Models\ProductionGoods::with('series')
                 ->where('status', 1)
-                ->when(!empty($orderDesignNumbers), function ($q) use ($orderDesignNumbers) {
-                    $q->whereIn('design_number', $orderDesignNumbers);
+                ->when(!empty($orderSizeSetIds), function ($query) use ($orderSizeSetIds) {
+                    $query->whereHas('variants', function ($q) use ($orderSizeSetIds) {
+                        $q->whereIn('master_size_measurement_id', $orderSizeSetIds);
+                    });
                 })
                 ->get(),
-            'colors' => \App\Models\MasterColor::when(!empty($orderColorIds), function ($q) use ($orderColorIds) {
-                $q->whereIn('id', $orderColorIds);
-            })->get(),
-            'size_sets' => \App\Models\MasterSizeMeasurement::when(!empty($orderSizeSetIds), function ($q) use ($orderSizeSetIds) {
-                $q->whereIn('id', $orderSizeSetIds);
-            })->get()
+            'colors' => $order ? \App\Models\MasterColor::whereIn('id', $orderColorIds)->get() : \App\Models\MasterColor::all(),
+            'size_sets' => $order ? \App\Models\MasterSizeMeasurement::whereIn('id', $orderSizeSetIds)->get() : \App\Models\MasterSizeMeasurement::all()
         ];
         $order_type = strtolower(trim($order->order_type ?? ''));
 
@@ -238,8 +236,17 @@ class PackingController extends Controller
 
         $storerooms = \App\Models\Storeroom::with('racks')->where('status', 1)->get();
 
+        $orderSizeSetIds = $order ? $order->OrderProductSets->pluck('set_size')->unique()->toArray() : [];
+
         $domestic_masters = [
-            'products' => \App\Models\ProductionGoods::with('series')->where('status', 1)->get(),
+            'products' => \App\Models\ProductionGoods::with('series')
+                ->where('status', 1)
+                ->when(!empty($orderSizeSetIds), function ($query) use ($orderSizeSetIds) {
+                    $query->whereHas('variants', function ($q) use ($orderSizeSetIds) {
+                        $q->whereIn('master_size_measurement_id', $orderSizeSetIds);
+                    });
+                })
+                ->get(),
             'size_sets' => \App\Models\MasterSizeMeasurement::all(),
             'colors' => \App\Models\MasterColor::all(),
             'fittings' => \App\Models\MasterProductFitting::all(),

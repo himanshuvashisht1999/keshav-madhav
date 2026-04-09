@@ -511,7 +511,7 @@
     </div>
 
     <!-- createSetModal -->
-    <div class="modal fade" id="createSetModal" tabindex="-1">
+    <div class="modal fade" id="createSetModal">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -547,7 +547,7 @@
     </div>
 
     <!-- Bulk Packing Modal -->
-    <div class="modal fade" id="bulkPackingModal" tabindex="-1">
+    <div class="modal fade" id="bulkPackingModal">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -828,7 +828,7 @@
     </div>
 
     <!-- DOMESTIC PACKING MODAL -->
-    <div class="modal fade" id="domesticPackingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="domesticPackingModal" aria-hidden="true">
         <div class="modal-dialog modal-xl" style="max-width: 90%;">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-info text-white p-3">
@@ -943,7 +943,7 @@
     </div>
 
     <!-- REWORK MODAL -->
-    <div class="modal fade" id="reworkModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="reworkModal" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-danger text-white p-3">
@@ -1484,10 +1484,13 @@
                 }
                 renderStructure();
 
-                // Initialize Select2 if available
-                if ($('.select2').length > 0) {
-                    $('.select2').select2();
-                }
+                // Initialize Select2 with modal focus support
+                $('.select2').each(function() {
+                    let modal = $(this).closest('.modal');
+                    $(this).select2({
+                        dropdownParent: modal.length ? modal : null
+                    });
+                });
 
                 // Handle Order Selection
                 $('#orderSelect').on('change', function () {
@@ -3267,9 +3270,6 @@
                 }
             }
 
-            function openDomesticPackingModal() {
-                $('#domesticPackingModal').modal('show');
-            }
 
             function updateDomRacks() {
                 let warehouseId = $('#domStore').val();
