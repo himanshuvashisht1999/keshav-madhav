@@ -354,7 +354,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/delete-outflow/{id}', [AdminPackingController::class, 'deleteOutflow'])->name('deleteOutflow');
             Route::post('/delete-rework/{id}', [AdminPackingController::class, 'deleteRework'])->name('deleteRework');
             Route::get('/download-outflow-barcode/{id}', [AdminPackingController::class, 'downloadOutflowBarcode'])->name('downloadOutflowBarcode');
-            
+
             // Rework Routes
             Route::post('/reassign-rework', [AdminPackingController::class, 'reassignRework'])->name('reassignRework');
             Route::post('/record-dead-stock', [AdminPackingController::class, 'recordDeadStock'])->name('recordDeadStock');
@@ -483,7 +483,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/{id}/process-scan', [AdminAgentOrderController::class, 'processScan'])->name('process-scan');
             Route::post('/{id}/remove-scan', [AdminAgentOrderController::class, 'removeScan'])->name('remove-scan');
             Route::post('/{id}/dispatch', [AdminAgentOrderController::class, 'dispatchOrder'])->name('dispatch');
-            
+
             // New Dispatch Session Routes
             Route::get('/dispatches', [AdminAgentOrderController::class, 'indexDispatches'])->name('dispatches.index');
             Route::get('/dispatches/{id}', [AdminAgentOrderController::class, 'dispatchShow'])->name('dispatches.show');
@@ -647,7 +647,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/delete-boxes', [AdminInventoryController::class, 'deleteBoxes'])->name('delete_boxes');
             Route::get('/show', [AdminInventoryController::class, 'show'])->name('show');
             Route::get('/create', [AdminInventoryController::class, 'create'])->name('create');
-            
+
             // Warehouse Stock Routes
             Route::get('/warehouse-stock', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'index'])->name('warehouse_stock');
             Route::get('/warehouse-stock/list', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'indexList'])->name('warehouse_stock.list');
@@ -667,7 +667,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/barcode-generator/generate-tspl', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateTspl'])->name('barcode-generator.generate-tspl');
             Route::post('/barcode-generator/generate-bulk', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateBulk'])->name('barcode-generator.generate-bulk');
             Route::post('/barcode-generator/generate-bulk-tspl', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateBulkTspl'])->name('barcode-generator.generate-bulk-tspl');
-            
+
             Route::get('/get-products-by-series', [AdminInventoryController::class, 'getProductsBySeries'])->name('get_products_by_series');
             Route::get('/get-product-details', [AdminInventoryController::class, 'getProductDetails'])->name('get_product_details');
             Route::get('/get-size-sets-by-product/{product_id}', [AdminInventoryController::class, 'getSizeSetsByProduct'])->name('get_size_sets_by_product');
@@ -894,7 +894,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/index', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'index'])->name('index');
             Route::get('/indexList', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'indexList'])->name('indexList');
             Route::post('/store', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'store'])->name('store');
-            Route::get('/edit', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'edit'])->name('edit'); 
+            Route::get('/edit', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'edit'])->name('edit');
             Route::post('/update', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'update'])->name('update');
             Route::get('/delete', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'delete'])->name('delete');
 
@@ -1282,6 +1282,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/process-domestic/{slip_id}', [\App\Http\Controllers\Admin\PackingController::class, 'processDomestic'])->name('processDomestic');
             Route::get('/download-domestic-barcode-txt/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'downloadDomesticBarcodeTxt'])->name('downloadDomesticBarcodeTxt');
             Route::get('/download-all-domestic-txt/{slip_id}', [\App\Http\Controllers\Admin\PackingController::class, 'downloadAllDomesticTxt'])->name('downloadAllDomesticTxt');
+            Route::get('/download-all-domestic-barcode/{slip_id}', [\App\Http\Controllers\Admin\PackingController::class, 'downloadAllDomesticBarcode'])->name('downloadAllDomesticBarcode');
         });
 
     }); // end checkAdminLogin for payment & packing

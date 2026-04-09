@@ -174,7 +174,8 @@
                 <div class="row">
                     <div class="col-12 mb-3">
                         <div class="alert alert-info py-2 small">
-                            DEBUG (v2.2): Order Type: "{{ $order->order_type ?? 'NULL' }}" | Order ID: {{ $order->id ?? 'NULL' }} | Masters Count: {{ count($domestic_masters ?? []) }}
+                            DEBUG (v2.2): Order Type: "{{ $order->order_type ?? 'NULL' }}" | Order ID:
+                            {{ $order->id ?? 'NULL' }} | Masters Count: {{ count($domestic_masters ?? []) }}
                         </div>
                     </div>
                     <!-- LEFT PANEL: AVAILABLE ITEMS -->
@@ -207,8 +208,8 @@
                                         id="btnCreateCarton" @if(!$order) disabled @endif>
                                         <i class="fas fa-plus"></i> New Carton
                                     </button> --}}
-                                    <button class="btn btn-outline-info btn-sm rounded-pill px-3 mr-2" id="btnDomesticPacking"
-                                            onclick="openDomesticPackingModal()">
+                                    <button class="btn btn-outline-info btn-sm rounded-pill px-3 mr-2"
+                                        id="btnDomesticPacking" onclick="openDomesticPackingModal()">
                                         <i class="fas fa-box mr-1"></i> Domestic Packing
                                     </button>
                                     <button class="btn btn-outline-danger btn-sm rounded-pill px-3 mr-2"
@@ -252,152 +253,199 @@
                 <!-- MOVEMENT SUMMARY ROW -->
                 <div class="row mt-4 mb-5">
                     <div class="col-md-12">
-                         <div class="card shadow-sm border-0" style="border-radius: 15px; overflow: hidden;">
-                             <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
-                                 <div>
+                        <div class="card shadow-sm border-0" style="border-radius: 15px; overflow: hidden;">
+                            <div
+                                class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                                <div>
                                     <h5 class="mb-0 text-dark font-weight-bold">
-                                        <i class="fas fa-exchange-alt mr-2 text-primary"></i> 
+                                        <i class="fas fa-exchange-alt mr-2 text-primary"></i>
                                         UNIT MOVEMENT & LOSS SUMMARY
                                     </h5>
-                                    <p class="mb-0 text-muted small">Audit trail of pieces sent for Rework, Sampling, Dead Stock, or Unit Debits</p>
-                                 </div>
-                                 <div class="text-right">
-                                     <span class="badge badge-soft-secondary px-3 py-2" style="border-radius: 20px; background: #f8f9fa; border: 1px solid #eee;">
-                                         <i class="fas fa-info-circle mr-1 text-info"></i> SESSION LOG
-                                     </span>
-                                 </div>
-                             </div>
-                             <div class="card-body p-0">
-                                 <div class="table-responsive">
-                                     <table class="table table-hover table-borderless mb-0">
-                                         <thead class="bg-light">
-                                             <tr>
-                                                 <th class="px-4 py-3 text-muted small text-uppercase font-weight-bold" style="letter-spacing: 0.5px;">Type</th>
-                                                 <th class="py-3 text-muted small text-uppercase font-weight-bold" style="letter-spacing: 0.5px;">Item / Size</th>
-                                                 <th class="py-3 text-muted small text-uppercase text-center font-weight-bold" style="letter-spacing: 0.5px;">Qty</th>
-                                                 <th class="py-3 text-muted small text-uppercase font-weight-bold" style="letter-spacing: 0.5px;">Destination / Accountability</th>
-                                                 <th class="py-3 text-muted small text-uppercase font-weight-bold" style="letter-spacing: 0.5px;">Remarks</th>
-                                                 <th class="py-3 text-muted small text-uppercase font-weight-bold" style="letter-spacing: 0.5px;">Timestamp</th>
-                                             </tr>
-                                         </thead>
-                                         <tbody>
-                                             @php $hasData = false; @endphp
-                                             @forelse($outflows as $o)
-                                                 @php $hasData = true; @endphp
-                                                 <tr class="align-middle border-bottom">
-                                                     <td class="px-4">
-                                                         @php
-                                                             $badge = 'badge-danger'; $icon = 'fa-skull-crossbones';
-                                                             if($o->type == 'sampling') { $badge = 'badge-primary'; $icon = 'fa-flask'; }
-                                                             if($o->type == 'debit') { $badge = 'badge-warning'; $icon = 'fa-minus-circle'; }
+                                    <p class="mb-0 text-muted small">Audit trail of pieces sent for Rework, Sampling, Dead
+                                        Stock, or Unit Debits</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="badge badge-soft-secondary px-3 py-2"
+                                        style="border-radius: 20px; background: #f8f9fa; border: 1px solid #eee;">
+                                        <i class="fas fa-info-circle mr-1 text-info"></i> SESSION LOG
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-borderless mb-0">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th class="px-4 py-3 text-muted small text-uppercase font-weight-bold"
+                                                    style="letter-spacing: 0.5px;">Type</th>
+                                                <th class="py-3 text-muted small text-uppercase font-weight-bold"
+                                                    style="letter-spacing: 0.5px;">Item / Size</th>
+                                                <th class="py-3 text-muted small text-uppercase text-center font-weight-bold"
+                                                    style="letter-spacing: 0.5px;">Qty</th>
+                                                <th class="py-3 text-muted small text-uppercase font-weight-bold"
+                                                    style="letter-spacing: 0.5px;">Destination / Accountability</th>
+                                                <th class="py-3 text-muted small text-uppercase font-weight-bold"
+                                                    style="letter-spacing: 0.5px;">Remarks</th>
+                                                <th class="py-3 text-muted small text-uppercase font-weight-bold"
+                                                    style="letter-spacing: 0.5px;">Timestamp</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @php $hasData = false; @endphp
+                                            @forelse($outflows as $o)
+                                                @php $hasData = true; @endphp
+                                                <tr class="align-middle border-bottom">
+                                                    <td class="px-4">
+                                                        @php
+                                                            $badge = 'badge-danger';
+                                                            $icon = 'fa-skull-crossbones';
+                                                            if ($o->type == 'sampling') {
+                                                                $badge = 'badge-primary';
+                                                                $icon = 'fa-flask';
+                                                            }
+                                                            if ($o->type == 'debit') {
+                                                                $badge = 'badge-warning';
+                                                                $icon = 'fa-minus-circle';
+                                                            }
                                                          @endphp
-                                                         <span class="badge {{ $badge }} text-uppercase px-2 py-1 shadow-sm" style="font-size: 10px; border-radius: 4px;">
-                                                             <i class="fas {{ $icon }} mr-1"></i> {{ $o->type }}
-                                                         </span>
-                                                     </td>
-                                                     <td>
-                                                         <div class="font-weight-bold text-dark">{{ $o->product->design_number ?? 'N/A' }}</div>
-                                                         <div class="text-muted small">Color: {{ $o->color->name ?? 'N/A' }} | Size: <span class="text-primary font-weight-bold">{{ $o->size->size ?? 'N/A' }}</span></div>
-                                                     </td>
-                                                     <td class="text-center">
-                                                         <span class="h6 mb-0 font-weight-bold text-dark">{{ $o->quantity }}</span>
-                                                         <small class="text-muted d-block small">pcs</small>
-                                                     </td>
-                                                     <td>
-                                                         @if($o->type == 'debit')
-                                                             <div class="small mb-1">
-                                                                 <i class="fas fa-user-tie mr-1 text-muted"></i> 
-                                                                 <strong>{{ $o->responsibleStage->name ?? '' }}</strong>
-                                                                 <span class="text-muted mx-1">→</span>
-                                                                 <strong>{{ $o->responsibleUnit->name ?? 'N/A' }}</strong>
-                                                             </div>
-                                                             <div class="badge badge-soft-danger px-2" style="background: #fff5f5; border: 1px solid #ffdcdc;">
-                                                                 Debit Amount: <span class="font-weight-bold">₹{{ number_format($o->total_amount, 2) }}</span>
-                                                             </div>
-                                                         @else
-                                                             <div class="small">
-                                                                 <i class="fas fa-warehouse mr-1 text-muted"></i> 
-                                                                 <span class="text-muted">Storage:</span> <strong>{{ $o->rack->storeroom->name ?? 'N/A' }}</strong>
-                                                             </div>
-                                                             <div class="text-muted small mt-1 ml-4">
-                                                                 Rack: <strong>{{ $o->rack->name ?? 'N/A' }}</strong>
-                                                             </div>
-                                                         @endif
-                                                     </td>
-                                                     <td>
-                                                         <div class="text-muted small" style="max-width: 250px; line-height: 1.4;">{{ $o->remarks ?: '—' }}</div>
-                                                     </td>
-                                                     <td>
-                                                         <div class="font-weight-bold small text-dark">{{ $o->created_at->format('d M, Y') }}</div>
-                                                         <div class="text-muted text-xs">{{ $o->created_at->format('h:i A') }}</div>
-                                                     </td>
-                                                 </tr>
-                                             @empty
-                                             @endforelse
+                                                        <span class="badge {{ $badge }} text-uppercase px-2 py-1 shadow-sm"
+                                                            style="font-size: 10px; border-radius: 4px;">
+                                                            <i class="fas {{ $icon }} mr-1"></i> {{ $o->type }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="font-weight-bold text-dark">
+                                                            {{ $o->product->design_number ?? 'N/A' }}</div>
+                                                        <div class="text-muted small">Color: {{ $o->color->name ?? 'N/A' }} |
+                                                            Size: <span
+                                                                class="text-primary font-weight-bold">{{ $o->size->size ?? 'N/A' }}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span
+                                                            class="h6 mb-0 font-weight-bold text-dark">{{ $o->quantity }}</span>
+                                                        <small class="text-muted d-block small">pcs</small>
+                                                    </td>
+                                                    <td>
+                                                        @if($o->type == 'debit')
+                                                            <div class="small mb-1">
+                                                                <i class="fas fa-user-tie mr-1 text-muted"></i>
+                                                                <strong>{{ $o->responsibleStage->name ?? '' }}</strong>
+                                                                <span class="text-muted mx-1">→</span>
+                                                                <strong>{{ $o->responsibleUnit->name ?? 'N/A' }}</strong>
+                                                            </div>
+                                                            <div class="badge badge-soft-danger px-2"
+                                                                style="background: #fff5f5; border: 1px solid #ffdcdc;">
+                                                                Debit Amount: <span
+                                                                    class="font-weight-bold">₹{{ number_format($o->total_amount, 2) }}</span>
+                                                            </div>
+                                                        @else
+                                                            <div class="small">
+                                                                <i class="fas fa-warehouse mr-1 text-muted"></i>
+                                                                <span class="text-muted">Storage:</span>
+                                                                <strong>{{ $o->rack->storeroom->name ?? 'N/A' }}</strong>
+                                                            </div>
+                                                            <div class="text-muted small mt-1 ml-4">
+                                                                Rack: <strong>{{ $o->rack->name ?? 'N/A' }}</strong>
+                                                            </div>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        <div class="text-muted small"
+                                                            style="max-width: 250px; line-height: 1.4;">{{ $o->remarks ?: '—' }}
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="font-weight-bold small text-dark">
+                                                            {{ $o->created_at->format('d M, Y') }}</div>
+                                                        <div class="text-muted text-xs">{{ $o->created_at->format('h:i A') }}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                            @endforelse
 
-                                             @foreach($reworks as $r)
-                                                 @php $hasData = true; @endphp
-                                                 @foreach($r->details as $rd)
-                                                 <tr class="align-middle border-bottom" style="background-color: #fafbfc;">
-                                                     <td class="px-4">
-                                                         @php
-                                                            $badgeClass = 'badge-info';
-                                                            $badgeText = strtoupper($r->type ?? 'REWORK');
-                                                            $badgeIcon = 'fa-tools';
-                                                            
-                                                            if($r->type == 'sampling') { $badgeClass = 'badge-primary'; $badgeIcon = 'fa-flask'; }
-                                                            elseif($r->type == 'damage' || $r->type == 'dead') { $badgeClass = 'badge-danger'; $badgeIcon = 'fa-skull-crossbones'; }
-                                                            elseif($r->type == 'debit') { $badgeClass = 'badge-warning'; $badgeIcon = 'fa-minus-circle'; }
-                                                         @endphp
-                                                         <span class="badge {{ $badgeClass }} text-uppercase px-2 py-1 shadow-sm" style="font-size: 10px; border-radius: 4px;">
-                                                             <i class="fas {{ $badgeIcon }} mr-1"></i> {{ $badgeText }}
-                                                         </span>
-                                                     </td>
-                                                     <td>
-                                                         <div class="font-weight-bold {{ ($r->type == 'rework') ? 'text-info' : 'text-dark' }} italic">
-                                                             {{ ($r->type == 'rework') ? 'Sent for Rework / Alteration' : ($r->remarks ?: 'Inventory Move') }}
-                                                         </div>
-                                                         <div class="text-muted small">Size: <span class="text-dark font-weight-bold">{{ $rd->size }}</span></div>
-                                                     </td>
-                                                     <td class="text-center">
-                                                         <span class="h6 mb-0 font-weight-bold text-info">{{ $rd->quantity }}</span>
-                                                         <small class="text-muted d-block small">pcs</small>
-                                                     </td>
-                                                     <td>
-                                                         <div class="small">
-                                                            <i class="fas fa-level-up-alt fa-rotate-270 mr-1 text-muted"></i> 
-                                                            <span class="text-muted">Target Stage:</span> <strong>{{ $r->toStage->name ?? 'N/A' }}</strong>
-                                                         </div>
-                                                         <div class="text-muted small mt-1 ml-3">
-                                                            Target Unit: <strong>{{ $r->toUnit->name ?? 'N/A' }}</strong>
-                                                         </div>
-                                                     </td>
-                                                     <td>
-                                                         <div class="text-muted small italic" style="max-width: 250px; line-height: 1.4;">{{ $r->note ?: 'Defect rework order' }}</div>
-                                                     </td>
-                                                     <td>
-                                                         <div class="font-weight-bold small text-dark">{{ $r->created_at->format('d M, Y') }}</div>
-                                                         <div class="text-muted text-xs">{{ $r->created_at->format('h:i A') }}</div>
-                                                     </td>
-                                                 </tr>
-                                                 @endforeach
-                                             @endforeach
+                                            @foreach($reworks as $r)
+                                                @php $hasData = true; @endphp
+                                                @foreach($r->details as $rd)
+                                                    <tr class="align-middle border-bottom" style="background-color: #fafbfc;">
+                                                        <td class="px-4">
+                                                            @php
+                                                                $badgeClass = 'badge-info';
+                                                                $badgeText = strtoupper($r->type ?? 'REWORK');
+                                                                $badgeIcon = 'fa-tools';
 
-                                             @if(!$hasData)
-                                             <tr>
-                                                 <td colspan="6" class="text-center py-5">
-                                                     <div class="py-4">
-                                                        <i class="fas fa-clipboard-list text-muted fa-3x mb-3 opacity-20"></i>
-                                                        <h6 class="text-muted font-weight-normal">No outflows or loss data recorded for this slip session.</h6>
-                                                     </div>
-                                                 </td>
-                                             </tr>
-                                             @endif
-                                         </tbody>
-                                     </table>
-                                 </div>
-                             </div>
-                         </div>
+                                                                if ($r->type == 'sampling') {
+                                                                    $badgeClass = 'badge-primary';
+                                                                    $badgeIcon = 'fa-flask';
+                                                                } elseif ($r->type == 'damage' || $r->type == 'dead') {
+                                                                    $badgeClass = 'badge-danger';
+                                                                    $badgeIcon = 'fa-skull-crossbones';
+                                                                } elseif ($r->type == 'debit') {
+                                                                    $badgeClass = 'badge-warning';
+                                                                    $badgeIcon = 'fa-minus-circle';
+                                                                }
+                                                             @endphp
+                                                            <span class="badge {{ $badgeClass }} text-uppercase px-2 py-1 shadow-sm"
+                                                                style="font-size: 10px; border-radius: 4px;">
+                                                                <i class="fas {{ $badgeIcon }} mr-1"></i> {{ $badgeText }}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <div
+                                                                class="font-weight-bold {{ ($r->type == 'rework') ? 'text-info' : 'text-dark' }} italic">
+                                                                {{ ($r->type == 'rework') ? 'Sent for Rework / Alteration' : ($r->remarks ?: 'Inventory Move') }}
+                                                            </div>
+                                                            <div class="text-muted small">Size: <span
+                                                                    class="text-dark font-weight-bold">{{ $rd->size }}</span></div>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <span
+                                                                class="h6 mb-0 font-weight-bold text-info">{{ $rd->quantity }}</span>
+                                                            <small class="text-muted d-block small">pcs</small>
+                                                        </td>
+                                                        <td>
+                                                            <div class="small">
+                                                                <i class="fas fa-level-up-alt fa-rotate-270 mr-1 text-muted"></i>
+                                                                <span class="text-muted">Target Stage:</span>
+                                                                <strong>{{ $r->toStage->name ?? 'N/A' }}</strong>
+                                                            </div>
+                                                            <div class="text-muted small mt-1 ml-3">
+                                                                Target Unit: <strong>{{ $r->toUnit->name ?? 'N/A' }}</strong>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="text-muted small italic"
+                                                                style="max-width: 250px; line-height: 1.4;">
+                                                                {{ $r->note ?: 'Defect rework order' }}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="font-weight-bold small text-dark">
+                                                                {{ $r->created_at->format('d M, Y') }}</div>
+                                                            <div class="text-muted text-xs">{{ $r->created_at->format('h:i A') }}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            @endforeach
+
+                                            @if(!$hasData)
+                                                <tr>
+                                                    <td colspan="6" class="text-center py-5">
+                                                        <div class="py-4">
+                                                            <i
+                                                                class="fas fa-clipboard-list text-muted fa-3x mb-3 opacity-20"></i>
+                                                            <h6 class="text-muted font-weight-normal">No outflows or loss data
+                                                                recorded for this slip session.</h6>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endif
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -752,79 +800,81 @@
         </div>
     </div>
 
-                                        </div>
-                                        <div class="col-md-2 d-flex align-items-end">
-                                            <button type="button" class="btn btn-primary btn-sm btn-block" onclick="addRangeToPlanner()">
-                                                <i class="fas fa-plus mr-1"></i> Add Range
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="row g-2 mt-2">
-                                        <div class="col-md-3">
-                                            <label class="small font-weight-bold mb-0">Warehouse</label>
-                                            <select id="rangeStore" class="form-control form-control-sm" onchange="updateRangeRacks()">
-                                                <option value="">Select Store Room</option>
-                                                @foreach($storerooms as $store) <option value="{{ $store->id }}" data-racks="{{ $store->racks }}">{{ $store->name }}</option> @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="small font-weight-bold mb-0">Rack</label>
-                                            <select id="rangeRack" class="form-control form-control-sm"></select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="small font-weight-bold mb-0">Barcode</label>
-                                            <input type="text" id="rangeBarcode" class="form-control form-control-sm" placeholder="Optional">
-                                        </div>
-                                        <div class="col-md-2 d-flex align-items-end">
-                                            <button type="button" class="btn btn-outline-danger btn-sm btn-block" onclick="$('#plannerTableBody').empty()">
-                                                <i class="fas fa-trash-alt mr-1"></i> Clear Table
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="mb-0 font-weight-bold">Carton Plan</h5>
-                                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="addPlannerRow()">
-                                    <i class="fas fa-plus mr-1"></i> Add Single Carton
-                                </button>
-                            </div>
-
-                            <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
-                                <table class="table table-sm table-hover border rounded mb-0" id="plannerTable" style="table-layout: fixed; width: 100%;">
-                                    <thead class="bg-light sticky-top" style="z-index: 10;">
-                                        <tr class="small text-uppercase">
-                                            <th style="width: 5%">No</th>
-                                            <th style="width: 10%">Design</th>
-                                            <th style="width: 10%">Size Set</th>
-                                            <th style="width: 10%">Color</th>
-                                            <th style="width: 10%">Type</th>
-                                            <th style="width: 5%">Qty</th>
-                                            <th style="width: 8%">MRP</th>
-                                            <th style="width: 8%">Price</th>
-                                            <th style="width: 10%">Barcode</th>
-                                            <th style="width: 18%">Storage (Store / Rack)</th>
-                                            <th style="width: 6%"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="plannerTableBody"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light p-3">
-                    <div class="mr-auto text-muted small">
-                        <i class="fas fa-info-circle mr-1"></i> Overage packing is allowed for corporate orders.
-                    </div>
-                    <button type="button" class="btn btn-light px-4" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-success px-5 shadow-sm font-weight-bold" onclick="submitMultiCartonPlan()">
-                        <i class="fas fa-check-circle mr-1"></i> PROCESS ALL CARTONS
-                    </button>
-                </div>
-            </div>
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button type="button" class="btn btn-primary btn-sm btn-block" onclick="addRangeToPlanner()">
+            <i class="fas fa-plus mr-1"></i> Add Range
+        </button>
+    </div>
+    </div>
+    <div class="row g-2 mt-2">
+        <div class="col-md-3">
+            <label class="small font-weight-bold mb-0">Warehouse</label>
+            <select id="rangeStore" class="form-control form-control-sm" onchange="updateRangeRacks()">
+                <option value="">Select Store Room</option>
+                @foreach($storerooms as $store) <option value="{{ $store->id }}" data-racks="{{ $store->racks }}">
+                {{ $store->name }}</option> @endforeach
+            </select>
         </div>
+        <div class="col-md-2">
+            <label class="small font-weight-bold mb-0">Rack</label>
+            <select id="rangeRack" class="form-control form-control-sm"></select>
+        </div>
+        <div class="col-md-3">
+            <label class="small font-weight-bold mb-0">Barcode</label>
+            <input type="text" id="rangeBarcode" class="form-control form-control-sm" placeholder="Optional">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="button" class="btn btn-outline-danger btn-sm btn-block" onclick="$('#plannerTableBody').empty()">
+                <i class="fas fa-trash-alt mr-1"></i> Clear Table
+            </button>
+        </div>
+    </div>
+    </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0 font-weight-bold">Carton Plan</h5>
+        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="addPlannerRow()">
+            <i class="fas fa-plus mr-1"></i> Add Single Carton
+        </button>
+    </div>
+
+    <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+        <table class="table table-sm table-hover border rounded mb-0" id="plannerTable"
+            style="table-layout: fixed; width: 100%;">
+            <thead class="bg-light sticky-top" style="z-index: 10;">
+                <tr class="small text-uppercase">
+                    <th style="width: 5%">No</th>
+                    <th style="width: 10%">Design</th>
+                    <th style="width: 10%">Size Set</th>
+                    <th style="width: 10%">Color</th>
+                    <th style="width: 10%">Type</th>
+                    <th style="width: 5%">Qty</th>
+                    <th style="width: 8%">MRP</th>
+                    <th style="width: 8%">Price</th>
+                    <th style="width: 10%">Barcode</th>
+                    <th style="width: 18%">Storage (Store / Rack)</th>
+                    <th style="width: 6%"></th>
+                </tr>
+            </thead>
+            <tbody id="plannerTableBody"></tbody>
+        </table>
+    </div>
+    </div>
+    </div>
+    </div>
+    <div class="modal-footer bg-light p-3">
+        <div class="mr-auto text-muted small">
+            <i class="fas fa-info-circle mr-1"></i> Overage packing is allowed for corporate orders.
+        </div>
+        <button type="button" class="btn btn-light px-4" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success px-5 shadow-sm font-weight-bold" onclick="submitMultiCartonPlan()">
+            <i class="fas fa-check-circle mr-1"></i> PROCESS ALL CARTONS
+        </button>
+    </div>
+    </div>
+    </div>
     </div>
 
     <!-- DOMESTIC PACKING MODAL -->
@@ -848,7 +898,8 @@
                                     <div class="row g-2">
                                         <div class="col-md-2">
                                             <label class="small font-weight-bold mb-0">Design</label>
-                                            <select id="dom_design" class="form-control form-control-sm select2" style="width: 100%;">
+                                            <select id="dom_design" class="form-control form-control-sm select2"
+                                                style="width: 100%;">
                                                 <option value="">Select Design</option>
                                                 @foreach($domestic_masters['products'] as $p)
                                                     @php
@@ -862,13 +913,15 @@
                                         </div>
                                         <div class="col-md-2">
                                             <label class="small font-weight-bold mb-0">Size Set</label>
-                                            <select id="dom_size_set" class="form-control form-control-sm select2" disabled style="width: 100%;">
+                                            <select id="dom_size_set" class="form-control form-control-sm select2" disabled
+                                                style="width: 100%;">
                                                 <option value="">Select Size Set</option>
                                             </select>
                                         </div>
                                         <div class="col-md-2">
                                             <label class="small font-weight-bold mb-0">Color</label>
-                                            <select id="dom_color" class="form-control form-control-sm select2" disabled style="width: 100%;">
+                                            <select id="dom_color" class="form-control form-control-sm select2" disabled
+                                                style="width: 100%;">
                                                 <option value="">Select Color</option>
                                             </select>
                                         </div>
@@ -882,27 +935,33 @@
                                         </div>
                                         <div class="col-md-1 mt-2 d-none">
                                             <label class="small font-weight-bold mb-0">Sets/Box</label>
-                                            <input type="number" id="dom_qty" class="form-control form-control-sm" value="1" title="Number of sets to pack in each box">
+                                            <input type="number" id="dom_qty" class="form-control form-control-sm" value="1"
+                                                title="Number of sets to pack in each box">
                                         </div>
                                         <div class="col-md-1 mt-2">
                                             <label class="small font-weight-bold mb-0">Boxes</label>
-                                            <input type="number" id="dom_box_count" class="form-control form-control-sm" value="1" min="1" title="Number of boxes to add to plan">
+                                            <input type="number" id="dom_box_count" class="form-control form-control-sm"
+                                                value="1" min="1" title="Number of boxes to add to plan">
                                         </div>
                                         <div class="col-md-2">
                                             <label class="small font-weight-bold mb-0">Store</label>
-                                            <select id="domStore" class="form-control form-control-sm" onchange="updateDomRacks()">
+                                            <select id="domStore" class="form-control form-control-sm"
+                                                onchange="updateDomRacks()">
                                                 <option value="">Select</option>
-                                                @foreach($storerooms as $store) <option value="{{ $store->id }}" data-racks="{{ $store->racks }}">{{ $store->name }}</option> @endforeach
+                                                @foreach($storerooms as $store) <option value="{{ $store->id }}"
+                                                data-racks="{{ $store->racks }}">{{ $store->name }}</option> @endforeach
                                             </select>
                                         </div>
                                         <div class="col-md-1">
                                             <label class="small font-weight-bold mb-0">Rack</label>
-                                            <select id="dom_rack" class="form-control form-control-sm select2" style="width: 100%;">
+                                            <select id="dom_rack" class="form-control form-control-sm select2"
+                                                style="width: 100%;">
                                                 <option value="">Select</option>
                                             </select>
                                         </div>
                                         <div class="col-md-1 d-flex align-items-end">
-                                            <button type="button" class="btn btn-info btn-sm btn-block" id="btnSaveDomesticBox">Pack</button>
+                                            <button type="button" class="btn btn-info btn-sm btn-block"
+                                                id="btnSaveDomesticBox">Pack</button>
                                         </div>
                                     </div>
                                 </div>
@@ -910,7 +969,8 @@
 
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h6 class="mb-0 font-weight-bold text-secondary text-uppercase small">Boxes Plan</h6>
-                                <button type="button" class="btn btn-link btn-sm text-danger" onclick="resetDomesticPlan()">Clear All</button>
+                                <button type="button" class="btn btn-link btn-sm text-danger"
+                                    onclick="resetDomesticPlan()">Clear All</button>
                             </div>
 
                             <div class="table-responsive">
@@ -936,7 +996,8 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-info px-5" onclick="submitDomesticPacking()">PROCESS ALL BOXES</button>
+                    <button type="button" class="btn btn-info px-5" onclick="submitDomesticPacking()">PROCESS ALL
+                        BOXES</button>
                 </div>
             </div>
         </div>
@@ -947,14 +1008,16 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-danger text-white p-3">
-                    <h5 class="modal-title font-weight-bold mb-0"><i class="fas fa-tools mr-2"></i> Re-assign Pieces for Rework</h5>
+                    <h5 class="modal-title font-weight-bold mb-0"><i class="fas fa-tools mr-2"></i> Re-assign Pieces for
+                        Rework</h5>
                     <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body pb-0">
                     <div class="alert alert-warning py-2 mb-3">
-                        <small><i class="fas fa-info-circle mr-1"></i> Use this to return defected pieces back to a previous production unit for rework.</small>
+                        <small><i class="fas fa-info-circle mr-1"></i> Use this to return defected pieces back to a previous
+                            production unit for rework.</small>
                     </div>
-                    
+
                     <div class="row mb-3">
                         <div class="col-md-6 mb-2">
                             <label class="font-weight-bold small text-muted">TARGET STAGE</label>
@@ -991,12 +1054,14 @@
 
                     <div class="mb-3">
                         <label class="font-weight-bold small text-muted">REMARKS / DEFECT DETAILS</label>
-                        <textarea id="reworkRemarks" class="form-control" rows="2" placeholder="Describe why these pieces are being sent back..."></textarea>
+                        <textarea id="reworkRemarks" class="form-control" rows="2"
+                            placeholder="Describe why these pieces are being sent back..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer bg-light border-0">
                     <button type="button" class="btn btn-light px-4" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger px-5 shadow-sm font-weight-bold" onclick="submitReworkAssignment()">
+                    <button type="button" class="btn btn-danger px-5 shadow-sm font-weight-bold"
+                        onclick="submitReworkAssignment()">
                         <i class="fas fa-paper-plane mr-1"></i> ASSIGN REWORK
                     </button>
                 </div>
@@ -1040,7 +1105,7 @@
                 let designId = $('#rangeDesign').val();
                 let $sizeSet = $('#rangeSizeSet');
                 $sizeSet.html('<option value="">Select</option>');
-                
+
                 if (designId) {
                     let setsForDesign = ORDER_SETS.filter(s => s.design_number == designId);
                     let uniqueSets = [];
@@ -1062,7 +1127,7 @@
                 let sizeSetId = $('#rangeSizeSet').val();
                 let $color = $('#rangeColor');
                 $color.html('<option value="">Select</option>');
-                
+
                 if (designId && sizeSetId) {
                     let filtered = ORDER_SETS.filter(s => s.design_number == designId && s.set_size == sizeSetId);
                     filtered.forEach(s => {
@@ -1087,7 +1152,7 @@
                             $sizeSelect.append(`<option value="${item.id}" data-max="${item.unit_available_qty}">${item.size} (Avl: ${item.unit_available_qty})</option>`);
                         }
                     });
-                    $qtyInput.removeAttr('max'); 
+                    $qtyInput.removeAttr('max');
                 } else if (type === 'set' && setId) {
                     $sizeContainer.addClass('d-none');
                     let sid = parseInt(setId);
@@ -1112,10 +1177,10 @@
             function validateUnitPackagingStock(input) {
                 let maxAttr = input.getAttribute('max');
                 if (maxAttr === null || maxAttr === '') return;
-                
+
                 let max = parseInt(maxAttr);
                 let val = parseInt(input.value);
-                
+
                 if (!isNaN(max) && val > max) {
                     alert("Quantity cannot exceed available stock (" + max + ")");
                     input.value = max;
@@ -1123,7 +1188,7 @@
                 if (val < 0) input.value = 0;
             }
 
-            $(document).on('change', '#rangeSize', function() {
+            $(document).on('change', '#rangeSize', function () {
                 let max = $(this).find(':selected').data('max');
                 if (max !== undefined) {
                     $('#rangeQty').attr('max', max);
@@ -1228,46 +1293,46 @@
                 let uniqueDesigns = [...new Set(ORDER_SETS.map(s => s.design_number))];
 
                 let html = `
-                                    <tr class="planner-row">
-                                        <td><input type="text" class="form-control form-control-sm planner-carton-no font-weight-bold" value="${nextCartonNo}"></td>
-                                        <td>
-                                            <select class="form-control form-control-sm planner-design" style="min-width: 100px;" onchange="updateRowSizeSets(this)">
-                                                <option value="">Select</option>
-                                                ${uniqueDesigns.map(d => `<option value="${d}" ${data && ORDER_SETS.find(s => s.id == data.set_id)?.design_number == d ? 'selected' : ''}>${d}</option>`).join('')}
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <select class="form-control form-control-sm planner-size-set" style="min-width: 100px;" onchange="updateRowColors(this)">
-                                                <option value="">Select</option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <select class="form-control form-control-sm planner-color" style="min-width: 100px;" onchange="updateRowTypeOptions(this)">
-                                                <option value="">Select</option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <select class="form-control form-control-sm planner-type mb-1" onchange="updateRowTypeOptions(this)">
-                                                <option value="set" ${data && data.type == 'set' ? 'selected' : ''}>Box (Set)</option>
-                                                <option value="loose" ${data && data.type == 'loose' ? 'selected' : ''}>Loose</option>
-                                            </select>
-                                            <select class="form-control form-control-sm planner-content-id d-none" style="min-width: 80px;"></select>
-                                        </td>
-                                        <td><input type="number" class="form-control form-control-sm planner-qty" value="${data ? data.qty : 1}" min="1"></td>
-                                        <td><input type="number" class="form-control form-control-sm planner-mrp" value="${data ? data.mrp : ''}" step="0.01"></td>
-                                        <td><input type="number" class="form-control form-control-sm planner-price" value="${data ? data.price : ''}" step="0.01"></td>
-                                        <td><input type="text" class="form-control form-control-sm planner-barcode" value="${data ? data.barcode : ''}"></td>
-                                        <td>
-                                            <select class="form-control form-control-sm planner-storeroom mb-1" onchange="updatePlannerRackSelect(this)">
-                                                <option value="">Store</option>
-                                                ${ALL_STOREROOMS.map(s => `<option value="${s.id}" ${data && data.store_id == s.id ? 'selected' : ''} data-racks='${JSON.stringify(s.racks)}'>${s.name}</option>`).join('')}
-                                            </select>
-                                            <select class="form-control form-control-sm planner-rack" style="min-width: 80px;"><option value="">Rack</option></select>
-                                        </td>
-                                        <td class="text-right">
-                                            <button type="button" class="btn btn-link text-danger btn-sm p-0" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button>
-                                        </td>
-                                    </tr>`;
+                                            <tr class="planner-row">
+                                                <td><input type="text" class="form-control form-control-sm planner-carton-no font-weight-bold" value="${nextCartonNo}"></td>
+                                                <td>
+                                                    <select class="form-control form-control-sm planner-design" style="min-width: 100px;" onchange="updateRowSizeSets(this)">
+                                                        <option value="">Select</option>
+                                                        ${uniqueDesigns.map(d => `<option value="${d}" ${data && ORDER_SETS.find(s => s.id == data.set_id)?.design_number == d ? 'selected' : ''}>${d}</option>`).join('')}
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <select class="form-control form-control-sm planner-size-set" style="min-width: 100px;" onchange="updateRowColors(this)">
+                                                        <option value="">Select</option>
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <select class="form-control form-control-sm planner-color" style="min-width: 100px;" onchange="updateRowTypeOptions(this)">
+                                                        <option value="">Select</option>
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <select class="form-control form-control-sm planner-type mb-1" onchange="updateRowTypeOptions(this)">
+                                                        <option value="set" ${data && data.type == 'set' ? 'selected' : ''}>Box (Set)</option>
+                                                        <option value="loose" ${data && data.type == 'loose' ? 'selected' : ''}>Loose</option>
+                                                    </select>
+                                                    <select class="form-control form-control-sm planner-content-id d-none" style="min-width: 80px;"></select>
+                                                </td>
+                                                <td><input type="number" class="form-control form-control-sm planner-qty" value="${data ? data.qty : 1}" min="1"></td>
+                                                <td><input type="number" class="form-control form-control-sm planner-mrp" value="${data ? data.mrp : ''}" step="0.01"></td>
+                                                <td><input type="number" class="form-control form-control-sm planner-price" value="${data ? data.price : ''}" step="0.01"></td>
+                                                <td><input type="text" class="form-control form-control-sm planner-barcode" value="${data ? data.barcode : ''}"></td>
+                                                <td>
+                                                    <select class="form-control form-control-sm planner-storeroom mb-1" onchange="updatePlannerRackSelect(this)">
+                                                        <option value="">Store</option>
+                                                        ${ALL_STOREROOMS.map(s => `<option value="${s.id}" ${data && data.store_id == s.id ? 'selected' : ''} data-racks='${JSON.stringify(s.racks)}'>${s.name}</option>`).join('')}
+                                                    </select>
+                                                    <select class="form-control form-control-sm planner-rack" style="min-width: 80px;"><option value="">Rack</option></select>
+                                                </td>
+                                                <td class="text-right">
+                                                    <button type="button" class="btn btn-link text-danger btn-sm p-0" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button>
+                                                </td>
+                                            </tr>`;
 
                 let $row = $(html);
                 $('#plannerTableBody').append($row);
@@ -1298,7 +1363,7 @@
                 let productId = $(el).val();
                 let $sizeSet = $row.find('.planner-size-set');
                 $sizeSet.html('<option value="">Select</option>');
-                
+
                 if (productId) {
                     let setsForDesign = ORDER_SETS.filter(s => s.design_number == productId);
                     let uniqueSets = [];
@@ -1321,7 +1386,7 @@
                 let sizeSetId = $(el).val();
                 let $color = $row.find('.planner-color');
                 $color.html('<option value="">Select</option>');
-                
+
                 if (designId && sizeSetId) {
                     let filtered = ORDER_SETS.filter(s => s.design_number == designId && s.set_size == sizeSetId);
                     filtered.forEach(s => {
@@ -1396,7 +1461,7 @@
                         barcode: barcode
                     });
                 });
-                
+
                 if (error) { alert(error); return; }
                 if (plan.length === 0) { alert("Add at least one carton to the plan."); return; }
 
@@ -1434,7 +1499,7 @@
             function deleteOutflow(id) {
                 if (!confirm("Are you sure you want to delete this outflow entry and revert pieces to stock?")) return;
                 let url = "{{ route('admin.packing.deleteOutflow', ':id') }}".replace(':id', id);
-                $.post(url, { _token: "{{ csrf_token() }}" }, function(res) {
+                $.post(url, { _token: "{{ csrf_token() }}" }, function (res) {
                     if (res.status === 'success') { location.reload(); }
                     else { alert("Error: " + res.message); }
                 });
@@ -1443,7 +1508,7 @@
             function deleteRework(id) {
                 if (!confirm("Are you sure you want to delete this rework entry and revert pieces to stock?")) return;
                 let url = "{{ route('admin.packing.deleteRework', ':id') }}".replace(':id', id);
-                $.post(url, { _token: "{{ csrf_token() }}" }, function(res) {
+                $.post(url, { _token: "{{ csrf_token() }}" }, function (res) {
                     if (res.status === 'success') { location.reload(); }
                     else { alert("Error: " + res.message); }
                 });
@@ -1486,7 +1551,7 @@
                 renderStructure();
 
                 // Initialize Select2 with modal focus support
-                $('.select2').each(function() {
+                $('.select2').each(function () {
                     let modal = $(this).closest('.modal');
                     $(this).select2({
                         dropdownParent: modal.length ? modal : null
@@ -1549,7 +1614,7 @@
                         ORDER_ITEMS = response.items || [];
                         ORDER_SETS = response.sets || [];
                         ORDER_TYPE = (response.order && response.order.order_type) ? response.order.order_type.toLowerCase() : "";
-                        
+
                         // Update UI mode
                         if (ORDER_TYPE === 'domestic') {
                             $('#btnDomesticPacking').removeClass('d-none').show();
@@ -1558,7 +1623,7 @@
                             $('#btnCorporatePacking').removeClass('d-none').show();
                             $('#btnDomesticPacking').hide();
                         }
-                        
+
                         // Restore existing packing session if found
                         if (response.packing) {
                             packedStructure.cartons = response.packing.cartons || [];
@@ -1598,7 +1663,7 @@
 
             function renderStructure() {
                 let html = '';
-                
+
                 // Aggregating all boxes for domestic display (both unpacked and in cartons)
                 let allBoxes = [...(packedStructure.boxes || [])];
                 if (packedStructure.cartons && packedStructure.cartons.length > 0) {
@@ -1612,14 +1677,14 @@
                 // In Domestic Packing, we ONLY show Boxes directly. No Cartons.
                 if (allBoxes.length > 0) {
                     html += `<div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-                                <h5 class="mb-0 text-dark font-weight-bold" style="letter-spacing: 0.5px;"><i class="fas fa-boxes mr-2 text-primary"></i>PACKED DOMESTIC BOXES</h5>
-                                <div class="d-flex align-items-center">
-                                     <a href="{{ route('admin.packing.downloadAllDomesticTxt', $slip->id) }}" class="btn btn-primary btn-sm mr-3 shadow-sm" style="border-radius: 20px;">
-                                        <i class="fas fa-file-download mr-1"></i> Download ALL TXT
-                                     </a>
-                                     <span class="badge badge-primary badge-pill px-3 py-1">${allBoxes.length} Total Boxes</span>
-                                </div>
-                            </div>`;
+                                        <h5 class="mb-0 text-dark font-weight-bold" style="letter-spacing: 0.5px;"><i class="fas fa-boxes mr-2 text-primary"></i>PACKED DOMESTIC BOXES</h5>
+                                        <div class="d-flex align-items-center">
+                                             <a href="{{ route('admin.packing.downloadAllDomesticBarcode', $slip->id) }}" class="btn btn-primary btn-sm mr-3 shadow-sm" style="border-radius: 20px;">
+                                                <i class="fas fa-barcode mr-1"></i> Download Barcode
+                                             </a>
+                                             <span class="badge badge-primary badge-pill px-3 py-1">${allBoxes.length} Total Boxes</span>
+                                        </div>
+                                    </div>`;
 
                     html += `<div class="row">`;
                     allBoxes.forEach(box => {
@@ -1633,51 +1698,51 @@
                         let fitting = inv?.fitting?.name || fallback?.master_product_fitting?.name || '-';
 
                         html += `
-                        <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
-                            <div class="card border-0 shadow-sm h-100" style="border-radius: 10px; border-top: 3px solid #17a2b8 !important; background: #ffffff;">
-                                <div class="card-body p-2">
-                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
-                                        <span class="small font-weight-bold text-dark"><i class="fas fa-box text-info mr-1"></i>#${box.box_no}</span>
-                                        <button class="btn btn-link text-danger btn-xs p-0" onclick="deleteDomesticBox(${box.id}, event)" title="Delete Box">
-                                            <i class="fas fa-trash-alt" style="font-size: 10px;"></i>
-                                        </button>
+                                <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                                    <div class="card border-0 shadow-sm h-100" style="border-radius: 10px; border-top: 3px solid #17a2b8 !important; background: #ffffff;">
+                                        <div class="card-body p-2">
+                                            <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                                                <span class="small font-weight-bold text-dark"><i class="fas fa-box text-info mr-1"></i>#${box.box_no}</span>
+                                                <button class="btn btn-link text-danger btn-xs p-0" onclick="deleteDomesticBox(${box.id}, event)" title="Delete Box">
+                                                    <i class="fas fa-trash-alt" style="font-size: 10px;"></i>
+                                                </button>
+                                            </div>
+
+                                            <div class="box-details-mini" style="font-size: 10.5px; line-height: 1.4;">
+                                                <div class="mb-1 d-flex justify-content-between">
+                                                    <span class="text-muted">Design:</span>
+                                                    <span class="font-weight-bold text-truncate ml-1" style="max-width: 80px;">${design}</span>
+                                                </div>
+                                                <div class="mb-1 d-flex justify-content-between">
+                                                    <span class="text-muted">Size Set:</span>
+                                                    <span class="text-dark ml-1">${sizeSet}</span>
+                                                </div>
+                                                <div class="mb-1 d-flex justify-content-between">
+                                                    <span class="text-muted">Color:</span>
+                                                    <span class="text-dark ml-1">${color}</span>
+                                                </div>
+                                                <div class="mb-1 d-flex justify-content-between border-top pt-1 mt-1">
+                                                    <span class="text-muted small">Patt/Fit:</span>
+                                                    <span class="text-muted small ml-1 text-truncate" style="max-width: 70px;">
+                                                        ${pattern}/${fitting}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    
-                                    <div class="box-details-mini" style="font-size: 10.5px; line-height: 1.4;">
-                                        <div class="mb-1 d-flex justify-content-between">
-                                            <span class="text-muted">Design:</span>
-                                            <span class="font-weight-bold text-truncate ml-1" style="max-width: 80px;">${design}</span>
-                                        </div>
-                                        <div class="mb-1 d-flex justify-content-between">
-                                            <span class="text-muted">Size Set:</span>
-                                            <span class="text-dark ml-1">${sizeSet}</span>
-                                        </div>
-                                        <div class="mb-1 d-flex justify-content-between">
-                                            <span class="text-muted">Color:</span>
-                                            <span class="text-dark ml-1">${color}</span>
-                                        </div>
-                                        <div class="mb-1 d-flex justify-content-between border-top pt-1 mt-1">
-                                            <span class="text-muted small">Patt/Fit:</span>
-                                            <span class="text-muted small ml-1 text-truncate" style="max-width: 70px;">
-                                                ${pattern}/${fitting}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
+                                </div>`;
                     });
                     html += `</div>`;
                 }
 
                 if (html === '') {
                     html = `<div class="text-center py-5 border rounded bg-light" style="border-style: dashed !important; border-width: 2px !important;">
-                                <img src="https://cdni.iconscout.com/illustration/premium/thumb/empty-box-4816154-4017688.png" style="width: 120px; opacity: 0.6;" class="mb-3">
-                                <h6 class="text-muted">No boxes created yet for this domestic order</h6>
-                                <button class="btn btn-info btn-sm mt-3 px-4 shadow-sm" style="border-radius: 20px;" onclick="openDomesticPackingModal()">
-                                    <i class="fas fa-box mr-1"></i> Start Domestic Packing
-                                </button>
-                            </div>`;
+                                        <img src="https://cdni.iconscout.com/illustration/premium/thumb/empty-box-4816154-4017688.png" style="width: 120px; opacity: 0.6;" class="mb-3">
+                                        <h6 class="text-muted">No boxes created yet for this domestic order</h6>
+                                        <button class="btn btn-info btn-sm mt-3 px-4 shadow-sm" style="border-radius: 20px;" onclick="openDomesticPackingModal()">
+                                            <i class="fas fa-box mr-1"></i> Start Domestic Packing
+                                        </button>
+                                    </div>`;
                 }
 
                 $('#packing-structure-area').html(html);
@@ -1733,24 +1798,24 @@
                         let sizeSetTitle = set.size_set_name || '';
 
                         html += `
-                                                <li class="list-group-item bg-light border-bottom-0 pb-1">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div>
-                                                            <strong class="text-dark">#${set.design_number}</strong>
-                                                            <span class="badge badge-light border text-muted small ml-1 px-2">${colorName}</span>
-                                                            <small class="text-secondary ml-1">[${sizeSetTitle}]</small>
-                                                        </div>
-                                                        <div>
-                                                            <span class="badge ${unitAvailableSets > 0 ? 'bg-primary' : 'bg-warning'} shadow-sm p-2" style="border-radius: 8px;">
-                                                                <i class="fas fa-boxes mr-1"></i> Full Sets: ${unitAvailableSets}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mt-1 d-flex justify-content-between align-items-center">
-                                                        <small class="text-muted">Set #${index + 1} (Target: ${set.set_quantity})</small>
-                                                        <span class="badge bg-secondary-light border text-dark font-weight-normal small px-2">Total Rem: ${remainingSets}</span>
-                                                    </div>
-                                                </li>`;
+                                                        <li class="list-group-item bg-light border-bottom-0 pb-1">
+                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                <div>
+                                                                    <strong class="text-dark">#${set.design_number}</strong>
+                                                                    <span class="badge badge-light border text-muted small ml-1 px-2">${colorName}</span>
+                                                                    <small class="text-secondary ml-1">[${sizeSetTitle}]</small>
+                                                                </div>
+                                                                <div>
+                                                                    <span class="badge ${unitAvailableSets > 0 ? 'bg-primary' : 'bg-warning'} shadow-sm p-2" style="border-radius: 8px;">
+                                                                        <i class="fas fa-boxes mr-1"></i> Full Sets: ${unitAvailableSets}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mt-1 d-flex justify-content-between align-items-center">
+                                                                <small class="text-muted">Set #${index + 1} (Target: ${set.set_quantity})</small>
+                                                                <span class="badge bg-secondary-light border text-dark font-weight-normal small px-2">Total Rem: ${remainingSets}</span>
+                                                            </div>
+                                                        </li>`;
 
                         // Details
                         if (set.details_data || set.details) {
@@ -1763,12 +1828,12 @@
                                 let badgeClass = availableAtUnit === 0 ? 'bg-warning' : 'bg-info';
 
                                 html += `<li class="list-group-item d-flex justify-content-between align-items-center ps-4 py-1">
-                                                            <small class="text-dark">Size: <strong>${item.size}</strong> <span class="text-muted ml-1">(${set.design_number})</span></small>
-                                                            <span>
-                                                                <small class="text-muted mr-2">Total Rem: ${remaining}</small>
-                                                                <span class="badge ${badgeClass} badge-pill px-2">At Unit: ${availableAtUnit}</span> 
-                                                            </span>
-                                                        </li>`;
+                                                                    <small class="text-dark">Size: <strong>${item.size}</strong> <span class="text-muted ml-1">(${set.design_number})</span></small>
+                                                                    <span>
+                                                                        <small class="text-muted mr-2">Total Rem: ${remaining}</small>
+                                                                        <span class="badge ${badgeClass} badge-pill px-2">At Unit: ${availableAtUnit}</span> 
+                                                                    </span>
+                                                                </li>`;
                             });
                         }
                         // console.log(set);
@@ -1776,18 +1841,18 @@
                         if (remainingSets > 0) {
                             let compositionText = (set.details_data || set.details).map(d => `${d.size}(${d.qty_per_set} pcs)`).join(', ');
                             modalSetsHtml += `
-                                                                                                                                                                                                                 <div class="card mb-2 p-2 border-left-primary">
-                                                                                                                                                                                                                    <div class="d-flex justify-content-between align-items-center">
-                                                                                                                                                                                                                        <div>
-                                                                  <strong>Set #${index + 1}</strong> <small class="text-muted">(${compositionText}), <br>Barcode -${set.bar_code}, Design No - ${set.design_number}, Colour - ${set?.colors?.name ?? ''}, </small><br>
-                                                                  <small class="text-primary">Available at Unit: ${unitAvailableSets}</small> | <small class="text-muted">Total Rem: ${remainingSets}</small>
-                                                             </div>
-                                                             <div class="d-flex align-items-center">
-                                                                 <input type="number" class="form-control form-control-sm set-pack-qty mr-2" style="width: 70px;" placeholder="Qty" max="${unitAvailableSets}" min="0" data-set-id="${set.id}">
-                                                                 <span>Sets</span>
-                                                             </div>
-                                                                                                                                                                                                                    </div>
-                                                                                                                                                                                                                 </div>`;
+                                                                                                                                                                                                                         <div class="card mb-2 p-2 border-left-primary">
+                                                                                                                                                                                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                                                                                                                                                                                <div>
+                                                                          <strong>Set #${index + 1}</strong> <small class="text-muted">(${compositionText}), <br>Barcode -${set.bar_code}, Design No - ${set.design_number}, Colour - ${set?.colors?.name ?? ''}, </small><br>
+                                                                          <small class="text-primary">Available at Unit: ${unitAvailableSets}</small> | <small class="text-muted">Total Rem: ${remainingSets}</small>
+                                                                     </div>
+                                                                     <div class="d-flex align-items-center">
+                                                                         <input type="number" class="form-control form-control-sm set-pack-qty mr-2" style="width: 70px;" placeholder="Qty" max="${unitAvailableSets}" min="0" data-set-id="${set.id}">
+                                                                         <span>Sets</span>
+                                                                     </div>
+                                                                                                                                                                                                                            </div>
+                                                                                                                                                                                                                         </div>`;
                         }
                     });
                 }
@@ -1805,9 +1870,9 @@
                         let badgeClass = remaining === 0 ? 'bg-success' : 'bg-primary';
 
                         html += `<li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                                                                                                                                                                Size: ${item.size}
-                                                                                                                                                                                                                <span class="badge ${badgeClass} badge-pill">${remaining} / ${total}</span>
-                                                                                                                                                                                                            </li>`;
+                                                                                                                                                                                                                        Size: ${item.size}
+                                                                                                                                                                                                                        <span class="badge ${badgeClass} badge-pill">${remaining} / ${total}</span>
+                                                                                                                                                                                                                    </li>`;
                     });
                 }
 
@@ -1830,16 +1895,16 @@
                             const setData = orderSetMap[item.order_products_set_id];
                             let availableAtUnit = parseInt(item.unit_available_qty) || 0;
                             modalHtml += `<tr>
-                                                                                                                                                                                                                    <td>${setData ? setData.bar_code : '-'}</td>
-                                                                                                                                                                                                                    <td>${setData ? setData.design_number : '-'}</td>
-                                                                                                                                                                                                                    <td>${setData && setData.colors ? setData.colors.name : '-'}</td>
-                                                                                                                                                                                                                     <td>${item.size}</td>
-                                                                                                                                                                                                                     <td>
-                                                                                                                                                                                                                        <span class="text-primary">${availableAtUnit} at Unit</span><br>
-                                                                                                                                                                                                                        <small class="text-muted">${remaining} total rem</small>
-                                                                                                                                                                                                                     </td>
-                                                                                                                                                                                                                     <td><input type="number" class="form-control form-control-sm item-pack-qty" data-size-id="${item.id}" max="${availableAtUnit}" min="0"></td>
-                                                                                                                                                                                                                </tr>`;
+                                                                                                                                                                                                                            <td>${setData ? setData.bar_code : '-'}</td>
+                                                                                                                                                                                                                            <td>${setData ? setData.design_number : '-'}</td>
+                                                                                                                                                                                                                            <td>${setData && setData.colors ? setData.colors.name : '-'}</td>
+                                                                                                                                                                                                                             <td>${item.size}</td>
+                                                                                                                                                                                                                             <td>
+                                                                                                                                                                                                                                <span class="text-primary">${availableAtUnit} at Unit</span><br>
+                                                                                                                                                                                                                                <small class="text-muted">${remaining} total rem</small>
+                                                                                                                                                                                                                             </td>
+                                                                                                                                                                                                                             <td><input type="number" class="form-control form-control-sm item-pack-qty" data-size-id="${item.id}" max="${availableAtUnit}" min="0"></td>
+                                                                                                                                                                                                                        </tr>`;
                         }
                     });
                 }
@@ -1862,13 +1927,13 @@
                 if (packedStructure.boxes.length > 0) {
                     packedStructure.boxes.forEach(box => {
                         html += `
-                                                                                                                                                                                                            <div class="form-check">
-                                                                                                                                                                                                                <input class="form-check-input box-select" type="checkbox" value="${box.id}" id="boxCheck${box.id}">
-                                                                                                                                                                                                                <label class="form-check-label" for="boxCheck${box.id}">
-                                                                                                                                                                                                                    Box #${box.box_no}
-                                                                                                                                                                                                                </label>
-                                                                                                                                                                                                            </div>
-                                                                                                                                                                                                            `;
+                                                                                                                                                                                                                    <div class="form-check">
+                                                                                                                                                                                                                        <input class="form-check-input box-select" type="checkbox" value="${box.id}" id="boxCheck${box.id}">
+                                                                                                                                                                                                                        <label class="form-check-label" for="boxCheck${box.id}">
+                                                                                                                                                                                                                            Box #${box.box_no}
+                                                                                                                                                                                                                        </label>
+                                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                                    `;
                     });
                 } else {
                     html = '<p class="text-muted">No unpacked boxes available.</p>';
@@ -1963,28 +2028,28 @@
                 setsToShow.forEach((set, idx) => {
                     let setIdx = ORDER_SETS.indexOf(set);
                     let html = `
-                                        <div class="set-storage-row mb-3 p-2 border-bottom">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span class="font-weight-bold text-primary">Set #${setIdx + 1} (D# ${set.design_number})</span>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <select class="form-control form-control-sm storeroom-selector" 
-                                                            data-set-id="${set.id}"
-                                                            onchange="updateSetRackSelect(this)">
-                                                        <option value="">Select Warehouse</option>
-                                                        ${ALL_STOREROOMS.map(s => `<option value="${s.id}" data-racks='${JSON.stringify(s.racks)}'>${s.name}</option>`).join('')}
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <select class="form-control form-control-sm rack-selector" 
-                                                            name="set_racks[${set.id}]" 
-                                                            data-set-id="${set.id}">
-                                                        <option value="">Select Rack</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>`;
+                                                <div class="set-storage-row mb-3 p-2 border-bottom">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="font-weight-bold text-primary">Set #${setIdx + 1} (D# ${set.design_number})</span>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <select class="form-control form-control-sm storeroom-selector" 
+                                                                    data-set-id="${set.id}"
+                                                                    onchange="updateSetRackSelect(this)">
+                                                                <option value="">Select Warehouse</option>
+                                                                ${ALL_STOREROOMS.map(s => `<option value="${s.id}" data-racks='${JSON.stringify(s.racks)}'>${s.name}</option>`).join('')}
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <select class="form-control form-control-sm rack-selector" 
+                                                                    name="set_racks[${set.id}]" 
+                                                                    data-set-id="${set.id}">
+                                                                <option value="">Select Rack</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>`;
                     $list.append(html);
                 });
             }
@@ -2452,8 +2517,8 @@
                             let downloadUrl = "{{ route('admin.packing.downloadSlipBarcode', ':id') }}".replace(':id', response.packing_main_id);
                             window.open(downloadUrl, '_blank');
                         }
-                        
-                        setTimeout(function() {
+
+                        setTimeout(function () {
                             alert("Packing Finalized Successfully!");
                             window.location.href = "{{ route('admin.uploaded-slips.index') }}";
                         }, 500);
@@ -2570,22 +2635,22 @@
                         let avl = item.unit_available_qty || 0;
                         if (avl > 0) {
                             $list.append(`
-                                <tr>
-                                    <td class="align-middle">
-                                        <div class="font-weight-bold">${item.design_number || 'N/A'}</div>
-                                        <div class="small text-muted">${item.color_name || 'N/A'}</div>
-                                    </td>
-                                    <td class="align-middle">${item.size || 'N/A'}</td>
-                                    <td class="align-middle text-center">
-                                        <span class="badge badge-light border px-2">${avl} Pcs</span>
-                                    </td>
-                                    <td class="align-middle">
-                                        <input type="number" class="form-control form-control-sm rework-qty-input" 
-                                               data-id="${item.id}" data-max="${avl}" 
-                                               min="0" max="${avl}" value="0" oninput="validateUnitPackagingStock(this)">
-                                    </td>
-                                </tr>
-                            `);
+                                        <tr>
+                                            <td class="align-middle">
+                                                <div class="font-weight-bold">${item.design_number || 'N/A'}</div>
+                                                <div class="small text-muted">${item.color_name || 'N/A'}</div>
+                                            </td>
+                                            <td class="align-middle">${item.size || 'N/A'}</td>
+                                            <td class="align-middle text-center">
+                                                <span class="badge badge-light border px-2">${avl} Pcs</span>
+                                            </td>
+                                            <td class="align-middle">
+                                                <input type="number" class="form-control form-control-sm rework-qty-input" 
+                                                       data-id="${item.id}" data-max="${avl}" 
+                                                       min="0" max="${avl}" value="0" oninput="validateUnitPackagingStock(this)">
+                                            </td>
+                                        </tr>
+                                    `);
                         }
                     });
                 }
@@ -2595,7 +2660,7 @@
                 }
 
                 // 2. Fetch Stages
-                $.get("{{ route('admin.packing.reworkStages') }}", function(response) {
+                $.get("{{ route('admin.packing.reworkStages') }}", function (response) {
                     if (response.status === 'success') {
                         let $stageSelect = $('#reworkStage');
                         $stageSelect.html('<option value="">Select Stage</option>');
@@ -2618,7 +2683,7 @@
                     return;
                 }
 
-                $.get("{{ route('admin.packing.stageUnits', '') }}/" + stageId, function(response) {
+                $.get("{{ route('admin.packing.stageUnits', '') }}/" + stageId, function (response) {
                     if (response.status === 'success') {
                         $unitSelect.html('<option value="">Select Unit</option>');
                         response.units.forEach(u => {
@@ -2634,14 +2699,14 @@
                 let stageId = $('#reworkStage').val();
                 let unitId = $('#reworkUnit').val();
                 let remarks = $('#reworkRemarks').val();
-                
+
                 if (!stageId || !unitId) {
                     alert('Please select target stage and unit.');
                     return;
                 }
 
                 let items = [];
-                $('.rework-qty-input').each(function() {
+                $('.rework-qty-input').each(function () {
                     let qty = parseInt($(this).val()) || 0;
                     if (qty > 0) {
                         items.push({
@@ -2672,7 +2737,7 @@
                         items: items,
                         remarks: remarks
                     },
-                    success: function(response) {
+                    success: function (response) {
                         if (response.status === 'success') {
                             alert(response.message);
                             location.reload();
@@ -2680,7 +2745,7 @@
                             alert('Error: ' + response.message);
                         }
                     },
-                    error: function() {
+                    error: function () {
                         alert('Something went wrong on the server.');
                     }
                 });
@@ -2722,7 +2787,8 @@
                             <h6>Storage Information</h6>
                             <div class="form-group">
                                 <label>Warehouse</label>
-                                <select id="deadStockWarehouse" class="form-control select2" onchange="updateDeadStockRacks()">
+                                <select id="deadStockWarehouse" class="form-control select2"
+                                    onchange="updateDeadStockRacks()">
                                     <option value="">Select Warehouse</option>
                                     @foreach($storerooms as $room)
                                         <option value="{{ $room->id }}">{{ $room->name }}</option>
@@ -2737,7 +2803,8 @@
                             </div>
                             <div class="form-group mt-3">
                                 <label>Remarks (Optional)</label>
-                                <textarea id="deadStockRemarks" class="form-control" rows="3" placeholder="Describe damage..."></textarea>
+                                <textarea id="deadStockRemarks" class="form-control" rows="3"
+                                    placeholder="Describe damage..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -2801,7 +2868,8 @@
                             </div>
                             <div class="form-group mt-3">
                                 <label>Remarks (Optional)</label>
-                                <textarea id="samplingRemarks" class="form-control" rows="3" placeholder="Sampling purpose..."></textarea>
+                                <textarea id="samplingRemarks" class="form-control" rows="3"
+                                    placeholder="Sampling purpose..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -2833,7 +2901,8 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label class="small font-weight-bold">Responsible Stage</label>
-                                    <select id="debitStage" class="form-control form-control-sm" onchange="updateDebitUnits()">
+                                    <select id="debitStage" class="form-control form-control-sm"
+                                        onchange="updateDebitUnits()">
                                         <option value="">Select Stage</option>
                                     </select>
                                 </div>
@@ -2865,7 +2934,8 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <label class="small font-weight-bold">Warehouse</label>
-                                    <select id="debitWarehouse" class="form-control form-control-sm" onchange="updateDebitRacks()">
+                                    <select id="debitWarehouse" class="form-control form-control-sm"
+                                        onchange="updateDebitRacks()">
                                         <option value="">Select Warehouse</option>
                                         @foreach($storerooms as $room)
                                             <option value="{{ $room->id }}">{{ $room->name }}</option>
@@ -2884,7 +2954,8 @@
                             <h6>4. Deduction Details</h6>
                             <div class="form-group mb-2">
                                 <label class="small font-weight-bold">Discount (₹)</label>
-                                <input type="number" id="debitDiscount" class="form-control form-control-sm" placeholder="0.00" oninput="calculateDebitTotal()">
+                                <input type="number" id="debitDiscount" class="form-control form-control-sm"
+                                    placeholder="0.00" oninput="calculateDebitTotal()">
                             </div>
                             <div class="form-group mt-3 bg-light p-3 rounded border">
                                 <label class="font-weight-bold text-danger mb-1">TOTAL DEBIT AMOUNT</label>
@@ -2896,7 +2967,8 @@
 
                             <div class="form-group mt-3">
                                 <label class="small font-weight-bold">Reason / Remarks</label>
-                                <textarea id="debitRemarks" class="form-control" rows="3" placeholder="Explain the defect..."></textarea>
+                                <textarea id="debitRemarks" class="form-control" rows="3"
+                                    placeholder="Explain the defect..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -2922,7 +2994,7 @@
                     $(input).val(max);
                 }
                 if (val < 0) $(input).val(0);
-                
+
                 // Specific callback for debit to update totals
                 if ($(input).hasClass('debit-qty-input')) {
                     calculateDebitTotal();
@@ -2936,7 +3008,7 @@
                 }
 
                 // 1. Fetch Stages (Production stages)
-                $.get("{{ route('admin.packing.reworkStages') }}", function(response) {
+                $.get("{{ route('admin.packing.reworkStages') }}", function (response) {
                     if (response.status === 'success') {
                         let $stageSelect = $('#debitStage');
                         $stageSelect.html('<option value="">Select Stage</option>');
@@ -2955,24 +3027,24 @@
                         let avl = item.unit_available_qty || 0;
                         if (avl > 0) {
                             $list.append(`
-                                <tr>
-                                    <td class="align-middle small">
-                                        <div class="font-weight-bold">${item.design_number || 'N/A'}</div>
-                                        <div class="text-muted">${item.color_name || 'N/A'}</div>
-                                    </td>
-                                    <td class="align-middle small">${item.size || 'N/A'}</td>
-                                    <td class="align-middle text-center small">${avl}</td>
-                                    <td class="align-middle">
-                                        <input type="number" class="form-control form-control-sm debit-qty-input" 
-                                               data-id="${item.id}" data-max="${avl}" 
-                                               min="0" max="${avl}" value="0" oninput="validateUnitPackagingStock(this)">
-                                    </td>
-                                    <td class="align-middle">
-                                        <input type="number" class="form-control form-control-sm debit-rate-input" 
-                                               placeholder="0" value="0" oninput="calculateDebitTotal()">
-                                    </td>
-                                </tr>
-                            `);
+                                        <tr>
+                                            <td class="align-middle small">
+                                                <div class="font-weight-bold">${item.design_number || 'N/A'}</div>
+                                                <div class="text-muted">${item.color_name || 'N/A'}</div>
+                                            </td>
+                                            <td class="align-middle small">${item.size || 'N/A'}</td>
+                                            <td class="align-middle text-center small">${avl}</td>
+                                            <td class="align-middle">
+                                                <input type="number" class="form-control form-control-sm debit-qty-input" 
+                                                       data-id="${item.id}" data-max="${avl}" 
+                                                       min="0" max="${avl}" value="0" oninput="validateUnitPackagingStock(this)">
+                                            </td>
+                                            <td class="align-middle">
+                                                <input type="number" class="form-control form-control-sm debit-rate-input" 
+                                                       placeholder="0" value="0" oninput="calculateDebitTotal()">
+                                            </td>
+                                        </tr>
+                                    `);
                         }
                     });
                 }
@@ -2999,7 +3071,7 @@
                     return;
                 }
 
-                $.get("{{ route('admin.packing.stageUnits', '') }}/" + stageId, function(response) {
+                $.get("{{ route('admin.packing.stageUnits', '') }}/" + stageId, function (response) {
                     if (response.status === 'success') {
                         $unitSelect.html('<option value="">Select Unit</option>');
                         response.units.forEach(unit => {
@@ -3028,7 +3100,7 @@
 
             function calculateDebitTotal() {
                 let subtotal = 0;
-                $('#debitItemsList tr').each(function() {
+                $('#debitItemsList tr').each(function () {
                     let qty = parseInt($(this).find('.debit-qty-input').val()) || 0;
                     let rate = parseFloat($(this).find('.debit-rate-input').val()) || 0;
                     subtotal += (qty * rate);
@@ -3038,7 +3110,7 @@
                 let finalTotal = Math.max(0, subtotal - discount);
 
                 $('#debitAmount').val(finalTotal.toFixed(2));
-                $('#debitTotalDisplay').text(finalTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                $('#debitTotalDisplay').text(finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
             }
 
             function submitDebit() {
@@ -3056,7 +3128,7 @@
 
                 let items = [];
                 let hasValidRate = true;
-                $('#debitItemsList tr').each(function() {
+                $('#debitItemsList tr').each(function () {
                     let $qtyInput = $(this).find('.debit-qty-input');
                     let $rateInput = $(this).find('.debit-rate-input');
                     let qty = parseInt($qtyInput.val()) || 0;
@@ -3103,7 +3175,7 @@
                         items: items,
                         remarks: remarks
                     },
-                    success: function(response) {
+                    success: function (response) {
                         if (response.status === 'success') {
                             toastr.success(response.message);
                             setTimeout(() => location.reload(), 800);
@@ -3111,7 +3183,7 @@
                             toastr.error(response.message);
                         }
                     },
-                    error: function() {
+                    error: function () {
                         toastr.error('Something went wrong on the server.');
                     }
                 });
@@ -3131,22 +3203,22 @@
                         let avl = item.unit_available_qty || 0;
                         if (avl > 0) {
                             $list.append(`
-                                <tr>
-                                    <td class="align-middle">
-                                        <div class="font-weight-bold text-dark">${item.design_number || 'N/A'}</div>
-                                        <div class="small text-muted">${item.color_name || 'N/A'}</div>
-                                    </td>
-                                    <td class="align-middle">${item.size || 'N/A'}</td>
-                                    <td class="align-middle text-center">
-                                        <span class="badge badge-light border px-2">${avl} Pcs</span>
-                                    </td>
-                                    <td class="align-middle">
-                                        <input type="number" class="form-control form-control-sm sampling-qty-input" 
-                                               data-id="${item.id}" data-max="${avl}" 
-                                               min="0" max="${avl}" value="0" oninput="validateUnitPackagingStock(this)">
-                                    </td>
-                                </tr>
-                            `);
+                                        <tr>
+                                            <td class="align-middle">
+                                                <div class="font-weight-bold text-dark">${item.design_number || 'N/A'}</div>
+                                                <div class="small text-muted">${item.color_name || 'N/A'}</div>
+                                            </td>
+                                            <td class="align-middle">${item.size || 'N/A'}</td>
+                                            <td class="align-middle text-center">
+                                                <span class="badge badge-light border px-2">${avl} Pcs</span>
+                                            </td>
+                                            <td class="align-middle">
+                                                <input type="number" class="form-control form-control-sm sampling-qty-input" 
+                                                       data-id="${item.id}" data-max="${avl}" 
+                                                       min="0" max="${avl}" value="0" oninput="validateUnitPackagingStock(this)">
+                                            </td>
+                                        </tr>
+                                    `);
                         }
                     });
                 }
@@ -3176,14 +3248,14 @@
             function submitSampling() {
                 let rackId = $('#samplingRack').val();
                 let remarks = $('#samplingRemarks').val();
-                
+
                 if (!rackId) {
                     alert('Please select storage rack.');
                     return;
                 }
 
                 let items = [];
-                $('.sampling-qty-input').each(function() {
+                $('.sampling-qty-input').each(function () {
                     let qty = parseInt($(this).val()) || 0;
                     if (qty > 0) {
                         items.push({
@@ -3213,7 +3285,7 @@
                         items: items,
                         remarks: remarks
                     },
-                    success: function(response) {
+                    success: function (response) {
                         if (response.status === 'success') {
                             toastr.success(response.message);
                             setTimeout(() => location.reload(), 800);
@@ -3221,7 +3293,7 @@
                             toastr.error('Error: ' + response.message);
                         }
                     },
-                    error: function() {
+                    error: function () {
                         toastr.error('Something went wrong on the server.');
                     }
                 });
@@ -3241,22 +3313,22 @@
                         let avl = item.unit_available_qty || 0;
                         if (avl > 0) {
                             $list.append(`
-                                <tr>
-                                    <td class="align-middle">
-                                        <div class="font-weight-bold text-dark">${item.design_number || 'N/A'}</div>
-                                        <div class="small text-muted">${item.color_name || 'N/A'}</div>
-                                    </td>
-                                    <td class="align-middle">${item.size || 'N/A'}</td>
-                                    <td class="align-middle text-center">
-                                        <span class="badge badge-light border px-2">${avl} Pcs</span>
-                                    </td>
-                                    <td class="align-middle">
-                                        <input type="number" class="form-control form-control-sm dead-qty-input" 
-                                               data-id="${item.id}" data-max="${avl}" 
-                                               min="0" max="${avl}" value="0" oninput="validateUnitPackagingStock(this)">
-                                    </td>
-                                </tr>
-                            `);
+                                        <tr>
+                                            <td class="align-middle">
+                                                <div class="font-weight-bold text-dark">${item.design_number || 'N/A'}</div>
+                                                <div class="small text-muted">${item.color_name || 'N/A'}</div>
+                                            </td>
+                                            <td class="align-middle">${item.size || 'N/A'}</td>
+                                            <td class="align-middle text-center">
+                                                <span class="badge badge-light border px-2">${avl} Pcs</span>
+                                            </td>
+                                            <td class="align-middle">
+                                                <input type="number" class="form-control form-control-sm dead-qty-input" 
+                                                       data-id="${item.id}" data-max="${avl}" 
+                                                       min="0" max="${avl}" value="0" oninput="validateUnitPackagingStock(this)">
+                                            </td>
+                                        </tr>
+                                    `);
                         }
                     });
                 }
@@ -3308,14 +3380,14 @@
             function submitDeadStock() {
                 let rackId = $('#deadStockRack').val();
                 let remarks = $('#deadStockRemarks').val();
-                
+
                 if (!rackId) {
                     alert('Please select storage rack.');
                     return;
                 }
 
                 let items = [];
-                $('.dead-qty-input').each(function() {
+                $('.dead-qty-input').each(function () {
                     let qty = parseInt($(this).val()) || 0;
                     if (qty > 0) {
                         items.push({
@@ -3345,7 +3417,7 @@
                         items: items,
                         remarks: remarks
                     },
-                    success: function(response) {
+                    success: function (response) {
                         if (response.status === 'success') {
                             toastr.success(response.message);
                             setTimeout(() => location.reload(), 800);
@@ -3353,7 +3425,7 @@
                             toastr.error('Error: ' + response.message);
                         }
                     },
-                    error: function() {
+                    error: function () {
                         toastr.error('Something went wrong on the server.');
                     }
                 });
@@ -3369,7 +3441,7 @@
             function renderDomesticInventory() {
                 let $list = $('#domesticInventoryList');
                 $list.html('<p class="small text-muted">Calculating...</p>');
-                
+
                 let html = '';
                 ORDER_SETS.forEach(set => {
                     let minSets = null;
@@ -3386,28 +3458,28 @@
 
                             // Add size detail for this set
                             sizeDetailsHtml += `<div class="d-flex justify-content-between mb-1 py-1 border-bottom-dashed">
-                                <span class="text-muted">Size ${item.size}:</span>
-                                <span class="badge badge-light border px-2">${avl} Pcs</span>
-                            </div>`;
+                                        <span class="text-muted">Size ${item.size}:</span>
+                                        <span class="badge badge-light border px-2">${avl} Pcs</span>
+                                    </div>`;
                         }
                     });
 
                     let count = hasDetails ? (minSets ?? 0) : 0;
                     if (count > 0 || sizeDetailsHtml) {
                         html += `<div class="mb-3 p-3 border rounded bg-white shadow-sm overflow-hidden">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="font-weight-bold text-dark">${set.design_number}</span>
-                                <span class="badge badge-info">${set.size_set_name || 'N/A'}</span>
-                            </div>
-                            <div class="text-muted small mb-2 border-bottom pb-2">${set.color_name || 'No Color'}</div>
-                            <div class="size-breakdown mb-2" style="max-height: 120px; overflow-y: auto;">
-                                ${sizeDetailsHtml}
-                            </div>
-                            <div class="text-primary mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
-                                <span class="small font-weight-bold">FULL BOXES:</span>
-                                <span class="h6 mb-0 font-weight-bold">${count}</span>
-                            </div>
-                        </div>`;
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="font-weight-bold text-dark">${set.design_number}</span>
+                                        <span class="badge badge-info">${set.size_set_name || 'N/A'}</span>
+                                    </div>
+                                    <div class="text-muted small mb-2 border-bottom pb-2">${set.color_name || 'No Color'}</div>
+                                    <div class="size-breakdown mb-2" style="max-height: 120px; overflow-y: auto;">
+                                        ${sizeDetailsHtml}
+                                    </div>
+                                    <div class="text-primary mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
+                                        <span class="small font-weight-bold">FULL BOXES:</span>
+                                        <span class="h6 mb-0 font-weight-bold">${count}</span>
+                                    </div>
+                                </div>`;
                     }
                 });
                 $list.html(html || '<p class="small text-muted">No stock available.</p>');
@@ -3421,38 +3493,38 @@
                     $body.empty();
                     domesticBoxesPlan.forEach((box, index) => {
                         $body.append(`
-                            <tr class="small">
-                                <td>${index + 1}</td>
-                                <td>${box.designLabel}</td>
-                                <td>${box.sizeSetLabel}</td>
-                                <td>${box.colorLabel}</td>
-                                <td>${box.patternLabel || '-'}</td>
-                                <td>${box.fittingLabel || '-'}</td>
-                                <td class="text-center font-weight-bold d-none">${box.quantity}</td>
-                                <td>${box.storageLabel}</td>
-                                <td class="text-right">
-                                    <button type="button" class="btn btn-link text-danger p-0" onclick="removeBoxFromPlan(${index})">
-                                        <i class="fas fa-times-circle"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        `);
+                                    <tr class="small">
+                                        <td>${index + 1}</td>
+                                        <td>${box.designLabel}</td>
+                                        <td>${box.sizeSetLabel}</td>
+                                        <td>${box.colorLabel}</td>
+                                        <td>${box.patternLabel || '-'}</td>
+                                        <td>${box.fittingLabel || '-'}</td>
+                                        <td class="text-center font-weight-bold d-none">${box.quantity}</td>
+                                        <td>${box.storageLabel}</td>
+                                        <td class="text-right">
+                                            <button type="button" class="btn btn-link text-danger p-0" onclick="removeBoxFromPlan(${index})">
+                                                <i class="fas fa-times-circle"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `);
                     });
                 }
 
-                window.removeBoxFromPlan = function(index) {
+                window.removeBoxFromPlan = function (index) {
                     domesticBoxesPlan.splice(index, 1);
                     updateDomesticPlanTable();
                 };
 
-                window.resetDomesticPlan = function() {
+                window.resetDomesticPlan = function () {
                     if (confirm("Clear all planned boxes?")) {
                         domesticBoxesPlan = [];
                         updateDomesticPlanTable();
                     }
                 };
 
-                window.submitDomesticPacking = function() {
+                window.submitDomesticPacking = function () {
                     if (domesticBoxesPlan.length === 0) {
                         toastr.warning("No boxes in the plan.");
                         return;
@@ -3471,7 +3543,7 @@
                             order_id: ORDER_ID,
                             boxes: domesticBoxesPlan.map(b => b.raw_data)
                         },
-                        success: function(res) {
+                        success: function (res) {
                             if (res.status === 'success') {
                                 toastr.success(res.message);
                                 setTimeout(() => location.reload(), 1000);
@@ -3480,28 +3552,28 @@
                                 $btn.prop('disabled', false).text(originalText);
                             }
                         },
-                        error: function() {
+                        error: function () {
                             toastr.error("Server error occurred during bulk process.");
                             $btn.prop('disabled', false).text(originalText);
                         }
                     });
                 };
 
-                $(document).on('change', '#dom_design', function() {
+                $(document).on('change', '#dom_design', function () {
                     let productId = $(this).val();
                     let $sizeSet = $('#dom_size_set');
                     let $color = $('#dom_color');
-                    
+
                     $sizeSet.html('<option value="">Loading...</option>').prop('disabled', true).trigger('change');
                     $color.html('<option value="">Select Size Set First</option>').prop('disabled', true).trigger('change');
-                    
-                    $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function(res) {
+
+                    $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function (res) {
                         if (res.success) {
                             $('#dom_pattern_name').val(res.pattern_name);
                             $('#dom_pattern_id').val(res.pattern_id);
                             $('#dom_fitting_name').val(res.fitting_name);
                             $('#dom_fitting_id').val(res.fitting_id);
-                            
+
                             $sizeSet.html('<option value="">-- Select Size Set --</option>');
                             res.variants.forEach(v => {
                                 // Convert both to numbers for reliable comparison
@@ -3516,13 +3588,13 @@
                     });
                 });
 
-                $(document).on('change', '#dom_size_set', function() {
+                $(document).on('change', '#dom_size_set', function () {
                     let sizeSetId = $(this).val();
                     let $color = $('#dom_color');
                     let selected = $(this).find(':selected');
-                    
+
                     $('#dom_mrp').val(selected.data('mrp'));
-                    
+
                     $color.html('<option value="">-- Select Color --</option>');
                     let colors = selected.data('colors') || [];
                     colors.forEach(c => {
@@ -3531,7 +3603,7 @@
                     $color.prop('disabled', false).trigger('change');
                 });
 
-                $('#btnSaveDomesticBox').on('click', function() {
+                $('#btnSaveDomesticBox').on('click', function () {
                     let data = {
                         product_id: $('#dom_design').val(),
                         product_label: $('#dom_design option:selected').text(),
@@ -3555,7 +3627,7 @@
                     }
 
                     let boxCount = parseInt($('#dom_box_count').val()) || 1;
-                    
+
                     for (let i = 0; i < boxCount; i++) {
                         domesticBoxesPlan.push({
                             designLabel: data.product_label,

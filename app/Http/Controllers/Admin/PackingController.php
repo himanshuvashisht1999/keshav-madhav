@@ -345,13 +345,13 @@ class PackingController extends Controller
             $box->packing_carton_id = $carton->id;
             $box->box_no = $box_no;
             $box->box_type = 'domestic';
-            $box->barcode = (string)$barcode;
+            $box->barcode = (string) $barcode;
             $box->save();
 
             // Direct DB Update as safety measure
-            DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string)$barcode]);
+            DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string) $barcode]);
 
-            \Log::channel('single')->info("Created Domestic Box ID: {$box->id} with Barcode: " . (string)$barcode);
+            \Log::channel('single')->info("Created Domestic Box ID: {$box->id} with Barcode: " . (string) $barcode);
 
             // Create or Update Domestic Inventory Record (stores total pieces)
 
@@ -560,11 +560,11 @@ class PackingController extends Controller
                     $box->packing_carton_id = $carton->id;
                     $box->box_no = $box_no;
                     $box->box_type = 'corporate_domestic';
-                    $box->barcode = (string)$barcode;
+                    $box->barcode = (string) $barcode;
                     $box->save();
 
                     // Direct DB Update as safety measure
-                    DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string)$barcode]);
+                    DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string) $barcode]);
 
                     $currentRackId = $box_plan['rack_id'] ?? null;
 
@@ -597,7 +597,7 @@ class PackingController extends Controller
                     }
 
                     // Redundant but safe
-                    DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string)$barcode]);
+                    DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string) $barcode]);
 
                     // 5. Piece Deductions from Original Corporate Order
                     if (!empty($sizeSetMaster->size_group)) {
@@ -1227,13 +1227,13 @@ class PackingController extends Controller
                 $box->packing_carton_id = $carton->id;
                 $box->box_no = $box_no;
                 $box->box_type = 'domestic';
-                $box->barcode = (string)$barcode;
+                $box->barcode = (string) $barcode;
                 $box->save();
 
                 // Direct DB Update as safety measure
-                DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string)$barcode]);
+                DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string) $barcode]);
 
-                \Log::channel('single')->info("Created Domestic Bulk Box ID: {$box->id} with Barcode: " . (string)$barcode);
+                \Log::channel('single')->info("Created Domestic Bulk Box ID: {$box->id} with Barcode: " . (string) $barcode);
 
                 $actualPiecesInBox = 0;
                 if (!empty($sizeSetMaster->size_group)) {
@@ -1382,5 +1382,25 @@ class PackingController extends Controller
                 'Content-Type' => 'text/plain',
                 'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
             ]);
+    }
+
+    public function downloadAllDomesticBarcode($slip_id)
+    {
+        $packing = \App\Models\PackingMain::where('slip_id', $slip_id)->first();
+        if (!$packing) {
+            return back()->withError("Packing session not found.");
+        }
+
+        $inventoryIds = \App\Models\DomesticInventory::where('packing_main_id', $packing->id)->pluck('id')->toArray();
+
+        if (empty($inventoryIds)) {
+            return back()->withError("No inventory items found for this slip.");
+        }
+
+        // Call the user's existing logic in BarcodeGeneratorController
+        $request = new \Illuminate\Http\Request();
+        $request->merge(['ids' => $inventoryIds]);
+
+        return (new \App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController())->generateBulkTspl($request);
     }
 }

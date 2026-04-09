@@ -109,16 +109,8 @@
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <label for="datetime">Date</label>
-                            <input type="text"
-                                id="datetime"
-                                class="form-control"
-                                placeholder="Select date"
-                                value="{{ $data->time ? \Carbon\Carbon::parse($data->time)->format('d M Y') : date('d M Y') }}">
-
-                            <input type="hidden"
-                                name="time"
-                                id="datetime_hidden"
-                                value="{{ $data->time ? \Carbon\Carbon::parse($data->time)->format('Y-m-d') : date('Y-m-d') }}">
+                            <input type="date" name="time" id="" value="{{$data->time}}" class="form-control">
+                            
                         </div>
 
                         <div class="col-md-4">
