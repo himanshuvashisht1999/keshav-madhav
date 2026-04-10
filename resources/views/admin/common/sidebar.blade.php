@@ -768,6 +768,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                             str_contains($page_url, 'admin/master/fabric_gsm') ||
                             str_contains($page_url, 'admin/master/fabric_weave') ||
                             str_contains($page_url, 'admin/master/fabric_width') ||
+                            str_contains($page_url, 'admin/master/fabric_unit') ||
                             ($page_url === '/admin/master/fabric' || str_starts_with($page_url, '/admin/master/fabric/'))
                         ) ? 'nav-item menu-open' : 'nav-item' }}">
                                                     <a href="#" class="{{ (
@@ -776,6 +777,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                             str_contains($page_url, 'admin/master/fabric_gsm') ||
                             str_contains($page_url, 'admin/master/fabric_weave') ||
                             str_contains($page_url, 'admin/master/fabric_width') ||
+                            str_contains($page_url, 'admin/master/fabric_unit') ||
                             ($page_url === '/admin/master/fabric' || str_starts_with($page_url, '/admin/master/fabric/'))
                         ) ? 'nav-link active' : 'nav-link' }}">
                                                         <i class="far fa-circle nav-icon"></i>
@@ -799,6 +801,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                                                 class="{{ $page_url === '/admin/master/fabric' || str_starts_with($page_url, '/admin/master/fabric/') ? 'nav-link active' : 'nav-link' }}">
                                                                 <i class="fas fa-circle"></i>
                                                                 <p>Fabric</p>
+                                                            </a>
+                                                        </li>
+
+                                                        <li class="nav-item">
+                                                            <a href="{{ route('admin.master.fabric_unit.index') }}"
+                                                                class="{{ str_contains($page_url, 'admin/master/fabric_unit') ? 'nav-link active' : 'nav-link' }}">
+                                                                <i class="fas fa-circle"></i>
+                                                                <p>Fabric Unit</p>
                                                             </a>
                                                         </li>
                                                     </ul>

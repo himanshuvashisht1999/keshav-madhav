@@ -26,32 +26,29 @@ class PackingService
 
     public function indexList($request)
     {
-        // Select unique orders that have at least one packing session
-        $query = OrderMain::whereHas('packingMains')
-            ->with(['customer', 'packingMains']);
+        // List individual Packing Sessions (Slips)
+        $query = PackingMain::with(['order.customer']);
 
         // Filter by Order No (SKU)
         if ($request->has('order_no') && !empty($request->order_no)) {
-            $query->where('sku', 'like', '%' . $request->order_no . '%');
+            $query->whereHas('order', function ($q) use ($request) {
+                $q->where('sku', 'like', '%' . $request->order_no . '%');
+            });
         }
 
         // Filter by Customer Name
         if ($request->has('customer_name') && !empty($request->customer_name)) {
-            $query->whereHas('customer', function ($q) use ($request) {
+            $query->whereHas('order.customer', function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->customer_name . '%');
             });
         }
 
-        // Filter by Date Range (Checking the latest packing_date)
+        // Filter by Date Range
         if ($request->has('start_date') && !empty($request->start_date)) {
-            $query->whereHas('packingMains', function ($q) use ($request) {
-                $q->whereDate('packing_date', '>=', $request->start_date);
-            });
+            $query->whereDate('packing_date', '>=', $request->start_date);
         }
         if ($request->has('end_date') && !empty($request->end_date)) {
-            $query->whereHas('packingMains', function ($q) use ($request) {
-                $q->whereDate('packing_date', '<=', $request->end_date);
-            });
+            $query->whereDate('packing_date', '<=', $request->end_date);
         }
 
         $query->orderBy('id', 'desc');
@@ -59,26 +56,25 @@ class PackingService
         return datatables()->of($query)
             ->addIndexColumn()
             ->addColumn('order_no', function ($row) {
-                return $row->sku ?? 'N/A';
+                return $row->order->sku ?? 'N/A';
             })
             ->addColumn('customer', function ($row) {
-                return $row->customer->name ?? 'N/A';
+                return $row->order->customer->name ?? 'N/A';
+            })
+            ->addColumn('slip_id', function ($row) {
+                return '#' . $row->slip_id;
             })
             ->addColumn('packing_date', function ($row) {
-                // Get the latest packing date from all associated slips
-                $latestDate = $row->packingMains->max('packing_date');
-                return $latestDate ? date('d/m/Y', strtotime($latestDate)) : 'N/A';
+                return $row->packing_date ? date('d/m/Y', strtotime($row->packing_date)) : 'N/A';
             })
             ->addColumn('status', function ($row) {
-                // If any slip is still in draft (status 0), the order is In-Progress
-                $allFinalized = !($row->packingMains->contains('status', 0));
-                if ($allFinalized) {
+                if ($row->status == 1) {
                     return '<span class="badge badge-success">Finalized</span>';
                 }
-                return '<span class="badge badge-warning">Packing In-Progress</span>';
+                return '<span class="badge badge-warning">In-Progress</span>';
             })
             ->addColumn('action', function ($row) {
-                $btn = '<a href="' . route('admin.packing.view', $row->id) . '" class="btn btn-info btn-sm mr-1"><i class="fas fa-eye"></i> View Complete Details</a>';
+                $btn = '<a href="' . route('admin.packing.view', $row->id) . '" class="btn btn-info btn-sm mr-1"><i class="fas fa-eye"></i> View Details</a>';
                 return $btn;
             })
             ->rawColumns(['status', 'action'])
@@ -109,6 +105,26 @@ class PackingService
             'packingMains.cartons.items.detail.orderProductSet.size_measurement',
             'packingMains.cartons.rack.storeroom'
         ])->findOrFail($order_id);
+    }
+
+    public function getPackingSessionDetails($id)
+    {
+        return PackingMain::with([
+            'order.customer',
+            'cartons.boxes.items.detail.orderProductSet.product',
+            'cartons.boxes.items.detail.orderProductSet.colors',
+            'cartons.boxes.items.detail.orderProductSet.size_measurement',
+            'cartons.boxes.domesticInventory.product',
+            'cartons.boxes.domesticInventory.color',
+            'cartons.boxes.domesticInventory.sizeSet',
+            'cartons.items.detail.orderProductSet.product',
+            'cartons.items.detail.orderProductSet.colors',
+            'cartons.items.detail.orderProductSet.size_measurement',
+            'cartons.rack.storeroom',
+            'outflows.product',
+            'outflows.color',
+            'outflows.size'
+        ])->findOrFail($id);
     }
     /**
      * Get pending packing slips (Stage 11)
@@ -1243,12 +1259,36 @@ class PackingService
                 }
             }
 
-            // 2. Cleanup Database
-            // Delete all items associated with this carton
-            PackingItem::where('packing_carton_id', $carton->id)->delete();
+            // 2. Cleanup Database and Adjust Domestic Inventory if needed
+            $boxes = PackingBox::with('domesticInventory')->where('packing_carton_id', $carton->id)->get();
+            foreach ($boxes as $box) {
+                if ($box->box_type === 'corporate_domestic' && $box->barcode) {
+                    // Try to find the exact inventory record for this carton/rack/barcode
+                    $inventory = \App\Models\DomesticInventory::where('barcode', $box->barcode)
+                        ->where('packing_carton_id', $carton->id)
+                        ->first();
+                    
+                    if (!$inventory) {
+                        // Fallback: search by barcode and order (standard relationship)
+                        $inventory = $box->domesticInventory;
+                    }
 
-            // Delete all boxes associated with this carton
-            PackingBox::where('packing_carton_id', $carton->id)->delete();
+                    if ($inventory) {
+                        if ($inventory->total_boxes > 1) {
+                            $inventory->decrement('total_boxes');
+                        } else {
+                            $inventory->delete();
+                        }
+                    }
+                }
+                
+                // Delete all items associated with this box
+                PackingItem::where('packing_box_id', $box->id)->delete();
+                $box->delete();
+            }
+
+            // Also delete loose items (not in boxes) associated with this carton
+            PackingItem::where('packing_carton_id', $carton->id)->whereNull('packing_box_id')->delete();
 
             // Delete the Carton
             $carton->delete();

@@ -32,4 +32,9 @@ class PackingMain extends Model
     {
         return $this->hasMany(PackingItem::class , 'packing_main_id');
     }
+
+    public function outflows()
+    {
+        return $this->hasMany(ProductionOutflowInventory::class, 'slip_id', 'slip_id');
+    }
 }

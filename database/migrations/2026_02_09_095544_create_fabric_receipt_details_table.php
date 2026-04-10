@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      *
@@ -29,7 +28,7 @@ return new class extends Migration
             $table->integer('meter')->nullable();
             $table->integer('remaining_quantity')->nullable();
             $table->string('batch_no')->nullable();
-            $table->integer('roll_number')->nullable();
+            $table->string('roll_number')->nullable();
             $table->string('price_per_meter')->nullable();
             $table->integer('master_fabric_warehouse_id')->nullable();
             $table->string('barcode')->nullable();

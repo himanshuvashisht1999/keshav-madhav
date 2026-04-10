@@ -1610,8 +1610,12 @@
 
                 $.get("{{ route('admin.inventory.get_size_sets_by_product', '') }}/" + pid, function (res) {
                     if (res.status === 'success') {
+                        // Only show size sets that are in the current order
+                        let orderSizeSetIds = ORDER_SETS.map(os => parseInt(os.set_size));
                         res.size_sets.forEach(ss => {
-                            $ss.append(`<option value="${ss.id}" data-sizes='${JSON.stringify(ss.sizes || [])}'>${ss.name}</option>`);
+                            if (orderSizeSetIds.includes(parseInt(ss.id))) {
+                                $ss.append(`<option value="${ss.id}" data-sizes='${JSON.stringify(ss.sizes || [])}'>${ss.name}</option>`);
+                            }
                         });
                     }
                 });

@@ -60,7 +60,8 @@
                                         <th width="5%" class="text-center py-3">#</th>
                                         <th class="py-3">Order No</th>
                                         <th class="py-3">Customer</th>
-                                        <th class="py-3">Latest Packing Date</th>
+                                        <th class="py-3">Slip ID</th>
+                                        <th class="py-3">Packing Date</th>
                                         <th class="text-center py-3">Status</th>
                                         <th class="text-right py-3 px-4">Action</th>
                                     </tr>
@@ -115,6 +116,7 @@
                     { data: 'DT_RowIndex', name: 'id', className: 'text-center text-muted' },
                     { data: 'order_no', name: 'order_no', className: 'font-weight-bold text-primary' },
                     { data: 'customer', name: 'customer' },
+                    { data: 'slip_id', name: 'slip_id' },
                     { data: 'packing_date', name: 'packing_date' },
                     { data: 'status', name: 'status', className: 'text-center' },
                     { data: 'action', name: 'action', className: 'text-right px-4' }

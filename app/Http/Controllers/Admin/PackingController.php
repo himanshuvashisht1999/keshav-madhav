@@ -34,8 +34,8 @@ class PackingController extends Controller
 
     public function view($id)
     {
-        $order = $this->service->getPackingDetailsForOrder($id);
-        return view('admin.packing.view', compact('order'));
+        $session = $this->service->getPackingSessionDetails($id);
+        return view('admin.packing.view', compact('session'));
     }
 
     public function process(Request $request, $slip_id)
@@ -117,7 +117,7 @@ class PackingController extends Controller
             // Fetch non-packing outflows (Dead, Sampling, Debit, Damage) for THIS order on this slip
             $outflows = \App\Models\ProductionOutflowInventory::where('slip_id', $slip_id)
                 ->where('order_main_id', $order->id)
-                ->where('type', '!=', 'packing') // Filter out packing movements per user request
+                ->whereNotIn('type', ['packing', 'packing_divert']) // Filter out packing and divert movements per user request
                 ->with(['product', 'color', 'size', 'rack.storeroom', 'responsibleStage', 'responsibleUnit'])
                 ->get();
 
@@ -259,7 +259,7 @@ class PackingController extends Controller
             // Fetch non-packing outflows (Dead, Sampling, Debit, Damage) for THIS order on this slip
             $outflows = \App\Models\ProductionOutflowInventory::where('slip_id', $slip_id)
                 ->where('order_main_id', $order->id)
-                ->where('type', '!=', 'packing') // Filter out packing movements
+                ->whereNotIn('type', ['packing', 'packing_divert']) // Filter out packing and divert movements
                 ->with(['product', 'color', 'size', 'rack.storeroom', 'responsibleStage', 'responsibleUnit'])
                 ->get();
 
@@ -551,7 +551,7 @@ class PackingController extends Controller
                     // 4. Barcode Calculation
                     $pattern_id = $box_plan['pattern_id'] ?? 0;
                     $fitting_id = $box_plan['fitting_id'] ?? 0;
-                    $barcode = 'CD' . $box_plan['product_id'] . 'S' . $box_plan['size_set_id'] . 'C' . $box_plan['color_id'] . 'P' . $pattern_id . 'F' . $fitting_id;
+                    $barcode = 'D' . $box_plan['product_id'] . 'S' . $box_plan['size_set_id'] . 'C' . $box_plan['color_id'] . 'P' . $pattern_id . 'F' . $fitting_id;
 
                     // 3. New Box
                     // Create PackingBox with explicit property assignment
@@ -657,7 +657,7 @@ class PackingController extends Controller
                                 'size_set_id' => $box_plan['size_set_id'],
                                 'size_id' => $usedDetailId ?: 0,
                                 'quantity' => $qtyToDeduct,
-                                'outflow_type' => 'packing_divert',
+                                'type' => 'packing_divert',
                                 'responsible_unit_id' => $slip_details->stage_master_unit_id,
                                 'remarks' => "Bulk Divert to Domestic - Box $box_no",
                             ]);
@@ -1402,5 +1402,44 @@ class PackingController extends Controller
         $request->merge(['ids' => $inventoryIds]);
 
         return (new \App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController())->generateBulkTspl($request);
+    }
+
+    public function downloadPrn($id)
+    {
+        $main = \App\Models\PackingMain::with('boxes.items')->findOrFail($id);
+        $allBarcodes = [];
+
+        // Define domestic box types
+        $domBoxTypes = ['domestic', 'corporate_domestic', 'packing_divert', 'domestic_planner'];
+
+        foreach ($main->boxes as $box) {
+            // Only process boxes that are of domestic types
+            if (!in_array($box->box_type, $domBoxTypes)) {
+                continue;
+            }
+
+            // As per updated user request: "if 5 boxes then 5 barcode"
+            if ($box->barcode) {
+                $allBarcodes[] = $box->barcode;
+            }
+        }
+
+        if (empty($allBarcodes)) {
+            return back()->withError('No domestic labels found to generate.');
+        }
+
+        // Use the global helper method
+        $tspl = generateBulkTsplByBarcodes($allBarcodes);
+
+        if (!$tspl) {
+            return back()->withError('Failed to generate TSPL content.');
+        }
+
+        $fileName = 'domestic_barcodes_pcs_session_' . $main->id . '.prn';
+
+        return response($tspl, 200, [
+            'Content-Type' => 'application/octet-stream',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
     }
 }

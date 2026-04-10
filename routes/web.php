@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\Master\FabricGsmController as AdminFabricGsmContr
 use App\Http\Controllers\Admin\Master\FabricCompositionController as AdminFabricCompositionController;
 use App\Http\Controllers\Admin\Master\FabricWeaveController as AdminFabricWeaveController;
 use App\Http\Controllers\Admin\Master\FabricWidthController as AdminFabricWidthController;
+use App\Http\Controllers\Admin\Master\FabricUnitController as AdminFabricUnitController;
 use App\Http\Controllers\Admin\Master\FabricController as AdminFabricController;
 use App\Http\Controllers\Admin\PurchaseOrderController as AdminPurchaseOrderController;
 use App\Http\Controllers\Admin\FabricReceiptController as AdminFabricReceiptController;
@@ -362,6 +363,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/record-unit-debit', [AdminPackingController::class, 'recordUnitDebit'])->name('recordUnitDebit');
             Route::get('/rework-stages', [AdminPackingController::class, 'getReworkStages'])->name('reworkStages');
             Route::get('/stage-units/{stageId}', [AdminPackingController::class, 'getStageUnits'])->name('stageUnits');
+            Route::get('/download-prn/{id}', [AdminPackingController::class, 'downloadPrn'])->name('downloadPrn');
         });
 
         Route::prefix('/inventory')->name('inventory.')->group(function () {
@@ -610,6 +612,15 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/edit', [AdminFabricWidthController::class, 'edit'])->name('edit');
             Route::post('/update', [AdminFabricWidthController::class, 'update'])->name('update');
             Route::get('/delete', [AdminFabricWidthController::class, 'delete'])->name('delete');
+        });
+        Route::prefix('master/fabric_unit')->name('master.fabric_unit.')->group(function () {
+            Route::get('/index', [AdminFabricUnitController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminFabricUnitController::class, 'indexList'])->name('indexList');
+            Route::get('/create', [AdminFabricUnitController::class, 'create'])->name('create');
+            Route::post('/store', [AdminFabricUnitController::class, 'store'])->name('store');
+            Route::get('/edit', [AdminFabricUnitController::class, 'edit'])->name('edit');
+            Route::post('/update', [AdminFabricUnitController::class, 'update'])->name('update');
+            Route::get('/delete', [AdminFabricUnitController::class, 'delete'])->name('delete');
         });
         Route::prefix('master/fabric')->name('master.fabric.')->group(function () {
             Route::get('/index', [AdminFabricController::class, 'index'])->name('index');

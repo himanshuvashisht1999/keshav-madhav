@@ -153,63 +153,7 @@ class BarcodeGeneratorController extends Controller
         ]);
     }
 
-    public function generateTsplOld(Request $request)
-    {
-        $request->validate([
-            'design_id' => 'required|exists:production_goods,id',
-            'pattern_id' => 'required|exists:master_design_patterns,id',
-            'fitting_id' => 'required|exists:master_product_fittings,id',
-            'color_ids' => 'required|array',
-            'color_ids.*' => 'required|exists:master_colors,id',
-            'size_set_ids' => 'required|array',
-            'size_set_ids.*' => 'required|exists:master_size_measurements,id',
-            'quantities' => 'required|array',
-            'quantities.*' => 'required|integer|min:1|max:500',
-        ]);
 
-        $design = ProductionGoods::with('series')->find($request->design_id);
-        $pattern = MasterDesignPattern::find($request->pattern_id);
-        $fitting = MasterProductFitting::find($request->fitting_id);
-
-        $labels = [];
-
-        foreach ($request->color_ids as $key => $color_id) {
-            if (!$color_id)
-                continue;
-            $color = MasterColor::find($color_id);
-            $sizeSet = MasterSizeMeasurement::find($request->size_set_ids[$key]);
-            $quantity = $request->quantities[$key];
-
-            $seriesName = $design->series->name ?? '';
-            $productName = $design->name_of_garment ?? '';
-            $fullProductName = $seriesName . ' ' . $productName;
-
-            $barcode = 'D' . $design->id . 'S' . $sizeSet->id . 'C' . $color->id . 'P' . $pattern->id . 'F' . $fitting->id;
-
-            for ($i = 0; $i < $quantity; $i++) {
-                $labels[] = (object) [
-                    'product_name' => $fullProductName,
-                    'fitting_name' => $fitting->name,
-                    'pattern_name' => $pattern->name,
-                    'size_group' => $sizeSet->name,
-                    'no_of_pcs' => $sizeSet->no_of_pcs,
-                    'color_name' => $color->name,
-                    'color_id' => $color->id,
-                    'design_number' => $design->design_number,
-                    'barcode' => $barcode
-                ];
-            }
-        }
-
-        if (empty($labels))
-            return back()->withError('No labels to generate.');
-
-        $tspl = $this->buildTsplContent($labels);
-        return response($tspl, 200, [
-            'Content-Type' => 'text/plain',
-            'Content-Disposition' => 'attachment; filename="barcodes-' . time() . '.txt"'
-        ]);
-    }
     public function generateTspl(Request $request)
     {
         $request->validate([
@@ -224,104 +168,30 @@ class BarcodeGeneratorController extends Controller
             'quantities.*' => 'required|integer|min:1|max:500',
         ]);
 
-        $design = ProductionGoods::with('series')->find($request->design_id);
-        $pattern = MasterDesignPattern::find($request->pattern_id);
-        $fitting = MasterProductFitting::find($request->fitting_id);
-
-        $labels = [];
+        $barcodeList = [];
 
         foreach ($request->color_ids as $key => $color_id) {
             if (!$color_id)
                 continue;
 
-            $color = MasterColor::find($color_id);
-            $sizeSet = MasterSizeMeasurement::find($request->size_set_ids[$key]);
+            $barcode = 'D' . $request->design_id .
+                'S' . $request->size_set_ids[$key] .
+                'C' . $color_id .
+                'P' . $request->pattern_id .
+                'F' . $request->fitting_id;
+
             $quantity = $request->quantities[$key];
 
-            $seriesName = $design->series->name ?? '';
-            $productName = $design->name_of_garment ?? '';
-            $fullProductName = trim($seriesName . ' ' . $productName);
-
-            $barcode =
-                'D' . $design->id .
-                'S' . $sizeSet->id .
-                'C' . $color->id .
-                'P' . $pattern->id .
-                'F' . $fitting->id;
-
             for ($i = 0; $i < $quantity; $i++) {
-                $labels[] = (object) [
-                    'product_name' => $fullProductName,
-                    'pattern_name' => $pattern->name,
-                    'fitting_name' => $fitting->name,
-                    'size_group' => $sizeSet->name,
-                    'no_of_pcs' => $sizeSet->no_of_pcs,
-                    'design_number' => $design->design_number,
-                    'barcode' => $barcode,
-                    'color_name' => $color->name . ' (' . $color->id . ')',
-                ];
+                $barcodeList[] = $barcode;
             }
         }
 
-        if (empty($labels)) {
+        if (empty($barcodeList)) {
             return back()->withError('No labels to generate.');
         }
 
-        $tspl = "
-SIZE 100 mm,90 mm
-GAP 2 mm,0
-DIRECTION 1
-REFERENCE 0,0
-SPEED 2
-DENSITY 15
-CLS
-";
-
-        $chunks = array_chunk($labels, 2);
-
-        foreach ($chunks as $pair) {
-
-            $left = $pair[0] ?? null;
-            $right = $pair[1] ?? null;
-
-            $tspl .= "CLS\n";
-
-            // ===== LEFT LABEL =====
-            if ($left) {
-                $tspl .= "
-TEXT 40,110,\"3\",0,2,2,\"{$left->product_name}\"
-TEXT 80,170,\"3\",0,2,2,\"{$left->size_group}\"
-TEXT 80,230,\"3\",0,2,2,\"{$left->no_of_pcs} PCS\"
-
-TEXT 40,290,\"2\",0,1,2,\"{$left->color_name}\"
-
-TEXT 40,340,\"2\",0,1,1,\"{$left->pattern_name}\"
-TEXT 40,380,\"2\",0,1,1,\"{$left->fitting_name}\"
-TEXT 40,420,\"2\",0,1,1,\"# {$left->design_number}\"
-
-BARCODE 20,480,\"128\",100,1,0,2,3,\"{$left->barcode}\"
-";
-            }
-
-            // ===== RIGHT LABEL =====
-            if ($right) {
-                $tspl .= "
-TEXT 440,110,\"3\",0,2,2,\"{$right->product_name}\"
-TEXT 480,170,\"3\",0,2,2,\"{$right->size_group}\"
-TEXT 480,230,\"3\",0,2,2,\"{$right->no_of_pcs} PCS\"
-
-TEXT 440,290,\"2\",0,1,2,\"{$right->color_name}\"
-
-TEXT 440,340,\"2\",0,1,1,\"{$right->pattern_name}\"
-TEXT 440,380,\"2\",0,1,1,\"{$right->fitting_name}\"
-TEXT 440,420,\"2\",0,1,1,\"# {$right->design_number}\"
-
-BARCODE 440,480,\"128\",100,1,0,2,3,\"{$right->barcode}\"
-";
-            }
-
-            $tspl .= "PRINT 1\n";
-        }
+        $tspl = generateBulkTsplByBarcodes($barcodeList);
 
         $fileName = 'barcode_print_' . time() . '.prn';
 
@@ -337,30 +207,27 @@ BARCODE 440,480,\"128\",100,1,0,2,3,\"{$right->barcode}\"
         if (empty($ids))
             return back()->withError('No inventory IDs provided.');
 
-        $items = \App\Models\DomesticInventory::with(['product.series', 'color', 'fitting', 'pattern', 'sizeSet'])
-            ->whereIn('id', $ids)
-            ->get();
-        $labels = [];
+        $items = \App\Models\DomesticInventory::whereIn('id', $ids)->get();
+        $barcodeList = [];
 
         foreach ($items as $item) {
-            $labels[] = (object) [
-                'product_name' => $item->product_name,
-                'fitting_name' => $item->fitting_name,
-                'pattern_name' => $item->pattern_name,
-                'size_group' => $item->size_set_name,
-                'no_of_pcs' => $item->quantity,
-                'color_name' => $item->color_name . ' (' . $item->color_id . ')',
-                'color_id' => $item->color_id,
-                'design_number' => $item->design_number,
-                'barcode' => $item->barcode
-            ];
+            // As per updated user request: "if 5 boxes then 5 barcode"
+            $boxes = (int) $item->total_boxes;
+
+            for ($i = 0; $i < $boxes; $i++) {
+                if ($item->barcode) {
+                    $barcodeList[] = $item->barcode;
+                }
+            }
         }
 
-        if (empty($labels))
-            return back()->withError('No labels to generate.');
+        if (empty($barcodeList))
+            return back()->withError('No valid barcodes found.');
 
-        $tspl = $this->buildTsplContent($labels);
-        $fileName = 'bulk_barcodes_' . time() . '.prn';
+        // Use the global helper method
+        $tspl = generateBulkTsplByBarcodes($barcodeList);
+
+        $fileName = 'bulk_barcodes_pcs_' . time() . '.prn';
 
         return response($tspl, 200, [
             'Content-Type' => 'application/octet-stream',
@@ -368,64 +235,4 @@ BARCODE 440,480,\"128\",100,1,0,2,3,\"{$right->barcode}\"
         ]);
     }
 
-    private function buildTsplContent($labels)
-    {
-        $tspl = "
-SIZE 100 mm,90 mm
-GAP 2 mm,0
-DIRECTION 1
-REFERENCE 0,0
-SPEED 2
-DENSITY 15
-CLS
-";
-
-        $chunks = array_chunk($labels, 2);
-
-        foreach ($chunks as $pair) {
-
-            $left = $pair[0] ?? null;
-            $right = $pair[1] ?? null;
-
-            $tspl .= "CLS\n";
-
-            // ===== LEFT LABEL =====
-            if ($left) {
-                $tspl .= "
-TEXT 80,110,\"3\",0,2,2,\"{$left->product_name}\"
-TEXT 80,170,\"3\",0,2,2,\"{$left->size_group}\"
-TEXT 80,230,\"3\",0,2,2,\"{$left->no_of_pcs} PCS\"
-
-TEXT 60,290,\"2\",0,1,2,\"{$left->color_name}\"
-
-TEXT 60,340,\"2\",0,1,1,\"{$left->pattern_name}\"
-TEXT 60,380,\"2\",0,1,1,\"{$left->fitting_name}\"
-TEXT 60,420,\"2\",0,1,1,\"# {$left->design_number}\"
-
-BARCODE 60,480,\"128\",100,1,0,2,3,\"{$left->barcode}\"
-";
-            }
-
-            // ===== RIGHT LABEL =====
-            if ($right) {
-                $tspl .= "
-TEXT 480,110,\"3\",0,2,2,\"{$right->product_name}\"
-TEXT 480,170,\"3\",0,2,2,\"{$right->size_group}\"
-TEXT 480,230,\"3\",0,2,2,\"{$right->no_of_pcs} PCS\"
-
-TEXT 460,290,\"2\",0,1,2,\"{$right->color_name}\"
-
-TEXT 460,340,\"2\",0,1,1,\"{$right->pattern_name}\"
-TEXT 460,380,\"2\",0,1,1,\"{$right->fitting_name}\"
-TEXT 460,420,\"2\",0,1,1,\"# {$right->design_number}\"
-
-BARCODE 460,480,\"128\",100,1,0,2,3,\"{$right->barcode}\"
-";
-            }
-
-            $tspl .= "PRINT 1\n";
-        }
-
-        return $tspl;
-    }
 }

@@ -363,13 +363,13 @@
                                                 <input type="hidden" name="roll_details[{{$index}}][fabric_id]" value="{{$detail->fabric_id}}">
                                             </td>
                                             <td>
-                                                <input type="number" name="roll_details[{{$index}}][price]" class="form-control roll-price" value="{{$detail->price_per_meter}}" step="0.01" tabindex="-1" required min="0.01">
+                                                <input type="number" name="roll_details[{{$index}}][price]" class="form-control roll-price" value="{{$detail->price_per_meter}}" step="0.01" tabindex="-1" required >
                                             </td>
                                             <td>
                                                 <input type="text" name="roll_details[{{$index}}][roll_no]" class="form-control roll-no" value="{{$detail->roll_number}}" placeholder="Roll No" tabindex="1" required>
                                             </td>
                                             <td>
-                                                <input type="number" name="roll_details[{{$index}}][meter]" class="form-control roll-meter" value="{{$detail->meter}}" step="0.01" tabindex="1" required min="0.01">
+                                                <input type="number" name="roll_details[{{$index}}][meter]" class="form-control roll-meter" value="{{$detail->meter}}" step="0.01" tabindex="1" required >
                                             </td>
                                             <td>
                                                 <input type="number" class="form-control roll-amount" value="{{ $detail->price_per_meter * $detail->meter }}" readonly tabindex="-1">
@@ -554,13 +554,13 @@ $(document).ready(function() {
                 $(this).find('.roll-price, .roll-meter').addClass('is-invalid');
             }
         });
-        if (invalidRow) {
-            e.preventDefault();
-            $('#submit-btn').prop('disabled', false);
-            $('#fabric-receipt-form').data('submitted', false);
-            alert("Price and Meter must be greater than 0 for all rolls.");
-            return false;
-        }
+        // if (invalidRow) {
+        //     e.preventDefault();
+        //     $('#submit-btn').prop('disabled', false);
+        //     $('#fabric-receipt-form').data('submitted', false);
+        //     alert("Price and Meter must be greater than 0 for all rolls.");
+        //     return false;
+        // }
 
         let amountField = parseFloat($('#amount').val()) || 0;
         let rollAmountSum = 0;
@@ -658,9 +658,9 @@ $(document).ready(function() {
                         <span class="font-weight-bold">${fabricName}</span>
                         <input type="hidden" name="roll_details[${rollIndex}][fabric_id]" value="${fabricId}">
                     </td>
-                    <td><input type="number" name="roll_details[${rollIndex}][price]" class="form-control roll-price" value="${price}" step="0.01" tabindex="-1" required min="0.01"></td>
+                    <td><input type="number" name="roll_details[${rollIndex}][price]" class="form-control roll-price" value="${price}" step="0.01" tabindex="-1" required></td>
                     <td><input type="text" name="roll_details[${rollIndex}][roll_no]" class="form-control roll-no" placeholder="Roll No" tabindex="1" required></td>
-                    <td><input type="number" name="roll_details[${rollIndex}][meter]" class="form-control roll-meter" step="0.01" tabindex="1" required min="0.01"></td>
+                    <td><input type="number" name="roll_details[${rollIndex}][meter]" class="form-control roll-meter" step="0.01" tabindex="1" required ></td>
                     <td><input type="number" class="form-control roll-amount" readonly tabindex="-1"></td>
                     <td><button type="button" class="btn btn-danger btn-sm remove-detail-row"><i class="fas fa-trash"></i></button></td>
                 </tr>
