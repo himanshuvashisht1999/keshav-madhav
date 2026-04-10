@@ -42,6 +42,15 @@ class AgentOrderController extends Controller
             })
             ->distinct()->pluck('production_goods.design_number');
 
+        $product_names = DomesticInventory::where('domestic_inventories.status', 1)
+            ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
+            ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
+            ->where(function ($q) {
+                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+            })
+            ->select(DB::raw('DISTINCT(TRIM(CONCAT(COALESCE(master_series.name, " "), " ", production_goods.name_of_garment))) as full_name'))
+            ->pluck('full_name');
+
         $colors = DomesticInventory::where('domestic_inventories.status', 1)
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->where(function ($q) {
@@ -75,6 +84,7 @@ class AgentOrderController extends Controller
                 $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
             })
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
+            ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
             ->leftJoin('master_product_fittings', 'domestic_inventories.fitting_id', '=', 'master_product_fittings.id')
@@ -102,6 +112,9 @@ class AgentOrderController extends Controller
         if ($request->filled('design_number')) {
             $query->where('production_goods.design_number', $request->design_number);
         }
+        if ($request->filled('product_name')) {
+            $query->where(DB::raw('TRIM(CONCAT(COALESCE(master_series.name, ""), " ", production_goods.name_of_garment))'), $request->product_name);
+        }
         if ($request->filled('color_name')) {
             $query->where('master_colors.name', $request->color_name);
         }
@@ -119,6 +132,8 @@ class AgentOrderController extends Controller
                 'domestic_inventories.color_id',
                 'domestic_inventories.size_set_id',
                 'production_goods.design_number',
+                'production_goods.name_of_garment',
+                'master_series.name as series_name',
                 'master_colors.name as color_name',
                 'master_size_measurements.name as size_set_name',
                 'master_product_fittings.name as fitting_name',
@@ -136,6 +151,8 @@ class AgentOrderController extends Controller
                 'domestic_inventories.color_id',
                 'domestic_inventories.size_set_id',
                 'production_goods.design_number',
+                'production_goods.name_of_garment',
+                'master_series.name',
                 'master_colors.name',
                 'master_size_measurements.name',
                 'master_product_fittings.name',
@@ -146,7 +163,7 @@ class AgentOrderController extends Controller
             )
             ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
             ->orderBy('production_goods.design_number')
-            ->paginate(50)
+            ->paginate(20)
             ->appends($request->except('page'));
 
         // Fetch images for the boxes
@@ -209,7 +226,20 @@ class AgentOrderController extends Controller
 
         $gst_percentage = DB::table('settings')->value('gst_order') ?? 5.00;
 
-        return view('admin.agent_orders.create', compact('agent', 'shop', 'designs', 'colors', 'size_sets', 'boxes', 'boxImages', 'gst_percentage'));
+        if ($request->ajax() && $request->has('load_more')) {
+            $html = "";
+            foreach ($boxes as $variation) {
+                $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
+                $image = $boxImages[$vKey] ?? null;
+                $html .= view('admin.agent_orders.partials.variation_row', compact('variation', 'vKey', 'image'))->render();
+            }
+            return response()->json([
+                'html' => $html,
+                'next_page' => $boxes->nextPageUrl() ? $boxes->currentPage() + 1 : null
+            ]);
+        }
+
+        return view('admin.agent_orders.create', compact('agent', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'boxes', 'boxImages', 'gst_percentage'));
     }
 
     public function store(Request $request)
@@ -490,6 +520,16 @@ class AgentOrderController extends Controller
         $designs = DomesticInventory::where('domestic_inventories.status', 1)
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
             ->whereNotNull('box_no')->distinct()->pluck('production_goods.design_number');
+
+        $product_names = DomesticInventory::where('domestic_inventories.status', 1)
+            ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
+            ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
+            ->where(function ($q) {
+                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+            })
+            ->select(DB::raw('DISTINCT(TRIM(CONCAT(COALESCE(master_series.name, ""), " ", production_goods.name_of_garment))) as full_name'))
+            ->pluck('full_name');
+
         $colors = DomesticInventory::where('domestic_inventories.status', 1)
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->whereNotNull('box_no')->distinct()->pluck('master_colors.name');
@@ -520,6 +560,7 @@ class AgentOrderController extends Controller
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
+            ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
             ->leftJoinSub($prices, 'ip', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
                     ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
@@ -543,6 +584,9 @@ class AgentOrderController extends Controller
         if ($request->filled('design_number')) {
             $query->where('production_goods.design_number', $request->design_number);
         }
+        if ($request->filled('product_name')) {
+            $query->where(DB::raw('TRIM(CONCAT(COALESCE(master_series.name, ""), " ", production_goods.name_of_garment))'), $request->product_name);
+        }
         if ($request->filled('color_name')) {
             $query->where('master_colors.name', $request->color_name);
         }
@@ -559,6 +603,8 @@ class AgentOrderController extends Controller
                 'domestic_inventories.color_id',
                 'domestic_inventories.size_set_id',
                 'production_goods.design_number',
+                'production_goods.name_of_garment',
+                'master_series.name as series_name',
                 'master_colors.name as color_name',
                 'master_size_measurements.name as size_set_name',
                 'domestic_inventories.fitting_id',
@@ -580,7 +626,7 @@ class AgentOrderController extends Controller
                 DB::raw($discount_col)
             )
             ->orderBy('production_goods.design_number')
-            ->paginate(50)
+            ->paginate(20)
             ->appends($request->except('page'));
 
         // Fetch images for the boxes
@@ -637,7 +683,21 @@ class AgentOrderController extends Controller
         // Fetch GST setting
         $gst_percentage = DB::table('settings')->value('gst_order') ?? 5.00;
 
-        return view('admin.agent_orders.edit', compact('order', 'shop', 'designs', 'colors', 'size_sets', 'boxes', 'boxImages', 'selected_quantities', 'gst_percentage'));
+        if ($request->ajax() && $request->has('load_more')) {
+            $html = '';
+            foreach ($boxes as $variation) {
+                $variant_key = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
+                $image = $boxImages[$variant_key] ?? null;
+                $initialQty = $selected_quantities[$variant_key]['qty'] ?? 0;
+                $html .= view('admin.agent_orders.partials.variation_row', compact('variation', 'image', 'initialQty'))->render();
+            }
+            return response()->json([
+                'html' => $html,
+                'next_page' => $boxes->nextPageUrl() ? $boxes->currentPage() + 1 : null
+            ]);
+        }
+
+        return view('admin.agent_orders.edit', compact('order', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'boxes', 'boxImages', 'selected_quantities', 'gst_percentage'));
     }
 
     public function update(Request $request, $id)
@@ -869,6 +929,58 @@ class AgentOrderController extends Controller
             ->setPaper('a4', 'portrait');
 
         return $pdf->download('Invoice-ORD-' . $id . '.pdf');
+    }
+    public function downloadOrder($id)
+    {
+        $order = DB::table('agent_orders')
+            ->leftJoin('sales_agents', 'agent_orders.sales_agent_id', '=', 'sales_agents.id')
+            ->join('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+            ->where('agent_orders.id', $id)
+            ->select(
+                'agent_orders.*',
+                DB::raw('COALESCE(sales_agents.name, "Direct (No Agent)") as agent_name'),
+                'master_customers.name as shop_name',
+                'master_customers.email as shop_email',
+                'master_customers.phone as shop_phone',
+                'master_customers.address as shop_address',
+                'master_customers.see_price'
+
+            )
+            ->first();
+
+        if (!$order) abort(404);
+
+        $itemsRaw = DB::table('agent_order_items')
+            ->leftJoin('master_design_patterns', 'agent_order_items.pattern_id', '=', 'master_design_patterns.id')
+            ->leftJoin('master_product_fittings', 'agent_order_items.fitting_id', '=', 'master_product_fittings.id')
+            ->where('agent_order_id', $id)
+            ->select('agent_order_items.*', 'master_design_patterns.name as db_pattern_name', 'master_product_fittings.name as db_fitting_name')
+            ->get();
+
+        $items = $itemsRaw->groupBy(function ($item) {
+                return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
+            })->map(function ($group) {
+                $first = $group->first();
+                return (object) [
+                    'product_name' => $first->product_name,
+                    'design_number' => $first->design_number,
+                    'color_name' => $first->color_name,
+                    'size_set_name' => $first->size_set_name,
+                    'fitting_name' => $first->db_fitting_name ?? $first->fitting_name,
+                    'pattern_name' => $first->db_pattern_name ?? $first->pattern_name,
+                    'mrp' => $first->mrp,
+                    'selling_price' => $first->selling_price,
+                    'total_qty' => $group->sum('quantity'),
+                    'box_count' => $group->sum('box_qty'),
+                ];
+            })->values();
+
+        $settings = DB::table('settings')->first();
+
+        $pdf = Pdf::loadView('admin.agent_orders.order-pdf', compact('order', 'items', 'settings'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download('Order_Sheet_ORD_' . $id . '.pdf');
     }
 
     public function downloadPackingSlip(Request $request, $id)

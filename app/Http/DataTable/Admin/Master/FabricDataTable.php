@@ -11,7 +11,7 @@ class FabricDataTable
 
     public function indexList($request)
     {
-        $queue = Fabric::where('status', '!=', 3);
+        $queue = Fabric::with(['fabric_unit', 'fabric_vendor', 'fabric_composition'])->where('status', '!=', 3);
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -47,6 +47,9 @@ class FabricDataTable
             })
             ->editColumn('composition_id', function ($queue) {
                 return $queue?->fabric_composition->name ?? 'N/A';
+            })
+            ->editColumn('fabric_unit_id', function ($queue) {
+                return $queue?->fabric_unit->name ?? 'N/A';
             })
             ->addColumn('image', function ($queue) {
                 $img = $queue->image; // relationship

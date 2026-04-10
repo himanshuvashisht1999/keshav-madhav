@@ -9,28 +9,18 @@
 
                     <div class="d-flex align-items-center">
                         <!-- Brand Filter Dropdown -->
-                        <!-- <div class="input-group input-group-sm mr-2 shadow-sm" style="width: 180px;">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-tag text-primary"></i></span>
-                                </div>
-                                <select id="brandFilter" class="form-control border-left-0 font-weight-bold" style="height: 31px;">
-                                    <option value="">All Brands</option>
-                                    <option value="2">SURGICAL</option>
-                                    <option value="1">SNAPKID</option>
-                                    <option value="actual">ACTUAL</option>
-                                </select>
-                            </div>
+                        <div class="mr-2">
+                            <a href="{{ route('admin.agent-orders.download-order', $order->id) }}" 
+                                class="btn btn-sm btn-success rounded-pill px-4 font-weight-bold shadow-sm">
+                                <i class="fas fa-file-pdf mr-1"></i> Download Order Sheet
+                            </a>
+                        </div>
 
-                            <div class="btn-group mr-2 shadow-sm" style="height: 31px;">
-                                <a id="btnPacking" href="{{ route('admin.agent-orders.download-packing-slip', $order->id) }}"
-                                    class="btn btn-sm btn-outline-dark px-3 font-weight-bold">
-                                    <i class="fas fa-file-pdf mr-1 text-danger"></i> Slip
-                                </a>
-                                <a id="btnInvoice" href="{{ route('admin.agent-orders.download-invoice', $order->id) }}"
-                                    class="btn btn-sm btn-outline-dark px-3 font-weight-bold">
-                                    <i class="fas fa-file-pdf mr-1 text-danger"></i> Invoice
-                                </a>
-                            </div> -->
+                        <!-- Brand Specific downloads moved to internal dispatch system as requested -->
+                        <div class="btn-group d-none">
+                            <a id="btnPacking" href="{{ route('admin.agent-orders.download-packing-slip', $order->id) }}" class="btn btn-sm btn-outline-danger">Slip</a>
+                            <a id="btnInvoice" href="{{ route('admin.agent-orders.download-invoice', $order->id) }}" class="btn btn-sm btn-danger">Invoice</a>
+                        </div>
 
                         <div class="btn-group">
                             @php $dispatchRecord = $order->dispatches->last(); @endphp

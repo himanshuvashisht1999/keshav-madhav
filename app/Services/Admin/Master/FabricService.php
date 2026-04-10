@@ -11,6 +11,7 @@ use App\Models\FabricWidth;
 use App\Models\FabricWeave;
 use App\Models\FabricComposition;
 use App\Models\FabricGsm;
+use App\Models\FabricUnit;
 use App\Models\FabricOtherImage;
 
 use App\Http\DataTable\Admin\Master\FabricDataTable as DataTable;
@@ -52,6 +53,7 @@ class FabricService
         $save_data->name = $request->name;
         $save_data->vendor_id = $request->vendor_id;
         $save_data->composition_id = $request->composition_id ?? NULL;
+        $save_data->fabric_unit_id = $request->fabric_unit_id ?? NULL;
         $save_data->image = $imgName;
         $save_data->status = $request->status ?? 1;
         $save_data->save();
@@ -105,6 +107,7 @@ class FabricService
         $update_data->sku = null;
         $update_data->vendor_id = $request->vendor_id;
         $update_data->composition_id = $request->composition_id ?? NULL;
+        $update_data->fabric_unit_id = $request->fabric_unit_id ?? NULL;
         $update_data->status = $request->status;
         $update_data->save();
 
@@ -158,6 +161,11 @@ class FabricService
     public function fab_composition_data()
     {
         $data = FabricComposition::where('status', 1)->get();
+        return $data;
+    }
+    public function fab_unit_data()
+    {
+        $data = FabricUnit::where('status', 1)->get();
         return $data;
     }
     public function deleteImage(Request $request){

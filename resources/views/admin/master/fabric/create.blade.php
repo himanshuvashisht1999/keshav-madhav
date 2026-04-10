@@ -159,6 +159,24 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
+                                        <label>Unit</label>
+                                        <select name="fabric_unit_id" class="form-control select2" style="width: 100%;">
+                                            <option value="">Select Unit</option>
+                                            @foreach ($fab_unit_data as $single_data)
+                                                <option value="{{ $single_data->id }}"
+                                                    {{ old('fabric_unit_id') == $single_data->id ? 'selected' : '' }}>
+                                                    {{ $single_data->name }} ({{ $single_data->symbol }})</option>
+                                            @endforeach
+                                        </select>
+                                        @if ($errors->has('fabric_unit_id'))
+                                            <span class="invalid-feedback d-block">
+                                                {{ $errors->first('fabric_unit_id') }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
                                         <label for="status">Status</label>
                                         <select name="status" id="status" class="form-control">
                                             <option value="1" {{ old('status') == '1' ? 'selected' : '' }}>Active</option>

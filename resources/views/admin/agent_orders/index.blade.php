@@ -50,20 +50,20 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="small text-muted font-weight-bold">Status</label>
-                                <select name="status" class="form-control">
+                                <select name="status" class="form-control select2">
                                     <option value="">Any Status</option>
                                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>PENDING</option>
                                     <option value="dispatched" {{ request('status') == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <!-- <div class="col-md-2">
                                 <label class="small text-muted font-weight-bold">Payment Status</label>
-                                <select name="payment_status" class="form-control">
+                                <select name="payment_status" class="form-control select2">
                                     <option value="">Any Status</option>
                                     <option value="paid" {{ request('payment_status') == 'paid' ? 'selected' : '' }}>PAID</option>
                                     <option value="unpaid" {{ request('payment_status') == 'unpaid' ? 'selected' : '' }}>UNPAID</option>
                                 </select>
-                            </div>
+                            </div> -->
                             <div class="col-md-2">
                                 <button type="submit" class="btn btn-primary px-4">
                                     <i class="fas fa-filter mr-1"></i> APPLY
@@ -98,12 +98,12 @@
                                     <th>Order ID</th>
                                     <th>Agent</th>
                                     <th>Shop Name</th>
-                                    <th>Exp. Dispatch</th>
+                                    <!-- <th>Exp. Dispatch</th> -->
                                     <th>Total Pcs</th>
                                     <th class="text-center">Scanned</th>
                                     <th>Grand Total</th>
                                     <th>Status</th>
-                                    <th>Payment</th>
+                                    <!-- <th>Payment</th> -->
                                     <th>Date</th>
                                     <th class="text-right">Actions</th>
                                 </tr>
@@ -122,14 +122,14 @@
                                         <td>#ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</td>
                                         <td><span class="badge badge-info">{{ $order->agent_name }}</span></td>
                                         <td><strong>{{ $order->shop_name }}</strong></td>
-                                        <td class="text-nowrap">
+                                        <!-- <td class="text-nowrap">
                                             {{ $order->expected_dispatch_date ? \Carbon\Carbon::parse($order->expected_dispatch_date)->format('d M Y') : 'N/A' }}
                                             @if($order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d'))
                                                 <div class="mt-1">
                                                     <span class="badge bg-danger animate__animated animate__flash animate__infinite">DELAYED</span>
                                                 </div>
                                             @endif
-                                        </td>
+                                        </td> -->
                                         <td>{{ number_format($order->total_qty, 0) }} Pcs</td>
                                         <td class="text-center">
                                             <span class="badge {{ $order->scanned_count == $order->total_boxes ? 'badge-success' : 'badge-info' }} px-3 py-2">
@@ -145,7 +145,7 @@
                                                 {{ strtoupper($order->status) }}
                                             </span>
                                         </td>
-                                        <td>
+                                        <!-- <td>
                                             @if($order->total_paid >= $order->grand_total && $order->grand_total > 0)
                                                 <a href="{{ route('admin.payment.history.index', ['paymentable_type' => 'App\Models\AgentOrder', 'paymentable_id' => $order->id]) }}">
                                                     <span class="badge badge-success">PAID</span>
@@ -154,20 +154,24 @@
                                                 <span class="badge badge-danger">UNPAID</span>
                                                 <br><small class="text-muted">₹{{ number_format($order->total_paid, 2) }}</small>
                                             @endif
-                                        </td>
+                                        </td> -->
                                         <td class="text-nowrap">
                                             <div class="text-dark">{{ date('d M Y', strtotime($order->order_date)) }}</div>
                                             <small class="text-muted">{{ date('h:i A', strtotime($order->order_date)) }}</small>
                                         </td>
                                         <td class="text-right text-nowrap">
+                                            <a href="{{ route('admin.agent-orders.download-order', $order->id) }}"
+                                                class="btn btn-success btn-sm px-2 shadow-sm rounded-pill mr-1" title="Download Order Sheet">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </a>
                                             <a href="{{ route('admin.agent-orders.show', $order->id) }}"
-                                                class="btn btn-primary btn-sm px-3 shadow-sm" style="border-radius: 6px;">
-                                                <i class="fas fa-eye mr-1"></i> View
+                                                class="btn btn-primary btn-sm px-2 shadow-sm rounded-pill mr-1" title="View Order">
+                                                <i class="fas fa-eye"></i>
                                             </a>
                                             @if($order->status == 'pending')
                                             <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
-                                                class="btn btn-info btn-sm px-3 shadow-sm" style="border-radius: 6px;">
-                                                <i class="fas fa-edit mr-1"></i> Edit
+                                                class="btn btn-info btn-sm px-2 shadow-sm rounded-pill" title="Edit Order">
+                                                <i class="fas fa-edit"></i>
                                             </a>
                                             @endif
                                         </td>

@@ -480,6 +480,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/{id}/edit', [AdminAgentOrderController::class, 'edit'])->name('edit');
             Route::put('/{id}/update', [AdminAgentOrderController::class, 'update'])->name('update');
             Route::get('/{id}/download-invoice', [AdminAgentOrderController::class, 'downloadInvoice'])->name('download-invoice');
+            Route::get('/{id}/download-order', [AdminAgentOrderController::class, 'downloadOrder'])->name('download-order');
             Route::get('/{id}/download-packing-slip', [AdminAgentOrderController::class, 'downloadPackingSlip'])->name('download-packing-slip');
             Route::get('/{id}/dispatch-scan', [AdminAgentOrderController::class, 'dispatchScan'])->name('dispatch-scan');
             Route::post('/{id}/process-scan', [AdminAgentOrderController::class, 'processScan'])->name('process-scan');
@@ -946,6 +947,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/sales-order/export', [AdminReportController::class, 'salesOrderExport'])->name('sales-order.export');
             Route::get('/lots', [AdminReportController::class, 'lots'])->name('lots');
             Route::get('/lots/lot-details/{lot_no}', [AdminReportController::class, 'lotDetails'])->name('lots.lot-details');
+            Route::get('/lots/lot-details-pdf/{lot_no}', [AdminReportController::class, 'lotDetailsPdf'])->name('lots.lot-details.pdf');
             Route::get('/stock', [AdminReportController::class, 'stock'])->name('stock');
             Route::get('/stock/roll-details', [AdminReportController::class, 'fabricRollDetails'])->name('stock.roll.details');
             Route::get('/stock/export', [AdminReportController::class, 'stockExport'])->name('stock.export');

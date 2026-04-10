@@ -27,7 +27,7 @@
                     <div class="card-body p-3">
                         <form method="GET" action="{{ route('admin.agent-orders.edit', $order->id) }}" id="filterForm">
                             <div class="row align-items-end">
-                                <div class="col-md-3 col-6 mb-2">
+                                <div class="col-md-2 col-6 mb-2">
                                     <label class="small font-weight-bold text-muted mb-1">Design No</label>
                                     <select name="design_number" class="form-control form-control-sm select2">
                                         <option value="">All Designs</option>
@@ -39,6 +39,17 @@
                                     </select>
                                 </div>
                                 <div class="col-md-3 col-6 mb-2">
+                                    <label class="small font-weight-bold text-muted mb-1">Product Name</label>
+                                    <select name="product_name" class="form-control form-control-sm select2">
+                                        <option value="">All Products</option>
+                                        @foreach($product_names as $name)
+                                            <option value="{{ $name }}" {{ request('product_name') == $name ? 'selected' : '' }}>
+                                                {{ $name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2 col-6 mb-2">
                                     <label class="small font-weight-bold text-muted mb-1">Color</label>
                                     <select name="color_name" class="form-control form-control-sm select2">
                                         <option value="">All Colors</option>
@@ -49,7 +60,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-3 col-12 mb-2">
+                                <div class="col-md-2 col-6 mb-2">
                                     <label class="small font-weight-bold text-muted mb-1">Size Set</label>
                                     <select name="size_set_name" class="form-control form-control-sm select2">
                                         <option value="">All Sets</option>
@@ -60,8 +71,8 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-3 col-12 mb-2 d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary btn-sm px-4">
+                                <div class="col-md-3 col-6 mb-2">
+                                    <button type="submit" class="btn btn-primary btn-sm px-4 mr-2">
                                         <i class="fas fa-search mr-1"></i> Filter
                                     </button>
                                     <a href="{{ route('admin.agent-orders.edit', $order->id) }}" class="btn btn-secondary btn-sm px-3">
@@ -99,82 +110,25 @@
                                         <th width="150" class="text-center px-4">Order Qty (Boxes)</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    @forelse($boxes as $variation)
+                                <tbody id="variation-container">
+                                    @foreach($boxes as $variation)
                                         @php
                                             $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
                                             $image = $boxImages[$vKey] ?? null;
                                             $itemData = $selected_quantities[$vKey] ?? null;
                                             $initialQty = $itemData ? $itemData['qty'] : 0;
                                         @endphp
-                                        <tr class="variation-row {{ $initialQty > 0 ? 'has-qty' : '' }}" data-key="{{ $vKey }}"
-                                            data-product-id="{{ $variation->product_id }}"
-                                            data-color-id="{{ $variation->color_id }}"
-                                            data-size-set-id="{{ $variation->size_set_id }}"
-                                            data-pcs="{{ $variation->pcs_per_box }}" data-price="{{ $variation->unit_price }}"
-                                            data-available="{{ $variation->available_boxes }}">
-                                            <td>
-                                                @if($image)
-                                                    <img src="{{ asset('assets/products/' . $image) }}" alt="Product"
-                                                        class="rounded border shadow-xs"
-                                                        style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
-                                                        onclick="window.open(this.src)">
-                                                @else
-                                                    <div class="bg-light rounded border d-flex align-items-center justify-content-center"
-                                                        style="width: 50px; height: 50px;">
-                                                        <i class="fas fa-image text-muted opacity-50"></i>
-                                                    </div>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                <div class="text-dark font-weight-500">{{ $variation->design_number }}</div>
-                                                <div class="text-muted small"><i class="fas fa-palette mr-1"></i>
-                                                    {{ $variation->color_name }}</div>
-                                            </td>
-                                            <td>
-                                                <span class="badge badge-outline-secondary px-2 py-1">{{ $variation->size_set_name }}</span>
-                                            </td>
-                                            <td class="text-center font-weight-bold">{{ number_format($variation->pcs_per_box, 0) }}</td>
-                                            <td class="text-center">
-                                                <span class="badge badge-info px-2 py-1">{{ $variation->available_boxes }} Boxes</span>
-                                            </td>
-                                            <td class="text-right">
-                                                <div class="text-dark font-weight-bold">₹{{ number_format($variation->unit_price, 2) }}</div>
-                                                <small class="text-muted">per pc</small>
-                                            </td>
-                                            <td class="text-center px-4">
-                                                <div class="input-group input-group-sm quantity-control">
-                                                    <div class="input-group-prepend">
-                                                        <button class="btn btn-outline-secondary btn-minus" type="button">-</button>
-                                                    </div>
-                                                    <input type="number" class="form-control text-center box-qty-input"
-                                                        value="{{ $initialQty }}" min="0" max="{{ $variation->available_boxes }}"
-                                                        data-key="{{ $vKey }}">
-                                                    <div class="input-group-append">
-                                                        <button class="btn btn-outline-secondary btn-plus" type="button">+</button>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="7" class="text-center py-5">
-                                                <i class="fas fa-search-minus fa-3x text-muted mb-3"></i>
-                                                <h6 class="text-muted">No variations found.</h6>
-                                            </td>
-                                        </tr>
-                                    @endforelse
+                                        @include('admin.agent_orders.partials.variation_row', ['variation' => $variation, 'image' => $image, 'initialQty' => $initialQty])
+                                    @endforeach
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                    @if($boxes->hasPages())
-                        <div class="card-footer bg-white py-3">
-                            <div class="d-flex justify-content-center">
-                                {{ $boxes->links() }}
+                        <div id="loading-spinner" class="text-center py-3" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
                             </div>
                         </div>
-                    @endif
+                    </div>
                 </div>
             </div>
         </section>
@@ -256,29 +210,83 @@
             let cart = new Map();
             const initialVariations = @json($selected_quantities);
 
+            // --- INFINITE SCROLL & REAL-TIME FILTER START ---
+            let nextPage = {{ $boxes->nextPageUrl() ? ($boxes->currentPage() + 1) : 'null' }};
+            let loading = false;
+            const container = $('#variation-container');
+            const scrollContainer = $('.content-wrapper');
+
+            container.css('min-height', '400px');
+
+            scrollContainer.on('scroll', function() {
+                if (loading || !nextPage) return;
+                let scrollTop = scrollContainer.scrollTop();
+                let innerHeight = scrollContainer.innerHeight();
+                let scrollHeight = scrollContainer[0].scrollHeight;
+                if (scrollTop + innerHeight >= scrollHeight - 300) {
+                    loadMore();
+                }
+            });
+
+            function loadMore(reset = false) {
+                if (loading) return;
+                loading = true;
+                $('#loading-spinner').show();
+                
+                if (reset) {
+                    nextPage = 1;
+                    container.css('opacity', '0.5');
+                }
+
+                let formData = $('#filterForm').serialize();
+                let requestData = formData + '&load_more=1&page=' + nextPage;
+                
+                $.ajax({
+                    url: window.location.pathname,
+                    method: 'GET',
+                    data: requestData,
+                    success: function(response) {
+                        if (reset) {
+                            container.empty().css('opacity', '1');
+                        }
+                        container.append(response.html);
+                        nextPage = response.next_page;
+                        loading = false;
+                        $('#loading-spinner').hide();
+                        updateUI();
+                        
+                        if (container.is(':empty') && !response.html) {
+                             container.append('<tr><td colspan="7" class="text-center py-5 text-muted">No inventory found for selected filters.</td></tr>');
+                        }
+                    },
+                    error: function() {
+                        loading = false;
+                        container.css('opacity', '1');
+                        $('#loading-spinner').hide();
+                    }
+                });
+            }
+
+            $('#filterForm select').on('change', function() {
+                loadMore(true);
+            });
+
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                loadMore(true);
+            });
+            // --- INFINITE SCROLL & REAL-TIME FILTER END ---
+
             Object.keys(initialVariations).forEach(key => {
                 const itemData = initialVariations[key];
-                const row = $(`.variation-row[data-key="${key}"]`);
-
-                if (row.length) {
-                    cart.set(key, {
-                        product_id: row.data('product-id'),
-                        color_id: row.data('color-id'),
-                        size_set_id: row.data('size-set-id'),
-                        qty: parseInt(itemData.qty) || 0,
-                        pcs_per_box: parseFloat(row.data('pcs')),
-                        unit_price: parseFloat(row.data('price'))
-                    });
-                } else {
-                    cart.set(key, {
-                        product_id: itemData.product_id,
-                        color_id: itemData.color_id,
-                        size_set_id: itemData.size_set_id,
-                        qty: parseInt(itemData.qty) || 0,
-                        pcs_per_box: parseFloat(itemData.pcs_per_box),
-                        unit_price: parseFloat(itemData.unit_price)
-                    });
-                }
+                cart.set(key, {
+                    product_id: itemData.product_id,
+                    color_id: itemData.color_id,
+                    size_set_id: itemData.size_set_id,
+                    qty: parseInt(itemData.qty) || 0,
+                    pcs_per_box: parseFloat(itemData.pcs_per_box),
+                    unit_price: parseFloat(itemData.unit_price)
+                });
             });
 
             if ($.fn.select2) {

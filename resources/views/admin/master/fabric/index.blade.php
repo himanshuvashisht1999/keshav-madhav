@@ -49,7 +49,7 @@
                                     </td>
                                     
                                     <td>
-                                        <select class="form-control" name="vendor_id" id="vendor_id" autocomplete="off">
+                                        <select class="form-control select2" name="vendor_id" id="vendor_id" autocomplete="off">
                                             <option value="">ALL</option>
                                             @foreach ($vendor_data as $single_data)
                                                 <option value="{{ $single_data->id }}" >{{ $single_data->name }}</option>
@@ -58,7 +58,7 @@
                                     </td>
                                     
                                     <td>
-                                        <select class="form-control" name="composition_id" id="composition_id"
+                                        <select class="form-control select2" name="composition_id" id="composition_id"
                                             autocomplete="off">
                                             <option value="">ALL</option>
                                             @foreach ($fab_composition_data as $single_data)
@@ -66,8 +66,9 @@
                                             @endforeach
                                         </select>
                                     </td>
+                                    <td></td>
                                     <td>
-                                        <select class="form-control" name="status" id="status" autocomplete="off">
+                                        <select class="form-control select2" name="status" id="status" autocomplete="off">
                                             <option value="">Select Status</option>
                                             <option value="1">Active</option>
                                             <option value="0">Inactive</option>
@@ -82,6 +83,7 @@
                                     <th>Name</th>
                                     <th>Supplier Name</th>
                                     <th>Composition</th>
+                                    <th>Unit</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
@@ -164,6 +166,10 @@
                     {
                         data: 'composition_id',
                         name: 'composition_id'
+                    },
+                    {
+                        data: 'fabric_unit_id',
+                        name: 'fabric_unit_id'
                     },
                     {
                         data: 'status',

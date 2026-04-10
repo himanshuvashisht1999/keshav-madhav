@@ -97,7 +97,7 @@
                                     <input type="hidden" name="order_date" value="{{ request('order_date') }}">
                                     
                                     <div class="row align-items-end">
-                                        <div class="col-md-3 col-6 mb-2">
+                                        <div class="col-md-2 col-6 mb-2">
                                             <label class="small font-weight-bold text-muted mb-1">Design No</label>
                                             <select name="design_number" class="form-control form-control-sm select2">
                                                 <option value="">All Designs</option>
@@ -109,6 +109,17 @@
                                             </select>
                                         </div>
                                         <div class="col-md-3 col-6 mb-2">
+                                            <label class="small font-weight-bold text-muted mb-1">Product Name</label>
+                                            <select name="product_name" class="form-control form-control-sm select2">
+                                                <option value="">All Products</option>
+                                                @foreach($product_names as $name)
+                                                    <option value="{{ $name }}" {{ request('product_name') == $name ? 'selected' : '' }}>
+                                                        {{ $name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2 col-6 mb-2">
                                             <label class="small font-weight-bold text-muted mb-1">Color</label>
                                             <select name="color_name" class="form-control form-control-sm select2">
                                                 <option value="">All Colors</option>
@@ -119,7 +130,7 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-3 col-12 mb-2">
+                                        <div class="col-md-2 col-6 mb-2">
                                             <label class="small font-weight-bold text-muted mb-1">Size Set</label>
                                             <select name="size_set_name" class="form-control form-control-sm select2">
                                                 <option value="">All Sets</option>
@@ -130,8 +141,8 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-3 col-12 mb-2 d-flex gap-2">
-                                            <button type="submit" class="btn btn-primary btn-sm px-4">
+                                        <div class="col-md-3 col-6 mb-2">
+                                            <button type="submit" class="btn btn-primary btn-sm px-4 mr-2">
                                                 <i class="fas fa-search mr-1"></i> Filter
                                             </button>
                                             <a href="{{ route('admin.agent-orders.create', ['sales_agent_id' => $agent->id, 'master_customer_id' => $shop->id, 'order_date' => request('order_date')]) }}" 
@@ -162,7 +173,7 @@
                                         <thead class="bg-light">
                                             <tr>
                                                 <th width="80">Image</th>
-                                                <th>Design & Color</th>
+                                                <th>Product Details</th>
                                                 <th>Size Set</th>
                                                 <th class="text-center">Pcs/Box</th>
                                                 <th class="text-center">Available</th>
@@ -170,60 +181,13 @@
                                                 <th width="150" class="text-center px-4">Order Qty (Boxes)</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody id="variation-container">
                                             @forelse($boxes as $variation)
                                                 @php
                                                     $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
                                                     $image = $boxImages[$vKey] ?? null;
                                                 @endphp
-                                                <tr class="variation-row" data-key="{{ $vKey }}"
-                                                    data-product-id="{{ $variation->product_id }}"
-                                                    data-color-id="{{ $variation->color_id }}"
-                                                    data-size-set-id="{{ $variation->size_set_id }}"
-                                                    data-pcs="{{ $variation->pcs_per_box }}" data-price="{{ $variation->unit_price }}"
-                                                    data-available="{{ $variation->available_boxes }}">
-                                                    <td>
-                                                        @if($image)
-                                                            <img src="{{ asset('assets/products/' . $image) }}" alt="Product"
-                                                                class="rounded border shadow-xs"
-                                                                style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
-                                                                onclick="window.open(this.src)">
-                                                        @else
-                                                            <div class="bg-light rounded border d-flex align-items-center justify-content-center"
-                                                                style="width: 50px; height: 50px;">
-                                                                <i class="fas fa-image text-muted opacity-50"></i>
-                                                            </div>
-                                                        @endif
-                                                    </td>
-                                                    <td>
-                                                        <div class="text-dark font-weight-500">{{ $variation->design_number }}</div>
-                                                        <div class="text-muted small"><i class="fas fa-palette mr-1"></i>
-                                                            {{ $variation->color_name }}</div>
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge badge-outline-secondary px-2 py-1">{{ $variation->size_set_name }}</span>
-                                                    </td>
-                                                    <td class="text-center font-weight-bold">{{ number_format($variation->pcs_per_box, 0) }}</td>
-                                                    <td class="text-center">
-                                                        <span class="badge badge-info px-2 py-1">{{ $variation->available_boxes }} Boxes</span>
-                                                    </td>
-                                                    <td class="text-right">
-                                                        <div class="text-dark font-weight-bold">₹{{ number_format($variation->unit_price, 2) }}</div>
-                                                        <small class="text-muted">MRP: ₹{{ number_format($variation->mrp, 2) }}</small>
-                                                    </td>
-                                                    <td class="text-center px-4">
-                                                        <div class="input-group input-group-sm quantity-control">
-                                                            <div class="input-group-prepend">
-                                                                <button class="btn btn-outline-secondary btn-minus" type="button">-</button>
-                                                            </div>
-                                                            <input type="number" class="form-control text-center box-qty-input" value="0"
-                                                                min="0" max="{{ $variation->available_boxes }}" data-key="{{ $vKey }}">
-                                                            <div class="input-group-append">
-                                                                <button class="btn btn-outline-secondary btn-plus" type="button">+</button>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                </tr>
+                                                @include('admin.agent_orders.partials.variation_row', ['variation' => $variation, 'vKey' => $vKey, 'image' => $image])
                                             @empty
                                                 <tr>
                                                     <td colspan="7" class="text-center py-5 text-muted">No inventory found for selected filters.</td>
@@ -233,11 +197,12 @@
                                     </table>
                                 </div>
                             </div>
-                            @if($boxes->hasPages())
-                                <div class="card-footer bg-white">
-                                    {{ $boxes->links() }}
+                            <div id="load-more-sentinel" style="height: 20px;"></div>
+                            <div id="loading-spinner" class="text-center py-3" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="sr-only">Loading...</span>
                                 </div>
-                            @endif
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -373,6 +338,81 @@
                 const data = JSON.parse(saved);
                 Object.keys(data).forEach(key => cart.set(key, data[key]));
             }
+
+            // --- INFINITE SCROLL & REAL-TIME FILTER START ---
+            let nextPage = {{ $boxes->nextPageUrl() ? ($boxes->currentPage() + 1) : 'null' }};
+            let loading = false;
+            const container = $('#variation-container');
+            const scrollContainer = $('.content-wrapper');
+
+            container.css('min-height', '400px'); // Prevent page collapse
+
+            scrollContainer.on('scroll', function() {
+                if (loading || !nextPage) return;
+                
+                // Trigger when 80% through the scrollable height
+                let scrollTop = scrollContainer.scrollTop();
+                let innerHeight = scrollContainer.innerHeight();
+                let scrollHeight = scrollContainer[0].scrollHeight;
+                
+                if (scrollTop + innerHeight >= scrollHeight - 300) {
+                    loadMore();
+                }
+            });
+
+            function loadMore(reset = false) {
+                if (loading) return;
+                loading = true;
+                $('#loading-spinner').show();
+                
+                if (reset) {
+                    nextPage = 1;
+                    container.css('opacity', '0.5'); // Visual feedback without collapse
+                }
+
+                let formData = $('#filterForm').serialize();
+                let requestData = formData + '&load_more=1&page=' + nextPage;
+                
+                $.ajax({
+                    url: window.location.pathname,
+                    method: 'GET',
+                    data: requestData,
+                    success: function(response) {
+                        if (reset) {
+                            container.empty().css('opacity', '1');
+                        }
+                        
+                        // Append and filter out potential duplicates if needed, but append is standard
+                        container.append(response.html);
+                        nextPage = response.next_page;
+                        loading = false;
+                        $('#loading-spinner').hide();
+                        updateUI();
+                        
+                        if (container.is(':empty') && !response.html) {
+                             container.append('<tr><td colspan="7" class="text-center py-5 text-muted">No inventory found for selected filters.</td></tr>');
+                        }
+                    },
+                    error: function() {
+                        loading = false;
+                        container.css('opacity', '1');
+                        $('#loading-spinner').hide();
+                    }
+                });
+            }
+
+            // Real-time filter triggers
+            $('#filterForm select').on('change', function() {
+                // If this is triggered by Select2 initialization, ignore it if possible
+                // But generally fine to reset on change
+                loadMore(true);
+            });
+
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                loadMore(true);
+            });
+            // --- INFINITE SCROLL & REAL-TIME FILTER END ---
 
             function updateUI() {
                 let totalBoxes = 0;

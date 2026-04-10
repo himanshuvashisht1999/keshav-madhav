@@ -34,6 +34,7 @@ class FabricController extends Controller {
         // $response['fab_gsm_data'] = $this->service->fab_gsm_data();
         $response['vender_data'] = $this->fabricReceiptService->vendors();
         $response['fab_composition_data'] = $this->service->fab_composition_data();
+        $response['fab_unit_data'] = $this->service->fab_unit_data();
         return view('admin.master.fabric.create',$response);
     }
     public function store(FabricStoreRequest $request){
@@ -49,6 +50,7 @@ class FabricController extends Controller {
         // $response['fab_weave_data'] = $this->service->fab_weave_data();
         // $response['fab_gsm_data'] = $this->service->fab_gsm_data();
         $response['fab_composition_data'] = $this->service->fab_composition_data();
+        $response['fab_unit_data'] = $this->service->fab_unit_data();
         return view('admin.master.fabric.edit',$response);
     }
     public function update(FabricUpdateRequest $request){

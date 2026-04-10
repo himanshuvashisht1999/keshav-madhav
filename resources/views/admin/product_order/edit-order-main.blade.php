@@ -289,6 +289,15 @@
                                     </tr>
                                 @endforeach
                             </tbody>
+                            <tfoot class="bg-light font-weight-bold">
+                                <tr>
+                                    <td colspan="4" class="text-right">TOTAL</td>
+                                    <td id="total_set_qty">0</td>
+                                    <td></td>
+                                    <td id="total_pcs_qty">0</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
 
@@ -555,6 +564,7 @@
 
             });
 
+            calculateGrandTotal();
         });
 
 
@@ -769,19 +779,19 @@
 
         function calculateGrandTotal() {
 
-            let grandTotal = 0;
+            let totalSetQty = 0;
+            let totalPcsQty = 0;
 
             $("#productList tbody tr").each(function () {
+                let setQty = parseFloat($(this).find("input[name='product_quantity[]']").val() || 0);
+                let pcsQty = parseFloat($(this).find("input[name='total_quantity[]']").val() || 0);
 
-                let rowTotal = parseFloat(
-                    $(this).find("input[name='total_amount[]']").val() || 0
-                );
-
-                grandTotal += rowTotal;
+                totalSetQty += setQty;
+                totalPcsQty += pcsQty;
             });
 
-            $("#grand_total_text").text(grandTotal.toFixed(2));
-            $("#grand_total").val(grandTotal.toFixed(2));
+            $("#total_set_qty").text(totalSetQty.toLocaleString());
+            $("#total_pcs_qty").text(totalPcsQty.toLocaleString());
         }
 
 

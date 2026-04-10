@@ -24,6 +24,7 @@ class Fabric extends Model
         'weave_type_id',
         'gsm_id',
         'composition_id',
+        'fabric_unit_id',
         'image',
         'status',
         'created_at',
@@ -62,6 +63,10 @@ class Fabric extends Model
     public function fabric_dye()
     {
         return $this->hasOne('App\Models\FabricDye', 'id', 'dye_id');
+    }
+    public function fabric_unit()
+    {
+        return $this->hasOne('App\Models\FabricUnit', 'id', 'fabric_unit_id');
     }
     public function other_images()
     {

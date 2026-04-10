@@ -24,6 +24,7 @@ class FabricUpdateRequest extends FormRequest{
         return [
             'name' => 'required',
             'vendor_id' => 'required',
+            'fabric_unit_id' => 'nullable|exists:fabric_unit,id',
             'sku'    => 'nullable',
             'status' =>'required',
         ];
