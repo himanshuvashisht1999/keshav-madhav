@@ -91,10 +91,18 @@ class SalesAgentService
 
     public function delete(Request $request)
     {
-        $data = SalesAgent::where('id', $request->id)->update([
-            'status' => 0,
-        ]);
-        return $data;
+        $agent = SalesAgent::withSum('shops as total_balance', 'balance')->find($request->id);
+
+        if ($agent) {
+            $total_balance = $agent->total_balance ?? 0;
+            // If balance is 0, status = 3 (Hidden), otherwise status = 0 (Inactive)
+            $newStatus = ($total_balance == 0) ? 3 : 0;
+
+            $agent->update(['status' => $newStatus]);
+            return true;
+        }
+
+        return false;
     }
 
 }

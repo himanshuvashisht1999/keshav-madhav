@@ -11,7 +11,7 @@ class SalesAgentDataTable
 
     public function indexList($request)
     {
-        $queue = SalesAgent::withSum('shops as total_balance', 'balance');
+        $queue = SalesAgent::where('status', '!=', 3)->withSum('shops as total_balance', 'balance');
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
