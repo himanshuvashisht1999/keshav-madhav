@@ -81,7 +81,7 @@
                                         <th class="py-3">MRP</th>
                                         <th class="text-center py-3">Total Boxes</th>
                                         <th class="text-center py-3">Total Order</th>
-                                        <th class="text-center py-3">Available</th>
+                                        <!-- <th class="text-center py-3">Available</th> -->
                                         <th class="text-center py-3" width="15%">Actions</th>
                                     </tr>
                                 </thead>
@@ -218,8 +218,7 @@
                                     <input type="number" class="form-control font-weight-bold" name="change_quantity"
                                         id="change_quantity" required min="1" value="1">
                                     <div class="input-group-append">
-                                        <span class="input-group-text text-muted bg-white">Total: <strong
-                                                id="total_boxes_display" class="ml-1 text-dark mr-2">0</strong> | Available:
+                                        <span class="input-group-text text-muted bg-white">Available:
                                             <strong id="max_boxes_display" class="ml-1 text-primary">0</strong></span>
                                     </div>
                                 </div>
@@ -369,7 +368,7 @@
                     { data: 'mrp_display', name: 'mrp' },
                     { data: 'total_boxes', name: 'total_boxes', className: 'text-center font-weight-bold text-success' },
                     { data: 'total_order', name: 'total_order', className: 'text-center font-weight-bold text-primary' },
-                    { data: 'available_boxes', name: 'available_boxes', className: 'text-center font-weight-bold text-info' },
+                    // { data: 'available_boxes', name: 'available_boxes', className: 'text-center font-weight-bold text-info' },
                     { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
                 ],
                 language: {

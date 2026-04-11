@@ -240,6 +240,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/update', [AdminFabricReceiptController::class, 'update'])->name('update');
             Route::get('/delete', [AdminFabricReceiptController::class, 'delete'])->name('delete');
             Route::get('/view', [AdminFabricReceiptController::class, 'view'])->name('view');
+            Route::post('/upload-challan', [AdminFabricReceiptController::class, 'uploadChallan'])->name('upload_challan');
             Route::get('/detail', [AdminFabricReceiptController::class, 'detail'])->name('detail');
             Route::post('/store-detail', [AdminFabricReceiptController::class, 'storeDetail'])->name('storeDetail');
             Route::get('/purchase-order-items/{id}', [AdminFabricReceiptController::class, 'getPurchaseOrderItems'])->name('items');
@@ -662,9 +663,14 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
             // Warehouse Stock Routes
             Route::get('/warehouse-stock', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'index'])->name('warehouse_stock');
+            Route::get('/warehouse-stock/show/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'show'])->name('warehouse_stock.show');
             Route::get('/warehouse-stock/list', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'indexList'])->name('warehouse_stock.list');
             Route::get('/warehouse-stock/history', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'history'])->name('warehouse_stock.history');
+            Route::get('/warehouse-stock/history/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'showHistory'])->name('warehouse_stock.history.show');
             Route::get('/warehouse-stock/history-list', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'indexHistoryList'])->name('warehouse_stock.history.list');
+            Route::post('/warehouse-stock/transfer-row', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'transferRow'])->name('warehouse_stock.transfer_row');
+            Route::post('/warehouse-stock/update-attributes', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'updateAttributes'])->name('warehouse_stock.update_attributes');
+            Route::post('/warehouse-stock/delete-boxes', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'deleteBoxes'])->name('warehouse_stock.delete_boxes');
             Route::post('/warehouse-stock/transfer', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'transfer'])->name('warehouse_stock.transfer');
             Route::get('/warehouse-stock/racks/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'getRacksByStoreroom']);
             Route::get('/warehouse-stock/download-slip/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'downloadSlip'])->name('warehouse_stock.download_slip');

@@ -13,9 +13,6 @@
                         <a href="{{ route('admin.inventory.warehouse_stock.history') }}" class="btn btn-outline-primary shadow-sm mr-2">
                             <i class="fas fa-history mr-1"></i> Transfer History
                         </a>
-                        <button id="btn-transfer" class="btn btn-primary shadow-sm" style="display:none;" data-toggle="modal" data-target="#transferModal">
-                            <i class="fas fa-exchange-alt mr-1"></i> Transfer Selected (<span id="sel-count">0</span>)
-                        </button>
                     </div>
                 </div>
             </div>
@@ -49,7 +46,7 @@
                                 <select id="design_filter" class="form-control select2">
                                     <option value="">All Design Nos.</option>
                                     @foreach($designs as $design)
-                                        <option value="{{ $design->id }}">{{ $design->name }}</option>
+                                        <option value="{{ $design->design_number }}">{{ $design->design_number }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -58,7 +55,7 @@
                                 <select id="product_filter" class="form-control select2">
                                     <option value="">All Products</option>
                                     @foreach($products as $prod)
-                                        <option value="{{ $prod->id }}">{{ $prod->name }}</option>
+                                        <option value="{{ $prod->id }}">{{ ($prod->series->name ?? '') . ' ' . $prod->name_of_garment }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -97,16 +94,15 @@
                             <table id="inventoryTable" class="table table-hover mb-0">
                                 <thead class="bg-light contrast-text">
                                     <tr>
-                                        <th width="5%" class="text-center py-3">
-                                            <input type="checkbox" id="checkAll">
-                                        </th>
+                                        <th class="py-3">#</th>
                                         <th class="py-3">Product Name</th>
                                         <th class="py-3">Design No.</th>
                                         <th class="py-3">Size Set</th>
                                         <th class="py-3">Color</th>
                                         <th class="py-3">Location (WH / Rack)</th>
                                         <th class="py-3 text-center">Total Boxes</th>
-                                        <th class="py-3 text-center">Total Qty</th>
+                                        <th class="py-3 text-center">Quantity</th>
+                                        <th class="py-3 text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -118,65 +114,187 @@
         </section>
     </div>
 
-    <!-- Transfer Modal -->
-    <div class="modal fade" id="transferModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Transfer Row Modal -->
+    <div class="modal fade" id="transferRowModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title font-weight-bold text-dark"><i class="fas fa-shipping-fast mr-2 text-primary"></i> Stock Transfer</h5>
+                    <h5 class="modal-title font-weight-bold text-dark"><i class="fas fa-exchange-alt mr-2 text-primary"></i> Transfer Inventory</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body p-0">
-                    <div style="max-height: 300px; overflow-y: auto; padding: 15px; background: #fafafa; border-bottom: 1px solid #eee;">
-                        <h6 class="font-weight-bold small text-muted">Confirm selection and quantities:</h6>
-                        <table class="table table-sm table-borderless mb-0">
-                            <thead>
-                                <tr class="text-muted small">
-                                    <th>Item Details</th>
-                                    <th width="100px" class="text-right">Boxes to Move</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transfer-item-list">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
+                <div class="modal-body">
+                    <div class="p-3 bg-light rounded mb-3">
+                        <div class="small text-muted mb-1">Product</div>
+                        <div class="font-weight-bold" id="transfer_product_name">-</div>
+                        <div class="mt-2">
+                            <span class="small text-muted">Available Boxes:</span>
+                            <span class="badge badge-primary" id="transfer_total_boxes">0</span>
+                        </div>
                     </div>
-                    <div class="p-3">
-                        <form id="form-transfer">
-                            @csrf
-                            <div class="form-group mb-2">
-                                <label class="small font-weight-bold text-muted mb-1">Destination Warehouse</label>
-                                <select id="dest_storeroom" class="form-control" required>
-                                    <option value="">Select Warehouse</option>
-                                    @foreach($storerooms as $storeroom)
-                                        <option value="{{ $storeroom->id }}">{{ $storeroom->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="form-group mb-2">
-                                <label class="small font-weight-bold text-muted mb-1">Destination Rack</label>
-                                <select id="dest_rack" name="rack_id" class="form-control" required>
-                                    <option value="">Select Rack</option>
-                                </select>
-                            </div>
-                            <div class="form-group mb-0">
-                                <label class="small font-weight-bold text-muted mb-1">Transfer Notes (Optional)</label>
-                                <textarea name="notes" class="form-control" rows="2" placeholder="Any additional details..."></textarea>
-                            </div>
-                        </form>
-                    </div>
+                    <form id="form-transfer-row">
+                        <input type="hidden" id="transfer_id">
+                        <div class="form-group mb-3">
+                            <label class="small font-weight-bold text-muted mb-1">Transfer Quantity (Boxes)</label>
+                            <input type="number" id="transfer_qty" class="form-control" min="1" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="small font-weight-bold text-muted mb-1">Destination Warehouse</label>
+                            <select id="dest_storeroom" class="form-control" required>
+                                <option value="">Select Warehouse</option>
+                                @foreach($storerooms as $storeroom)
+                                    <option value="{{ $storeroom->id }}">{{ $storeroom->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="small font-weight-bold text-muted mb-1">Destination Rack</label>
+                            <select id="dest_rack" class="form-control" required>
+                                <option value="">Select Rack</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="small font-weight-bold text-muted mb-1">Transfer Notes (Optional)</label>
+                            <textarea id="transfer_notes" class="form-control" rows="2" placeholder="Reason for transfer..."></textarea>
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="button" id="submit-transfer" class="btn btn-primary shadow-sm px-4">
-                        <i class="fas fa-check mr-1"></i> Proceed Transfer
+                    <button type="button" id="submit-transfer-row" class="btn btn-primary shadow-sm px-4">
+                        <i class="fas fa-check mr-1"></i> Confirm Transfer
                     </button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Edit Attributes Modal -->
+    <div class="modal fade" id="editAttributesModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-weight-bold text-dark"><i class="fas fa-edit mr-2 text-warning"></i> Update Stock Attributes</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-edit-attributes">
+                        <input type="hidden" id="edit_attr_id">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group mb-3">
+                                    <label class="small font-weight-bold text-muted mb-1">Design (Product)</label>
+                                    <select id="edit_product_id" class="form-control select2-modal-edit" required>
+                                        <option value="">Select Product ({{ count($products) }})</option>
+                                        @foreach($products as $prod)
+                                            <option value="{{ $prod->id }}">{{ $prod->design_number }} - {{ ($prod->series->name ?? '') . ' ' . $prod->name_of_garment }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="small font-weight-bold text-muted mb-1">Pattern</label>
+                                    <select id="edit_pattern_id" class="form-control select2-modal-edit">
+                                        <option value="">None</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="small font-weight-bold text-muted mb-1">Fitting</label>
+                                    <select id="edit_fitting_id" class="form-control select2-modal-edit">
+                                        <option value="">None</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="small font-weight-bold text-muted mb-1">Size Set</label>
+                                    <select id="edit_size_set_id" class="form-control select2-modal-edit" required>
+                                        <option value="">Select Size Set ({{ count($size_sets) }})</option>
+                                        @foreach($size_sets as $set)
+                                            <option value="{{ $set->id }}">{{ $set->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="small font-weight-bold text-muted mb-1">Color</label>
+                                    <select id="edit_color_id" class="form-control select2-modal-edit" required>
+                                        <option value="">Select Color ({{ count($colors) }})</option>
+                                        @foreach($colors as $color)
+                                            <option value="{{ $color->id }}">{{ $color->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group mb-0">
+                                    <label class="small font-weight-bold text-muted mb-1">Number of Boxes to Update</label>
+                                    <div class="input-group">
+                                        <input type="number" id="edit_update_qty" class="form-control" min="1" required>
+                                        <div class="input-group-append">
+                                            <span class="input-group-text bg-light border-left-0 small text-muted">Available: <span id="edit_max_boxes" class="ml-1 font-weight-bold">0</span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" id="submit-edit-attributes" class="btn btn-warning shadow-sm px-4 text-dark font-weight-bold">
+                        <i class="fas fa-save mr-1"></i> Update Attributes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Boxes Modal -->
+    <div class="modal fade" id="deleteBoxesModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-weight-bold text-dark text-danger"><i class="fas fa-trash mr-2"></i> Delete Boxes</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="p-3 bg-light rounded mb-3">
+                        <div class="small text-muted mb-1">Product</div>
+                        <div class="font-weight-bold" id="delete_product_name">-</div>
+                    </div>
+                    <form id="form-delete-boxes">
+                        <input type="hidden" id="delete_id">
+                        <div class="form-group mb-0">
+                            <label class="small font-weight-bold text-muted mb-1">Number of Boxes to Delete</label>
+                            <div class="input-group">
+                                <input type="number" id="delete_qty" class="form-control" min="1" required>
+                                <div class="input-group-append">
+                                    <span class="input-group-text bg-light border-left-0 small text-muted">Available: <span id="delete_max_boxes" class="ml-1 font-weight-bold">0</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" id="submit-delete-boxes" class="btn btn-danger shadow-sm px-4">
+                        <i class="fas fa-trash mr-1"></i> Delete Permanent
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <style>
         .contrast-text th {
@@ -210,6 +328,15 @@
                 width: '100%'
             });
 
+            // Initialize select2 when modal is shown (fix for bootstrap 4 modals)
+            $('#editAttributesModal').on('shown.bs.modal', function () {
+                $('.select2-modal-edit').select2({
+                    theme: 'bootstrap4',
+                    width: '100%',
+                    dropdownParent: $('#editAttributesModal')
+                });
+            });
+
             let table = $('#inventoryTable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -226,14 +353,15 @@
                     }
                 },
                 columns: [
-                    { data: 'checkbox', name: 'checkbox', className: 'text-center' },
+                    { data: 'DT_RowIndex', name: 'DT_RowIndex', className: 'text-center' },
                     { data: 'product_name', name: 'product_name' },
                     { data: 'design_number', name: 'design_number' },
                     { data: 'size_set_name', name: 'size_set_name' },
                     { data: 'color_name', name: 'color_name' },
                     { data: 'location', name: 'location' },
                     { data: 'total_boxes', name: 'total_boxes', className: 'text-center' },
-                    { data: 'total_quantity', name: 'total_quantity', className: 'text-center font-weight-bold' }
+                    { data: 'quantity', name: 'quantity', className: 'text-center font-weight-bold' },
+                    { data: 'action', name: 'action', className: 'text-center' }
                 ],
                 language: {
                     emptyTable: "No inventory records found",
@@ -253,7 +381,7 @@
                 table.ajax.reload();
             });
 
-            // Dynamic Racks logic for Filters
+            // Filter Dynamic Racks
             $('#storeroom_filter').on('change', function() {
                 let wh_id = $(this).val();
                 let rack_filter = $('#rack_filter');
@@ -267,7 +395,20 @@
                 }
             });
 
-            // Dynamic Racks logic for Transfer Modal
+            // Transfer Logic
+            $(document).on('click', '.btn-transfer', function() {
+                let id = $(this).data('id');
+                let product = $(this).data('product');
+                let boxes = $(this).data('boxes');
+
+                $('#transfer_id').val(id);
+                $('#transfer_product_name').text(product);
+                $('#transfer_total_boxes').text(boxes);
+                $('#transfer_qty').attr('max', boxes).val(boxes);
+                
+                $('#transferRowModal').modal('show');
+            });
+
             $('#dest_storeroom').on('change', function() {
                 let wh_id = $(this).val();
                 let dest_rack = $('#dest_rack');
@@ -281,127 +422,233 @@
                 }
             });
 
-            // Checkbox multi-select logic
-            let selectedCartons = new Set();
-            
-            $(document).on('change', '.carton-checkbox', function() {
-                let val = $(this).val();
-                if(val === "-") return;
+            $('#submit-transfer-row').on('click', function() {
+                let btn = $(this);
+                let form = $('#form-transfer-row');
                 
-                if($(this).is(':checked')) {
-                    selectedCartons.add(val);
-                } else {
-                    selectedCartons.delete(val);
-                    $('#checkAll').prop('checked', false);
-                }
-                updateTransferBtn();
-            });
-
-            $('#checkAll').on('change', function() {
-                let isChecked = $(this).is(':checked');
-                $('.carton-checkbox').each(function() {
-                    let val = $(this).val();
-                    if(val !== "-") {
-                        $(this).prop('checked', isChecked);
-                        if(isChecked) selectedCartons.add(val);
-                        else selectedCartons.delete(val);
-                    }
-                });
-                updateTransferBtn();
-            });
-
-            table.on('draw', function() {
-                // Restore selections on pagination/draw
-                $('.carton-checkbox').each(function() {
-                    if(selectedCartons.has($(this).val())) {
-                        $(this).prop('checked', true);
-                    }
-                });
-                // Uncheck checkAll just in case
-                $('#checkAll').prop('checked', false);
-            });
-
-            function updateTransferBtn() {
-                let count = selectedCartons.size;
-                $('#sel-count').text(count);
-                if(count > 0) {
-                    $('#btn-transfer').show();
-                    
-                    // Update Modal List
-                    let list = $('#transfer-item-list').empty();
-                    $('.carton-checkbox:checked').each(function() {
-                        let $data = $(this).data();
-                        list.append(`
-                            <tr class="border-bottom">
-                                <td class="py-2">
-                                    <div class="font-weight-bold text-dark small">${$data.designNo} - ${$data.productName}</div>
-                                    <div class="text-muted" style="font-size: 11px;">Color: ${$data.colorName} | Size: ${$data.sizeSetName}</div>
-                                </td>
-                                <td class="py-2">
-                                    <input type="number" class="form-control form-control-sm transfer-qty text-right" 
-                                        data-cartons="${$(this).val()}"
-                                        value="${$data.totalBoxes}" min="1" max="${$data.totalBoxes}"
-                                        style="background: white; border: 1px solid #ddd;">
-                                </td>
-                            </tr>
-                        `);
-                    });
-                } else {
-                    $('#btn-transfer').hide();
-                }
-            }
-
-            // Submit Transfer
-            $('#submit-transfer').on('click', function() {
-                let dest_rack = $('#dest_rack').val();
-                if(!dest_rack) {
+                if(!$('#dest_rack').val()) {
                     toastr.error('Please select a destination rack.');
                     return;
                 }
-                
-                let btn = $(this);
+
                 btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing');
 
-                let transfers = [];
-                $('.transfer-qty').each(function() {
-                    let fullList = $(this).data('cartons').split(',');
-                    let qty = parseInt($(this).val());
-                    // Sub-list of cartons based on quantity
-                    let selectedForTransfer = fullList.slice(0, qty);
-                    transfers.push(...selectedForTransfer);
-                });
-
-                if(transfers.length === 0) {
-                    toastr.error('No items to transfer.');
-                    btn.prop('disabled', false).text('Confirm Transfer');
-                    return;
-                }
-
                 $.ajax({
-                    url: "{{ route('admin.inventory.warehouse_stock.transfer') }}",
+                    url: "{{ route('admin.inventory.warehouse_stock.transfer_row') }}",
                     type: "POST",
                     data: {
                         _token: "{{ csrf_token() }}",
-                        carton_ids: transfers.join(','),
-                        rack_id: dest_rack,
-                        notes: $('textarea[name="notes"]').val()
+                        id: $('#transfer_id').val(),
+                        rack_id: $('#dest_rack').val(),
+                        transfer_qty: $('#transfer_qty').val(),
+                        notes: $('#transfer_notes').val()
                     },
                     success: function(res) {
-                        btn.prop('disabled', false).text('Proceed Transfer');
-                        if(res.success) {
+                        btn.prop('disabled', false).text('Confirm Transfer');
+                        if(res.status == 'success') {
                             toastr.success(res.message);
-                            $('#transferModal').modal('hide');
-                            $('textarea[name="notes"]').val('');
-                            selectedCartons.clear();
-                            updateTransferBtn();
+                            $('#transferRowModal').modal('hide');
+                            form[0].reset();
                             table.ajax.reload();
                         } else {
                             toastr.error(res.message);
                         }
                     },
                     error: function(err) {
-                        btn.prop('disabled', false).text('Proceed Transfer');
-                        toastr.error('An error occurred during transfer.');
+                        btn.prop('disabled', false).text('Confirm Transfer');
+                        toastr.error('An error occurred.');
+                    }
+                });
+            });
+
+            // Edit Attributes Logic
+            $(document).on('click', '.btn-edit-attributes', function() {
+                let id = $(this).data('id');
+                let productId = $(this).data('product-id');
+                let colorId = $(this).data('color-id');
+                let sizeSetId = $(this).data('size-set-id');
+                let fittingId = $(this).data('fitting-id');
+                let patternId = $(this).data('pattern-id');
+                let boxes = $(this).data('boxes');
+
+                $('#edit_attr_id').val(id);
+                $('#edit_max_boxes').text(boxes);
+                $('#edit_update_qty').attr('max', boxes).val(boxes);
+                
+                // Set pre-select data for the product change trigger
+                $('#edit_product_id').data('preselect-size', sizeSetId);
+                $('#edit_product_id').data('preselect-color', colorId);
+                $('#edit_product_id').data('preselect-fitting', fittingId);
+                $('#edit_product_id').data('preselect-pattern', patternId);
+                
+                $('#edit_product_id').val(productId).trigger('change');
+                
+                $('#editAttributesModal').modal('show');
+            });
+
+            // Dependent Dropdowns for Edit Modal
+            $('#edit_product_id').on('change', function () {
+                var productId = $(this).val();
+                var fittingSelect = $('#edit_fitting_id');
+                var patternSelect = $('#edit_pattern_id');
+                var sizeSelect = $('#edit_size_set_id');
+                var colorSelect = $('#edit_color_id');
+
+                var preselectSize = $(this).data('preselect-size');
+                var preselectColor = $(this).data('preselect-color');
+                var preselectFitting = $(this).data('preselect-fitting');
+                var preselectPattern = $(this).data('preselect-pattern');
+
+                // Clear subsequent dropdowns
+                sizeSelect.empty().append('<option value="">Select Size Set</option>').trigger('change.select2');
+                colorSelect.empty().append('<option value="">Select Color</option>').trigger('change.select2');
+
+                if (productId) {
+                    $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function (data) {
+                        if (data.success) {
+                            // Update Fitting
+                            fittingSelect.empty();
+                            if (data.fitting_id) {
+                                fittingSelect.append(`<option value="${data.fitting_id}" selected>${data.fitting_name}</option>`);
+                            } else {
+                                fittingSelect.append('<option value="">No Fitting</option>');
+                            }
+                            fittingSelect.trigger('change.select2');
+                            
+                            // Update Pattern
+                            patternSelect.empty();
+                            if (data.pattern_id) {
+                                patternSelect.append(`<option value="${data.pattern_id}" selected>${data.pattern_name}</option>`);
+                            } else {
+                                patternSelect.append('<option value="">No Pattern</option>');
+                            }
+                            patternSelect.trigger('change.select2');
+
+                            // Store variants for color filtering
+                            $('#editAttributesModal').data('variants', data.variants);
+
+                            // Update Size Set
+                            sizeSelect.empty().append('<option value="">Select Size Set</option>');
+                            data.variants.forEach(function (v) {
+                                sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                            });
+
+                            if (preselectSize) {
+                                sizeSelect.val(preselectSize).trigger('change');
+                                $('#edit_product_id').data('preselect-size', null);
+                            } else {
+                                sizeSelect.trigger('change.select2');
+                            }
+                        }
+                    });
+                }
+            });
+
+            $('#edit_size_set_id').on('change', function () {
+                var sizeSetId = $(this).val();
+                var variants = $('#editAttributesModal').data('variants') || [];
+                var colorSelect = $('#edit_color_id');
+                var preselectColor = $('#edit_product_id').data('preselect-color');
+
+                colorSelect.empty().append('<option value="">Select Color</option>').trigger('change.select2');
+
+                if (sizeSetId) {
+                    var variant = variants.find(v => v.size_set_id == sizeSetId);
+                    if (variant) {
+                        colorSelect.empty().append('<option value="">Select Color</option>');
+                        variant.colors.forEach(function (c) {
+                            colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
+                        });
+
+                        if (preselectColor) {
+                            colorSelect.val(preselectColor).trigger('change.select2');
+                            $('#edit_product_id').data('preselect-color', null);
+                        } else {
+                            colorSelect.trigger('change.select2');
+                        }
+                    }
+                }
+            });
+
+            $('#submit-edit-attributes').on('click', function() {
+                let btn = $(this);
+                let form = $('#form-edit-attributes');
+                
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating');
+
+                $.ajax({
+                    url: "{{ route('admin.inventory.warehouse_stock.update_attributes') }}",
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        id: $('#edit_attr_id').val(),
+                        product_id: $('#edit_product_id').val(),
+                        color_id: $('#edit_color_id').val(),
+                        size_set_id: $('#edit_size_set_id').val(),
+                        fitting_id: $('#edit_fitting_id').val(),
+                        pattern_id: $('#edit_pattern_id').val(),
+                        update_qty: $('#edit_update_qty').val()
+                    },
+                    success: function(res) {
+                        btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Update Attributes');
+                        if(res.status == 'success') {
+                            toastr.success(res.message);
+                            $('#editAttributesModal').modal('hide');
+                            table.ajax.reload();
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function(err) {
+                        btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Update Attributes');
+                        toastr.error('An error occurred.');
+                    }
+                });
+            });
+
+            // Delete Boxes Logic
+            $(document).on('click', '.btn-delete-boxes', function() {
+                let id = $(this).data('id');
+                let product = $(this).closest('tr').find('td:eq(0)').text() + ' (' + $(this).data('design-no') + ')';
+                let boxes = $(this).data('available-boxes');
+
+                $('#delete_id').val(id);
+                $('#delete_product_name').text(product);
+                $('#delete_max_boxes').text(boxes);
+                $('#delete_qty').attr('max', boxes).val(boxes);
+                
+                $('#deleteBoxesModal').modal('show');
+            });
+
+            $('#submit-delete-boxes').on('click', function() {
+                if(!confirm('Are you sure you want to delete these boxes? This action cannot be undone.')) return;
+                
+                let btn = $(this);
+                let form = $('#form-delete-boxes');
+                
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Deleting');
+
+                $.ajax({
+                    url: "{{ route('admin.inventory.warehouse_stock.delete_boxes') }}",
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        id: $('#delete_id').val(),
+                        delete_qty: $('#delete_qty').val()
+                    },
+                    success: function(res) {
+                        btn.prop('disabled', false).html('<i class="fas fa-trash mr-1"></i> Delete Permanent');
+                        if(res.status == 'success') {
+                            toastr.success(res.message);
+                            $('#deleteBoxesModal').modal('hide');
+                            table.ajax.reload();
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function(err) {
+                        btn.prop('disabled', false).html('<i class="fas fa-trash mr-1"></i> Delete Permanent');
+                        toastr.error('An error occurred.');
                     }
                 });
             });

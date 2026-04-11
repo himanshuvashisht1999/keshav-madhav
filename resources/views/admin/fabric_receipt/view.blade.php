@@ -216,15 +216,27 @@
                                         <i class="fas fa-image"></i>
                                     </div>
                                     <div>
-                                        <small class="text-muted text-uppercase font-weight-bold"
-                                            style="font-size: 10px;">Challan Photo</small>
+                                        <div class="d-flex align-items-center justify-content-between mb-1" style="width: 180px;">
+                                            <small class="text-muted text-uppercase font-weight-bold" style="font-size: 10px;">Challan Photo</small>
+                                            <button type="button" class="btn btn-xs btn-outline-primary border-0" onclick="$('#uploadChallanModal').modal('show')" title="Upload/Change">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
                                         <div class="mt-1">
-                                            @if($data->challan_photo)
-                                                <a href="#"
-                                                    onclick="openChallanModal('{{ $data->challan_photo }}'); return false;">
-                                                    <img src="{{ $data->challan_photo }}" height="60"
-                                                        class="border rounded shadow-sm hover-brighten" alt="Challan Photo">
-                                                </a>
+                                            @php
+                                                $isPdf = str_contains($data->challan_photo, '.pdf');
+                                            @endphp
+                                            @if($data->challan_photo && !str_contains($data->challan_photo, 'image-placeholder.png'))
+                                                @if($isPdf)
+                                                    <a href="#" onclick="openChallanModal('{{ $data->challan_photo }}', 'pdf'); return false;" class="d-flex align-items-center p-2 border rounded bg-white shadow-xs hover-brighten" style="width: 150px;">
+                                                        <i class="fas fa-file-pdf text-danger fa-2x mr-2"></i>
+                                                        <span class="small font-weight-bold text-dark text-truncate">View PDF</span>
+                                                    </a>
+                                                @else
+                                                    <a href="#" onclick="openChallanModal('{{ $data->challan_photo }}', 'image'); return false;">
+                                                        <img src="{{ $data->challan_photo }}" height="60" class="border rounded shadow-sm hover-brighten" alt="Challan Photo">
+                                                    </a>
+                                                @endif
                                             @else
                                                 <div class="text-muted italic" style="font-size: 13px;">No photo attached</div>
                                             @endif
@@ -345,21 +357,22 @@
 
     <!-- Challan Preview Modal -->
     <div class="modal fade shadow" id="challanPreviewModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
             <div class="modal-content border-0">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title font-weight-bold"><i class="fas fa-image mr-2"></i>Challan Preview</h5>
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-file-alt mr-2"></i>Challan Preview</h5>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body p-0 bg-dark d-flex align-items-center justify-content-center"
-                    style="min-height: 400px; overflow: auto;">
-                    <img id="challan-modal-image" src="" class="img-fluid shadow"
-                        style="max-height: 80vh; transition: transform 0.3s ease;">
+                    style="min-height: 500px; height: 80vh; overflow: auto;">
+                    <iframe id="challan-modal-pdf" src="" class="w-100 h-100 border-0 d-none"></iframe>
+                    <img id="challan-modal-image" src="" class="img-fluid shadow d-none"
+                        style="transition: transform 0.3s ease;">
                 </div>
                 <div class="modal-footer bg-light justify-content-between">
-                    <div>
+                    <div id="modal-zoom-controls">
                         <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomOutChallan()"><i
                                 class="fas fa-search-minus"></i></button>
                         <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetZoomChallan()"><i
@@ -369,6 +382,34 @@
                     </div>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Challan Modal -->
+    <div class="modal fade" id="uploadChallanModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <form action="{{ route('admin.fabric_receipt.upload_challan') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="receipt_id" value="{{ $data->id }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title font-weight-bold">Upload Challan Slip</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="font-weight-bold">Select File (Image or PDF)</label>
+                            <input type="file" name="challan_photo" class="form-control" accept="image/*,.pdf" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Upload Now</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -459,15 +500,27 @@
         });
 
         let challanZoom = 1;
+        let isPdfMode = false;
 
-        function openChallanModal(src) {
+        function openChallanModal(src, type) {
             if (!src) return;
             challanZoom = 1;
+            isPdfMode = (type === 'pdf');
+            
             let img = document.getElementById('challan-modal-image');
-            if (img) {
-                img.src = src;
-                img.style.transform = 'scale(1)';
+            let frame = document.getElementById('challan-modal-pdf');
+            let controls = document.getElementById('modal-zoom-controls');
+
+            if (isPdfMode) {
+                $(img).addClass('d-none');
+                $(frame).removeClass('d-none').attr('src', src);
+                $(controls).addClass('d-none');
+            } else {
+                $(frame).addClass('d-none').attr('src', '');
+                $(img).removeClass('d-none').attr('src', src).css('transform', 'scale(1)');
+                $(controls).removeClass('d-none');
             }
+            
             $('#challanPreviewModal').modal('show');
         }
 

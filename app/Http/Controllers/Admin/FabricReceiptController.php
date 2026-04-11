@@ -134,4 +134,9 @@ class FabricReceiptController extends Controller
             'exists' => $exists
         ]);
     }
+    public function uploadChallan(Request $request)
+    {
+        $this->service->update($request);
+        return redirect()->back()->withSuccess('Challan photo has been successfully updated.');
+    }
 }

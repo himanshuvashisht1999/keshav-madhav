@@ -366,7 +366,7 @@ class PackingController extends Controller
                 $inventory->increment('total_boxes');
             } else {
                 \App\Models\DomesticInventory::create([
-                    'order_main_id' => $data['order_id'],
+                    // 'order_main_id' => $data['order_id'],
                     'packing_main_id' => $main->id,
                     'packing_carton_id' => $carton->id,
                     'packing_box_id' => $box->id,
@@ -577,7 +577,7 @@ class PackingController extends Controller
                         $inventory->increment('total_boxes');
                     } else {
                         $inventory = \App\Models\DomesticInventory::create([
-                            'order_main_id' => 0,
+                            // 'order_main_id' => 0,
                             'packing_main_id' => $main->id,
                             'packing_carton_id' => $carton->id,
                             'packing_box_id' => $box->id,
@@ -1322,7 +1322,7 @@ class PackingController extends Controller
                     $inventoryResult->increment('total_boxes');
                 } else {
                     \App\Models\DomesticInventory::create([
-                        'order_main_id' => $order_id,
+                        // 'order_main_id' => $order_id,
                         'packing_main_id' => $main->id,
                         'packing_carton_id' => $carton->id,
                         'packing_box_id' => $box->id,

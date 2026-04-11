@@ -25,16 +25,16 @@
                             <table id="historyTable" class="table table-hover mb-0">
                                 <thead class="bg-light contrast-text">
                                     <tr>
-                                        <th width="5%" class="py-3">#</th>
-                                        <th class="py-3">Transfer No.</th>
-                                        <th class="py-3">Date & Time</th>
-                                        <th class="py-3">Destination (WH / Rack)</th>
-                                        <th class="py-3 text-center">Total Boxes</th>
-                                        <th class="py-3">Transferred By</th>
-                                        <th class="py-3">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
+                                         <th width="5%" class="py-3">#</th>
+                                         <th class="py-3">Date & Time</th>
+                                         <th class="py-3">Product Details</th>
+                                         <th class="py-3">From Location</th>
+                                         <th class="py-3">Destination</th>
+                                         <th class="py-3 text-center">Boxes</th>
+                                         <th class="py-3 text-center">Action</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody></tbody>
                             </table>
                         </div>
                     </div>
@@ -66,7 +66,6 @@
                 ajax: "{{ route('admin.inventory.warehouse_stock.history.list') }}",
                 columns: [
                     { data: 'DT_RowIndex', name: 'DT_RowIndex', className: 'text-center' },
-                    { data: 'transfer_no', name: 'transfer_no' },
                     { 
                         data: 'created_at', 
                         name: 'created_at',
@@ -76,9 +75,10 @@
                             return date.toLocaleString();
                         }
                     },
+                    { data: 'product_details', name: 'product_details' },
+                    { data: 'from_location', name: 'from_location' },
                     { data: 'to_location', name: 'to_location' },
-                    { data: 'items_count', name: 'items_count', className: 'text-center' },
-                    { data: 'user.name', name: 'user.name', defaultContent: 'System' },
+                    { data: 'box_quantity', name: 'box_quantity', className: 'text-center' },
                     { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
                 ],
                 language: {

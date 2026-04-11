@@ -37,17 +37,17 @@ class AgentOrderController extends Controller
 
         $designs = DomesticInventory::where('domestic_inventories.status', 1)
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
-            ->where(function ($q) {
-                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            })
+            // ->where(function ($q) {
+            //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+            // })
             ->distinct()->pluck('production_goods.design_number');
 
         $product_names = DomesticInventory::where('domestic_inventories.status', 1)
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
             ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
-            ->where(function ($q) {
-                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            })
+            // ->where(function ($q) {
+            //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+            // })
             ->select(DB::raw('DISTINCT(TRIM(CONCAT(COALESCE(master_series.name, " "), " ", production_goods.name_of_garment))) as full_name'))
             ->pluck('full_name');
 

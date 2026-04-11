@@ -234,42 +234,42 @@ class InventoryController extends Controller
                             else
                                 $q->whereNull('pattern_id');
                         })
-                        ->where(function ($q) {
-                            $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-                        })
+                        // ->where(function ($q) {
+                        //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+                        // })
                         ->sum('total_boxes');
 
                     $seriesId = \App\Models\ProductionGoods::find($row->product_id)->master_series_id ?? '';
 
-                    $btn .= ' <button type="button" class="btn btn-warning btn-sm btn-icon mb-1 text-dark font-weight-bold" 
-                             data-toggle="modal" 
-                             data-target="#editAttributesModal"
-                             data-product-id="' . $row->product_id . '"
-                             data-series-id="' . $seriesId . '"
-                             data-design-no="' . $row->design_number . '"
-                             data-size-set-id="' . $row->size_set_id . '"
-                             data-color-id="' . $row->color_id . '"
-                             data-fitting-id="' . ($row->fitting_id ?? '') . '"
-                             data-pattern-id="' . ($row->pattern_id ?? '') . '"
-                             data-total-boxes="' . $row->total_boxes . '"
-                             data-available-boxes="' . $availableBoxes . '"
-                             title="Change Product Attributes"
-                         ><i class="fas fa-edit"></i></button>';
-
-                    $btn .= ' <button type="button" class="btn btn-danger btn-sm btn-icon mb-1 text-white font-weight-bold" 
-                             data-toggle="modal" 
-                             data-target="#deleteBoxesModal"
-                             data-product-id="' . $row->product_id . '"
-                             data-design-no="' . $row->design_number . '"
-                             data-size-set-id="' . $row->size_set_id . '"
-                             data-color-id="' . $row->color_id . '"
-                             data-fitting-id="' . ($row->fitting_id ?? '') . '"
-                             data-pattern-id="' . ($row->pattern_id ?? '') . '"
-                             data-total-boxes="' . $row->total_boxes . '"
-                             data-available-boxes="' . $availableBoxes . '"
-                             title="Delete Boxes"
-                         ><i class="fas fa-trash"></i></button>';
-
+                    // $btn .= ' <button type="button" class="btn btn-warning btn-sm btn-icon mb-1 text-dark font-weight-bold" 
+                    //          data-toggle="modal" 
+                    //          data-target="#editAttributesModal"
+                    //          data-product-id="' . $row->product_id . '"
+                    //          data-series-id="' . $seriesId . '"
+                    //          data-design-no="' . $row->design_number . '"
+                    //          data-size-set-id="' . $row->size_set_id . '"
+                    //          data-color-id="' . $row->color_id . '"
+                    //          data-fitting-id="' . ($row->fitting_id ?? '') . '"
+                    //          data-pattern-id="' . ($row->pattern_id ?? '') . '"
+                    //          data-total-boxes="' . $row->total_boxes . '"
+                    //          data-available-boxes="' . $availableBoxes . '"
+                    //          title="Change Product Attributes"
+                    //      ><i class="fas fa-edit"></i></button>';
+    
+                    // $btn .= ' <button type="button" class="btn btn-danger btn-sm btn-icon mb-1 text-white font-weight-bold" 
+                    //          data-toggle="modal" 
+                    //          data-target="#deleteBoxesModal"
+                    //          data-product-id="' . $row->product_id . '"
+                    //          data-design-no="' . $row->design_number . '"
+                    //          data-size-set-id="' . $row->size_set_id . '"
+                    //          data-color-id="' . $row->color_id . '"
+                    //          data-fitting-id="' . ($row->fitting_id ?? '') . '"
+                    //          data-pattern-id="' . ($row->pattern_id ?? '') . '"
+                    //          data-total-boxes="' . $row->total_boxes . '"
+                    //          data-available-boxes="' . $availableBoxes . '"
+                    //          title="Delete Boxes"
+                    //      ><i class="fas fa-trash"></i></button>';
+    
                     return $btn;
                 })
                 ->rawColumns(['action', 'product_name_display'])
@@ -373,7 +373,7 @@ class InventoryController extends Controller
                 $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'] . 'P' . $item['pattern_id'] . 'F' . $item['fitting_id'];                // Consolidated Inventory Logic: Manage stock as aggregate counts per barcode
                 $inventory = DomesticInventory::where('barcode', $barcode)
                     ->where('rack_id', $item['rack_id'] ?? null)
-                    ->where('order_main_id', 0) // Unassigned stock
+                    // ->where('order_main_id', 0) // Unassigned stock
                     ->first();
 
                 if ($inventory) {
@@ -536,9 +536,9 @@ class InventoryController extends Controller
             }
 
             // Exclude items already assigned to active orders via order_main_id (NULL or 0 means unassigned)
-            $query->where(function ($q) {
-                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            });
+            // $query->where(function ($q) {
+            //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+            // });
 
             // Check if any loose inventory exists for this combination
             $inventoryItems = $query->get();
@@ -603,9 +603,9 @@ class InventoryController extends Controller
                     })
                     ->where('rack_id', $new_rack_id)
                     ->where('id', '!=', $item->id) // CRITICAL: Don't find yourself!
-                    ->where(function ($q) {
-                        $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-                    })
+                    // ->where(function ($q) {
+                    //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+                    // })
                     ->first();
 
                 if ($new_item) {
@@ -798,9 +798,9 @@ class InventoryController extends Controller
             }
 
             // Exclude items already assigned to orders
-            $query->where(function ($q) {
-                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            });
+            // $query->where(function ($q) {
+            //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+            // });
 
             $inventoryItems = $query->get();
 
