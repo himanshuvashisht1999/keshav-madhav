@@ -80,9 +80,9 @@ class AgentOrderController extends Controller
             ->groupBy('product_id', 'color_id', 'size_set_id');
 
         $query = DomesticInventory::where('domestic_inventories.status', 1)
-            ->where(function ($q) {
-                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            })
+            // ->where(function ($q) {
+            //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
+            // })
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
             ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
@@ -214,8 +214,8 @@ class AgentOrderController extends Controller
                 }
             })
             ->sum(DB::raw('box_qty - IFNULL(scanned_box_qty, 0)'));
-
-            $variation->available_boxes = max(0, $variation->available_boxes - $agentOrderBoxes);
+            
+            // $variation->available_boxes = max(0, $variation->available_boxes - $agentOrderBoxes);
         }
 
         // Filter out variations with 0 available boxes from the paginated collection
@@ -516,10 +516,10 @@ class AgentOrderController extends Controller
 
         $shop = $order->shop;
 
-        // Fetch Filter Options
         $designs = DomesticInventory::where('domestic_inventories.status', 1)
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
-            ->whereNotNull('box_no')->distinct()->pluck('production_goods.design_number');
+            
+            ->distinct()->pluck('production_goods.design_number');
 
         $product_names = DomesticInventory::where('domestic_inventories.status', 1)
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
