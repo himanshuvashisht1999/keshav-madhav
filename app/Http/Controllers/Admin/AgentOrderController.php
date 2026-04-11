@@ -162,6 +162,7 @@ class AgentOrderController extends Controller
                 DB::raw($discount_col)
             )
             ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
+            ->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0')
             ->orderBy('production_goods.design_number')
             ->paginate(20)
             ->appends($request->except('page'));
@@ -191,38 +192,7 @@ class AgentOrderController extends Controller
 
             $key = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
             $boxImages[$key] = $image;
-
-            // Deduct pending ordered stock (Available-To-Promise logic)
-            $agentOrderBoxes = \App\Models\AgentOrderItem::whereHas('order', function ($q) {
-                $q->where('status', '!=', 'dispatched');
-            })
-            ->where('product_id', $variation->product_id)
-            ->where('color_id', $variation->color_id)
-            ->where('size_set_id', $variation->size_set_id)
-            ->where(function($q) use ($variation) {
-                if ($variation->fitting_id) {
-                    $q->where('fitting_id', $variation->fitting_id);
-                } else {
-                    $q->whereNull('fitting_id');
-                }
-            })
-            ->where(function($q) use ($variation) {
-                if ($variation->pattern_id) {
-                    $q->where('pattern_id', $variation->pattern_id);
-                } else {
-                    $q->whereNull('pattern_id');
-                }
-            })
-            ->sum(DB::raw('box_qty - IFNULL(scanned_box_qty, 0)'));
-            
-            // $variation->available_boxes = max(0, $variation->available_boxes - $agentOrderBoxes);
         }
-
-        // Filter out variations with 0 available boxes from the paginated collection
-        $filteredCollection = $boxes->getCollection()->filter(function ($variation) {
-            return $variation->available_boxes > 0;
-        })->values();
-        $boxes->setCollection($filteredCollection);
 
         $gst_percentage = DB::table('settings')->value('gst_order') ?? 5.00;
 
@@ -598,6 +568,12 @@ class AgentOrderController extends Controller
                     ->on('domestic_inventories.color_id', '=', 'alloc.color_id')
                     ->on('domestic_inventories.size_set_id', '=', 'alloc.size_set_id');
             })
+            ->leftJoin('agent_order_items as current_items', function ($join) use ($order) {
+                $join->on('domestic_inventories.product_id', '=', 'current_items.product_id')
+                    ->on('domestic_inventories.color_id', '=', 'current_items.color_id')
+                    ->on('domestic_inventories.size_set_id', '=', 'current_items.size_set_id')
+                    ->where('current_items.agent_order_id', '=', $order->id);
+            })
             ->select(
                 'domestic_inventories.product_id',
                 'domestic_inventories.color_id',
@@ -612,7 +588,8 @@ class AgentOrderController extends Controller
                 DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
-                DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp')
+                DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
+                DB::raw('MAX(current_items.box_qty) as current_order_qty')
             )
             ->groupBy(
                 'domestic_inventories.product_id',
@@ -625,6 +602,8 @@ class AgentOrderController extends Controller
                 'domestic_inventories.pattern_id',
                 DB::raw($discount_col)
             )
+            ->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0 OR MAX(current_items.box_qty) > 0')
+            ->orderByRaw('current_order_qty DESC')
             ->orderBy('production_goods.design_number')
             ->paginate(20)
             ->appends($request->except('page'));
