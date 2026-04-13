@@ -8,8 +8,18 @@ class CapitalService
 {
     public function store(array $data)
     {
+        $balance = $data['opening_balance'] ?? 0;
+        $balance_type = $data['balance_type'] ?? 'Credit';
+
+        if ($balance_type == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+
         return CapitalMaster::create([
             'name' => $data['name'],
+            'balance' => $balance,
             'status' => 1,
         ]);
     }
@@ -22,8 +32,19 @@ class CapitalService
     public function update(array $data, $id)
     {
         $item = CapitalMaster::findOrFail($id);
+
+        $balance = $data['opening_balance'] ?? 0;
+        $balance_type = $data['balance_type'] ?? 'Credit';
+
+        if ($balance_type == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+
         return $item->update([
             'name' => $data['name'],
+            'balance' => $balance,
         ]);
     }
 

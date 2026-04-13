@@ -35,15 +35,15 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Amount (Monthly/Total) <span class="text-danger">*</span></label>
-                                        <input type="number" step="0.01" name="amount" class="form-control" placeholder="Enter Amount"
-                                            value="{{$data->amount}}" required>
+                                        <label>Amount (Monthly/Total)</label>
+                                        <input type="number" step="0.01" name="amount" class="form-control" placeholder="Enter Amount (Optional)"
+                                            value="{{$data->amount}}">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Period (e.g., 12 Months)</label>
-                                        <input type="text" name="period" class="form-control" placeholder="Enter Period"
+                                        <input type="text" name="period" class="form-control" placeholder="Enter Period (Optional)"
                                             value="{{$data->period}}">
                                     </div>
                                 </div>

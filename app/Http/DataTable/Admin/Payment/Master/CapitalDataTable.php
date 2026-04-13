@@ -41,6 +41,9 @@ class CapitalDataTable
         foreach ($records as $record) {
             $status = '<span class="badge badge-' . ($record->status == 1 ? 'success' : 'danger') . '">' . ($record->status == 1 ? 'Active' : 'Inactive') . '</span>';
             
+            $balance = abs($record->balance);
+            $type = $record->balance >= 0 ? '<span class="badge badge-success">Credit</span>' : '<span class="badge badge-danger">Debit</span>';
+
             $action = '
                 <div class="btn-group">
                     <a href="' . route('admin.payment.master.capital.edit', ['id' => $record->id]) . '" class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></a>
@@ -51,6 +54,8 @@ class CapitalDataTable
             $data_arr[] = array(
                 "id" => $record->id,
                 "name" => $record->name,
+                "balance" => '₹ ' . number_format($balance, 2),
+                "type" => $type,
                 "status" => $status,
                 "action" => $action
             );

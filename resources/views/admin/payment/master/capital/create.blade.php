@@ -25,10 +25,25 @@
                         @csrf
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Capital Name <span class="text-danger">*</span></label>
                                         <input type="text" name="name" class="form-control" placeholder="Enter Capital Name" value="{{ old('name') }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Opening Balance</label>
+                                        <input type="number" step="0.01" name="opening_balance" class="form-control" placeholder="Enter Opening Balance" value="{{ old('opening_balance') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Balance Type</label>
+                                        <select name="balance_type" class="form-control">
+                                            <option value="Credit" {{ old('balance_type') == 'Credit' ? 'selected' : '' }}>Credit</option>
+                                            <option value="Debit" {{ old('balance_type') == 'Debit' ? 'selected' : '' }}>Debit</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="col-md-12 text-right">

@@ -16,8 +16,8 @@ class BankAccountUpdateRequest extends FormRequest
         return [
             'bank_name' => 'required|string|max:255',
             'account_name' => 'required|string|max:255',
-            'account_number' => 'required|string|max:255',
-            'ifsc_code' => 'required|string|max:255',
+            'account_number' => 'nullable|string|max:255',
+            'ifsc_code' => 'nullable|string|max:255',
             'branch_name' => 'nullable|string|max:255',
         ];
     }

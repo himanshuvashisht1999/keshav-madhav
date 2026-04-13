@@ -150,7 +150,7 @@ class ProductOrderDataTable  {
                 $edit = '';
                 $delete = '';
                 
-                if ($queue->orderCuttingStages()->count() == 0) {
+                if ($queue->orderLots()->count() == 0) {
                     $edit = '<a href="' . route('admin.product_order.editOrderMain',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted" title="Edit"></i></a>';
                     $delete = '<a href="javascript:void(0);" onclick="deleteOrder('.$parameter.')" class="" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash text-danger" title="Delete"></i></a>';
                 }

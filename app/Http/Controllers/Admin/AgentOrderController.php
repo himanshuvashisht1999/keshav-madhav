@@ -421,7 +421,7 @@ class AgentOrderController extends Controller
             }
         }
 
-        $orders = $query->latest('order_date')
+        $orders = $query->orderBy('agent_orders.id', 'desc')
             ->paginate(20)
             ->appends($request->query());
 

@@ -15,7 +15,7 @@ class CommissionStoreRequest extends FormRequest
     {
         return [
             'name' => 'required|string|unique:commissions,name',
-            'percentage' => 'required|numeric|min:0|max:100',
+            'percentage' => 'nullable|numeric|min:0|max:100',
         ];
     }
 }

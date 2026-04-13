@@ -40,9 +40,9 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="percentage">Percentage (%) <span class="text-danger">*</span></label>
+                                        <label for="percentage">Percentage (%)</label>
                                         <input type="number" step="0.01" name="percentage" class="form-control" id="percentage"
-                                            value="{{ $data->percentage }}" required>
+                                            value="{{ $data->percentage }}">
                                         @error('percentage')
                                             <span class="text-danger">{{ $message }}</span>
                                         @enderror

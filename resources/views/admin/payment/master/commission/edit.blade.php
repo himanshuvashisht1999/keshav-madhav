@@ -34,9 +34,9 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Percentage (%) <span class="text-danger">*</span></label>
-                                        <input type="number" step="0.01" name="percentage" class="form-control" placeholder="Enter Percentage" value="{{ old('percentage', $data->percentage) }}" required>
-                                    </div>
+                                         <label>Percentage (%)</label>
+                                         <input type="number" step="0.01" name="percentage" class="form-control" placeholder="Enter Percentage (Optional)" value="{{ old('percentage', $data->percentage) }}">
+                                     </div>
                                 </div>
                                 <div class="col-md-12 text-right">
                                     <button type="submit" class="btn btn-primary">Update</button>

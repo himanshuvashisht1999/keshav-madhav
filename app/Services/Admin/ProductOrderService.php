@@ -32,6 +32,7 @@ use App\Models\StageMasterUnit;
 use App\Models\MasterDesignPattern;
 use App\Models\Fabric;
 use App\Models\OrderProductSetDetail;
+use App\Models\OrderLot;
 
 use PDF;
 
@@ -210,7 +211,18 @@ class ProductOrderService
         try {
             $id = $request->id;
 
+            // Check if any lots exist for this order
+            $lotExists = OrderLot::where('order_main_id', $id)->exists();
+            if ($lotExists) {
+                return [
+                    'status_code' => 0,
+                    'message' => 'Cannot delete order because it has associated production lots.'
+                ];
+            }
+
             $setIds = OrderProductSet::where('order_main_id', $id)->pluck('id');
+            
+            // Delete related records
             OrderProductSetDetail::whereIn('order_products_set_id', $setIds)->delete();
             OrderProductSet::where('order_main_id', $id)->delete();
             OrderCuttingStage::where('order_main_id', $id)->delete();
@@ -219,11 +231,17 @@ class ProductOrderService
             OrderMain::where('id', $id)->delete();
 
             DB::commit();
-            return true;
+            return [
+                'status_code' => 1,
+                'message' => 'The sales order has been successfully deleted.'
+            ];
         }
         catch (\Exception $e) {
             DB::rollBack();
-            throw $e;
+            return [
+                'status_code' => 0,
+                'message' => 'Error deleting order: ' . $e->getMessage()
+            ];
         }
     }
     public function products()
@@ -472,6 +490,7 @@ class ProductOrderService
     {
         $data = MasterCustomer::where('status', 1)
             ->where('type', 'corporate')
+            ->orWhere('name', 'SnapKid DM')
             ->orderBy('name', 'asc')
             ->get();
         return $data;

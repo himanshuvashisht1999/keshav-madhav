@@ -15,6 +15,8 @@ class CapitalStoreRequest extends FormRequest
     {
         return [
             'name' => 'required|string|unique:capital_masters,name',
+            'opening_balance' => 'nullable|numeric',
+            'balance_type' => 'nullable|string|in:Credit,Debit',
         ];
     }
 }

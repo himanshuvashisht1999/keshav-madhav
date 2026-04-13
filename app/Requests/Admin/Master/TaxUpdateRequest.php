@@ -16,7 +16,7 @@ class TaxUpdateRequest extends FormRequest
         return [
             'id' => 'required|exists:taxes,id',
             'name' => 'required|string|max:255|unique:taxes,name,' . $this->id,
-            'percentage' => 'required|numeric|min:0|max:100',
+            'percentage' => 'nullable|numeric|min:0|max:100',
         ];
     }
 }

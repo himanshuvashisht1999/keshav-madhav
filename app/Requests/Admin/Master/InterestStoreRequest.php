@@ -15,7 +15,7 @@ class InterestStoreRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255|unique:interests,name',
-            'percentage' => 'required|numeric|min:0|max:100',
+            'percentage' => 'nullable|numeric|min:0|max:100',
         ];
     }
 }

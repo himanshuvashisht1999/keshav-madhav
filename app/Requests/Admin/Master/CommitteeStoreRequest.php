@@ -15,8 +15,8 @@ class CommitteeStoreRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0',
-            'period' => 'required|string|max:255',
+            'amount' => 'nullable|numeric|min:0',
+            'period' => 'nullable|string|max:255',
         ];
     }
 }

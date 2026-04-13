@@ -43,7 +43,7 @@
                 <button class="btn btn-outline-secondary btn-minus" type="button">-</button>
             </div>
             <input type="number" class="form-control text-center box-qty-input" value="{{ $initialQty ?? 0 }}"
-                min="0" max="{{ $variation->available_boxes + ($initialQty ?? 0) }}" data-key="{{ $vKey }}">
+                min="0" max="{{ $variation->available_boxes }}" data-key="{{ $vKey }}">
             <div class="input-group-append">
                 <button class="btn btn-outline-secondary btn-plus" type="button">+</button>
             </div>

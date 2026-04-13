@@ -16,7 +16,7 @@ class InterestUpdateRequest extends FormRequest
         return [
             'id' => 'required|exists:interests,id',
             'name' => 'required|string|max:255|unique:interests,name,' . $this->id,
-            'percentage' => 'required|numeric|min:0|max:100',
+            'percentage' => 'nullable|numeric|min:0|max:100',
         ];
     }
 }

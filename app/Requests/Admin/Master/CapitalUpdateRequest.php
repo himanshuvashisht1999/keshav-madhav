@@ -16,6 +16,8 @@ class CapitalUpdateRequest extends FormRequest
         return [
             'id' => 'required|exists:capital_masters,id',
             'name' => 'required|string|unique:capital_masters,name,' . $this->id,
+            'opening_balance' => 'nullable|numeric',
+            'balance_type' => 'nullable|string|in:Credit,Debit',
         ];
     }
 }

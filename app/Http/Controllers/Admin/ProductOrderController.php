@@ -138,7 +138,11 @@ class ProductOrderController extends Controller {
 
     public function deleteOrderMain(Request $request){
         $data = $this->service->deleteOrderMain($request);
-        return redirect()->route('admin.product_order.indexOrder')->withSuccess('The sales order has been successfully deleted.'); 
+        if($data['status_code'] == 1){
+            return redirect()->route('admin.product_order.indexOrder')->withSuccess($data['message']);
+        }else{
+            return redirect()->route('admin.product_order.indexOrder')->withError($data['message']);
+        }
     }
 
     public function transfer(Request $request)

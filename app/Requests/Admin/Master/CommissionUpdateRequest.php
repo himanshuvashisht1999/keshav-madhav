@@ -16,7 +16,7 @@ class CommissionUpdateRequest extends FormRequest
         return [
             'id' => 'required|exists:commissions,id',
             'name' => 'required|string|unique:commissions,name,' . $this->id,
-            'percentage' => 'required|numeric|min:0|max:100',
+            'percentage' => 'nullable|numeric|min:0|max:100',
         ];
     }
 }

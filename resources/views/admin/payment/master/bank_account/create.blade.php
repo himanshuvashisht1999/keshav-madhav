@@ -50,7 +50,7 @@
                                     <div class="form-group">
                                         <label>Account Number</label>
                                         <input type="text" name="account_number" class="form-control"
-                                            placeholder="Enter Account Number" value="{{old('account_number')}}" required>
+                                            placeholder="Enter Account Number (Optional)" value="{{old('account_number')}}">
                                         @if ($errors->has('account_number'))
                                             <span class="invalid-feedback d-block">{{ $errors->first('account_number') }}</span>
                                         @endif
@@ -60,7 +60,7 @@
                                     <div class="form-group">
                                         <label>IFSC Code</label>
                                         <input type="text" name="ifsc_code" class="form-control"
-                                            placeholder="Enter IFSC Code" value="{{old('ifsc_code')}}" required>
+                                            placeholder="Enter IFSC Code (Optional)" value="{{old('ifsc_code')}}">
                                         @if ($errors->has('ifsc_code'))
                                             <span class="invalid-feedback d-block">{{ $errors->first('ifsc_code') }}</span>
                                         @endif
