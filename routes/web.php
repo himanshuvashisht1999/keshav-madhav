@@ -675,11 +675,19 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/warehouse-stock/racks/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'getRacksByStoreroom']);
             Route::get('/warehouse-stock/download-slip/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'downloadSlip'])->name('warehouse_stock.download_slip');
 
+            // Stock Transfer Routes
+            Route::prefix('/stock-transfer')->name('stock_transfer.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\Inventory\StockTransferController::class, 'index'])->name('index');
+                Route::get('/search', [\App\Http\Controllers\Admin\Inventory\StockTransferController::class, 'search'])->name('search');
+                Route::post('/transfer', [\App\Http\Controllers\Admin\Inventory\StockTransferController::class, 'transfer'])->name('transfer');
+            });
+
             Route::post('/store', [AdminInventoryController::class, 'store'])->name('store');
             Route::get('/get-size-set-info/{id}', [AdminInventoryController::class, 'getSizeSetInfo'])->name('get_size_set_info');
             Route::get('/get-product-full-details', [AdminInventoryController::class, 'getProductFullDetails'])->name('get_product_full_details');
             Route::get('/get-pricing-info', [AdminInventoryController::class, 'getPricingInfo'])->name('get_pricing_info');
             Route::get('/get-locations', [AdminInventoryController::class, 'getLocations'])->name('get_locations');
+            Route::get('/get-domestic-inventory-for-consume', [AdminInventoryController::class, 'getDomesticInventoryForConsume'])->name('get_domestic_inventory_for_consume');
             Route::get('/barcode-generator', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'index'])->name('barcode-generator.index');
             Route::post('/barcode-generator/generate', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generate'])->name('barcode-generator.generate');
             Route::post('/barcode-generator/generate-tspl', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateTspl'])->name('barcode-generator.generate-tspl');

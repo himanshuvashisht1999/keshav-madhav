@@ -370,6 +370,37 @@ class InventoryController extends Controller
             ]);
 
             foreach ($request->products as $item) {
+                // Handle Consumption Logic
+                if (isset($item['consume_source_id']) && !empty($item['consume_source_id'])) {
+                    $source = DomesticInventory::find($item['consume_source_id']);
+                    if ($source) {
+                        if ($source->total_boxes < $item['total_boxes']) {
+                             throw new \Exception("Insufficient stock in source for Design: " . $source->barcode);
+                        }
+                        $source->total_boxes -= $item['total_boxes'];
+                        if ($source->total_boxes <= 0) {
+                            $source->delete();
+                        } else {
+                            $source->save();
+                        }
+
+                        // Add history for consumption
+                         \App\Models\DomesticInventoryHistory::create([
+                            'user_id' => auth()->id(),
+                            'old_product_id' => $source->product_id,
+                            'old_size_set_id' => $source->size_set_id,
+                            'old_color_id' => $source->color_id,
+                            'old_rack_id' => $source->rack_id,
+                            'new_product_id' => $item['product_id'],
+                            'new_size_set_id' => $item['size_set_id'],
+                            'new_color_id' => $item['color_id'],
+                            'new_rack_id' => $item['rack_id'] ?? null,
+                            'box_quantity' => $item['total_boxes'],
+                            'type' => 'stock_consume'
+                        ]);
+                    }
+                }
+
                 $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'] . 'P' . $item['pattern_id'] . 'F' . $item['fitting_id'];                // Consolidated Inventory Logic: Manage stock as aggregate counts per barcode
                 $inventory = DomesticInventory::where('barcode', $barcode)
                     ->where('rack_id', $item['rack_id'] ?? null)
@@ -843,5 +874,43 @@ class InventoryController extends Controller
                 'message' => 'Error deleting boxes: ' . $e->getMessage()
             ], 500);
         }
+    }
+    public function getDomesticInventoryForConsume(Request $request)
+    {
+        $query = DomesticInventory::where('product_id', $request->product_id)
+            ->where('size_set_id', $request->size_set_id)
+            ->where('color_id', $request->color_id)
+            ->where('pattern_id', $request->pattern_id)
+            ->where('fitting_id', $request->fitting_id)
+            ->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+            ->where('racks.storeroom_id', $request->warehouse_id)
+            ->where('domestic_inventories.rack_id', $request->rack_id);
+
+        $inventory = $query->select(
+            'domestic_inventories.*',
+            DB::raw('SUM(domestic_inventories.total_boxes) as aggregate_boxes')
+        )->groupBy(
+            'domestic_inventories.product_id',
+            'domestic_inventories.size_set_id',
+            'domestic_inventories.color_id',
+            'domestic_inventories.rack_id'
+        )->first();
+
+        if ($inventory) {
+            // Get MRP from variants
+            $variant = ProductionGoodVariant::where('production_goods_id', $request->product_id)
+                ->where('master_size_measurement_id', $request->size_set_id)
+                ->first();
+
+            return response()->json([
+                'success' => true,
+                'inventory_id' => $inventory->id,
+                'total_boxes' => $inventory->aggregate_boxes,
+                'pieces_per_box' => $inventory->quantity,
+                'mrp' => $variant ? $variant->mrp : 0
+            ]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'No matching inventory found']);
     }
 }

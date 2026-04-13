@@ -85,22 +85,22 @@ class WarehouseInventoryController extends Controller
                 })
                 ->addColumn('action', function ($row) {
                     $btn = '<a href="' . route('admin.inventory.warehouse_stock.show', $row->id) . '" class="btn btn-xs btn-primary mr-1" title="View"><i class="fas fa-eye"></i></a>';
-                    $btn .= '<button type="button" class="btn btn-xs btn-success btn-transfer" title="Transfer" 
-                        data-id="' . $row->id . '" 
-                        data-product="' . $row->product_name . ' (' . $row->design_number . ')"
-                        data-boxes="' . $row->total_boxes . '">
-                        <i class="fas fa-exchange-alt"></i></button>';
-                    $btn .= '<button type="button" class="btn btn-xs btn-warning ml-1 btn-edit-attributes" title="Edit Attributes" 
-                        data-id="' . $row->id . '" 
-                        data-product-id="' . $row->product_id . '"
-                        data-design-no="' . $row->design_number . '"
-                        data-color-id="' . $row->color_id . '"
-                        data-size-set-id="' . $row->size_set_id . '"
-                        data-fitting-id="' . ($row->fitting_id ?? '') . '"
-                        data-pattern-id="' . ($row->pattern_id ?? '') . '"
-                        data-boxes="' . $row->total_boxes . '"
-                        data-rack-id="' . $row->rack_id . '">
-                        <i class="fas fa-edit"></i></button>';
+                    // $btn .= '<button type="button" class="btn btn-xs btn-success btn-transfer" title="Transfer" 
+                    //     data-id="' . $row->id . '" 
+                    //     data-product="' . $row->product_name . ' (' . $row->design_number . ')"
+                    //     data-boxes="' . $row->total_boxes . '">
+                    //     <i class="fas fa-exchange-alt"></i></button>';
+                    // $btn .= '<button type="button" class="btn btn-xs btn-warning ml-1 btn-edit-attributes" title="Edit Attributes" 
+                    //     data-id="' . $row->id . '" 
+                    //     data-product-id="' . $row->product_id . '"
+                    //     data-design-no="' . $row->design_number . '"
+                    //     data-color-id="' . $row->color_id . '"
+                    //     data-size-set-id="' . $row->size_set_id . '"
+                    //     data-fitting-id="' . ($row->fitting_id ?? '') . '"
+                    //     data-pattern-id="' . ($row->pattern_id ?? '') . '"
+                    //     data-boxes="' . $row->total_boxes . '"
+                    //     data-rack-id="' . $row->rack_id . '">
+                    //     <i class="fas fa-edit"></i></button>';
                     $btn .= '<button type="button" class="btn btn-xs btn-danger ml-1 btn-delete-boxes" title="Delete Boxes" 
                         data-id="' . $row->id . '" 
                         data-product-id="' . $row->product_id . '"
@@ -405,7 +405,7 @@ class WarehouseInventoryController extends Controller
 
                 if ($target) {
                     $target->increment('total_boxes', $updateQty);
-                    
+
                     // Update individual boxes before deleting
                     // We filter by rack_id to ensure we only update boxes in the correct location
                     $boxesToUpdateIds = DB::table('packing_boxes')
@@ -431,7 +431,7 @@ class WarehouseInventoryController extends Controller
                     $inventory->pattern_id = $newPatternId;
                     $inventory->barcode = $newBarcode;
                     $inventory->save();
-                    
+
                     $boxesToUpdateIds = DB::table('packing_boxes')
                         ->join('packing_cartons', 'packing_boxes.packing_carton_id', '=', 'packing_cartons.id')
                         ->where('packing_boxes.barcode', $oldBarcode)
@@ -449,11 +449,11 @@ class WarehouseInventoryController extends Controller
                 // Partial Change
                 $oldBarcode = $inventory->barcode;
                 $inventory->decrement('total_boxes', $updateQty);
-                
+
                 $target = DomesticInventory::where($matchCriteria)->first();
                 if ($target) {
                     $target->increment('total_boxes', $updateQty);
-                    
+
                     // Assign boxes to the target
                     $boxesToUpdateIds = DB::table('packing_boxes')
                         ->join('packing_cartons', 'packing_boxes.packing_carton_id', '=', 'packing_cartons.id')
@@ -462,7 +462,7 @@ class WarehouseInventoryController extends Controller
                         ->limit($updateQty)
                         ->select('packing_boxes.id')
                         ->pluck('id');
-                    
+
                     if ($boxesToUpdateIds->isNotEmpty()) {
                         DB::table('packing_boxes')
                             ->whereIn('id', $boxesToUpdateIds)
@@ -486,7 +486,7 @@ class WarehouseInventoryController extends Controller
                         ->limit($updateQty)
                         ->select('packing_boxes.id')
                         ->pluck('id');
-                    
+
                     if ($boxesToUpdateIds->isNotEmpty()) {
                         DB::table('packing_boxes')
                             ->whereIn('id', $boxesToUpdateIds)
