@@ -33,90 +33,93 @@ class WarehouseInventoryController extends Controller
 
     public function indexList(Request $request)
     {
-        if ($request->ajax()) {
-            $query = DomesticInventory::with(['product.series', 'sizeSet', 'color', 'rack.storeroom']);
+        $query = DomesticInventory::with(['product.series', 'sizeSet', 'color', 'rack.storeroom']);
 
-            if ($request->has('storeroom_id') && !empty($request->storeroom_id)) {
-                $query->whereHas('rack', function ($q) use ($request) {
-                    $q->where('storeroom_id', $request->storeroom_id);
-                });
-            }
-
-            if ($request->has('rack_id') && !empty($request->rack_id)) {
-                $query->where('rack_id', $request->rack_id);
-            }
-
-            if ($request->has('size_set_id') && !empty($request->size_set_id)) {
-                $query->where('size_set_id', $request->size_set_id);
-            }
-
-            if ($request->has('design_filter') && !empty($request->design_filter)) {
-                $query->whereHas('product', function ($q) use ($request) {
-                    $q->where('design_number', $request->design_filter);
-                });
-            }
-
-            if ($request->has('product_id') && !empty($request->product_id)) {
-                $query->where('product_id', $request->product_id);
-            }
-
-            if ($request->has('color_id') && !empty($request->color_id)) {
-                $query->where('color_id', $request->color_id);
-            }
-
-            return Datatables::of($query)
-                ->addIndexColumn()
-                ->addColumn('product_name', function ($row) {
-                    return $row->product_name;
-                })
-                ->addColumn('design_number', function ($row) {
-                    return $row->design_number;
-                })
-                ->addColumn('size_set_name', function ($row) {
-                    return $row->size_set_name;
-                })
-                ->addColumn('color_name', function ($row) {
-                    return $row->color_name;
-                })
-                ->addColumn('location', function ($row) {
-                    $wh = $row->rack->storeroom->name ?? 'N/A';
-                    $rk = $row->rack->name ?? 'N/A';
-                    return $wh . ' / ' . $rk;
-                })
-                ->addColumn('action', function ($row) {
-                    $btn = '<a href="' . route('admin.inventory.warehouse_stock.show', $row->id) . '" class="btn btn-xs btn-primary mr-1" title="View"><i class="fas fa-eye"></i></a>';
-                    // $btn .= '<button type="button" class="btn btn-xs btn-success btn-transfer" title="Transfer" 
-                    //     data-id="' . $row->id . '" 
-                    //     data-product="' . $row->product_name . ' (' . $row->design_number . ')"
-                    //     data-boxes="' . $row->total_boxes . '">
-                    //     <i class="fas fa-exchange-alt"></i></button>';
-                    // $btn .= '<button type="button" class="btn btn-xs btn-warning ml-1 btn-edit-attributes" title="Edit Attributes" 
-                    //     data-id="' . $row->id . '" 
-                    //     data-product-id="' . $row->product_id . '"
-                    //     data-design-no="' . $row->design_number . '"
-                    //     data-color-id="' . $row->color_id . '"
-                    //     data-size-set-id="' . $row->size_set_id . '"
-                    //     data-fitting-id="' . ($row->fitting_id ?? '') . '"
-                    //     data-pattern-id="' . ($row->pattern_id ?? '') . '"
-                    //     data-boxes="' . $row->total_boxes . '"
-                    //     data-rack-id="' . $row->rack_id . '">
-                    //     <i class="fas fa-edit"></i></button>';
-                    $btn .= '<button type="button" class="btn btn-xs btn-danger ml-1 btn-delete-boxes" title="Delete Boxes" 
-                        data-id="' . $row->id . '" 
-                        data-product-id="' . $row->product_id . '"
-                        data-design-no="' . $row->design_number . '"
-                        data-color-id="' . $row->color_id . '"
-                        data-size-set-id="' . $row->size_set_id . '"
-                        data-fitting-id="' . ($row->fitting_id ?? '') . '"
-                        data-pattern-id="' . ($row->pattern_id ?? '') . '"
-                        data-available-boxes="' . $row->total_boxes . '"
-                        data-rack-id="' . $row->rack_id . '">
-                        <i class="fas fa-trash"></i></button>';
-                    return $btn;
-                })
-                ->rawColumns(['action'])
-                ->make(true);
+        if ($request->has('storeroom_id') && !empty($request->storeroom_id)) {
+            $query->whereHas('rack', function ($q) use ($request) {
+                $q->where('storeroom_id', $request->storeroom_id);
+            });
         }
+
+        if ($request->has('rack_id') && !empty($request->rack_id)) {
+            $query->where('rack_id', $request->rack_id);
+        }
+
+        if ($request->has('size_set_id') && !empty($request->size_set_id)) {
+            $query->where('size_set_id', $request->size_set_id);
+        }
+
+        if ($request->has('design_filter') && !empty($request->design_filter)) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('design_number', $request->design_filter);
+            });
+        }
+
+        if ($request->has('product_id') && !empty($request->product_id)) {
+            $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->has('color_id') && !empty($request->color_id)) {
+            $query->where('color_id', $request->color_id);
+        }
+        
+        $query->latest();
+
+        if ($request->has('load_more')) {
+            $perPage = 20;
+            $results = $query->paginate($perPage);
+            
+            $html = '';
+            $start = ($results->currentPage() - 1) * $perPage + 1;
+            foreach ($results as $index => $row) {
+                $html .= view('admin.inventory.warehouse_stock.partials.row', [
+                    'row' => $row,
+                    'index' => $start + $index
+                ])->render();
+            }
+
+            return response()->json([
+                'html' => $html,
+                'next_page' => $results->nextPageUrl() ? $results->currentPage() + 1 : null
+            ]);
+        }
+
+        return Datatables::of($query)
+            ->addIndexColumn()
+            ->addColumn('product_name', function ($row) {
+                return $row->product_name;
+            })
+            ->addColumn('design_number', function ($row) {
+                return $row->design_number;
+            })
+            ->addColumn('size_set_name', function ($row) {
+                return $row->size_set_name;
+            })
+            ->addColumn('color_name', function ($row) {
+                return $row->color_name;
+            })
+            ->addColumn('location', function ($row) {
+                $wh = $row->rack->storeroom->name ?? 'N/A';
+                $rk = $row->rack->name ?? 'N/A';
+                return $wh . ' / ' . $rk;
+            })
+            ->addColumn('action', function ($row) {
+                $btn = '<a href="' . route('admin.inventory.warehouse_stock.show', $row->id) . '" class="btn btn-xs btn-primary mr-1" title="View"><i class="fas fa-eye"></i></a>';
+                $btn .= '<button type="button" class="btn btn-xs btn-danger ml-1 btn-delete-boxes" title="Delete Boxes" 
+                    data-id="' . $row->id . '" 
+                    data-product-id="' . $row->product_id . '"
+                    data-design-no="' . $row->design_number . '"
+                    data-color-id="' . $row->color_id . '"
+                    data-size-set-id="' . $row->size_set_id . '"
+                    data-fitting-id="' . ($row->fitting_id ?? '') . '"
+                    data-pattern-id="' . ($row->pattern_id ?? '') . '"
+                    data-available-boxes="' . $row->total_boxes . '"
+                    data-rack-id="' . $row->rack_id . '">
+                    <i class="fas fa-trash"></i></button>';
+                return $btn;
+            })
+            ->rawColumns(['action'])
+            ->make(true);
     }
 
     public function show($id)

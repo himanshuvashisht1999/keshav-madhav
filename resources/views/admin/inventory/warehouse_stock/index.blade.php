@@ -108,6 +108,14 @@
                                 <tbody></tbody>
                             </table>
                         </div>
+                        <div id="loading-spinner" class="text-center py-3" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                        <div id="no-more-data" class="text-center py-3 text-muted small" style="display: none;">
+                            No more records to load.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -337,48 +345,91 @@
                 });
             });
 
-            let table = $('#inventoryTable').DataTable({
-                processing: true,
-                serverSide: true,
-                ordering: false,
-                ajax: {
+            const container = $('#inventoryTable tbody');
+            let nextPage = 1;
+            let loading = false;
+
+            function loadMore(reset = false) {
+                if (loading) return;
+                if (!nextPage && !reset) {
+                    $('#no-more-data').show();
+                    return;
+                }
+
+                loading = true;
+                $('#loading-spinner').show();
+                $('#no-more-data').hide();
+
+                if (reset) {
+                    nextPage = 1;
+                    container.css('opacity', '0.5');
+                }
+
+                $.ajax({
                     url: "{{ route('admin.inventory.warehouse_stock.list') }}",
-                    data: function (d) {
-                        d.storeroom_id = $('#storeroom_filter').val();
-                        d.rack_id = $('#rack_filter').val();
-                        d.size_set_id = $('#size_set_filter').val();
-                        d.design_filter = $('#design_filter').val();
-                        d.product_id = $('#product_filter').val();
-                        d.color_id = $('#color_filter').val();
+                    type: "GET",
+                    data: {
+                        load_more: 1,
+                        page: nextPage,
+                        storeroom_id: $('#storeroom_filter').val(),
+                        rack_id: $('#rack_filter').val(),
+                        size_set_id: $('#size_set_filter').val(),
+                        design_filter: $('#design_filter').val(),
+                        product_id: $('#product_filter').val(),
+                        color_id: $('#color_filter').val()
+                    },
+                    success: function(res) {
+                        if (reset) {
+                            container.empty().css('opacity', '1');
+                        }
+                        
+                        container.append(res.html);
+                        nextPage = res.next_page;
+                        loading = false;
+                        $('#loading-spinner').hide();
+
+                        if (!nextPage) {
+                            $('#no-more-data').show();
+                        }
+                        
+                        if (container.is(':empty')) {
+                            container.append('<tr><td colspan="9" class="text-center py-5 text-muted">No inventory records found.</td></tr>');
+                            $('#no-more-data').hide();
+                        }
+                    },
+                    error: function() {
+                        loading = false;
+                        $('#loading-spinner').hide();
+                        container.css('opacity', '1');
+                        toastr.error('Failed to load inventory.');
                     }
-                },
-                columns: [
-                    { data: 'DT_RowIndex', name: 'DT_RowIndex', className: 'text-center' },
-                    { data: 'product_name', name: 'product_name' },
-                    { data: 'design_number', name: 'design_number' },
-                    { data: 'size_set_name', name: 'size_set_name' },
-                    { data: 'color_name', name: 'color_name' },
-                    { data: 'location', name: 'location' },
-                    { data: 'total_boxes', name: 'total_boxes', className: 'text-center' },
-                    { data: 'quantity', name: 'quantity', className: 'text-center font-weight-bold' },
-                    { data: 'action', name: 'action', className: 'text-center' }
-                ],
-                language: {
-                    emptyTable: "No inventory records found",
-                    zeroRecords: "No matching records found",
-                    processing: '<i class="fas fa-spinner fa-spin fa-2x text-primary"></i>'
+                });
+            }
+
+            // Initial Load
+            loadMore();
+
+            // Scroll Event
+            $('.content-wrapper').on('scroll', function() {
+                if (loading || !nextPage) return;
+
+                let scrollTop = $(this).scrollTop();
+                let innerHeight = $(this).innerHeight();
+                let scrollHeight = $(this)[0].scrollHeight;
+
+                if (scrollTop + innerHeight >= scrollHeight - 300) {
+                    loadMore();
                 }
             });
 
             // Filter events
             $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #color_filter').on('change', function () {
-                table.ajax.reload();
+                loadMore(true);
             });
 
             // Reset filter
             $('#reset_filters').on('click', function () {
                 $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #color_filter').val('').trigger('change');
-                table.ajax.reload();
             });
 
             // Filter Dynamic Racks
@@ -449,7 +500,7 @@
                             toastr.success(res.message);
                             $('#transferRowModal').modal('hide');
                             form[0].reset();
-                            table.ajax.reload();
+                            loadMore(true);
                         } else {
                             toastr.error(res.message);
                         }
@@ -594,7 +645,7 @@
                         if(res.status == 'success') {
                             toastr.success(res.message);
                             $('#editAttributesModal').modal('hide');
-                            table.ajax.reload();
+                            loadMore(true);
                         } else {
                             toastr.error(res.message);
                         }
@@ -641,7 +692,7 @@
                         if(res.status == 'success') {
                             toastr.success(res.message);
                             $('#deleteBoxesModal').modal('hide');
-                            table.ajax.reload();
+                            loadMore(true);
                         } else {
                             toastr.error(res.message);
                         }

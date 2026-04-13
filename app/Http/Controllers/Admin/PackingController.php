@@ -365,7 +365,7 @@ class PackingController extends Controller
             if ($inventory) {
                 $inventory->increment('total_boxes');
             } else {
-                \App\Models\DomesticInventory::create([
+                $inventory = \App\Models\DomesticInventory::create([
                     // 'order_main_id' => $data['order_id'],
                     'packing_main_id' => $main->id,
                     'packing_carton_id' => $carton->id,
@@ -383,6 +383,19 @@ class PackingController extends Controller
                     'status' => 1
                 ]);
             }
+
+            // Log History
+            \App\Models\DomesticInventoryHistory::create([
+                'user_id' => auth()->id(),
+                'new_product_id' => $data['product_id'],
+                'new_size_set_id' => $data['size_set_id'],
+                'new_color_id' => $data['color_id'],
+                'new_fitting_id' => $data['fitting_id'],
+                'new_pattern_id' => $data['pattern_id'],
+                'new_rack_id' => $data['rack_id'] ?? null,
+                'box_quantity' => 1,
+                'type' => 'packing'
+            ]);
 
             // Granular Deduction logic: Size-wise math for both Order and Unit Stock
             if (!empty($sizeSetMaster->size_group)) {
@@ -595,6 +608,19 @@ class PackingController extends Controller
                             'status' => 1
                         ]);
                     }
+
+                    // Log History
+                    \App\Models\DomesticInventoryHistory::create([
+                        'user_id' => auth()->id(),
+                        'new_product_id' => $box_plan['product_id'],
+                        'new_size_set_id' => $box_plan['size_set_id'],
+                        'new_color_id' => $box_plan['color_id'],
+                        'new_fitting_id' => $fitting_id ?: null,
+                        'new_pattern_id' => $pattern_id ?: null,
+                        'new_rack_id' => $currentRackId,
+                        'box_quantity' => 1,
+                        'type' => 'packing'
+                    ]);
 
                     // Redundant but safe
                     DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string) $barcode]);

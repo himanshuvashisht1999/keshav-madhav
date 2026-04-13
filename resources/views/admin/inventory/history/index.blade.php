@@ -27,6 +27,18 @@
                                     <input type="text" id="design_search" class="form-control border-left-0" placeholder="Search Design (Old or New)...">
                                 </div>
                             </div>
+                            <div class="col-md-3">
+                                <label class="small font-weight-bold text-muted mb-1">Movement Type</label>
+                                <select id="type_filter" class="form-control custom-select">
+                                    <option value="">All Types</option>
+                                    <option value="creation">Entry</option>
+                                    <option value="packing">Packing</option>
+                                    <option value="attribute_change">Update</option>
+                                    <option value="stock_consume">Consume</option>
+                                    <option value="transfer">Transfer</option>
+                                    <option value="deletion">Deletion</option>
+                                </select>
+                            </div>
                             <div class="col-md-2">
                                 <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block">
                                     <i class="fas fa-undo mr-1"></i> Reset
@@ -42,16 +54,28 @@
                             <table id="historyTable" class="table table-hover mb-0">
                                 <thead class="bg-light contrast-text">
                                     <tr>
-                                        <th width="5%" class="text-center py-3">#</th>
-                                        <th class="py-3">Old Attributes</th>
-                                        <th class="py-3 text-center"><i class="fas fa-arrow-right"></i></th>
-                                        <th class="py-3">New Attributes</th>
-                                        <th class="py-3 text-center">Qty (Boxes)</th>
-                                        <th class="py-3">Date</th>
+                                        <th width="3%" class="text-center py-3">#</th>
+                                        <th width="10%" class="py-3">Type</th>
+                                        <th width="28%" class="py-3">Old Attributes</th>
+                                        <th width="5%" class="py-3 text-center"><i class="fas fa-link text-muted"></i></th>
+                                        <th width="28%" class="py-3">New Attributes</th>
+                                        <th width="10%" class="py-3 text-center">Movement</th>
+                                        <th width="8%" class="py-3">User</th>
+                                        <th width="8%" class="py-3">Date</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
+                        </div>
+                        <div id="loading-indicator" class="text-center py-4" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="text-muted small mt-2">Loading more records...</p>
+                        </div>
+                        <div id="no-more-records" class="text-center py-4" style="display: none;">
+                            <hr class="w-25">
+                            <p class="text-muted small">No more history records found.</p>
                         </div>
                     </div>
                 </div>
@@ -75,49 +99,73 @@
 
     <script>
         $(function () {
-            let table = $('#historyTable').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
+            let currentPage = 1;
+            let isLoading = false;
+            let hasMore = true;
+
+            function loadMore(reset = false) {
+                if (isLoading || (!hasMore && !reset)) return;
+
+                if (reset) {
+                    currentPage = 1;
+                    hasMore = true;
+                    $('#historyTable tbody').html('');
+                }
+
+                isLoading = true;
+                $('#loading-indicator').show();
+                $('#no-more-records').hide();
+
+                $.ajax({
                     url: "{{ route('admin.inventory.attribute-history.list') }}",
-                    data: function(d) {
-                        d.design_search = $('#design_search').val();
-                    }
-                },
-                columns: [
-                    { data: 'DT_RowIndex', className: 'text-center text-muted', orderable: false, searchable: false },
-                    { data: 'old_details', orderable: false, searchable: false },
-                    { 
-                        data: null, 
-                        className: 'text-center',
-                        orderable: false,
-                        searchable: false,
-                        render: function() {
-                            return '<i class="fas fa-arrow-right text-primary"></i>';
+                    type: "GET",
+                    data: {
+                        page: currentPage,
+                        load_more: 1,
+                        design_search: $('#design_search').val(),
+                        type: $('#type_filter').val()
+                    },
+                    success: function (response) {
+                        $('#historyTable tbody').append(response.html);
+                        
+                        if (response.next_page) {
+                            currentPage = response.next_page;
+                        } else {
+                            hasMore = false;
+                            if ($('#historyTable tbody tr').length > 0) {
+                                $('#no-more-records').show();
+                            }
                         }
                     },
-                    { data: 'new_details', orderable: false, searchable: false },
-                    { data: 'box_quantity', className: 'text-center' },
-                    { 
-                        data: 'created_at',
-                        render: function(data) {
-                            return moment(data).format('DD-MM-YYYY HH:mm');
-                        }
+                    error: function () {
+                        console.error("Failed to load records.");
+                    },
+                    complete: function () {
+                        isLoading = false;
+                        $('#loading-indicator').hide();
                     }
-                ],
-                order: [[5, 'desc']], // Default order by created_at column (index 5 now)
-                language: {
-                    processing: '<i class="fas fa-spinner fa-spin fa-2x text-primary"></i>'
+                });
+            }
+
+            // Initial Load
+            loadMore();
+
+            // Scroll Event
+            $('.content-wrapper').on('scroll', function () {
+                if ($(this).scrollTop() + $(this).innerHeight() >= $(this)[0].scrollHeight - 10) {
+                    loadMore();
                 }
             });
 
-            $('#design_search').on('keyup change', function() {
-                table.draw();
+            // Filters
+            $('#design_search, #type_filter').on('keyup change', function () {
+                loadMore(true);
             });
 
-            $('#reset_filters').on('click', function() {
+            $('#reset_filters').on('click', function () {
                 $('#design_search').val('');
-                table.draw();
+                $('#type_filter').val('');
+                loadMore(true);
             });
         });
     </script>

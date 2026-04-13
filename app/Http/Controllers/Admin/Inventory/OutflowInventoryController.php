@@ -104,6 +104,10 @@ class OutflowInventoryController extends Controller
             'oldRack.storeroom', 'newRack.storeroom'
         ])->orderBy('created_at', 'desc');
 
+        if ($request->type) {
+            $data->where('type', $request->type);
+        }
+
         if ($request->design_search) {
             $search = $request->design_search;
             $data->where(function($q) use ($search) {
@@ -115,37 +119,80 @@ class OutflowInventoryController extends Controller
             });
         }
 
+        if ($request->has('load_more')) {
+            $perPage = 20;
+            $results = $data->paginate($perPage);
+            
+            $html = '';
+            $start = ($results->currentPage() - 1) * $perPage + 1;
+            foreach ($results as $index => $row) {
+                $html .= view('admin.inventory.history.partials.row', [
+                    'row' => $row,
+                    'index' => $start + $index
+                ])->render();
+            }
+
+            return response()->json([
+                'html' => $html,
+                'next_page' => $results->nextPageUrl() ? $results->currentPage() + 1 : null
+            ]);
+        }
+
         return DataTables::of($data)
             ->addIndexColumn()
-            ->addColumn('user_name', function($row){
-                return $row->user ? $row->user->name : 'System';
+            ->addColumn('user_name', function ($row) {
+                return '<div class="font-weight-bold text-dark">' . ($row->user ? $row->user->name : 'System') . '</div>';
             })
-            ->addColumn('old_details', function($row){
+            ->addColumn('type_label', function ($row) {
+                $badges = [
+                    'creation' => ['label' => 'Entry', 'class' => 'badge-success'],
+                    'packing' => ['label' => 'Packing', 'class' => 'badge-info'],
+                    'attribute_change' => ['label' => 'Update', 'class' => 'badge-warning'],
+                    'stock_consume' => ['label' => 'Consume', 'class' => 'badge-danger'],
+                    'transfer' => ['label' => 'Transfer', 'class' => 'badge-primary'],
+                    'deletion' => ['label' => 'Deletion', 'class' => 'badge-danger'],
+                ];
+                $type = $badges[$row->type] ?? ['label' => ucfirst($row->type), 'class' => 'badge-secondary'];
+                return '<span class="badge ' . $type['class'] . ' px-2 py-1">' . $type['label'] . '</span>';
+            })
+            ->addColumn('old_details', function ($row) {
+                if (in_array($row->type, ['creation', 'packing'])) {
+                    return '<div class="text-muted small">New Stock Inbound</div>';
+                }
+                
                 $design = $row->oldProduct ? $row->oldProduct->design_number : 'N/A';
                 $color = $row->oldColor ? $row->oldColor->name : 'N/A';
                 $size = $row->oldSizeSet ? $row->oldSizeSet->name : 'N/A';
                 $fitting = $row->oldFitting ? $row->oldFitting->name : 'N/A';
                 $pattern = $row->oldPattern ? $row->oldPattern->name : 'N/A';
-                $rack = $row->oldRack ? ($row->oldRack->storeroom->name . '/' . $row->oldRack->name) : 'N/A';
-                
-                return "<strong>D: $design</strong> | C: $color | S: $size<br>
-                        <small>F: $fitting | P: $pattern | R: $rack</small>";
+                $rack = $row->oldRack ? ($row->oldRack->storeroom->name . ' / ' . $row->oldRack->name) : 'N/A';
+
+                return '<div class="small">' .
+                    '<strong class="text-dark">D: ' . $design . '</strong> | C: ' . $color . ' | S: ' . $size . '<br>' .
+                    '<span class="text-muted">F: ' . $fitting . ' | P: ' . $pattern . ' | R: ' . $rack . '</span>' .
+                    '</div>';
             })
-            ->addColumn('new_details', function($row){
+            ->addColumn('new_details', function ($row) {
+                if ($row->type === 'deletion') {
+                    return '<div class="text-danger small font-weight-bold">Stock Removed from System</div>';
+                }
+
                 $design = $row->newProduct ? $row->newProduct->design_number : 'N/A';
                 $color = $row->newColor ? $row->newColor->name : 'N/A';
                 $size = $row->newSizeSet ? $row->newSizeSet->name : 'N/A';
                 $fitting = $row->newFitting ? $row->newFitting->name : 'N/A';
                 $pattern = $row->newPattern ? $row->newPattern->name : 'N/A';
-                $rack = $row->newRack ? ($row->newRack->storeroom->name . '/' . $row->newRack->name) : 'N/A';
-                
-                return "<strong>D: $design</strong> | C: $color | S: $size<br>
-                        <small>F: $fitting | P: $pattern | R: $rack</small>";
+                $rack = $row->newRack ? ($row->newRack->storeroom->name . ' / ' . $row->newRack->name) : 'N/A';
+
+                return '<div class="small">' .
+                    '<strong class="text-success">D: ' . $design . '</strong> | C: ' . $color . ' | S: ' . $size . '<br>' .
+                    '<span class="text-muted">F: ' . $fitting . ' | P: ' . $pattern . ' | R: ' . $rack . '</span>' .
+                    '</div>';
             })
-            ->editColumn('box_quantity', function($row){
-                return '<strong>' . $row->box_quantity . '</strong> Boxes';
+            ->editColumn('box_quantity', function ($row) {
+                return '<span class="badge badge-light border px-2 py-1 font-weight-bold" style="font-size: 0.9rem;">' . $row->box_quantity . ' Boxes</span>';
             })
-            ->rawColumns(['old_details', 'new_details', 'box_quantity'])
+            ->rawColumns(['user_name', 'type_label', 'old_details', 'new_details', 'box_quantity'])
             ->make(true);
     }
 }

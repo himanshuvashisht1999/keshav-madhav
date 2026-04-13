@@ -57,224 +57,97 @@ class InventoryController extends Controller
 
     public function indexList(Request $request)
     {
-        if ($request->ajax()) {
-            // Group by Product Name, Design Number, Size Set, MRP, Selling Price
-            $query = DomesticInventory::select(
-                'domestic_inventories.size_set_id',
-                'domestic_inventories.color_id',
-                'domestic_inventories.fitting_id',
-                'domestic_inventories.pattern_id',
-                'domestic_inventories.product_id',
-                'domestic_inventories.rack_id',
-                'racks.name as rack_name',
-                'racks.storeroom_id',
-                'storerooms.name as storeroom_name',
-                'products.design_number',
-                'products.name_of_garment as product_name',
-                'series.name as series_name',
-                'colors.name as color_name',
-                'sizes.name as size_set_name',
-                'fittings.name as fitting_name',
-                'patterns.name as pattern_name',
-                'variants.mrp as mrp',
-                DB::raw('SUM(domestic_inventories.total_boxes) as total_boxes'),
-                DB::raw('MAX(domestic_inventories.created_at) as recent_date')
-            )
-                ->leftJoin('production_goods as products', 'domestic_inventories.product_id', '=', 'products.id')
-                ->leftJoin('master_series as series', 'products.master_series_id', '=', 'series.id')
-                ->leftJoin('master_colors as colors', 'domestic_inventories.color_id', '=', 'colors.id')
-                ->leftJoin('master_size_measurements as sizes', 'domestic_inventories.size_set_id', '=', 'sizes.id')
-                ->leftJoin('master_product_fittings as fittings', 'domestic_inventories.fitting_id', '=', 'fittings.id')
-                ->leftJoin('master_design_patterns as patterns', 'domestic_inventories.pattern_id', '=', 'patterns.id')
-                ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                ->leftJoin('production_goods_variants as variants', function ($join) {
-                    $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
-                        ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
-                });
+        // Group by Product Name, Design Number, Size Set, MRP, Selling Price
+        $query = DomesticInventory::select(
+            'domestic_inventories.size_set_id',
+            'domestic_inventories.color_id',
+            'domestic_inventories.fitting_id',
+            'domestic_inventories.pattern_id',
+            'domestic_inventories.product_id',
+            'products.design_number',
+            'products.name_of_garment as product_name',
+            'series.name as series_name',
+            'colors.name as color_name',
+            'sizes.name as size_set_name',
+            'fittings.name as fitting_name',
+            'patterns.name as pattern_name',
+            'variants.mrp as mrp',
+            DB::raw('SUM(domestic_inventories.total_boxes) as total_boxes')
+        )
+            ->leftJoin('production_goods as products', 'domestic_inventories.product_id', '=', 'products.id')
+            ->leftJoin('master_series as series', 'products.master_series_id', '=', 'series.id')
+            ->leftJoin('master_colors as colors', 'domestic_inventories.color_id', '=', 'colors.id')
+            ->leftJoin('master_size_measurements as sizes', 'domestic_inventories.size_set_id', '=', 'sizes.id')
+            ->leftJoin('master_product_fittings as fittings', 'domestic_inventories.fitting_id', '=', 'fittings.id')
+            ->leftJoin('master_design_patterns as patterns', 'domestic_inventories.pattern_id', '=', 'patterns.id')
+            ->leftJoin('production_goods_variants as variants', function ($join) {
+                $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
+                    ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
+            });
 
-            // Filter by Size Set
-            if ($request->has('size_set_id') && !empty($request->size_set_id)) {
-                $query->where('domestic_inventories.size_set_id', $request->size_set_id);
-            }
-
-            // Filter by Product
-            if ($request->has('product_id') && !empty($request->product_id)) {
-                $query->where('domestic_inventories.product_id', $request->product_id);
-            }
-
-            // Filter by Color
-            if ($request->has('color_id') && !empty($request->color_id)) {
-                $query->where('domestic_inventories.color_id', $request->color_id);
-            }
-
-            // Filter by Design Number
-            if ($request->has('design_number') && !empty($request->design_number)) {
-                $query->where('products.design_number', 'LIKE', '%' . $request->design_number . '%');
-            }
-
-            // Filter by MRP
-            if ($request->has('mrp') && !empty($request->mrp)) {
-                $query->where('variants.mrp', '>=', $request->mrp);
-            }
-
-            $data = $query->groupBy(
-                'domestic_inventories.size_set_id',
-                'domestic_inventories.color_id',
-                'domestic_inventories.fitting_id',
-                'domestic_inventories.pattern_id',
-                'domestic_inventories.product_id',
-                'products.design_number',
-                'products.name_of_garment',
-                'series.name',
-                'colors.name',
-                'sizes.name',
-                'fittings.name',
-                'patterns.name',
-                'variants.mrp'
-            )->get();
-
-            return datatables()->of($data)
-                ->addIndexColumn()
-                ->addColumn('product_name_display', function ($row) {
-                    return trim($row->product_name) ?: $row->design_number;
-                })
-                ->addColumn('mrp_display', function ($row) {
-                    return '₹' . number_format($row->mrp ?? 0, 2);
-                })
-                ->addColumn('total_order', function ($row) {
-                    $agentOrderBoxes = \App\Models\AgentOrderItem::whereHas(
-                        'order',
-                        function ($q) {
-                            $q->where('status', '!=', 'dispatched');
-                        }
-                    )
-                        ->where('design_number', $row->design_number)
-                        ->where('color_id', $row->color_id)
-                        ->where('size_set_id', $row->size_set_id)
-                        ->when(
-                            $row->fitting_id,
-                            function ($q, $val) {
-                                return $q->where('fitting_id', $val);
-                            }
-                            ,
-                            function ($q) {
-                                return $q->whereNull('fitting_id');
-                            }
-                        )
-                        ->when(
-                            $row->pattern_id,
-                            function ($q, $val) {
-                                return $q->where('pattern_id', $val);
-                            }
-                            ,
-                            function ($q) {
-                                return $q->whereNull('pattern_id');
-                            }
-                        )
-                        ->sum('box_qty');
-
-                    return (int) $agentOrderBoxes;
-                })
-                ->addColumn('available_boxes', function ($row) {
-                    $total_boxes = $row->total_boxes ?? 0;
-                    $agentOrderBoxes = \App\Models\AgentOrderItem::whereHas(
-                        'order',
-                        function ($q) {
-                            $q->where('status', '!=', 'dispatched');
-                        }
-                    )
-                        ->where('design_number', $row->design_number)
-                        ->where('color_id', $row->color_id)
-                        ->where('size_set_id', $row->size_set_id)
-                        ->when(
-                            $row->fitting_id,
-                            function ($q, $val) {
-                                return $q->where('fitting_id', $val);
-                            },
-                            function ($q) {
-                                return $q->whereNull('fitting_id');
-                            }
-                        )
-                        ->when(
-                            $row->pattern_id,
-                            function ($q, $val) {
-                                return $q->where('pattern_id', $val);
-                            },
-                            function ($q) {
-                                return $q->whereNull('pattern_id');
-                            }
-                        )
-                        ->sum(DB::raw('box_qty - IFNULL(scanned_box_qty, 0)'));
-
-                    return max(0, (int) ($total_boxes - $agentOrderBoxes));
-                })
-                ->addColumn('action', function ($row) {
-                    $params = [
-                        'product_id' => $row->product_id,
-                        'size_set_id' => $row->size_set_id,
-                        'color_id' => $row->color_id,
-                        'fitting_id' => $row->fitting_id,
-                        'pattern_id' => $row->pattern_id,
-                    ];
-                    $btn = '<a href="' . route('admin.inventory.show', $params) . '" class="btn btn-primary btn-sm btn-icon mb-1" title="View Details"><i class="fas fa-eye"></i></a>';
-
-                    $availableBoxes = DomesticInventory::where('product_id', $row->product_id)
-                        ->where('size_set_id', $row->size_set_id)
-                        ->where('color_id', $row->color_id)
-                        ->where(function ($q) use ($row) {
-                            if ($row->fitting_id)
-                                $q->where('fitting_id', $row->fitting_id);
-                            else
-                                $q->whereNull('fitting_id');
-                        })
-                        ->where(function ($q) use ($row) {
-                            if ($row->pattern_id)
-                                $q->where('pattern_id', $row->pattern_id);
-                            else
-                                $q->whereNull('pattern_id');
-                        })
-                        // ->where(function ($q) {
-                        //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-                        // })
-                        ->sum('total_boxes');
-
-                    $seriesId = \App\Models\ProductionGoods::find($row->product_id)->master_series_id ?? '';
-
-                    // $btn .= ' <button type="button" class="btn btn-warning btn-sm btn-icon mb-1 text-dark font-weight-bold" 
-                    //          data-toggle="modal" 
-                    //          data-target="#editAttributesModal"
-                    //          data-product-id="' . $row->product_id . '"
-                    //          data-series-id="' . $seriesId . '"
-                    //          data-design-no="' . $row->design_number . '"
-                    //          data-size-set-id="' . $row->size_set_id . '"
-                    //          data-color-id="' . $row->color_id . '"
-                    //          data-fitting-id="' . ($row->fitting_id ?? '') . '"
-                    //          data-pattern-id="' . ($row->pattern_id ?? '') . '"
-                    //          data-total-boxes="' . $row->total_boxes . '"
-                    //          data-available-boxes="' . $availableBoxes . '"
-                    //          title="Change Product Attributes"
-                    //      ><i class="fas fa-edit"></i></button>';
-    
-                    // $btn .= ' <button type="button" class="btn btn-danger btn-sm btn-icon mb-1 text-white font-weight-bold" 
-                    //          data-toggle="modal" 
-                    //          data-target="#deleteBoxesModal"
-                    //          data-product-id="' . $row->product_id . '"
-                    //          data-design-no="' . $row->design_number . '"
-                    //          data-size-set-id="' . $row->size_set_id . '"
-                    //          data-color-id="' . $row->color_id . '"
-                    //          data-fitting-id="' . ($row->fitting_id ?? '') . '"
-                    //          data-pattern-id="' . ($row->pattern_id ?? '') . '"
-                    //          data-total-boxes="' . $row->total_boxes . '"
-                    //          data-available-boxes="' . $availableBoxes . '"
-                    //          title="Delete Boxes"
-                    //      ><i class="fas fa-trash"></i></button>';
-    
-                    return $btn;
-                })
-                ->rawColumns(['action', 'product_name_display'])
-                ->make(true);
+        // Filter by Size Set
+        if ($request->has('size_set_id') && !empty($request->size_set_id)) {
+            $query->where('domestic_inventories.size_set_id', $request->size_set_id);
         }
+
+        // Filter by Product
+        if ($request->has('product_id') && !empty($request->product_id)) {
+            $query->where('domestic_inventories.product_id', $request->product_id);
+        }
+
+        // Filter by Color
+        if ($request->has('color_id') && !empty($request->color_id)) {
+            $query->where('domestic_inventories.color_id', $request->color_id);
+        }
+
+        // Filter by Design Number
+        if ($request->has('design_number') && !empty($request->design_number)) {
+            $query->where('products.design_number', 'LIKE', '%' . $request->design_number . '%');
+        }
+
+        // Filter by MRP
+        if ($request->has('mrp') && !empty($request->mrp)) {
+            $query->where('variants.mrp', '>=', $request->mrp);
+        }
+
+        $query->groupBy(
+            'domestic_inventories.size_set_id',
+            'domestic_inventories.color_id',
+            'domestic_inventories.fitting_id',
+            'domestic_inventories.pattern_id',
+            'domestic_inventories.product_id',
+            'products.design_number',
+            'products.name_of_garment',
+            'series.name',
+            'colors.name',
+            'sizes.name',
+            'fittings.name',
+            'patterns.name',
+            'variants.mrp'
+        )->orderBy('products.design_number', 'asc');
+
+        if ($request->has('load_more')) {
+            $perPage = 20;
+            $results = $query->paginate($perPage);
+            
+            $html = '';
+            $start = ($results->currentPage() - 1) * $perPage + 1;
+            foreach ($results as $index => $row) {
+                $html .= view('admin.inventory.partials.row', [
+                    'row' => $row,
+                    'index' => $start + $index
+                ])->render();
+            }
+
+            return response()->json([
+                'html' => $html,
+                'next_page' => $results->nextPageUrl() ? $results->currentPage() + 1 : null
+            ]);
+        }
+
+        // Fallback for DataTables if still used by other parts
+        $data = $query->get();
+        return Datatables::of($data)->addIndexColumn()->make(true);
     }
 
     public function show(Request $request)
@@ -426,6 +299,19 @@ class InventoryController extends Controller
                         'status' => 1
                     ]);
                 }
+
+                // Log History for stock addition
+                \App\Models\DomesticInventoryHistory::create([
+                    'user_id' => auth()->id(),
+                    'new_product_id' => $item['product_id'],
+                    'new_size_set_id' => $item['size_set_id'],
+                    'new_color_id' => $item['color_id'],
+                    'new_fitting_id' => $item['fitting_id'],
+                    'new_pattern_id' => $item['pattern_id'],
+                    'new_rack_id' => $item['rack_id'] ?? null,
+                    'box_quantity' => $item['total_boxes'],
+                    'type' => 'creation'
+                ]);
 
                 $inventoryIds[] = $inventory->id;
 

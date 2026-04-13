@@ -88,6 +88,14 @@
                                 <tbody></tbody>
                             </table>
                         </div>
+                        <div id="loading-spinner" class="text-center py-3" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                        <div id="no-more-data" class="text-center py-3 text-muted small" style="display: none;">
+                            No more records to load.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -343,51 +351,91 @@
                 width: '100%'
             });
 
-            let table = $('#inventoryTable').DataTable({
-                processing: true,
-                serverSide: true,
-                ordering: false,
-                ajax: {
+            const container = $('#inventoryTable tbody');
+            let nextPage = 1;
+            let loading = false;
+
+            function loadMore(reset = false) {
+                if (loading) return;
+                if (!nextPage && !reset) {
+                    $('#no-more-data').show();
+                    return;
+                }
+
+                loading = true;
+                $('#loading-spinner').show();
+                $('#no-more-data').hide();
+
+                if (reset) {
+                    nextPage = 1;
+                    container.css('opacity', '0.5');
+                }
+
+                $.ajax({
                     url: "{{ route('admin.inventory.list') }}",
-                    data: function (d) {
-                        d.size_set_id = $('#size_set_filter').val();
-                        d.product_id = $('#product_filter').val();
-                        d.color_id = $('#color_filter').val();
-                        d.mrp = $('#mrp_filter').val();
-                        d.design_number = $('#design_number').val();
+                    type: "GET",
+                    data: {
+                        load_more: 1,
+                        page: nextPage,
+                        size_set_id: $('#size_set_filter').val(),
+                        product_id: $('#product_filter').val(),
+                        color_id: $('#color_filter').val(),
+                        mrp: $('#mrp_filter').val(),
+                        design_number: $('#design_number').val()
+                    },
+                    success: function(res) {
+                        if (reset) {
+                            container.empty().css('opacity', '1');
+                        }
+                        
+                        container.append(res.html);
+                        nextPage = res.next_page;
+                        loading = false;
+                        $('#loading-spinner').hide();
+
+                        if (!nextPage) {
+                            $('#no-more-data').show();
+                        }
+                        
+                        if (container.is(':empty')) {
+                            container.append('<tr><td colspan="11" class="text-center py-5 text-muted">No inventory records found.</td></tr>');
+                            $('#no-more-data').hide();
+                        }
+                    },
+                    error: function() {
+                        loading = false;
+                        $('#loading-spinner').hide();
+                        container.css('opacity', '1');
+                        toastr.error('Failed to load inventory.');
                     }
-                },
-                columns: [
-                    { data: 'DT_RowIndex', name: 'id', className: 'text-center text-muted' },
-                    { data: 'product_name_display', name: 'product_name_display' },
-                    { data: 'design_number', name: 'design_number' },
-                    { data: 'size_set_name', name: 'size_set_name' },
-                    { data: 'color_name', name: 'color_name' },
-                    { data: 'fitting_name', name: 'fitting_name' },
-                    { data: 'pattern_name', name: 'pattern_name' },
-                    { data: 'mrp_display', name: 'mrp' },
-                    { data: 'total_boxes', name: 'total_boxes', className: 'text-center font-weight-bold text-success' },
-                    { data: 'total_order', name: 'total_order', className: 'text-center font-weight-bold text-primary' },
-                    // { data: 'available_boxes', name: 'available_boxes', className: 'text-center font-weight-bold text-info' },
-                    { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
-                ],
-                language: {
-                    emptyTable: "No inventory records found",
-                    zeroRecords: "No matching records found",
-                    processing: '<i class="fas fa-spinner fa-spin fa-2x text-primary"></i>'
+                });
+            }
+
+            // Initial Load
+            loadMore();
+
+            // Scroll Event
+            $('.content-wrapper').on('scroll', function() {
+                if (loading || !nextPage) return;
+
+                let scrollTop = $(this).scrollTop();
+                let innerHeight = $(this).innerHeight();
+                let scrollHeight = $(this)[0].scrollHeight;
+
+                if (scrollTop + innerHeight >= scrollHeight - 300) {
+                    loadMore();
                 }
             });
 
             // Filter events
             $('#design_number, #size_set_filter, #product_filter, #color_filter, #mrp_filter').on('keyup change', function () {
-                table.ajax.reload();
+                loadMore(true);
             });
 
             // Reset filter
             $('#reset_filters').on('click', function () {
                 $('#design_number, #mrp_filter').val('');
                 $('#size_set_filter, #product_filter, #color_filter').val('').trigger('change');
-                table.ajax.reload();
             });
 
             // Initialize select2 for Modal
