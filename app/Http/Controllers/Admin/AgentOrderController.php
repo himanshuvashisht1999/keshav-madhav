@@ -395,11 +395,11 @@ class AgentOrderController extends Controller
                 DB::raw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE paymentable_id = agent_orders.id AND paymentable_type = "App\\\\Models\\\\AgentOrder") as total_paid')
             );
 
-        // Filtering
         if ($request->filled('agent_id')) {
             if ($request->agent_id === 'direct') {
                 $query->where(function ($q) {
                     $q->whereNull('agent_orders.sales_agent_id')
+                        ->orWhere('agent_orders.sales_agent_id', 0)
                         ->orWhere('agent_orders.sales_agent_id', 'direct');
                 });
             } else {

@@ -11,6 +11,7 @@ class AgentOrderItem extends Model
 
     protected $fillable = [
         'agent_order_id',
+        'agent_order_dispatch_id',
         'packing_box_id',
         'box_no',
         'carton_no',
@@ -32,7 +33,10 @@ class AgentOrderItem extends Model
         'selling_price',
         'barcode',
         'box_qty',
-        'qrcode'
+        'scanned_box_qty',
+        'scanned_quantity',
+        'qrcode',
+        'dispatched_at'
     ];
 
     public function order()

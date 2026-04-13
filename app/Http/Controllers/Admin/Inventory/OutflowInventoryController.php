@@ -26,12 +26,12 @@ class OutflowInventoryController extends Controller
 
         if ($request->search) {
             $search = $request->search;
-            $data->where(function($q) use ($search) {
-                $q->whereHas('orderMain', function($query) use ($search) {
+            $data->where(function ($q) use ($search) {
+                $q->whereHas('orderMain', function ($query) use ($search) {
                     $query->where('sku', 'like', "%{$search}%");
-                })->orWhereHas('slip', function($query) use ($search) {
+                })->orWhereHas('slip', function ($query) use ($search) {
                     $query->where('lot_no', 'like', "%{$search}%");
-                })->orWhereHas('product', function($query) use ($search) {
+                })->orWhereHas('product', function ($query) use ($search) {
                     $query->where('design_number', 'like', "%{$search}%");
                 });
             });
@@ -39,29 +39,29 @@ class OutflowInventoryController extends Controller
 
         return DataTables::of($data)
             ->addIndexColumn()
-            ->addColumn('order_no', function($row){
+            ->addColumn('order_no', function ($row) {
                 $sku = $row->orderMain ? $row->orderMain->sku : 'N/A';
                 $lot = $row->lot_no ?: ($row->slip ? $row->slip->lot_no : '-');
                 return "Ord: <strong>$sku</strong><br><small>Lot: $lot</small>";
             })
-            ->addColumn('product_name', function($row){
+            ->addColumn('product_name', function ($row) {
                 $design = $row->product ? $row->product->design_number : 'N/A';
                 $color = $row->color ? $row->color->name : 'N/A';
                 return "<strong>$design</strong><br><small>$color</small>";
             })
-            ->addColumn('size', function($row){
+            ->addColumn('size', function ($row) {
                 return $row->size ? $row->size->size : 'N/A';
             })
-            ->addColumn('storage', function($row){
+            ->addColumn('storage', function ($row) {
                 if ($row->rack && $row->rack->storeroom) {
                     return $row->rack->storeroom->name . ' / ' . $row->rack->name;
                 }
                 return 'N/A';
             })
-            ->addColumn('quantity_display', function($row){
+            ->addColumn('quantity_display', function ($row) {
                 return '<strong>' . $row->quantity . '</strong> Pcs';
             })
-            ->addColumn('amount_display', function($row){
+            ->addColumn('amount_display', function ($row) {
                 if ($row->type === 'debit') {
                     $total = number_format($row->total_amount, 2);
                     $per = number_format($row->per_piece_amount, 2);
@@ -69,18 +69,25 @@ class OutflowInventoryController extends Controller
                 }
                 return '-';
             })
-            ->addColumn('responsible', function($row){
+            ->addColumn('responsible', function ($row) {
                 if ($row->type === 'debit' && $row->responsibleUnit) {
                     return $row->responsibleUnit->name . ' (' . ($row->responsibleStage ? $row->responsibleStage->name : 'N/A') . ')';
                 }
                 return 'N/A';
             })
-            ->addColumn('type_label', function($row){
+            ->addColumn('type_label', function ($row) {
                 $class = 'badge-secondary';
                 $label = ucfirst($row->type);
-                if ($row->type === 'dead') { $class = 'badge-danger'; $label = 'Dead Stock'; }
-                if ($row->type === 'sampling') { $class = 'badge-info'; }
-                if ($row->type === 'debit') { $class = 'badge-warning'; }
+                if ($row->type === 'dead') {
+                    $class = 'badge-danger';
+                    $label = 'Dead Stock';
+                }
+                if ($row->type === 'sampling') {
+                    $class = 'badge-info';
+                }
+                if ($row->type === 'debit') {
+                    $class = 'badge-warning';
+                }
                 return '<span class="badge ' . $class . '">' . $label . '</span>';
             })
             ->rawColumns(['order_no', 'product_name', 'quantity_display', 'amount_display', 'type_label'])
@@ -96,12 +103,18 @@ class OutflowInventoryController extends Controller
     {
         $data = DomesticInventoryHistory::with([
             'user',
-            'oldProduct', 'newProduct',
-            'oldColor', 'newColor',
-            'oldSizeSet', 'newSizeSet',
-            'oldFitting', 'newFitting',
-            'oldPattern', 'newPattern',
-            'oldRack.storeroom', 'newRack.storeroom'
+            'oldProduct',
+            'newProduct',
+            'oldColor',
+            'newColor',
+            'oldSizeSet',
+            'newSizeSet',
+            'oldFitting',
+            'newFitting',
+            'oldPattern',
+            'newPattern',
+            'oldRack.storeroom',
+            'newRack.storeroom'
         ])->orderBy('created_at', 'desc');
 
         if ($request->type) {
@@ -110,10 +123,10 @@ class OutflowInventoryController extends Controller
 
         if ($request->design_search) {
             $search = $request->design_search;
-            $data->where(function($q) use ($search) {
-                $q->whereHas('oldProduct', function($query) use ($search) {
+            $data->where(function ($q) use ($search) {
+                $q->whereHas('oldProduct', function ($query) use ($search) {
                     $query->where('design_number', 'like', "%{$search}%");
-                })->orWhereHas('newProduct', function($query) use ($search) {
+                })->orWhereHas('newProduct', function ($query) use ($search) {
                     $query->where('design_number', 'like', "%{$search}%");
                 });
             });
@@ -122,7 +135,7 @@ class OutflowInventoryController extends Controller
         if ($request->has('load_more')) {
             $perPage = 20;
             $results = $data->paginate($perPage);
-            
+
             $html = '';
             $start = ($results->currentPage() - 1) * $perPage + 1;
             foreach ($results as $index => $row) {
@@ -159,7 +172,7 @@ class OutflowInventoryController extends Controller
                 if (in_array($row->type, ['creation', 'packing'])) {
                     return '<div class="text-muted small">New Stock Inbound</div>';
                 }
-                
+
                 $design = $row->oldProduct ? $row->oldProduct->design_number : 'N/A';
                 $color = $row->oldColor ? $row->oldColor->name : 'N/A';
                 $size = $row->oldSizeSet ? $row->oldSizeSet->name : 'N/A';

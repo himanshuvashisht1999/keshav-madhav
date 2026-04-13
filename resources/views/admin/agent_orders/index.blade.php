@@ -12,6 +12,9 @@
                     <a href="{{ route('admin.agent-orders.dispatches.index') }}" class="btn btn-info shadow-sm px-4 mr-2" style="border-radius: 8px;">
                         <i class="fas fa-truck mr-2"></i> VIEW DISPATCHES
                     </a>
+                    <a href="{{ route('admin.direct-sales.create') }}" class="btn btn-success shadow-sm px-4 mr-2" style="border-radius: 8px;">
+                        <i class="fas fa-bolt mr-2"></i> DIRECT SALES (EXPRESS)
+                    </a>
                     <a href="{{ route('admin.agent-orders.create') }}" class="btn btn-primary shadow-sm px-4" style="border-radius: 8px;">
                         <i class="fas fa-plus mr-2"></i> CREATE NEW ORDER
                     </a>

@@ -497,6 +497,13 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/dispatch-selected', [AdminAgentOrderController::class, 'dispatchSelected'])->name('dispatch-selected');
         });
 
+        Route::prefix('direct-sales')->name('direct-sales.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\SalesOrderController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\SalesOrderController::class, 'create'])->name('create');
+            Route::post('/store', [\App\Http\Controllers\Admin\SalesOrderController::class, 'store'])->name('store');
+            Route::get('/{id}/show', [\App\Http\Controllers\Admin\SalesOrderController::class, 'show'])->name('show');
+        });
+
         Route::prefix('master')->name('master.')->group(function () {
             Route::resource('employees', \App\Http\Controllers\Admin\EmployeeController::class);
         });

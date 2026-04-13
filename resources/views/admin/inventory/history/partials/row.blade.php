@@ -54,11 +54,12 @@
         @endif
     </td>
     <td class="text-center">
-        <span class="badge badge-light border px-2 py-1 font-weight-bold" style="font-size: 0.9rem;">{{ $row->box_quantity }} Boxes</span>
+        <span class="badge badge-light border px-2 py-1 font-weight-bold"
+            style="font-size: 0.9rem;">{{ $row->box_quantity }} Boxes</span>
     </td>
-    <td>
+    <!-- <td>
         <div class="font-weight-bold text-dark small">{{ $row->user ? $row->user->name : 'System' }}</div>
-    </td>
+    </td> -->
     <td>
         <div class="small font-weight-bold text-dark">{{ $row->created_at->format('d-m-Y') }}</div>
         <div class="text-muted small">{{ $row->created_at->format('H:i') }}</div>

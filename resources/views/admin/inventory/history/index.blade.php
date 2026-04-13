@@ -22,9 +22,11 @@
                                 <label class="small font-weight-bold text-muted mb-1">Search Design No.</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
-                                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+                                        <span class="input-group-text bg-white border-right-0"><i
+                                                class="fas fa-search text-muted"></i></span>
                                     </div>
-                                    <input type="text" id="design_search" class="form-control border-left-0" placeholder="Search Design (Old or New)...">
+                                    <input type="text" id="design_search" class="form-control border-left-0"
+                                        placeholder="Search Design (Old or New)...">
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -60,7 +62,7 @@
                                         <th width="5%" class="py-3 text-center"><i class="fas fa-link text-muted"></i></th>
                                         <th width="28%" class="py-3">New Attributes</th>
                                         <th width="10%" class="py-3 text-center">Movement</th>
-                                        <th width="8%" class="py-3">User</th>
+                                        <!-- <th width="8%" class="py-3">User</th> -->
                                         <th width="8%" class="py-3">Date</th>
                                     </tr>
                                 </thead>
@@ -91,6 +93,7 @@
             font-size: 0.8rem;
             letter-spacing: 0.5px;
         }
+
         .table tbody td {
             vertical-align: middle;
             padding: 1rem 0.75rem;
@@ -127,7 +130,7 @@
                     },
                     success: function (response) {
                         $('#historyTable tbody').append(response.html);
-                        
+
                         if (response.next_page) {
                             currentPage = response.next_page;
                         } else {
