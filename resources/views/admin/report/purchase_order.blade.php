@@ -67,44 +67,42 @@
         <form method="GET" action="{{ route('admin.report.purchase_order') }}">
             <div class="row g-2 align-items-end">
 
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">PO Number</label>
-                    <input type="text"
-                           name="sku"
-                           class="form-control"
-                           placeholder="PO/..."
-                           value="{{ $filters['sku'] ?? '' }}">
+                    <input type="text" name="sku" class="form-control" placeholder="PO/..." value="{{ $filters['sku'] ?? '' }}">
                 </div>
 
                 <div class="col-md-3">
-                    <label class="form-label">Fabric SKU</label>
-                    <select name="fabric_sku" class="form-control">
-                        <option value="">All Fabrics</option>
-                        @foreach($fabrics as $fabric)
-                            <option value="{{ $fabric->sku }}"
-                                {{ ($filters['fabric_sku'] ?? '') == $fabric->sku ? 'selected' : '' }}>
-                                {{ $fabric->sku }}
+                    <label class="form-label">Supplier</label>
+                    <select name="vendor_id" class="form-control">
+                        <option value="">All Suppliers</option>
+                        @foreach($vendors as $v)
+                            <option value="{{ $v->id }}" {{ ($filters['vendor_id'] ?? '') == $v->id ? 'selected' : '' }}>
+                                {{ $v->name }}
                             </option>
                         @endforeach
                     </select>
                 </div>
 
                 <div class="col-md-2">
-                    <button class="btn btn-primary w-100">
-                        <i class="fas fa-filter"></i> Apply
-                    </button>
+                    <label class="form-label">From Date</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ $filters['start_date'] ?? '' }}">
                 </div>
 
                 <div class="col-md-2">
-                    <a href="{{ route('admin.report.purchase_order') }}"
-                       class="btn btn-outline-secondary w-100">
-                        Reset
-                    </a>
+                    <label class="form-label">To Date</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ $filters['end_date'] ?? '' }}">
                 </div>
-                <div class="col-md-2">
-                    <a href="{{ route('admin.report.purchase_order.export', request()->query()) }}"
-                    class="btn btn-secondary w-100">
-                        <i class="fas fa-file-excel"></i> Export
+
+                <div class="col-md-3 d-flex gap-1">
+                    <button class="btn btn-primary flex-fill">
+                        <i class="fas fa-filter"></i> Apply
+                    </button>
+                    <a href="{{ route('admin.report.purchase_order') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-undo"></i>
+                    </a>
+                    <a href="{{ route('admin.report.purchase_order.export', request()->query()) }}" class="btn btn-success">
+                        <i class="fas fa-file-excel"></i>
                     </a>
                 </div>
 
@@ -125,10 +123,9 @@
     <th>Order Date</th>
     <th>Supplier</th>
     <th>PO Number</th>
-    <th>Fabric</th>
-    <th>Ordered</th>
-    <th>Received</th>
-    <th>Remaining</th>
+    <th class="text-end">Ordered Qty</th>
+    <th class="text-end">Received Qty</th>
+    <th class="text-end">Remaining Qty</th>
     <th>Status</th>
     <th>Delayed</th>
     <th class="text-center">Action</th>
@@ -136,86 +133,51 @@
 </thead>
 
 <tbody>
-@php $sr = 1; @endphp
+@php $sr = ($data->currentPage() - 1) * $data->perPage() + 1; @endphp
 
 @forelse($data as $po)
 
     @php
-        $rowspan = $po->items->count();
+        $totalOrdered = $po->items->sum('meter');
+        $totalRemaining = $po->items->sum('remaining_quantity');
+        $totalReceived = $totalOrdered - $totalRemaining;
+
+        $isDelayed = $totalRemaining > 0 && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($po->delivery_date));
     @endphp
 
-    @foreach($po->items as $index => $item)
+    <tr class="{{ $isDelayed ? 'delayed-row' : '' }}">
 
-        @php
-            $receivedQty = $item->meter - $item->remaining_quantity;
-            $isDelayed =
-                $item->remaining_quantity > 0 &&
-                \Carbon\Carbon::now()->gt(
-                    \Carbon\Carbon::parse($po->delivery_date)
-                );
-        @endphp
+        <td>{{ $sr++ }}</td>
+        <td>{{ \Carbon\Carbon::parse($po->date)->format('d M Y') }}</td>
+        <td class="fw-bold">{{ $po->vendor?->name ?? '-' }}</td>
+        <td>{{ $po->sku }}</td>
 
-        <tr class="{{ $isDelayed ? 'delayed-row' : '' }}">
+        <td class="text-end text-primary">{{ number_format($totalOrdered, 2) }}</td>
+        <td class="text-end text-success">{{ number_format($totalReceived, 2) }}</td>
+        <td class="text-end text-danger">{{ number_format($totalRemaining, 2) }}</td>
 
-            {{-- ORDER LEVEL (ONLY ON FIRST ROW) --}}
-            @if($index === 0)
-                <td rowspan="{{ $rowspan }}" class="order-cell">{{ $sr }}</td>
-                <td rowspan="{{ $rowspan }}" class="order-cell">
-                    {{ \Carbon\Carbon::parse($po->date)->format('d M Y') }}
-                </td>
-                <td rowspan="{{ $rowspan }}" class="order-cell">
-                    {{ $po->vendor?->name ?? '-' }}
-                </td>
-                <td rowspan="{{ $rowspan }}" class="order-cell">
-                    {{ $po->sku }}
-                </td>
-            @endif
+        <td>
+            <span class="badge {{ $totalRemaining == 0 ? 'bg-success' : 'bg-warning text-dark' }}">
+                {{ $totalRemaining == 0 ? 'Closed' : 'Open' }}
+            </span>
+        </td>
 
-            {{-- FABRIC LEVEL --}}
-            <td>{{ $item->fabric_sku }}</td>
+        <td>
+            <span class="badge {{ $isDelayed ? 'bg-danger' : 'bg-success' }}">
+                {{ $isDelayed ? 'Yes' : 'No' }}
+            </span>
+        </td>
 
-            <td class="text-end">{{ number_format($item->meter,2) }}</td>
-
-            <td class="text-end text-success">
-                {{ number_format($receivedQty,2) }}
-            </td>
-
-            <td class="text-end text-danger">
-                {{ number_format($item->remaining_quantity,2) }}
-            </td>
-
-            <td>
-                <span class="badge
-                    {{ $item->remaining_quantity == 0 ? 'bg-success' : 'bg-warning' }}">
-                    {{ $item->remaining_quantity == 0 ? 'Closed' : 'Open' }}
-                </span>
-            </td>
-
-            <td>
-                <span class="badge {{ $isDelayed ? 'bg-danger' : 'bg-success' }}">
-                    {{ $isDelayed ? 'Yes' : 'No' }}
-                </span>
-            </td>
-
-            <td class="text-center">
-                <button class="btn btn-sm btn-outline-primary expand-btn"
-                    onclick="openPoItemModal(
-                        '{{ $item->id }}',
-                        '{{ $po->sku }}',
-                        '{{ $item->fabric_sku }}'
-                    )">
-                    View
-                </button>
-            </td>
-        </tr>
-
-    @endforeach
-
-    @php $sr++; @endphp
+        <td class="text-center">
+            <a href="{{ route('admin.report.purchase_order', array_merge(request()->query(), ['purchase_order_id' => $po->id])) }}" class="btn btn-sm btn-outline-primary expand-btn">
+                <i class="fas fa-eye"></i> View
+            </a>
+        </td>
+    </tr>
 
 @empty
 <tr>
-    <td colspan="11" class="text-center text-muted">
+    <td colspan="10" class="text-center text-muted py-4">
         No purchase orders found
     </td>
 </tr>
@@ -223,94 +185,16 @@
 </tbody>
 
 </table>
-
 </div>
+
+<div class="mt-3">
+    {{ $data->appends(request()->query())->links() }}
+</div>
+
 </div>
 </div>
 
 </div>
 </section>
 </div>
-
-{{-- ================= MODAL ================= --}}
-<div class="modal fade" id="poItemModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-
-            <div class="modal-header">
-                <h5 class="modal-title">Purchase Order Item Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <strong>PO Number:</strong>
-                        <span id="modalPoNo"></span>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>Fabric:</strong>
-                        <span id="modalFabric"></span>
-                    </div>
-                </div>
-
-                <div id="modalItemTable"></div>
-
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- ================= SCRIPT ================= --}}
-<script>
-function openPoItemModal(poItemId, poNo, fabricSku)
-{
-    document.getElementById('modalPoNo').innerText = poNo;
-    document.getElementById('modalFabric').innerText = fabricSku;
-    document.getElementById('modalItemTable').innerHTML =
-        '<div class="text-center py-3">Loading...</div>';
-
-    fetch(`{{ route('admin.report.purchase_order.item.details') }}?purchase_order_item_id=${poItemId}`)
-        .then(res => res.json())
-        .then(data => {
-
-            let html = `
-                <table class="table table-bordered table-sm">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Receipt Date</th>
-                            <th>Warehouse</th>
-                            <th>Roll No</th>
-                            <th>Received Qty</th>
-                            <th>Barcode</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            data.forEach(r => {
-                html += `
-                    <tr>
-                        <td>${new Date(r.created_at).toLocaleDateString()}</td>
-                        <td>${r.master_fabric_warehouse?.cutting_master_name ?? '-'}</td>
-                        <td>${r.roll_number ?? '-'}</td>
-                        <td><strong>${r.meter}</strong></td>
-                        <td>
-                            <img src="${r.barcode}"
-                                 style="height:40px;cursor:pointer"
-                                 onclick="window.open(this.src,'_blank')">
-                        </td>
-                    </tr>
-                `;
-            });
-
-            html += '</tbody></table>';
-            document.getElementById('modalItemTable').innerHTML = html;
-        });
-
-    new bootstrap.Modal(document.getElementById('poItemModal')).show();
-}
-</script>
-
 @endsection

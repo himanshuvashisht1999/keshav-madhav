@@ -49,10 +49,13 @@ class ReportController extends Controller
     }
     public function stock(Request $request)
     {
-        $response['data'] = $this->service->stock($request);
+        $reportData = $this->service->stock($request);
+        
+        $response = $reportData;
         $response['warehouses'] = $this->service->warehouses();
         $response['fabrics'] = $this->service->fabrics();
         $response['filters'] = $request->all();
+
         return view('admin.report.stock', $response);
     }
     public function fabricRollDetails(Request $request)
@@ -99,52 +102,59 @@ class ReportController extends Controller
 
     public function stockExport(Request $request)
     {
-        // Summary data (same as UI)
-        $data = $this->service->stock($request);
+        $request->merge(['is_export' => true]);
+        $reportData = $this->service->stock($request);
+        $level = $reportData['level'];
 
-        // Roll-level data (same logic as fabricRollDetails)
-        $rolls = FabricReceiptDetail::with([
-            'fabric_receipt.vendor',
-            'purchase_order'
-        ])
-            ->where('remaining_quantity', '>', 0)
+        // Dynamic view selection based on level
+        $view = 'admin.report.stock_export'; // Default for fabrics summary
+        $filenamePrefix = 'fabric-stock';
 
-            ->when($request->filled('warehouse_id'), function ($q) use ($request) {
-                $q->where('master_fabric_warehouse_id', $request->warehouse_id);
-            })
-            ->when($request->filled('fabric_sku'), function ($q) use ($request) {
-                $q->where('fabric_sku', $request->fabric_sku);
-            })
+        if ($level === 'warehouses') {
+            $view = 'admin.report.stock_warehouse_export';
+            $filenamePrefix = 'fabric-warehouse-stock';
+        } elseif ($level === 'receipts') {
+            $view = 'admin.report.stock_receipts_export';
+            $filenamePrefix = 'fabric-shipments';
+        } elseif ($level === 'usages') {
+            $view = 'admin.report.stock_usages_export';
+            $filenamePrefix = 'fabric-usages';
+        }
 
-            ->orderBy('fabric_sku')
-            ->orderBy('master_fabric_warehouse_id')
-            ->orderBy('shipment_number')
-            ->orderBy('roll_number')
-            ->get()
-
-            // group same way as summary table
-            ->groupBy(function ($row) {
-                return $row->fabric_sku . '_' . $row->master_fabric_warehouse_id;
-            });
+        // Add extra chronological ledger if just a fabric is selected but no specific type
+        if ($request->filled('fabric_id') && !$request->filled('type')) {
+            $ledger = $this->service->fabricLedger($request->fabric_id, $request->warehouse_id);
+            $reportData['ledger'] = $ledger;
+            $reportData['fabric_name'] = \App\Models\Fabric::find($request->fabric_id)?->name ?? $request->fabric_id;
+            $view = 'admin.report.stock_ledger_export';
+            $filenamePrefix = 'fabric-ledger';
+        }
 
         return response()
-            ->view('admin.report.stock_export', [
-                'data' => $data,
-                'rolls' => $rolls,
-                'exportedAt' => now()
-            ])
+            ->view($view, array_merge($reportData, ['exportedAt' => now()]))
             ->header('Content-Type', 'application/vnd.ms-excel')
             ->header(
                 'Content-Disposition',
-                'attachment; filename="fabric-stock-report-' . now()->format('d-m-Y_H-i') . '.xls"'
+                'attachment; filename="' . $filenamePrefix . '-' . now()->format('d-m-Y_H-i') . '.xls"'
             );
     }
 
 
     public function purchaseOrder(Request $request)
     {
+        if ($request->filled('purchase_order_id')) {
+            $po = \App\Models\PurchaseOrder::with(['vendor', 'items.fabric'])->findOrFail($request->purchase_order_id);
+            $receipts = \App\Models\FabricReceiptDetail::with(['master_fabric_warehouse', 'fabric'])
+                ->whereHas('purchase_order_item', function($q) use ($po) {
+                    $q->where('purchase_order_id', $po->id);
+                })
+                ->orderBy('created_at')
+                ->get();
+            return view('admin.report.purchase_order_details', compact('po', 'receipts'));
+        }
+
         $response['data'] = $this->service->purchaseOrder($request);
-        $response['fabrics'] = $this->service->fabrics();
+        $response['vendors'] = $this->service->vendors();
         $response['filters'] = $request->all();
         return view('admin.report.purchase_order', $response);
     }
@@ -157,16 +167,16 @@ class ReportController extends Controller
     }
     public function purchaseOrderExport(Request $request)
     {
-        // Same filtered purchase orders
+        // Same filtered purchase orders (all for export)
+        $request->merge(['is_export' => true]);
         $orders = $this->service->purchaseOrder($request);
 
-        // Get ALL receipt (modal) data for these PO items
+        // Get ALL receipt data for these PO items
         $receipts = FabricReceiptDetail::with('master_fabric_warehouse')
             ->whereIn(
                 'purchase_order_item_id',
                 $orders->pluck('items')->flatten()->pluck('id')
             )
-            ->where('status', 2)
             ->orderBy('created_at')
             ->get()
             ->groupBy('purchase_order_item_id');

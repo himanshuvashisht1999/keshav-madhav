@@ -361,35 +361,125 @@ class ReportService
 
     public function stock(Request $request)
     {
-        $query = FabricReceiptDetail::query()
-            ->selectRaw('
-                fabric_sku,
-                master_fabric_warehouse_id,
-                SUM(remaining_quantity) as total_remaining
-            ')
-            ->with('master_fabric_warehouse:id,cutting_master_name')
-            ->groupBy('fabric_sku', 'master_fabric_warehouse_id');
+        $level = 'fabrics';
 
-        // Warehouse filter
-        if ($request->filled('warehouse_id')) {
-            $query->where('master_fabric_warehouse_id', $request->warehouse_id);
+        if ($request->filled('fabric_id') && $request->filled('type')) {
+            $level = $request->type; // 'receipts' or 'usages'
+        } elseif ($request->filled('fabric_id')) {
+            $level = 'warehouses';
         }
 
-        // Fabric filter
-        if ($request->filled('fabric_sku')) {
-            $query->where('fabric_sku', $request->fabric_sku);
+        if ($level === 'fabrics') {
+            // Level 1: All Fabrics Paginated manually joined for efficiency
+            $query = Fabric::query()
+                ->select([
+                    'fabrics.id',
+                    'fabrics.name',
+                    'vendors.name as vendor_name',
+                    \DB::raw('COALESCE(SUM(fabric_receipt_details.meter), 0) as total_received'),
+                    \DB::raw('COALESCE(SUM(fabric_receipt_details.remaining_quantity), 0) as total_remaining'),
+                    \DB::raw('COALESCE(SUM(fabric_receipt_details.meter - fabric_receipt_details.remaining_quantity), 0) as total_issued')
+                ])
+                ->leftJoin('fabric_receipt_details', 'fabrics.id', '=', 'fabric_receipt_details.fabric_id')
+                ->leftJoin('vendors', 'fabrics.vendor_id', '=', 'vendors.id')
+                ->groupBy('fabrics.id', 'fabrics.name', 'vendors.name')
+                ->when($request->filled('search'), function($q) use ($request) {
+                    $q->where('fabrics.name', 'LIKE', '%' . $request->search . '%');
+                })
+                ->orderBy('fabrics.name');
+
+            if ($request->has('is_export')) {
+                return ['level' => 'fabrics', 'data' => $query->get()];
+            }
+            return ['level' => 'fabrics', 'data' => $query->paginate(20)->withQueryString()];
         }
 
-        // Remaining quantity range
-        if ($request->filled('meter_from')) {
-            $query->havingRaw('SUM(remaining_quantity) >= ?', [$request->meter_from]);
+        if ($level === 'warehouses') {
+            // Level 2: Warehouses for a specific Fabric
+            $fabricId = $request->fabric_id;
+            $fabric = Fabric::find($fabricId);
+
+            $query = FabricReceiptDetail::query()
+                ->select([
+                    'master_fabric_warehouse_id',
+                    \DB::raw('SUM(meter) as total_received'),
+                    \DB::raw('SUM(remaining_quantity) as total_remaining'),
+                    \DB::raw('SUM(meter - remaining_quantity) as total_issued'),
+                ])
+                ->with('master_fabric_warehouse:id,cutting_master_name')
+                ->where('fabric_id', $fabricId)
+                ->groupBy('master_fabric_warehouse_id');
+
+            return [
+                'level' => 'warehouses',
+                'fabric' => $fabric,
+                'data' => $query->get() // Usaually few warehouses, no need to paginate
+            ];
         }
 
-        if ($request->filled('meter_to')) {
-            $query->havingRaw('SUM(remaining_quantity) <= ?', [$request->meter_to]);
+        if ($level === 'receipts') {
+            $fabricId = $request->fabric_id;
+            $warehouseId = $request->warehouse_id;
+
+            $query = FabricReceiptDetail::with(['fabric_receipt.vendor', 'purchase_order', 'master_fabric_warehouse'])
+                ->where('fabric_id', $fabricId)
+                ->when($warehouseId, function($q) use ($warehouseId) {
+                    $q->where('master_fabric_warehouse_id', $warehouseId);
+                })
+                ->orderBy('created_at', 'desc');
+
+            if ($request->has('is_export')) {
+                return [
+                    'level' => 'receipts',
+                    'fabric' => Fabric::find($fabricId),
+                    'data' => $query->get()
+                ];
+            }
+            return [
+                'level' => 'receipts',
+                'fabric' => Fabric::find($fabricId),
+                'data' => $query->paginate(20)->withQueryString()
+            ];
         }
 
-        return $query->get()->groupBy('fabric_sku');
+        if ($level === 'usages') {
+            $fabricId = $request->fabric_id;
+            $warehouseId = $request->warehouse_id;
+
+            // Find all roll numbers matching this fabric & warehouse
+            $rollQuery = FabricReceiptDetail::where('fabric_id', $fabricId);
+            if ($warehouseId) {
+                $rollQuery->where('master_fabric_warehouse_id', $warehouseId);
+            }
+            $rollNumbers = $rollQuery->pluck('roll_number')->filter()->unique();
+
+            if ($rollNumbers->isEmpty()) {
+                return [
+                    'level' => 'usages',
+                    'fabric' => Fabric::find($fabricId),
+                    'data' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20)
+                ];
+            }
+
+            $query = \App\Models\FabricRollAssigning::with(['orderProductSet.colors', 'stageMasterUnit'])
+                ->whereIn('roll_no', $rollNumbers)
+                ->orderBy('created_at', 'desc');
+
+            if ($request->has('is_export')) {
+                return [
+                    'level' => 'usages',
+                    'fabric' => Fabric::find($fabricId),
+                    'data' => $query->get()
+                ];
+            }
+            return [
+                'level' => 'usages',
+                'fabric' => Fabric::find($fabricId),
+                'data' => $query->paginate(20)->withQueryString()
+            ];
+        }
+
+        return ['level' => 'fabrics', 'data' => collect([])];
     }
 
 
@@ -418,7 +508,7 @@ class ReportService
         ])
             ->where('fabric_sku', $fabricSku)
             ->where('master_fabric_warehouse_id', $warehouseId)
-            ->where('remaining_quantity', '>', 0)
+            // Removed remaining_quantity > 0 to show the full ledger of rolls received, consumed, etc
             ->orderBy('shipment_number')
             ->orderBy('roll_number')
             ->get()
@@ -431,11 +521,13 @@ class ReportService
                     'shipment_number' => $shipmentNo,
                     'po_number' => $first->purchase_order?->sku ?? '-', // ✅ PO number
                     'batch_no' => $first->batch_no,
-                    'supplier' => $first->fabric_receipt->vendor->name,
+                    'supplier' => $first->fabric_receipt->vendor->name ?? '-',
                     'receipt_date' => optional($first->fabric_receipt)->created_at?->format('d M Y'),
                     'rolls' => $rows->map(function ($r) {
                         return [
                             'roll_number' => $r->roll_number,
+                            'original_quantity' => $r->meter,
+                            'issued_quantity' => $r->meter - $r->remaining_quantity,
                             'remaining_quantity' => $r->remaining_quantity,
                             'qrcode_number' => $r->qrcode_number,
                         ];
@@ -444,6 +536,84 @@ class ReportService
             })->values();
     }
 
+
+    public function fabricLedger($fabricId, $warehouseId = null)
+    {
+        $query = FabricReceiptDetail::with([
+            'fabric_receipt.vendor',
+            'purchase_order'
+        ])->where('fabric_id', $fabricId);
+
+        if (!empty($warehouseId)) {
+            $query->where('master_fabric_warehouse_id', $warehouseId);
+        }
+
+        $receipts = $query->get();
+
+        $rollNumbers = $receipts->pluck('roll_number')->filter()->unique();
+
+        if ($rollNumbers->isEmpty()) {
+            return [];
+        }
+
+        $usages = \App\Models\FabricRollAssigning::with(['orderProductSet.colors', 'stageMasterUnit'])
+            ->whereIn('roll_no', $rollNumbers)
+            ->get();
+
+        $ledger = [];
+
+        foreach ($receipts as $r) {
+            $ledger[] = [
+                'date' => optional($r->fabric_receipt)->created_at ? $r->fabric_receipt->created_at->format('Y-m-d H:i:s') : $r->created_at->format('Y-m-d H:i:s'),
+                'sort_date' => optional($r->fabric_receipt)->created_at ? $r->fabric_receipt->created_at->timestamp : $r->created_at->timestamp,
+                'type' => 'Receipt',
+                'shipment_no' => $r->shipment_number ?? '-',
+                'po_number' => $r->purchase_order?->sku ?? '-',
+                'roll_number' => $r->roll_number,
+                'reference' => 'Supplier: ' . ($r->fabric_receipt->vendor->name ?? '-'),
+                'in' => $r->meter,
+                'out' => 0,
+            ];
+        }
+
+        foreach ($usages as $u) {
+            $designNo = $u->orderProductSet?->design_number ?? '-';
+            $colorName = $u->orderProductSet?->colors?->name ?? '-';
+
+            $refList = [
+                'Lot No: ' . $u->lot_no,
+                'Order: ' . $u->order_no,
+                'Design: ' . $designNo,
+                'Color: ' . $colorName,
+                'Stage Unit: ' . ($u->stageMasterUnit?->name ?? '-')
+            ];
+
+            $ledger[] = [
+                'date' => $u->created_at->format('Y-m-d H:i:s'),
+                'sort_date' => $u->created_at->timestamp,
+                'type' => 'Usage',
+                'shipment_no' => '-',
+                'po_number' => '-',
+                'roll_number' => $u->roll_no,
+                'reference' => implode("\n", $refList),
+                'in' => 0,
+                'out' => $u->meter,
+            ];
+        }
+
+        usort($ledger, function($a, $b) {
+            return $a['sort_date'] <=> $b['sort_date'];
+        });
+
+        $balance = 0;
+        foreach ($ledger as &$trans) {
+            $balance += $trans['in'];
+            $balance -= $trans['out'];
+            $trans['balance'] = $balance;
+        }
+
+        return array_reverse($ledger); // Most recent first, but balance calculated from chronological order
+    }
 
     public function stockRollDetailsByFilter(Request $request)
     {
@@ -454,17 +624,17 @@ class ReportService
             $query->where('master_fabric_warehouse_id', $request->warehouse_id);
         }
 
-        if ($request->filled('fabric_sku')) {
-            $query->where('fabric_sku', $request->fabric_sku);
+        if ($request->filled('fabric_id')) {
+            $query->where('fabric_id', $request->fabric_id);
         }
 
         return $query
-            ->orderBy('fabric_sku')
+            ->orderBy('fabric_id')
             ->orderBy('roll_number')
             ->get()
             ->groupBy(
                 fn($row) =>
-                $row->fabric_sku . '_' . $row->master_fabric_warehouse_id
+                $row->fabric_id . '_' . $row->master_fabric_warehouse_id
             );
     }
 
@@ -479,26 +649,39 @@ class ReportService
     }
     public function fabrics()
     {
-        $fabrics = Fabric::orderBy('sku')->get();
+        $fabrics = Fabric::orderBy('name')->get();
         return $fabrics;
+    }
+    public function vendors()
+    {
+        return \App\Models\Vendor::orderBy('name')->get();
     }
 
     public function purchaseOrder(Request $request)
     {
-        return PurchaseOrder::with([
+        $query = PurchaseOrder::with([
             'vendor',
             'items'
         ])
             ->when($request->filled('sku'), function ($q) use ($request) {
                 $q->where('sku', 'like', '%' . $request->sku . '%');
             })
-            ->when($request->filled('fabric_sku'), function ($q) use ($request) {
-                $q->whereHas('items', function ($i) use ($request) {
-                    $i->where('fabric_sku', $request->fabric_sku);
-                });
+            ->when($request->filled('vendor_id'), function ($q) use ($request) {
+                $q->where('vendor_id', $request->vendor_id);
             })
-            ->orderBy('date', 'desc')
-            ->get();
+            ->when($request->filled('start_date'), function ($q) use ($request) {
+                $q->whereDate('date', '>=', $request->start_date);
+            })
+            ->when($request->filled('end_date'), function ($q) use ($request) {
+                $q->whereDate('date', '<=', $request->end_date);
+            })
+            ->orderBy('date', 'desc');
+
+        if ($request->has('is_export')) {
+            return $query->get();
+        }
+
+        return $query->paginate(20);
     }
 
     public function purchaseOrderItemReceipts($poItemId)

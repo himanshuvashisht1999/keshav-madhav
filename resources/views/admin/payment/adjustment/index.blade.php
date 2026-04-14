@@ -57,9 +57,17 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <a href="{{ route('admin.payment.adjustment.show', $batchId) }}" class="btn btn-info btn-sm">
-                                        <i class="fas fa-eye"></i> View Details
-                                    </a>
+                                    <div class="btn-group">
+                                        <a href="{{ route('admin.payment.adjustment.show', $batchId) }}" class="btn btn-info btn-sm" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ route('admin.payment.adjustment.edit', $batchId) }}" class="btn btn-warning btn-sm" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ route('admin.payment.adjustment.delete', $batchId) }}" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure you want to delete this adjustment batch and REVERSE all financial impacts?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach

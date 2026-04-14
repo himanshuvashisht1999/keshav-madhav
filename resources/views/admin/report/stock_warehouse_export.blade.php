@@ -2,7 +2,7 @@
     <thead>
         <tr>
             <th colspan="5" style="font-size:16px;font-weight:bold">
-                Fabric Stock Report (All Fabrics)
+                Fabric Stock by Warehouse : {{ $fabric->name }}
             </th>
         </tr>
         <tr>
@@ -12,7 +12,7 @@
         </tr>
         <tr style="background:#eee;font-weight:bold">
             <th>Sr No</th>
-            <th>Fabric Name</th>
+            <th>Warehouse</th>
             <th align="right">Total Received</th>
             <th align="right">Total Issued</th>
             <th align="right">Remaining Qty</th>
@@ -23,7 +23,7 @@
         @foreach($data as $row)
         <tr>
             <td>{{ $sr++ }}</td>
-            <td style="font-weight:bold">{{ $row->name }}</td>
+            <td>{{ $row->master_fabric_warehouse?->cutting_master_name ?? 'Unknown' }}</td>
             <td align="right">{{ number_format($row->total_received, 2) }}</td>
             <td align="right">{{ number_format($row->total_issued, 2) }}</td>
             <td align="right" style="font-weight:bold">{{ number_format($row->total_remaining, 2) }}</td>

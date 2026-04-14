@@ -1294,6 +1294,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/create', [AdminPaymentAdjustmentController::class, 'create'])->name('create');
                 Route::post('/store', [AdminPaymentAdjustmentController::class, 'store'])->name('store');
                 Route::get('/show/{batchId}', [AdminPaymentAdjustmentController::class, 'show'])->name('show');
+                Route::get('/edit/{batchId}', [AdminPaymentAdjustmentController::class, 'edit'])->name('edit');
+                Route::post('/update/{batchId}', [AdminPaymentAdjustmentController::class, 'update'])->name('update');
+                Route::get('/delete/{batchId}', [AdminPaymentAdjustmentController::class, 'delete'])->name('delete');
                 Route::get('/getSubMasters', [AdminPaymentAdjustmentController::class, 'getSubMasters'])->name('getSubMasters');
                 Route::get('/getVendorShipments', [AdminPaymentAdjustmentController::class, 'getVendorShipments'])->name('getVendorShipments');
                 Route::get('/getAccounts', [AdminPaymentAdjustmentController::class, 'getAccounts'])->name('getAccounts');
