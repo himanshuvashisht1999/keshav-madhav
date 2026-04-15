@@ -751,6 +751,7 @@ class ProductOrderService
             // Delete old sets and details
             OrderProductSetDetail::whereIn('order_products_set_id', $existing_sets->pluck('id'))->delete();
             OrderProductSet::where('order_main_id', $id)->delete();
+            OrderCuttingStage::where('order_main_id', $id)->delete();
 
             // Create new sets
             $i = 0;

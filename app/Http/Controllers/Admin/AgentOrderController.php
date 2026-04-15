@@ -1178,14 +1178,20 @@ class AgentOrderController extends Controller
 
         // 1. Find the inventory record by barcode (Inventory is now consolidated)
         // Check if input is a compact barcode (D1S1C1P1F1) or a unique box_no
+        // $inventory = DB::table('domestic_inventories')
+        //     ->where(function ($q) use ($input) {
+        //         $q->where('barcode', $input)->orWhere('box_no', $input);
+        //     })
+        //     // ->where('order_main_id', 0)
+        //     ->where('total_boxes', '>', 0)
+        //     ->first();
+
         $inventory = DB::table('domestic_inventories')
-            ->where(function ($q) use ($input) {
-                $q->where('barcode', $input)->orWhere('box_no', $input);
-            })
-            // ->where('order_main_id', 0)
+            
+            ->where('barcode', $input)
             ->where('total_boxes', '>', 0)
             ->first();
-
+            
         if (!$inventory) {
             return response()->json(['success' => false, 'message' => 'No available stock found in inventory for: ' . $input]);
         }
