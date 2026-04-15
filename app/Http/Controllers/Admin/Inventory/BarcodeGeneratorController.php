@@ -16,7 +16,7 @@ class BarcodeGeneratorController extends Controller
     public function index()
     {
         $designs = ProductionGoods::with('series')->where('status', 1)->orderBy('design_number')->get();
-        $sizeSets = MasterSizeMeasurement::where('status', 1)->orderBy('name')->get();
+        $sizeSets = MasterSizeMeasurement::whereIn('status', [1, 2])->orderBy('name')->get();
         $colors = MasterColor::where('status', 1)->orderBy('name')->get();
         $patterns = MasterDesignPattern::where('status', 1)->orderBy('name')->get();
         $fittings = MasterProductFitting::where('status', 1)->orderBy('name')->get();

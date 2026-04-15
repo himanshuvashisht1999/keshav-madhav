@@ -650,7 +650,7 @@ class ProductOrderService
 
     function product_sizes()
     {
-        $data = MasterSizeMeasurement::where('status', 1)->orderBy('id', 'asc')->get();
+        $data = MasterSizeMeasurement::whereIn('status', [1, 2])->orderBy('id', 'asc')->get();
         return $data;
     }
 
@@ -665,7 +665,7 @@ class ProductOrderService
         $design_id = $request->design_id;
         // $customer_id = $request->customer_id;
         $customer_id = 1;
-        $data = MasterSizeMeasurement::where('design_number', $design_id)->where('status', 1)->orderBy('id', 'asc')->get();
+        $data = MasterSizeMeasurement::where('design_number', $design_id)->whereIn('status', [1, 2])->orderBy('id', 'asc')->get();
         $data_res = [];
         foreach ($data as $size) {
             $data_res[$size->id] = $size->name . "&&" . $size->no_of_pcs . "&&" . $size->size_group;
@@ -919,10 +919,14 @@ class ProductOrderService
             ->where('status', 2)
             ->exists();
         $new_size_set_id = '';
+        $product = ProductionGoods::find($request->design_id);
+        $design_number_str = $product ? $product->design_number : $request->design_id;
+
         if (!$exists) {
             $save_data = new MasterSizeMeasurement;
             $save_data->sku = '';
             $save_data->corporate_company_id = 1;
+            $save_data->design_number = $design_number_str;
             $save_data->set_size = $set_size;
             $save_data->name = $set_size;
             $save_data->size_group = $size_group;
@@ -934,6 +938,7 @@ class ProductOrderService
         else {
             $size_data = MasterSizeMeasurement::where('set_size', $set_size)
                 ->where('status', 2)->first();
+            $size_data->design_number = $design_number_str;
             $size_data->size_group = $size_group;
             $size_data->no_of_pcs = $no_of_pcs;
             $size_data->save();
