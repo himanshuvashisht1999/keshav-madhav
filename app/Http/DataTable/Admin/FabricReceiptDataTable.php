@@ -106,7 +106,7 @@ class FabricReceiptDataTable
                 }
 
                 if ($queue->can_delete) {
-                    $action .= '<a href="javascript:void(0)" onclick="deleteData(\'' . route('admin.fabric_receipt.delete', ['id' => $parameter]) . '\')" class="text-danger" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash"></i></a>';
+                    $action .= '<a href="javascript:void(0)" onclick="deleteData(\'' . $parameter . '\')" class="text-danger" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash"></i></a>';
                 }
 
                 return $action;

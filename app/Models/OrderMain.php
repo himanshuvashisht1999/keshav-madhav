@@ -15,6 +15,8 @@ class OrderMain extends Model
         'sub_company_id',
         'project_id',
         'sku',
+        'po_number',
+        'po_date',
         'order_type',
         'expected_delivery_date',
         'master_customer_id',

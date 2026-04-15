@@ -109,8 +109,12 @@ class FabricReceiptController extends Controller
     }
     public function delete(Request $request)
     {
-        $data = $this->service->delete($request);
-        return redirect()->route('admin.fabric_receipt.index')->withSuccess('The fabric receipt has been successfully deleted.');
+        $status = $this->service->delete($request);
+        if ($status) {
+            return redirect()->route('admin.fabric_receipt.index')->withSuccess('The fabric receipt has been successfully deleted.');
+        } else {
+            return redirect()->route('admin.fabric_receipt.index')->withError('Delete Failed! This shipment has existing payment adjustments or used rolls.');
+        }
     }
 
     public function scan(Request $request)

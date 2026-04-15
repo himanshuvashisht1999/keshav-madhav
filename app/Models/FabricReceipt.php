@@ -41,9 +41,16 @@ class FabricReceipt extends Model
 
     public function getCanDeleteAttribute()
     {
-        // A shipment can be deleted only if NONE of its rolls have been used
-        // i.e., remaining_quantity must be equal to the original meter for ALL details
-        return !$this->details()->whereColumn('remaining_quantity', '<', 'meter')->exists();
+        // 1. Check if rolls have been used
+        $hasUsedRolls = $this->details()->whereColumn('remaining_quantity', '<', 'meter')->exists();
+        if ($hasUsedRolls) return false;
+
+        // 2. Check if any payment adjustments exist for this shipment
+        $hasAdjustments = \App\Models\PaymentAdjustment::where('ref_id', (string)$this->id)
+            ->whereIn('adjustment_master_id', [14, 16]) // Vendor master IDs
+            ->exists();
+        
+        return !$hasAdjustments;
     }
 
     public function vendor()

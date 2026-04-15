@@ -91,6 +91,8 @@ class ProductOrderService
             $save_data_main->sku = '';
             $save_data_main->order_type = $request->order_type ?? 'domestic';
             $save_data_main->expected_delivery_date = $request->expected_delivery_date;
+            $save_data_main->po_number = $request->po_number;
+            $save_data_main->po_date = $request->po_date;
             $save_data_main->master_customer_id = $request->master_customer_id;
             $save_data_main->corporate_order_file = $imgName ?? null;
             $save_data_main->status = 1;
@@ -724,6 +726,8 @@ class ProductOrderService
 
             $order_main->order_type = $request->order_type ?? 'domestic';
             $order_main->expected_delivery_date = $request->expected_delivery_date;
+            $order_main->po_number = $request->po_number;
+            $order_main->po_date = $request->po_date;
             $order_main->master_customer_id = $request->master_customer_id;
             $order_main->corporate_order_file = $imgName;
             $order_main->save();

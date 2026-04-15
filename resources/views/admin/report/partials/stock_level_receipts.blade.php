@@ -14,6 +14,8 @@
                         <th>PO Number</th>
                         <th>Shipment No</th>
                         <th>Roll No</th>
+                        <th class="text-end">Price/Mtr</th>
+                        <th class="text-end">Total Amount</th>
                         <th class="text-end">Received Qty</th>
                         <th class="text-end">Remaining Qty</th>
                     </tr>
@@ -29,12 +31,14 @@
                         <td>{{ $row->purchase_order?->sku ?? '-' }}</td>
                         <td>{{ $row->shipment_number ?? '-' }}</td>
                         <td><span class="badge bg-secondary">{{ $row->roll_number }}</span></td>
+                        <td class="text-end">{{ number_format($row->price_per_meter, 2) }}</td>
+                        <td class="text-end fw-bold">{{ number_format($row->price_per_meter * $row->meter, 2) }}</td>
                         <td class="text-end fw-bold text-success">{{ number_format($row->meter, 2) }}</td>
                         <td class="text-end fw-bold">{{ number_format($row->remaining_quantity, 2) }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4">No shipments found.</td>
+                        <td colspan="11" class="text-center text-muted py-4">No shipments found.</td>
                     </tr>
                     @endforelse
                 </tbody>

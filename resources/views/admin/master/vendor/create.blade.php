@@ -111,6 +111,23 @@
 
                             <div class="col-md-6">
                                 <div class="form-group">
+                                    <label>Purchase Agent</label>
+                                    <select name="purchase_agent_id" class="form-control select2" style="width: 100%;">
+                                        <option value="">Select Purchase Agent</option>
+                                        @foreach($purchase_agents as $agent)
+                                        <option value="{{$agent->id}}" {{old('purchase_agent_id') == $agent->id ? 'selected' : ''}}>{{$agent->name}}</option>
+                                        @endforeach
+                                    </select>
+                                    @if ($errors->has('purchase_agent_id'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('purchase_agent_id') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
                                      <label>Type</label>
                                      <select name="type" class="form-control select2" style="width: 100%;">
                                          <option value="Credit" {{old('type') == 'Credit' ? 'selected' : ''}}>Credit</option>

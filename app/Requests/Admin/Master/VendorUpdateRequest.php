@@ -30,6 +30,7 @@ class VendorUpdateRequest extends FormRequest{
             'sku'    => 'nullable',
             'balance' => 'nullable|numeric',
             'type' => 'required|in:Credit,Debit',
+            'purchase_agent_id' => 'nullable|exists:purchase_agents,id',
         ];
     }
 

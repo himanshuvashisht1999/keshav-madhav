@@ -1182,7 +1182,7 @@ class AgentOrderController extends Controller
             ->where(function ($q) use ($input) {
                 $q->where('barcode', $input)->orWhere('box_no', $input);
             })
-            ->where('order_main_id', 0)
+            // ->where('order_main_id', 0)
             ->where('total_boxes', '>', 0)
             ->first();
 

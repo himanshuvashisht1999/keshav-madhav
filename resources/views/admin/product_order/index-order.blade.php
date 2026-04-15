@@ -27,8 +27,9 @@
                         <table id="customers" class="table table-bordered table-hover">
                             <thead>
                                 <tr role="row" class="filter">
+                                    <td></td>
                                     <td>
-                                        <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
+                                        <input type="text" class="form-control" name="po_number" id="po_num_search" autocomplete="off" placeholder="PO #">
                                     </td>
                                     <td>
                                         <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
@@ -73,6 +74,7 @@
                                 </tr>
                                 <tr>
                                     <th>ID</th>
+                                    <th>PO No</th>
                                     <th>Order No</th>
                                     <th>Customer</th>
                                     <th>Order Type</th>
@@ -118,6 +120,7 @@
                     data: function (d) {
                         d.id = $('#id').val();
                         d.sku = $('#sku').val();
+                        d.po_number = $('#po_num_search').val();
                         d.master_customer_id = $('#master_customer_id').val();
                         d.order_type = $('#order_type').val();
                         d.created_at = $('#created_at').val();
@@ -129,6 +132,7 @@
                 },
                 columns: [
                     { data: 'DT_RowIndex', name: 'id' },
+                    { data: 'po_number', name: 'po_number' },
                     { data: 'sku', name: 'sku' },
                     { data: 'master_customer_id', name: 'master_customer_id' },
                     { data: 'order_type', name: 'order_type' },
@@ -169,6 +173,10 @@
             });
 
             $('#sku').on('keyup', function (e) {
+                oTable.draw();
+                e.preventDefault();
+            });
+            $('#po_num_search').on('keyup', function (e) {
                 oTable.draw();
                 e.preventDefault();
             });

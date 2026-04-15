@@ -6,6 +6,7 @@ use Illuminate\Support\Str;
 use Auth;
 use App\Models\Vendor;
 use App\Models\Item;
+use App\Models\PurchaseAgent;
 use App\Http\DataTable\Admin\Master\VendorDataTable as DataTable;
 
 class VendorService {
@@ -34,6 +35,7 @@ class VendorService {
         $save_data->phone = $request->phone;
         $save_data->email = $request->email;
         $save_data->address = $request->address;
+        $save_data->purchase_agent_id = $request->purchase_agent_id;
         
         $balance = $request->balance ?? 0;
         if ($request->type == 'Debit') {
@@ -62,6 +64,7 @@ class VendorService {
         $update_data->phone = $request->phone;
         $update_data->email = $request->email;
         $update_data->address = $request->address;
+        $update_data->purchase_agent_id = $request->purchase_agent_id;
         
         $balance = $request->balance ?? 0;
         if ($request->type == 'Debit') {
@@ -87,6 +90,11 @@ class VendorService {
 
     public function items(){
         $data = Item::where('status',1)->get();
+        return $data;
+    }
+
+    public function purchaseAgents(){
+        $data = PurchaseAgent::where('status',1)->get();
         return $data;
     }
 

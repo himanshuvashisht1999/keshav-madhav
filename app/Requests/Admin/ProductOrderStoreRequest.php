@@ -23,6 +23,8 @@ class ProductOrderStoreRequest extends FormRequest{
         return [
             // 'sku'    => 'required|unique:orders,sku',
             'expected_delivery_date' => 'required',
+            'po_number' => 'nullable|string',
+            'po_date' => 'nullable|date',
             'master_customer_id' => 'required',
             'designList' => 'required|array|min:1',
             'designList.*' => 'required',

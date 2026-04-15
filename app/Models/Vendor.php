@@ -21,6 +21,7 @@ class Vendor extends Model
         'address',
         'balance',
         'items',
+        'purchase_agent_id',
         'status',
         'created_at',
         'updated_at'
@@ -28,6 +29,11 @@ class Vendor extends Model
 
     public function fabrics(){
         return $this->hasMany('App\Models\Fabric','vendor_id','id');
+    }
+
+    public function purchaseAgent()
+    {
+        return $this->belongsTo(PurchaseAgent::class, 'purchase_agent_id');
     }
     
 }

@@ -944,6 +944,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                                     </a>
                                                 </li>
                                                 <li class="nav-item">
+                                                    <a href="{{ route('admin.master.purchase-agent.index') }}"
+                                                        class="{{ str_contains($page_url, 'admin/master/purchase-agent') ? 'nav-link active' : 'nav-link' }}">
+                                                        <i class="far fa-circle nav-icon"></i>
+                                                        <p>Purchase Agents</p>
+                                                    </a>
+                                                </li>
+                                                <li class="nav-item">
                                                     <a href="{{ route('admin.master.employees.index') }}"
                                                         class="{{ str_contains($page_url, 'admin/master/employees') ? 'nav-link active' : 'nav-link' }}">
                                                         <i class="far fa-circle nav-icon"></i>

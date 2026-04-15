@@ -140,6 +140,23 @@
 
                             <div class="col-md-6">
                                 <div class="form-group">
+                                    <label>Purchase Agent</label>
+                                    <select name="purchase_agent_id" class="form-control select2" style="width: 100%;">
+                                        <option value="">Select Purchase Agent</option>
+                                        @foreach($purchase_agents as $agent)
+                                        <option value="{{$agent->id}}" {{old('purchase_agent_id', $data->purchase_agent_id) == $agent->id ? 'selected' : ''}}>{{$agent->name}}</option>
+                                        @endforeach
+                                    </select>
+                                    @if ($errors->has('purchase_agent_id'))
+                                        <span class="invalid-feedback d-block">
+                                        {{ $errors->first('purchase_agent_id') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
                                     <label>Items</label>
                                     <select name="items[]" class="form-control select2" style="width: 100%;" multiple>
                                         <option value="0" @if(in_array(0, $selectedItems ?? [])) selected @endif>Fabric</option>

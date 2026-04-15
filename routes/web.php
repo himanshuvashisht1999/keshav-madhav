@@ -84,6 +84,7 @@ use App\Http\Controllers\Admin\PackingController as AdminPackingController;
 use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
 use App\Http\Controllers\Admin\AgentOrderController as AdminAgentOrderController;
 use App\Http\Controllers\Admin\Master\SalesAgentController as AdminSalesAgentController;
+use App\Http\Controllers\Admin\Master\PurchaseAgentController as AdminPurchaseAgentController;
 use App\Http\Controllers\Admin\Master\BrandController as AdminBrandController;
 use App\Http\Controllers\Admin\Master\CompanyController as AdminCompanyController;
 
@@ -852,6 +853,16 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/edit', [AdminSalesAgentController::class, 'edit'])->name('edit');
             Route::post('/update', [AdminSalesAgentController::class, 'update'])->name('update');
             Route::get('/delete', [AdminSalesAgentController::class, 'delete'])->name('delete');
+        });
+
+        Route::prefix('master/purchase-agent')->name('master.purchase-agent.')->group(function () {
+            Route::get('/index', [AdminPurchaseAgentController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminPurchaseAgentController::class, 'indexList'])->name('indexList');
+            Route::get('/create', [AdminPurchaseAgentController::class, 'create'])->name('create');
+            Route::post('/store', [AdminPurchaseAgentController::class, 'store'])->name('store');
+            Route::get('/edit', [AdminPurchaseAgentController::class, 'edit'])->name('edit');
+            Route::post('/update', [AdminPurchaseAgentController::class, 'update'])->name('update');
+            Route::get('/delete', [AdminPurchaseAgentController::class, 'delete'])->name('delete');
         });
 
         Route::prefix('master/sales-agent-shops')->name('master.sales-agent-shops.')->group(function () {

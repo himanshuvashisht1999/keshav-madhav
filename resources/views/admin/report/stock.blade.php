@@ -25,6 +25,12 @@
                 <div class="report-meta d-flex align-items-center gap-2">
                     @if($level === 'fabrics')
                     <form method="GET" action="{{ route('admin.report.stock') }}" class="d-flex me-3">
+                        <select name="warehouse_id" class="form-control form-control-sm me-2 select2" style="min-width: 200px;">
+                            <option value="">All Warehouses</option>
+                            @foreach($warehouses as $wh)
+                                <option value="{{ $wh->id }}" {{ request('warehouse_id') == $wh->id ? 'selected' : '' }}>{{ $wh->cutting_master_name }}</option>
+                            @endforeach
+                        </select>
                         <input type="text" name="search" class="form-control form-control-sm me-2" placeholder="Search fabric..." value="{{ request('search') }}">
                         <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search"></i></button>
                     </form>

@@ -85,6 +85,9 @@ class ProductOrderDataTable  {
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
+                if ($request->has('po_number') && !empty($request->po_number)) {
+                    $query->where('po_number', 'like', "%{$request->get('po_number')}%");
+                }
                 if ($request->has('master_customer_id') && !empty($request->master_customer_id)) {
                     $query->where('master_customer_id', 'like', "%{$request->get('master_customer_id')}%");
                 }
@@ -138,9 +141,12 @@ class ProductOrderDataTable  {
             ->addColumn('total_pcs', function ($queue) {
                 return getOrderDispatchData($queue->id)['total'] ?? 0;
             })
-            // ->addColumn('total_amount', function ($queue) {
-            //     return number_format($queue->total_amount, 2) ?? '0.00';
-            // })
+            ->editColumn('po_number', function ($queue) {
+                return $queue->po_number ?? '-';
+            })
+            ->editColumn('po_date', function ($queue) {
+                return $queue->po_date ? getformatDate($queue->po_date) : '-';
+            })
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
 

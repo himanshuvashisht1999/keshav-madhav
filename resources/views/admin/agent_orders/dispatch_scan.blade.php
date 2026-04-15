@@ -88,9 +88,11 @@
                                                         <div class="font-weight-bold">{{ $group['product_name'] }}</div>
                                                         <small class="text-muted">
                                                             D: {{ $group['design_number'] }} | C: {{ $group['color_name'] }} |
-                                                            S: {{ $group['size_set_name'] }} | P: {{ $group['pattern_name'] }} | F: {{ $group['fitting_name'] }}
+                                                            S: {{ $group['size_set_name'] }} | P: {{ $group['pattern_name'] }} |
+                                                            F: {{ $group['fitting_name'] }}
                                                             <br>
-                                                            <span class="badge badge-info mt-1">Barcode: {{ $group['barcode'] }}</span>
+                                                            <span class="badge badge-info mt-1">Barcode:
+                                                                {{ $group['barcode'] }}</span>
                                                         </small>
                                                     </td>
                                                     <td class="vertical-align-middle">
@@ -126,7 +128,8 @@
                             <div class="card-footer bg-white text-right">
                                 <p class="small text-muted mb-3">Totals and prices are automatically updated as you scan
                                     actual box quantities.</p>
-                                <a href="{{ route('admin.agent-orders.index') }}" class="btn btn-outline-primary btn-lg px-5 shadow rounded-pill">
+                                <a href="{{ route('admin.agent-orders.index') }}"
+                                    class="btn btn-outline-primary btn-lg px-5 shadow rounded-pill">
                                     <i class="fas fa-arrow-left mr-2"></i> BACK TO ORDERS
                                 </a>
                             </div>
@@ -153,7 +156,8 @@
                                                         {{ $box->scanned_box_qty }} / {{ $box->box_qty }}</small>
                                                 </div>
                                                 <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
-                                                    data-id="{{ $box->box_no }}" data-barcode="{{ $box->barcode }}" title="Undo one scan">
+                                                    data-id="{{ $box->box_no }}" data-barcode="{{ $box->barcode }}"
+                                                    title="Undo one scan">
                                                     <i class="fas fa-undo"></i>
                                                 </button>
                                             </div>
@@ -236,24 +240,28 @@
             });
 
             let scanTimer;
-            barcodeInput.on('input', function () {
-                const val = $(this).val().trim();
-                console.log('Input Received:', val);
+            // barcodeInput.on('input', function () {
+            //     const val = $(this).val().trim();
+            //     console.log('Input Received:', val);
+            //     $('.input-group-text i').addClass('fa-spin text-warning').removeClass('text-primary');
+            //     setTimeout(() => {
+            //         $('.input-group-text i').removeClass('fa-spin text-warning').addClass('text-primary');
+            //     }, 100);
 
-                // Visual feedback that input is being received
-                $('.input-group-text i').addClass('fa-spin text-warning').removeClass('text-primary');
+            //     // Auto-submit after 400ms of no typing (useful for scanners that don't send Enter)
+            //     clearTimeout(scanTimer);
+            //     scanTimer = setTimeout(function () {
+            //         if (val.length >= 4) { // Trigger only if length is 4 or more
+            //             console.log('Auto-submitting due to inactivity timeout (400ms)...');
+            //             triggerScan();
+            //         }
+            //     }, 400);
+            // });
+
+            barcodeInput.on('paste', function (e) {
                 setTimeout(() => {
-                    $('.input-group-text i').removeClass('fa-spin text-warning').addClass('text-primary');
-                }, 100);
-
-                // Auto-submit after 400ms of no typing (useful for scanners that don't send Enter)
-                clearTimeout(scanTimer);
-                scanTimer = setTimeout(function () {
-                    if (val.length >= 4) { // Trigger only if length is 4 or more
-                        console.log('Auto-submitting due to inactivity timeout (400ms)...');
-                        triggerScan();
-                    }
-                }, 400);
+                    triggerScan();
+                }, 100); // wait for paste to complete
             });
 
             barcodeInput.on('keydown', function (e) {
@@ -383,19 +391,19 @@
                 const existingHistory = $(`#history_${boxNo}`);
 
                 const historyHTML = `
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <div class="font-weight-bold">Scanned: ${designNumber}</div>
-                                                    <small class="text-muted d-block">${productName}</small>
-                                                    <small class="text-muted">${color} | Count: ${current} / ${total}</small>
-                                                    <div class="mt-1"><small class="text-white bg-success px-2 rounded">Just Scanned</small></div>
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
-                                                    data-id="${boxNo}" data-barcode="${response.barcode}" title="Undo one scan">
-                                                    <i class="fas fa-undo"></i>
-                                                </button>
-                                            </div>
-                        `;
+                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                <div>
+                                                                    <div class="font-weight-bold">Scanned: ${designNumber}</div>
+                                                                    <small class="text-muted d-block">${productName}</small>
+                                                                    <small class="text-muted">${color} | Count: ${current} / ${total}</small>
+                                                                    <div class="mt-1"><small class="text-white bg-success px-2 rounded">Just Scanned</small></div>
+                                                                </div>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
+                                                                    data-id="${boxNo}" data-barcode="${response.barcode}" title="Undo one scan">
+                                                                    <i class="fas fa-undo"></i>
+                                                                </button>
+                                                            </div>
+                                        `;
 
                 if (existingHistory.length) {
                     existingHistory.html(historyHTML).addClass('animate__animated animate__pulse');
@@ -448,21 +456,21 @@
             function setLoadingStatus(barcode) {
                 scanStatus.removeClass('alert-secondary alert-success alert-danger').addClass('alert-info');
                 scanStatus.html(`
-                                                <div class="text-center">
-                                                    <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
-                                                    <div>Processing: <strong>${barcode}</strong></div>
-                                                </div>
-                                            `);
+                                                                <div class="text-center">
+                                                                    <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+                                                                    <div>Processing: <strong>${barcode}</strong></div>
+                                                                </div>
+                                                            `);
             }
 
             function setSuccessStatus(message) {
                 scanStatus.removeClass('alert-info alert-danger alert-secondary').addClass('alert-success border-success');
                 scanStatus.html(`
-                                                <div class="text-center animate__animated animate__fadeIn">
-                                                    <i class="fas fa-check-circle fa-2x mb-2 text-white"></i>
-                                                    <div class="h5 font-weight-bold text-white mb-0">${message}</div>
-                                                </div>
-                                            `);
+                                                                <div class="text-center animate__animated animate__fadeIn">
+                                                                    <i class="fas fa-check-circle fa-2x mb-2 text-white"></i>
+                                                                    <div class="h5 font-weight-bold text-white mb-0">${message}</div>
+                                                                </div>
+                                                            `);
 
                 // Reset status to "Ready" after 3 seconds
                 setTimeout(() => {
@@ -475,21 +483,21 @@
             function setErrorStatus(message) {
                 scanStatus.removeClass('alert-info alert-success alert-secondary').addClass('alert-danger border-danger');
                 scanStatus.html(`
-                                                <div class="text-center animate__animated animate__shakeX">
-                                                    <i class="fas fa-exclamation-circle fa-2x mb-2 text-white"></i>
-                                                    <div class="h5 font-weight-bold text-white mb-0">${message}</div>
-                                                </div>
-                                            `);
+                                                                <div class="text-center animate__animated animate__shakeX">
+                                                                    <i class="fas fa-exclamation-circle fa-2x mb-2 text-white"></i>
+                                                                    <div class="h5 font-weight-bold text-white mb-0">${message}</div>
+                                                                </div>
+                                                            `);
             }
 
             function resetToReady() {
                 scanStatus.removeClass('alert-success alert-danger alert-info').addClass('alert-secondary border-secondary');
                 scanStatus.html(`
-                                                <div class="text-center">
-                                                    <i class="fas fa-qrcode fa-2x mb-2 text-white opacity-50"></i>
-                                                    <div class="font-weight-bold text-white">Ready to Scan</div>
-                                                </div>
-                                            `);
+                                                                <div class="text-center">
+                                                                    <i class="fas fa-qrcode fa-2x mb-2 text-white opacity-50"></i>
+                                                                    <div class="font-weight-bold text-white">Ready to Scan</div>
+                                                                </div>
+                                                            `);
             }
 
             function playBeep(success) {

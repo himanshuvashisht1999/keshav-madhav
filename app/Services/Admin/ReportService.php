@@ -382,6 +382,9 @@ class ReportService
                 ])
                 ->leftJoin('fabric_receipt_details', 'fabrics.id', '=', 'fabric_receipt_details.fabric_id')
                 ->leftJoin('vendors', 'fabrics.vendor_id', '=', 'vendors.id')
+                ->when($request->filled('warehouse_id'), function($q) use ($request) {
+                    $q->where('fabric_receipt_details.master_fabric_warehouse_id', $request->warehouse_id);
+                })
                 ->groupBy('fabrics.id', 'fabrics.name', 'vendors.name')
                 ->when($request->filled('search'), function($q) use ($request) {
                     $q->where('fabrics.name', 'LIKE', '%' . $request->search . '%');
