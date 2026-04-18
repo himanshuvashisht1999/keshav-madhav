@@ -7,15 +7,15 @@
             @if(!isset($boxes))
                 <div class="row align-items-center">
                     <div class="col-sm-6">
-                        <h1 class="m-0 font-weight-bold text-dark"><i class="fas fa-plus-circle mr-2"></i>Create New Agent Order</h1>
-                        <p class="text-muted">Initiate a new order by selecting an agent and a customer.</p>
+                        <h1 class="m-0 font-weight-bold text-dark"><i class="fas fa-plus-circle mr-2"></i>Create New {{ request('order_type') == 'direct' ? 'Direct' : 'Sales' }} Order</h1>
+                        <p class="text-muted">Initiate a new order by selecting {{ request('order_type') == 'direct' ? 'a customer' : 'an agent and a customer' }}.</p>
                     </div>
                 </div>
             @else
                 <div class="row align-items-center">
                     <div class="col-sm-6">
-                        <h1 class="m-0 font-weight-bold text-dark"><i class="fas fa-shopping-basket mr-2"></i>New Order: {{ $shop->name }}</h1>
-                        <p class="text-muted small mb-0"><i class="fas fa-user-tie mr-1"></i> Agent: {{ $agent->name }}</p>
+                        <h1 class="m-0 font-weight-bold text-dark"><i class="fas fa-shopping-basket mr-2"></i>New {{ request('order_type') == 'direct' ? 'Direct' : 'Agent' }} Order: {{ $shop->name }}</h1>
+                        <p class="text-muted small mb-0"><i class="fas fa-user-tie mr-1"></i> {{ $agent->id === 'direct' ? 'Direct Sale (No Agent)' : 'Agent: ' . $agent->name }}</p>
                     </div>
                     <div class="col-sm-6 text-right">
                         <a href="{{ route('admin.agent-orders.create') }}" class="btn btn-outline-secondary btn-sm">
@@ -40,29 +40,43 @@
                             <div class="card-body p-4">
                                 <form action="{{ route('admin.agent-orders.store') }}" method="POST">
                                     @csrf
-                                    
+                                    <input type="hidden" name="order_type" value="{{ request('order_type', 'normal') }}">
                                     <div class="form-group mb-4">
-                                        <label class="text-muted small font-weight-bold text-uppercase">Select Sales Agent <span class="text-danger">*</span></label>
-                                        <select name="sales_agent_id" id="agentSelect" class="form-control select2 @error('sales_agent_id') is-invalid @enderror" required>
-                                            <option value="">-- Choose Agent --</option>
-                                            <option value="direct" {{ request('sales_agent_id') == 'direct' ? 'selected' : '' }}>-- Direct (No Agent) --</option>
-                                            @foreach($agents as $agent)
-                                                <option value="{{ $agent->id }}" {{ old('sales_agent_id') == $agent->id ? 'selected' : '' }}>
-                                                    {{ $agent->name }}
+                                        <label class="text-muted small font-weight-bold text-uppercase">Select Party / Customer <span class="text-danger">*</span></label>
+                                        <select name="master_customer_id" id="customerSelect" class="form-control select2 @error('master_customer_id') is-invalid @enderror" required>
+                                            <option value="">-- Choose Customer --</option>
+                                            @foreach($shops as $shop_item)
+                                                <option value="{{ $shop_item->id }}" {{ old('master_customer_id') == $shop_item->id ? 'selected' : '' }}>
+                                                    {{ $shop_item->name }}
                                                 </option>
                                             @endforeach
                                         </select>
                                     </div>
 
-                                    <div class="form-group mb-4">
-                                        <label class="text-muted small font-weight-bold text-uppercase">Select Party / Customer <span class="text-danger">*</span></label>
-                                        <select name="master_customer_id" id="customerSelect" class="form-control select2 @error('master_customer_id') is-invalid @enderror" required>
-                                            <option value="">-- Choose Customer --</option>
-                                            @foreach($shops as $shop)
-                                                <option value="{{ $shop->id }}" {{ old('master_customer_id') == $shop->id ? 'selected' : '' }}>
-                                                    {{ $shop->name }}
-                                                </option>
-                                            @endforeach
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-4">
+                                                <label class="text-muted small font-weight-bold text-uppercase">Order Type <span class="text-danger">*</span></label>
+                                                <select name="order_type" id="orderTypeSelect" class="form-control @error('order_type') is-invalid @enderror" required>
+                                                    <option value="normal" {{ request('order_type') == 'normal' ? 'selected' : '' }}>Normal</option>
+                                                    <option value="direct" {{ request('order_type') == 'direct' ? 'selected' : '' }}>Direct (Instant Bill/Dispatch)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-4">
+                                                <label class="text-muted small font-weight-bold text-uppercase">Sale Type <span class="text-danger">*</span></label>
+                                                <select name="sale_type" id="saleTypeSelect" class="form-control @error('sale_type') is-invalid @enderror" required>
+                                                    <option value="item" {{ old('sale_type', 'item') == 'item' ? 'selected' : '' }}>Item (Ready Goods)</option>
+                                                    <option value="fabric" {{ old('sale_type') == 'fabric' ? 'selected' : '' }}>Fabric (Under Development)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group mb-4" id="agentSelectionWrapper" style="display:none;">
+                                        <select name="sales_agent_id" id="agentSelect" class="form-control">
+                                             <option value="direct">Direct</option>
                                         </select>
                                     </div>
 
@@ -76,7 +90,7 @@
                                             <i class="fas fa-times mr-2"></i> Cancel
                                         </a>
                                         <button type="submit" class="btn btn-primary px-5 shadow-sm" style="border-radius: 8px;">
-                                            Next: Select Items <i class="fas fa-arrow-right ml-2"></i>
+                                            Proceed <i class="fas fa-arrow-right ml-2"></i>
                                         </button>
                                     </div>
                                 </form>
@@ -95,7 +109,7 @@
                                     <input type="hidden" name="sales_agent_id" value="{{ $agent->id }}">
                                     <input type="hidden" name="master_customer_id" value="{{ $shop->id }}">
                                     <input type="hidden" name="order_date" value="{{ request('order_date') }}">
-                                    
+                                    <input type="hidden" name="order_type" value="{{ request('order_type') }}">
                                     <div class="row align-items-end">
                                         <div class="col-md-2 col-6 mb-2">
                                             <label class="small font-weight-bold text-muted mb-1">Design No</label>
@@ -145,7 +159,7 @@
                                             <button type="submit" class="btn btn-primary btn-sm px-4 mr-2">
                                                 <i class="fas fa-search mr-1"></i> Filter
                                             </button>
-                                            <a href="{{ route('admin.agent-orders.create', ['sales_agent_id' => $agent->id, 'master_customer_id' => $shop->id, 'order_date' => request('order_date')]) }}" 
+                                            <a href="{{ route('admin.agent-orders.create', ['order_type' => request('order_type'), 'sales_agent_id' => $agent->id, 'master_customer_id' => $shop->id, 'order_date' => request('order_date')]) }}" 
                                                class="btn btn-secondary btn-sm px-3">
                                                 <i class="fas fa-undo"></i>
                                             </a>
@@ -177,7 +191,7 @@
                                                 <th>Size Set</th>
                                                 <th class="text-center">Pcs/Box</th>
                                                 <th class="text-center">Available</th>
-                                                <th class="text-right">Price (Agent)</th>
+                                                <th class="text-right">Price ({{ request('order_type') == 'direct' ? 'Customer' : 'Agent' }})</th>
                                                 <th width="150" class="text-center px-4">Order Qty (Boxes)</th>
                                             </tr>
                                         </thead>
@@ -241,11 +255,13 @@
                                 </div>
                             </div>
 
+                            @if(request('order_type') != 'direct')
                             <div class="col-md-2 border-right">
                                 <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Expected Dispatch</small>
                                 <input type="date" id="expectedDispatchDate" class="form-control form-control-sm mt-1" 
                                     value="{{ date('Y-m-d', strtotime('+3 days')) }}" min="{{ date('Y-m-d') }}">
                             </div>
+                            @endif
 
                             <div class="col-md-2 border-right">
                                 <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Booking & Transport</small>
@@ -265,7 +281,7 @@
 
                             <div class="col-md-2">
                                 <button type="button" class="btn btn-success btn-lg btn-block py-2 font-weight-bold shadow-sm place-order-btn">
-                                    Place Order <i class="fas fa-check-circle ml-2"></i>
+                                    {{ request('order_type') == 'direct' ? 'Deduct Stock & Bill' : 'Place Order' }} <i class="fas fa-check-circle ml-2"></i>
                                 </button>
                             </div>
                         </div>
@@ -297,47 +313,7 @@
             $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
         }
 
-        // Function to load shops
-        function loadShops(agentId, selectedShopId = null) {
-            const customerSelect = $('#customerSelect');
-            customerSelect.empty().append('<option value="">-- Loading Shops... --</option>');
-            
-            if (agentId) {
-                $.ajax({
-                    url: "{{ route('admin.agent-orders.get-shops') }}",
-                    method: "GET",
-                    data: { 
-                        agent_id: agentId === 'direct' ? '' : agentId,
-                        is_direct: agentId === 'direct' ? 1 : 0
-                    },
-                    success: function(shops) {
-                        customerSelect.empty().append('<option value="">-- Choose Customer --</option>');
-                        shops.forEach(shop => {
-                            const selected = (selectedShopId == shop.id) ? 'selected' : '';
-                            customerSelect.append(`<option value="${shop.id}" ${selected}>${shop.name}</option>`);
-                        });
-                        customerSelect.trigger('change');
-                    },
-                    error: function() {
-                        customerSelect.empty().append('<option value="">-- Error loading shops --</option>');
-                    }
-                });
-            } else {
-                customerSelect.empty().append('<option value="">-- Select Agent First --</option>');
-            }
-        }
-
-        // Handle Agent Change
-        $('#agentSelect').on('change', function() {
-            loadShops($(this).val());
-        });
-
-        // Trigger on load if agent is already selected (e.g. from old input)
-        if ($('#agentSelect').val()) {
-            loadShops($('#agentSelect').val(), "{{ old('master_customer_id') }}");
-        } else {
-            $('#customerSelect').empty().append('<option value="">-- Select Agent First --</option>');
-        }
+        // Agent selection removed - automatically determined based on customer and order type
 
         @if(isset($boxes))
             let cart = new Map();
@@ -542,6 +518,8 @@
                                 sales_agent_id: "{{ $agent->id }}",
                                 master_customer_id: "{{ $shop->id }}",
                                 order_date: "{{ request('order_date', date('Y-m-d')) }}",
+                                order_type: "{{ request('order_type', 'normal') }}",
+                                 sale_type: "{{ request('sale_type', 'item') }}",
                                 variations: variations,
                                 expected_dispatch_date: $('#expectedDispatchDate').val(),
                                 discount_percentage: $('#discountPercentage').val(),

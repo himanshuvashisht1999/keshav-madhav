@@ -20,7 +20,7 @@ class AgentOrderController extends Controller
 
         if (!$agent_id || !$shop_id) {
             $agents = DB::table('sales_agents')->select('id', 'name')->where('status', 1)->get();
-            $shops = collect(); // Load dynamically via AJAX
+            $shops = DB::table('master_customers')->select('id', 'name')->where('status', 1)->get();
             return view('admin.agent_orders.create', compact('agents', 'shops'));
         }
 
@@ -217,31 +217,44 @@ class AgentOrderController extends Controller
         // Check if it's the Step 1 form or the Step 2 AJAX
         if (!$request->ajax()) {
             $request->validate([
-                'sales_agent_id' => 'required',
+                'order_type' => 'required|in:normal,direct',
+                'sale_type' => 'required|string',
                 'master_customer_id' => 'required|exists:master_customers,id',
                 'order_date' => 'required|date',
             ]);
+
+            $agent_id = 'direct';
+            if ($request->order_type === 'normal') {
+                $customer = DB::table('master_customers')->where('id', $request->master_customer_id)->first();
+                $agent_id = $customer->sales_agent_id ?: 'direct';
+            }
+
             return redirect()->route('admin.agent-orders.create', [
-                'sales_agent_id' => $request->sales_agent_id,
+                'order_type' => $request->order_type,
+                'sale_type' => $request->sale_type,
+                'sales_agent_id' => $agent_id,
                 'master_customer_id' => $request->master_customer_id,
                 'order_date' => $request->order_date
             ]);
         }
 
-        // AJAX Store Logic (matching Agent type)
+        // AJAX Store Logic
         $request->validate([
-            'sales_agent_id' => 'required',
+            'order_type' => 'nullable|in:normal,direct',
+            'sale_type' => 'nullable|string',
             'master_customer_id' => 'required|exists:master_customers,id',
             'variations' => 'required|array|min:1',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        if ($request->sales_agent_id === 'direct') {
-            $shop = DB::table('master_customers')->where('id', $request->master_customer_id)->first();
-            $agent_id_to_save = null;
+        $customer = \App\Models\MasterCustomer::findOrFail($request->master_customer_id);
+        $order_type = $request->order_type ?: ($request->sales_agent_id === 'direct' ? 'direct' : 'normal');
+        $sale_type = $request->sale_type ?: 'item';
+
+        if ($order_type === 'direct') {
+            $agent_id_to_save = 0;
         } else {
-            $agent = DB::table('sales_agents')->where('id', $request->sales_agent_id)->first();
-            $agent_id_to_save = $request->sales_agent_id;
+            $agent_id_to_save = $customer->sales_agent_id ?: 0;
         }
 
         $total_qty = 0;
@@ -276,7 +289,6 @@ class AgentOrderController extends Controller
 
             $mrp = $variant->mrp ?? 0;
             
-            // Use unit_price from front-end if available, else calculate
             $selling_price = isset($var['unit_price']) ? (float)$var['unit_price'] : ($mrp - ($mrp * $brand_discount / 100));
 
             $seriesName = ($product->series) ? $product->series->name : '';
@@ -285,7 +297,6 @@ class AgentOrderController extends Controller
             $fitting = $product->master_product_fitting_id ? \App\Models\MasterProductFitting::find($product->master_product_fitting_id) : null;
             $pattern = $product->master_pattern_id ? \App\Models\MasterDesignPattern::find($product->master_pattern_id) : null;
 
-            // Determine PCS per Box (Source of Truth: Front-end > Current Inventory > Master Config)
             $pcs_per_box = isset($var['pcs_per_box']) ? (float)$var['pcs_per_box'] : 0;
             if ($pcs_per_box <= 0) {
                 $pcs_per_box = (float) DomesticInventory::where('product_id', $var['product_id'])
@@ -319,6 +330,9 @@ class AgentOrderController extends Controller
                 'selling_price' => $selling_price,
                 'barcode' => $barcode,
                 'packing_box_id' => null,
+                'scanned_box_qty' => $order_type === 'direct' ? $var['qty'] : 0,
+                'scanned_quantity' => $order_type === 'direct' ? $total_pcs : 0,
+                'dispatched_at' => $order_type === 'direct' ? now() : null,
             ];
             $total_qty += $total_pcs;
             $total_amount += ($total_pcs * $selling_price);
@@ -331,10 +345,14 @@ class AgentOrderController extends Controller
         $gst_amount = $taxable_amount * ($gst_percentage / 100);
         $grand_total = $taxable_amount + $gst_amount;
 
+        $status = $order_type === 'direct' ? 'dispatched' : 'pending';
+
         DB::beginTransaction();
         try {
+            $customer = \App\Models\MasterCustomer::findOrFail($request->master_customer_id);
+
             $order = AgentOrder::create([
-                'sales_agent_id' => $request->sales_agent_id === 'direct' ? 0 : $request->sales_agent_id,
+                'sales_agent_id' => $agent_id_to_save,
                 'master_customer_id' => $request->master_customer_id,
                 'total_qty' => $total_qty,
                 'total_amount' => $total_amount,
@@ -344,7 +362,9 @@ class AgentOrderController extends Controller
                 'gst_amount' => $gst_amount,
                 'grand_total' => $grand_total,
                 'expected_dispatch_date' => $request->expected_dispatch_date,
-                'status' => 'pending',
+                'status' => $status,
+                'order_type' => $order_type,
+                'sale_type' => $sale_type,
                 'order_date' => $request->order_date ?? date('Y-m-d'),
                 'created_by' => Auth::id(),
                 'remark' => $request->remark,
@@ -352,13 +372,76 @@ class AgentOrderController extends Controller
                 'transport' => $request->transport,
             ]);
 
+            $dispatch = null;
+            if ($order_type === 'direct') {
+                $dispatch = \App\Models\AgentOrderDispatch::create([
+                    'master_customer_id' => $request->master_customer_id,
+                    'sales_agent_id' => $agent_id_to_save,
+                    'status' => 'dispatched',
+                    'created_by' => Auth::id(),
+                    'dispatch_date' => now(),
+                    'total_amount' => $total_amount,
+                    'discount_amount' => $discount_amount,
+                    'gst_amount' => $gst_amount,
+                    'gst_percentage' => $gst_percentage,
+                    'grand_total' => $grand_total,
+                ]);
+
+                \App\Models\AgentOrderDispatchItem::create([
+                    'agent_order_dispatch_id' => $dispatch->id,
+                    'agent_order_id' => $order->id,
+                ]);
+            }
+
             foreach ($items_to_create as $item) {
                 $item['agent_order_id'] = $order->id;
+                if ($dispatch) {
+                    $item['agent_order_dispatch_id'] = $dispatch->id;
+                }
                 AgentOrderItem::create($item);
+
+                if ($order_type === 'direct') {
+                    // Find inventory to deduct
+                    $inventories = DomesticInventory::where('barcode', $item['barcode'])
+                        ->where('total_boxes', '>', 0)
+                        ->get();
+
+                    $remainingToDeduct = $item['box_qty'];
+                    foreach ($inventories as $inv) {
+                        if ($remainingToDeduct <= 0) break;
+                        $deduct = min($inv->total_boxes, $remainingToDeduct);
+
+                        \App\Models\DomesticInventoryHistory::create([
+                            'domestic_inventory_id' => $inv->id,
+                            'user_id' => Auth::id(),
+                            'type' => 'stock_consume',
+                            'old_product_id' => $inv->product_id,
+                            'old_color_id' => $inv->color_id,
+                            'old_size_set_id' => $inv->size_set_id,
+                            'old_fitting_id' => $inv->fitting_id,
+                            'old_pattern_id' => $inv->pattern_id,
+                            'old_rack_id' => $inv->warehouse_rack_id,
+                            'box_quantity' => $deduct,
+                        ]);
+
+                        $inv->decrement('total_boxes', $deduct);
+                        if ($inv->total_boxes <= 0) $inv->delete();
+                        $remainingToDeduct -= $deduct;
+                    }
+                }
+            }
+
+            if ($order_type === 'direct') {
+                $customer->decrement('balance', $grand_total);
             }
 
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Order created successfully!', 'redirect_url' => route('admin.agent-orders.show', $order->id)]);
+
+            $redirect_url = $order_type === 'direct' 
+                ? route('admin.agent-orders.dispatches.show', $dispatch->id) 
+                : route('admin.agent-orders.show', $order->id);
+
+            return response()->json(['success' => true, 'message' => 'Order created successfully!', 'redirect_url' => $redirect_url]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => 'Failed to create order: ' . $e->getMessage()], 500);
@@ -1003,6 +1086,7 @@ class AgentOrderController extends Controller
                     'selling_price' => $first->selling_price,
                     'total_qty' => $group->sum('quantity'),
                     'box_count' => $group->sum('box_qty'),
+                    'barcode' => $first->barcode,
                     'warehouse_name' => $withRack->warehouse_name ?? 'N/A',
                     'rack_name' => $withRack->rack_name ?? 'N/A',
                 ];

@@ -12,11 +12,8 @@
                     <a href="{{ route('admin.agent-orders.dispatches.index') }}" class="btn btn-info shadow-sm px-4 mr-2" style="border-radius: 8px;">
                         <i class="fas fa-truck mr-2"></i> VIEW DISPATCHES
                     </a>
-                    <a href="{{ route('admin.direct-sales.create') }}" class="btn btn-success shadow-sm px-4 mr-2" style="border-radius: 8px;">
-                        <i class="fas fa-bolt mr-2"></i> DIRECT SALES (EXPRESS)
-                    </a>
                     <a href="{{ route('admin.agent-orders.create') }}" class="btn btn-primary shadow-sm px-4" style="border-radius: 8px;">
-                        <i class="fas fa-plus mr-2"></i> CREATE NEW ORDER
+                        <i class="fas fa-plus mr-2"></i> CREATE SALES ORDER
                     </a>
                 </div>
             </div>
@@ -101,7 +98,7 @@
                                     <th>Order ID</th>
                                     <th>Agent</th>
                                     <th>Shop Name</th>
-                                    <!-- <th>Exp. Dispatch</th> -->
+                                    <th>Type</th>
                                     <th>Total Pcs</th>
                                     <th class="text-center">Scanned</th>
                                     <th>Grand Total</th>
@@ -125,14 +122,12 @@
                                         <td>#ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</td>
                                         <td><span class="badge badge-info">{{ $order->agent_name }}</span></td>
                                         <td><strong>{{ $order->shop_name }}</strong></td>
-                                        <!-- <td class="text-nowrap">
-                                            {{ $order->expected_dispatch_date ? \Carbon\Carbon::parse($order->expected_dispatch_date)->format('d M Y') : 'N/A' }}
-                                            @if($order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d'))
-                                                <div class="mt-1">
-                                                    <span class="badge bg-danger animate__animated animate__flash animate__infinite">DELAYED</span>
-                                                </div>
-                                            @endif
-                                        </td> -->
+                                        <td>
+                                            <div class="small">
+                                                <span class="badge badge-outline-secondary">{{ strtoupper($order->order_type ?? 'normal') }}</span><br>
+                                                <span class="text-muted">{{ ucfirst($order->sale_type ?? 'item') }}</span>
+                                            </div>
+                                        </td>
                                         <td>{{ number_format($order->total_qty, 0) }} Pcs</td>
                                         <td class="text-center">
                                             <span class="badge {{ $order->scanned_count == $order->total_boxes ? 'badge-success' : 'badge-info' }} px-3 py-2">
@@ -207,7 +202,10 @@
             </div>
         </section>
     </div>
+    </div>
+
 @endsection
+
 
 @push('scripts')
 <script>
@@ -283,6 +281,8 @@ $(document).ready(function() {
             e.preventDefault();
         }
     });
+
+    // Unified Create Modal Logic removed
 });
 </script>
 @endpush

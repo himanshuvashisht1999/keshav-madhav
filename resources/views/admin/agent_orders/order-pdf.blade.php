@@ -19,7 +19,7 @@
         .info-table td:last-child { border-right: none; }
         .items-table { width: 100%; border-collapse: collapse; }
         .items-table th { border-bottom: 2px solid #000; border-right: 1px solid #000; padding: 8px 5px; background-color: #f2f2f2; text-transform: uppercase; font-size: 10px; }
-        .items-table td { border-right: 1px solid #000; padding: 5px 10px; vertical-align: top; border-bottom: 1px solid #eee; }
+        .items-table td { border-right: 1px solid #000; padding: 5px 10px; vertical-align: top; border-bottom: 1px solid #bbb; }
         .items-table th:last-child, .items-table td:last-child { border-right: none; }
         .total-row td { border-top: 2px solid #000; border-bottom: 1px solid #000; font-weight: bold; padding: 8px; background: #fdfdfd; }
         .summary-row td { font-weight: bold; padding: 3px 8px; }
@@ -114,7 +114,7 @@
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>
                             <strong>{{ $item->product_name }}</strong><br>
-                            <small>Color: {{ $item->color_name }} ({{ $item->color_id }})</small>
+                            <small>Color: {{ $item->color_name }} ({{ $item->color_id }}) | Barcode: {{ $item->barcode }}</small>
                         </td>
                         <td class="text-center">{{ $item->warehouse_name }}</td>
                         <td class="text-center">{{ $item->rack_name }}</td>

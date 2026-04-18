@@ -81,6 +81,7 @@
                     <th width="5%">Sr</th>
                     <th>Date</th>
                     <th>Warehouse</th>
+                    <th>Fabric</th>
                     <th>Supplier</th>
                     <th>PO / Shipment</th>
                     <th>Roll No</th>
@@ -95,6 +96,7 @@
                     <td>{{ $index + 1 }}</td>
                     <td>{{ optional($row->fabric_receipt)->created_at ? $row->fabric_receipt->created_at->format('d-m-Y') : $row->created_at->format('d-m-Y') }}</td>
                     <td>{{ $row->master_fabric_warehouse?->cutting_master_name }}</td>
+                    <td class="font-bold">{{ $row->fabric->name ?? ($fabric->name ?? '-') }}</td>
                     <td>{{ $row->fabric_receipt->vendor->name ?? '-' }}</td>
                     <td>{{ $row->purchase_order?->sku ?? '-' }} / {{ $row->shipment_number ?? '-' }}</td>
                     <td>{{ $row->roll_number }}</td>
@@ -113,6 +115,7 @@
                     <th>Date</th>
                     <th>Roll No</th>
                     <th>Lot / Order No</th>
+                    <th>Fabric</th>
                     <th>Design / Color</th>
                     <th>Stage Unit</th>
                     <th class="text-right">Used Qty</th>
@@ -125,6 +128,7 @@
                     <td>{{ $row->created_at->format('d-m-Y') }}</td>
                     <td>{{ $row->roll_no }}</td>
                     <td class="font-bold">{{ $row->lot_no }} / {{ $row->order_no }}</td>
+                    <td>{{ $fabric->name ?? '-' }}</td>
                     <td>{{ $row->orderProductSet?->design_number ?? '-' }} / {{ $row->orderProductSet?->colors?->name ?? '-' }}</td>
                     <td>{{ $row->stageMasterUnit?->name ?? '-' }}</td>
                     <td class="text-right font-bold" style="color: #d32f2f;">{{ number_format($row->meter, 2) }}</td>

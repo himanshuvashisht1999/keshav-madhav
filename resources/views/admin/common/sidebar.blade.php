@@ -221,11 +221,11 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                 </li>
 
                                 <li class="nav-item">
-                                    <a href="{{ route('admin.direct-sales.create') }}"
-                                        class="{{ str_contains($page_url, 'admin/direct-sales') ? 'nav-link active' : 'nav-link' }}"
+                                    <a href="{{ route('admin.agent-orders.create') }}"
+                                        class="{{ str_contains($page_url, 'admin/agent-orders/create') ? 'nav-link active' : 'nav-link' }}"
                                         style="position:static;">
                                         <i class="far fa-circle nav-icon"></i>
-                                        <p>Direct Sales (Express)</p>
+                                        <p>Create Order</p>
                                     </a>
                                 </li>
 

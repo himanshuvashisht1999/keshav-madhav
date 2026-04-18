@@ -159,6 +159,7 @@ class ReportController extends Controller
         }
 
         // Add extra chronological ledger logic
+        // Add extra chronological ledger logic
         if ($request->filled('fabric_id') && !$request->filled('type')) {
             $ledger = $this->service->fabricLedger($request->fabric_id, $request->warehouse_id);
             $reportData['ledger'] = $ledger;
@@ -167,6 +168,9 @@ class ReportController extends Controller
         }
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.report.stock_pdf', array_merge($reportData, [
+            'fabric_name' => $reportData['fabric_name'] ?? ($reportData['fabric']->name ?? null),
+            'warehouses' => $this->service->warehouses(),
+            'fabrics' => $this->service->fabrics(),
             'exportedAt' => now(),
             'filename' => $filenamePrefix
         ]))->setPaper('A4', 'portrait');
