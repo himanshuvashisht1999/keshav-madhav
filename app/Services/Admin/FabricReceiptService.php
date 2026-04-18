@@ -49,91 +49,128 @@ class FabricReceiptService
     public function store(Request $request)
     {
         $po_id = $request->purchase_order_id;
-        if (!$po_id) {
-            $new_po = new PurchaseOrder();
-            $new_po->vendor_id = $request->vendor_id;
-            $new_po->date = date('Y-m-d');
-            $new_po->delivery_date = date('Y-m-d');
-            $new_po->status = 2; // Assuming 2 means received/closed
-            $new_po->sku = 'PO-' . time();
-            $new_po->save();
-            $new_po->update(['sku' => 'PO-' . $new_po->id]);
-            $po_id = $new_po->id;
-        }
 
-        $imgName = '';
-        if ($request->file('shipment_photo')) {
-            $image = $request->file('shipment_photo');
-            $extImage = $image->getClientOriginalExtension();
-            $imgName = "shipment-image-" . rand() . "_" . time() . "." . $extImage;
-            $destinationPath = public_path() . '/assets/receipts/shipment-image';
-            $image->move($destinationPath, $imgName);
-        }
-        $imgName2 = '';
-        if ($request->file('challan_photo')) {
-            $image = $request->file('challan_photo');
-            $extImage = $image->getClientOriginalExtension();
-            $imgName2 = "challan-image-" . rand() . "_" . time() . "." . $extImage;
-            $destinationPath = public_path() . '/assets/receipts/challan-image';
-            $image->move($destinationPath, $imgName2);
-        }
-        $save_data = new FabricReceipt;
-        $save_data->sku = '';
-        $save_data->vendor_id = $request->vendor_id;
-        $save_data->bill_no = $request->bill_no;
-        $save_data->truck_number = $request->truck_number ?? '';
-        $save_data->time = $request->time;
-        $save_data->roll = count($request->roll_details);
-        $save_data->received_by = $request->received_by ?? '';
-        $save_data->amount = $request->amount ?? 0.00;
-        $save_data->gst_amount = $request->gst_amount ?? 0.00;
-        $save_data->gst_percentage = $request->gst_percentage ?? 1;
-        $save_data->total_amount = $request->total_amount ?? 0.00;
-        $save_data->other_charges = $request->other_charges ?? 0.00;
-        $save_data->total_meter = $request->total_meter ?? 0.00;
-        $save_data->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
-        $save_data->shipment_photo = $imgName;
-        $save_data->challan_photo = $imgName2;
-        $save_data->status = 1;
-        $save_data->save();
+        DB::beginTransaction();
+        try {
+            if (!$po_id) {
+                // Same logic as PurchaseOrderService::store
+                $new_po = new PurchaseOrder;
+                $new_po->sku = '';
+                $new_po->date = date('Y-m-d');
+                $new_po->vendor_id = $request->vendor_id;
+                $new_po->delivery_date = date('Y-m-d');
+                $new_po->status = 1;
+                $new_po->save();
 
-        $date = \Carbon\Carbon::parse($request->date)->format('dmY');
-        $sku = "FR/" . $date . "/" . $save_data->id;
-        $shipment_id = "SHP/" . $date . "/" . $save_data->id;
-        $save_data->update([
-            'sku' => $sku,
-            'shipment_id' => $shipment_id
-        ]);
+                $date_po = \Carbon\Carbon::parse($new_po->date)->format('dmY');
+                $sku_po = "PO/" . $date_po . "/" . $new_po->id;
+                $new_po->update(['sku' => $sku_po]);
+                $po_id = $new_po->id;
 
-        if ($save_data->vendor_id) {
-            $vendor = Vendor::find($save_data->vendor_id);
-            if ($vendor) {
-                $vendor->balance += $save_data->total_amount;
-                $vendor->save();
-            }
-        }
+                // Group rolls by fabric to create PO items
+                $group_fabrics = [];
+                foreach ($request->roll_details as $roll) {
+                    $fid = $roll['fabric_id'];
+                    $mtr = $roll['meter'];
+                    $prc = $roll['price'];
+                    if (!isset($group_fabrics[$fid])) {
+                        $group_fabrics[$fid] = ['meter' => 0, 'price' => $prc];
+                    }
+                    $group_fabrics[$fid]['meter'] += $mtr;
+                }
 
-        foreach ($request->roll_details as $single_data) {
-            $fab_data = Fabric::where('id', $single_data['fabric_id'])->first();
-            if ($fab_data) {
-                $fabric_sku = $fab_data->sku;
-                $fabric_id = $fab_data->id;
-
-                $meter = $single_data['meter'];
-                $roll_number = $single_data['roll_no'];
-                $price = $single_data['price'];
-
-                $po_item_id = 0;
-                if ($po_id > 0) {
-                    // Link to real PO item if it exists
-                    $po_item = PurchaseOrderItem::where('purchase_order_id', $po_id)
-                        ->where('fabric_id', $fabric_id)
-                        ->first();
-                    if ($po_item) {
-                        $po_item_id = $po_item->id;
-                        $po_item->update(['status' => 2]); // Mark as received
+                foreach ($group_fabrics as $fid => $fab_info) {
+                    $fabric = Fabric::find($fid);
+                    if ($fabric) {
+                        $po_item = new PurchaseOrderItem;
+                        $po_item->purchase_order_id = $po_id;
+                        $po_item->fabric_sku = $fabric->sku;
+                        $po_item->fabric_id = $fabric->id;
+                        $po_item->meter = $fab_info['meter'];
+                        $po_item->remaining_quantity = 0; // Fully received
+                        $po_item->price = $fab_info['price'];
+                        $po_item->total_price = $fab_info['meter'] * $fab_info['price'];
+                        $po_item->status = 1; // Mark as active
+                        $po_item->save();
                     }
                 }
+                $new_po->update(['status' => 1]); // Marked as active so it shows in lists
+            }
+
+            $imgName = '';
+            if ($request->file('shipment_photo')) {
+                $image = $request->file('shipment_photo');
+                $extImage = $image->getClientOriginalExtension();
+                $imgName = "shipment-image-" . rand() . "_" . time() . "." . $extImage;
+                $destinationPath = public_path() . '/assets/receipts/shipment-image';
+                $image->move($destinationPath, $imgName);
+            }
+            $imgName2 = '';
+            if ($request->file('challan_photo')) {
+                $image = $request->file('challan_photo');
+                $extImage = $image->getClientOriginalExtension();
+                $imgName2 = "challan-image-" . rand() . "_" . time() . "." . $extImage;
+                $destinationPath = public_path() . '/assets/receipts/challan-image';
+                $image->move($destinationPath, $imgName2);
+            }
+            $save_data = new FabricReceipt;
+            $save_data->sku = '';
+            $save_data->vendor_id = $request->vendor_id;
+            $save_data->bill_no = $request->bill_no;
+            $save_data->truck_number = $request->truck_number ?? '';
+            $save_data->time = $request->time;
+            $save_data->roll = count($request->roll_details);
+            $save_data->received_by = $request->received_by ?? '';
+            $save_data->amount = $request->amount ?? 0.00;
+            $save_data->gst_amount = $request->gst_amount ?? 0.00;
+            $save_data->gst_percentage = $request->gst_percentage ?? 1;
+            $save_data->total_amount = $request->total_amount ?? 0.00;
+            $save_data->other_charges = $request->other_charges ?? 0.00;
+            $save_data->total_meter = $request->total_meter ?? 0.00;
+            $save_data->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
+            $save_data->shipment_photo = $imgName;
+            $save_data->challan_photo = $imgName2;
+            $save_data->status = 1;
+            $save_data->save();
+
+            $date = \Carbon\Carbon::parse($request->date)->format('dmY');
+            $sku = "FR/" . $date . "/" . $save_data->id;
+            $shipment_id = "SHP/" . $date . "/" . $save_data->id;
+            $save_data->update([
+                'sku' => $sku,
+                'shipment_id' => $shipment_id
+            ]);
+
+            if ($save_data->vendor_id) {
+                $vendor = Vendor::find($save_data->vendor_id);
+                if ($vendor) {
+                    $vendor->balance += $save_data->total_amount;
+                    $vendor->save();
+                }
+            }
+
+            foreach ($request->roll_details as $single_data) {
+                $fab_data = Fabric::where('id', $single_data['fabric_id'])->first();
+                if ($fab_data) {
+                    $fabric_sku = $fab_data->sku;
+                    $fabric_id = $fab_data->id;
+
+                    $meter = $single_data['meter'];
+                    $roll_number = $single_data['roll_no'];
+                    $price = $single_data['price'];
+
+                    $po_item_id = 0;
+                    if ($po_id > 0) {
+                        // Link to real PO item if it exists
+                        $po_item = PurchaseOrderItem::where('purchase_order_id', $po_id)
+                            ->where('fabric_id', $fabric_id)
+                            ->first();
+
+                        if ($po_item) {
+                            $po_item_id = $po_item->id;
+                            $po_item->update(['status' => 1]); // Keep as active/received
+                        }
+                    }
 
                 ////////// work for barcode
                 $qrcode_number = $this->generateUniqueQrNumber();
@@ -203,7 +240,12 @@ class FabricReceiptService
 
         }
 
+        DB::commit();
         return $save_data->id;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     public function view(Request $request)
