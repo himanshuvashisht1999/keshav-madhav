@@ -983,6 +983,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/stock', [AdminReportController::class, 'stock'])->name('stock');
             Route::get('/stock/roll-details', [AdminReportController::class, 'fabricRollDetails'])->name('stock.roll.details');
             Route::get('/stock/export', [AdminReportController::class, 'stockExport'])->name('stock.export');
+            Route::get('/stock/pdf', [AdminReportController::class, 'stockPdf'])->name('stock.pdf');
             Route::get('/purchase-order', [AdminReportController::class, 'purchaseOrder'])->name('purchase_order');
             Route::get('/purchase-order/item-details', [AdminReportController::class, 'purchaseOrderItemDetails'])->name('purchase_order.item.details');
 

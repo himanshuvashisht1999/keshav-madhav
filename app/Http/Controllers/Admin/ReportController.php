@@ -140,6 +140,40 @@ class ReportController extends Controller
     }
 
 
+    public function stockPdf(Request $request)
+    {
+        $request->merge(['is_export' => true]);
+        $reportData = $this->service->stock($request);
+        $level = $reportData['level'];
+
+        // Dynamic view selection based on level
+        $view = 'admin.report.stock_pdf'; // Base template for PDF
+        $filenamePrefix = 'fabric-stock';
+
+        if ($level === 'warehouses') {
+            $filenamePrefix = 'fabric-warehouse-stock';
+        } elseif ($level === 'receipts') {
+            $filenamePrefix = 'fabric-shipments';
+        } elseif ($level === 'usages') {
+            $filenamePrefix = 'fabric-usages';
+        }
+
+        // Add extra chronological ledger logic
+        if ($request->filled('fabric_id') && !$request->filled('type')) {
+            $ledger = $this->service->fabricLedger($request->fabric_id, $request->warehouse_id);
+            $reportData['ledger'] = $ledger;
+            $reportData['fabric_name'] = \App\Models\Fabric::find($request->fabric_id)?->name ?? $request->fabric_id;
+            $filenamePrefix = 'fabric-ledger';
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.report.stock_pdf', array_merge($reportData, [
+            'exportedAt' => now(),
+            'filename' => $filenamePrefix
+        ]))->setPaper('A4', 'portrait');
+
+        return $pdf->download($filenamePrefix . '-' . now()->format('d-m-Y') . '.pdf');
+    }
+
     public function purchaseOrder(Request $request)
     {
         if ($request->filled('purchase_order_id')) {

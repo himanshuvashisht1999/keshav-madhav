@@ -39,8 +39,11 @@
                     @if($level != 'fabrics')
                     <a href="{{ route('admin.report.stock') }}" class="btn btn-sm btn-secondary me-2"><i class="fas fa-arrow-left"></i> Back to Main</a>
                     @endif
-                    <a href="{{ route('admin.report.stock.export', request()->query()) }}" class="btn btn-sm btn-success">
+                    <a href="{{ route('admin.report.stock.export', request()->query()) }}" class="btn btn-sm btn-success me-2">
                         <i class="fas fa-file-excel"></i> Export
+                    </a>
+                    <a href="{{ route('admin.report.stock.pdf', request()->query()) }}" class="btn btn-sm btn-danger" target="_blank">
+                        <i class="fas fa-file-pdf"></i> PDF
                     </a>
                 </div>
             </div>
