@@ -191,9 +191,9 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
 
                     @can('manage-inventory')
                         <li
-                            class="nav-item {{ (request()->is('admin/inventory*') || request()->is('admin/agent-orders*')) ? 'menu-open' : '' }}">
+                            class="nav-item {{ (request()->is('admin/inventory*') || request()->is('admin/agent-orders*') || request()->is('admin/direct-sales*')) ? 'menu-open' : '' }}">
                             <a href="#"
-                                class="nav-link {{ (request()->is('admin/inventory*') || request()->is('admin/agent-orders*')) ? 'active' : '' }} border_class">
+                                class="nav-link {{ (request()->is('admin/inventory*') || request()->is('admin/agent-orders*') || request()->is('admin/direct-sales*')) ? 'active' : '' }} border_class">
                                 <i class="nav-icon fas fa-warehouse"></i>
                                 <p>
                                     INVENTORY
@@ -217,6 +217,15 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                         style="position:static;">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Sales Orders</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.direct-sales.create') }}"
+                                        class="{{ str_contains($page_url, 'admin/direct-sales') ? 'nav-link active' : 'nav-link' }}"
+                                        style="position:static;">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Direct Sales (Express)</p>
                                     </a>
                                 </li>
 

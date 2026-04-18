@@ -6,15 +6,18 @@ use Illuminate\Http\Request;
 use App\Models\MasterSizeMeasurement;
 use Yajra\DataTables\Facades\DataTables;
 
-class SizeMeasurementDataTable  {
+class SizeMeasurementDataTable
+{
     protected $master_size_measurement;
-    public function __construct(MasterSizeMeasurement $master_size_measurement) {
+    public function __construct(MasterSizeMeasurement $master_size_measurement)
+    {
         $this->master_size_measurement = $master_size_measurement;
     }
 
-    public function indexList($request){
+    public function indexList($request)
+    {
         $queue = MasterSizeMeasurement::where('status', '!=', 3);
-        
+
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
                 if ($request->has('customer_id') && $request->filled('customer_id')) {
@@ -35,25 +38,26 @@ class SizeMeasurementDataTable  {
                 if ($request->has('status') && $request->filled('status')) {
                     $query->where('status', $request->get('status'));
                 }
-            }) 
+                $query->where('status', 1);
+            })
             ->order(function ($query) {
                 $query->orderBy('id', 'asc');
-            }) 
+            })
             ->editColumn('customer_id', function ($queue) {
                 return $queue->customer ? $queue->customer->name : '';
             })
             ->editColumn('status', function ($queue) {
-				$status= $queue->status;
+                $status = $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
             })
             ->addColumn('action', function ($queue) {
-				$parameter= $queue->id;
+                $parameter = $queue->id;
                 return '
-                <a href="' . route('admin.master.size-measurement.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                <a href="' . route('admin.master.size-measurement.edit', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
                 <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete"><i class="fas fa-trash text-danger"></i></a>
                 ';
             })
-            
+
             ->rawColumns(['action', 'customer_id', 'status'])
             ->make(true);
     }

@@ -21,7 +21,10 @@ class AgentOrder extends Model
         'grand_total',
         'status',
         'created_by',
-        'order_date'
+        'order_date',
+        'remark',
+        'booking_station',
+        'transport'
     ];
 
     protected $appends = ['paid_amount', 'balance_amount'];

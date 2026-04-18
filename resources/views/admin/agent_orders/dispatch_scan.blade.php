@@ -9,10 +9,21 @@
                         <h1 class="m-0 font-weight-bold text-dark">Dispatch Scanning</h1>
                         <p class="text-muted mb-0">Order #ORD-{{ $order->id }} | {{ $order->shop_name }}</p>
                     </div>
-                    <a href="{{ route('admin.agent-orders.show', $order->id) }}"
-                        class="btn btn-outline-secondary rounded-pill px-4">
-                        <i class="fas fa-arrow-left mr-1"></i> Back to Details
-                    </a>
+                    <div class="d-flex align-items-center">
+                        <form action="{{ route('admin.agent-orders.dispatch-selected') }}" method="POST"
+                            class="d-inline mr-2">
+                            @csrf
+                            <input type="hidden" name="order_ids[]" value="{{ $order->id }}">
+                            <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm"
+                                onclick="return confirm('Are you sure you want to finalize and dispatch scanned items for this order?')">
+                                <i class="fas fa-shipping-fast mr-1"></i> DISPATCH NOW
+                            </button>
+                        </form>
+                        <a href="{{ route('admin.agent-orders.show', $order->id) }}"
+                            class="btn btn-outline-secondary rounded-pill px-4">
+                            <i class="fas fa-arrow-left mr-1"></i> Back to Details
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -91,6 +102,8 @@
                                                             S: {{ $group['size_set_name'] }} | P: {{ $group['pattern_name'] }} |
                                                             F: {{ $group['fitting_name'] }}
                                                             <br>
+                                                            <span class="badge badge-light border mt-1">WH: {{ $group['warehouse_name'] }}</span>
+                                                            <span class="badge badge-light border mt-1">Rack: {{ $group['rack_name'] }}</span>
                                                             <span class="badge badge-info mt-1">Barcode:
                                                                 {{ $group['barcode'] }}</span>
                                                         </small>
@@ -125,14 +138,7 @@
                                     </table>
                                 </div>
                             </div>
-                            <div class="card-footer bg-white text-right">
-                                <p class="small text-muted mb-3">Totals and prices are automatically updated as you scan
-                                    actual box quantities.</p>
-                                <a href="{{ route('admin.agent-orders.index') }}"
-                                    class="btn btn-outline-primary btn-lg px-5 shadow rounded-pill">
-                                    <i class="fas fa-arrow-left mr-2"></i> BACK TO ORDERS
-                                </a>
-                            </div>
+
                         </div>
                     </div>
 
@@ -391,19 +397,19 @@
                 const existingHistory = $(`#history_${boxNo}`);
 
                 const historyHTML = `
-                                                            <div class="d-flex justify-content-between align-items-center">
-                                                                <div>
-                                                                    <div class="font-weight-bold">Scanned: ${designNumber}</div>
-                                                                    <small class="text-muted d-block">${productName}</small>
-                                                                    <small class="text-muted">${color} | Count: ${current} / ${total}</small>
-                                                                    <div class="mt-1"><small class="text-white bg-success px-2 rounded">Just Scanned</small></div>
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <div>
+                                                                        <div class="font-weight-bold">Scanned: ${designNumber}</div>
+                                                                        <small class="text-muted d-block">${productName}</small>
+                                                                        <small class="text-muted">${color} | Count: ${current} / ${total}</small>
+                                                                        <div class="mt-1"><small class="text-white bg-success px-2 rounded">Just Scanned</small></div>
+                                                                    </div>
+                                                                    <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
+                                                                        data-id="${boxNo}" data-barcode="${response.barcode}" title="Undo one scan">
+                                                                        <i class="fas fa-undo"></i>
+                                                                    </button>
                                                                 </div>
-                                                                <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
-                                                                    data-id="${boxNo}" data-barcode="${response.barcode}" title="Undo one scan">
-                                                                    <i class="fas fa-undo"></i>
-                                                                </button>
-                                                            </div>
-                                        `;
+                                            `;
 
                 if (existingHistory.length) {
                     existingHistory.html(historyHTML).addClass('animate__animated animate__pulse');
@@ -456,21 +462,21 @@
             function setLoadingStatus(barcode) {
                 scanStatus.removeClass('alert-secondary alert-success alert-danger').addClass('alert-info');
                 scanStatus.html(`
-                                                                <div class="text-center">
-                                                                    <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
-                                                                    <div>Processing: <strong>${barcode}</strong></div>
-                                                                </div>
-                                                            `);
+                                                                    <div class="text-center">
+                                                                        <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+                                                                        <div>Processing: <strong>${barcode}</strong></div>
+                                                                    </div>
+                                                                `);
             }
 
             function setSuccessStatus(message) {
                 scanStatus.removeClass('alert-info alert-danger alert-secondary').addClass('alert-success border-success');
                 scanStatus.html(`
-                                                                <div class="text-center animate__animated animate__fadeIn">
-                                                                    <i class="fas fa-check-circle fa-2x mb-2 text-white"></i>
-                                                                    <div class="h5 font-weight-bold text-white mb-0">${message}</div>
-                                                                </div>
-                                                            `);
+                                                                    <div class="text-center animate__animated animate__fadeIn">
+                                                                        <i class="fas fa-check-circle fa-2x mb-2 text-white"></i>
+                                                                        <div class="h5 font-weight-bold text-white mb-0">${message}</div>
+                                                                    </div>
+                                                                `);
 
                 // Reset status to "Ready" after 3 seconds
                 setTimeout(() => {
@@ -483,21 +489,21 @@
             function setErrorStatus(message) {
                 scanStatus.removeClass('alert-info alert-success alert-secondary').addClass('alert-danger border-danger');
                 scanStatus.html(`
-                                                                <div class="text-center animate__animated animate__shakeX">
-                                                                    <i class="fas fa-exclamation-circle fa-2x mb-2 text-white"></i>
-                                                                    <div class="h5 font-weight-bold text-white mb-0">${message}</div>
-                                                                </div>
-                                                            `);
+                                                                    <div class="text-center animate__animated animate__shakeX">
+                                                                        <i class="fas fa-exclamation-circle fa-2x mb-2 text-white"></i>
+                                                                        <div class="h5 font-weight-bold text-white mb-0">${message}</div>
+                                                                    </div>
+                                                                `);
             }
 
             function resetToReady() {
                 scanStatus.removeClass('alert-success alert-danger alert-info').addClass('alert-secondary border-secondary');
                 scanStatus.html(`
-                                                                <div class="text-center">
-                                                                    <i class="fas fa-qrcode fa-2x mb-2 text-white opacity-50"></i>
-                                                                    <div class="font-weight-bold text-white">Ready to Scan</div>
-                                                                </div>
-                                                            `);
+                                                                    <div class="text-center">
+                                                                        <i class="fas fa-qrcode fa-2x mb-2 text-white opacity-50"></i>
+                                                                        <div class="font-weight-bold text-white">Ready to Scan</div>
+                                                                    </div>
+                                                                `);
             }
 
             function playBeep(success) {

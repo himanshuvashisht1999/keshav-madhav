@@ -234,6 +234,9 @@ class SalesOrderController extends Controller
                 'status' => 'dispatched',
                 'order_date' => date('Y-m-d'),
                 'created_by' => Auth::id(),
+                'remark' => $request->remark,
+                'booking_station' => $request->booking_station,
+                'transport' => $request->transport,
             ]);
 
             // 2. Create Dispatch Record

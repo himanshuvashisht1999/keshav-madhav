@@ -23,6 +23,14 @@
 
         <section class="content">
             <div class="container-fluid">
+                @php
+                    function is_lot_deletable($lot) {
+                        return ($lot->is_printing == 0 && $lot->is_stitching == 0);
+                    }
+                    function is_transaction_deletable($tx) {
+                        return ($tx->remaining_quantity == $tx->quantity);
+                    }
+                @endphp
 
                 @php
                     $all_sizes = [];
@@ -69,7 +77,20 @@
                         <div class="mb-5 p-4 border rounded bg-white shadow-sm" style="border-top: 5px solid #10b981 !important;">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h4 class="fw-bold text-dark mb-0">Digitization Session #{{ $index + 1 }}</h4>
-                                <span class="badge bg-success fs-6 px-3 py-2">Stage: Cutting</span>
+                                <div>
+                                    @if(is_lot_deletable($lot))
+                                        <a href="{{ route('admin.uploaded-slips.delete-session', ['type' => 'lot', 'id' => $lot->id]) }}" 
+                                           class="btn btn-sm btn-outline-danger border shadow-xs me-2"
+                                           onclick="return confirm('Are you sure you want to delete this session and restore used quantities?')">
+                                            <i class="fas fa-trash-alt me-1"></i> Delete
+                                        </a>
+                                    @else
+                                        <span class="badge bg-light text-muted border py-2 me-2" title="Lot has been moved to Printing/Stitching">
+                                            <i class="fas fa-lock me-1"></i> Read-only
+                                        </span>
+                                    @endif
+                                    <span class="badge bg-success fs-6 px-3 py-2">Stage: Cutting</span>
+                                </div>
                             </div>
                             
                             {{-- Specific Order Info for this Lot --}}
@@ -168,7 +189,20 @@
                         <div class="mb-5 p-4 border rounded bg-white shadow-sm" style="border-top: 5px solid #3b82f6 !important;">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h4 class="fw-bold text-dark mb-0">Digitization Session #{{ $index + 1 }}</h4>
-                                <span class="badge bg-primary fs-6 px-3 py-2">Stage: Printing</span>
+                                <div>
+                                    @if(is_transaction_deletable($printing))
+                                        <a href="{{ route('admin.uploaded-slips.delete-session', ['type' => 'printing', 'id' => $printing->id]) }}" 
+                                           class="btn btn-sm btn-outline-danger border shadow-xs me-2"
+                                           onclick="return confirm('Are you sure you want to delete this session and restore quantities?')">
+                                            <i class="fas fa-trash-alt me-1"></i> Delete
+                                        </a>
+                                    @else
+                                        <span class="badge bg-light text-muted border py-2 me-2" title="Quantity has been moved to further stages">
+                                            <i class="fas fa-lock me-1"></i> Read-only
+                                        </span>
+                                    @endif
+                                    <span class="badge bg-primary fs-6 px-3 py-2">Stage: Printing</span>
+                                </div>
                             </div>
 
                             {{-- Specific Order Info for this Printing Session --}}
@@ -252,7 +286,23 @@
                         <div class="mb-5 p-4 border rounded bg-white shadow-sm" style="border-top: 5px solid #f59e0b !important;">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h4 class="fw-bold text-dark mb-0">Digitization Session #{{ $index + 1 }}</h4>
-                                <span class="badge bg-warning text-dark fs-6 px-3 py-2">Stage: Transfer</span>
+                                <div>
+                                    @php 
+                                        $type = ($transaction instanceof \App\Models\OrderPrintingToStichingTransaction) ? 'printing_stitching' : 'transfer';
+                                    @endphp
+                                    @if(is_transaction_deletable($transaction))
+                                        <a href="{{ route('admin.uploaded-slips.delete-session', ['type' => $type, 'id' => $transaction->id]) }}" 
+                                           class="btn btn-sm btn-outline-danger border shadow-xs me-2"
+                                           onclick="return confirm('Are you sure you want to delete this session and restore quantities?')">
+                                            <i class="fas fa-trash-alt me-1"></i> Delete
+                                        </a>
+                                    @else
+                                        <span class="badge bg-light text-muted border py-2 me-2" title="Quantity has been moved to further stages">
+                                            <i class="fas fa-lock me-1"></i> Read-only
+                                        </span>
+                                    @endif
+                                    <span class="badge bg-warning text-dark fs-6 px-3 py-2">Stage: Transfer</span>
+                                </div>
                             </div>
 
                             {{-- Specific Order Info for this Transfer --}}

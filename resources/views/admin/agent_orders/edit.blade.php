@@ -162,7 +162,6 @@
                                 style="width: 60px; height: 24px;" value="{{ $order->gst_percentage }}" min="0" max="100">
                         </div>
                     </div>
-
                     <div class="col-md-2 border-right">
                         <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Expected Dispatch</small>
                         <input type="date" id="expectedDispatchDate" class="form-control form-control-sm mt-1"
@@ -170,19 +169,30 @@
                             min="{{ date('Y-m-d') }}">
                     </div>
 
+                    <div class="col-md-2 border-right">
+                        <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Booking & Transport</small>
+                        <input type="text" id="booking_station" class="form-control form-control-sm mt-1" placeholder="Station" value="{{ $order->booking_station }}">
+                        <input type="text" id="transport" class="form-control form-control-sm mt-1" placeholder="Transport" value="{{ $order->transport }}">
+                    </div>
+
+                    <div class="col-md-2 border-right">
+                        <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Order Remark</small>
+                        <textarea id="remark" class="form-control form-control-sm mt-1" rows="2" placeholder="Notes...">{{ $order->remark }}</textarea>
+                    </div>
+
                     <div class="col-md-2 text-center border-right">
                         <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Grand Total</small>
                         <span class="h4 font-weight-bold text-primary mb-0">₹<span id="grandTotalAmount">0</span></span>
                     </div>
 
-                    <div class="col-md-3">
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('admin.agent-orders.show', $order->id) }}" class="btn btn-outline-secondary btn-lg py-2 flex-grow-1 font-weight-bold">
-                                Cancel
-                            </a>
-                            <button type="button" class="btn btn-primary btn-lg py-2 flex-grow-1 font-weight-bold shadow-sm update-order-btn">
+                    <div class="col-md-2">
+                        <div class="d-flex flex-column gap-1">
+                            <button type="button" class="btn btn-primary btn-block py-2 font-weight-bold shadow-sm update-order-btn">
                                 Update <i class="fas fa-save ml-1"></i>
                             </button>
+                            <a href="{{ route('admin.agent-orders.show', $order->id) }}" class="btn btn-outline-secondary btn-block py-1 font-weight-bold small">
+                                Cancel
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -422,6 +432,9 @@
                                 discount_percentage: discountPercent,
                                 gst_percentage: gstPercent,
                                 expected_dispatch_date: expectedDate,
+                                remark: $('#remark').val(),
+                                booking_station: $('#booking_station').val(),
+                                transport: $('#transport').val()
                             },
                             success: function (response) {
                                 if (response.success) {

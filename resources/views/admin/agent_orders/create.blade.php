@@ -247,12 +247,23 @@
                                     value="{{ date('Y-m-d', strtotime('+3 days')) }}" min="{{ date('Y-m-d') }}">
                             </div>
 
+                            <div class="col-md-2 border-right">
+                                <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Booking & Transport</small>
+                                <input type="text" id="booking_station" class="form-control form-control-sm mt-1" placeholder="Station">
+                                <input type="text" id="transport" class="form-control form-control-sm mt-1" placeholder="Transport">
+                            </div>
+
+                            <div class="col-md-2 border-right">
+                                <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Order Remark</small>
+                                <textarea id="remark" class="form-control form-control-sm mt-1" rows="2" placeholder="Notes..."></textarea>
+                            </div>
+
                             <div class="col-md-2 text-center border-right">
                                 <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Grand Total</small>
                                 <span class="h4 font-weight-bold text-primary mb-0">₹<span id="grandTotalAmount">0</span></span>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <button type="button" class="btn btn-success btn-lg btn-block py-2 font-weight-bold shadow-sm place-order-btn">
                                     Place Order <i class="fas fa-check-circle ml-2"></i>
                                 </button>
@@ -533,7 +544,10 @@
                                 order_date: "{{ request('order_date', date('Y-m-d')) }}",
                                 variations: variations,
                                 expected_dispatch_date: $('#expectedDispatchDate').val(),
-                                discount_percentage: $('#discountPercentage').val()
+                                discount_percentage: $('#discountPercentage').val(),
+                                remark: $('#remark').val(),
+                                booking_station: $('#booking_station').val(),
+                                transport: $('#transport').val()
                             },
                             success: function(response) {
                                 if (response.success) {

@@ -9,11 +9,20 @@
 
                     <div class="d-flex align-items-center">
                         <!-- Brand Filter Dropdown -->
-                        <div class="mr-2">
-                            <a href="{{ route('admin.agent-orders.download-order', $order->id) }}" 
-                                class="btn btn-sm btn-success rounded-pill px-4 font-weight-bold shadow-sm">
-                                <i class="fas fa-file-pdf mr-1"></i> Download Order Sheet
-                            </a>
+                        <!-- Download PDF with/without price -->
+                        <div class="dropdown mr-2">
+                            <button class="btn btn-sm btn-success dropdown-toggle rounded-pill px-4 font-weight-bold shadow-sm" 
+                                type="button" id="downloadOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-file-pdf mr-1"></i> Order Sheet
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="downloadOrderDropdown">
+                                <a class="dropdown-item py-2" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=1">
+                                    <i class="fas fa-file-invoice-dollar text-success mr-2"></i> With Price
+                                </a>
+                                <a class="dropdown-item py-2" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=0">
+                                    <i class="fas fa-file-contract text-secondary mr-2"></i> Without Price
+                                </a>
+                            </div>
                         </div>
 
                         <!-- Brand Specific downloads moved to internal dispatch system as requested -->
@@ -140,6 +149,26 @@
                                     </li>
                                 </ul>
 
+                                <div class="mt-3">
+                                    <div class="card bg-light border-0">
+                                        <div class="card-body p-2">
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <small class="text-muted d-block">Booking Station</small>
+                                                    <span class="font-weight-bold">{{ $order->booking_station ?? 'N/A' }}</span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <small class="text-muted d-block">Transport</small>
+                                                    <span class="font-weight-bold">{{ $order->transport ?? 'N/A' }}</span>
+                                                </div>
+                                            </div>
+                                            <hr class="my-2">
+                                            <small class="text-muted d-block">Remarks</small>
+                                            <p class="mb-0 small">{{ $order->remark ?? 'No remarks provided.' }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 @if($order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d'))
                                     <div class="alert alert-danger animate__animated animate__shakeX mt-3 mb-0 shadow-sm border-left border-danger"
                                         style="border-left-width: 5px !important;">
@@ -190,6 +219,7 @@
                                         <tr>
                                             <th width="10%">Boxes</th>
                                             <th>Product Details</th>
+                                            <th class="text-center">Location</th>
                                             <th class="text-center">Total Qty</th>
                                             <th class="text-right">Price</th>
                                             <th class="text-right">Total</th>
@@ -216,6 +246,10 @@
                                                         @if(isset($item->pattern_name) && $item->pattern_name) | Pat:
                                                         {{ $item->pattern_name }} @endif
                                                     </small>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge badge-light border">WH: {{ $item->warehouse_name }}</span><br>
+                                                    <span class="badge badge-light border">Rack: {{ $item->rack_name }}</span>
                                                 </td>
                                                 <td class="text-center font-weight-bold">{{ $item->total_qty }} pcs</td>
                                                 <td class="text-right">₹{{ number_format($item->selling_price, 2) }}</td>

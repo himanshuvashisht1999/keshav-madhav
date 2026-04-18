@@ -163,10 +163,20 @@
                                             <small class="text-muted">{{ date('h:i A', strtotime($order->order_date)) }}</small>
                                         </td>
                                         <td class="text-right text-nowrap">
-                                            <a href="{{ route('admin.agent-orders.download-order', $order->id) }}"
-                                                class="btn btn-success btn-sm px-2 shadow-sm rounded-pill mr-1" title="Download Order Sheet">
-                                                <i class="fas fa-file-pdf"></i>
-                                            </a>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-success btn-sm px-2 shadow-sm rounded-pill mr-1 dropdown-toggle" 
+                                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Download Order Sheet">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-right shadow border-0">
+                                                    <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=1">
+                                                        <i class="fas fa-tag text-success mr-2"></i> With Price
+                                                    </a>
+                                                    <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=0">
+                                                        <i class="fas fa-barcode text-muted mr-2"></i> Without Price
+                                                    </a>
+                                                </div>
+                                            </div>
                                             <a href="{{ route('admin.agent-orders.show', $order->id) }}"
                                                 class="btn btn-primary btn-sm px-2 shadow-sm rounded-pill mr-1" title="View Order">
                                                 <i class="fas fa-eye"></i>

@@ -6,266 +6,266 @@
 @endsection
 
 @push('styles')
-<style>
-    /* Filter Section */
-    .filter-section {
-        background: white;
-        border-radius: 16px;
-        padding: 16px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        border: 1px solid #f3f4f6;
-    }
+    <style>
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f3f4f6;
+        }
 
-    .filter-title {
-        font-size: 14px;
-        font-weight: 700;
-        color: #4b5563;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        cursor: pointer;
-        list-style: none;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-    }
+        .filter-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #4b5563;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            list-style: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-    .filter-title::-webkit-details-marker {
-        display: none;
-    }
+        .filter-title::-webkit-details-marker {
+            display: none;
+        }
 
-    .filter-title-inner {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
+        .filter-title-inner {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-    .filter-body {
-        margin-top: 12px;
-        padding-top: 16px;
-        border-top: 1px dashed #e5e7eb;
-    }
+        .filter-body {
+            margin-top: 12px;
+            padding-top: 16px;
+            border-top: 1px dashed #e5e7eb;
+        }
 
-    details[open] .toggle-icon {
-        transform: rotate(180deg);
-    }
+        details[open] .toggle-icon {
+            transform: rotate(180deg);
+        }
 
-    .toggle-icon {
-        transition: transform 0.3s ease;
-        color: #9ca3af;
-        font-size: 12px;
-    }
+        .toggle-icon {
+            transition: transform 0.3s ease;
+            color: #9ca3af;
+            font-size: 12px;
+        }
 
-    .filter-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 12px;
-    }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
 
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
 
-    .filter-group label {
-        font-size: 12px;
-        font-weight: 600;
-        color: #6b7280;
-    }
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+        }
 
-    .filter-input {
-        width: 100%;
-        padding: 10px 12px;
-        border-radius: 10px;
-        border: 1px solid #e5e7eb;
-        font-size: 14px;
-        outline: none;
-        transition: border-color 0.3s, box-shadow 0.3s;
-        background: #f9fafb;
-    }
+        .filter-input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            background: #f9fafb;
+        }
 
-    .filter-input:focus {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        background: white;
-    }
+        .filter-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
 
-    .filter-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 16px;
-    }
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
 
-    .filter-btn {
-        flex: 1;
-        padding: 10px;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 14px;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
+        .filter-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
 
-    .btn-apply {
-        background: var(--primary);
-        color: white;
-    }
+        .btn-apply {
+            background: var(--primary);
+            color: white;
+        }
 
-    .btn-clear {
-        background: #f3f4f6;
-        color: #4b5563;
-        text-decoration: none;
-        text-align: center;
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
-    }
+        .btn-clear {
+            background: #f3f4f6;
+            color: #4b5563;
+            text-decoration: none;
+            text-align: center;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-    .tabs {
-        display: flex;
-        background: #e5e7eb;
-        padding: 4px;
-        border-radius: 999px;
-        margin-bottom: 16px;
-    }
+        .tabs {
+            display: flex;
+            background: #e5e7eb;
+            padding: 4px;
+            border-radius: 999px;
+            margin-bottom: 16px;
+        }
 
-    .tab-item {
-        flex: 1;
-        text-align: center;
-        padding: 6px 10px;
-        font-size: 12px;
-        font-weight: 600;
-        border-radius: 999px;
-        text-decoration: none;
-        color: #4b5563;
-        transition: all 0.2s;
-    }
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 999px;
+            text-decoration: none;
+            color: #4b5563;
+            transition: all 0.2s;
+        }
 
-    .tab-item.active {
-        background: white;
-        color: var(--primary);
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-    }
+        .tab-item.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
 
-    .assignment-card {
-        background: white;
-        border-radius: 16px;
-        padding: 16px;
-        margin-bottom: 16px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
+        .assignment-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-    .assignment-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #f3f4f6;
-        padding-bottom: 12px;
-    }
+        .assignment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f3f4f6;
+            padding-bottom: 12px;
+        }
 
-    .date-badge {
-        background: #f3f4f6;
-        padding: 4px 8px;
-        border-radius: 6px;
-        font-size: 12px;
-        color: #6b7280;
-    }
+        .date-badge {
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #6b7280;
+        }
 
-    .status-badge {
-        padding: 4px 8px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 600;
-    }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
 
-    .status-pending {
-        background: #fef3c7;
-        color: #d97706;
-    }
+        .status-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
 
-    .status-completed {
-        background: #d1fae5;
-        color: #059669;
-    }
+        .status-completed {
+            background: #d1fae5;
+            color: #059669;
+        }
 
-    .assignment-body {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-    }
+        .assignment-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
 
-    .info-item {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
 
-    .info-label {
-        font-size: 11px;
-        color: #9ca3af;
-        text-transform: uppercase;
-    }
+        .info-label {
+            font-size: 11px;
+            color: #9ca3af;
+            text-transform: uppercase;
+        }
 
-    .info-value {
-        font-size: 14px;
-        font-weight: 600;
-        color: #1f2937;
-    }
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+        }
 
-    .assignment-footer {
-        padding-top: 12px;
-        border-top: 1px solid #f3f4f6;
-        display: flex;
-        justify-content: space-between;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
+        .assignment-footer {
+            padding-top: 12px;
+            border-top: 1px solid #f3f4f6;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
 
-    .btn-view,
-    .btn-secondary {
-        border: none;
-        outline: none;
-        cursor: pointer;
-        background: var(--bg-gradient);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-size: 12px;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
+        .btn-view,
+        .btn-secondary {
+            border: none;
+            outline: none;
+            cursor: pointer;
+            background: var(--bg-gradient);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-    .btn-secondary {
-        background: #f3f4f6;
-        color: #374151;
-    }
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
 
-    .empty-state {
-        text-align: center;
-        padding: 40px 20px;
-        color: #9ca3af;
-    }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
 
-    .empty-icon {
-        font-size: 48px;
-        margin-bottom: 16px;
-        opacity: 0.5;
-    }
-    
-    .assignment-footer .btn-group {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-    }
-</style>
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .assignment-footer .btn-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -301,8 +301,8 @@
                     </div>
                     <div class="filter-group">
                         <label for="order_no">Order No</label>
-                        <input type="text" id="order_no" name="order_no" class="filter-input"
-                            placeholder="e.g. ORD-123" value="{{ request('order_no') }}">
+                        <input type="text" id="order_no" name="order_no" class="filter-input" placeholder="e.g. ORD-123"
+                            value="{{ request('order_no') }}">
                     </div>
                 </div>
                 <div class="filter-actions">
@@ -372,8 +372,8 @@
                             @if(!empty($canCloseTasks) && $canCloseTasks)
                                 <form method="POST" class="task-action-form"
                                     data-action="{{ ($view ?? 'open') === 'closed' ? 'reopen' : 'close' }}" action="{{ ($view ?? 'open') === 'closed'
-                                    ? route('unit.assignments.reopen', ['type' => 'cutting', 'id' => $item->id])
-                                    : route('unit.assignments.close', ['type' => 'cutting', 'id' => $item->id]) }}">
+                                        ? route('unit.assignments.reopen', ['type' => 'cutting', 'id' => $item->id])
+                                        : route('unit.assignments.close', ['type' => 'cutting', 'id' => $item->id]) }}">
                                     @csrf
                                     <button type="submit" class="btn-secondary">
                                         <i class="fas {{ ($view ?? 'open') === 'closed' ? 'fa-undo' : 'fa-times' }}"></i>
@@ -412,8 +412,7 @@
                         </div>
                         <div class="info-item">
                             <span class="info-label">Sent By</span>
-                            <span
-                                class="info-value">{{ $item->getFromUnitMaster->name ?? $item->getUnitMaster->name ?? '-' }}</span>
+                            <span class="info-value">{{ $item->getFromUnitMaster->name ?? $item->getUnitMaster->name ?? '-' }}</span>
                         </div>
                         <!-- For Transactions, show quantity if available (remaining_quantity) -->
                         <div class="info-item">
@@ -427,8 +426,8 @@
                                 <form method="POST" class="task-action-form"
                                     data-action="{{ ($view ?? 'open') === 'closed' ? 'reopen' : 'close' }}"
                                     action="{{ ($view ?? 'open') === 'closed'
-                                    ? route('unit.assignments.reopen', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id])
-                                    : route('unit.assignments.close', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id]) }}">
+                                        ? route('unit.assignments.reopen', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id])
+                                        : route('unit.assignments.close', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id]) }}">
                                     @csrf
                                     <button type="submit" class="btn-secondary">
                                         <i class="fas {{ ($view ?? 'open') === 'closed' ? 'fa-undo' : 'fa-times' }}"></i>
@@ -464,31 +463,31 @@
 @endsection
 
 @push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Task Action Forms (Close/Reopen)
-        var forms = document.querySelectorAll('.task-action-form');
-        forms.forEach(function (form) {
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                var action = form.getAttribute('data-action');
-                var isClose = action === 'close';
-                Swal.fire({
-                    title: isClose ? 'Close this task?' : 'Re-open this task?',
-                    text: isClose ? 'Once closed, this task will move to the Closed tab.' : 'This task will move back to Open tasks.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: isClose ? 'Yes, close it' : 'Yes, re-open it',
-                    cancelButtonText: 'Cancel'
-                }).then(function (result) {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Task Action Forms (Close/Reopen)
+            var forms = document.querySelectorAll('.task-action-form');
+            forms.forEach(function (form) {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    var action = form.getAttribute('data-action');
+                    var isClose = action === 'close';
+                    Swal.fire({
+                        title: isClose ? 'Close this task?' : 'Re-open this task?',
+                        text: isClose ? 'Once closed, this task will move to the Closed tab.' : 'This task will move back to Open tasks.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: isClose ? 'Yes, close it' : 'Yes, re-open it',
+                        cancelButtonText: 'Cancel'
+                    }).then(function (result) {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
                 });
             });
         });
-    });
-</script>
+    </script>
 @endpush

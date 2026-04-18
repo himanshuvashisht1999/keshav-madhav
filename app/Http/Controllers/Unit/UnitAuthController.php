@@ -149,11 +149,13 @@ class UnitAuthController extends Controller
             $save_data->stage_master_unit_id = $data->id;
             $save_data->slip_file = $slip_file;
             $save_data->status = 0;
-            
+
             // Set save_type and type from request
-            if ($request->has('save_type')) $save_data->save_type = $request->save_type;
-            if ($request->has('type')) $save_data->type = $request->type;
-            
+            if ($request->has('save_type'))
+                $save_data->save_type = $request->save_type;
+            if ($request->has('type'))
+                $save_data->type = $request->type;
+
             if ($request->has('to_stage_id'))
                 $save_data->to_stage_id = $request->to_stage_id;
             if ($request->has('order_product_set_id'))
@@ -233,10 +235,14 @@ class UnitAuthController extends Controller
                 // Assignments (Cutting Only)
                 if ($isCutting) {
                     $qAssign = \App\Models\OrderCuttingStage::where('to_assign_id', $unitId)->with(['productSet.orderMain']);
-                    if ($lotNo) $qAssign->whereHas('productSet', function($qs) use ($lotNo) { $qs->where('design_number', 'like', '%' . $lotNo . '%'); });
-                    if ($orderNo) $qAssign->whereHas('productSet.orderMain', function($qs) use ($orderNo) { $qs->where('sku', 'like', '%' . $orderNo . '%'); });
-                    
-                    foreach($qAssign->get() as $item) {
+                    if ($lotNo)
+                        $qAssign->whereHas('productSet', function ($qs) use ($lotNo) {
+                            $qs->where('design_number', 'like', '%' . $lotNo . '%'); });
+                    if ($orderNo)
+                        $qAssign->whereHas('productSet.orderMain', function ($qs) use ($orderNo) {
+                            $qs->where('sku', 'like', '%' . $orderNo . '%'); });
+
+                    foreach ($qAssign->get() as $item) {
                         $tasks->push([
                             'id' => $item->id,
                             'event_type' => 'received',
@@ -257,14 +263,17 @@ class UnitAuthController extends Controller
                 $q3 = \App\Models\OrderPrintingToStichingTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage', 'orderProduct.orderMain']);
 
                 foreach ([$q1, $q2, $q3] as $idx => $q) {
-                    if ($lotNo) $q->where('lot_no', 'like', '%' . $lotNo . '%');
-                    if ($orderNo) $q->where(function($sq) use ($orderNo) {
-                        $sq->where('sku', 'like', '%' . $orderNo . '%')
-                           ->orWhereHas('orderProduct.orderMain', function($ssq) use ($orderNo) { $ssq->where('sku', 'like', '%' . $orderNo . '%'); });
-                    });
+                    if ($lotNo)
+                        $q->where('lot_no', 'like', '%' . $lotNo . '%');
+                    if ($orderNo)
+                        $q->where(function ($sq) use ($orderNo) {
+                            $sq->where('sku', 'like', '%' . $orderNo . '%')
+                                ->orWhereHas('orderProduct.orderMain', function ($ssq) use ($orderNo) {
+                                    $ssq->where('sku', 'like', '%' . $orderNo . '%'); });
+                        });
 
                     $txTypes = ['stage', 'printing', 'printing_to_stitching'];
-                    foreach($q->get() as $item) {
+                    foreach ($q->get() as $item) {
                         // ROBUST SKU FETCHING
                         $sku = $item->orderProduct->orderMain->sku ?? $item->sku ?? '-';
                         if ($sku === '-' || empty($sku)) {
@@ -294,15 +303,17 @@ class UnitAuthController extends Controller
             if (!$activityType || $activityType === 'sent') {
                 // Fabric Rolls Alotted (Mainly for Cutting)
                 $qRolls = \App\Models\FabricRollAssigning::where('stage_master_unit_id', $unitId)->with(['orderProductSet.orderMain', 'fabricRollAssigningsDetail']);
-                if ($lotNo) $qRolls->where('lot_no', 'like', '%' . $lotNo . '%');
+                if ($lotNo)
+                    $qRolls->where('lot_no', 'like', '%' . $lotNo . '%');
                 if ($orderNo) {
-                    $qRolls->where(function($sq) use ($orderNo) {
+                    $qRolls->where(function ($sq) use ($orderNo) {
                         $sq->where('order_no', 'like', '%' . $orderNo . '%')
-                           ->orWhereHas('orderProductSet.orderMain', function($ssq) use ($orderNo) { $ssq->where('sku', 'like', '%' . $orderNo . '%'); });
+                            ->orWhereHas('orderProductSet.orderMain', function ($ssq) use ($orderNo) {
+                                $ssq->where('sku', 'like', '%' . $orderNo . '%'); });
                     });
                 }
-                
-                foreach($qRolls->get() as $item) {
+
+                foreach ($qRolls->get() as $item) {
                     $sku = $item->order_no ?? $item->orderProductSet->orderMain->sku ?? '-';
                     if ($sku === '-' && !empty($item->lot_no)) {
                         $lRef = \App\Models\OrderLot::where('lot_no', $item->lot_no)->with('orderMain')->first();
@@ -328,14 +339,17 @@ class UnitAuthController extends Controller
                 $s3 = \App\Models\OrderPrintingToStichingTransaction::where('sub_stage_id', $unitId)->with(['to_stage', 'orderProduct.orderMain']);
 
                 foreach ([$s1, $s2, $s3] as $idx => $q) {
-                    if ($lotNo) $q->where('lot_no', 'like', '%' . $lotNo . '%');
-                    if ($orderNo) $q->where(function($sq) use ($orderNo) {
-                        $sq->where('sku', 'like', '%' . $orderNo . '%')
-                           ->orWhereHas('orderProduct.orderMain', function($ssq) use ($orderNo) { $ssq->where('sku', 'like', '%' . $orderNo . '%'); });
-                    });
+                    if ($lotNo)
+                        $q->where('lot_no', 'like', '%' . $lotNo . '%');
+                    if ($orderNo)
+                        $q->where(function ($sq) use ($orderNo) {
+                            $sq->where('sku', 'like', '%' . $orderNo . '%')
+                                ->orWhereHas('orderProduct.orderMain', function ($ssq) use ($orderNo) {
+                                    $ssq->where('sku', 'like', '%' . $orderNo . '%'); });
+                        });
 
                     $txTypes = ['stage', 'printing', 'printing_to_stitching'];
-                    foreach($q->get() as $item) {
+                    foreach ($q->get() as $item) {
                         $sku = $item->orderProduct->orderMain->sku ?? $item->sku ?? '-';
                         if ($sku === '-' || empty($sku)) {
                             $sku = $item->orderProduct?->orderProductSet?->orderMain?->sku ?? '-';
@@ -361,8 +375,10 @@ class UnitAuthController extends Controller
             }
 
             // Filtering by status on merged collection if needed
-            if ($status === 'done') $tasks = $tasks->where('status', 1);
-            elseif ($status === 'pending') $tasks = $tasks->where('status', 0);
+            if ($status === 'done')
+                $tasks = $tasks->where('status', 1);
+            elseif ($status === 'pending')
+                $tasks = $tasks->where('status', 0);
 
             return view('unit.history', [
                 'tasks' => $tasks->sortByDesc('created_at'),
@@ -400,31 +416,31 @@ class UnitAuthController extends Controller
             ]);
 
         if ($lotNo) {
-            $productionQuery->where(function($q) use ($lotNo) {
+            $productionQuery->where(function ($q) use ($lotNo) {
                 $q->where('lot_no', 'like', '%' . $lotNo . '%')
-                  ->orWhereHas('orderLots', function($sq) use ($lotNo) {
-                      $sq->where('lot_no', 'like', '%' . $lotNo . '%');
-                  })
-                  ->orWhereHas('orderPrintingStageTransaction', function($pq) use ($lotNo) {
-                      $pq->where('lot_no', 'like', '%' . $lotNo . '%');
-                  })
-                  ->orWhereHas('orderStageTransaction', function($tq) use ($lotNo) {
-                      $tq->where('lot_no', 'like', '%' . $lotNo . '%');
-                  });
+                    ->orWhereHas('orderLots', function ($sq) use ($lotNo) {
+                        $sq->where('lot_no', 'like', '%' . $lotNo . '%');
+                    })
+                    ->orWhereHas('orderPrintingStageTransaction', function ($pq) use ($lotNo) {
+                        $pq->where('lot_no', 'like', '%' . $lotNo . '%');
+                    })
+                    ->orWhereHas('orderStageTransaction', function ($tq) use ($lotNo) {
+                        $tq->where('lot_no', 'like', '%' . $lotNo . '%');
+                    });
             });
         }
-        
+
         if ($orderNo) {
-            $productionQuery->where(function($q) use ($orderNo) {
-                $q->whereHas('orderProductSet.orderMain', function($sq) use ($orderNo) {
+            $productionQuery->where(function ($q) use ($orderNo) {
+                $q->whereHas('orderProductSet.orderMain', function ($sq) use ($orderNo) {
                     $sq->where('sku', 'like', '%' . $orderNo . '%');
                 })
-                ->orWhereHas('orderLots.orderMain', function($sq) use ($orderNo) {
-                    $sq->where('sku', 'like', '%' . $orderNo . '%');
-                })
-                ->orWhereHas('orderPrintingStageTransaction.orderProduct.orderProductSet.orderMain', function($sq) use ($orderNo) {
-                    $sq->where('sku', 'like', '%' . $orderNo . '%');
-                });
+                    ->orWhereHas('orderLots.orderMain', function ($sq) use ($orderNo) {
+                        $sq->where('sku', 'like', '%' . $orderNo . '%');
+                    })
+                    ->orWhereHas('orderPrintingStageTransaction.orderProduct.orderProductSet.orderMain', function ($sq) use ($orderNo) {
+                        $sq->where('sku', 'like', '%' . $orderNo . '%');
+                    });
             });
         }
 
@@ -453,19 +469,34 @@ class UnitAuthController extends Controller
         foreach ($productionSlips as $slip) {
             // Gather ALL lot numbers
             $lots = collect();
-            if ($slip->lot_no) $lots->push($slip->lot_no);
-            if ($slip->orderLots) $lots = $lots->merge($slip->orderLots->pluck('lot_no'));
-            if ($slip->orderStageTransaction) $lots = $lots->merge($slip->orderStageTransaction->pluck('lot_no'));
-            if ($slip->orderPrintingStageTransaction) $lots = $lots->merge($slip->orderPrintingStageTransaction->pluck('lot_no'));
-            if ($slip->orderPrintingToStichingTransaction) $lots = $lots->merge($slip->orderPrintingToStichingTransaction->pluck('lot_no'));
+            if ($slip->lot_no)
+                $lots->push($slip->lot_no);
+            if ($slip->orderLots)
+                $lots = $lots->merge($slip->orderLots->pluck('lot_no'));
+            if ($slip->orderStageTransaction)
+                $lots = $lots->merge($slip->orderStageTransaction->pluck('lot_no'));
+            if ($slip->orderPrintingStageTransaction)
+                $lots = $lots->merge($slip->orderPrintingStageTransaction->pluck('lot_no'));
+            if ($slip->orderPrintingToStichingTransaction)
+                $lots = $lots->merge($slip->orderPrintingToStichingTransaction->pluck('lot_no'));
             $finalLots = $lots->unique()->filter()->values();
 
             // Gather ALL order numbers
             $skus = collect();
-            if ($slip->orderProductSet?->orderMain) $skus->push($slip->orderProductSet->orderMain->sku);
-            foreach($slip->orderLots as $ol) { if($ol->orderMain) $skus->push($ol->orderMain->sku); }
-            foreach($slip->orderPrintingStageTransaction as $opt) { if($opt->orderProduct?->orderProductSet?->orderMain) $skus->push($opt->orderProduct->orderProductSet->orderMain->sku); }
-            foreach($slip->orderStageTransaction as $ost) { if($ost->orderProduct?->orderProductSet?->orderMain) $skus->push($ost->orderProduct->orderProductSet->orderMain->sku); }
+            if ($slip->orderProductSet?->orderMain)
+                $skus->push($slip->orderProductSet->orderMain->sku);
+            foreach ($slip->orderLots as $ol) {
+                if ($ol->orderMain)
+                    $skus->push($ol->orderMain->sku);
+            }
+            foreach ($slip->orderPrintingStageTransaction as $opt) {
+                if ($opt->orderProduct?->orderProductSet?->orderMain)
+                    $skus->push($opt->orderProduct->orderProductSet->orderMain->sku);
+            }
+            foreach ($slip->orderStageTransaction as $ost) {
+                if ($ost->orderProduct?->orderProductSet?->orderMain)
+                    $skus->push($ost->orderProduct->orderProductSet->orderMain->sku);
+            }
             $finalSkus = $skus->unique()->filter()->values();
 
             $allSlips->push([
@@ -535,8 +566,8 @@ class UnitAuthController extends Controller
         // 2. Is sender in any linked transaction?
         if (!$isCreator) {
             $isCreator = \App\Models\OrderStageTransaction::where('production_slip_digitization_id', $id)->where('sub_stage_id', $unitId)->exists() ||
-                         \App\Models\OrderPrintingStageTransaction::where('production_slip_digitization_id', $id)->where('sub_stage_id', $unitId)->exists() ||
-                         \App\Models\OrderPrintingToStichingTransaction::where('production_slip_digitization_id', $id)->where('sub_stage_id', $unitId)->exists();
+                \App\Models\OrderPrintingStageTransaction::where('production_slip_digitization_id', $id)->where('sub_stage_id', $unitId)->exists() ||
+                \App\Models\OrderPrintingToStichingTransaction::where('production_slip_digitization_id', $id)->where('sub_stage_id', $unitId)->exists();
         }
 
         $isReceiver = false;
@@ -572,14 +603,14 @@ class UnitAuthController extends Controller
             // Since we already filtered the history list to only show your interactions, 
             // if this was in your history list, you should be allowed to view it.
             if (request()->headers->get('referer') && str_contains(request()->headers->get('referer'), 'unit/history')) {
-                 // Allow view if redirected from history
+                // Allow view if redirected from history
             } else {
-                 abort(403, 'Unauthorized access to this slip.');
+                abort(403, 'Unauthorized access to this slip.');
             }
         }
 
         // --- Fetch ALL digitized sessions linked to this slip (Multiple are now supported) ---
-        
+
         // 1. Lots & Rolls (Cutting)
         $lots = \App\Models\OrderLot::where('production_slip_digitization_id', $slip->id)
             ->with([
@@ -599,7 +630,7 @@ class UnitAuthController extends Controller
         // 2. Printing
         $printings = \App\Models\OrderPrintingStageTransaction::where('production_slip_digitization_id', $slip->id)
             ->with([
-                'from_stage', 
+                'from_stage',
                 'to_stage',
                 'orderProduct.orderProductSet.fabric',
                 'orderProduct.orderProductSet.colors',
@@ -657,40 +688,58 @@ class UnitAuthController extends Controller
 
         // 1. From Lots
         foreach ($lots as $lot) {
-            if ($lot->lot_no) $consolidated['lot_nos']->push($lot->lot_no);
-            if ($lot->orderMain) $consolidated['order_nos']->push($lot->orderMain->sku);
+            if ($lot->lot_no)
+                $consolidated['lot_nos']->push($lot->lot_no);
+            if ($lot->orderMain)
+                $consolidated['order_nos']->push($lot->orderMain->sku);
             if ($lot->orderProductSet) {
                 $ops = $lot->orderProductSet;
-                if ($ops->design_number) $consolidated['design_nos']->push($ops->design_number);
-                if ($ops->fabric) $consolidated['fabrics']->push($ops->fabric->name);
-                if ($ops->colors) $consolidated['colors']->push($ops->colors->name);
-                if ($ops->orderMain?->customer) $consolidated['customers']->push($ops->orderMain->customer->name);
+                if ($ops->design_number)
+                    $consolidated['design_nos']->push($ops->design_number);
+                if ($ops->fabric)
+                    $consolidated['fabrics']->push($ops->fabric->name);
+                if ($ops->colors)
+                    $consolidated['colors']->push($ops->colors->name);
+                if ($ops->orderMain?->customer)
+                    $consolidated['customers']->push($ops->orderMain->customer->name);
             }
         }
 
         // 2. From Printings
         foreach ($printings as $printing) {
-            if ($printing->lot_no) $consolidated['lot_nos']->push($printing->lot_no);
+            if ($printing->lot_no)
+                $consolidated['lot_nos']->push($printing->lot_no);
             if ($printing->orderProduct?->orderProductSet) {
                 $ops = $printing->orderProduct->orderProductSet;
-                if ($ops->orderMain) $consolidated['order_nos']->push($ops->orderMain->sku);
-                if ($ops->design_number) $consolidated['design_nos']->push($ops->design_number);
-                if ($ops->fabric) $consolidated['fabrics']->push($ops->fabric->name);
-                if ($ops->colors) $consolidated['colors']->push($ops->colors->name);
-                if ($ops->orderMain?->customer) $consolidated['customers']->push($ops->orderMain->customer->name);
+                if ($ops->orderMain)
+                    $consolidated['order_nos']->push($ops->orderMain->sku);
+                if ($ops->design_number)
+                    $consolidated['design_nos']->push($ops->design_number);
+                if ($ops->fabric)
+                    $consolidated['fabrics']->push($ops->fabric->name);
+                if ($ops->colors)
+                    $consolidated['colors']->push($ops->colors->name);
+                if ($ops->orderMain?->customer)
+                    $consolidated['customers']->push($ops->orderMain->customer->name);
             }
         }
 
         // 3. From Stage Transactions
         foreach ($stage_transactions as $tx) {
-            if ($tx->lot_no) $consolidated['lot_nos']->push($tx->lot_no);
+            if ($tx->lot_no)
+                $consolidated['lot_nos']->push($tx->lot_no);
             if ($tx->orderProduct?->orderProductSet) {
                 $ops = $tx->orderProduct->orderProductSet;
-                if ($ops->orderMain) $consolidated['order_nos']->push($ops->orderMain->sku);
-                if ($ops->design_number) $consolidated['design_nos']->push($ops->design_number);
-                if ($ops->fabric) $consolidated['fabrics']->push($ops->fabric->name);
-                if ($ops->colors) $consolidated['colors']->push($ops->colors->name);
-                if ($ops->orderMain?->customer) $consolidated['customers']->push($ops->orderMain->customer->name);
+                if ($ops->orderMain)
+                    $consolidated['order_nos']->push($ops->orderMain->sku);
+                if ($ops->design_number)
+                    $consolidated['design_nos']->push($ops->design_number);
+                if ($ops->fabric)
+                    $consolidated['fabrics']->push($ops->fabric->name);
+                if ($ops->colors)
+                    $consolidated['colors']->push($ops->colors->name);
+                if ($ops->orderMain?->customer)
+                    $consolidated['customers']->push($ops->orderMain->customer->name);
             }
         }
 
@@ -700,16 +749,19 @@ class UnitAuthController extends Controller
             'customer' => $consolidated['customers']->unique()->filter()->implode(', '),
             'design' => $consolidated['design_nos']->unique()->filter()->implode(', ')
         ];
-        
+
         // Derive Size Group from first available session
         $orderSet = $slip->orderProductSet;
-        if (!$orderSet && $lots->isNotEmpty()) $orderSet = $lots->first()->orderProductSet;
-        if (!$orderSet && $printings->isNotEmpty()) $orderSet = $printings->first()->orderProduct?->orderProductSet;
-        if (!$orderSet && $stage_transactions->isNotEmpty()) $orderSet = $stage_transactions->first()->orderProduct?->orderProductSet;
-        
+        if (!$orderSet && $lots->isNotEmpty())
+            $orderSet = $lots->first()->orderProductSet;
+        if (!$orderSet && $printings->isNotEmpty())
+            $orderSet = $printings->first()->orderProduct?->orderProductSet;
+        if (!$orderSet && $stage_transactions->isNotEmpty())
+            $orderSet = $stage_transactions->first()->orderProduct?->orderProductSet;
+
         $standard_sizes = [];
         if ($orderSet) {
-            $orderSet->loadMissing('size_measurement'); 
+            $orderSet->loadMissing('size_measurement');
             if ($orderSet->size_measurement && !empty($orderSet->size_measurement->size_group)) {
                 $standard_sizes = array_filter(array_map('trim', explode(',', $orderSet->size_measurement->size_group)));
             }
@@ -718,16 +770,36 @@ class UnitAuthController extends Controller
 
         // Calculation of slip range and total pcs from ACTUAL digitized data
         $all_sizes = [];
-        foreach($rolls as $r) { foreach($r->fabricRollAssigningsDetail as $sd) { $all_sizes[] = $sd->size; } }
-        foreach($printings as $p) { foreach($p->details as $rs) { $all_sizes[] = $rs->size; } }
-        foreach($stage_transactions as $st) { foreach($st->details as $rs) { $all_sizes[] = $rs->size; } }
+        foreach ($rolls as $r) {
+            foreach ($r->fabricRollAssigningsDetail as $sd) {
+                $all_sizes[] = $sd->size;
+            }
+        }
+        foreach ($printings as $p) {
+            foreach ($p->details as $rs) {
+                $all_sizes[] = $rs->size;
+            }
+        }
+        foreach ($stage_transactions as $st) {
+            foreach ($st->details as $rs) {
+                $all_sizes[] = $rs->size;
+            }
+        }
         $all_sizes = array_unique(array_filter($all_sizes));
         $actual_range = count($all_sizes) > 0 ? min($all_sizes) . '-' . max($all_sizes) : '-';
 
         $total_pcs = 0;
-        foreach($rolls as $r) { foreach($r->fabricRollAssigningsDetail as $sd) { $total_pcs += $sd->quantity; } }
-        foreach($printings as $p) { $total_pcs += $p->details->sum('quantity'); }
-        foreach($stage_transactions as $st) { $total_pcs += $st->details->sum('quantity'); }
+        foreach ($rolls as $r) {
+            foreach ($r->fabricRollAssigningsDetail as $sd) {
+                $total_pcs += $sd->quantity;
+            }
+        }
+        foreach ($printings as $p) {
+            $total_pcs += $p->details->sum('quantity');
+        }
+        foreach ($stage_transactions as $st) {
+            $total_pcs += $st->details->sum('quantity');
+        }
 
         $data = [
             'slip' => $slip,
@@ -797,9 +869,9 @@ class UnitAuthController extends Controller
                 $assignments = $query->where('is_closed_for_unit', 1)->get();
             } else {
                 $assignments = $query->where(function ($q) {
-                        $q->whereNull('is_closed_for_unit')
-                          ->orWhere('is_closed_for_unit', 0);
-                    })->get();
+                    $q->whereNull('is_closed_for_unit')
+                        ->orWhere('is_closed_for_unit', 0);
+                })->get();
             }
         } else {
             $type = 'other';
@@ -849,17 +921,17 @@ class UnitAuthController extends Controller
                     $ass3Query->where('is_closed_for_unit', 1);
                 } else {
                     $ass1Query->where(function ($q) {
-                            $q->whereNull('is_closed_for_unit')
-                                ->orWhere('is_closed_for_unit', 0);
-                        });
+                        $q->whereNull('is_closed_for_unit')
+                            ->orWhere('is_closed_for_unit', 0);
+                    });
                     $ass2Query->where(function ($q) {
-                            $q->whereNull('is_closed_for_unit')
-                                ->orWhere('is_closed_for_unit', 0);
-                        });
+                        $q->whereNull('is_closed_for_unit')
+                            ->orWhere('is_closed_for_unit', 0);
+                    });
                     $ass3Query->where(function ($q) {
-                            $q->whereNull('is_closed_for_unit')
-                                ->orWhere('is_closed_for_unit', 0);
-                        });
+                        $q->whereNull('is_closed_for_unit')
+                            ->orWhere('is_closed_for_unit', 0);
+                    });
                 }
             } else {
                 // Other stages (printing, stitching, etc.) can only see open work; no close option
@@ -1161,7 +1233,7 @@ class UnitAuthController extends Controller
                     $sizes = [$orderProductSet->set_size];
                 }
             }
-            
+
             $isRework = ($transaction && isset($transaction->type) && $transaction->type === 'rework');
 
             $sizeSetRange = count($sizes) > 0 ? min($sizes) . '-' . max($sizes) : '-';
@@ -1366,9 +1438,12 @@ class UnitAuthController extends Controller
         // --- FALLBACK: Try to find OrderProductSet via lot_no if still null ---
         if (!$orderSet) {
             $fallbackLot = null;
-            if ($data['lots']->isNotEmpty()) $fallbackLot = $data['lots']->first()->lot_no;
-            elseif ($data['printings']->isNotEmpty()) $fallbackLot = $data['printings']->first()->lot_no;
-            elseif ($data['stage_transactions']->isNotEmpty()) $fallbackLot = $data['stage_transactions']->first()->lot_no;
+            if ($data['lots']->isNotEmpty())
+                $fallbackLot = $data['lots']->first()->lot_no;
+            elseif ($data['printings']->isNotEmpty())
+                $fallbackLot = $data['printings']->first()->lot_no;
+            elseif ($data['stage_transactions']->isNotEmpty())
+                $fallbackLot = $data['stage_transactions']->first()->lot_no;
 
             if ($fallbackLot) {
                 $orderLot = \App\Models\OrderLot::where('lot_no', $fallbackLot)->with('orderProductSet')->first();
@@ -1391,19 +1466,22 @@ class UnitAuthController extends Controller
         }
 
         $data['size_set'] = count($sizes) > 0 ? min($sizes) . '-' . max($sizes) : '-';
-        
+
         // --- Calculate Total Pieces by summing all sessions ---
         $grandTotal = 0;
-        foreach($data['lots'] as $l) $grandTotal += ($l->quantity ?? 0);
-        foreach($data['printings'] as $p) $grandTotal += ($p->quantity ?? 0);
-        foreach($data['stage_transactions'] as $st) $grandTotal += ($st->quantity ?? 0);
+        foreach ($data['lots'] as $l)
+            $grandTotal += ($l->quantity ?? 0);
+        foreach ($data['printings'] as $p)
+            $grandTotal += ($p->quantity ?? 0);
+        foreach ($data['stage_transactions'] as $st)
+            $grandTotal += ($st->quantity ?? 0);
 
         // If summarized total is 0, check if we have sizes in data
         if ($grandTotal == 0) {
-           // Fallback to pcs_in_set logic if needed, but grandTotal from sessions is usually what's wanted for summary
-           $data['pcs_in_set'] = ($orderSet && $orderSet->size_measurement) ? ($orderSet->size_measurement->no_of_pcs ?? count($sizes)) : count($sizes);
+            // Fallback to pcs_in_set logic if needed, but grandTotal from sessions is usually what's wanted for summary
+            $data['pcs_in_set'] = ($orderSet && $orderSet->size_measurement) ? ($orderSet->size_measurement->no_of_pcs ?? count($sizes)) : count($sizes);
         } else {
-           $data['pcs_in_set'] = $grandTotal;
+            $data['pcs_in_set'] = $grandTotal;
         }
 
         $pdf = Pdf::loadView('admin.uploaded_slips.pdf', $data)
@@ -1455,7 +1533,7 @@ class UnitAuthController extends Controller
         } elseif (!empty($data->set_size)) {
             $sizes = [$data->set_size];
         }
-        
+
         $sizeSetRange = count($sizes) > 0 ? min($sizes) . '-' . max($sizes) : '-';
         $totalPcsInSet = $data->size_measurement->no_of_pcs ?? count($sizes);
         $cmpoHeader['size_set'] = $sizeSetRange;

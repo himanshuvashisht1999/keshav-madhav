@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\ProductionSlipDigitization;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\MasterProductStage;
+use App\Models\FabricRollAssigningsDetail;
 use App\Models\StageMasterUnit;
 use App\Models\OrderLot;
 use App\Models\FabricRollAssigning;
@@ -19,6 +20,9 @@ use App\Models\OrderPrintingToStichingTransactionDetail;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Support\Facades\Storage;
+use App\Models\OrderProductSetDetail;
+use App\Models\FabricReceiptDetail;
+use App\Models\OrderStageTransactionDetail;
 
 class UploadedSlipsController extends Controller
 {
@@ -565,5 +569,128 @@ class UploadedSlipsController extends Controller
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+
+    public function deleteSession($type, $id)
+    {
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            $slip_id = null;
+
+            if ($type == 'lot') {
+                $session = OrderLot::findOrFail($id);
+                $slip_id = $session->production_slip_digitization_id;
+
+                if ($session->is_printing == 1 || $session->is_stitching == 1) {
+                    throw new \Exception('Cannot delete. This lot has already been moved forward.');
+                }
+
+                // Revert FabricRollAssigning
+                $rolls = FabricRollAssigning::where('order_lot_id', $id)->get();
+                foreach ($rolls as $roll) {
+                    // Revert FabricReceiptDetail meters
+                    $receipt = FabricReceiptDetail::where('roll_number', $roll->roll_no)->first();
+                    if ($receipt) {
+                        $receipt->remaining_quantity += $roll->meter;
+                        $receipt->save();
+                    }
+
+                    // Revert OrderProductSetDetail quantities
+                    $details = FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id', $roll->id)->get();
+                    foreach ($details as $detail) {
+                        $setDetail = OrderProductSetDetail::where('order_products_set_id', $session->order_products_set_id)
+                            ->where('size', $detail->size)
+                            ->first();
+                        if ($setDetail) {
+                            $setDetail->remaining_lot_allocated += $detail->quantity;
+                            $setDetail->save();
+                        }
+                        $detail->delete();
+                    }
+                    $roll->delete();
+                }
+                $session->delete();
+
+            } elseif ($type == 'printing' || $type == 'transfer' || $type == 'printing_stitching') {
+                $modelMap = [
+                    'printing' => OrderPrintingStageTransaction::class,
+                    'transfer' => OrderStageTransaction::class,
+                    'printing_stitching' => OrderPrintingToStichingTransaction::class
+                ];
+                $model = $modelMap[$type];
+                $session = $model::findOrFail($id);
+                $slip_id = $session->production_slip_digitization_id;
+
+                if ($session->remaining_quantity != $session->quantity) {
+                    throw new \Exception('Cannot delete. Some quantity has already been moved forward.');
+                }
+
+                // Restore Source Quantity
+                if ($type == 'printing') {
+                    // Source was Cutting (Lot)
+                    OrderLot::where('lot_no', $session->lot_no)->update(['is_printing' => 0]);
+                    FabricRollAssigning::where('lot_no', $session->lot_no)
+                        ->where('to_stage_id', 1)
+                        ->update(['status' => 1, 'to_stage_id' => null]);
+                    
+                    // Delete details
+                    OrderPrintingStageTransactionDetail::where('order_printing_stage_transaction_id', $id)->delete();
+
+                } elseif ($type == 'printing_stitching') {
+                    // Source was Printing
+                    $source = OrderPrintingStageTransaction::where('lot_no', $session->lot_no)
+                        ->where('sub_stage_id_to', $session->sub_stage_id)
+                        ->first();
+                    if ($source) {
+                        $source->remaining_quantity += $session->quantity;
+                        $source->save();
+                    }
+                    OrderPrintingToStichingTransactionDetail::where('order_printing_to_stiching_transaction_id', $id)->delete();
+
+                } elseif ($type == 'transfer') {
+                    // General transfer restore
+                    if ($session->from_stage_id == 3) {
+                        // From Cutting
+                        OrderLot::where('lot_no', $session->lot_no)->update(['is_stitching' => 0]);
+                        FabricRollAssigning::where('lot_no', $session->lot_no)
+                            ->where('to_stage_id', $session->to_stage_id)
+                            ->update(['status' => 1, 'to_stage_id' => null]);
+                    } else {
+                        // From another stage transaction
+                        $source = OrderStageTransaction::where('lot_no', $session->lot_no)
+                            ->where('to_stage_id', $session->from_stage_id)
+                            ->where('sub_stage_id_to', $session->sub_stage_id)
+                            ->first();
+                        if(!$source) {
+                            // Try Printing if not found in StageTransactions
+                            $source = OrderPrintingStageTransaction::where('lot_no', $session->lot_no)
+                                ->where('to_stage_id', $session->from_stage_id)
+                                ->where('sub_stage_id_to', $session->sub_stage_id)
+                                ->first();
+                        }
+
+                        if ($source) {
+                            $source->remaining_quantity += $session->quantity;
+                            $source->save();
+                        }
+                    }
+                    OrderStageTransactionDetail::where('order_stage_transaction_id', $id)->delete();
+                }
+
+                $session->delete();
+            }
+
+            // Reset Digitized Status of Slip
+            if ($slip_id) {
+                ProductionSlipDigitization::where('id', $slip_id)->update(['status' => 0]);
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+            return redirect()->back()->with('success', 'Session deleted and quantities restored successfully.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return redirect()->back()->with('error', 'Error deleting session: ' . $e->getMessage());
+        }
     }
 }

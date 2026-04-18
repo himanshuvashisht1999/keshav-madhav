@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Order Sheet #ORD-{{ $order->id }}</title>
+    <title>Order Form #ORD-{{ $order->id }}</title>
     <style>
         @page { margin: 0; }
         body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 11px; color: #222; margin: 0; padding: 30px; line-height: 1.4; }
@@ -47,7 +47,7 @@
                         @endif
                     </td>
                     <td width="60%" class="text-center">
-                        <div class="title">ORDER SHEET</div>
+                        <div class="title">ORDER FORM</div>
                         <div class="company-name">{{ $settings->website_name ?? 'SURGICAL JEANS' }}</div>
                         <div style="font-size: 10px;">{{ $settings->address ?? '' }}</div>
                     </td>
@@ -79,8 +79,12 @@
                             <td style="border:none; padding: 2px 0;">: {{ $order->agent_name }}</td>
                         </tr>
                         <tr>
-                            <td style="border:none; padding: 2px 0;"><strong>Print Date</strong></td>
-                            <td style="border:none; padding: 2px 0;">: {{ date('d-m-Y H:i') }}</td>
+                            <td style="border:none; padding: 2px 0;"><strong>Booking Station</strong></td>
+                            <td style="border:none; padding: 2px 0;">: {{ $order->booking_station ?? 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td style="border:none; padding: 2px 0;"><strong>Transport</strong></td>
+                            <td style="border:none; padding: 2px 0;">: {{ $order->transport ?? 'N/A' }}</td>
                         </tr>
                     </table>
                 </td>
@@ -91,10 +95,12 @@
             <thead>
                 <tr>
                     <th width="5%">S.N.</th>
-                    <th width="{{ $showPrice ? '40%' : '65%' }}">Product Particulars</th>
+                    <th width="{{ $showPrice ? '23%' : '43%' }}">Product Particulars</th>
+                    <th width="10%" class="text-center">Warehouse</th>
+                    <th width="10%" class="text-center">Rack</th>
                     <th width="10%" class="text-center">Set/Size</th>
-                    <th width="10%" class="text-center">Boxes</th>
-                    <th width="10%" class="text-center">Pcs Qty</th>
+                    <th width="8%" class="text-center">Boxes</th>
+                    <th width="9%" class="text-center">Pcs Qty</th>
                     @if($showPrice)
                     <th width="12%" class="text-right">Unit Price</th>
                     <th width="13%" class="text-right">Total</th>
@@ -108,8 +114,10 @@
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>
                             <strong>{{ $item->product_name }}</strong><br>
-                            <small>Design: {{ $item->design_number }} | Color: {{ $item->color_name }}</small>
+                            <small>Color: {{ $item->color_name }} ({{ $item->color_id }})</small>
                         </td>
+                        <td class="text-center">{{ $item->warehouse_name }}</td>
+                        <td class="text-center">{{ $item->rack_name }}</td>
                         <td class="text-center">{{ $item->size_set_name }}</td>
                         <td class="text-center">{{ number_format($item->box_count, 0) }}</td>
                         <td class="text-center">{{ number_format($item->total_qty, 0) }}</td>
@@ -122,11 +130,11 @@
                 @endforeach
 
                 @for ($i = count($items); $i < 15; $i++)
-                    <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td>@if($showPrice)<td></td><td></td>@endif</tr>
+                    <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td>@if($showPrice)<td></td><td></td>@endif</tr>
                 @endfor
 
                 <tr class="total-row">
-                    <td colspan="3" class="text-right">TOTAL</td>
+                    <td colspan="5" class="text-right">TOTAL</td>
                     <td class="text-center">{{ $tBoxes }}</td>
                     <td class="text-center">{{ $tPcs }}</td>
                     @if($showPrice)
@@ -138,20 +146,20 @@
                 @if($showPrice)
                     @if($order->discount_amount > 0)
                     <tr class="summary-row">
-                        <td colspan="6" class="text-right">Discount ({{ $order->discount_percentage }}%)</td>
+                        <td colspan="8" class="text-right">Discount ({{ $order->discount_percentage }}%)</td>
                         <td class="text-right">-Rs. {{ number_format($order->discount_amount, 2) }}</td>
                     </tr>
                     @endif
                     <tr class="summary-row">
-                        <td colspan="6" class="text-right small">Taxable Amount</td>
+                        <td colspan="8" class="text-right small">Taxable Amount</td>
                         <td class="text-right small">Rs. {{ number_format($tAmt - $order->discount_amount, 2) }}</td>
                     </tr>
                     <tr class="summary-row">
-                        <td colspan="6" class="text-right small">GST ({{ $order->gst_percentage }}%)</td>
+                        <td colspan="8" class="text-right small">GST ({{ $order->gst_percentage }}%)</td>
                         <td class="text-right small">+Rs. {{ number_format($order->gst_amount, 2) }}</td>
                     </tr>
                     <tr class="summary-row" style="background:#f0f0f0;">
-                        <td colspan="6" class="text-right" style="font-size:14px;">GRAND TOTAL</td>
+                        <td colspan="8" class="text-right" style="font-size:14px;">GRAND TOTAL</td>
                         <td class="text-right" style="font-size:14px; color:#d32f2f;">Rs. {{ number_format($order->grand_total, 2) }}</td>
                     </tr>
                 @endif
@@ -167,7 +175,7 @@
         @endif
 
         <div style="padding: 15px; border-top: 1px solid #000; font-size: 10px;">
-            <strong>REMARKS:</strong> {{ $order->remarks ?? 'N/A' }}<br><br>
+            <strong>REMARKS:</strong> {{ $order->remark ?? 'N/A' }}<br><br>
             * This is an automated order acknowledgement sheet.
         </div>
 

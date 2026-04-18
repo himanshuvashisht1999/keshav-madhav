@@ -189,7 +189,7 @@
                                             </a>
                                         @endif
 
-                                        @if($slip->status != 2) {{-- If not skipped --}}
+                                        @if($slip->status == 0) {{-- Only if Pending --}}
                                             <a href="{{ $actionRoute }}" class="btn btn-primary btn-sm shadow-sm" title="Digitize More/Start">
                                                 <i class="fas fa-pen"></i>
                                             </a>

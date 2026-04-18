@@ -80,8 +80,16 @@ class ProductOrderDataTable  {
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $query->orderBy('id','desc');
-                $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
+                $query->orderBy('order_main.id', 'desc');
+
+                $searchValue = $request->get('search')['value'];
+                if ($searchValue) {
+                    $query->where(function ($q) use ($searchValue) {
+                        $q->where('sku', 'like', "%{$searchValue}%")
+                            ->orWhere('po_number', 'like', "%{$searchValue}%");
+                    });
+                }
+
                 if ($request->has('sku') && !empty($request->sku)) {
                     $query->where('sku', 'like', "%{$request->get('sku')}%");
                 }
@@ -89,21 +97,21 @@ class ProductOrderDataTable  {
                     $query->where('po_number', 'like', "%{$request->get('po_number')}%");
                 }
                 if ($request->has('master_customer_id') && !empty($request->master_customer_id)) {
-                    $query->where('master_customer_id', 'like', "%{$request->get('master_customer_id')}%");
+                    $query->where('master_customer_id', $request->get('master_customer_id'));
                 }
                 if ($request->has('order_type') && !empty($request->order_type)) {
-                    $query->where('order_type', 'like', "%{$request->get('order_type')}%");
+                    $query->where('order_type', $request->get('order_type'));
                 }
                 if ($request->has('created_at') && !empty($request->created_at)) {
-                    $query->where('created_at', 'like', "%{$request->get('created_at')}%");
+                    $query->whereDate('created_at', $request->get('created_at'));
                 }
                 if ($request->has('expected_delivery_date') && !empty($request->expected_delivery_date)) {
-                    $query->where('expected_delivery_date', 'like', "%{$request->get('expected_delivery_date')}%");
+                    $query->whereDate('expected_delivery_date', $request->get('expected_delivery_date'));
                 }
                 if ($request->has('status') && !empty($request->status)) {
                     $query->where('status', $request->get('status'));
                 }
-                
+
             }) 
          
             ->addColumn('status', function ($queue) {

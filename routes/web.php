@@ -1348,6 +1348,7 @@ Route::prefix('/admin')->name('admin.')->middleware(['web', 'checkAdminLogin'])-
         Route::get('/{id}/download', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'download'])->name('download');
         Route::get('/outflow-receipt/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'downloadOutflowReceipt'])->name('outflow-receipt');
         Route::post('/corporate-excel/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'corporateExcel'])->name('corporate-excel');
+        Route::get('/delete-session/{type}/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'deleteSession'])->name('delete-session');
     });
 });
 
