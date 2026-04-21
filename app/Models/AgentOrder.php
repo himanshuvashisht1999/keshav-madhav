@@ -20,6 +20,9 @@ class AgentOrder extends Model
         'discount_amount',
         'grand_total',
         'status',
+        'order_type',
+        'sale_type',
+        'expected_dispatch_date',
         'created_by',
         'order_date',
         'remark',
@@ -32,6 +35,11 @@ class AgentOrder extends Model
     public function items()
     {
         return $this->hasMany(AgentOrderItem::class, 'agent_order_id');
+    }
+
+    public function fabricItems()
+    {
+        return $this->hasMany(AgentOrderFabricItem::class, 'agent_order_id');
     }
 
     public function shop()

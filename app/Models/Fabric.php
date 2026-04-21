@@ -82,4 +82,9 @@ class Fabric extends Model
     {
         return $this->hasMany('App\Models\FabricReceiptDetail', 'fabric_id', 'id');
     }
+
+    public function rolls()
+    {
+        return $this->hasMany('App\Models\FabricReceiptDetail', 'fabric_id', 'id');
+    }
 }

@@ -215,60 +215,85 @@
                             </div>
                             <div class="card-body p-0">
                                 <table class="table table-striped mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th width="10%">Boxes</th>
-                                            <th>Product Details</th>
-                                            <th class="text-center">Location</th>
-                                            <th class="text-center">Total Qty</th>
-                                            <th class="text-right">Price</th>
-                                            <th class="text-right">Total</th>
-                                            <th class="text-right">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($items as $item)
+                                    @if($order->sale_type === 'fabric')
+                                        <thead>
                                             <tr>
-                                                <td>
-                                                    <span
-                                                        class="badge {{ $item->status == 'Scanned' ? 'badge-success' : ($item->status == 'Partial' ? 'badge-info' : 'badge-primary') }}">
-                                                        {{ $item->scanned_box_qty }} / {{ $item->box_count }} Boxes
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <strong>{{ $item->product_name }}</strong><br>
-                                                    <small style="color:#666;">
-                                                        Design: {{ $item->design_number }} | Color: {{ $item->color_name }} |
-                                                        Set:
-                                                        {{ $item->size_set_name }} | Barcode: {{ $item->barcode }}
-                                                        @if(isset($item->fitting_name) && $item->fitting_name) | Fit:
-                                                        {{ $item->fitting_name }} @endif
-                                                        @if(isset($item->pattern_name) && $item->pattern_name) | Pat:
-                                                        {{ $item->pattern_name }} @endif
-                                                    </small>
-                                                </td>
-                                                <td class="text-center">
-                                                    <span class="badge badge-light border">WH: {{ $item->warehouse_name }}</span><br>
-                                                    <span class="badge badge-light border">Rack: {{ $item->rack_name }}</span>
-                                                </td>
-                                                <td class="text-center font-weight-bold">{{ $item->total_qty }} pcs</td>
-                                                <td class="text-right">₹{{ number_format($item->selling_price, 2) }}</td>
-                                                <td class="text-right font-weight-bold text-primary">
-                                                    ₹{{ number_format($item->total_qty * $item->selling_price, 2) }}</td>
-                                                <td class="text-right">
-                                                    @if($item->status == 'Dispatched')
-                                                        <span class="badge badge-success"><i
-                                                                class="fas fa-check mr-1"></i>{{ $item->status }}</span>
-                                                    @elseif($item->status == 'Scanned')
-                                                        <span class="badge badge-info"><i
-                                                                class="fas fa-barcode mr-1"></i>{{ $item->status }}</span>
-                                                    @else
-                                                        <span class="badge badge-secondary">{{ $item->status }}</span>
-                                                    @endif
-                                                </td>
+                                                <th>Roll Number</th>
+                                                <th>Fabric Details</th>
+                                                <th class="text-center">Batch No</th>
+                                                <th class="text-center">Meter</th>
+                                                <th class="text-right">Price/m</th>
+                                                <th class="text-right">Total</th>
                                             </tr>
-                                        @endforeach
-                                    </tbody>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($items as $item)
+                                                <tr>
+                                                    <td><span class="badge badge-primary">{{ $item->roll_number }}</span></td>
+                                                    <td><strong>{{ $item->fabric_name }}</strong></td>
+                                                    <td class="text-center">{{ $item->batch_no }}</td>
+                                                    <td class="text-center font-weight-bold">{{ number_format($item->meter, 2) }} m</td>
+                                                    <td class="text-right">₹{{ number_format($item->selling_price, 2) }}</td>
+                                                    <td class="text-right font-weight-bold text-primary">₹{{ number_format($item->meter * $item->selling_price, 2) }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    @else
+                                        <thead>
+                                            <tr>
+                                                <th width="10%">Boxes</th>
+                                                <th>Product Details</th>
+                                                <th class="text-center">Location</th>
+                                                <th class="text-center">Total Qty</th>
+                                                <th class="text-right">Price</th>
+                                                <th class="text-right">Total</th>
+                                                <th class="text-right">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($items as $item)
+                                                <tr>
+                                                    <td>
+                                                        <span
+                                                            class="badge {{ $item->status == 'Scanned' ? 'badge-success' : ($item->status == 'Partial' ? 'badge-info' : 'badge-primary') }}">
+                                                            {{ $item->scanned_box_qty }} / {{ $item->box_count }} Boxes
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <strong>{{ $item->product_name }}</strong><br>
+                                                        <small style="color:#666;">
+                                                            Design: {{ $item->design_number }} | Color: {{ $item->color_name }} |
+                                                            Set:
+                                                            {{ $item->size_set_name }} | Barcode: {{ $item->barcode }}
+                                                            @if(isset($item->fitting_name) && $item->fitting_name) | Fit:
+                                                            {{ $item->fitting_name }} @endif
+                                                            @if(isset($item->pattern_name) && $item->pattern_name) | Pat:
+                                                            {{ $item->pattern_name }} @endif
+                                                        </small>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge badge-light border">WH: {{ $item->warehouse_name }}</span><br>
+                                                        <span class="badge badge-light border">Rack: {{ $item->rack_name }}</span>
+                                                    </td>
+                                                    <td class="text-center font-weight-bold">{{ $item->total_qty }} pcs</td>
+                                                    <td class="text-right">₹{{ number_format($item->selling_price, 2) }}</td>
+                                                    <td class="text-right font-weight-bold text-primary">
+                                                        ₹{{ number_format($item->total_qty * $item->selling_price, 2) }}</td>
+                                                    <td class="text-right">
+                                                        @if($item->status == 'Dispatched')
+                                                            <span class="badge badge-success"><i
+                                                                    class="fas fa-check mr-1"></i>{{ $item->status }}</span>
+                                                        @elseif($item->status == 'Scanned')
+                                                            <span class="badge badge-info"><i
+                                                                    class="fas fa-barcode mr-1"></i>{{ $item->status }}</span>
+                                                        @else
+                                                            <span class="badge badge-secondary">{{ $item->status }}</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    @endif
                                 </table>
                             </div>
                         </div>

@@ -11,6 +11,7 @@
                         Agent: <strong>{{ $dispatch->agent->name ?? 'Direct' }}</strong></p>
                 </div>
                 <div class="d-flex align-items-center">
+                    @if(!$isFabric)
                     <div class="mr-3">
                         <select id="brandSelect" class="form-control form-control-sm shadow-sm"
                             style="border-radius: 8px; min-width: 150px; height: 38px;">
@@ -19,6 +20,7 @@
                             <option value="1">Snapkid</option>
                         </select>
                     </div>
+                    @endif
                     <button type="button" class="btn btn-outline-warning shadow-sm px-4 mr-2"
                         style="border-radius: 8px;" data-toggle="modal" data-target="#editInvoiceModal">
                         <i class="fas fa-edit mr-2"></i> EDIT INVOICE
@@ -118,15 +120,18 @@
                         </div>
                     </div>
                     @php
-                        $overallQty = $dispatch->orders->flatMap(function ($o) use ($dispatch) {
-                            return $o->items->where('agent_order_dispatch_id', $dispatch->id);
-                        })->sum('quantity');
+                        $overallQty = $groupedItems->sum('total_qty');
+                        $overallFabricMeters = $fabricItems->sum('meter');
                     @endphp
                     <div class="col-md-3">
                         <div class="card shadow-sm border-0 h-100">
                             <div class="card-body text-center py-4">
                                 <h6 class="text-muted font-weight-bold text-uppercase mb-2">Total Units</h6>
-                                <h4 class="font-weight-bold mb-0 text-primary">{{ number_format($overallQty) }} PCs</h4>
+                                <h4 class="font-weight-bold mb-0 text-primary">
+                                    @if($overallQty > 0) {{ number_format($overallQty) }} PCs @endif
+                                    @if($overallQty > 0 && $overallFabricMeters > 0) + @endif
+                                    @if($overallFabricMeters > 0) {{ number_format($overallFabricMeters, 2) }} m @endif
+                                </h4>
                             </div>
                         </div>
                     </div>
@@ -209,12 +214,17 @@
                 @foreach($dispatch->orders as $order)
                     @php
                         $sessionItems = $order->items->where('agent_order_dispatch_id', $dispatch->id);
-                        if ($sessionItems->isEmpty())
+                        $sessionFabricItems = $fabricItems->where('agent_order_id', $order->id);
+                        
+                        if ($sessionItems->isEmpty() && $sessionFabricItems->isEmpty())
                             continue;
 
                         $orderDispatchedQty = $sessionItems->sum('quantity');
+                        $orderDispatchedMeters = $sessionFabricItems->sum('meter');
                         $orderSubtotal = $sessionItems->sum(function ($i) {
                             return $i->quantity * $i->selling_price;
+                        }) + $sessionFabricItems->sum(function ($i) {
+                            return $i->meter * $i->selling_price;
                         });
                     @endphp
 
@@ -226,26 +236,39 @@
                                     target="_blank">#ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</a>
                             </h5>
                             <div class="text-right">
-                                <span class="badge badge-light border px-3 py-2 mr-2"
-                                    style="font-size: 14px;">{{ number_format($orderDispatchedQty) }} PCs</span>
-                                <span class="badge badge-success px-3 py-2"
-                                    style="font-size: 14px;">₹{{ number_format($orderSubtotal, 2) }}</span>
+                                <span class="badge badge-light border px-3 py-2 mr-2" style="font-size: 14px;">
+                                    @if($orderDispatchedQty > 0) {{ number_format($orderDispatchedQty) }} PCs @endif
+                                    @if($orderDispatchedQty > 0 && $orderDispatchedMeters > 0) + @endif
+                                    @if($orderDispatchedMeters > 0) {{ number_format($orderDispatchedMeters, 2) }} m @endif
+                                </span>
+                                <span class="badge badge-success px-3 py-2" style="font-size: 14px;">₹{{ number_format($orderSubtotal, 2) }}</span>
                             </div>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table class="table table-striped table-hover mb-0 text-nowrap">
                                     <thead class="bg-light">
-                                        <tr>
-                                            <th>Design #</th>
-                                            <th>Product Name</th>
-                                            <th>Color</th>
-                                            <th>Size Set</th>
-                                            <th class="text-center">Boxes</th>
-                                            <th class="text-center">Total Pcs</th>
-                                            <th class="text-right">Price/Pc</th>
-                                            <th class="text-right">Total Amount</th>
-                                        </tr>
+                                        @if($sessionItems->isNotEmpty())
+                                            <tr>
+                                                <th>Design #</th>
+                                                <th>Product Name</th>
+                                                <th>Color</th>
+                                                <th>Size Set</th>
+                                                <th class="text-center">Boxes</th>
+                                                <th class="text-center">Total Pcs</th>
+                                                <th class="text-right">Price/Pc</th>
+                                                <th class="text-right">Total Amount</th>
+                                            </tr>
+                                        @else
+                                            <tr>
+                                                <th>Roll #</th>
+                                                <th>Fabric Name</th>
+                                                <th class="text-center">Batch No</th>
+                                                <th class="text-center">Meters</th>
+                                                <th class="text-right">Price/m</th>
+                                                <th class="text-right">Total Amount</th>
+                                            </tr>
+                                        @endif
                                     </thead>
                                     <tbody>
                                         @foreach($sessionItems as $item)
@@ -262,6 +285,17 @@
                                                 <td class="text-right text-muted">₹{{ number_format($item->selling_price, 2) }}</td>
                                                 <td class="text-right font-weight-bold text-success" style="font-size: 15px;">
                                                     ₹{{ number_format($item->quantity * $item->selling_price, 2) }}</td>
+                                            </tr>
+                                        @endforeach
+
+                                        @foreach($sessionFabricItems as $fItem)
+                                            <tr>
+                                                <td><span class="badge badge-primary">{{ $fItem->roll_number }}</span></td>
+                                                <td><div class="font-weight-bold text-dark">{{ $fItem->fabric_name }}</div></td>
+                                                <td class="text-center">{{ $fItem->batch_no }}</td>
+                                                <td class="text-center font-weight-bold" style="font-size: 15px;">{{ number_format($fItem->meter, 2) }} m</td>
+                                                <td class="text-right text-muted">₹{{ number_format($fItem->selling_price, 2) }}</td>
+                                                <td class="text-right font-weight-bold text-success" style="font-size: 15px;">₹{{ number_format($fItem->meter * $fItem->selling_price, 2) }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>

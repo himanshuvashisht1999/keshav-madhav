@@ -478,6 +478,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/create', [AdminAgentOrderController::class, 'create'])->name('create');
             Route::post('/store', [AdminAgentOrderController::class, 'store'])->name('store');
             Route::get('/get-shops', [AdminAgentOrderController::class, 'getShops'])->name('get-shops');
+            Route::get('/get-fabric-rolls/{id}', [AdminAgentOrderController::class, 'getFabricRolls'])->name('get-fabric-rolls');
             Route::get('/{id}/show', [AdminAgentOrderController::class, 'show'])->name('show');
             Route::get('/{id}/edit', [AdminAgentOrderController::class, 'edit'])->name('edit');
             Route::put('/{id}/update', [AdminAgentOrderController::class, 'update'])->name('update');
@@ -488,6 +489,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/{id}/process-scan', [AdminAgentOrderController::class, 'processScan'])->name('process-scan');
             Route::post('/{id}/remove-scan', [AdminAgentOrderController::class, 'removeScan'])->name('remove-scan');
             Route::post('/{id}/dispatch', [AdminAgentOrderController::class, 'dispatchOrder'])->name('dispatch');
+            Route::post('/{id}/dispatch-fabric', [AdminAgentOrderController::class, 'dispatchFabric'])->name('dispatch-fabric');
 
             // New Dispatch Session Routes
             Route::get('/dispatches', [AdminAgentOrderController::class, 'indexDispatches'])->name('dispatches.index');

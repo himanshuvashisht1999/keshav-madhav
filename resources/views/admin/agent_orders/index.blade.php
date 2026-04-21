@@ -56,14 +56,14 @@
                                     <option value="dispatched" {{ request('status') == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
                                 </select>
                             </div>
-                            <!-- <div class="col-md-2">
-                                <label class="small text-muted font-weight-bold">Payment Status</label>
-                                <select name="payment_status" class="form-control select2">
-                                    <option value="">Any Status</option>
-                                    <option value="paid" {{ request('payment_status') == 'paid' ? 'selected' : '' }}>PAID</option>
-                                    <option value="unpaid" {{ request('payment_status') == 'unpaid' ? 'selected' : '' }}>UNPAID</option>
+                            <div class="col-md-2">
+                                <label class="small text-muted font-weight-bold">Sale Type</label>
+                                <select name="sale_type" class="form-control select2">
+                                    <option value="">Any Type</option>
+                                    <option value="item" {{ request('sale_type') == 'item' ? 'selected' : '' }}>ITEM (Box)</option>
+                                    <option value="fabric" {{ request('sale_type') == 'fabric' ? 'selected' : '' }}>FABRIC (Roll)</option>
                                 </select>
-                            </div> -->
+                            </div>
                             <div class="col-md-2">
                                 <button type="submit" class="btn btn-primary px-4">
                                     <i class="fas fa-filter mr-1"></i> APPLY
@@ -119,20 +119,32 @@
                                             </div>
                                             @endif
                                         </td>
-                                        <td>#ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</td>
+                                        <td>
+                                            <a href="{{ route('admin.agent-orders.show', $order->id) }}" class="font-weight-bold">
+                                                #ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}
+                                            </a>
+                                        </td>
                                         <td><span class="badge badge-info">{{ $order->agent_name }}</span></td>
                                         <td><strong>{{ $order->shop_name }}</strong></td>
                                         <td>
                                             <div class="small">
                                                 <span class="badge badge-outline-secondary">{{ strtoupper($order->order_type ?? 'normal') }}</span><br>
-                                                <span class="text-muted">{{ ucfirst($order->sale_type ?? 'item') }}</span>
+                                                <a href="{{ route('admin.agent-orders.edit', $order->id) }}" class="text-decoration-none">
+                                                    <span class="text-muted font-weight-bold">{{ ucfirst($order->sale_type ?? 'item') }}</span>
+                                                </a>
                                             </div>
                                         </td>
-                                        <td>{{ number_format($order->total_qty, 0) }} Pcs</td>
+                                        <td>{{ number_format($order->total_qty, $order->sale_type == 'fabric' ? 2 : 0) }} {{ $order->sale_type == 'fabric' ? 'm' : 'Pcs' }}</td>
                                         <td class="text-center">
-                                            <span class="badge {{ $order->scanned_count == $order->total_boxes ? 'badge-success' : 'badge-info' }} px-3 py-2">
-                                                {{ $order->scanned_count }} / {{ $order->total_boxes }}
-                                            </span>
+                                            @if($order->sale_type == 'fabric')
+                                                <span class="badge badge-secondary px-3 py-2">
+                                                    {{ $order->total_boxes }} Rolls
+                                                </span>
+                                            @else
+                                                <span class="badge {{ $order->scanned_count == $order->total_boxes ? 'badge-success' : 'badge-info' }} px-3 py-2">
+                                                    {{ $order->scanned_count }} / {{ $order->total_boxes }}
+                                                </span>
+                                            @endif
                                         </td>
                                         <td><span
                                                 class="text-primary font-weight-bold">₹{{ number_format($order->grand_total, 2) }}</span>
