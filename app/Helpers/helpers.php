@@ -368,7 +368,7 @@ CLS
             $tspl .= "TEXT 440,340,\"2\",0,1,1,\"{$right->pattern_name}\"\n";
             $tspl .= "TEXT 440,380,\"2\",0,1,1,\"{$right->fitting_name}\"\n";
             $tspl .= "TEXT 440,420,\"2\",0,1,1,\"# {$right->design_number}\"\n";
-            $tspl .= "BARCODE 440,480,\"128\",100,1,0,2,3,\"{$right->barcode}\"\n";
+            $tspl .= "BARCODE 450,480,\"128\",100,1,0,2,3,\"{$right->barcode}\"\n";
         }
 
         $tspl .= "PRINT 1\n";
