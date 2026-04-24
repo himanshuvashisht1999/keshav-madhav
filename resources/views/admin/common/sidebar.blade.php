@@ -485,6 +485,41 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                             </a>
                                         </li>
                                         <li class="nav-item">
+                                            <a href="{{ route('admin.payment.master.machinery.index') }}"
+                                                class="nav-link {{ str_contains($page_url, 'payment/master/machinery') ? 'active' : '' }}">
+                                                <i class="fas fa-circle nav-icon" style="font-size: 12px;"></i>
+                                                <p>Machinery Master</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.payment.master.loan.index') }}"
+                                                class="nav-link {{ str_contains($page_url, 'payment/master/loan') ? 'active' : '' }}">
+                                                <i class="fas fa-circle nav-icon" style="font-size: 12px;"></i>
+                                                <p>Loan Master</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.payment.master.factory_head.index') }}"
+                                                class="nav-link {{ str_contains($page_url, 'payment/master/factory_head') ? 'active' : '' }}">
+                                                <i class="fas fa-circle nav-icon" style="font-size: 12px;"></i>
+                                                <p>Factory Head Master</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.payment.master.discount.index') }}"
+                                                class="nav-link {{ str_contains($page_url, 'payment/master/discount') ? 'active' : '' }}">
+                                                <i class="fas fa-circle nav-icon" style="font-size: 12px;"></i>
+                                                <p>Discount Master</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.payment.master.salary.index') }}"
+                                                class="nav-link {{ str_contains($page_url, 'payment/master/salary') ? 'active' : '' }}">
+                                                <i class="fas fa-circle nav-icon" style="font-size: 12px;"></i>
+                                                <p>Salary Master</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
                                             <a href="{{ route('admin.payment.master.capital.index') }}"
                                                 class="nav-link {{ str_contains($page_url, 'payment/master/capital') ? 'active' : '' }}">
                                                 <i class="fas fa-circle nav-icon" style="font-size: 12px;"></i>

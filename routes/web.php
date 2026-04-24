@@ -68,6 +68,11 @@ use App\Http\Controllers\Admin\Payment\Master\RentController as AdminRentControl
 use App\Http\Controllers\Admin\Payment\Master\TelephoneExpenseController as AdminTelephoneExpenseController;
 use App\Http\Controllers\Admin\Payment\Master\CommissionController as AdminCommissionController;
 use App\Http\Controllers\Admin\Payment\Master\HulayatiController as AdminHulayatiController;
+use App\Http\Controllers\Admin\Payment\Master\MachineryController as AdminMachineryController;
+use App\Http\Controllers\Admin\Payment\Master\LoanController as AdminLoanController;
+use App\Http\Controllers\Admin\Payment\Master\FactoryHeadController as AdminFactoryHeadController;
+use App\Http\Controllers\Admin\Payment\Master\DiscountController as AdminDiscountController;
+use App\Http\Controllers\Admin\Payment\Master\SalaryController as AdminSalaryController;
 use App\Http\Controllers\Admin\Payment\Master\CapitalController as AdminCapitalController;
 use App\Http\Controllers\Admin\Payment\Master\AdjustmentMasterController as AdminAdjustmentMasterController;
 use App\Http\Controllers\Admin\Payment\Master\FareExpenseController as AdminFareExpenseController;
@@ -1281,6 +1286,56 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                     Route::get('/edit', [AdminHulayatiController::class, 'edit'])->name('edit');
                     Route::post('/update', [AdminHulayatiController::class, 'update'])->name('update');
                     Route::get('/delete', [AdminHulayatiController::class, 'delete'])->name('delete');
+                });
+
+                Route::prefix('machinery')->name('machinery.')->group(function () {
+                    Route::get('/index', [AdminMachineryController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminMachineryController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminMachineryController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminMachineryController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminMachineryController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminMachineryController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminMachineryController::class, 'delete'])->name('delete');
+                });
+
+                Route::prefix('loan')->name('loan.')->group(function () {
+                    Route::get('/index', [AdminLoanController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminLoanController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminLoanController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminLoanController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminLoanController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminLoanController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminLoanController::class, 'delete'])->name('delete');
+                });
+
+                Route::prefix('factory_head')->name('factory_head.')->group(function () {
+                    Route::get('/index', [AdminFactoryHeadController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminFactoryHeadController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminFactoryHeadController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminFactoryHeadController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminFactoryHeadController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminFactoryHeadController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminFactoryHeadController::class, 'delete'])->name('delete');
+                });
+
+                Route::prefix('discount')->name('discount.')->group(function () {
+                    Route::get('/index', [AdminDiscountController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminDiscountController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminDiscountController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminDiscountController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminDiscountController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminDiscountController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminDiscountController::class, 'delete'])->name('delete');
+                });
+
+                Route::prefix('salary')->name('salary.')->group(function () {
+                    Route::get('/index', [AdminSalaryController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminSalaryController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminSalaryController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminSalaryController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminSalaryController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminSalaryController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminSalaryController::class, 'delete'])->name('delete');
                 });
 
                 Route::prefix('capital')->name('capital.')->group(function () {

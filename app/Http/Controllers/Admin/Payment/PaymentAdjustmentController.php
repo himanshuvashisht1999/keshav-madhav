@@ -219,7 +219,7 @@ class PaymentAdjustmentController extends Controller
                         } else {
                             // Update Master Item Balance (regular flow)
                             if (isset($item->balance) || isset($item->amount)) {
-                                $isSpecial = in_array($masterId, [1, 12, 19]); // Committee, Bank, Hulayati
+                                $isSpecial = in_array($masterId, [1, 12, 19, 26, 27, 28, 29, 30]); // Committee, Bank, Hulayati, Machinery, Loan, Factory Head, Discount, Salary
                                 
                                 if (isset($item->balance)) {
                                     if ($type == 'debit') {
@@ -600,7 +600,7 @@ class PaymentAdjustmentController extends Controller
                         $item->save();
                     } else {
                         if (isset($item->balance) || isset($item->amount)) {
-                            $isSpecial = in_array($adj->adjustment_master_id, [1, 12, 19]);
+                            $isSpecial = in_array($adj->adjustment_master_id, [1, 12, 19, 26, 27, 28, 29, 30]);
 
                             if (isset($item->balance)) {
                                 if ($type == 'debit') {
