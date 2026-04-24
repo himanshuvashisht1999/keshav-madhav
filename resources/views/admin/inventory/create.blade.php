@@ -275,6 +275,9 @@
                                 <i class="fas fa-barcode"></i> Stock Generate #1
                             </span>
                             <div class="header-actions">
+                                <button type="button" class="btn btn-outline-primary btn-sm btn-duplicate-item mr-2" data-card-index="0">
+                                    <i class="fas fa-copy mr-1"></i> Duplicate
+                                </button>
                                 <button type="button" class="btn btn-info btn-sm btn-stock-consume" data-card-index="0">
                                     <i class="fas fa-box-open mr-1"></i> Stock Consume
                                 </button>
@@ -469,159 +472,268 @@
 
                 initSelect2($('#itemsContainer'));
 
-                $('#addNewItem').on('click', function () {
+                function addItem(values = null) {
                     itemCount++;
+                    let idx = itemCount;
                     let newItem = `
-                                    <div class="inventory-item-card animate-in" data-index="${itemCount}">
-                                        <div class="card-header-premium">
-                                            <span class="item-number">
-                                                <i class="fas fa-barcode"></i> Stock Generate #${itemCount + 1}
-                                            </span>
-                                            <div class="header-actions">
-                                                <button type="button" class="btn btn-info btn-sm btn-stock-consume" data-card-index="${itemCount}">
-                                                    <i class="fas fa-box-open mr-1"></i> Stock Consume
-                                                </button>
-                                                <button type="button" class="btn-remove-item ml-2">
-                                                    <i class="fas fa-trash-alt mr-1"></i> Remove
-                                                </button>
+                        <div class="inventory-item-card animate-in" data-index="${idx}">
+                            <div class="card-header-premium">
+                                <span class="item-number">
+                                    <i class="fas fa-barcode"></i> Stock Generate #${idx + 1}
+                                </span>
+                                <div class="header-actions">
+                                    <button type="button" class="btn btn-outline-primary btn-sm btn-duplicate-item mr-2" data-card-index="${idx}">
+                                        <i class="fas fa-copy mr-1"></i> Duplicate
+                                    </button>
+                                    <button type="button" class="btn btn-info btn-sm btn-stock-consume" data-card-index="${idx}">
+                                        <i class="fas fa-box-open mr-1"></i> Stock Consume
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm btn-remove-item ml-2">
+                                        <i class="fas fa-trash-alt mr-1"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body-premium">
+                                <div class="consume-selection-row mb-4 p-3 bg-light rounded" style="display: none; border: 1px dashed var(--primary-color);">
+                                    <h6 class="font-weight-bold text-primary mb-2"><i class="fas fa-search mr-1"></i> Search Domestic Inventory</h6>
+                                    <p class="small text-muted mb-3">Selecting from here will <b>subtract</b> from this source and <b>add</b> to your new entry below.</p>
+                                    <input type="hidden" name="products[${idx}][consume_source_id]" class="consume-source-id">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label class="label-premium text-primary">Design No</label>
+                                            <select class="form-control select2 consume-design-select">
+                                                <option value="">Select Design</option>
+                                                @foreach($products as $product)
+                                                    <option value="{{ $product->id }}">
+                                                        {{ $product->design_number }} ({{ $product->series->name ?? '' }} {{ $product->name_of_garment }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="label-premium text-primary">Pattern</label>
+                                            <select class="form-control select2 consume-pattern-select">
+                                                <option value="">Pattern</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="label-premium text-primary">Fitting</label>
+                                            <select class="form-control select2 consume-fitting-select">
+                                                <option value="">Fitting</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="label-premium text-primary">Warehouse</label>
+                                            <select class="form-control select2 consume-warehouse-select">
+                                                <option value="">Warehouse</option>
+                                                @foreach($storerooms as $room)
+                                                    <option value="{{ $room->id }}">{{ $room->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="label-premium text-primary">Rack</label>
+                                            <select class="form-control select2 consume-rack-select">
+                                                <option value="">Rack</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-md-3">
+                                            <label class="label-premium text-primary">Size Set</label>
+                                            <select class="form-control select2 consume-size-set-select">
+                                                <option value="">Size Set</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="label-premium text-primary">Color</label>
+                                            <select class="form-control select2 consume-color-select">
+                                                <option value="">Color</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 d-flex align-items-end justify-content-end">
+                                            <div class="mr-4 text-right">
+                                                <label class="label-premium text-success d-block mb-0">Total Available Stock</label>
+                                                <div class="consume-available-display font-weight-bold text-success" style="font-size: 1.5rem; line-height: 1;">-</div>
                                             </div>
                                         </div>
-                                        <div class="card-body-premium">
-                                             <div class="consume-selection-row mb-4 p-3 bg-light rounded" style="display: none; border: 1px dashed var(--primary-color);">
-                                                <h6 class="font-weight-bold text-primary mb-2"><i class="fas fa-search mr-1"></i> Search Domestic Inventory</h6>
-                                                <p class="small text-muted mb-3">Selecting from here will <b>subtract</b> from this source and <b>add</b> to your new entry below.</p>
-                                                <input type="hidden" name="products[${itemCount}][consume_source_id]" class="consume-source-id">
-                                                <div class="row">
-                                                    <div class="col-md-3">
-                                                        <label class="label-premium text-primary">Design No</label>
-                                                        <select class="form-control select2 consume-design-select">
-                                                            <option value="">Select Design</option>
-                                                            @foreach($products as $product)
-                                                                <option value="{{ $product->id }}">
-                                                                    {{ $product->design_number }} ({{ $product->series->name ?? '' }} {{ $product->name_of_garment }})
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-2">
-                                                        <label class="label-premium text-primary">Pattern</label>
-                                                        <select class="form-control select2 consume-pattern-select">
-                                                            <option value="">Pattern</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-2">
-                                                        <label class="label-premium text-primary">Fitting</label>
-                                                        <select class="form-control select2 consume-fitting-select">
-                                                            <option value="">Fitting</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-2">
-                                                        <label class="label-premium text-primary">Warehouse</label>
-                                                        <select class="form-control select2 consume-warehouse-select">
-                                                            <option value="">Warehouse</option>
-                                                            @foreach($storerooms as $room)
-                                                                <option value="{{ $room->id }}">{{ $room->name }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-3">
-                                                        <label class="label-premium text-primary">Rack</label>
-                                                        <select class="form-control select2 consume-rack-select">
-                                                            <option value="">Rack</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                <div class="row mt-3">
-                                                    <div class="col-md-3">
-                                                        <label class="label-premium text-primary">Size Set</label>
-                                                        <select class="form-control select2 consume-size-set-select">
-                                                            <option value="">Size Set</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-3">
-                                                        <label class="label-premium text-primary">Color</label>
-                                                        <select class="form-control select2 consume-color-select">
-                                                            <option value="">Color</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-6 d-flex align-items-end justify-content-end">
-                                                        <div class="mr-4 text-right">
-                                                            <label class="label-premium text-success d-block mb-0">Total Available Stock</label>
-                                                            <div class="consume-available-display font-weight-bold text-success" style="font-size: 1.5rem; line-height: 1;">-</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                    </div>
+                                </div>
 
-                                            <div class="row">
-                                                <div class="col-md-3 input-group-premium">
-                                                    <label class="label-premium">Design No *</label>
-                                                    <select name="products[${itemCount}][product_id]" class="form-control select2 design-select" required>
-                                                        <option value="">Select Design</option>
-                                                        @foreach($products as $product)
-                                                            <option value="{{ $product->id }}" data-name="{{ $product->name_of_garment }}">{{ $product->design_number }} ({{ $product->series->name ?? '' }} {{ $product->name_of_garment }})</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <label class="label-premium">Pattern *</label>
-                                                    <select name="products[${itemCount}][pattern_id]" class="form-control select2 pattern-select" required>
-                                                        <option value="">Pattern</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <label class="label-premium">Fitting *</label>
-                                                    <select name="products[${itemCount}][fitting_id]" class="form-control select2 fitting-select" required>
-                                                        <option value="">Fitting</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-3 input-group-premium">
-                                                    <label class="label-premium">Warehouse *</label>
-                                                    <select name="products[${itemCount}][warehouse_id]" class="form-control select2 warehouse-select" required>
-                                                        <option value="">Warehouse</option>
-                                                        @foreach($storerooms as $room)
-                                                            <option value="{{ $room->id }}">{{ $room->name }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <label class="label-premium">Rack</label>
-                                                    <select name="products[${itemCount}][rack_id]" class="form-control select2 rack-select" required>
-                                                        <option value="">Rack</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col-md-3 input-group-premium">
-                                                    <label class="label-premium">Size Set *</label>
-                                                    <select name="products[${itemCount}][size_set_id]" class="form-control select2 size-set-select" required>
-                                                        <option value="">Select Size Set</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-3 input-group-premium">
-                                                    <label class="label-premium">Color *</label>
-                                                    <select name="products[${itemCount}][color_id]" class="form-control select2 color-select" required>
-                                                        <option value="">Color</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <label class="label-premium">Total Boxes *</label>
-                                                    <input type="number" name="products[${itemCount}][total_boxes]" class="form-control form-control-premium total-boxes-input" placeholder="Qty" min="1" required>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <label class="label-premium">Pcs / Box</label>
-                                                    <input type="number" name="products[${itemCount}][pieces_per_box]" class="form-control form-control-premium bg-light" placeholder="Pcs/Box" readonly required>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <label class="label-premium">MRP *</label>
-                                                    <input type="number" name="products[${itemCount}][mrp]" class="form-control form-control-premium mrp-input bg-light" placeholder="Price" step="0.01" min="0" readonly required>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>`;
+                                <div class="row">
+                                    <div class="col-md-3 input-group-premium">
+                                        <label class="label-premium">Design No *</label>
+                                        <select name="products[${idx}][product_id]" class="form-control select2 design-select" required>
+                                            <option value="">Select Design</option>
+                                            @foreach($products as $product)
+                                                <option value="{{ $product->id }}" data-name="{{ $product->name_of_garment }}">{{ $product->design_number }} ({{ $product->series->name ?? '' }} {{ $product->name_of_garment }})</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 input-group-premium">
+                                        <label class="label-premium">Pattern *</label>
+                                        <select name="products[${idx}][pattern_id]" class="form-control select2 pattern-select" required>
+                                            <option value="">Pattern</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 input-group-premium">
+                                        <label class="label-premium">Fitting *</label>
+                                        <select name="products[${idx}][fitting_id]" class="form-control select2 fitting-select" required>
+                                            <option value="">Fitting</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 input-group-premium">
+                                        <label class="label-premium">Warehouse *</label>
+                                        <select name="products[${idx}][warehouse_id]" class="form-control select2 warehouse-select" required>
+                                            <option value="">Warehouse</option>
+                                            @foreach($storerooms as $room)
+                                                <option value="{{ $room->id }}">{{ $room->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 input-group-premium">
+                                        <label class="label-premium">Rack</label>
+                                        <select name="products[${idx}][rack_id]" class="form-control select2 rack-select" required>
+                                            <option value="">Rack</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-3 input-group-premium">
+                                        <label class="label-premium">Size Set *</label>
+                                        <select name="products[${idx}][size_set_id]" class="form-control select2 size-set-select" required>
+                                            <option value="">Select Size Set</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 input-group-premium">
+                                        <label class="label-premium">Color *</label>
+                                        <select name="products[${idx}][color_id]" class="form-control select2 color-select" required>
+                                            <option value="">Color</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 input-group-premium">
+                                        <label class="label-premium">Total Boxes *</label>
+                                        <input type="number" name="products[${idx}][total_boxes]" class="form-control form-control-premium total-boxes-input" placeholder="Qty" min="1" required>
+                                    </div>
+                                    <div class="col-md-2 input-group-premium">
+                                        <label class="label-premium">Pcs / Box</label>
+                                        <input type="number" name="products[${idx}][pieces_per_box]" class="form-control form-control-premium bg-light" placeholder="Pcs/Box" readonly required>
+                                    </div>
+                                    <div class="col-md-2 input-group-premium">
+                                        <label class="label-premium">MRP *</label>
+                                        <input type="number" name="products[${idx}][mrp]" class="form-control form-control-premium mrp-input bg-light" placeholder="Price" step="0.01" min="0" readonly required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                    
                     $('#itemsContainer').append(newItem);
-                    initSelect2($('#itemsContainer').children().last());
+                    let newCard = $('#itemsContainer').find(`.inventory-item-card[data-index="${idx}"]`);
+                    initSelect2(newCard);
+
+                    if (values) {
+                        populateCard(newCard, values);
+                    }
+
                     updateItemNumbers();
+                }
+
+                let isPopulating = false;
+
+                function populateCard(card, values) {
+                    if (!values.product_id) return;
+                    
+                    isPopulating = true;
+                    
+                    // 1. Set variants data immediately if available
+                    if (values.variants) {
+                        card.data('variants', values.variants);
+                    }
+
+                    // 2. Set Product
+                    card.find('.design-select').val(values.product_id).trigger('change.select2');
+                    
+                    // 3. Set Pattern & Fitting
+                    if (values.pattern_id) {
+                        card.find('.pattern-select').empty().append(`<option value="${values.pattern_id}" selected>${values.pattern_name || 'Pattern'}</option>`).trigger('change.select2');
+                    }
+                    if (values.fitting_id) {
+                        card.find('.fitting-select').empty().append(`<option value="${values.fitting_id}" selected>${values.fitting_name || 'Fitting'}</option>`).trigger('change.select2');
+                    }
+
+                    // 4. Set Warehouse
+                    if (values.warehouse_id) {
+                        card.find('.warehouse-select').val(values.warehouse_id).trigger('change.select2');
+                    }
+
+                    // 5. Populate dropdowns and set values
+                    // If we have variants, we can populate Size/Color dropdowns immediately so they are editable
+                    if (values.variants) {
+                        let sizeSelect = card.find('.size-set-select');
+                        sizeSelect.empty().append('<option value="">Select Size Set</option>');
+                        values.variants.forEach(function (v) {
+                            sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                        });
+                        sizeSelect.val(values.size_set_id).trigger('change.select2');
+
+                        let colorSelect = card.find('.color-select');
+                        colorSelect.empty().append('<option value="">Color</option>');
+                        let variant = values.variants.find(v => v.size_set_id == values.size_set_id);
+                        if (variant) {
+                            variant.colors.forEach(function (c) {
+                                colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
+                            });
+                        }
+                        colorSelect.val(values.color_id).trigger('change.select2');
+                    } else {
+                        // Fallback if no variants (shouldn't happen with duplicate)
+                        if (values.size_set_id) {
+                            card.find('.size-set-select').empty().append(`<option value="${values.size_set_id}" selected>${values.size_set_name || 'Size Set'}</option>`).trigger('change.select2');
+                        }
+                        if (values.color_id) {
+                            card.find('.color-select').empty().append(`<option value="${values.color_id}" selected>${values.color_name || 'Color'}</option>`).trigger('change.select2');
+                        }
+                    }
+
+                    // Set Rack
+                    if (values.rack_id) {
+                        card.find('.rack-select').empty().append(`<option value="${values.rack_id}" selected>${values.rack_name || 'Rack'}</option>`).trigger('change.select2');
+                    }
+                    
+                    // Set Numeric Inputs
+                    if (values.total_boxes) card.find('.total-boxes-input').val(values.total_boxes);
+                    if (values.pieces_per_box) card.find('input[name*="pieces_per_box"]').val(values.pieces_per_box);
+                    if (values.mrp) card.find('.mrp-input').val(values.mrp);
+
+                    isPopulating = false;
+                }
+
+                $('#addNewItem').on('click', function () {
+                    addItem();
+                });
+
+                $(document).on('click', '.btn-duplicate-item', function () {
+                    let sourceCard = $(this).closest('.inventory-item-card');
+                    let values = {
+                        product_id: sourceCard.find('.design-select').val(),
+                        pattern_id: sourceCard.find('.pattern-select').val(),
+                        pattern_name: sourceCard.find('.pattern-select option:selected').text(),
+                        fitting_id: sourceCard.find('.fitting-select').val(),
+                        fitting_name: sourceCard.find('.fitting-select option:selected').text(),
+                        warehouse_id: sourceCard.find('.warehouse-select').val(),
+                        rack_id: sourceCard.find('.rack-select').val(),
+                        rack_name: sourceCard.find('.rack-select option:selected').text(),
+                        size_set_id: sourceCard.find('.size-set-select').val(),
+                        size_set_name: sourceCard.find('.size-set-select option:selected').text(),
+                        color_id: sourceCard.find('.color-select').val(),
+                        color_name: sourceCard.find('.color-select option:selected').text(),
+                        total_boxes: sourceCard.find('.total-boxes-input').val(),
+                        pieces_per_box: sourceCard.find('input[name*="pieces_per_box"]').val(),
+                        mrp: sourceCard.find('.mrp-input').val(),
+                        variants: sourceCard.data('variants')
+                    };
+                    addItem(values);
+                    toastr.info('Item duplicated. You can now modify specific fields.');
                 });
 
                 $(document).on('click', '.btn-remove-item', function () {
@@ -638,6 +750,7 @@
                 }
 
                 $(document).on('change', '.design-select', function () {
+                    if (isPopulating) return;
                     let productId = $(this).val();
                     let card = $(this).closest('.inventory-item-card');
                     let patternSelect = card.find('.pattern-select');
@@ -677,6 +790,7 @@
                 });
 
                 $(document).on('change', '.size-set-select', function () {
+                    if (isPopulating) return;
                     let sizeSetId = $(this).val();
                     let card = $(this).closest('.inventory-item-card');
                     let variants = card.data('variants') || [];
@@ -704,6 +818,7 @@
                 });
 
                 $(document).on('change', '.warehouse-select', function () {
+                    if (isPopulating) return;
                     let warehouseId = $(this).val();
                     let card = $(this).closest('.inventory-item-card');
                     let rackSelect = card.find('.rack-select');
