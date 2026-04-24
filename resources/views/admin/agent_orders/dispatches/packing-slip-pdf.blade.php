@@ -63,6 +63,8 @@
         if($showSurgical && $showSnapkid) $brandTitle = "SNAPKID";
         elseif($showSurgical) $brandTitle = "SURGICAL";
         elseif($showSnapkid) $brandTitle = "SNAPKID";
+
+        $party = $dispatch->party_type === 'vendor' ? $dispatch->vendor : $dispatch->shop;
     @endphp
 
     <div class="main-container">
@@ -78,9 +80,9 @@
             <tr>
                 <td width="60%">
                     <div class="party-label">Party Details :</div>
-                    <div class="party-name">{{ $dispatch->shop->name ?? 'N/A' }}</div>
-                    <div>{{ $dispatch->shop->address ?? '' }}</div>
-                    <div>Phone: {{ $dispatch->shop->phone ?? 'N/A' }}</div>
+                    <div class="party-name">{{ $party->name ?? 'N/A' }}</div>
+                    <div>{{ $party->address ?? '' }}</div>
+                    <div>Phone: {{ $party->phone ?? 'N/A' }}</div>
                 </td>
                 <td width="40%">
                     <table width="100%" style="border-collapse: collapse;">

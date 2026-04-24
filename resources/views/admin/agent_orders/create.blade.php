@@ -42,12 +42,38 @@
                                     @csrf
                                     <input type="hidden" name="order_type" value="{{ request('order_type', 'normal') }}">
                                     <div class="form-group mb-4">
-                                        <label class="text-muted small font-weight-bold text-uppercase">Select Party / Customer <span class="text-danger">*</span></label>
-                                        <select name="master_customer_id" id="customerSelect" class="form-control select2 @error('master_customer_id') is-invalid @enderror" required>
+                                        <label class="text-muted small font-weight-bold text-uppercase">Party Type <span class="text-danger">*</span></label>
+                                        <div class="d-flex align-items-center">
+                                            <div class="custom-control custom-radio mr-4">
+                                                <input class="custom-control-input" type="radio" id="typeCustomer" name="party_type" value="customer" {{ old('party_type', request('party_type', 'customer')) == 'customer' ? 'checked' : '' }}>
+                                                <label for="typeCustomer" class="custom-control-label font-weight-normal">Customer</label>
+                                            </div>
+                                            <div class="custom-control custom-radio">
+                                                <input class="custom-control-input" type="radio" id="typeVendor" name="party_type" value="vendor" {{ old('party_type', request('party_type')) == 'vendor' ? 'checked' : '' }}>
+                                                <label for="typeVendor" class="custom-control-label font-weight-normal">Vendor</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group mb-4" id="customerWrapper" style="{{ old('party_type', request('party_type', 'customer')) == 'customer' ? '' : 'display:none;' }}">
+                                        <label class="text-muted small font-weight-bold text-uppercase">Select Customer <span class="text-danger">*</span></label>
+                                        <select name="master_customer_id" id="customerSelect" class="form-control select2 @error('master_customer_id') is-invalid @enderror">
                                             <option value="">-- Choose Customer --</option>
                                             @foreach($shops as $shop_item)
-                                                <option value="{{ $shop_item->id }}" {{ old('master_customer_id') == $shop_item->id ? 'selected' : '' }}>
+                                                <option value="{{ $shop_item->id }}" {{ old('master_customer_id', request('master_customer_id')) == $shop_item->id ? 'selected' : '' }}>
                                                     {{ $shop_item->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group mb-4" id="vendorWrapper" style="{{ old('party_type', request('party_type')) == 'vendor' ? '' : 'display:none;' }}">
+                                        <label class="text-muted small font-weight-bold text-uppercase">Select Vendor <span class="text-danger">*</span></label>
+                                        <select name="master_vendor_id" id="vendorSelect" class="form-control select2 @error('master_vendor_id') is-invalid @enderror">
+                                            <option value="">-- Choose Vendor --</option>
+                                            @foreach($vendors as $vendor_item)
+                                                <option value="{{ $vendor_item->id }}" {{ old('master_vendor_id', request('master_vendor_id')) == $vendor_item->id ? 'selected' : '' }}>
+                                                    {{ $vendor_item->name }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -107,7 +133,9 @@
                             <div class="card-body p-3">
                                 <form method="GET" action="{{ route('admin.agent-orders.create') }}" id="filterForm">
                                     <input type="hidden" name="sales_agent_id" value="{{ $agent->id }}">
-                                    <input type="hidden" name="master_customer_id" value="{{ $shop->id }}">
+                                    <input type="hidden" name="party_type" value="{{ request('party_type', 'customer') }}">
+                                    <input type="hidden" name="master_customer_id" value="{{ request('master_customer_id') }}">
+                                    <input type="hidden" name="master_vendor_id" value="{{ request('master_vendor_id') }}">
                                     <input type="hidden" name="order_date" value="{{ request('order_date') }}">
                                     <input type="hidden" name="order_type" value="{{ request('order_type') }}">
                                     <div class="row align-items-end">
@@ -314,6 +342,19 @@
         }
 
         // Agent selection removed - automatically determined based on customer and order type
+        $('input[name="party_type"]').change(function() {
+            if (this.value === 'customer') {
+                $('#customerWrapper').show();
+                $('#vendorWrapper').hide();
+                $('#customerSelect').attr('required', true);
+                $('#vendorSelect').attr('required', false);
+            } else {
+                $('#customerWrapper').hide();
+                $('#vendorWrapper').show();
+                $('#customerSelect').attr('required', false);
+                $('#vendorSelect').attr('required', true);
+            }
+        });
 
         @if(isset($boxes))
             let cart = new Map();
@@ -516,10 +557,12 @@
                             data: {
                                 _token: "{{ csrf_token() }}",
                                 sales_agent_id: "{{ $agent->id }}",
-                                master_customer_id: "{{ $shop->id }}",
+                                party_type: "{{ request('party_type', 'customer') }}",
+                                master_customer_id: "{{ request('master_customer_id') }}",
+                                master_vendor_id: "{{ request('master_vendor_id') }}",
                                 order_date: "{{ request('order_date', date('Y-m-d')) }}",
                                 order_type: "{{ request('order_type', 'normal') }}",
-                                 sale_type: "{{ request('sale_type', 'item') }}",
+                                sale_type: "{{ request('sale_type', 'item') }}",
                                 variations: variations,
                                 expected_dispatch_date: $('#expectedDispatchDate').val(),
                                 discount_percentage: $('#discountPercentage').val(),

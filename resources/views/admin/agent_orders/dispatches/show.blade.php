@@ -7,7 +7,14 @@
                 <div>
                     <h1 class="m-0 font-weight-bold text-dark"><i class="fas fa-shipping-fast mr-2"></i> Dispatch
                         #DSP-{{ str_pad($dispatch->id, 5, '0', STR_PAD_LEFT) }}</h1>
-                    <p class="text-muted mb-0">Shop: <strong>{{ $dispatch->shop->name ?? 'N/A' }}</strong> &nbsp;|&nbsp;
+                    <p class="text-muted mb-0">Party: <strong>
+                            @if ($dispatch->party_type === 'vendor')
+                                {{ $dispatch->vendor->name ?? 'N/A' }} <span class="badge badge-warning shadow-sm ml-1"
+                                    style="font-size: 10px;">VENDOR</span>
+                            @else
+                                {{ $dispatch->shop->name ?? 'N/A' }}
+                            @endif
+                        </strong> &nbsp;|&nbsp;
                         Agent: <strong>{{ $dispatch->agent->name ?? 'Direct' }}</strong></p>
                 </div>
                 <div class="d-flex align-items-center">

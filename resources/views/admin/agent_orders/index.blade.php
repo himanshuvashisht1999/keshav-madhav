@@ -38,9 +38,9 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <label class="small text-muted font-weight-bold">Filter by Shop</label>
+                                <label class="small text-muted font-weight-bold">Filter by Party</label>
                                 <select name="shop_id" id="shop_id" class="form-control select2">
-                                    <option value="">All Shops</option>
+                                    <option value="">All Parties</option>
                                     @foreach($shops as $shop)
                                         <option value="{{ $shop->id }}" {{ request('shop_id') == $shop->id ? 'selected' : '' }}>
                                             {{ $shop->name }}

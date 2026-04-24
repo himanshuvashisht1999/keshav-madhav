@@ -11,7 +11,9 @@ class AgentOrder extends Model
 
     protected $fillable = [
         'sales_agent_id',
+        'party_type',
         'master_customer_id',
+        'master_vendor_id',
         'total_qty',
         'total_amount',
         'gst_percentage',
@@ -45,6 +47,19 @@ class AgentOrder extends Model
     public function shop()
     {
         return $this->belongsTo(MasterCustomer::class, 'master_customer_id');
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class, 'master_vendor_id');
+    }
+
+    public function party()
+    {
+        if ($this->party_type === 'vendor') {
+            return $this->vendor();
+        }
+        return $this->shop();
     }
 
     public function agent()

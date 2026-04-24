@@ -10,7 +10,8 @@
                     <div class="col-sm-6">
                         <ol class="breadcrumb float-sm-right">
                             <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('admin.payment.master.hulayati.index') }}">Manage Hulayati Master</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('admin.payment.master.hulayati.index') }}">Manage
+                                    Hulayati Master</a></li>
                             <li class="breadcrumb-item active">Create</li>
                         </ol>
                     </div>
@@ -28,21 +29,25 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Hulayati Name <span class="text-danger">*</span></label>
-                                        <input type="text" name="name" class="form-control" placeholder="Enter Hulayati Name" value="{{ old('name') }}" required>
+                                        <input type="text" name="name" class="form-control"
+                                            placeholder="Enter Hulayati Name" value="{{ old('name') }}" required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Balance</label>
-                                        <input type="number" step="0.01" name="balance" class="form-control" placeholder="Enter Balance" value="{{ old('balance', 0) }}">
+                                        <input type="number" step="0.01" name="balance" class="form-control"
+                                            placeholder="Enter Balance" value="{{ old('balance', 0) }}">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Balance Type</label>
                                         <select name="balance_type" class="form-control select2" style="width: 100%;">
-                                            <option value="Credit" {{ old('balance_type') == 'Credit' ? 'selected' : '' }}>Credit</option>
-                                            <option value="Debit" {{ old('balance_type') == 'Debit' ? 'selected' : '' }}>Debit</option>
+                                            <option value="Credit" {{ old('balance_type') == 'Credit' ? 'selected' : '' }}>
+                                                Credit</option>
+                                            <option value="Debit" {{ old('balance_type') == 'Debit' ? 'selected' : '' }}>Debit
+                                            </option>
                                         </select>
                                     </div>
                                 </div>

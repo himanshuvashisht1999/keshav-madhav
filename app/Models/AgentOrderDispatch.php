@@ -11,6 +11,8 @@ class AgentOrderDispatch extends Model
 
     protected $fillable = [
         'master_customer_id',
+        'party_type',
+        'master_vendor_id',
         'sales_agent_id',
         'dispatch_date',
         'lr_no',
@@ -54,6 +56,19 @@ class AgentOrderDispatch extends Model
     public function shop()
     {
         return $this->belongsTo(MasterCustomer::class, 'master_customer_id');
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class, 'master_vendor_id');
+    }
+
+    public function party()
+    {
+        if ($this->party_type === 'vendor') {
+            return $this->vendor();
+        }
+        return $this->shop();
     }
 
     public function agent()

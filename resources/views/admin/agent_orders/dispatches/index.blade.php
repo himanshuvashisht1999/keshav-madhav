@@ -22,10 +22,10 @@
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body p-3">
                         <form action="{{ route('admin.agent-orders.dispatches.index') }}" method="GET" class="row align-items-end">
-                            <div class="col-md-4">
-                                <label class="small text-muted font-weight-bold">Filter by Shop</label>
+                            <div class="col-md-3">
+                                <label class="small text-muted font-weight-bold">Filter by Party</label>
                                 <select name="shop_id" class="form-control select2">
-                                    <option value="">All Shops</option>
+                                    <option value="">All Parties</option>
                                     @foreach($shops as $shop)
                                         <option value="{{ $shop->id }}" {{ request('shop_id') == $shop->id ? 'selected' : '' }}>
                                             {{ $shop->name }}
@@ -33,8 +33,27 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="col-md-3">
+                                <label class="small text-muted font-weight-bold">Filter by Vendor</label>
+                                <select name="vendor_id" class="form-control select2">
+                                    <option value="">All Vendors</option>
+                                    @foreach($vendors as $vendor)
+                                        <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>
+                                            {{ $vendor->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary px-4">
+                                <label class="small text-muted font-weight-bold">From Date</label>
+                                <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="small text-muted font-weight-bold">To Date</label>
+                                <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary btn-block">
                                     <i class="fas fa-filter mr-1"></i> APPLY
                                 </button>
                             </div>
@@ -48,7 +67,7 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th>Dispatch ID</th>
-                                    <th>Shop Name</th>
+                                    <th>Party Name</th>
                                     <th>Agent</th>
                                     <th>LR No.</th>
                                     <th>Transport</th>
@@ -61,7 +80,15 @@
                                 @forelse($dispatches as $dispatch)
                                     <tr>
                                         <td>#DSP-{{ str_pad($dispatch->id, 5, '0', STR_PAD_LEFT) }}</td>
-                                        <td><strong>{{ $dispatch->shop->name ?? 'N/A' }}</strong></td>
+                                        <td>
+                                            <strong>
+                                                @if($dispatch->party_type === 'vendor')
+                                                    {{ $dispatch->vendor->name ?? 'N/A' }} <span class="badge badge-warning ml-1">Vendor</span>
+                                                @else
+                                                    {{ $dispatch->shop->name ?? 'N/A' }}
+                                                @endif
+                                            </strong>
+                                        </td>
                                         <td><span class="badge badge-info">{{ $dispatch->agent->name ?? 'Direct' }}</span></td>
                                         <td>{{ $dispatch->lr_no ?? 'Pending' }}</td>
                                         <td>{{ $dispatch->transport_name ?? 'N/A' }}</td>

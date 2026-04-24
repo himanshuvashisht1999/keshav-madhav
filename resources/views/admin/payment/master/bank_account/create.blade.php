@@ -10,7 +10,8 @@
                     <div class="col-sm-6">
                         <ol class="breadcrumb float-sm-right">
                             <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                            <li class="breadcrumb-item"><a href="{{route('admin.payment.master.bank_account.index')}}">Manage Bank
+                            <li class="breadcrumb-item"><a
+                                    href="{{route('admin.payment.master.bank_account.index')}}">Manage Bank
                                     Accounts</a></li>
                             <li class="breadcrumb-item active">Create</li>
                         </ol>
@@ -90,8 +91,10 @@
                                     <div class="form-group">
                                         <label>Balance Type</label>
                                         <select name="balance_type" class="form-control select2" style="width: 100%;">
-                                            <option value="Credit" {{old('balance_type') == 'Credit' ? 'selected' : ''}}>Credit</option>
-                                            <option value="Debit" {{old('balance_type') == 'Debit' ? 'selected' : ''}}>Debit</option>
+                                            <option value="Credit" {{old('balance_type') == 'Credit' ? 'selected' : ''}}>
+                                                Credit</option>
+                                            <option value="Debit" {{old('balance_type') == 'Debit' ? 'selected' : ''}}>Debit
+                                            </option>
                                         </select>
                                         @if ($errors->has('balance_type'))
                                             <span class="invalid-feedback d-block">{{ $errors->first('balance_type') }}</span>

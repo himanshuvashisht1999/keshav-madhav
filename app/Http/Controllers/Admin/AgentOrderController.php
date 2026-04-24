@@ -20,11 +20,16 @@ class AgentOrderController extends Controller
     {
         $agent_id = $request->get('sales_agent_id');
         $shop_id = $request->get('master_customer_id');
+        $vendor_id = $request->get('master_vendor_id');
+        $party_type = $request->get('party_type', 'customer');
 
-        if (!$agent_id || !$shop_id) {
+        $is_selected = ($party_type === 'customer' && $shop_id) || ($party_type === 'vendor' && $vendor_id);
+
+        if (!$agent_id || !$is_selected) {
             $agents = DB::table('sales_agents')->select('id', 'name')->where('status', 1)->get();
             $shops = DB::table('master_customers')->select('id', 'name')->where('status', 1)->get();
-            return view('admin.agent_orders.create', compact('agents', 'shops'));
+            $vendors = DB::table('vendors')->select('id', 'name')->where('status', 1)->get();
+            return view('admin.agent_orders.create', compact('agents', 'shops', 'vendors'));
         }
 
         if ($agent_id === 'direct') {
@@ -32,10 +37,15 @@ class AgentOrderController extends Controller
         } else {
             $agent = DB::table('sales_agents')->where('id', $agent_id)->first();
         }
-        $shop = DB::table('master_customers')->where('id', $shop_id)->first();
+
+        if ($party_type === 'vendor') {
+            $shop = DB::table('vendors')->where('id', $vendor_id)->first();
+        } else {
+            $shop = DB::table('master_customers')->where('id', $shop_id)->first();
+        }
 
         if (!$agent || !$shop) {
-            return redirect()->route('admin.agent-orders.create')->with('error', 'Invalid Agent or Shop selected.');
+            return redirect()->route('admin.agent-orders.create')->with('error', 'Invalid Agent or Party selected.');
         }
 
         $sale_type = $request->get('sale_type', 'item');
@@ -250,21 +260,30 @@ class AgentOrderController extends Controller
             $request->validate([
                 'order_type' => 'required|in:normal,direct',
                 'sale_type' => 'required|string',
-                'master_customer_id' => 'required|exists:master_customers,id',
+                'party_type' => 'required|in:customer,vendor',
+                'master_customer_id' => 'required_if:party_type,customer',
+                'master_vendor_id' => 'required_if:party_type,vendor',
                 'order_date' => 'required|date',
             ]);
 
             $agent_id = 'direct';
             if ($request->order_type === 'normal') {
-                $customer = DB::table('master_customers')->where('id', $request->master_customer_id)->first();
-                $agent_id = $customer->sales_agent_id ?: 'direct';
+                if ($request->party_type === 'customer') {
+                    $customer = DB::table('master_customers')->where('id', $request->master_customer_id)->first();
+                    $agent_id = ($customer && $customer->sales_agent_id) ? $customer->sales_agent_id : 'direct';
+                } else {
+                    $vendor = DB::table('vendors')->where('id', $request->master_vendor_id)->first();
+                    $agent_id = 'direct'; // Vendors usually don't have sales agents in this schema?
+                }
             }
 
             return redirect()->route('admin.agent-orders.create', [
                 'order_type' => $request->order_type,
                 'sale_type' => $request->sale_type,
+                'party_type' => $request->party_type,
                 'sales_agent_id' => $agent_id,
                 'master_customer_id' => $request->master_customer_id,
+                'master_vendor_id' => $request->master_vendor_id,
                 'order_date' => $request->order_date
             ]);
         }
@@ -285,7 +304,11 @@ class AgentOrderController extends Controller
             ]);
         }
 
-        $customer = \App\Models\MasterCustomer::findOrFail($request->master_customer_id);
+        if ($request->party_type === 'vendor') {
+            $customer = \App\Models\Vendor::findOrFail($request->master_vendor_id);
+        } else {
+            $customer = \App\Models\MasterCustomer::findOrFail($request->master_customer_id);
+        }
 
         if ($order_type === 'direct') {
             $agent_id_to_save = 0;
@@ -325,10 +348,14 @@ class AgentOrderController extends Controller
                 // Fetch Brand-based Discount
                 $brand_discount = 0;
                 if ($request->sales_agent_id === 'direct') {
-                    $brand_discount = DB::table('customer_brand_discounts')
-                        ->where('customer_id', $request->master_customer_id)
-                        ->where('brand_id', $product->brand_id)
-                        ->value('discount_percentage') ?? 0;
+                    if ($request->party_type === 'vendor') {
+                        $brand_discount = 0; // Vendors don't have brand discounts in this schema yet
+                    } else {
+                        $brand_discount = DB::table('customer_brand_discounts')
+                            ->where('customer_id', $request->master_customer_id)
+                            ->where('brand_id', $product->brand_id)
+                            ->value('discount_percentage') ?? 0;
+                    }
                 } else {
                     $brand_discount = DB::table('sales_agent_brand_discounts')
                         ->where('sales_agent_id', $request->sales_agent_id)
@@ -405,7 +432,9 @@ class AgentOrderController extends Controller
         try {
             $order = AgentOrder::create([
                 'sales_agent_id' => $agent_id_to_save,
-                'master_customer_id' => $request->master_customer_id,
+                'party_type' => $request->party_type ?? 'customer',
+                'master_customer_id' => $request->party_type === 'vendor' ? null : $request->master_customer_id,
+                'master_vendor_id' => $request->party_type === 'vendor' ? $request->master_vendor_id : null,
                 'total_qty' => $total_qty,
                 'total_amount' => $total_amount,
                 'discount_percentage' => $discount_percentage,
@@ -427,7 +456,9 @@ class AgentOrderController extends Controller
             $dispatch = null;
             if ($order_type === 'direct') {
                 $dispatch = \App\Models\AgentOrderDispatch::create([
-                    'master_customer_id' => $request->master_customer_id,
+                    'party_type' => $request->party_type ?? 'customer',
+                    'master_customer_id' => $request->party_type === 'vendor' ? null : $request->master_customer_id,
+                    'master_vendor_id' => $request->party_type === 'vendor' ? $request->master_vendor_id : null,
                     'sales_agent_id' => $agent_id_to_save,
                     'status' => 'dispatched',
                     'created_by' => Auth::id(),
@@ -538,11 +569,12 @@ class AgentOrderController extends Controller
     {
         $query = DB::table('agent_orders')
             ->leftJoin('sales_agents', 'agent_orders.sales_agent_id', '=', 'sales_agents.id')
-            ->join('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+            ->leftJoin('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+            ->leftJoin('vendors', 'agent_orders.master_vendor_id', '=', 'vendors.id')
             ->select(
                 'agent_orders.*',
                 DB::raw('COALESCE(sales_agents.name, "Direct (No Agent)") as agent_name'),
-                'master_customers.name as shop_name',
+                DB::raw('COALESCE(master_customers.name, vendors.name) as shop_name'),
                 DB::raw('(SELECT COALESCE(SUM(box_qty), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id) + (SELECT COALESCE(COUNT(id), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id) as total_boxes'),
                 DB::raw('(SELECT COALESCE(SUM(scanned_box_qty), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id) as scanned_count'),
                 DB::raw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE paymentable_id = agent_orders.id AND paymentable_type = "App\\\\Models\\\\AgentOrder") as total_paid')
@@ -561,6 +593,9 @@ class AgentOrderController extends Controller
         }
         if ($request->filled('shop_id')) {
             $query->where('agent_orders.master_customer_id', $request->shop_id);
+        }
+        if ($request->filled('vendor_id')) {
+            $query->where('agent_orders.master_vendor_id', $request->vendor_id);
         }
         if ($request->filled('status')) {
             $query->where('agent_orders.status', $request->status);
@@ -583,20 +618,23 @@ class AgentOrderController extends Controller
 
         $agents = DB::table('sales_agents')->select('id', 'name')->get();
         $shops = DB::table('master_customers')->select('id', 'name')->get();
+        $vendors = DB::table('vendors')->select('id', 'name')->get();
 
-        return view('admin.agent_orders.index', compact('orders', 'agents', 'shops'));
+        return view('admin.agent_orders.index', compact('orders', 'agents', 'shops', 'vendors'));
     }
 
     public function show($id)
     {
-        $order = AgentOrder::with(['shop', 'agent', 'dispatches'])->findOrFail($id);
+        $order = AgentOrder::with(['shop', 'vendor', 'agent', 'dispatches'])->findOrFail($id);
+
+        $party = $order->party_type === 'vendor' ? $order->vendor : $order->shop;
 
         // Map expected attributes for standard view usage
         $order->agent_name = $order->agent->name ?? "Direct (No Agent)";
-        $order->shop_name = $order->shop->name ?? "N/A";
-        $order->shop_email = $order->shop->email ?? "";
-        $order->shop_phone = $order->shop->phone ?? "";
-        $order->shop_address = $order->shop->address ?? "";
+        $order->shop_name = $party->name ?? "N/A";
+        $order->shop_email = $party->email ?? "";
+        $order->shop_phone = $party->phone ?? "";
+        $order->shop_address = $party->address ?? "";
 
         // Sum total paid
         $order->total_paid = DB::table('payments')
@@ -677,15 +715,17 @@ class AgentOrderController extends Controller
             return redirect()->back()->with('error', 'Only pending orders can be edited.');
         }
 
-        $shop = $order->shop;
+        $shop = $order->party_type === 'vendor' ? $order->vendor : $order->shop;
 
         if (strtolower(trim($order->sale_type)) === 'fabric') {
             $fabrics = Fabric::where('status', 1)
-                ->withSum(['rolls as total_meters' => function ($query) {
-                    $query->where('remaining_quantity', '>', 0);
-                }], 'remaining_quantity')
+                ->withSum([
+                    'rolls as total_meters' => function ($query) {
+                        $query->where('remaining_quantity', '>', 0);
+                    }
+                ], 'remaining_quantity')
                 ->get();
-            
+
             $existing_items = DB::table('agent_order_fabric_items')
                 ->join('fabrics', 'agent_order_fabric_items.fabric_id', '=', 'fabrics.id')
                 ->join('fabric_receipt_details', 'agent_order_fabric_items.fabric_receipt_detail_id', '=', 'fabric_receipt_details.id')
@@ -698,12 +738,12 @@ class AgentOrderController extends Controller
                     'fabric_receipt_details.remaining_quantity as avail_now'
                 )
                 ->get();
-            
+
             $gst_percentage = $order->gst_percentage ?? (DB::table('settings')->value('gst_order') ?? 5.00);
-            
+
             $agent_id = $order->sales_agent_id;
             if ($agent_id == 0 || $agent_id === 'direct' || empty($agent_id)) {
-                $agent = (object)['id' => 'direct', 'name' => 'Direct'];
+                $agent = (object) ['id' => 'direct', 'name' => 'Direct'];
             } else {
                 $agent = DB::table('sales_agents')->where('id', $agent_id)->first();
             }
@@ -937,10 +977,11 @@ class AgentOrderController extends Controller
         if ($sale_type === 'fabric') {
             foreach ($request->rolls as $rollData) {
                 $roll = DB::table('fabric_receipt_details')->where('id', $rollData['roll_id'])->first();
-                if (!$roll) continue;
+                if (!$roll)
+                    continue;
 
-                $meter = (float)$rollData['meter'];
-                $price = (float)$rollData['price'];
+                $meter = (float) $rollData['meter'];
+                $price = (float) $rollData['price'];
                 $total_amount += $meter * $price;
                 $total_qty += $meter;
 
@@ -994,9 +1035,9 @@ class AgentOrderController extends Controller
 
                 // PCS per Box (Source of Truth: Front-end > Current Inventory > Master Config)
                 $pcs_per_box = (float) DomesticInventory::where('status', 1)->where('product_id', $var['product_id'])
-                        ->where('color_id', $var['color_id'])
-                        ->where('size_set_id', $var['size_set_id'])
-                        ->avg('quantity') ?? ($sizeSet->total_pieces ?? 0);
+                    ->where('color_id', $var['color_id'])
+                    ->where('size_set_id', $var['size_set_id'])
+                    ->avg('quantity') ?? ($sizeSet->total_pieces ?? 0);
 
                 $total_pcs = $var['qty'] * $pcs_per_box;
 
@@ -1060,12 +1101,12 @@ class AgentOrderController extends Controller
             if ($sale_type === 'fabric') {
                 // Restore inventory before deleting
                 $oldItems = AgentOrderFabricItem::where('agent_order_id', $order->id)->get();
-                foreach($oldItems as $old) {
+                foreach ($oldItems as $old) {
                     FabricReceiptDetail::where('id', $old->fabric_receipt_detail_id)->increment('remaining_quantity', $old->meter);
                 }
-                
+
                 AgentOrderFabricItem::where('agent_order_id', $order->id)->delete();
-                
+
                 foreach ($fabric_items_to_create as $item) {
                     AgentOrderFabricItem::create($item);
                     // Deduct new inventory
@@ -1095,15 +1136,16 @@ class AgentOrderController extends Controller
     {
         $order = DB::table('agent_orders')
             ->leftJoin('sales_agents', 'agent_orders.sales_agent_id', '=', 'sales_agents.id')
-            ->join('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+            ->leftJoin('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+            ->leftJoin('vendors', 'agent_orders.master_vendor_id', '=', 'vendors.id')
             ->where('agent_orders.id', $id)
             ->select(
                 'agent_orders.*',
                 DB::raw('COALESCE(sales_agents.name, "Direct (No Agent)") as agent_name'),
-                'master_customers.name as shop_name',
-                'master_customers.email as shop_email',
-                'master_customers.phone as shop_phone',
-                'master_customers.address as shop_address'
+                DB::raw('COALESCE(master_customers.name, vendors.name) as shop_name'),
+                DB::raw('COALESCE(master_customers.email, vendors.email) as shop_email'),
+                DB::raw('COALESCE(master_customers.phone, vendors.phone) as shop_phone'),
+                DB::raw('COALESCE(master_customers.address, vendors.address) as shop_address')
             )
             ->first();
 
@@ -1173,17 +1215,17 @@ class AgentOrderController extends Controller
     {
         $order = DB::table('agent_orders')
             ->leftJoin('sales_agents', 'agent_orders.sales_agent_id', '=', 'sales_agents.id')
-            ->join('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+            ->leftJoin('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+            ->leftJoin('vendors', 'agent_orders.master_vendor_id', '=', 'vendors.id')
             ->where('agent_orders.id', $id)
             ->select(
                 'agent_orders.*',
                 DB::raw('COALESCE(sales_agents.name, "Direct (No Agent)") as agent_name'),
-                'master_customers.name as shop_name',
-                'master_customers.email as shop_email',
-                'master_customers.phone as shop_phone',
-                'master_customers.address as shop_address',
-                'master_customers.see_price'
-
+                DB::raw('COALESCE(master_customers.name, vendors.name) as shop_name'),
+                DB::raw('COALESCE(master_customers.email, vendors.email) as shop_email'),
+                DB::raw('COALESCE(master_customers.phone, vendors.phone) as shop_phone'),
+                DB::raw('COALESCE(master_customers.address, vendors.address) as shop_address'),
+                DB::raw('COALESCE(master_customers.see_price, 1) as see_price')
             )
             ->first();
 
@@ -1208,7 +1250,7 @@ class AgentOrderController extends Controller
                     'fabric_receipt_details.batch_no'
                 )
                 ->get();
-            
+
             $settings = DB::table('settings')->first();
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.order-pdf-fabric', compact('order', 'items', 'settings'));
             return $pdf->download("Order_Sheet_Fabric_{$order->id}.pdf");
@@ -1273,15 +1315,16 @@ class AgentOrderController extends Controller
     {
         $order = DB::table('agent_orders')
             ->leftJoin('sales_agents', 'agent_orders.sales_agent_id', '=', 'sales_agents.id')
-            ->join('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+            ->leftJoin('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+            ->leftJoin('vendors', 'agent_orders.master_vendor_id', '=', 'vendors.id')
             ->where('agent_orders.id', $id)
             ->select(
                 'agent_orders.*',
                 DB::raw('COALESCE(sales_agents.name, "Direct (No Agent)") as agent_name'),
-                'master_customers.name as shop_name',
-                'master_customers.email as shop_email',
-                'master_customers.phone as shop_phone',
-                'master_customers.address as shop_address'
+                DB::raw('COALESCE(master_customers.name, vendors.name) as shop_name'),
+                DB::raw('COALESCE(master_customers.email, vendors.email) as shop_email'),
+                DB::raw('COALESCE(master_customers.phone, vendors.phone) as shop_phone'),
+                DB::raw('COALESCE(master_customers.address, vendors.address) as shop_address')
             )
             ->first();
 
@@ -1357,11 +1400,19 @@ class AgentOrderController extends Controller
             $dispatchGst = $dispatchSubtotal * ($gstPercentage / 100);
             $dispatchTotal = $dispatchSubtotal + $dispatchGst;
 
-            // 2. Update MasterCustomer Balance (Subtract because they now owe this amount)
-            $customer = \App\Models\MasterCustomer::find($order->master_customer_id);
-            if ($customer) {
-                $customer->balance -= $dispatchTotal;
-                $customer->save();
+            // 2. Update Party Balance (Increase because they now owe this amount)
+            if ($order->party_type === 'vendor') {
+                $vendor = \App\Models\Vendor::find($order->master_vendor_id);
+                if ($vendor) {
+                    $vendor->balance -= $dispatchTotal;
+                    $vendor->save();
+                }
+            } else {
+                $customer = \App\Models\MasterCustomer::find($order->master_customer_id);
+                if ($customer) {
+                    $customer->balance -= $dispatchTotal;
+                    $customer->save();
+                }
             }
 
             // 3. Delete boxes from DomesticInventory (remove from stock)
@@ -1369,7 +1420,9 @@ class AgentOrderController extends Controller
 
             // Create Dispatch Log Entry
             $dispatch = \App\Models\AgentOrderDispatch::create([
+                'party_type' => $order->party_type ?? 'customer',
                 'master_customer_id' => $order->master_customer_id,
+                'master_vendor_id' => $order->master_vendor_id,
                 'sales_agent_id' => $order->sales_agent_id,
                 'status' => 'dispatched',
                 'created_by' => Auth::id(),
@@ -1420,12 +1473,13 @@ class AgentOrderController extends Controller
     {
         $order = DB::table('agent_orders')
             ->leftJoin('sales_agents', 'agent_orders.sales_agent_id', '=', 'sales_agents.id')
-            ->join('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+            ->leftJoin('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+            ->leftJoin('vendors', 'agent_orders.master_vendor_id', '=', 'vendors.id')
             ->where('agent_orders.id', $id)
             ->select(
                 'agent_orders.*',
                 DB::raw('COALESCE(sales_agents.name, "Direct (No Agent)") as agent_name'),
-                'master_customers.name as shop_name'
+                DB::raw('COALESCE(master_customers.name, vendors.name) as shop_name')
             )
             ->first();
 
@@ -1664,7 +1718,9 @@ class AgentOrderController extends Controller
         try {
             // Create dispatch header
             $dispatch = \App\Models\AgentOrderDispatch::create([
+                'party_type' => $order->party_type ?? 'customer',
                 'master_customer_id' => $order->master_customer_id,
+                'master_vendor_id' => $order->master_vendor_id,
                 'sales_agent_id' => $order->sales_agent_id,
                 'status' => 'dispatched',
                 'created_by' => Auth::id(),
@@ -1678,7 +1734,7 @@ class AgentOrderController extends Controller
 
             foreach ($itemsToUpdate as $item) {
                 $subtotal += ($item->meter * $item->selling_price);
-                
+
                 DB::table('agent_order_fabric_items')->where('id', $item->id)->update([
                     'status' => 'dispatched',
                     'dispatched_at' => now(),
@@ -1693,6 +1749,21 @@ class AgentOrderController extends Controller
             $dispatch->grand_total = $subtotal + $gst;
             $dispatch->save();
 
+            // Update Party Balance (Increase on dispatch)
+            if ($order->party_type === 'vendor') {
+                $vendor = \App\Models\Vendor::find($order->master_vendor_id);
+                if ($vendor) {
+                    $vendor->balance += $dispatch->grand_total;
+                    $vendor->save();
+                }
+            } else {
+                $customer = \App\Models\MasterCustomer::find($order->master_customer_id);
+                if ($customer) {
+                    $customer->balance += $dispatch->grand_total;
+                    $customer->save();
+                }
+            }
+
             // Link to Dispatch record (pivot-like join for historical tracking)
             \App\Models\AgentOrderDispatchItem::create([
                 'agent_order_dispatch_id' => $dispatch->id,
@@ -1704,7 +1775,7 @@ class AgentOrderController extends Controller
                 ->where('agent_order_id', $order->id)
                 ->where('status', '!=', 'dispatched')
                 ->count();
-            
+
             $order->status = ($remaining > 0) ? 'partially_dispatched' : 'dispatched';
             $order->save();
 
@@ -1718,22 +1789,35 @@ class AgentOrderController extends Controller
 
     public function indexDispatches(Request $request)
     {
-        $query = \App\Models\AgentOrderDispatch::with(['shop', 'agent'])
+        $query = \App\Models\AgentOrderDispatch::with(['shop', 'vendor', 'agent'])
             ->latest();
 
         if ($request->filled('shop_id')) {
             $query->where('master_customer_id', $request->shop_id);
         }
 
+        if ($request->filled('vendor_id')) {
+            $query->where('master_vendor_id', $request->vendor_id);
+        }
+
+        if ($request->filled('from_date')) {
+            $query->whereDate('dispatch_date', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate('dispatch_date', '<=', $request->to_date);
+        }
+
         $dispatches = $query->paginate(20);
         $shops = DB::table('master_customers')->select('id', 'name')->get();
+        $vendors = DB::table('vendors')->select('id', 'name')->get();
 
-        return view('admin.agent_orders.dispatches.index', compact('dispatches', 'shops'));
+        return view('admin.agent_orders.dispatches.index', compact('dispatches', 'shops', 'vendors'));
     }
 
     public function dispatchShow($id)
     {
-        $dispatch = \App\Models\AgentOrderDispatch::with(['shop', 'agent', 'orders.items'])->findOrFail($id);
+        $dispatch = \App\Models\AgentOrderDispatch::with(['shop', 'vendor', 'agent', 'orders.items'])->findOrFail($id);
 
         $items = DB::table('agent_order_items')
             ->where('agent_order_dispatch_id', '=', $id)
@@ -1781,19 +1865,28 @@ class AgentOrderController extends Controller
 
         $orders = \App\Models\AgentOrder::whereIn('id', $orderIds)->get();
 
-        // Validation: Verify all orders belong to the same shop
-        $shopIds = $orders->pluck('master_customer_id')->unique();
-        if ($shopIds->count() > 1) {
-            return redirect()->back()->with('error', 'Please select orders for the same shop.');
-        }
-
+        // Validation: Verify all orders belong to the same shop/party
         $firstOrder = $orders->first();
+        $partyType = $firstOrder->party_type;
+        $partyId = $partyType == 'vendor' ? $firstOrder->master_vendor_id : $firstOrder->master_customer_id;
+
+        foreach ($orders as $order) {
+            if ($order->party_type !== $partyType) {
+                return redirect()->back()->with('error', 'Cannot mix customer and vendor orders in one dispatch.');
+            }
+            $currentId = $partyType == 'vendor' ? $order->master_vendor_id : $order->master_customer_id;
+            if ($currentId !== $partyId) {
+                return redirect()->back()->with('error', 'Please select orders for the same shop/party.');
+            }
+        }
 
         DB::beginTransaction();
         try {
             // Create dispatch header
             $dispatch = \App\Models\AgentOrderDispatch::create([
+                'party_type' => $firstOrder->party_type ?? 'customer',
                 'master_customer_id' => $firstOrder->master_customer_id,
+                'master_vendor_id' => $firstOrder->master_vendor_id,
                 'sales_agent_id' => $firstOrder->sales_agent_id,
                 'status' => 'dispatched',
                 'created_by' => Auth::id(),
@@ -1889,11 +1982,19 @@ class AgentOrderController extends Controller
             $dispatch->grand_total = $grandTotalSubtotal + $grandTotalGst;
             $dispatch->save();
 
-            // Finally: Update Customer Balance
-            $customer = \App\Models\MasterCustomer::find($firstOrder->master_customer_id);
-            if ($customer) {
-                $customer->balance -= $dispatch->grand_total;
-                $customer->save();
+            // Finally: Update Party Balance (Increase model)
+            if ($dispatch->party_type === 'vendor') {
+                $vendor = \App\Models\Vendor::find($dispatch->master_vendor_id);
+                if ($vendor) {
+                    $vendor->balance += $dispatch->grand_total;
+                    $vendor->save();
+                }
+            } else {
+                $customer = \App\Models\MasterCustomer::find($dispatch->master_customer_id);
+                if ($customer) {
+                    $customer->balance += $dispatch->grand_total;
+                    $customer->save();
+                }
             }
 
             DB::commit();
@@ -1907,7 +2008,7 @@ class AgentOrderController extends Controller
 
     public function downloadDispatchInvoice(Request $request, $id)
     {
-        $dispatch = \App\Models\AgentOrderDispatch::with(['shop', 'agent'])->findOrFail($id);
+        $dispatch = \App\Models\AgentOrderDispatch::with(['shop', 'vendor', 'agent'])->findOrFail($id);
         $settings = DB::table('settings')->first();
 
         $brandId = $request->get('brand_id');
@@ -1933,7 +2034,9 @@ class AgentOrderController extends Controller
 
         if ($fabricItems->isNotEmpty() && $items->isEmpty()) {
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.dispatches.invoice-pdf-fabric', compact(
-                'dispatch', 'fabricItems', 'settings'
+                'dispatch',
+                'fabricItems',
+                'settings'
             ));
             return $pdf->download("Dispatch_Invoice_Fabric_{$dispatch->id}.pdf");
         }
@@ -2027,12 +2130,21 @@ class AgentOrderController extends Controller
                 'grand_total' => $grandTotal,
             ]);
 
-            // Adjust Customer Balance
-            $customer = \App\Models\MasterCustomer::find($dispatch->master_customer_id);
-            if ($customer) {
-                // We subtracted $oldGrandTotal before. Add it back and subtract the new one.
-                $customer->balance = $customer->balance + $oldGrandTotal - $grandTotal;
-                $customer->save();
+            // Adjust Party Balance (Increase model)
+            if ($dispatch->party_type === 'vendor') {
+                $vendor = \App\Models\Vendor::find($dispatch->master_vendor_id);
+                if ($vendor) {
+                    // Subtract old and add new to adjust the increase
+                    $vendor->balance = $vendor->balance - $oldGrandTotal + $grandTotal;
+                    $vendor->save();
+                }
+            } else {
+                $customer = \App\Models\MasterCustomer::find($dispatch->master_customer_id);
+                if ($customer) {
+                    // Subtract old and add new to adjust the increase
+                    $customer->balance = $customer->balance - $oldGrandTotal + $grandTotal;
+                    $customer->save();
+                }
             }
 
             DB::commit();
@@ -2044,7 +2156,7 @@ class AgentOrderController extends Controller
     }
     public function downloadDispatchPackingSlip(Request $request, $id)
     {
-        $dispatch = \App\Models\AgentOrderDispatch::with(['shop', 'agent'])->findOrFail($id);
+        $dispatch = \App\Models\AgentOrderDispatch::with(['shop', 'vendor', 'agent'])->findOrFail($id);
         $settings = DB::table('settings')->first();
 
         $brandId = $request->get('brand_id');
@@ -2070,7 +2182,9 @@ class AgentOrderController extends Controller
 
         if ($fabricItems->isNotEmpty() && $items->isEmpty()) {
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.dispatches.packing-slip-pdf-fabric', compact(
-                'dispatch', 'fabricItems', 'settings'
+                'dispatch',
+                'fabricItems',
+                'settings'
             ));
             return $pdf->download("Packing_Slip_Fabric_{$dispatch->id}.pdf");
         }
