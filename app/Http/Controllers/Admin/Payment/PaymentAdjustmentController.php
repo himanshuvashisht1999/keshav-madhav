@@ -218,13 +218,22 @@ class PaymentAdjustmentController extends Controller
                             $item->save();
                         } else {
                             // Update Master Item Balance (regular flow)
-                            if (isset($item->balance)) {
-                                if ($type == 'debit') $item->balance -= $currentAmount;
-                                else $item->balance += $currentAmount;
-                                $item->save();
-                            } elseif (isset($item->amount)) {
-                                if ($type == 'debit') $item->amount -= $currentAmount;
-                                else $item->amount += $currentAmount;
+                            if (isset($item->balance) || isset($item->amount)) {
+                                $isSpecial = in_array($masterId, [1, 12, 19]); // Committee, Bank, Hulayati
+                                
+                                if (isset($item->balance)) {
+                                    if ($type == 'debit') {
+                                        $isSpecial ? $item->balance += $currentAmount : $item->balance -= $currentAmount;
+                                    } else {
+                                        $isSpecial ? $item->balance -= $currentAmount : $item->balance += $currentAmount;
+                                    }
+                                } elseif (isset($item->amount)) {
+                                    if ($type == 'debit') {
+                                        $isSpecial ? $item->amount += $currentAmount : $item->amount -= $currentAmount;
+                                    } else {
+                                        $isSpecial ? $item->amount -= $currentAmount : $item->amount += $currentAmount;
+                                    }
+                                }
                                 $item->save();
                             }
                         }
@@ -590,13 +599,22 @@ class PaymentAdjustmentController extends Controller
                         else $item->balance += $amount;
                         $item->save();
                     } else {
-                        if (isset($item->balance)) {
-                            if ($type == 'debit') $item->balance += $amount;
-                            else $item->balance -= $amount;
-                            $item->save();
-                        } elseif (isset($item->amount)) {
-                            if ($type == 'debit') $item->amount += $amount;
-                            else $item->amount -= $amount;
+                        if (isset($item->balance) || isset($item->amount)) {
+                            $isSpecial = in_array($adj->adjustment_master_id, [1, 12, 19]);
+
+                            if (isset($item->balance)) {
+                                if ($type == 'debit') {
+                                    $isSpecial ? $item->balance -= $amount : $item->balance += $amount;
+                                } else {
+                                    $isSpecial ? $item->balance += $amount : $item->balance -= $amount;
+                                }
+                            } elseif (isset($item->amount)) {
+                                if ($type == 'debit') {
+                                    $isSpecial ? $item->amount -= $amount : $item->amount += $amount;
+                                } else {
+                                    $isSpecial ? $item->amount += $amount : $item->amount -= $amount;
+                                }
+                            }
                             $item->save();
                         }
                     }

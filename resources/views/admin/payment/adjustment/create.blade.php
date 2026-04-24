@@ -351,11 +351,30 @@
                             if (isFinancialSource && bulkMode && bulkMode.startsWith(masterText.split(' ')[0].toLowerCase()) && value.id == bulkAccountId) {
                                 return;
                             }
-                            $itemSelect.append('<option value="' + value.id + '">' + value.name + '</option>');
+                            var balanceText = (value.balance !== undefined) ? ' (Bal: ' + value.balance + ')' : '';
+                            $itemSelect.append('<option value="' + value.id + '" data-balance="' + value.balance + '">' + value.name + balanceText + '</option>');
                         });
                         $itemSelect.prop('disabled', false).trigger('change');
                     }
                 });
+            }
+        });
+
+        // Show balance for master item
+        $(document).on('change', '.master-item', function() {
+            var $row = $(this).closest('tr');
+            var balance = $(this).find(':selected').data('balance');
+            var $balanceDisplay = $row.find('.item-balance-display');
+            
+            if ($balanceDisplay.length == 0) {
+                $balanceDisplay = $('<small class="text-muted item-balance-display"></small>');
+                $(this).after($balanceDisplay);
+            }
+
+            if (balance !== undefined && !$(this).val().includes(',')) {
+                $balanceDisplay.text('Current Balance: ' + balance);
+            } else {
+                $balanceDisplay.text('');
             }
         });
 
