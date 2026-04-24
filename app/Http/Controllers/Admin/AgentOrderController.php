@@ -989,6 +989,9 @@ class AgentOrderController extends Controller
                 $seriesName = ($product->series) ? $product->series->name : '';
                 $product_name = trim($seriesName . ' ' . $product->name_of_garment);
 
+                $fitting = $product->master_product_fitting_id ? \App\Models\MasterProductFitting::find($product->master_product_fitting_id) : null;
+                $pattern = $product->master_pattern_id ? \App\Models\MasterDesignPattern::find($product->master_pattern_id) : null;
+
                 // PCS per Box (Source of Truth: Front-end > Current Inventory > Master Config)
                 $pcs_per_box = (float) DomesticInventory::where('status', 1)->where('product_id', $var['product_id'])
                         ->where('color_id', $var['color_id'])
@@ -996,6 +999,8 @@ class AgentOrderController extends Controller
                         ->avg('quantity') ?? ($sizeSet->total_pieces ?? 0);
 
                 $total_pcs = $var['qty'] * $pcs_per_box;
+
+                $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'] . 'P' . ($product->master_pattern_id ?? 0) . 'F' . ($product->master_product_fitting_id ?? 0);
 
                 $items_to_create[] = [
                     'product_id' => $var['product_id'],
@@ -1005,11 +1010,15 @@ class AgentOrderController extends Controller
                     'design_number' => $product->design_number,
                     'color_name' => $color->name,
                     'size_set_name' => $sizeSet->name,
+                    'fitting_id' => $product->master_product_fitting_id,
+                    'fitting_name' => $fitting->name ?? null,
+                    'pattern_id' => $product->master_pattern_id,
+                    'pattern_name' => $pattern->name ?? null,
                     'quantity' => $total_pcs,
                     'box_qty' => $var['qty'],
                     'mrp' => $mrp,
                     'selling_price' => $selling_price,
-                    'barcode' => 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'],
+                    'barcode' => $barcode,
                     'created_at' => now(),
                     'updated_at' => now()
                 ];

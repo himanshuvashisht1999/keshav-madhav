@@ -185,16 +185,16 @@
 
                     @if(request('is_skip') == 1)
                         <!-- <a href="{{ route('admin.order_digitalization.cutting-master') }}"
-                                                                                                                                                                                                class="btn btn-secondary">
-                                                                                                                                                                                                    View Normal Slips
-                                                                                                                                                                                                </a> -->
+                                                                                                                                                                                                                class="btn btn-secondary">
+                                                                                                                                                                                                                    View Normal Slips
+                                                                                                                                                                                                                </a> -->
 
 
                     @else
                         <!-- <a href="{{ route('admin.order_digitalization.cutting-master', ['is_skip' => 1]) }}"
-                                                                                                                                                                                                class="btn btn-secondary">
-                                                                                                                                                                                                    View Skipped Slips
-                                                                                                                                                                                                </a> -->
+                                                                                                                                                                                                                class="btn btn-secondary">
+                                                                                                                                                                                                                    View Skipped Slips
+                                                                                                                                                                                                                </a> -->
                     @endif
 
 
@@ -255,8 +255,8 @@
                                             <div class="lot-input-wrapper my-3 lot-inline">
                                                 <label class="lot-input-label">Lot No.</label>
                                                 <!-- <input type="text" id="lot_no" class="lot-input" placeholder="Enter Lot Number"
-                                                                                                                                    inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-                                                                                                                                    required> -->
+                                                                                                                                                    inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                                                                                                                                                    required> -->
                                                 <input type="text" id="lot_no" class="lot-input" placeholder="Enter Lot Number"
                                                     required>
                                             </div>
@@ -300,7 +300,8 @@
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label>Total Meter *</label>
-                                                        <input type="number" id="total_meter" class="form-control" required>
+                                                        <input type="number" id="total_meter" class="form-control" step="any"
+                                                            required>
                                                         <small class="text-danger" id="err_total_meter"></small>
                                                     </div>
                                                 </div>
@@ -312,9 +313,9 @@
 
                                                 <!-- SIZE ALLOCATION UI (UNCHANGED) -->
                                                 <!-- <div id="size_allocations" class="mt-3 p-2 border rounded bg-white">
-                                                                                                                                                                                                                            <label class="mb-2">Size Wise Quantity</label>
-                                                                                                                                                                                                                            <div id="size_inputs_container"></div>
-                                                                                                                                                                                                                        </div> -->
+                                                                                                                                                                                                                                            <label class="mb-2">Size Wise Quantity</label>
+                                                                                                                                                                                                                                            <div id="size_inputs_container"></div>
+                                                                                                                                                                                                                                        </div> -->
                                                 <div id="size_allocations" class="mt-3 p-2 border rounded bg-white">
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                                         <label class="mb-0 font-weight-bold">Size Wise Quantity</label>
@@ -761,8 +762,8 @@
                 order.order_product_sets.forEach(set => {
                     designSelect.append(
                         `<option value="${set.id}">
-                                                                                                ${set.design_number}
-                                                                                            </option>`
+                                                                                                        ${set.design_number}
+                                                                                                    </option>`
                     );
                 });
                 designSelect.trigger('change');
@@ -838,21 +839,21 @@
                         let remaining = detail.remaining_lot_allocated;
                         let size = detail.size;
                         $('#size_inputs_container').append(`
-                                                                                                            <div class="row mb-2 align-items-center">
-                                                                                                                <div class="col-4">
-                                                                                                                    <span class="font-weight-bold">${size}</span> <br>
-                                                                                                                    {{-- <small class="text-muted">(Pending: ${remaining})</small>  --}}
-                                                                                                                </div>
-                                                                                                                <div class="col-8">
-                                                                                                                    <input type="number" 
-                                                                                                                        class="form-control size-qty-input" 
-                                                                                                                        data-detail-id="${detail.id}"
-                                                                                                                        data-size="${size}"
-                                                                                                                        data-pending="${remaining}"
-                                                                                                                        placeholder="Qty">
-                                                                                                                </div>
-                                                                                                            </div>
-                                                                                                        `);
+                                                                                                                    <div class="row mb-2 align-items-center">
+                                                                                                                        <div class="col-4">
+                                                                                                                            <span class="font-weight-bold">${size}</span> <br>
+                                                                                                                            {{-- <small class="text-muted">(Pending: ${remaining})</small>  --}}
+                                                                                                                        </div>
+                                                                                                                        <div class="col-8">
+                                                                                                                            <input type="number" 
+                                                                                                                                class="form-control size-qty-input" 
+                                                                                                                                data-detail-id="${detail.id}"
+                                                                                                                                data-size="${size}"
+                                                                                                                                data-pending="${remaining}"
+                                                                                                                                placeholder="Qty">
+                                                                                                                        </div>
+                                                                                                                    </div>
+                                                                                                                `);
                         setTimeout(() => {
                             autoFillSizesFromTotal();
                         }, 0);
@@ -932,11 +933,11 @@
                 let optionsHtml = '';
                 $('#roll_no option').each(function () {
                     optionsHtml += `<option 
-                                                                                                        value="${this.value}"
-                                                                                                        data-meter="${$(this).attr('data-meter')}"
-                                                                                                        data-roll="${$(this).attr('data-roll')}">
-                                                                                                        ${$(this).text()}
-                                                                                                    </option>`;
+                                                                                                                value="${this.value}"
+                                                                                                                data-meter="${$(this).attr('data-meter')}"
+                                                                                                                data-roll="${$(this).attr('data-roll')}">
+                                                                                                                ${$(this).text()}
+                                                                                                            </option>`;
                 });
 
                 // // Trigger Auto-Select if available
@@ -956,27 +957,27 @@
                     let lotNo = $('#lot_no').val();
 
                     container.append(`
-                                                                                                        <div class="row mb-2 roll-row">
-                                                                                                            <div class="col-md-6">
-                                                                                                                <label>Roll No (${i}) *</label>
-                                                                                                                <select name="roll_no_list[]" class="form-control select2 roll-select" required>
-                                                                                                                    ${optionsHtml}
-                                                                                                                </select>
-                                                                                                            </div>
+                                                                                                                <div class="row mb-2 roll-row">
+                                                                                                                    <div class="col-md-6">
+                                                                                                                        <label>Roll No (${i}) *</label>
+                                                                                                                        <select name="roll_no_list[]" class="form-control select2 roll-select" required>
+                                                                                                                            ${optionsHtml}
+                                                                                                                        </select>
+                                                                                                                    </div>
 
-                                                                                                            <div class="col-md-6">
-                                                                                                                <label>Meter Used *</label>
-                                                                                                                <input type="number"
-                                                                                                                    name="meter_list[]"
-                                                                                                                    class="form-control roll-meter"
-                                                                                                                    disabled
-                                                                                                                    placeholder="Select roll first">
-                                                                                                            </div>
+                                                                                                                    <div class="col-md-6">
+                                                                                                                        <label>Meter Used *</label>
+                                                                                                                        <input type="number"
+                                                                                                                            name="meter_list[]"
+                                                                                                                            class="form-control roll-meter"
+                                                                                                                            disabled
+                                                                                                                            placeholder="Select roll first"  step="any">
+                                                                                                                    </div>
 
-                                                                                                            <input type="hidden" name="lot_no_list[]" value="${lotNo}">
-                                                                                                            <input type="hidden" name="size_details[]" class="size-json">
-                                                                                                        </div>
-                                                                                                    `);
+                                                                                                                    <input type="hidden" name="lot_no_list[]" value="${lotNo}">
+                                                                                                                    <input type="hidden" name="size_details[]" class="size-json">
+                                                                                                                </div>
+                                                                                                            `);
                 }
 
                 $('.select2').select2();
@@ -1026,11 +1027,11 @@
 
                 // Show loading
                 detailsContainer.html(`
-                                                                                                    <div class="text-center py-3">
-                                                                                                        <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-                                                                                                        <p class="mt-2">Loading lot details...</p>
-                                                                                                    </div>
-                                                                                                `).show();
+                                                                                                            <div class="text-center py-3">
+                                                                                                                <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                                                                                                                <p class="mt-2">Loading lot details...</p>
+                                                                                                            </div>
+                                                                                                        `).show();
 
                 // Fetch lot details
                 $.ajax({
@@ -1045,20 +1046,20 @@
                             displayLotDetails(data, detailsContainer);
                         } else {
                             detailsContainer.html(`
-                                                                                                                <div class="alert alert-warning">
-                                                                                                                    <i class="fas fa-exclamation-triangle mr-2"></i>
-                                                                                                                    No details found for this lot.
-                                                                                                                </div>
-                                                                                                            `);
+                                                                                                                        <div class="alert alert-warning">
+                                                                                                                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                                                                                            No details found for this lot.
+                                                                                                                        </div>
+                                                                                                                    `);
                         }
                     },
                     error: function () {
                         detailsContainer.html(`
-                                                                                                            <div class="alert alert-danger">
-                                                                                                                <i class="fas fa-times-circle mr-2"></i>
-                                                                                                                Error loading lot details. Please try again.
-                                                                                                            </div>
-                                                                                                        `);
+                                                                                                                    <div class="alert alert-danger">
+                                                                                                                        <i class="fas fa-times-circle mr-2"></i>
+                                                                                                                        Error loading lot details. Please try again.
+                                                                                                                    </div>
+                                                                                                                `);
                     }
                 });
             });
@@ -1099,43 +1100,43 @@
                 if (data.size_wise_quantities && Object.keys(data.size_wise_quantities).length > 0) {
                     for (const [size, qty] of Object.entries(data.size_wise_quantities)) {
                         sizeModalRows += `
-                                                                                                <tr>
-                                                                                                    <td class="font-weight-bold text-primary">${size}</td>
-                                                                                                    <td>${qty} pcs</td>
-                                                                                                </tr>
-                                                                                            `;
+                                                                                                        <tr>
+                                                                                                            <td class="font-weight-bold text-primary">${size}</td>
+                                                                                                            <td>${qty} pcs</td>
+                                                                                                        </tr>
+                                                                                                    `;
                     }
                 }
 
                 const uniqueId = `lot_${data.lot_no.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
                 const html = `
-                                                                                                    <!-- Simplified Lot Details Card -->
-                                                                                                    <div class="card border-primary shadow-sm mb-3 lot-details-card">
-                                                                                                        <div class="card-header bg-gradient-primary text-white p-2 d-flex justify-content-between align-items-center">
-                                                                                                            <div class="d-flex align-items-center">
-                                                                                                                <i class="fas fa-box mr-2"></i>
-                                                                                                                <strong>Lot: ${data.lot_no}</strong>
+                                                                                                            <!-- Simplified Lot Details Card -->
+                                                                                                            <div class="card border-primary shadow-sm mb-3 lot-details-card">
+                                                                                                                <div class="card-header bg-gradient-primary text-white p-2 d-flex justify-content-between align-items-center">
+                                                                                                                    <div class="d-flex align-items-center">
+                                                                                                                        <i class="fas fa-box mr-2"></i>
+                                                                                                                        <strong>Lot: ${data.lot_no}</strong>
+                                                                                                                    </div>
+                                                                                                                    <span class="badge badge-light">${totalPieces} pcs</span>
+                                                                                                                </div>
+                                                                                                                <div class="card-body p-0">
+                                                                                                                    <div class="table-responsive">
+                                                                                                                        <table class="table table-sm table-bordered mb-0" style="font-size: 0.9rem;">
+                                                                                                                            <thead class="bg-light text-center">
+                                                                                                                                <tr>
+                                                                                                                                    <th style="width: 40%">Size</th>
+                                                                                                                                    <th style="width: 60%">Quantity</th>
+                                                                                                                                </tr>
+                                                                                                                            </thead>
+                                                                                                                            <tbody class="text-center">
+                                                                                                                                ${sizeModalRows || '<tr><td colspan="2" class="text-muted">No size data</td></tr>'}
+                                                                                                                            </tbody>
+                                                                                                                        </table>
+                                                                                                                    </div>
+                                                                                                                </div>
                                                                                                             </div>
-                                                                                                            <span class="badge badge-light">${totalPieces} pcs</span>
-                                                                                                        </div>
-                                                                                                        <div class="card-body p-0">
-                                                                                                            <div class="table-responsive">
-                                                                                                                <table class="table table-sm table-bordered mb-0" style="font-size: 0.9rem;">
-                                                                                                                    <thead class="bg-light text-center">
-                                                                                                                        <tr>
-                                                                                                                            <th style="width: 40%">Size</th>
-                                                                                                                            <th style="width: 60%">Quantity</th>
-                                                                                                                        </tr>
-                                                                                                                    </thead>
-                                                                                                                    <tbody class="text-center">
-                                                                                                                        ${sizeModalRows || '<tr><td colspan="2" class="text-muted">No size data</td></tr>'}
-                                                                                                                    </tbody>
-                                                                                                                </table>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                `;
+                                                                                                        `;
 
                 container.html(html).show();
             }
@@ -1324,7 +1325,7 @@
                     $(`.action-btn[data-target="${target}"]`).trigger('click');
                 }
             @endif
-                                                                            });
+                                                                                    });
     </script>
 
     <script>
