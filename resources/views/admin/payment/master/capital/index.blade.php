@@ -33,6 +33,13 @@
                                 </tr>
                             </thead>
                             <tbody></tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="2" style="text-align:right">Total:</th>
+                                    <th id="total_amount"></th>
+                                    <th colspan="3"></th>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
@@ -51,9 +58,8 @@
                 stateSave: true,
                 searching: true,
                 ordering: true,
-                lengthMenu: [[25, 100, -1], [25, 100, "All"]],
-                "pageLength": 25,
-                dom: 'lBfrtip',
+                paging: false,
+                dom: 'Bfrtip',
                 buttons: [
                     {
                         text: 'Add Capital',
@@ -73,7 +79,31 @@
                     { data: 'type', name: 'type' },
                     { data: 'status', name: 'status' },
                     { data: 'action', name: 'action', orderable: false, searchable: false }
-                ]
+                ],
+                footerCallback: function (row, data, start, end, display) {
+                    var api = this.api();
+                    
+                    // Remove the formatting to get integer data for summation
+                    var intVal = function (i) {
+                        return typeof i === 'string' ?
+                            i.replace(/[\₹,]/g, '') * 1 :
+                            typeof i === 'number' ?
+                                i : 0;
+                    };
+
+                    // Total over all pages
+                    total = api
+                        .column(2)
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+
+                    // Update footer
+                    $(api.column(2).footer()).html(
+                        '₹ ' + total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                    );
+                }
             });
         });
     </script>

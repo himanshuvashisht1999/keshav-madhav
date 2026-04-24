@@ -29,12 +29,15 @@ class CapitalDataTable
             ->count();
 
         // Fetch records
-        $records = CapitalMaster::orderBy($columnName, $columnSortOrder)
+        $query = CapitalMaster::orderBy($columnName, $columnSortOrder)
             ->where('name', 'like', '%' . $searchValue . '%')
-            ->select('capital_masters.*')
-            ->skip($start)
-            ->take($rowperpage)
-            ->get();
+            ->select('capital_masters.*');
+
+        if ($rowperpage != -1) {
+            $query->skip($start)->take($rowperpage);
+        }
+
+        $records = $query->get();
 
         $data_arr = array();
 
@@ -55,6 +58,7 @@ class CapitalDataTable
                 "id" => $record->id,
                 "name" => $record->name,
                 "balance" => '₹ ' . number_format($balance, 2),
+                "raw_balance" => $record->balance,
                 "type" => $type,
                 "status" => $status,
                 "action" => $action
