@@ -27,6 +27,7 @@
                                     <th>ID</th>
                                     <th>Name</th>
                                     <th>Amount</th>
+                                    <th>Balance</th>
                                     <th>Period</th>
                                     <th>Status</th>
                                     <th>Action</th>
@@ -57,6 +58,7 @@
                     { data: 'DT_RowIndex', name: 'id' },
                     { data: 'name', name: 'name' },
                     { data: 'amount', name: 'amount' },
+                    { data: 'balance', name: 'balance' },
                     { data: 'period', name: 'period' },
                     { data: 'status', name: 'status' },
                     { data: 'action', name: 'action', searchable: false }

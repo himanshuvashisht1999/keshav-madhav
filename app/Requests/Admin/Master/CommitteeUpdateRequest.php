@@ -17,6 +17,8 @@ class CommitteeUpdateRequest extends FormRequest
             'id' => 'required|exists:committees,id',
             'name' => 'required|string|max:255',
             'amount' => 'nullable|numeric|min:0',
+            'balance' => 'required|numeric',
+            'balance_type' => 'required|string|in:Credit,Debit',
             'period' => 'nullable|string|max:255',
         ];
     }

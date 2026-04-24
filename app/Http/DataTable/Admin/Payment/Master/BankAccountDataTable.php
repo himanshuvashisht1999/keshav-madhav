@@ -29,13 +29,17 @@ class BankAccountDataTable
                     ? '<span class="badge badge-xs badge-success">Active</span>'
                     : '<span class="badge badge-xs badge-primary">Inactive</span>';
             })
+            ->editColumn('balance', function ($row) {
+                $type = $row->balance >= 0 ? '<span class="badge badge-success">Cr</span>' : '<span class="badge badge-danger">Dr</span>';
+                return '₹ ' . number_format(abs($row->balance), 2) . ' ' . $type;
+            })
             ->addColumn('action', function ($row) {
                 return '
                 <a href="' . route('admin.payment.master.bank_account.edit', ['id' => $row->id]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted"></i></a>
                 <a href="' . route('admin.payment.master.bank_account.delete', ['id' => $row->id]) . '" class="ml-2" data-toggle="tooltip" data-placement="top" title="Delete" onclick="return confirm(\'Are you sure you want to delete this bank account?\')"><i class="fas fa-trash text-danger"></i></a>
                 ';
             })
-            ->rawColumns(['action', 'status'])
+            ->rawColumns(['action', 'status', 'balance'])
             ->make(true);
     }
 }

@@ -36,6 +36,7 @@
                                     <td></td>
                                     <td></td>
                                     <td></td>
+                                    <td></td>
                                 </tr>
                                 <tr>
                                     <th>ID</th>
@@ -43,6 +44,7 @@
                                     <th>Account Name</th>
                                     <th>Account Number</th>
                                     <th>IFSC Code</th>
+                                    <th>Balance</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
@@ -79,6 +81,7 @@
                     { data: 'account_name', name: 'account_name' },
                     { data: 'account_number', name: 'account_number' },
                     { data: 'ifsc_code', name: 'ifsc_code' },
+                    { data: 'balance', name: 'balance' },
                     { data: 'status', name: 'status' },
                     { data: 'action', name: 'action', searchable: false }
                 ],

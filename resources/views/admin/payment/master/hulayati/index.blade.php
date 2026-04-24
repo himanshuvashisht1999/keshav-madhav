@@ -26,6 +26,7 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Name</th>
+                                    <th>Balance</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
@@ -67,6 +68,7 @@
                 columns: [
                     { data: 'id', name: 'id' },
                     { data: 'name', name: 'name' },
+                    { data: 'balance', name: 'balance' },
                     { data: 'status', name: 'status' },
                     { data: 'action', name: 'action', orderable: false, searchable: false }
                 ]

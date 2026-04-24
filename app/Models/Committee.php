@@ -9,5 +9,5 @@ class Committee extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'amount', 'period', 'status'];
+    protected $fillable = ['name', 'amount', 'balance', 'period', 'status'];
 }

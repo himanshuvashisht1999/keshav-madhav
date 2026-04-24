@@ -19,6 +19,8 @@ class BankAccountStoreRequest extends FormRequest
             'account_number' => 'nullable|string|max:255',
             'ifsc_code' => 'nullable|string|max:255',
             'branch_name' => 'nullable|string|max:255',
+            'balance' => 'required|numeric',
+            'balance_type' => 'required|string|in:Credit,Debit',
         ];
     }
 }

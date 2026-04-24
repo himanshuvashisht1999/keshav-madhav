@@ -76,6 +76,28 @@
                                         @endif
                                     </div>
                                 </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Balance</label>
+                                        <input type="number" step="0.01" name="balance" class="form-control"
+                                            placeholder="Enter Balance" value="{{old('balance', 0)}}">
+                                        @if ($errors->has('balance'))
+                                            <span class="invalid-feedback d-block">{{ $errors->first('balance') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Balance Type</label>
+                                        <select name="balance_type" class="form-control select2" style="width: 100%;">
+                                            <option value="Credit" {{old('balance_type') == 'Credit' ? 'selected' : ''}}>Credit</option>
+                                            <option value="Debit" {{old('balance_type') == 'Debit' ? 'selected' : ''}}>Debit</option>
+                                        </select>
+                                        @if ($errors->has('balance_type'))
+                                            <span class="invalid-feedback d-block">{{ $errors->first('balance_type') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
                                 <div class="col-md-12">
                                     <div class="mt-2" style="float:right">
                                         <button type="submit" class="btn btn-primary">Submit</button>

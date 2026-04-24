@@ -26,10 +26,25 @@
                         <input type="hidden" name="id" value="{{ $data->id }}">
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Hulayati Name <span class="text-danger">*</span></label>
                                         <input type="text" name="name" class="form-control" placeholder="Enter Hulayati Name" value="{{ old('name', $data->name) }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Balance</label>
+                                        <input type="number" step="0.01" name="balance" class="form-control" placeholder="Enter Balance" value="{{ abs($data->balance) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Balance Type</label>
+                                        <select name="balance_type" class="form-control select2" style="width: 100%;">
+                                            <option value="Credit" {{ $data->balance >= 0 ? 'selected' : '' }}>Credit</option>
+                                            <option value="Debit" {{ $data->balance < 0 ? 'selected' : '' }}>Debit</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="col-md-12 text-right">

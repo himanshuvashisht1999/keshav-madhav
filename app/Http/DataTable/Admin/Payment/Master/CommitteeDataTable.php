@@ -25,13 +25,17 @@ class CommitteeDataTable
                     ? '<span class="badge badge-success">Active</span>'
                     : '<span class="badge badge-primary">Inactive</span>';
             })
+            ->editColumn('balance', function ($row) {
+                $type = $row->balance >= 0 ? '<span class="badge badge-success">Cr</span>' : '<span class="badge badge-danger">Dr</span>';
+                return '₹ ' . number_format(abs($row->balance), 2) . ' ' . $type;
+            })
             ->addColumn('action', function ($row) {
                 return '
                 <a href="' . route('admin.payment.master.committee.edit', ['id' => $row->id]) . '" class="text-muted" data-toggle="tooltip" title="Edit"><i class="fas fa-edit"></i></a>
                 <a href="' . route('admin.payment.master.committee.delete', ['id' => $row->id]) . '" class="ml-2 text-danger" data-toggle="tooltip" title="Delete" onclick="return confirm(\'Are you sure you want to delete this committee?\')"><i class="fas fa-trash"></i></a>
                 ';
             })
-            ->rawColumns(['action', 'status'])
+            ->rawColumns(['action', 'status', 'balance'])
             ->make(true);
     }
 }

@@ -25,6 +25,13 @@ class CommitteeService
         $committee = new Committee();
         $committee->name = $request->name;
         $committee->amount = $request->amount;
+        $balance = $request->balance ?? 0;
+        if ($request->balance_type == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+        $committee->balance = $balance;
         $committee->period = $request->period;
         $committee->status = 1;
         $committee->save();
@@ -41,6 +48,13 @@ class CommitteeService
         $committee = Committee::find($request->id);
         $committee->name = $request->name;
         $committee->amount = $request->amount;
+        $balance = $request->balance ?? 0;
+        if ($request->balance_type == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+        $committee->balance = $balance;
         $committee->period = $request->period;
         $committee->save();
         return true;

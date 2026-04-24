@@ -42,6 +42,22 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
+                                        <label>Balance</label>
+                                        <input type="number" step="0.01" name="balance" class="form-control" placeholder="Enter Balance"
+                                            value="{{ abs($data->balance) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Balance Type</label>
+                                        <select name="balance_type" class="form-control select2" style="width: 100%;">
+                                            <option value="Credit" {{$data->balance >= 0 ? 'selected' : ''}}>Credit</option>
+                                            <option value="Debit" {{$data->balance < 0 ? 'selected' : ''}}>Debit</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
                                         <label>Period (e.g., 12 Months)</label>
                                         <input type="text" name="period" class="form-control" placeholder="Enter Period (Optional)"
                                             value="{{$data->period}}">

@@ -48,9 +48,13 @@ class HulayatiDataTable
                 </div>
             ';
 
+            $balance_type = $record->balance >= 0 ? '<span class="badge badge-success">Cr</span>' : '<span class="badge badge-danger">Dr</span>';
+            $balance = '₹ ' . number_format(abs($record->balance), 2) . ' ' . $balance_type;
+
             $data_arr[] = array(
                 "id" => $record->id,
                 "name" => $record->name,
+                "balance" => $balance,
                 "status" => $status,
                 "action" => $action
             );

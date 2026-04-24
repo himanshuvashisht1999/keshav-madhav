@@ -16,6 +16,8 @@ class HulayatiUpdateRequest extends FormRequest
         return [
             'id' => 'required|exists:hulayati_masters,id',
             'name' => 'required|string|unique:hulayati_masters,name,' . $this->id,
+            'balance' => 'required|numeric',
+            'balance_type' => 'required|string|in:Credit,Debit',
         ];
     }
 }

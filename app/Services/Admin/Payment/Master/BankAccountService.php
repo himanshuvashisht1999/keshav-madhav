@@ -28,6 +28,13 @@ class BankAccountService
         $bankAccount->account_number = $request->account_number;
         $bankAccount->ifsc_code = $request->ifsc_code;
         $bankAccount->branch_name = $request->branch_name;
+        $balance = $request->balance ?? 0;
+        if ($request->balance_type == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+        $bankAccount->balance = $balance;
         $bankAccount->status = 1;
         $bankAccount->save();
         return true;
@@ -46,6 +53,13 @@ class BankAccountService
         $bankAccount->account_number = $request->account_number;
         $bankAccount->ifsc_code = $request->ifsc_code;
         $bankAccount->branch_name = $request->branch_name;
+        $balance = $request->balance ?? 0;
+        if ($request->balance_type == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+        $bankAccount->balance = $balance;
         $bankAccount->save();
         return true;
     }

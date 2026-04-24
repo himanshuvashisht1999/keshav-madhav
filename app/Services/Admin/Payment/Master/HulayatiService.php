@@ -8,8 +8,16 @@ class HulayatiService
 {
     public function store(array $data)
     {
+        $balance = $data['balance'] ?? 0;
+        if ($data['balance_type'] == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+
         return HulayatiMaster::create([
             'name' => $data['name'],
+            'balance' => $balance,
             'status' => 1,
         ]);
     }
@@ -22,8 +30,17 @@ class HulayatiService
     public function update(array $data, $id)
     {
         $item = HulayatiMaster::findOrFail($id);
+
+        $balance = $data['balance'] ?? 0;
+        if ($data['balance_type'] == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+
         return $item->update([
             'name' => $data['name'],
+            'balance' => $balance,
         ]);
     }
 

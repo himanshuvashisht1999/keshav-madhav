@@ -15,6 +15,8 @@ class HulayatiStoreRequest extends FormRequest
     {
         return [
             'name' => 'required|string|unique:hulayati_masters,name',
+            'balance' => 'required|numeric',
+            'balance_type' => 'required|string|in:Credit,Debit',
         ];
     }
 }
