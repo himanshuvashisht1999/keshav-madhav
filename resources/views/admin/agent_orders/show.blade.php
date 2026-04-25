@@ -46,6 +46,16 @@
                                     class="btn btn-sm btn-warning rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
                                     <i class="fas fa-edit mr-1"></i> Edit
                                 </a>
+
+                                @if($order->dispatches->count() == 0)
+                                    <form action="{{ route('admin.agent-orders.destroy', $order->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this order? This will restore any deducted inventory.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
+                                            <i class="fas fa-trash mr-1"></i> Delete
+                                        </button>
+                                    </form>
+                                @endif
                             @endif
                             <a href="{{ route('admin.agent-orders.index') }}"
                                 class="btn btn-sm btn-outline-secondary rounded-pill px-3 font-weight-bold shadow-sm">
@@ -138,9 +148,14 @@
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between p-2">
                                         <span class="text-muted">GST
-                                            ({{ number_format($order->gst_percentage, 0) }}%):</span>
+                                            ({{ number_format($order->gst_percentage, 1) }}%):</span>
                                         <span
                                             class="font-weight-bold text-danger">+₹{{ number_format($order->gst_amount, 2) }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between p-2 {{ $order->other_charges > 0 ? '' : 'd-none' }}">
+                                        <span class="text-muted">Other Charges:</span>
+                                        <span
+                                            class="font-weight-bold text-dark">+₹{{ number_format($order->other_charges, 2) }}</span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between p-2 bg-light">
                                         <span class="text-dark h5 mb-0">Grand Total:</span>

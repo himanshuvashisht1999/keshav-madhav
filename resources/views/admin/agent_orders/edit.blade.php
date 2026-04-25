@@ -155,11 +155,31 @@
                                 class="form-control form-control-sm text-right p-1 py-0"
                                 style="width: 60px; height: 24px;" value="{{ $order->discount_percentage }}" min="0" max="100" step="0.1">
                         </div>
-                        <div class="d-flex justify-content-between align-items-center">
+                    </div>
+                    <div class="col-md-2 border-right">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted font-weight-bold">Taxable:</small>
+                            <span class="font-weight-bold">₹<span id="taxableAmount">0</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
                             <small class="text-muted font-weight-bold">GST (%):</small>
                             <input type="number" id="gstInput"
                                 class="form-control form-control-sm text-right p-1 py-0"
                                 style="width: 60px; height: 24px;" value="{{ $order->gst_percentage }}" min="0" max="100">
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted font-weight-bold">GST Amount:</small>
+                            <span class="font-weight-bold text-danger">+₹<span id="gstAmount">0</span></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-2 border-right">
+                        <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Other Charges</small>
+                        <div class="input-group input-group-sm mt-1">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">₹</span>
+                            </div>
+                            <input type="number" id="other_charges" class="form-control" value="{{ $order->other_charges ?? 0 }}" min="0" step="1">
                         </div>
                     </div>
                     <div class="col-md-2 border-right">
@@ -317,14 +337,16 @@
                 });
 
                 let discountPercent = parseFloat($('#discountInput').val()) || 0;
+                let otherCharges = parseFloat($('#other_charges').val()) || 0;
                 const discountAmount = subTotal * (discountPercent / 100);
                 const taxableAmount = subTotal - discountAmount;
                 const gstPercent = parseFloat($('#gstInput').val()) || 0;
                 const gstAmount = taxableAmount * (gstPercent / 100);
-                const grandTotal = taxableAmount + gstAmount;
+                const grandTotal = taxableAmount + gstAmount + otherCharges;
 
                 $('#selectedCount').text(totalBoxes);
                 $('#subTotalAmount').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                $('#taxableAmount').text(taxableAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
                 $('#gstAmount').text(gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
                 $('#grandTotalAmount').text(grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
@@ -370,10 +392,10 @@
                 updateUI();
             });
 
-            $('#discountInput, #gstInput').on('input change', function () {
+            $('#discountInput, #gstInput, #other_charges').on('input change', function () {
                 let val = parseFloat($(this).val());
-                if (val < 0) $(this).val(0);
-                if (val > 100) $(this).val(100);
+                if (val < 0 && !$(this).is('#other_charges')) $(this).val(0);
+                if (val > 100 && ($(this).is('#discountInput') || $(this).is('#gstInput'))) $(this).val(100);
                 updateUI();
             });
 
@@ -410,6 +432,7 @@
 
                 let discountPercent = parseFloat($('#discountInput').val()) || 0;
                 let gstPercent = parseFloat($('#gstInput').val()) || 0;
+                let otherCharges = parseFloat($('#other_charges').val()) || 0;
                 let expectedDate = $('#expectedDispatchDate').val();
 
                 Swal.fire({
@@ -431,6 +454,7 @@
                                 variations: variations,
                                 discount_percentage: discountPercent,
                                 gst_percentage: gstPercent,
+                                other_charges: otherCharges,
                                 expected_dispatch_date: expectedDate,
                                 remark: $('#remark').val(),
                                 booking_station: $('#booking_station').val(),

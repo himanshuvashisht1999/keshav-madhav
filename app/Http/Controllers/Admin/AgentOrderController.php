@@ -420,11 +420,12 @@ class AgentOrderController extends Controller
         }
 
         $gst_percentage = $request->gst_percentage ?? 5.00;
+        $other_charges = $request->other_charges ?? 0;
         $discount_percentage = $request->discount_percentage ?? 0;
         $discount_amount = ($total_amount * $discount_percentage / 100);
         $taxable_amount = $total_amount - $discount_amount;
         $gst_amount = $taxable_amount * ($gst_percentage / 100);
-        $grand_total = $taxable_amount + $gst_amount;
+        $grand_total = $taxable_amount + $gst_amount + $other_charges;
 
         $status = $order_type === 'direct' ? 'dispatched' : 'pending';
 
@@ -441,6 +442,7 @@ class AgentOrderController extends Controller
                 'discount_amount' => $discount_amount,
                 'gst_percentage' => $gst_percentage,
                 'gst_amount' => $gst_amount,
+                'other_charges' => $other_charges,
                 'grand_total' => $grand_total,
                 'expected_dispatch_date' => $request->expected_dispatch_date,
                 'status' => $status,
@@ -705,6 +707,59 @@ class AgentOrderController extends Controller
         }
 
         return view('admin.agent_orders.show', compact('order', 'items'));
+    }
+
+    public function destroy($id)
+    {
+        $order = AgentOrder::with(['items', 'fabricItems', 'dispatches'])->findOrFail($id);
+
+        // Check if any items are dispatched
+        $hasDispatch = $order->dispatches()->exists() ||
+            $order->items()->whereNotNull('dispatched_at')->exists() ||
+            $order->status === 'dispatched';
+
+        if ($hasDispatch) {
+            return redirect()->back()->with('error', 'Cannot delete order as some items have already been dispatched.');
+        }
+
+        if ($order->paid_amount > 0) {
+            return redirect()->back()->with('error', 'Cannot delete order as payments have already been recorded.');
+        }
+
+        DB::beginTransaction();
+        try {
+            if ($order->sale_type === 'fabric') {
+                foreach ($order->fabricItems as $item) {
+                    FabricReceiptDetail::where('id', $item->fabric_receipt_detail_id)
+                        ->increment('remaining_quantity', $item->meter);
+                }
+                $order->fabricItems()->delete();
+            } else {
+                foreach ($order->items as $item) {
+                    if ($item->scanned_box_qty > 0) {
+                        // Restore inventory for scanned items
+                        $inventory = DB::table('domestic_inventories')
+                            ->where('barcode', $item->barcode)
+                            ->first();
+
+                        if ($inventory) {
+                            DB::table('domestic_inventories')
+                                ->where('id', $inventory->id)
+                                ->increment('total_boxes', $item->scanned_box_qty);
+                        }
+                    }
+                }
+                $order->items()->delete();
+            }
+
+            $order->delete();
+
+            DB::commit();
+            return redirect()->route('admin.agent-orders.index')->with('success', 'Order deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Failed to delete order: ' . $e->getMessage());
+        }
     }
 
     public function edit($id, Request $request)
@@ -1070,13 +1125,14 @@ class AgentOrderController extends Controller
 
 
         $discount_percentage = $request->discount_percentage ?? 0;
+        $other_charges = $request->other_charges ?? 0;
         $discount_amount = ($total_amount * $discount_percentage / 100);
         $taxable_amount = $total_amount - $discount_amount;
 
         $gst_percentage = $request->has('gst_percentage') ? $request->gst_percentage : ($order->gst_percentage ?: 5.00);
 
         $gst_amount = $taxable_amount * ($gst_percentage / 100);
-        $grand_total = $taxable_amount + $gst_amount;
+        $grand_total = $taxable_amount + $gst_amount + $other_charges;
 
         $expected_dispatch_date = $request->expected_dispatch_date ?: $order->expected_dispatch_date;
 
@@ -1089,6 +1145,7 @@ class AgentOrderController extends Controller
                 'discount_amount' => $discount_amount,
                 'gst_amount' => $gst_amount,
                 'gst_percentage' => $gst_percentage,
+                'other_charges' => $other_charges,
                 'grand_total' => $grand_total,
                 'expected_dispatch_date' => $expected_dispatch_date,
                 'booking_station' => $request->booking_station,

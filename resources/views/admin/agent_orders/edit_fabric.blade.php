@@ -127,9 +127,17 @@
                                     <span class="text-muted">Discount (%):</span>
                                     <input type="number" id="discountPercentage" class="form-control form-control-sm text-right w-25 border-info" value="{{ $order->discount_percentage }}" min="0" max="100">
                                 </li>
+                                <li class="list-group-item d-flex justify-content-between px-0 py-2 border-0 align-items-center">
+                                    <span class="text-muted">GST (%):</span>
+                                    <input type="number" id="gstPercentage" class="form-control form-control-sm text-right w-25 border-info" value="{{ $order->gst_percentage }}" min="0" max="100" step="0.1">
+                                </li>
                                 <li class="list-group-item d-flex justify-content-between px-0 py-2 border-0">
-                                    <span class="text-muted">GST ({{ $gst_percentage }}%):</span>
+                                    <span class="text-muted">GST Amount:</span>
                                     <span class="font-weight-bold text-danger">+₹<span id="gstAmount">0.00</span></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between px-0 py-2 border-0 align-items-center">
+                                    <span class="text-muted">Other Charges:</span>
+                                    <input type="number" id="other_charges" class="form-control form-control-sm text-right w-50 border-info" value="{{ $order->other_charges ?? 0 }}" min="0" step="1">
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between px-0 py-3 border-top mt-2">
                                     <span class="h5 mb-0 font-weight-bold">Grand Total:</span>
@@ -452,10 +460,12 @@
             }
 
             const discountPercent = parseFloat($('#discountPercentage').val()) || 0;
+            const otherCharges = parseFloat($('#other_charges').val()) || 0;
             const discountAmount = subTotal * (discountPercent / 100);
             const taxable = subTotal - discountAmount;
-            const gst = taxable * (gstPercent / 100);
-            const grandTotal = taxable + gst;
+            const gstPercentInput = parseFloat($('#gstPercentage').val()) || 0;
+            const gst = taxable * (gstPercentInput / 100);
+            const grandTotal = taxable + gst + otherCharges;
 
             $('#totalRollsHeader').text(rollCount + ' Rolls Added');
             $('#subTotalAmount').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
@@ -472,7 +482,7 @@
             }
         }
 
-        $(document).on('input', '.order-meter, .roll-price, #discountPercentage, #targetTotalMeter', function() {
+        $(document).on('input', '.order-meter, .roll-price, #discountPercentage, #targetTotalMeter, #gstPercentage, #other_charges', function() {
             if ($(this).hasClass('order-meter')) {
                 const max = parseFloat($(this).attr('max')) || 0;
                 let val = parseFloat($(this).val()) || 0;
@@ -537,6 +547,8 @@
                             sale_type: "fabric",
                             rolls: selections,
                             discount_percentage: $('#discountPercentage').val(),
+                            gst_percentage: $('#gstPercentage').val(),
+                            other_charges: $('#other_charges').val(),
                             expected_dispatch_date: $('#expectedDispatchDate').val(),
                             booking_station: $('#booking_station').val(),
                             transport: $('#transport').val(),

@@ -158,6 +158,12 @@
                         <td colspan="8" class="text-right small">GST ({{ $order->gst_percentage }}%)</td>
                         <td class="text-right small">+Rs. {{ number_format($order->gst_amount, 2) }}</td>
                     </tr>
+                    @if($order->other_charges > 0)
+                    <tr class="summary-row">
+                        <td colspan="8" class="text-right small">Other Charges</td>
+                        <td class="text-right small">+Rs. {{ number_format($order->other_charges, 2) }}</td>
+                    </tr>
+                    @endif
                     <tr class="summary-row" style="background:#f0f0f0;">
                         <td colspan="8" class="text-right" style="font-size:14px;">GRAND TOTAL</td>
                         <td class="text-right" style="font-size:14px; color:#d32f2f;">Rs. {{ number_format($order->grand_total, 2) }}</td>

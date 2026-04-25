@@ -485,6 +485,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/get-shops', [AdminAgentOrderController::class, 'getShops'])->name('get-shops');
             Route::get('/get-fabric-rolls/{id}', [AdminAgentOrderController::class, 'getFabricRolls'])->name('get-fabric-rolls');
             Route::get('/{id}/show', [AdminAgentOrderController::class, 'show'])->name('show');
+            Route::delete('/{id}/delete', [AdminAgentOrderController::class, 'destroy'])->name('destroy');
             Route::get('/{id}/edit', [AdminAgentOrderController::class, 'edit'])->name('edit');
             Route::put('/{id}/update', [AdminAgentOrderController::class, 'update'])->name('update');
             Route::get('/{id}/download-invoice', [AdminAgentOrderController::class, 'downloadInvoice'])->name('download-invoice');

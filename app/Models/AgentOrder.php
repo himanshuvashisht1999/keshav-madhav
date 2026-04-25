@@ -29,7 +29,8 @@ class AgentOrder extends Model
         'order_date',
         'remark',
         'booking_station',
-        'transport'
+        'transport',
+        'other_charges'
     ];
 
     protected $appends = ['paid_amount', 'balance_amount'];

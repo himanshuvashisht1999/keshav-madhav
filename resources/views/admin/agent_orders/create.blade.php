@@ -277,9 +277,24 @@
                                     <small class="text-muted font-weight-bold">Taxable:</small>
                                     <span class="font-weight-bold">₹<span id="taxableAmount">0</span></span>
                                 </div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted font-weight-bold">GST (%):</small>
+                                    <input type="number" id="gstPercentage" class="form-control form-control-sm text-right h-auto py-0 px-1" 
+                                        style="width: 60px; font-weight: bold;" value="{{ $gst_percentage }}" min="0" max="100" step="0.1">
+                                </div>
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <small class="text-muted font-weight-bold">GST ({{ $gst_percentage }}%):</small>
+                                    <small class="text-muted font-weight-bold">GST Amount:</small>
                                     <span class="font-weight-bold text-danger">+₹<span id="gstAmount">0</span></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-2 border-right">
+                                <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Other Charges</small>
+                                <div class="input-group input-group-sm mt-1">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">₹</span>
+                                    </div>
+                                    <input type="number" id="other_charges" class="form-control" value="0" min="0" step="1">
                                 </div>
                             </div>
 
@@ -454,11 +469,12 @@
                 });
 
                 const discountPercent = parseFloat($('#discountPercentage').val()) || 0;
+                const otherCharges = parseFloat($('#other_charges').val()) || 0;
                 const discountAmount = subTotal * (discountPercent / 100);
                 const taxableAmount = subTotal - discountAmount;
-                const gstPercent = {{ $gst_percentage }};
+                const gstPercent = parseFloat($('#gstPercentage').val()) || 0;
                 const gstAmount = taxableAmount * (gstPercent / 100);
-                const grandTotal = taxableAmount + gstAmount;
+                const grandTotal = taxableAmount + gstAmount + otherCharges;
 
                 $('#selectedCount').text(totalBoxes);
                 $('#subTotalAmount').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
@@ -519,7 +535,7 @@
                 updateUI();
             });
 
-            $(document).on('input', '#discountPercentage', function() {
+            $(document).on('input', '#discountPercentage, #gstPercentage, #other_charges', function() {
                 updateUI();
             });
 
@@ -566,6 +582,8 @@
                                 variations: variations,
                                 expected_dispatch_date: $('#expectedDispatchDate').val(),
                                 discount_percentage: $('#discountPercentage').val(),
+                                gst_percentage: $('#gstPercentage').val(),
+                                other_charges: $('#other_charges').val(),
                                 remark: $('#remark').val(),
                                 booking_station: $('#booking_station').val(),
                                 transport: $('#transport').val()

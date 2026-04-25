@@ -40,7 +40,7 @@ class HulayatiDataTable
 
         foreach ($records as $record) {
             $status = '<span class="badge badge-' . ($record->status == 1 ? 'success' : 'danger') . '">' . ($record->status == 1 ? 'Active' : 'Inactive') . '</span>';
-            
+
             $action = '
                 <div class="btn-group">
                     <a href="' . route('admin.payment.master.hulayati.edit', ['id' => $record->id]) . '" class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></a>
