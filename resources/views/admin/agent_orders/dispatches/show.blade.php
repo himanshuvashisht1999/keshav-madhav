@@ -32,6 +32,10 @@
                         style="border-radius: 8px;" data-toggle="modal" data-target="#editInvoiceModal">
                         <i class="fas fa-edit mr-2"></i> EDIT INVOICE
                     </button>
+                    <a href="{{ route('admin.agent-orders.dispatches.return.create', $dispatch->id) }}"
+                        class="btn btn-outline-danger shadow-sm px-4 mr-2" style="border-radius: 8px;">
+                        <i class="fas fa-undo mr-2"></i> SALES RETURN
+                    </a>
                     <a href="{{ route('admin.agent-orders.dispatches.download-packing-slip', $dispatch->id) }}"
                         id="packingSlipBtn" class="btn btn-outline-info shadow-sm px-4 mr-2" style="border-radius: 8px;">
                         <i class="fas fa-boxes mr-2"></i> PACKING SLIP

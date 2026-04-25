@@ -36,7 +36,8 @@ class AgentOrderItem extends Model
         'scanned_box_qty',
         'scanned_quantity',
         'qrcode',
-        'dispatched_at'
+        'dispatched_at',
+        'agent_order_dispatch_id'
     ];
 
     public function order()

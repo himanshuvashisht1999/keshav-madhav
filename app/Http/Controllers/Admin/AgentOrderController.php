@@ -13,6 +13,8 @@ use App\Models\AgentOrderFabricItem;
 use App\Models\DomesticInventory;
 use App\Models\Fabric;
 use App\Models\FabricReceiptDetail;
+use App\Models\AgentOrderReturn;
+use App\Models\AgentOrderReturnItem;
 
 class AgentOrderController extends Controller
 {
@@ -2275,5 +2277,424 @@ class AgentOrderController extends Controller
 
         $pdf = Pdf::loadView('admin.agent_orders.dispatches.packing-slip-pdf', compact('dispatch', 'groupedItems', 'settings', 'selectedBrand', 'type', 'brandCount'));
         return $pdf->download('Packing_Slip_' . $dispatch->id . '.pdf');
+    }
+
+    public function indexReturns()
+    {
+        $returns = AgentOrderReturn::with(['dispatch.party', 'dispatch.agent', 'creator'])->latest()->paginate(20);
+        return view('admin.agent_orders.returns.index', compact('returns'));
+    }
+
+    public function returnCreate($id)
+    {
+        $dispatch = \App\Models\AgentOrderDispatch::with(['shop', 'vendor', 'agent'])->findOrFail($id);
+
+        $items = AgentOrderItem::where('agent_order_dispatch_id', $id)->get();
+        $fabricItems = AgentOrderFabricItem::with('fabric', 'roll')->where('agent_order_dispatch_id', $id)->get();
+
+        // Calculate already returned quantities
+        $returnedQuantities = DB::table('agent_order_return_items')
+            ->join('agent_order_returns', 'agent_order_return_items.agent_order_return_id', '=', 'agent_order_returns.id')
+            ->where('agent_order_returns.agent_order_dispatch_id', $id)
+            ->select('item_type', 'item_id', DB::raw('SUM(quantity) as total_returned'))
+            ->groupBy('item_type', 'item_id')
+            ->get()
+            ->groupBy('item_type');
+
+        return view('admin.agent_orders.returns.create', compact('dispatch', 'items', 'fabricItems', 'returnedQuantities'));
+    }
+
+    public function returnStore(Request $request, $id)
+    {
+        $dispatch = \App\Models\AgentOrderDispatch::findOrFail($id);
+        $returns_data = $request->input('returns'); // Array of {item_type, item_id, quantity}
+
+        if (empty($returns_data)) {
+            return response()->json(['success' => false, 'message' => 'No items selected for return.'], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $total_amount = 0;
+            $items_to_save = [];
+
+            foreach ($returns_data as $data) {
+                $qty = (float) $data['quantity'];
+                if ($qty <= 0) continue;
+
+                if ($data['item_type'] === 'standard') {
+                    $item = AgentOrderItem::findOrFail($data['item_id']);
+                    $max_qty = $item->scanned_box_qty;
+                } else {
+                    $item = AgentOrderFabricItem::findOrFail($data['item_id']);
+                    $max_qty = $item->meter;
+                }
+
+                // Check already returned
+                $alreadyReturned = DB::table('agent_order_return_items')
+                    ->join('agent_order_returns', 'agent_order_return_items.agent_order_return_id', '=', 'agent_order_returns.id')
+                    ->where('agent_order_returns.agent_order_dispatch_id', $id)
+                    ->where('item_type', $data['item_type'])
+                    ->where('item_id', $data['item_id'])
+                    ->sum('quantity');
+
+                if (($qty + $alreadyReturned) > $max_qty) {
+                    throw new \Exception("Return quantity exceeds dispatched quantity for one or more items.");
+                }
+
+                $price = (float) ($data['price'] ?? $item->selling_price);
+                
+                // For standard items, we need to calculate PCS if quantity is boxes
+                $row_pcs = $qty;
+                if ($data['item_type'] === 'standard') {
+                    $pcs_per_box = $item->scanned_quantity / ($item->scanned_box_qty ?: 1);
+                    $row_pcs = $qty * $pcs_per_box;
+                }
+
+                $subtotal = $row_pcs * $price;
+                $total_amount += $subtotal;
+
+                $items_to_save[] = [
+                    'item_type' => $data['item_type'],
+                    'item_id' => $data['item_id'],
+                    'quantity' => $qty,
+                    'price' => $price,
+                    'subtotal' => $subtotal,
+                    'tax_amount' => 0, // We will calculate tax at header level or distributed
+                    'total' => $subtotal, // Placeholder, will update if needed
+                ];
+
+                // Restore Inventory
+                if ($data['item_type'] === 'standard') {
+                    $inv = DomesticInventory::where('barcode', $item->barcode)->first();
+                    if ($inv) {
+                        $inv->increment('total_boxes', $qty);
+                    } else {
+                        DomesticInventory::create([
+                            'product_id' => $item->product_id,
+                            'color_id' => $item->color_id,
+                            'size_set_id' => $item->size_set_id,
+                            'fitting_id' => $item->fitting_id,
+                            'pattern_id' => $item->pattern_id,
+                            'quantity' => ($item->scanned_quantity / ($item->scanned_box_qty ?: 1)),
+                            'total_boxes' => $qty,
+                            'barcode' => $item->barcode,
+                            'box_no' => $item->box_no,
+                            'carton_no' => $item->carton_no,
+                            'status' => 'available'
+                        ]);
+                    }
+                } else {
+                    $roll = FabricReceiptDetail::find($item->fabric_receipt_detail_id);
+                    if ($roll) {
+                        $roll->increment('remaining_quantity', $qty);
+                    }
+                }
+            }
+
+            if (empty($items_to_save)) {
+                throw new \Exception("Please enter valid return quantities.");
+            }
+
+            // Calculations based on manual inputs
+            $gst_percentage = (float) ($request->gst_percentage ?? ($dispatch->gst_percentage ?? 5.00));
+            $discount_percentage = (float) ($request->discount_percentage ?? 0);
+            $other_charges = (float) ($request->other_charges ?? 0);
+
+            $discount_amount = ($total_amount * $discount_percentage / 100);
+            $taxable_amount = $total_amount - $discount_amount;
+            $gst_amount = $taxable_amount * ($gst_percentage / 100);
+            $grand_total = $taxable_amount + $gst_amount + $other_charges;
+
+            $return = AgentOrderReturn::create([
+                'agent_order_dispatch_id' => $id,
+                'return_date' => $request->return_date ?? date('Y-m-d'),
+                'total_amount' => $total_amount,
+                'gst_percentage' => $gst_percentage,
+                'discount_amount' => $discount_amount,
+                'discount_percentage' => $discount_percentage,
+                'gst_amount' => $gst_amount,
+                'other_charges' => $other_charges,
+                'grand_total' => $grand_total,
+                'remark' => $request->remark,
+                'created_by' => Auth::id()
+            ]);
+
+            foreach ($items_to_save as $item_data) {
+                $item_data['agent_order_return_id'] = $return->id;
+                // Distribute tax and discount proportionally if needed, or just save subtotal
+                AgentOrderReturnItem::create($item_data);
+            }
+
+            // Adjust Party Balance
+            $party = $dispatch->party();
+            if ($party) {
+                // Return increases balance (reduces debt)
+                $party->increment('balance', $grand_total);
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Sales return processed successfully.', 'redirect_url' => route('admin.agent-orders.returns.show', $return->id)]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function returnShow($id)
+    {
+        $return = AgentOrderReturn::with(['dispatch.party', 'dispatch.agent', 'items', 'creator'])->findOrFail($id);
+        
+        foreach ($return->items as $item) {
+            if ($item->item_type === 'standard') {
+                $original = AgentOrderItem::find($item->item_id);
+                $item->product_name = $original->product_name ?? 'N/A';
+                $item->design_number = $original->design_number ?? 'N/A';
+                $item->color_name = $original->color_name ?? 'N/A';
+                $item->size_set_name = $original->size_set_name ?? 'N/A';
+                $item->unit = 'Boxes';
+            } else {
+                $original = AgentOrderFabricItem::with('fabric')->find($item->item_id);
+                $item->product_name = $original->fabric->name ?? 'Fabric';
+                $item->design_number = 'N/A';
+                $item->color_name = 'N/A';
+                $item->size_set_name = 'N/A';
+                $item->unit = 'm';
+            }
+        }
+
+        return view('admin.agent_orders.returns.show', compact('return'));
+    }
+
+    public function returnEdit($id)
+    {
+        $return = AgentOrderReturn::with('items')->findOrFail($id);
+        $dispatch = \App\Models\AgentOrderDispatch::with(['party', 'orders.items', 'orders.fabricItems.fabric', 'orders.fabricItems.roll'])->findOrFail($return->agent_order_dispatch_id);
+
+        $items = $dispatch->orders->flatMap->items->where('agent_order_dispatch_id', $dispatch->id);
+        $fabricItems = $dispatch->orders->flatMap->fabricItems->where('agent_order_dispatch_id', $dispatch->id);
+
+        // Pre-calculate already returned quantities for this dispatch (excluding current return)
+        $returnedQuantities = [
+            'standard' => DB::table('agent_order_return_items')
+                ->join('agent_order_returns', 'agent_order_return_items.agent_order_return_id', '=', 'agent_order_returns.id')
+                ->where('agent_order_returns.agent_order_dispatch_id', $dispatch->id)
+                ->where('agent_order_returns.id', '!=', $id)
+                ->where('item_type', 'standard')
+                ->select('item_id', DB::raw('SUM(quantity) as total_returned'))
+                ->groupBy('item_id')
+                ->get(),
+            'fabric' => DB::table('agent_order_return_items')
+                ->join('agent_order_returns', 'agent_order_return_items.agent_order_return_id', '=', 'agent_order_returns.id')
+                ->where('agent_order_returns.agent_order_dispatch_id', $dispatch->id)
+                ->where('agent_order_returns.id', '!=', $id)
+                ->where('item_type', 'fabric')
+                ->select('item_id', DB::raw('SUM(quantity) as total_returned'))
+                ->groupBy('item_id')
+                ->get(),
+        ];
+
+        return view('admin.agent_orders.returns.edit', compact('return', 'dispatch', 'items', 'fabricItems', 'returnedQuantities'));
+    }
+
+    public function returnUpdate(Request $request, $id)
+    {
+        $return = AgentOrderReturn::with('items')->findOrFail($id);
+        $dispatch = \App\Models\AgentOrderDispatch::findOrFail($return->agent_order_dispatch_id);
+        $returns_data = $request->input('returns');
+
+        if (empty($returns_data)) {
+            return response()->json(['success' => false, 'message' => 'No items selected for return.'], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // 1. Reverse the current return's inventory and balance impact
+            foreach ($return->items as $item) {
+                if ($item->item_type === 'standard') {
+                    $original = AgentOrderItem::find($item->item_id);
+                    if ($original) {
+                        $inv = DomesticInventory::where('barcode', $original->barcode)->first();
+                        if ($inv) {
+                            $inv->decrement('total_boxes', $item->quantity);
+                        }
+                    }
+                } else {
+                    $original = AgentOrderFabricItem::find($item->item_id);
+                    if ($original) {
+                        $roll = FabricReceiptDetail::find($original->fabric_receipt_detail_id);
+                        if ($roll) {
+                            $roll->decrement('remaining_quantity', $item->quantity);
+                        }
+                    }
+                }
+            }
+
+            $party = $dispatch->party;
+            if ($party) {
+                $party->decrement('balance', $return->grand_total);
+            }
+
+            // 2. Delete old return items
+            $return->items()->delete();
+
+            // 3. Process new return data
+            $total_amount = 0;
+            $items_to_save = [];
+
+            foreach ($returns_data as $data) {
+                $qty = (float) $data['quantity'];
+                if ($qty <= 0) continue;
+
+                if ($data['item_type'] === 'standard') {
+                    $item = AgentOrderItem::findOrFail($data['item_id']);
+                    $max_qty = $item->scanned_box_qty;
+                } else {
+                    $item = AgentOrderFabricItem::findOrFail($data['item_id']);
+                    $max_qty = $item->meter;
+                }
+
+                $alreadyReturned = DB::table('agent_order_return_items')
+                    ->join('agent_order_returns', 'agent_order_return_items.agent_order_return_id', '=', 'agent_order_returns.id')
+                    ->where('agent_order_returns.agent_order_dispatch_id', $dispatch->id)
+                    ->where('agent_order_returns.id', '!=', $id)
+                    ->where('item_type', $data['item_type'])
+                    ->where('item_id', $data['item_id'])
+                    ->sum('quantity');
+
+                if (($qty + $alreadyReturned) > $max_qty) {
+                    throw new \Exception("Return quantity exceeds dispatched quantity for one or more items.");
+                }
+
+                $price = (float) ($data['price'] ?? $item->selling_price);
+                $row_pcs = $qty;
+                if ($data['item_type'] === 'standard') {
+                    $pcs_per_box = $item->scanned_quantity / ($item->scanned_box_qty ?: 1);
+                    $row_pcs = $qty * $pcs_per_box;
+                }
+
+                $subtotal = $row_pcs * $price;
+                $total_amount += $subtotal;
+
+                $items_to_save[] = [
+                    'agent_order_return_id' => $return->id,
+                    'item_type' => $data['item_type'],
+                    'item_id' => $data['item_id'],
+                    'quantity' => $qty,
+                    'price' => $price,
+                    'subtotal' => $subtotal,
+                    'tax_amount' => 0,
+                    'total' => $subtotal,
+                ];
+
+                // Restore Inventory
+                if ($data['item_type'] === 'standard') {
+                    $inv = DomesticInventory::where('barcode', $item->barcode)->first();
+                    if ($inv) {
+                        $inv->increment('total_boxes', $qty);
+                    } else {
+                        DomesticInventory::create([
+                            'product_id' => $item->product_id,
+                            'color_id' => $item->color_id,
+                            'size_set_id' => $item->size_set_id,
+                            'fitting_id' => $item->fitting_id,
+                            'pattern_id' => $item->pattern_id,
+                            'quantity' => ($item->scanned_quantity / ($item->scanned_box_qty ?: 1)),
+                            'total_boxes' => $qty,
+                            'barcode' => $item->barcode,
+                            'box_no' => $item->box_no,
+                            'carton_no' => $item->carton_no,
+                            'status' => 'available'
+                        ]);
+                    }
+                } else {
+                    $roll = FabricReceiptDetail::find($item->fabric_receipt_detail_id);
+                    if ($roll) {
+                        $roll->increment('remaining_quantity', $qty);
+                    }
+                }
+            }
+
+            // 4. Update return header
+            $gst_percentage = (float) ($request->gst_percentage ?? 5.00);
+            $discount_percentage = (float) ($request->discount_percentage ?? 0);
+            $other_charges = (float) ($request->other_charges ?? 0);
+
+            $discount_amount = ($total_amount * $discount_percentage / 100);
+            $taxable_amount = $total_amount - $discount_amount;
+            $gst_amount = $taxable_amount * ($gst_percentage / 100);
+            $grand_total = $taxable_amount + $gst_amount + $other_charges;
+
+            $return->update([
+                'return_date' => $request->return_date ?? date('Y-m-d'),
+                'total_amount' => $total_amount,
+                'gst_percentage' => $gst_percentage,
+                'discount_amount' => $discount_amount,
+                'discount_percentage' => $discount_percentage,
+                'gst_amount' => $gst_amount,
+                'other_charges' => $other_charges,
+                'grand_total' => $grand_total,
+                'remark' => $request->remark,
+            ]);
+
+            foreach ($items_to_save as $item_data) {
+                AgentOrderReturnItem::create($item_data);
+            }
+
+            // 5. Re-apply new Party Balance
+            if ($party) {
+                $party->increment('balance', $grand_total);
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Sales Return updated successfully.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Error updating return: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function returnDestroy($id)
+    {
+        DB::beginTransaction();
+        try {
+            $return = AgentOrderReturn::with('items')->findOrFail($id);
+            $dispatch = \App\Models\AgentOrderDispatch::findOrFail($return->agent_order_dispatch_id);
+
+            foreach ($return->items as $item) {
+                // Reverse Inventory
+                if ($item->item_type === 'standard') {
+                    $original = AgentOrderItem::find($item->item_id);
+                    if ($original) {
+                        $inv = DomesticInventory::where('barcode', $original->barcode)->first();
+                        if ($inv) {
+                            $inv->decrement('total_boxes', $item->quantity);
+                        }
+                    }
+                } else {
+                    $original = AgentOrderFabricItem::find($item->item_id);
+                    if ($original) {
+                        $roll = FabricReceiptDetail::find($original->fabric_receipt_detail_id);
+                        if ($roll) {
+                            $roll->decrement('remaining_quantity', $item->quantity);
+                        }
+                    }
+                }
+            }
+
+            // Reverse Party Balance
+            $party = $dispatch->party;
+            if ($party) {
+                $party->decrement('balance', $return->grand_total);
+            }
+
+            $return->delete();
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Sales Return deleted and inventory/balance reversed successfully.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Error deleting return: ' . $e->getMessage()], 500);
+        }
     }
 }

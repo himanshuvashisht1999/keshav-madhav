@@ -504,6 +504,15 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/dispatches/{id}/packing-slip', [AdminAgentOrderController::class, 'downloadDispatchPackingSlip'])->name('dispatches.download-packing-slip');
             Route::post('/dispatches/{id}/update-invoice', [AdminAgentOrderController::class, 'updateDispatchInvoice'])->name('dispatches.update-invoice');
             Route::post('/dispatch-selected', [AdminAgentOrderController::class, 'dispatchSelected'])->name('dispatch-selected');
+
+            // Returns
+            Route::get('/dispatches/{id}/return', [AdminAgentOrderController::class, 'returnCreate'])->name('dispatches.return.create');
+            Route::post('/dispatches/{id}/return', [AdminAgentOrderController::class, 'returnStore'])->name('dispatches.return.store');
+            Route::get('/returns', [AdminAgentOrderController::class, 'indexReturns'])->name('returns.index');
+            Route::get('/returns/{id}', [AdminAgentOrderController::class, 'returnShow'])->name('returns.show');
+            Route::get('/returns/{id}/edit', [AdminAgentOrderController::class, 'returnEdit'])->name('returns.edit');
+            Route::post('/returns/{id}/update', [AdminAgentOrderController::class, 'returnUpdate'])->name('returns.update');
+            Route::delete('/returns/{id}/delete', [AdminAgentOrderController::class, 'returnDestroy'])->name('returns.destroy');
         });
 
         Route::prefix('direct-sales')->name('direct-sales.')->group(function () {
