@@ -30,6 +30,7 @@ class OrderCuttingStage extends Model
         'allowed_time',
         'processed_by',
         'remarks',
+        'belt',
         'status',
         'created_by',
         'created_at',

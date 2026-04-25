@@ -845,6 +845,7 @@ class ProductOrderService
                     $cuttingStage->quantity = $assignQty;
                     $cuttingStage->remaining_quantity = $assignQty;
                     $cuttingStage->remarks = $request->remark ?? null;
+                    $cuttingStage->belt = $request->belt ?? null;
                     $cuttingStage->processed_by = auth()->id();
                     $cuttingStage->status = 1; // Pending at cutting
                     $cuttingStage->save();

@@ -189,6 +189,12 @@
                         <small class="text-muted">Current remaining pieces: <span id="current_remain_qty"></span></small>
                     </div>
 
+                    <!-- BELT -->
+                    <div class="form-group">
+                        <label>Belt</label>
+                        <input type="text" name="belt" class="form-control" placeholder="Enter belt details">
+                    </div>
+
                     <!-- REMARK -->
                     <div class="form-group">
                         <label>Remark</label>

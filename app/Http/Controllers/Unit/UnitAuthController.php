@@ -879,13 +879,13 @@ class UnitAuthController extends Controller
             // Filter by sub_stage_id_to = current unit's ID in Transactions
 
             $ass1Query = \App\Models\OrderStageTransaction::where('sub_stage_id_to', $unitId)
-                ->with(['from_stage', 'getFromUnitMaster']);
+                ->with(['from_stage', 'getFromUnitMaster', 'orderProduct.orderProductSet.order_cutting_stage']);
 
             $ass2Query = \App\Models\OrderPrintingStageTransaction::where('sub_stage_id_to', $unitId)
-                ->with(['from_stage', 'getFromUnitMaster']);
+                ->with(['from_stage', 'getFromUnitMaster', 'orderProduct.orderProductSet.order_cutting_stage']);
 
             $ass3Query = \App\Models\OrderPrintingToStichingTransaction::where('sub_stage_id_to', $unitId)
-                ->with(['from_stage', 'getFromUnitMaster']);
+                ->with(['from_stage', 'getFromUnitMaster', 'orderProduct.orderProductSet.order_cutting_stage']);
 
             if ($lotNo) {
                 $ass1Query->where('lot_no', 'like', '%' . $lotNo . '%');
@@ -1123,6 +1123,7 @@ class UnitAuthController extends Controller
                 'warehouse' => $unit->masterFabricWarehouse->cutting_master_name ?? '-',
                 'unit_name' => $unit->name ?? '-',
                 'remark' => $stageAssignment->remarks ?? $data->remark ?? '-',
+                'belt' => $stageAssignment->belt ?? '-',
                 'total_pcs' => $stageAssignment->quantity ?? 0,
                 'lot_no' => 'Pending',
                 'size_set' => $sizeSetRange,
@@ -1522,7 +1523,8 @@ class UnitAuthController extends Controller
             'fitting' => $stageAssignment->master_fitting->name ?? '-',
             'warehouse_name' => $stageAssignment->cutting_master->masterFabricWarehouse->cutting_master_name ?? '-',
             'cuttingMaster' => $stageAssignment->cutting_master->name ?? '-',
-            'remark' => $data->remark ?? '-',
+            'remark' => $stageAssignment->remarks ?? '-',
+            'belt' => $stageAssignment->belt ?? '-',
             'total_pcs' => $stageAssignment->quantity ?? 0,
         ];
 

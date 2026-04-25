@@ -347,6 +347,10 @@
                     </div>
                     <div class="assignment-body">
                         <div class="info-item">
+                            <span class="info-label">CMPO No</span>
+                            <span class="info-value">CMPO-{{ $item->id }}</span>
+                        </div>
+                        <div class="info-item">
                             <span class="info-label">Order No</span>
                             <span class="info-value">{{ $item->productSet->orderMain->sku ?? '-' }}</span>
                         </div>
@@ -402,6 +406,10 @@
                         </span>
                     </div>
                     <div class="assignment-body">
+                        <div class="info-item">
+                            <span class="info-label">CMPO No</span>
+                            <span class="info-value">CMPO-{{ $item->orderProduct?->orderProductSet?->order_cutting_stage?->id ?? '-' }}</span>
+                        </div>
                         <div class="info-item">
                             <span class="info-label">From Stage</span>
                             <span class="info-value">{{ $item->from_stage->name ?? $item->fromStage->name ?? '-' }}</span>

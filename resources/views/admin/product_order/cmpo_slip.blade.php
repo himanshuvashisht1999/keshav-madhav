@@ -123,6 +123,10 @@
         </tr> --}}
 
         <tr>
+            <td class="meta-label">Belt:</td>
+            <td colspan="3">{{ $header['belt'] }}</td>
+        </tr>
+        <tr>
             <td class="meta-label">Remark:</td>
             <td colspan="3">{{ $header['remark'] }}</td>
         </tr>

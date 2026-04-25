@@ -242,6 +242,10 @@
                 <span class="info-label">Pattern & Fitting</span>
                 <span class="info-value">{{ $header['pattern'] }} | {{ $header['fitting'] }}</span>
             </div>
+            <div class="info-item info-full">
+                <span class="info-label">Belt</span>
+                <span class="info-value">{{ $header['belt'] }}</span>
+            </div>
         </div>
 
         @if($header['remark'] && $header['remark'] != '-')
