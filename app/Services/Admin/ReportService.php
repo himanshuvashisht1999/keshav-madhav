@@ -485,6 +485,40 @@ class ReportService
         return ['level' => 'fabrics', 'data' => collect([])];
     }
 
+    public function fabricReturn(Request $request)
+    {
+        $query = \App\Models\FabricReturn::with(['receipt.vendor'])
+            ->orderBy('date', 'desc');
+
+        if ($request->filled('vendor_id')) {
+            $query->whereHas('receipt', function($q) use ($request) {
+                $q->where('vendor_id', $request->vendor_id);
+            });
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('date', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('date', '<=', $request->end_date);
+        }
+
+        if ($request->filled('search')) {
+            $query->whereHas('receipt', function($q) use ($request) {
+                $q->where('sku', 'LIKE', '%' . $request->search . '%');
+            });
+        }
+
+        return $query->paginate(20)->withQueryString();
+    }
+
+    public function getFabricReturnDetails($id)
+    {
+        return \App\Models\FabricReturn::with(['receipt.vendor', 'details.fabric', 'details.receipt_detail'])
+            ->findOrFail($id);
+    }
+
 
 
 

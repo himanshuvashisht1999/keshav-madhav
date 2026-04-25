@@ -896,6 +896,50 @@ class ProductOrderService
         }
     }
 
+    public function deleteAssignment(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $setId = $request->id;
+            $data = OrderProductSet::findOrFail($setId);
+
+            // Check if any lots exist
+            $lotExists = OrderLot::where('order_products_set_id', $setId)->exists();
+            if ($lotExists) {
+                return [
+                    'status' => false,
+                    'message' => 'Cannot delete assignment because production lots have already been created.'
+                ];
+            }
+
+            // Delete Cutting Stages
+            OrderCuttingStage::where('set_product_id', $setId)->delete();
+
+            // Reset Order Product Set
+            $data->remain_total_quantity = $data->total_quantity;
+            $data->remain_set_quantity = $data->set_quantity;
+            $data->status = 1; // Not Assigned
+            $data->stage_master_unit_id = null;
+            $data->fabric_id = null;
+            $data->master_product_fitting_id = null;
+            $data->master_design_pattern_id = null;
+            $data->remark = null;
+            $data->save();
+
+            DB::commit();
+            return [
+                'status' => true,
+                'message' => 'Assignment details deleted successfully.'
+            ];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return [
+                'status' => false,
+                'message' => 'Error deleting assignment: ' . $e->getMessage()
+            ];
+        }
+    }
+
     public function fittings()
     {
         $data = MasterProductFitting::where('status', 1)->get();

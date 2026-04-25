@@ -343,6 +343,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/status-hover-data', [AdminProductOrderController::class, 'productStatusHoverData'])->name('statusHoverData');
 
             Route::post('/assign_to', [AdminProductOrderController::class, 'assign_to'])->name('assign_to');
+            Route::post('/delete-assignment', [AdminProductOrderController::class, 'deleteAssignment'])->name('deleteAssignment');
             Route::get('/download-cutting-slip', [AdminProductOrderController::class, 'downloadCuttingSlip'])->name('downloadCuttingSlip');
 
             // Route::get('/fabric_combined_receipt',[AdminProductOrderController::class,'fabric_combined_receipt'])->name('fabric_combined_receipt');
@@ -492,7 +493,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/get-shops', [AdminAgentOrderController::class, 'getShops'])->name('get-shops');
             Route::get('/get-fabric-rolls/{id}', [AdminAgentOrderController::class, 'getFabricRolls'])->name('get-fabric-rolls');
             Route::get('/{id}/show', [AdminAgentOrderController::class, 'show'])->name('show');
-            Route::delete('/{id}/delete', [AdminAgentOrderController::class, 'destroy'])->name('destroy');
+            Route::get('/{id}/delete', [AdminAgentOrderController::class, 'destroy'])->name('destroy');
             Route::get('/{id}/edit', [AdminAgentOrderController::class, 'edit'])->name('edit');
             Route::put('/{id}/update', [AdminAgentOrderController::class, 'update'])->name('update');
             Route::get('/{id}/download-invoice', [AdminAgentOrderController::class, 'downloadInvoice'])->name('download-invoice');
@@ -1008,6 +1009,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/stock/roll-details', [AdminReportController::class, 'fabricRollDetails'])->name('stock.roll.details');
             Route::get('/stock/export', [AdminReportController::class, 'stockExport'])->name('stock.export');
             Route::get('/stock/pdf', [AdminReportController::class, 'stockPdf'])->name('stock.pdf');
+            Route::get('/fabric-return', [AdminReportController::class, 'fabricReturn'])->name('fabric_return');
+            Route::get('/fabric-return/view/{id}', [AdminReportController::class, 'fabricReturnView'])->name('fabric_return_view');
             Route::get('/purchase-order', [AdminReportController::class, 'purchaseOrder'])->name('purchase_order');
             Route::get('/purchase-order/item-details', [AdminReportController::class, 'purchaseOrderItemDetails'])->name('purchase_order.item.details');
 

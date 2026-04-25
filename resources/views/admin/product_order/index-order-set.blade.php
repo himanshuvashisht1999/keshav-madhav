@@ -385,6 +385,31 @@ $('#assignForm').on('submit', function (e) {
     });
 });
 
+// Delete Assignment Handler
+$(document).on('click', '.delete-assign-btn', function () {
+    const id = $(this).data('id');
+    if (confirm('Are you sure you want to delete all assignment details for this set? This will revert stock and marks it as Not Assigned.')) {
+        $.ajax({
+            url: "{{ route('admin.product_order.deleteAssignment') }}",
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                id: id
+            },
+            success: function (res) {
+                if (res.status) {
+                    $('#customers').DataTable().ajax.reload(null, false);
+                } else {
+                    alert(res.message);
+                }
+            },
+            error: function () {
+                alert('Something went wrong');
+            }
+        });
+    }
+});
+
 </script>
 
 @endsection

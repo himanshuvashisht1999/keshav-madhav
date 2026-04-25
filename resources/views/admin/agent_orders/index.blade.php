@@ -188,7 +188,18 @@
                                                 class="btn btn-primary btn-sm px-2 shadow-sm rounded-pill mr-1" title="View Order">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            @if($order->status == 'pending')
+                                            @if($order->status == 'pending' && $order->scanned_count == 0)
+                                            <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
+                                                class="btn btn-info btn-sm px-2 shadow-sm rounded-pill mr-1" title="Edit Order">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ route('admin.agent-orders.destroy', $order->id) }}"
+                                                class="btn btn-danger btn-sm px-2 shadow-sm rounded-pill" 
+                                                onclick="return confirm('Are you sure you want to delete this order? This will revert any reserved stock.');"
+                                                title="Delete Order">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                            @elseif($order->status == 'pending')
                                             <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
                                                 class="btn btn-info btn-sm px-2 shadow-sm rounded-pill" title="Edit Order">
                                                 <i class="fas fa-edit"></i>

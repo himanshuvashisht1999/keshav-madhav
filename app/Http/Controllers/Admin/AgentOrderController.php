@@ -715,13 +715,15 @@ class AgentOrderController extends Controller
     {
         $order = AgentOrder::with(['items', 'fabricItems', 'dispatches'])->findOrFail($id);
 
-        // Check if any items are dispatched
-        $hasDispatch = $order->dispatches()->exists() ||
+        // Check if any items are dispatched or scanned
+        $hasScanned = $order->items()->where('scanned_box_qty', '>', 0)->exists();
+        $hasDispatch = $order->dispatches()->exists() || 
             $order->items()->whereNotNull('dispatched_at')->exists() ||
+            $order->fabricItems()->whereNotNull('agent_order_dispatch_id')->exists() ||
             $order->status === 'dispatched';
 
-        if ($hasDispatch) {
-            return redirect()->back()->with('error', 'Cannot delete order as some items have already been dispatched.');
+        if ($hasDispatch || $hasScanned) {
+            return redirect()->back()->with('error', 'Cannot delete order as some items have already been scanned or dispatched.');
         }
 
         if ($order->paid_amount > 0) {

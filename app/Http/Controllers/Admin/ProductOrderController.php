@@ -237,6 +237,12 @@ class ProductOrderController extends Controller {
         }
     }
 
+    public function deleteAssignment(Request $request)
+    {
+        $response = $this->service->deleteAssignment($request);
+        return response()->json($response);
+    }
+
     public function indexOrderSetDownload(Request $request)
     {
         // $data = OrderProductSet::with([

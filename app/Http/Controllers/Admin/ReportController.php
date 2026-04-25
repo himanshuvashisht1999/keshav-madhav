@@ -340,4 +340,18 @@ class ReportController extends Controller
         $response = $this->service->designWip($request);
         return view('admin.report.design_wip', $response);
     }
+
+    public function fabricReturn(Request $request)
+    {
+        $response['data'] = $this->service->fabricReturn($request);
+        $response['vendors'] = $this->service->vendors();
+        $response['filters'] = $request->all();
+        return view('admin.report.fabric_return', $response);
+    }
+
+    public function fabricReturnView($id)
+    {
+        $response['return'] = $this->service->getFabricReturnDetails($id);
+        return view('admin.report.fabric_return_view', $response);
+    }
 }

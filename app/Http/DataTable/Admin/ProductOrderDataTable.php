@@ -268,7 +268,13 @@ class ProductOrderDataTable  {
                 
                 // Show View/Download if at least some quantity has been assigned
                 if ($queue->remain_total_quantity < $queue->total_quantity || $queue->status == 2) {
-                    $view = '<a href="' . route('admin.product_order.viewCuttingSlip', ['id' => $parameter]) . '" class="btn btn-xs btn-info" data-toggle="tooltip" title="View Assignments">View</a>';
+                    $view = '<a href="' . route('admin.product_order.viewCuttingSlip', ['id' => $parameter]) . '" class="mr-2" data-toggle="tooltip" title="View Assignments"><i class="fas fa-eye text-primary" style="font-size: 16px;"></i></a>';
+                    
+                    // Add Delete Assignment button if no lots exist
+                    $lotExists = \App\Models\OrderLot::where('order_products_set_id', $parameter)->exists();
+                    if (!$lotExists) {
+                        $view .= '<a href="javascript:void(0)" class="delete-assign-btn" data-id="'.$parameter.'" data-toggle="tooltip" title="Delete Assignment"><i class="fas fa-trash text-danger" style="font-size: 16px;"></i></a>';
+                    }
                 } else {
                     $view = '';
                 }
