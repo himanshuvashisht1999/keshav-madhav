@@ -17,12 +17,14 @@
                         <th class="text-end">Price/Mtr</th>
                         <th class="text-end">Total Amount</th>
                         <th class="text-end">Received Qty</th>
+                        <th class="text-end text-danger">Returned Qty</th>
                         <th class="text-end">Remaining Qty</th>
                     </tr>
                 </thead>
                 <tbody>
                     @php $sr = ($data->currentPage() - 1) * $data->perPage() + 1; @endphp
                     @forelse($data as $row)
+                    @php $returnedQty = $row->returns->sum('return_meter'); @endphp
                     <tr>
                         <td>{{ $sr++ }}</td>
                         <td>{{ optional($row->fabric_receipt)->created_at ? $row->fabric_receipt->created_at->format('d M Y') : $row->created_at->format('d M Y') }}</td>
@@ -34,6 +36,7 @@
                         <td class="text-end">{{ number_format($row->price_per_meter, 2) }}</td>
                         <td class="text-end fw-bold">{{ number_format($row->price_per_meter * $row->meter, 2) }}</td>
                         <td class="text-end fw-bold text-success">{{ number_format($row->meter, 2) }}</td>
+                        <td class="text-end fw-bold text-danger">{{ number_format($returnedQty, 2) }}</td>
                         <td class="text-end fw-bold">{{ number_format($row->remaining_quantity, 2) }}</td>
                     </tr>
                     @empty

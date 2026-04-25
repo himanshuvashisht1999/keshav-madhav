@@ -20,6 +20,8 @@ use Carbon\Carbon;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
 use Picqer\Barcode\BarcodeGeneratorPNG;
+use App\Models\FabricReturn;
+use App\Models\FabricReturnDetail;
 use PDF;
 
 class FabricReceiptService
@@ -172,76 +174,76 @@ class FabricReceiptService
                         }
                     }
 
-                ////////// work for barcode
-                $qrcode_number = $this->generateUniqueQrNumber();
+                    ////////// work for barcode
+                    $qrcode_number = $this->generateUniqueQrNumber();
 
-                /// code for barcode
-                $barcodeGenerator = new BarcodeGeneratorPNG();
-                $barcodeData = $qrcode_number;
-                $barcodeFileName = $qrcode_number . '_barcode.png';
-                $barcodePath = public_path('assets/barcodes');
-                if (!file_exists($barcodePath)) {
-                    mkdir($barcodePath, 0777, true);
+                    /// code for barcode
+                    $barcodeGenerator = new BarcodeGeneratorPNG();
+                    $barcodeData = $qrcode_number;
+                    $barcodeFileName = $qrcode_number . '_barcode.png';
+                    $barcodePath = public_path('assets/barcodes');
+                    if (!file_exists($barcodePath)) {
+                        mkdir($barcodePath, 0777, true);
+                    }
+                    file_put_contents(
+                        $barcodePath . '/' . $barcodeFileName,
+                        $barcodeGenerator->getBarcode($barcodeData, $barcodeGenerator::TYPE_CODE_128, 3, 80)
+                    );
+
+                    $fileName = $qrcode_number . '.png';
+                    $qrData = json_encode([
+                        'fabric_id' => $fabric_id,
+                        'shipment_id' => $shipment_id,
+                        'roll_number' => $roll_number,
+                        'price' => $price
+                    ]);
+
+                    $destinationPath = public_path('assets/qrcodes');
+
+                    // Ensure directory exists
+                    if (!file_exists($destinationPath)) {
+                        mkdir($destinationPath, 0777, true);
+                    }
+
+                    // Generate QR Code with GD (no imagick)
+                    $result = Builder::create()
+                        ->writer(new PngWriter())
+                        ->data($qrData)
+                        ->size(300)
+                        ->margin(10)
+                        ->build();
+
+                    $result->saveToFile($destinationPath . '/' . $fileName);
+
+                    ////end barcode
+
+                    $save_data_detail = new FabricReceiptDetail;
+                    $save_data_detail->fabric_receipt_id = $save_data->id;
+
+                    $save_data_detail->purchase_order_id = $po_id;
+                    $save_data_detail->purchase_order_item_id = $po_item_id;
+                    $save_data_detail->fabric_sku = $fabric_sku;
+                    $save_data_detail->fabric_id = $fabric_id;
+                    $save_data_detail->roll = 1;
+                    $save_data_detail->roll_number = $roll_number;
+                    $save_data_detail->price_per_meter = $price;
+                    $save_data_detail->meter = $meter;
+                    $save_data_detail->batch_no = '';
+                    $save_data_detail->status = 1;
+                    $save_data_detail->barcode = $barcodeFileName;
+                    $save_data_detail->qrcode = $fileName;
+                    $save_data_detail->qrcode_number = $qrcode_number;
+                    $save_data_detail->remaining_quantity = $meter;
+                    $save_data_detail->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
+                    $save_data_detail->shipment_number = $shipment_id;
+                    $save_data_detail->save();
+
                 }
-                file_put_contents(
-                    $barcodePath . '/' . $barcodeFileName,
-                    $barcodeGenerator->getBarcode($barcodeData, $barcodeGenerator::TYPE_CODE_128, 3, 80)
-                );
-
-                $fileName = $qrcode_number . '.png';
-                $qrData = json_encode([
-                    'fabric_id' => $fabric_id,
-                    'shipment_id' => $shipment_id,
-                    'roll_number' => $roll_number,
-                    'price' => $price
-                ]);
-
-                $destinationPath = public_path('assets/qrcodes');
-
-                // Ensure directory exists
-                if (!file_exists($destinationPath)) {
-                    mkdir($destinationPath, 0777, true);
-                }
-
-                // Generate QR Code with GD (no imagick)
-                $result = Builder::create()
-                    ->writer(new PngWriter())
-                    ->data($qrData)
-                    ->size(300)
-                    ->margin(10)
-                    ->build();
-
-                $result->saveToFile($destinationPath . '/' . $fileName);
-
-                ////end barcode
-
-                $save_data_detail = new FabricReceiptDetail;
-                $save_data_detail->fabric_receipt_id = $save_data->id;
-
-                $save_data_detail->purchase_order_id = $po_id;
-                $save_data_detail->purchase_order_item_id = $po_item_id;
-                $save_data_detail->fabric_sku = $fabric_sku;
-                $save_data_detail->fabric_id = $fabric_id;
-                $save_data_detail->roll = 1;
-                $save_data_detail->roll_number = $roll_number;
-                $save_data_detail->price_per_meter = $price;
-                $save_data_detail->meter = $meter;
-                $save_data_detail->batch_no = '';
-                $save_data_detail->status = 1;
-                $save_data_detail->barcode = $barcodeFileName;
-                $save_data_detail->qrcode = $fileName;
-                $save_data_detail->qrcode_number = $qrcode_number;
-                $save_data_detail->remaining_quantity = $meter;
-                $save_data_detail->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
-                $save_data_detail->shipment_number = $shipment_id;
-                $save_data_detail->save();
 
             }
 
-        }
-
-        DB::commit();
-        return $save_data->id;
+            DB::commit();
+            return $save_data->id;
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
@@ -250,8 +252,182 @@ class FabricReceiptService
 
     public function view(Request $request)
     {
-        $data = FabricReceipt::with('vendor', 'details.purchase_order', 'details.purchase_order_item', 'details.fabric')->where('id', $request->id)->first();
+        $data = FabricReceipt::with([
+            'vendor',
+            'details.purchase_order',
+            'details.purchase_order_item',
+            'details.fabric',
+            'details.returns',
+            'returns',
+            'returns.details',
+            'returns.details.fabric'
+        ])->where('id', $request->id)->first();
         return $data;
+    }
+
+    public function storeReturn(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $receipt = FabricReceipt::find($request->fabric_receipt_id);
+
+            $return = new FabricReturn();
+            $return->fabric_receipt_id = $receipt->id;
+            $return->date = $request->date ?? date('Y-m-d');
+            $return->remarks = $request->remarks;
+            $return->return_number = 'RET-' . time() . '-' . rand(100, 999);
+
+            // New fields from request
+            $return->sub_total = $request->sub_total ?? 0;
+            $return->gst_percentage = $request->gst_percentage ?? 0;
+            $return->gst_amount = $request->gst_amount ?? 0;
+            $return->discount = $request->discount ?? 0;
+            $return->other_charges = $request->other_charges ?? 0;
+            $return->total_amount = $request->total_amount ?? 0;
+            $return->save();
+
+            $calculated_subtotal = 0;
+
+            foreach ($request->returns as $detail_id => $return_data) {
+                if (!isset($return_data['return_meter']) || $return_data['return_meter'] <= 0) {
+                    continue;
+                }
+
+                $detail = FabricReceiptDetail::find($detail_id);
+                if (!$detail)
+                    continue;
+
+                $return_meter = (float) $return_data['return_meter'];
+                $price_per_meter = (float) ($return_data['price_per_meter'] ?? $detail->price_per_meter);
+
+                // Validate against remaining quantity
+                if ($return_meter > $detail->remaining_quantity) {
+                    throw new \Exception("Return quantity for roll {$detail->roll_number} exceeds remaining quantity.");
+                }
+
+                // Create Return Detail
+                $return_detail = new FabricReturnDetail();
+                $return_detail->fabric_return_id = $return->id;
+                $return_detail->fabric_receipt_detail_id = $detail->id;
+                $return_detail->fabric_id = $detail->fabric_id;
+                $return_detail->return_meter = $return_meter;
+                $return_detail->price_per_meter = $price_per_meter;
+                $return_detail->save();
+
+                // Update Detail Remaining Quantity
+                $detail->remaining_quantity -= $return_meter;
+                // if ($detail->remaining_quantity <= 0) {
+                //     $detail->status = 2; // Fully Returned
+                // }
+                $detail->save();
+            }
+
+            // Deduct from vendor balance
+            if ($receipt->vendor_id) {
+                $vendor = Vendor::find($receipt->vendor_id);
+                if ($vendor) {
+                    $vendor->balance -= $return->total_amount;
+                    $vendor->save();
+                }
+            }
+
+            DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    public function updateReturn(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $return = FabricReturn::with('details.receipt_detail')->find($request->return_id);
+            if (!$return) {
+                throw new \Exception("Return record not found.");
+            }
+
+            $receipt = FabricReceipt::find($return->fabric_receipt_id);
+
+            // 1. Revert OLD return impact
+            foreach ($return->details as $old_detail) {
+                if ($old_detail->receipt_detail) {
+                    $old_detail->receipt_detail->remaining_quantity += $old_detail->return_meter;
+                    if ($old_detail->receipt_detail->status == 2) {
+                        $old_detail->receipt_detail->status = 1;
+                    }
+                    $old_detail->receipt_detail->save();
+                }
+            }
+
+            // Revert Vendor Balance (add back the deduction)
+            if ($receipt && $receipt->vendor_id) {
+                $vendor = Vendor::find($receipt->vendor_id);
+                if ($vendor) {
+                    $vendor->balance += $return->total_amount;
+                    $vendor->save();
+                }
+            }
+
+            // Clear old details
+            $return->details()->delete();
+
+            // 2. Apply NEW return impact
+            $return->date = $request->date ?? date('Y-m-d');
+            $return->remarks = $request->remarks;
+            $return->sub_total = $request->sub_total ?? 0;
+            $return->gst_percentage = $request->gst_percentage ?? 0;
+            $return->gst_amount = $request->gst_amount ?? 0;
+            $return->discount = $request->discount ?? 0;
+            $return->other_charges = $request->other_charges ?? 0;
+            $return->total_amount = $request->total_amount ?? 0;
+            $return->save();
+
+            foreach ($request->returns as $detail_id => $return_data) {
+                if (!isset($return_data['return_meter']) || $return_data['return_meter'] <= 0) {
+                    continue;
+                }
+
+                $detail = FabricReceiptDetail::find($detail_id);
+                if (!$detail) continue;
+
+                $return_meter = (float) $return_data['return_meter'];
+                $price_per_meter = (float) ($return_data['price_per_meter'] ?? $detail->price_per_meter);
+
+                if ($return_meter > $detail->remaining_quantity) {
+                    throw new \Exception("Return quantity for roll {$detail->roll_number} exceeds available quantity.");
+                }
+
+                // Create New Return Detail
+                $return_detail = new FabricReturnDetail();
+                $return_detail->fabric_return_id = $return->id;
+                $return_detail->fabric_receipt_detail_id = $detail->id;
+                $return_detail->fabric_id = $detail->fabric_id;
+                $return_detail->return_meter = $return_meter;
+                $return_detail->price_per_meter = $price_per_meter;
+                $return_detail->save();
+
+                // Update Detail Remaining Quantity
+                $detail->remaining_quantity -= $return_meter;
+                $detail->save();
+            }
+
+            // Update Vendor Balance with NEW total
+            if ($receipt && $receipt->vendor_id) {
+                $vendor = Vendor::find($receipt->vendor_id);
+                if ($vendor) {
+                    $vendor->balance -= $return->total_amount;
+                    $vendor->save();
+                }
+            }
+
+            DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     public function downloadReport(Request $request)
@@ -404,15 +580,10 @@ class FabricReceiptService
                     $vendor->save();
                 }
             }
-            // Permanently deleting or soft deleting? 
-            // The original code set status to 0. I'll stick to that but also delete details 
-            // if you want, or just leave them with status 0.
-            $receipt->status = 0;
-            $receipt->save();
-            
-            // Also mark details as inactive
-            $receipt->details()->update(['status' => 0]);
-            
+
+            $receipt->details()->delete();
+            $receipt->delete();
+
             return true;
         }
         return false;
@@ -668,5 +839,112 @@ class FabricReceiptService
         }
         $exists = $query->whereNotNull('bill_no')->where('bill_no', '!=', '')->exists();
         return $exists;
+    }
+
+    public function returnFabric(Request $request)
+    {
+        $detail = FabricReceiptDetail::find($request->detail_id);
+        if (!$detail || $detail->status == 2) {
+            return false;
+        }
+
+        // Check if fabric is already used (remaining_quantity < meter)
+        if ($detail->remaining_quantity < $detail->meter) {
+            return false;
+        }
+
+        DB::beginTransaction();
+        try {
+            // Mark detail as returned
+            $detail->status = 2; // 2 for Returned
+            $detail->remaining_quantity = 0;
+            $detail->save();
+
+            // Find and delete/deactivate from Stock
+            $stock = Stock::where('goods_entry_number', $detail->id)->first();
+            if ($stock) {
+                $stock->delete();
+            }
+
+            // Deduct from vendor balance
+            $receipt = FabricReceipt::find($detail->fabric_receipt_id);
+            if ($receipt && $receipt->vendor_id) {
+                $vendor = Vendor::find($receipt->vendor_id);
+                if ($vendor) {
+                    $amount_to_deduct = $detail->meter * $detail->price_per_meter;
+
+                    // Add GST if applicable
+                    if ($receipt->gst_percentage > 0) {
+                        $amount_to_deduct += ($amount_to_deduct * $receipt->gst_percentage / 100);
+                    }
+
+                    $vendor->balance -= $amount_to_deduct;
+                    $vendor->save();
+                }
+            }
+
+            DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return false;
+        }
+    }
+
+    public function downloadReturnReport(Request $request)
+    {
+        $return = FabricReturn::with(['receipt.vendor', 'details.fabric', 'details.receipt_detail'])->find($request->id);
+        if (!$return) {
+            abort(404, 'Return record not found');
+        }
+
+        $pdf = \PDF::loadView('admin.fabric_receipt.return_report_pdf', compact('return'));
+        $fileName = 'Fabric_Return_' . str_replace('/', '_', $return->return_number) . '.pdf';
+        return $pdf->download($fileName);
+    }
+
+    public function deleteReturn($id)
+    {
+        DB::beginTransaction();
+        try {
+            $return = FabricReturn::with('details.receipt_detail')->find($id);
+            if (!$return) {
+                return false;
+            }
+
+            $receipt = FabricReceipt::find($return->fabric_receipt_id);
+
+            // Revert Roll Quantities
+            foreach ($return->details as $detail) {
+                if ($detail->receipt_detail) {
+                    $detail->receipt_detail->remaining_quantity += $detail->return_meter;
+                    
+                    // Reset status to active if it was returned
+                    if ($detail->receipt_detail->status == 2) {
+                        $detail->receipt_detail->status = 1;
+                    }
+                    
+                    $detail->receipt_detail->save();
+                }
+                $detail->delete();
+            }
+
+            // Revert Vendor Balance
+            if ($receipt && $receipt->vendor_id) {
+                $vendor = Vendor::find($receipt->vendor_id);
+                if ($vendor) {
+                    $vendor->balance += $return->total_amount;
+                    $vendor->save();
+                }
+            }
+
+            $return->delete();
+
+            DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 }

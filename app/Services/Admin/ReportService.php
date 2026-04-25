@@ -424,7 +424,7 @@ class ReportService
             $fabricId = $request->fabric_id;
             $warehouseId = $request->warehouse_id;
 
-            $query = FabricReceiptDetail::with(['fabric_receipt.vendor', 'purchase_order', 'master_fabric_warehouse'])
+            $query = FabricReceiptDetail::with(['fabric_receipt.vendor', 'purchase_order', 'master_fabric_warehouse', 'returns'])
                 ->where('fabric_id', $fabricId)
                 ->when($warehouseId, function($q) use ($warehouseId) {
                     $q->where('master_fabric_warehouse_id', $warehouseId);

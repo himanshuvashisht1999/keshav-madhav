@@ -11,6 +11,10 @@
                         <h1>Fabric Shipment Details ({{ $data->shipment_id }})</h1>
                     </div>
                     <div class="col-sm-6 text-right">
+                        <a href="{{ route('admin.fabric_receipt.return', ['id' => $data->id]) }}"
+                            class="btn btn-danger mr-1">
+                            <i class="fas fa-undo"></i> Return Shipment
+                        </a>
                         <a href="{{ route('admin.fabric_receipt.download_report', ['id' => $data->id]) }}"
                             class="btn btn-success">
                             <i class="fas fa-download"></i> Download Report
@@ -301,29 +305,33 @@
                                                             <th>#</th>
                                                             <th>Roll No</th>
                                                             <th>Meter</th>
+                                                            <th class="text-danger">Returned</th>
+                                                            <th class="text-primary">Remaining</th>
                                                             <th>Price/Mtr</th>
-                                                            <th>QR Code</th>
-                                                            <th>Barcode</th>
+                                                            <th>Status</th>
+                                                            <th>Action</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         @foreach($rolls as $rollKey => $roll)
-                                                            <tr>
+                                                            <tr id="roll-row-{{ $roll->id }}">
                                                                 <td>{{ $rollKey + 1 }}</td>
                                                                 <td>{{ $roll->roll_number }}</td>
                                                                 <td>{{ $roll->meter }}</td>
+                                                                <td class="text-danger font-weight-bold">{{ number_format($roll->returns->sum('return_meter'), 2) }}</td>
+                                                                <td class="text-primary font-weight-bold">{{ number_format($roll->remaining_quantity, 2) }}</td>
                                                                 <td>Rs. {{ $roll->price_per_meter }}</td>
                                                                 <td>
-                                                                    <img src="{{ $roll->qrcode }}" width="60" height="60"
-                                                                        class="border rounded shadow-sm">
+                                                                    @if($roll->status == 2)
+                                                                        <span class="badge badge-danger">Returned</span>
+                                                                    @elseif($roll->remaining_quantity <= 0)
+                                                                        <span class="badge badge-secondary">Used</span>
+                                                                    @else
+                                                                        <span class="badge badge-success">Available</span>
+                                                                    @endif
                                                                 </td>
                                                                 <td>
-                                                                    <div class="d-flex flex-column align-items-center">
-                                                                        <img src="{{ $roll->barcode }}" width="120" height="40"
-                                                                            class="border rounded mb-1">
-                                                                        <small
-                                                                            class="font-weight-bold">{{ $roll->qrcode_number }}</small>
-                                                                    </div>
+                                                                    -
                                                                 </td>
                                                             </tr>
                                                         @endforeach
@@ -344,6 +352,82 @@
 
                     </div>
                 </div>
+
+                <!-- Return History Section -->
+    <div class="card card-outline card-danger shadow-sm mt-4">
+        <div class="card-header bg-white border-bottom-0 pt-4 px-4">
+            <h3 class="card-title font-weight-bold text-dark">
+                <i class="fas fa-history text-danger mr-2"></i>
+                Return History
+            </h3>
+        </div>
+        <div class="card-body px-4 pb-4">
+            @if($data->returns->count() > 0)
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Return No</th>
+                                <th>Fabrics Returned</th>
+                                <th class="text-right">Meters</th>
+                                <th class="text-right">Breakup</th>
+                                <th class="text-right">Total Amount</th>
+                                <th>Remarks</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($data->returns as $return)
+                                <tr>
+                                    <td>{{ \Carbon\Carbon::parse($return->date)->format('d M, Y') }}</td>
+                                    <td><span class="badge badge-secondary">{{ $return->return_number }}</span></td>
+                                    <td>
+                                        <ul class="mb-0 pl-3 small">
+                                            @foreach($return->details as $rd)
+                                                <li>{{ $rd->fabric->name ?? '-' }} ({{ $rd->return_meter }} mtr @ ₹{{ $rd->price_per_meter }})</li>
+                                            @endforeach
+                                        </ul>
+                                    </td>
+                                    <td class="text-right">{{ number_format($return->details->sum('return_meter'), 2) }}</td>
+                                    <td class="text-right small">
+                                        Sub: ₹{{ number_format($return->sub_total, 2) }}<br>
+                                        GST ({{ $return->gst_percentage }}%): ₹{{ number_format($return->gst_amount, 2) }}<br>
+                                        Other: ₹{{ number_format($return->other_charges, 2) }}<br>
+                                        Disc: -₹{{ number_format($return->discount, 2) }}
+                                    </td>
+                                    <td class="text-right text-danger font-weight-bold">₹ {{ number_format($return->total_amount, 2) }}</td>
+                                    <td>{{ $return->remarks ?? '-' }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ route('admin.fabric_receipt.download_return_report', ['id' => $return->id]) }}" 
+                                               class="btn btn-sm btn-outline-danger" title="Download Report">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <a href="{{ route('admin.fabric_receipt.edit_return', ['id' => $return->id]) }}" 
+                                               class="btn btn-sm btn-outline-primary" title="Edit Return">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ route('admin.fabric_receipt.delete_return', ['id' => $return->id]) }}" 
+                                               class="btn btn-sm btn-outline-secondary" 
+                                               onclick="return confirm('Are you sure you want to delete this return record? This will revert the roll quantities and vendor balance.')"
+                                               title="Delete Return">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="text-center p-4 text-muted border rounded">
+                    <i class="fas fa-info-circle mr-1"></i> No return history found for this shipment.
+                </div>
+            @endif
+        </div>
+    </div>
 
                 <!-- ================= Back Button ================= -->
                 <div class="mt-3">
@@ -413,6 +497,8 @@
             </div>
         </div>
     </div>
+
+    
 @endsection
 
 @section('scripts')

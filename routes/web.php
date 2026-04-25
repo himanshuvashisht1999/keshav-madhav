@@ -255,6 +255,13 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/check-roll-no', [AdminFabricReceiptController::class, 'checkRollNo'])->name('check-roll-no');
             Route::post('/check-bill-no', [AdminFabricReceiptController::class, 'checkBillNo'])->name('check-bill-no');
             Route::get('/download-report', [AdminFabricReceiptController::class, 'downloadReport'])->name('download_report');
+            Route::post('/return-fabric', [AdminFabricReceiptController::class, 'returnFabric'])->name('return_fabric');
+            Route::get('/return', [AdminFabricReceiptController::class, 'returnPage'])->name('return');
+            Route::post('/return-store', [AdminFabricReceiptController::class, 'storeReturn'])->name('store_return');
+            Route::get('/return-report', [AdminFabricReceiptController::class, 'downloadReturnReport'])->name('download_return_report');
+            Route::get('/return-delete/{id}', [AdminFabricReceiptController::class, 'deleteReturn'])->name('delete_return');
+            Route::get('/return-edit/{id}', [AdminFabricReceiptController::class, 'editReturnPage'])->name('edit_return');
+            Route::post('/return-update', [AdminFabricReceiptController::class, 'updateReturn'])->name('update_return');
         });
 
         Route::prefix('/item-receipt')->name('item_receipt.')->group(function () {

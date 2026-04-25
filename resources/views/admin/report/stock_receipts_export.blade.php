@@ -18,11 +18,13 @@
             <th>Shipment No</th>
             <th>Roll No</th>
             <th align="right">Received Qty</th>
+            <th align="right">Returned Qty</th>
             <th align="right">Remaining Qty</th>
         </tr>
     </thead>
     <tbody>
         @foreach($data as $row)
+        @php $returnedQty = $row->returns->sum('return_meter'); @endphp
         <tr>
             <td>{{ $row->created_at->format('d M Y') }}</td>
             <td>{{ $row->master_fabric_warehouse?->cutting_master_name }}</td>
@@ -31,6 +33,7 @@
             <td>{{ $row->shipment_number ?? '-' }}</td>
             <td>{{ $row->roll_number }}</td>
             <td align="right">{{ number_format($row->meter, 2) }}</td>
+            <td align="right">{{ number_format($returnedQty, 2) }}</td>
             <td align="right">{{ number_format($row->remaining_quantity, 2) }}</td>
         </tr>
         @endforeach

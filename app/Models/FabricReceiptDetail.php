@@ -56,6 +56,11 @@ class FabricReceiptDetail extends Model
         return $this->hasOne('App\Models\MasterFabricWarehouse', 'id', 'master_fabric_warehouse_id');
     }
 
+    public function returns()
+    {
+        return $this->hasMany('App\Models\FabricReturnDetail', 'fabric_receipt_detail_id', 'id');
+    }
+
     public function getQrcodeAttribute($value)
     {
         if ($value) {

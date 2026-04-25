@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\FabricReturn;
 use App\Services\Admin\FabricReceiptService as Service;
 use App\Requests\Admin\FabricReceiptStoreRequest;
 use App\Requests\Admin\FabricReceiptUpdateRequest;
@@ -142,5 +143,53 @@ class FabricReceiptController extends Controller
     {
         $this->service->update($request);
         return redirect()->back()->withSuccess('Challan photo has been successfully updated.');
+    }
+
+    public function returnFabric(Request $request)
+    {
+        $status = $this->service->returnFabric($request);
+        if ($status) {
+            return response()->json(['success' => true, 'message' => 'Fabric returned successfully.']);
+        } else {
+            return response()->json(['success' => false, 'message' => 'Return failed! Fabric might be already used or not found.'], 400);
+        }
+    }
+
+    public function returnPage(Request $request)
+    {
+        $response['data'] = $this->service->view($request);
+        return view('admin.fabric_receipt.return', $response);
+    }
+
+    public function storeReturn(Request $request)
+    {
+        $this->service->storeReturn($request);
+        return redirect()->route('admin.fabric_receipt.view', ['id' => $request->fabric_receipt_id])->withSuccess('Fabric return has been successfully processed.');
+    }
+
+    public function downloadReturnReport(Request $request)
+    {
+        return $this->service->downloadReturnReport($request);
+    }
+
+    public function deleteReturn($id)
+    {
+        $this->service->deleteReturn($id);
+        return redirect()->back()->withSuccess('Fabric return record has been successfully deleted.');
+    }
+
+    public function editReturnPage($id)
+    {
+        $response['return'] = FabricReturn::with(['details.receipt_detail', 'receipt.details.fabric'])->find($id);
+        if (!$response['return']) abort(404);
+        
+        $response['data'] = $response['return']->receipt;
+        return view('admin.fabric_receipt.edit_return', $response);
+    }
+
+    public function updateReturn(Request $request)
+    {
+        $this->service->updateReturn($request);
+        return redirect()->route('admin.fabric_receipt.view', ['id' => $request->fabric_receipt_id])->withSuccess('Fabric return has been successfully updated.');
     }
 }

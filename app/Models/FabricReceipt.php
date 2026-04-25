@@ -66,6 +66,11 @@ class FabricReceipt extends Model
         return $this->hasMany('App\Models\FabricReceiptDetail', 'fabric_receipt_id', 'id');
     }
 
+    public function returns()
+    {
+        return $this->hasMany('App\Models\FabricReturn', 'fabric_receipt_id', 'id');
+    }
+
     public function prices()
     {
         return $this->hasMany('App\Models\FabricReceiptPrice', 'fabric_receipt_id', 'id');
