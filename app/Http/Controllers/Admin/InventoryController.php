@@ -203,14 +203,20 @@ class InventoryController extends Controller
         $patterns = \App\Models\MasterDesignPattern::all();
         $size_sets = \App\Models\MasterSizeMeasurement::all();
         $storerooms = \App\Models\Storeroom::where('status', '1')->get();
+        
+        $vendors = \App\Models\Vendor::where('status', '1')->get();
+        $customers = \App\Models\MasterCustomer::where('status', '1')->get();
 
-        return view('admin.inventory.create', compact('products', 'colors', 'fittings', 'patterns', 'size_sets', 'storerooms'));
+        return view('admin.inventory.create', compact('products', 'colors', 'fittings', 'patterns', 'size_sets', 'storerooms', 'vendors', 'customers'));
     }
 
     public function store(Request $request)
     {
         // dd($request->all());
         $request->validate([
+            'source_type' => 'required|in:production,vendor,customer',
+            'vendor_id' => 'required_if:source_type,vendor',
+            'customer_id' => 'required_if:source_type,customer',
             'products.*.product_id' => 'required',
             'products.*.color_id' => 'required',
             'products.*.size_set_id' => 'required',
@@ -241,6 +247,10 @@ class InventoryController extends Controller
                 'packing_date' => now(),
                 'status' => 1 // Finalized
             ]);
+
+            $source_type = $request->source_type ?? 'production';
+            $vendor_id = $request->vendor_id ?? null;
+            $customer_id = $request->customer_id ?? null;
 
             foreach ($request->products as $item) {
                 // Handle Consumption Logic
@@ -303,6 +313,8 @@ class InventoryController extends Controller
                 // Log History for stock addition
                 \App\Models\DomesticInventoryHistory::create([
                     'user_id' => auth()->id(),
+                    'vendor_id' => ($source_type == 'vendor') ? $vendor_id : null,
+                    'customer_id' => ($source_type == 'customer') ? $customer_id : null,
                     'new_product_id' => $item['product_id'],
                     'new_size_set_id' => $item['size_set_id'],
                     'new_color_id' => $item['color_id'],

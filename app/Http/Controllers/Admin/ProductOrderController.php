@@ -449,6 +449,9 @@ class ProductOrderController extends Controller {
             'cuttingMasterAddress' => $data->stage_master_unit->masterFabricWarehouse->address ?? ($firstAssignment->cutting_master->masterFabricWarehouse->address ?? '-'),
             'fitting' => $data->master_product_fitting?->name ?? ($firstAssignment->master_fitting?->name ?? '-'),
             'remark' => $data->remark ?? ($firstAssignment->remarks ?? '-'),
+            'belt' => $firstAssignment->belt ?? '-',
+            'size_set' => $data->size_measurement?->name ?? '-',
+            'pcs_in_set' => $data->no_of_pcs ?? 0,
             'total_pcs' => $data->total_quantity ?? 0,
         ];
 

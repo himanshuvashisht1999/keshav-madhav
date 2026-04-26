@@ -267,6 +267,35 @@
                     <p class="page-subtitle">Add new production goods to your warehouse stock.</p>
                 </header>
 
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label class="label-premium">Source Type</label>
+                        <select name="source_type" id="sourceType" class="form-control select2">
+                            <option value="production">Self Production</option>
+                            <option value="vendor">Vendor</option>
+                            <option value="customer">Customer</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4" id="vendorContainer" style="display: none;">
+                        <label class="label-premium">Select Vendor</label>
+                        <select name="vendor_id" class="form-control select2">
+                            <option value="">Select Vendor</option>
+                            @foreach($vendors as $vendor)
+                                <option value="{{ $vendor->id }}">{{ $vendor->company_name ?? $vendor->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4" id="customerContainer" style="display: none;">
+                        <label class="label-premium">Select Customer</label>
+                        <select name="customer_id" class="form-control select2">
+                            <option value="">Select Customer</option>
+                            @foreach($customers as $customer)
+                                <option value="{{ $customer->id }}">{{ $customer->company_name ?? $customer->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
                 <div id="itemsContainer">
                     <!-- Initial Item Card -->
                     <div class="inventory-item-card animate-in" data-index="0">
@@ -470,7 +499,28 @@
                     });
                 }
 
-                initSelect2($('#itemsContainer'));
+                initSelect2($('.content-wrapper'));
+
+                $('#sourceType').on('change', function() {
+                    let type = $(this).val();
+                    if (type === 'vendor') {
+                        $('#vendorContainer').show();
+                        $('#customerContainer').hide();
+                        $('.btn-stock-consume').hide();
+                        $('.consume-selection-row').slideUp();
+                        $('.consume-source-id').val('');
+                    } else if (type === 'customer') {
+                        $('#vendorContainer').hide();
+                        $('#customerContainer').show();
+                        $('.btn-stock-consume').hide();
+                        $('.consume-selection-row').slideUp();
+                        $('.consume-source-id').val('');
+                    } else {
+                        $('#vendorContainer').hide();
+                        $('#customerContainer').hide();
+                        $('.btn-stock-consume').show();
+                    }
+                });
 
                 function addItem(values = null) {
                     itemCount++;
@@ -636,6 +686,9 @@
                     }
 
                     updateItemNumbers();
+                    
+                    // apply source type check
+                    $('#sourceType').trigger('change');
                 }
 
                 let isPopulating = false;

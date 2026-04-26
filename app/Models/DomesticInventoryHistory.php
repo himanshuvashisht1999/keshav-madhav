@@ -13,6 +13,8 @@ class DomesticInventoryHistory extends Model
 
     protected $fillable = [
         'user_id',
+        'customer_id',
+        'vendor_id',
         'old_product_id',
         'old_size_set_id',
         'old_color_id',
@@ -32,6 +34,16 @@ class DomesticInventoryHistory extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(MasterCustomer::class, 'customer_id');
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class, 'vendor_id');
     }
 
     public function oldProduct()

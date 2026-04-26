@@ -124,7 +124,7 @@
 
         <tr>
             <td class="meta-label">Belt:</td>
-            <td colspan="3">{{ $header['belt'] }}</td>
+            <td colspan="3">{{ $header['belt'] ?? '-' }}</td>
         </tr>
         <tr>
             <td class="meta-label">Remark:</td>
