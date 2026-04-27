@@ -441,6 +441,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
             Route::get('/order-designs', [AdminOrderDigitalizationController::class, 'getDesigns'])->name('order-designs');
             Route::get('/lot-details', [AdminOrderDigitalizationController::class, 'getLotDetails'])->name('lot-details');
+            Route::get('/assignment-details', [AdminOrderDigitalizationController::class, 'getAssignmentDetails'])->name('assignment-details');
             Route::post('/store-stitching', [AdminOrderDigitalizationController::class, 'storeStitching'])->name('store-stitching');
             Route::post('/store-printing', [AdminOrderDigitalizationController::class, 'storePrinting'])->name('store-printing');
             Route::post('/get-lot-details-for-display', [AdminOrderDigitalizationController::class, 'getLotDetailsForDisplay'])->name('get-lot-details-for-display');

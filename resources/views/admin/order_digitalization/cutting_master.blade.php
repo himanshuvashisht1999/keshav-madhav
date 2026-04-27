@@ -240,6 +240,17 @@
                                                     required>
                                             </div>
                                             <div class="card p-2 mt-3 border">
+                                                <label class="font-weight-bold">Select CMPO (Assignment) <span class="text-muted small">(Optional)</span></label>
+                                                <select id="select_cmpo" name="cmpo_id" class="form-control mb-2 select2">
+                                                    <option value="">Direct Selection / Normal</option>
+                                                    @foreach($assignments as $assignment)
+                                                        <option value="{{ $assignment->id }}">
+                                                            CMPO-{{ $assignment->id }} ({{ $assignment->orderMain->sku ?? '-' }})
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="card p-2 mt-3 border">
                                                 <label>Order No *</label>
                                                 <select id="select_order_no" name="select_order_no"
                                                     class="form-control mb-2 select2" required>
@@ -743,6 +754,29 @@
             const PRE_FILLED_DESIGN_ID = "{{ $preFilledDesignId ?? '' }}";
 
             // We'll trigger this at the end of the script to ensure handlers are registered
+
+            $('#select_cmpo').on('change', function() {
+                let assignmentId = $(this).val();
+                if (!assignmentId) return;
+
+                $.ajax({
+                    url: "{{ route('admin.order_digitalization.assignment-details') }}",
+                    method: 'GET',
+                    data: { assignment_id: assignmentId },
+                    success: function(res) {
+                        if (res.status == 1) {
+                            // 1. Set Order
+                            $('#select_order_no').val(res.order_main_id).trigger('change');
+                            
+                            // 2. Set Design (Wait for designs to load then set it)
+                            // Since select_order_no trigger('change') is async-ish with its handler
+                            setTimeout(() => {
+                                $('#design_id').val(res.order_product_set_id).trigger('change');
+                            }, 500);
+                        }
+                    }
+                });
+            });
 
             $('#select_order_no').on('change', function () {
 

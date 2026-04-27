@@ -183,6 +183,7 @@ class OrderDigitalizationController extends Controller
             $response['printing_units'] = $this->service->getStageUnits($warehouse_id, 1);  // 1 = Printing
 
             $cutting_unit = $production_slip_digitization->stage_master_unit_id;
+            $response['assignments'] = $this->service->getAssignments($cutting_unit);
 
         } else {
             $response['orders'] = [];
@@ -300,5 +301,10 @@ class OrderDigitalizationController extends Controller
         } else {
             return redirect()->back()->withError($result['message']);
         }
+    }
+    public function getAssignmentDetails(Request $request)
+    {
+        $response = $this->service->getAssignmentDetails($request);
+        return response()->json($response);
     }
 }

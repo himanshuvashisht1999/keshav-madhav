@@ -2027,4 +2027,27 @@ class OrderDigitalizationService
             ->whereNull('image')
             ->update($update);
     }
+
+    public function getAssignments($unitId)
+    {
+        return OrderCuttingStage::where('to_assign_id', $unitId)
+            ->where('status', '!=', 2) // Not completed
+            ->with(['orderMain', 'productSet'])
+            ->get();
+    }
+
+    public function getAssignmentDetails(Request $request)
+    {
+        $assignment = OrderCuttingStage::with(['orderMain', 'productSet'])->find($request->assignment_id);
+        if ($assignment) {
+            return [
+                'status' => 1,
+                'order_main_id' => $assignment->order_main_id,
+                'order_product_set_id' => $assignment->set_product_id,
+                'design_number' => $assignment->productSet->design_number ?? '-',
+                'sku' => $assignment->orderMain->sku ?? '-',
+            ];
+        }
+        return ['status' => 0, 'message' => 'Assignment not found'];
+    }
 }
