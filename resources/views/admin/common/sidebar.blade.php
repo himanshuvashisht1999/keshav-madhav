@@ -212,6 +212,15 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                 </li>
 
                                 <li class="nav-item">
+                                    <a href="{{ route('admin.inventory.sample-product.index') }}"
+                                        class="{{ str_contains($page_url, 'admin/inventory/sample-product') ? 'nav-link active' : 'nav-link' }}"
+                                        style="position:static;">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Sample Product</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
                                     <a href="{{ route('admin.agent-orders.index') }}"
                                         class="{{ str_contains($page_url, 'admin/agent-orders') && !str_contains($page_url, 'admin/agent-orders/dispatches') ? 'nav-link active' : 'nav-link' }}"
                                         style="position:static;">

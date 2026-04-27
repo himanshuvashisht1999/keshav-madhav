@@ -2725,4 +2725,95 @@ class AgentOrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Error deleting return: ' . $e->getMessage()], 500);
         }
     }
+
+    public function destroyDispatch($id)
+    {
+        $dispatch = \App\Models\AgentOrderDispatch::with(['orders'])->findOrFail($id);
+
+        DB::beginTransaction();
+        try {
+            // 1. Restore Item Inventory
+            $items = DB::table('agent_order_items')->where('agent_order_dispatch_id', $id)->get();
+            foreach ($items as $item) {
+                // Find or create inventory record to restore
+                $inventory = \App\Models\DomesticInventory::where('barcode', $item->barcode)->first();
+                if ($inventory) {
+                    $inventory->increment('total_boxes', $item->box_qty);
+                } else {
+                    // If deleted, recreate it
+                    \App\Models\DomesticInventory::create([
+                        'product_id' => $item->product_id,
+                        'color_id' => $item->color_id,
+                        'size_set_id' => $item->size_set_id,
+                        'fitting_id' => $item->fitting_id,
+                        'pattern_id' => $item->pattern_id,
+                        'total_boxes' => $item->box_qty,
+                        'quantity' => ($item->box_qty > 0) ? ($item->quantity / $item->box_qty) : 0,
+                        'box_no' => $item->box_no,
+                        'carton_no' => $item->carton_no,
+                        'barcode' => $item->barcode,
+                        'status' => 1
+                    ]);
+                }
+
+                // Reset item to scanned but not dispatched
+                DB::table('agent_order_items')->where('id', $item->id)->update([
+                    'dispatched_at' => null,
+                    'agent_order_dispatch_id' => null
+                ]);
+            }
+
+            // 2. Restore Fabric Inventory
+            $fabricItems = DB::table('agent_order_fabric_items')->where('agent_order_dispatch_id', $id)->get();
+            foreach ($fabricItems as $fItem) {
+                $roll = \App\Models\FabricReceiptDetail::find($fItem->fabric_receipt_detail_id);
+                if ($roll) {
+                    $roll->increment('remaining_quantity', $fItem->meter);
+                }
+
+                DB::table('agent_order_fabric_items')->where('id', $fItem->id)->update([
+                    'status' => 'pending',
+                    'dispatched_at' => null,
+                    'agent_order_dispatch_id' => null
+                ]);
+            }
+
+            // 3. Reverse Party Balance
+            if ($dispatch->party_type === 'vendor') {
+                $party = \App\Models\Vendor::find($dispatch->master_vendor_id);
+            } else {
+                $party = \App\Models\MasterCustomer::find($dispatch->master_customer_id);
+            }
+
+            if ($party) {
+                $party->decrement('balance', $dispatch->grand_total);
+            }
+
+            // 4. Update Order Statuses
+            foreach ($dispatch->orders as $order) {
+                $totalItems = DB::table('agent_order_items')->where('agent_order_id', $order->id)->count();
+                $dispatchedItems = DB::table('agent_order_items')->where('agent_order_id', $order->id)->whereNotNull('dispatched_at')->count();
+                
+                $totalFabric = DB::table('agent_order_fabric_items')->where('agent_order_id', $order->id)->count();
+                $dispatchedFabric = DB::table('agent_order_fabric_items')->where('agent_order_id', $order->id)->whereNotNull('dispatched_at')->count();
+
+                if ($dispatchedItems == 0 && $dispatchedFabric == 0) {
+                    $order->status = 'pending';
+                } else if (($dispatchedItems + $dispatchedFabric) < ($totalItems + $totalFabric)) {
+                    $order->status = 'partially_dispatched';
+                }
+                $order->save();
+            }
+
+            // 5. Delete Dispatch and Dispatch Items
+            DB::table('agent_order_dispatch_items')->where('agent_order_dispatch_id', $id)->delete();
+            $dispatch->delete();
+
+            DB::commit();
+            return redirect()->route('admin.agent-orders.dispatches.index')->with('success', 'Dispatch deleted and inventory/balance reversed successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error deleting dispatch: ' . $e->getMessage());
+        }
+    }
 }

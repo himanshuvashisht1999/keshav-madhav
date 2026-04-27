@@ -36,6 +36,11 @@
                         class="btn btn-outline-danger shadow-sm px-4 mr-2" style="border-radius: 8px;">
                         <i class="fas fa-undo mr-2"></i> SALES RETURN
                     </a>
+                    <a href="{{ route('admin.agent-orders.dispatches.destroy', $dispatch->id) }}"
+                        class="btn btn-danger shadow-sm px-4 mr-2" style="border-radius: 8px;"
+                        onclick="return confirm('Are you sure you want to PERMANENTLY delete this dispatch? This will reverse stock and customer balance.')">
+                        <i class="fas fa-trash-alt mr-2"></i> DELETE DISPATCH
+                    </a>
                     <a href="{{ route('admin.agent-orders.dispatches.download-packing-slip', $dispatch->id) }}"
                         id="packingSlipBtn" class="btn btn-outline-info shadow-sm px-4 mr-2" style="border-radius: 8px;">
                         <i class="fas fa-boxes mr-2"></i> PACKING SLIP

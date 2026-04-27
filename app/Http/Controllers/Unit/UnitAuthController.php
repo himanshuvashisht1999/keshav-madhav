@@ -931,6 +931,7 @@ class UnitAuthController extends Controller
 
         $lotNo = $request->get('lot_no');
         $orderNo = $request->get('order_no');
+        $customerSearch = $orderNo; // Fix for undefined variable error
 
         if ($isCutting) {
             $type = 'cutting';

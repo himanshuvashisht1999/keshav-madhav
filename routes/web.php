@@ -100,6 +100,8 @@ use App\Http\Controllers\Admin\BalanceCarryForwardController as AdminBalanceCarr
 Route::get('/', [AdminLoginController::class, 'login'])->name('web.homepage');
 Route::get('/upload-production-slip/{encryptedId}', [AdminLoginController::class, 'uploadProductionSlip'])->name('uploadProductionSlip');
 Route::post('/submit-production-slip', [AdminLoginController::class, 'submitProductionSlip'])->name('submitProductionSlip');
+Route::get('/sc/{barcode}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'showColorChart'])->name('sample-product.color-chart');
+
 Route::get('/scan', [AdminFabricReceiptController::class, 'scan'])->name('scan');
 
 // ================= UNIT AUTHENTICATION ROUTES (SEPARATE FROM ADMIN) =================
@@ -514,6 +516,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/dispatches/{id}/invoice', [AdminAgentOrderController::class, 'downloadDispatchInvoice'])->name('dispatches.download-invoice');
             Route::get('/dispatches/{id}/packing-slip', [AdminAgentOrderController::class, 'downloadDispatchPackingSlip'])->name('dispatches.download-packing-slip');
             Route::post('/dispatches/{id}/update-invoice', [AdminAgentOrderController::class, 'updateDispatchInvoice'])->name('dispatches.update-invoice');
+            Route::get('/dispatches/{id}/delete', [AdminAgentOrderController::class, 'destroyDispatch'])->name('dispatches.destroy');
             Route::post('/dispatch-selected', [AdminAgentOrderController::class, 'dispatchSelected'])->name('dispatch-selected');
 
             // Returns
@@ -746,7 +749,21 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'attributeHistoryIndex'])->name('index');
                 Route::get('/list', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'attributeHistoryList'])->name('list');
             });
+
+            // Sample Product Routes
+            Route::prefix('/sample-product')->name('sample-product.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'create'])->name('create');
+                Route::get('/get-products', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'getProducts'])->name('get-products');
+                Route::post('/store', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'store'])->name('store');
+                Route::get('/edit/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'edit'])->name('edit');
+                Route::put('/update/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'update'])->name('update');
+                Route::get('/generate-pdf-batch/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'generatePdfFromBatch'])->name('generate-pdf-batch');
+                Route::delete('/destroy/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'destroy'])->name('destroy');
+            });
         });
+
+
 
         Route::prefix('/inventory-prices')->name('inventory-prices.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\InventoryPriceController::class, 'index'])->name('index');

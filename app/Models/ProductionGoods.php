@@ -78,6 +78,11 @@ class ProductionGoods extends Model
         return $this->hasOne(ProductionGoodImage::class, 'product_id')->where('is_main', 1);
     }
 
+    public function inventory()
+    {
+        return $this->hasMany(DomesticInventory::class, 'product_id');
+    }
+
     public function getMainImgAttribute()
     {
         if ($this->mainImage) {
