@@ -249,12 +249,20 @@
                 <span class="info-value">{{ $summary['design'] ?: '-' }}</span>
             </div>
             <div class="info-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <span class="info-label">Pieces</span>
+                <span class="info-label">Total Pieces</span>
                 <span class="info-value" style="color: #10b981;">{{ $total_pcs }}</span>
             </div>
             <div class="info-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <span class="info-label">Size Set</span>
-                <span class="info-value" style="color: #3b82f6;">{{ $summary['size_group'] }} ({{ $actual_range }})</span>
+                <span class="info-label">Size Set Name</span>
+                <span class="info-value" style="color: #3b82f6;">{{ $summary['size_group'] }}</span>
+            </div>
+            <div class="info-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                <span class="info-label">Pieces in Set</span>
+                <span class="info-value" style="color: #6366f1;">{{ $summary['pcs_in_set'] }}</span>
+            </div>
+            <div class="info-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                <span class="info-label">Actual Range</span>
+                <span class="info-value" style="color: #94a3b8; font-size: 11px;">{{ $actual_range }}</span>
             </div>
             <div class="info-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                 <span class="info-label">Order No.</span>

@@ -437,13 +437,15 @@
 
     <div class="view-type-switcher">
         <label class="view-type-option">
-            <input type="radio" name="view_mode" value="slips" {{ $viewType === 'slips' ? 'checked' : '' }} onchange="window.location.href='{{ route('unit.history', ['view_type' => 'slips']) }}'">
+            <input type="radio" name="view_mode" value="slips" {{ $viewType === 'slips' ? 'checked' : '' }} 
+                onchange="window.location.href='{{ route('unit.history', array_merge(request()->query(), ['view_type' => 'slips'])) }}'">
             <div class="view-type-label">
                 <i class="fas fa-file-invoice"></i> Digitized Slips
             </div>
         </label>
         <label class="view-type-option">
-            <input type="radio" name="view_mode" value="tasks" {{ $viewType === 'tasks' ? 'checked' : '' }} onchange="window.location.href='{{ route('unit.history', ['view_type' => 'tasks']) }}'">
+            <input type="radio" name="view_mode" value="tasks" {{ $viewType === 'tasks' ? 'checked' : '' }} 
+                onchange="window.location.href='{{ route('unit.history', array_merge(request()->query(), ['view_type' => 'tasks'])) }}'">
             <div class="view-type-label">
                 <i class="fas fa-tasks"></i> Assigned Tasks
             </div>
@@ -453,7 +455,7 @@
     <!-- Filter Form -->
     <form action="{{ route('unit.history') }}" method="GET" class="filter-section">
         <input type="hidden" name="view_type" value="{{ $viewType }}">
-        <details {{ request('lot_no') || request('order_no') || request('status') ? 'open' : '' }}>
+        <details {{ request('lot_no') || request('customer') || request('status') ? 'open' : '' }}>
             <summary class="filter-title">
                 <div class="filter-title-inner">
                     <i class="fas fa-filter"></i> Filter History
@@ -468,9 +470,9 @@
                             value="{{ request('lot_no') }}">
                     </div>
                     <div class="filter-group">
-                        <label for="order_no">Order No</label>
-                        <input type="text" id="order_no" name="order_no" class="filter-input" placeholder="e.g. ORD-123"
-                            value="{{ request('order_no') }}">
+                        <label for="customer">Customer</label>
+                        <input type="text" id="customer" name="customer" class="filter-input" placeholder="Search Customer..."
+                            value="{{ request('customer') }}">
                     </div>
                     <div class="filter-group">
                         <label for="status">Status</label>
@@ -518,26 +520,65 @@
                                     <span class="badge {{ $slip['status'] == 0 ? 'badge-pending' : 'badge-approved' }}">
                                         {{ $slip['status'] == 0 ? '⏳ Pending' : '✅ Done' }}
                                     </span>
+                                    @if($slip['pieces'] > 0)
+                                        <span class="badge" style="background: #ecfdf5; color: #065f46; border: 1px solid #d1fae5;">
+                                            <i class="fas fa-tshirt"></i> {{ $slip['pieces'] }} Pcs
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
                             <i class="fas fa-chevron-right chevron"></i>
                         </div>
-                        <div class="slip-meta" style="flex-wrap: wrap; row-gap: 4px;">
+                        <div class="slip-meta" style="flex-wrap: wrap; row-gap: 8px; @if($slip['type'] === 'production' && isset($slip['sessions']) && $slip['sessions']->isNotEmpty()) display: none; @endif">
                             @if($slip['type'] === 'fabric')
-                                <span><i class="fas fa-tag" style="color:#6366f1;"></i> {{ $slip['lot_no'] }}</span>
-                                <span><i class="fas fa-shopping-cart" style="color:#10b981;"></i> {{ $slip['order_no'] }}</span>
+                                <span><i class="fas fa-tag" style="color:#6366f1;"></i> <strong>Lots:</strong> {{ $slip['lot_no'] }}</span>
+                                <span><i class="fas fa-shopping-cart" style="color:#10b981;"></i> <strong>Order:</strong> {{ $slip['order_no'] }}</span>
+                                <span><i class="fas fa-drafting-compass" style="color:#f59e0b;"></i> <strong>Design:</strong> {{ $slip['design_no'] }}</span>
+                                <span><i class="fas fa-tshirt" style="color:#ec4899;"></i> <strong>Pieces:</strong> {{ $slip['pieces'] }}</span>
+                                <span><i class="fas fa-ruler-combined" style="color:#8b5cf6;"></i> <strong>Sizes:</strong> {{ $slip['size_sets'] }}</span>
                             @else
-                                <span style="max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    <i class="fas fa-tag" style="color:#6366f1;"></i> {{ $slip['lot_no'] }}
+                                <span style="max-width: 100%;">
+                                    <i class="fas fa-tag" style="color:#6366f1;"></i> <strong>Lots:</strong> {{ $slip['lot_no'] }}
                                 </span>
-                                @if($slip['order_no'] !== '-')
-                                    <span style="max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                        <i class="fas fa-shopping-cart" style="color:#10b981;"></i> {{ $slip['order_no'] }}
+                                @if($slip['customer'] !== '-')
+                                    <span style="max-width: 100%;">
+                                        <i class="fas fa-user" style="color:#10b981;"></i> <strong>Customer:</strong> {{ $slip['customer'] }}
                                     </span>
                                 @endif
-                                <span><i class="fas fa-layer-group" style="color:#3b82f6;"></i> {{ $slip['stage'] }}</span>
+                                <span><i class="fas fa-drafting-compass" style="color:#f59e0b;"></i> <strong>Design:</strong> {{ $slip['design_no'] }}</span>
+                                <span><i class="fas fa-tshirt" style="color:#ec4899;"></i> <strong>Pieces:</strong> {{ $slip['pieces'] }}</span>
+                                <span><i class="fas fa-ruler-combined" style="color:#8b5cf6;"></i> <strong>Sizes:</strong> {{ $slip['size_sets'] }}</span>
+                                <span><i class="fas fa-layer-group" style="color:#3b82f6;"></i> <strong>Stage:</strong> {{ $slip['stage'] }}</span>
                             @endif
                         </div>
+
+                        {{-- Sessions Breakdown --}}
+                        @if(isset($slip['sessions']) && $slip['sessions']->isNotEmpty())
+                            <div class="sessions-breakdown" style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #e5e7eb;">
+                                <div style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                                    Digitized Sessions ({{ $slip['sessions']->count() }})
+                                </div>
+                                @foreach($slip['sessions'] as $session)
+                                    <div style="background: #f9fafb; border-radius: 8px; padding: 8px; margin-bottom: 6px; border-left: 3px solid #10b981;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                            <span style="font-size: 11px; font-weight: 700; color: #374151;">
+                                                <span style="color: #10b981;">{{ $session['type'] }}</span> - Lot #{{ $session['lot_no'] }}
+                                            </span>
+                                            <span style="font-size: 11px; font-weight: 700; color: #10b981;">{{ $session['pieces'] }} Pcs</span>
+                                        </div>
+                                        <div style="font-size: 10px; color: #6b7280; display: flex; gap: 8px;">
+                                            <span><i class="fas fa-ruler-combined"></i> {{ $session['size_sets'] }}</span>
+                                            @if($session['design_no'] !== '-')
+                                                <span><i class="fas fa-drafting-compass"></i> {{ $session['design_no'] }}</span>
+                                            @endif
+                                            @if($session['customer'] !== '-')
+                                                <span><i class="fas fa-user"></i> {{ $session['customer'] }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 </a>
             @empty
@@ -586,12 +627,20 @@
                             </span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">{{ $isReceived ? 'From Stage' : 'To Next Stage' }}</span>
-                            <span class="info-value">{{ $task['from_stage'] }}</span>
+                            <span class="info-label">Design Number</span>
+                            <span class="info-value">{{ $task['design_no'] }}</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Order Number</span>
-                            <span class="info-value">{{ $task['order_no'] }}</span>
+                            <span class="info-label">Customer</span>
+                            <span class="info-value">{{ $task['customer'] ?? '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Sizes</span>
+                            <span class="info-value">{{ $task['size_sets'] }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">{{ $isReceived ? 'From Stage' : 'To Next Stage' }}</span>
+                            <span class="info-value">{{ $task['from_stage'] }}</span>
                         </div>
                     </div>
 
