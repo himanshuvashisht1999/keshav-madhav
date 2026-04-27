@@ -3,221 +3,222 @@
 @section('title', 'Slip Details')
 
 @section('header_icon')
-<a href="{{ route('unit.history') }}" style="color: white; margin-right: 10px;">
-    <i class="fas fa-arrow-left"></i>
-</a>
+    <a href="{{ route('unit.history') }}" style="color: white; margin-right: 10px;">
+        <i class="fas fa-arrow-left"></i>
+    </a>
 @endsection
 
 @push('styles')
-<style>
-    .card {
-        background: white;
-        border-radius: 20px;
-        padding: 20px;
-        margin-bottom: 16px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    }
+    <style>
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
 
-    .section-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #1f2937;
-        margin-bottom: 16px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    /* Image */
-    .slip-image-container {
-        background: #f9fafb;
-        border-radius: 16px;
-        overflow: hidden;
-        margin-bottom: 16px;
-        position: relative;
-    }
+        /* Image */
+        .slip-image-container {
+            background: #f9fafb;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            position: relative;
+        }
 
-    .slip-image {
-        width: 100%;
-        display: block;
-        cursor: zoom-in;
-    }
+        .slip-image {
+            width: 100%;
+            display: block;
+            cursor: zoom-in;
+        }
 
-    .zoom-hint {
-        position: absolute;
-        bottom: 12px;
-        right: 12px;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 600;
-        backdrop-filter: blur(10px);
-    }
+        .zoom-hint {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
 
-    /* Info Grid */
-    .info-grid {
-        display: grid;
-        gap: 10px;
-    }
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            gap: 10px;
+        }
 
-    .info-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 14px;
-        background: #f9fafb;
-        border-radius: 12px;
-        align-items: center;
-    }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px;
+            background: #f9fafb;
+            border-radius: 12px;
+            align-items: center;
+        }
 
-    .info-label {
-        color: #6b7280;
-        font-size: 14px;
-        font-weight: 500;
-    }
+        .info-label {
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+        }
 
-    .info-value {
-        color: #1f2937;
-        font-weight: 600;
-        font-size: 14px;
-        text-align: right;
-    }
+        .info-value {
+            color: #1f2937;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: right;
+        }
 
-    .status-badge {
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 700;
-    }
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+        }
 
-    .status-pending {
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        color: #92400e;
-    }
+        .status-pending {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+        }
 
-    .status-approved {
-        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-        color: #065f46;
-    }
+        .status-approved {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #065f46;
+        }
 
-    /* Tables */
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 12px;
-    }
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
 
-    th, td {
-        padding: 12px;
-        text-align: left;
-        border-bottom: 1px solid #f3f4f6;
-    }
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #f3f4f6;
+        }
 
-    th {
-        background: #f9fafb;
-        font-weight: 700;
-        color: #374151;
-        font-size: 13px;
-    }
+        th {
+            background: #f9fafb;
+            font-weight: 700;
+            color: #374151;
+            font-size: 13px;
+        }
 
-    td {
-        font-size: 14px;
-        color: #6b7280;
-    }
+        td {
+            font-size: 14px;
+            color: #6b7280;
+        }
 
-    /* Roll/Carton Cards */
-    .item-card {
-        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-        border-radius: 16px;
-        padding: 16px;
-        margin-bottom: 12px;
-        border-left: 4px solid var(--primary);
-    }
+        /* Roll/Carton Cards */
+        .item-card {
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
+        }
 
-    .item-header {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 12px;
-        font-weight: 700;
-        color: #1f2937;
-    }
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-weight: 700;
+            color: #1f2937;
+        }
 
-    .box-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 12px;
-    }
+        .box-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
 
-    .box-badge {
-        background: white;
-        border: 2px solid #e5e7eb;
-        padding: 8px 14px;
-        border-radius: 10px;
-        font-size: 13px;
-        font-weight: 600;
-        color: #374151;
-    }
+        .box-badge {
+            background: white;
+            border: 2px solid #e5e7eb;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
 
-    .subsection-label {
-        font-size: 11px;
-        color: #6b7280;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 10px;
-    }
+        .subsection-label {
+            font-size: 11px;
+            color: #6b7280;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
 
-    /* Image Modal */
-    .image-modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.95);
-        z-index: 2000;
-        align-items: center;
-        justify-content: center;
-    }
+        /* Image Modal */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
 
-    .image-modal.active {
-        display: flex;
-    }
+        .image-modal.active {
+            display: flex;
+        }
 
-    .modal-image {
-        max-width: 95%;
-        max-height: 95%;
-        object-fit: contain;
-    }
+        .modal-image {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain;
+        }
 
-    .close-modal {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        background: white;
-        color: #333;
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        cursor: pointer;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    }
-</style>
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            color: #333;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+    </style>
 @endpush
 
 @section('content')
     {{-- SLIP IMAGE --}}
     <div class="card">
         <div class="slip-image-container">
-            <img src="{{ asset('assets/production_slips/' . $slip->slip_file) }}" alt="Production Slip"
-                class="slip-image" id="slipImage">
+            <img src="{{ asset('assets/production_slips/' . $slip->slip_file) }}" alt="Production Slip" class="slip-image"
+                id="slipImage">
             <div class="zoom-hint">
                 <i class="fas fa-search-plus"></i> Tap to zoom
             </div>
@@ -282,8 +283,11 @@
         @foreach($lots as $index => $lot)
             @php $currentRolls = $rolls->where('order_lot_id', $lot->id); @endphp
             <div class="card" style="border-left: 5px solid #10b981; padding: 0; overflow: hidden;">
-                <div style="background: #ecfdf5; padding: 10px 15px; border-bottom: 1px solid #d1fae5; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 700; color: #065f46; font-size: 14px;">Session #{{ $index + 1 }} - <span style="font-weight: 900; color: #10b981;">LOT #{{ $lot->lot_no }}</span> - {{ $currentRolls->sum(fn($r) => $r->fabricRollAssigningsDetail->sum('quantity')) }} Pcs</span>
+                <div
+                    style="background: #ecfdf5; padding: 10px 15px; border-bottom: 1px solid #d1fae5; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; color: #065f46; font-size: 14px;">Session #{{ $index + 1 }} - <span
+                            style="font-weight: 900; color: #10b981;">LOT #{{ $lot->lot_no }}</span> -
+                        {{ $currentRolls->sum(fn($r) => $r->fabricRollAssigningsDetail->sum('quantity')) }} Pcs</span>
                 </div>
 
                 @if($lot->orderProductSet)
@@ -337,7 +341,8 @@
                             </div>
                         @endforeach
                     @else
-                        <div style="text-align: center; color: #9ca3af; padding: 10px; font-size: 13px; font-style: italic;">No rolls digitized yet</div>
+                        <div style="text-align: center; color: #9ca3af; padding: 10px; font-size: 13px; font-style: italic;">No rolls
+                            digitized yet</div>
                     @endif
                 </div>
             </div>
@@ -351,8 +356,11 @@
         </div>
         @foreach($printings as $index => $printing)
             <div class="card" style="border-left: 5px solid #3b82f6; padding: 0; overflow: hidden;">
-                <div style="background: #eff6ff; padding: 10px 15px; border-bottom: 1px solid #dbeafe; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 700; color: #1e40af; font-size: 14px;">Session #{{ $index + 1 }} - <span style="font-weight: 900; color: #3b82f6;">LOT #{{ $printing->lot_no }}</span> - {{ $printing->details->sum('quantity') }} Pcs</span>
+                <div
+                    style="background: #eff6ff; padding: 10px 15px; border-bottom: 1px solid #dbeafe; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; color: #1e40af; font-size: 14px;">Session #{{ $index + 1 }} - <span
+                            style="font-weight: 900; color: #3b82f6;">LOT #{{ $printing->lot_no }}</span> -
+                        {{ $printing->details->sum('quantity') }} Pcs</span>
                 </div>
 
                 @if($printing->orderProduct?->orderProductSet)
@@ -408,8 +416,11 @@
         </div>
         @foreach($stage_transactions as $index => $transaction)
             <div class="card" style="border-left: 5px solid #f59e0b; padding: 0; overflow: hidden;">
-                <div style="background: #fffbeb; padding: 10px 15px; border-bottom: 1px solid #fef3c7; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 700; color: #92400e; font-size: 14px;">Session #{{ $index + 1 }} - <span style="font-weight: 900; color: #f59e0b;">LOT #{{ $transaction->lot_no }}</span> - {{ $transaction->details->sum('quantity') }} Pcs</span>
+                <div
+                    style="background: #fffbeb; padding: 10px 15px; border-bottom: 1px solid #fef3c7; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; color: #92400e; font-size: 14px;">Session #{{ $index + 1 }} - <span
+                            style="font-weight: 900; color: #f59e0b;">LOT #{{ $transaction->lot_no }}</span> -
+                        {{ $transaction->details->sum('quantity') }} Pcs</span>
                 </div>
 
                 @if($transaction->orderProduct?->orderProductSet)
@@ -468,7 +479,8 @@
                 <div class="item-card" style="border-left-color: #8b5cf6;">
                     <div class="item-header">
                         <span>📦 Carton #{{ $carton->carton_no }}</span>
-                        <span class="status-badge" style="background:#ede9fe; color:#5b21b6;">{{ $carton->boxes->count() }} Boxes</span>
+                        <span class="status-badge" style="background:#ede9fe; color:#5b21b6;">{{ $carton->boxes->count() }}
+                            Boxes</span>
                     </div>
                     @if($carton->boxes->isNotEmpty())
                         <div class="subsection-label">Box Numbers</div>
@@ -491,19 +503,19 @@
 @endsection
 
 @push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const slipImage = document.getElementById('slipImage');
-        const imageModal = document.getElementById('imageModal');
-        const closeModal = document.getElementById('closeModal');
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const slipImage = document.getElementById('slipImage');
+            const imageModal = document.getElementById('imageModal');
+            const closeModal = document.getElementById('closeModal');
 
-        if(slipImage && imageModal && closeModal) {
-            slipImage.addEventListener('click', () => imageModal.classList.add('active'));
-            closeModal.addEventListener('click', () => imageModal.classList.remove('active'));
-            imageModal.addEventListener('click', (e) => {
-                if (e.target === imageModal) imageModal.classList.remove('active');
-            });
-        }
-    });
-</script>
+            if (slipImage && imageModal && closeModal) {
+                slipImage.addEventListener('click', () => imageModal.classList.add('active'));
+                closeModal.addEventListener('click', () => imageModal.classList.remove('active'));
+                imageModal.addEventListener('click', (e) => {
+                    if (e.target === imageModal) imageModal.classList.remove('active');
+                });
+            }
+        });
+    </script>
 @endpush

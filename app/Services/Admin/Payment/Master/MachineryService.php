@@ -3,6 +3,7 @@
 namespace App\Services\Admin\Payment\Master;
 
 use App\Models\MachineryMaster;
+use App\Models\MasterOpeningBalance;
 
 class MachineryService
 {
@@ -15,16 +16,30 @@ class MachineryService
             $balance = abs($balance);
         }
 
-        return MachineryMaster::create([
+        $item = MachineryMaster::create([
             'name' => $data['name'],
             'balance' => $balance,
             'status' => 1,
         ]);
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'machinery',
+                'master_id' => $item->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($data['balance'] ?? 0),
+                'balance_type' => $data['balance_type'] ?? 'Credit',
+            ]
+        );
+
+        return $item;
     }
 
     public function find($id)
     {
-        return MachineryMaster::findOrFail($id);
+        return MachineryMaster::with('currentOpeningBalance')->findOrFail($id);
     }
 
     public function update(array $data, $id)
@@ -38,10 +53,24 @@ class MachineryService
             $balance = abs($balance);
         }
 
-        return $item->update([
+        $item->update([
             'name' => $data['name'],
             'balance' => $balance,
         ]);
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'machinery',
+                'master_id' => $item->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($data['balance'] ?? 0),
+                'balance_type' => $data['balance_type'] ?? 'Credit',
+            ]
+        );
+
+        return true;
     }
 
     public function delete($id)

@@ -92,6 +92,7 @@ use App\Http\Controllers\Admin\Master\SalesAgentController as AdminSalesAgentCon
 use App\Http\Controllers\Admin\Master\PurchaseAgentController as AdminPurchaseAgentController;
 use App\Http\Controllers\Admin\Master\BrandController as AdminBrandController;
 use App\Http\Controllers\Admin\Master\CompanyController as AdminCompanyController;
+use App\Http\Controllers\Admin\BalanceCarryForwardController as AdminBalanceCarryForwardController;
 
 
 
@@ -196,6 +197,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::get('/logout', [AdminLoginController::class, 'logout'])->name('logout');
         Route::get('/dashboard', [AdminDashboardController::class, 'dashboard'])->name('dashboard');
         Route::get('/getDashboardData', [AdminDashboardController::class, 'getDashboardData'])->name('getDashboardData');
+        Route::get('/carry-forward-balances', [AdminBalanceCarryForwardController::class, 'carryForward'])->name('carry-forward-balances');
 
         Route::prefix('/purchase-order')->name('purchase_order.')->group(function () {
             Route::get('/index', [AdminPurchaseOrderController::class, 'index'])->name('index');

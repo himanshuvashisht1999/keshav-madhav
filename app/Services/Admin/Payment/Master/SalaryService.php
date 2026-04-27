@@ -3,6 +3,7 @@
 namespace App\Services\Admin\Payment\Master;
 
 use App\Models\SalaryMaster;
+use App\Models\MasterOpeningBalance;
 
 class SalaryService
 {
@@ -15,16 +16,30 @@ class SalaryService
             $balance = abs($balance);
         }
 
-        return SalaryMaster::create([
+        $item = SalaryMaster::create([
             'name' => $data['name'],
             'balance' => $balance,
             'status' => 1,
         ]);
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'salary',
+                'master_id' => $item->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($data['balance'] ?? 0),
+                'balance_type' => $data['balance_type'] ?? 'Credit',
+            ]
+        );
+
+        return $item;
     }
 
     public function find($id)
     {
-        return SalaryMaster::findOrFail($id);
+        return SalaryMaster::with('currentOpeningBalance')->findOrFail($id);
     }
 
     public function update(array $data, $id)
@@ -38,10 +53,24 @@ class SalaryService
             $balance = abs($balance);
         }
 
-        return $item->update([
+        $item->update([
             'name' => $data['name'],
             'balance' => $balance,
         ]);
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'salary',
+                'master_id' => $item->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($data['balance'] ?? 0),
+                'balance_type' => $data['balance_type'] ?? 'Credit',
+            ]
+        );
+
+        return true;
     }
 
     public function delete($id)

@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      *
@@ -12,13 +13,10 @@ return new class extends Migration {
      */
     public function up()
     {
-        Schema::create('payment_opening_balances', function (Blueprint $table) {
+        Schema::create('carry_forward_logs', function (Blueprint $table) {
             $table->id();
-            $table->string('master_type');
-            $table->unsignedBigInteger('master_id');
             $table->string('financial_year');
-            $table->decimal('amount', 15, 2)->default(0);
-            $table->string('balance_type')->default('Credit');
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->timestamps();
         });
     }
@@ -30,6 +28,6 @@ return new class extends Migration {
      */
     public function down()
     {
-        Schema::dropIfExists('payment_opening_balances');
+        Schema::dropIfExists('carry_forward_logs');
     }
 };

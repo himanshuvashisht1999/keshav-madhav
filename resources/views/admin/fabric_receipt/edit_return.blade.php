@@ -221,6 +221,13 @@
         }
 
         $(document).on('input', '.return-input', function() {
+            let val = parseFloat($(this).val());
+            let max = parseFloat($(this).data('max'));
+            
+            if (val > max) {
+                alert('Return meter cannot exceed available quantity (' + max + ')');
+                $(this).val(max);
+            }
             calculateTotals();
         });
 

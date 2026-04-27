@@ -7,6 +7,8 @@ use App\Requests\Admin\Master\CustomerStoreRequest;
 use App\Requests\Admin\Master\CustomerUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
 use Auth;
+use App\Models\MasterCustomer;
+use App\Models\MasterOpeningBalance;
 
 class CustomerController extends Controller { 
     protected $service;
@@ -15,6 +17,8 @@ class CustomerController extends Controller {
     }
     public function index(){
         $response['items'] = $this->service->items();
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('customer');
+        $response['total_current_balance'] = MasterCustomer::where('status', '!=', 3)->sum('balance');
         return view('admin.master.customer.index',$response);
     } 
     public function indexList(Request $request){

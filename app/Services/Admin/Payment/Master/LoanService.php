@@ -3,6 +3,7 @@
 namespace App\Services\Admin\Payment\Master;
 
 use App\Models\LoanMaster;
+use App\Models\MasterOpeningBalance;
 
 class LoanService
 {
@@ -15,16 +16,30 @@ class LoanService
             $balance = abs($balance);
         }
 
-        return LoanMaster::create([
+        $item = LoanMaster::create([
             'name' => $data['name'],
             'balance' => $balance,
             'status' => 1,
         ]);
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'loan',
+                'master_id' => $item->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($data['balance'] ?? 0),
+                'balance_type' => $data['balance_type'] ?? 'Credit',
+            ]
+        );
+
+        return $item;
     }
 
     public function find($id)
     {
-        return LoanMaster::findOrFail($id);
+        return LoanMaster::with('currentOpeningBalance')->findOrFail($id);
     }
 
     public function update(array $data, $id)
@@ -38,10 +53,24 @@ class LoanService
             $balance = abs($balance);
         }
 
-        return $item->update([
+        $item->update([
             'name' => $data['name'],
             'balance' => $balance,
         ]);
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'loan',
+                'master_id' => $item->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($data['balance'] ?? 0),
+                'balance_type' => $data['balance_type'] ?? 'Credit',
+            ]
+        );
+
+        return true;
     }
 
     public function delete($id)

@@ -29,7 +29,8 @@ class SalaryDataTable
             ->count();
 
         // Fetch records
-        $records = SalaryMaster::orderBy($columnName, $columnSortOrder)
+        $records = SalaryMaster::with('currentOpeningBalance')
+            ->orderBy($columnName, $columnSortOrder)
             ->where('name', 'like', '%' . $searchValue . '%')
             ->select('salary_masters.*')
             ->skip($start)
@@ -51,10 +52,18 @@ class SalaryDataTable
             $balance_type = $record->balance >= 0 ? '<span class="badge badge-success">Cr</span>' : '<span class="badge badge-danger">Dr</span>';
             $balance = '₹ ' . number_format(abs($record->balance), 2) . ' ' . $balance_type;
 
+            if ($record->currentOpeningBalance) {
+                $ob_type = $record->currentOpeningBalance->balance_type == 'Credit' ? '<span class="badge badge-success">Cr</span>' : '<span class="badge badge-danger">Dr</span>';
+                $opening_balance = '₹ ' . number_format($record->currentOpeningBalance->amount, 2) . ' ' . $ob_type;
+            } else {
+                $opening_balance = '₹ 0.00';
+            }
+
             $data_arr[] = array(
                 "id" => $record->id,
                 "name" => $record->name,
                 "balance" => $balance,
+                "opening_balance" => $opening_balance,
                 "status" => $status,
                 "action" => $action
             );

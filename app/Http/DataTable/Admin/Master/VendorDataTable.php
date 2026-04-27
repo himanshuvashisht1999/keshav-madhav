@@ -14,7 +14,7 @@ class VendorDataTable  {
     }
 
     public function indexList($request){
-        $queue = Vendor::where('status', '!=', 3);
+        $queue = Vendor::with('currentOpeningBalance')->where('status', '!=', 3);
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -41,6 +41,14 @@ class VendorDataTable  {
                 $type = ($balance >= 0) ? 'Credit' : 'Debit';
                 return '<span style="color:' . $color . '; font-weight:bold;">' . number_format(abs($balance), 2) . ' (' . $type . ')</span>';
             })
+            ->addColumn('opening_balance', function ($queue) {
+                if ($queue->currentOpeningBalance) {
+                    $type = $queue->currentOpeningBalance->balance_type == 'Credit' ? 'green' : 'red';
+                    $label = $queue->currentOpeningBalance->balance_type;
+                    return '<span style="color:' . $type . '; font-weight:bold;">' . number_format($queue->currentOpeningBalance->amount, 2) . ' (' . $label . ')</span>';
+                }
+                return '0.00';
+            })
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
                 return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
@@ -53,7 +61,7 @@ class VendorDataTable  {
                 ';
             })
             
-            ->rawColumns(['action', 'status', 'balance'])
+            ->rawColumns(['action', 'status', 'balance', 'opening_balance'])
             ->make(true);
     }
 }

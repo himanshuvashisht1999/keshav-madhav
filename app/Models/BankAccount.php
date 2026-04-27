@@ -18,4 +18,11 @@ class BankAccount extends Model
         'balance',
         'status',
     ];
+
+    public function currentOpeningBalance()
+    {
+        return $this->hasOne(MasterOpeningBalance::class, 'master_id')
+            ->where('master_type', 'bank_account')
+            ->where('financial_year', MasterOpeningBalance::getCurrentFinancialYear());
+    }
 }

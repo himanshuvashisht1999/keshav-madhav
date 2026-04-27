@@ -26,4 +26,11 @@ class PurchaseAgent extends Model
     {
         return $this->hasMany(Vendor::class, 'purchase_agent_id');
     }
+
+    public function currentOpeningBalance()
+    {
+        return $this->hasOne(MasterOpeningBalance::class, 'master_id')
+            ->where('master_type', 'purchase_agent')
+            ->where('financial_year', MasterOpeningBalance::getCurrentFinancialYear());
+    }
 }

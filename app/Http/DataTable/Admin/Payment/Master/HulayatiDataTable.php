@@ -29,7 +29,8 @@ class HulayatiDataTable
             ->count();
 
         // Fetch records
-        $records = HulayatiMaster::orderBy($columnName, $columnSortOrder)
+        $records = HulayatiMaster::with('currentOpeningBalance')
+            ->orderBy($columnName, $columnSortOrder)
             ->where('name', 'like', '%' . $searchValue . '%')
             ->select('hulayati_masters.*')
             ->skip($start)
@@ -51,9 +52,16 @@ class HulayatiDataTable
             $balance_type = $record->balance >= 0 ? '<span class="badge badge-success">Cr</span>' : '<span class="badge badge-danger">Dr</span>';
             $balance = '₹ ' . number_format(abs($record->balance), 2) . ' ' . $balance_type;
 
+            $opening_balance = '₹ 0.00';
+            if ($record->currentOpeningBalance) {
+                $o_type = $record->currentOpeningBalance->balance_type == 'Credit' ? '<span class="badge badge-success">Cr</span>' : '<span class="badge badge-danger">Dr</span>';
+                $opening_balance = '₹ ' . number_format($record->currentOpeningBalance->amount, 2) . ' ' . $o_type;
+            }
+
             $data_arr[] = array(
                 "id" => $record->id,
                 "name" => $record->name,
+                "opening_balance" => $opening_balance,
                 "balance" => $balance,
                 "status" => $status,
                 "action" => $action

@@ -50,7 +50,7 @@ class ReportController extends Controller
     public function stock(Request $request)
     {
         $reportData = $this->service->stock($request);
-        
+
         $response = $reportData;
         $response['warehouses'] = $this->service->warehouses();
         $response['fabrics'] = $this->service->fabrics();
@@ -183,7 +183,7 @@ class ReportController extends Controller
         if ($request->filled('purchase_order_id')) {
             $po = \App\Models\PurchaseOrder::with(['vendor', 'items.fabric'])->findOrFail($request->purchase_order_id);
             $receipts = \App\Models\FabricReceiptDetail::with(['master_fabric_warehouse', 'fabric'])
-                ->whereHas('purchase_order_item', function($q) use ($po) {
+                ->whereHas('purchase_order_item', function ($q) use ($po) {
                     $q->where('purchase_order_id', $po->id);
                 })
                 ->orderBy('created_at')

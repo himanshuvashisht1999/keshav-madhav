@@ -4,6 +4,7 @@ namespace App\Services\Admin\Master;
 
 use Illuminate\Http\Request;
 use App\Models\PurchaseAgent;
+use App\Models\MasterOpeningBalance;
 use App\Http\DataTable\Admin\Master\PurchaseAgentDataTable as DataTable;
 
 class PurchaseAgentService
@@ -30,12 +31,24 @@ class PurchaseAgentService
         $save_data->status = 1;
         $save_data->save();
 
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'purchase_agent',
+                'master_id' => $save_data->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($request->balance ?? 0),
+                'balance_type' => $request->balance_type ?? 'Credit',
+            ]
+        );
+
         return true;
     }
 
     public function edit(Request $request)
     {
-        return PurchaseAgent::find($request->id);
+        return PurchaseAgent::with('currentOpeningBalance')->find($request->id);
     }
 
     public function update(Request $request)
@@ -48,6 +61,18 @@ class PurchaseAgentService
             $update_data->address = $request->address;
             $update_data->status = $request->status ?? 1;
             $update_data->save();
+
+            MasterOpeningBalance::updateOrCreate(
+                [
+                    'master_type' => 'purchase_agent',
+                    'master_id' => $update_data->id,
+                    'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+                ],
+                [
+                    'amount' => abs($request->balance ?? 0),
+                    'balance_type' => $request->balance_type ?? 'Credit',
+                ]
+            );
             return true;
         }
         return false;

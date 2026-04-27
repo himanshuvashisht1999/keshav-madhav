@@ -9,6 +9,9 @@ use App\Models\Brand;
 use App\Requests\Admin\Master\SalesAgentStoreRequest;
 use App\Requests\Admin\Master\SalesAgentUpdateRequest;
 use Auth;
+use App\Models\SalesAgent;
+use App\Models\MasterOpeningBalance;
+use App\Models\MasterCustomer;
 
 class SalesAgentController extends Controller
 {
@@ -19,7 +22,9 @@ class SalesAgentController extends Controller
     }
     public function index()
     {
-        return view('admin.master.sales_agent.index');
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('sales_agent');
+        $response['total_current_balance'] = MasterCustomer::where('status', '!=', 3)->whereNotNull('sales_agent_id')->sum('balance');
+        return view('admin.master.sales_agent.index', $response);
     }
     public function indexList(Request $request)
     {

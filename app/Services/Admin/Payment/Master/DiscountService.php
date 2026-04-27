@@ -3,6 +3,7 @@
 namespace App\Services\Admin\Payment\Master;
 
 use App\Models\DiscountMaster;
+use App\Models\MasterOpeningBalance;
 
 class DiscountService
 {
@@ -15,16 +16,30 @@ class DiscountService
             $balance = abs($balance);
         }
 
-        return DiscountMaster::create([
+        $item = DiscountMaster::create([
             'name' => $data['name'],
             'balance' => $balance,
             'status' => 1,
         ]);
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'discount',
+                'master_id' => $item->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($data['balance'] ?? 0),
+                'balance_type' => $data['balance_type'] ?? 'Credit',
+            ]
+        );
+
+        return $item;
     }
 
     public function find($id)
     {
-        return DiscountMaster::findOrFail($id);
+        return DiscountMaster::with('currentOpeningBalance')->findOrFail($id);
     }
 
     public function update(array $data, $id)
@@ -38,10 +53,24 @@ class DiscountService
             $balance = abs($balance);
         }
 
-        return $item->update([
+        $item->update([
             'name' => $data['name'],
             'balance' => $balance,
         ]);
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'discount',
+                'master_id' => $item->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($data['balance'] ?? 0),
+                'balance_type' => $data['balance_type'] ?? 'Credit',
+            ]
+        );
+
+        return true;
     }
 
     public function delete($id)

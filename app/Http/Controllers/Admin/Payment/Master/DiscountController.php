@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\DataTable\Admin\Payment\Master\DiscountDataTable;
 use App\Requests\Admin\Master\DiscountStoreRequest;
 use App\Requests\Admin\Master\DiscountUpdateRequest;
+use App\Models\DiscountMaster;
+use App\Models\MasterOpeningBalance;
 use App\Services\Admin\Payment\Master\DiscountService;
 use Illuminate\Http\Request;
 
@@ -22,7 +24,9 @@ class DiscountController extends Controller
 
     public function index()
     {
-        return view('admin.payment.master.discount.index');
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('discount');
+        $response['total_current_balance'] = DiscountMaster::where('status', '!=', 3)->sum('balance');
+        return view('admin.payment.master.discount.index', $response);
     }
 
     public function indexList(Request $request)

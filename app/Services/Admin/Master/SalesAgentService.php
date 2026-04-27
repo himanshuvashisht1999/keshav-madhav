@@ -5,6 +5,7 @@ namespace App\Services\Admin\Master;
 use Illuminate\Http\Request;
 use App\Models\SalesAgent;
 use App\Models\SalesAgentBrandDiscount;
+use App\Models\MasterOpeningBalance;
 use App\Http\DataTable\Admin\Master\SalesAgentDataTable as DataTable;
 
 class SalesAgentService
@@ -37,6 +38,18 @@ class SalesAgentService
         $save_data->see_price = $request->see_price ? 1 : 0;
         $save_data->save();
 
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'sales_agent',
+                'master_id' => $save_data->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($request->balance ?? 0),
+                'balance_type' => $request->balance_type ?? 'Credit',
+            ]
+        );
+
         if ($request->has('brand_discounts')) {
             foreach ($request->brand_discounts as $brand_id => $discount) {
                 if ($discount !== null && $discount !== '') {
@@ -54,7 +67,7 @@ class SalesAgentService
 
     public function edit(Request $request)
     {
-        $data = SalesAgent::with('brandDiscounts')->where('id', $request->id)->first();
+        $data = SalesAgent::with(['brandDiscounts', 'currentOpeningBalance'])->where('id', $request->id)->first();
         return $data;
     }
 
@@ -71,6 +84,18 @@ class SalesAgentService
         $update_data->status = $request->status ?? 1;
         $update_data->see_price = $request->see_price ? 1 : 0;
         $update_data->save();
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'sales_agent',
+                'master_id' => $update_data->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($request->balance ?? 0),
+                'balance_type' => $request->balance_type ?? 'Credit',
+            ]
+        );
 
         if ($request->has('brand_discounts')) {
             // Delete existing ones first or use sync logic

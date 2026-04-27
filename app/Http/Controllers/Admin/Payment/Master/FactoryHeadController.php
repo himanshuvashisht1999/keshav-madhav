@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\DataTable\Admin\Payment\Master\FactoryHeadDataTable;
 use App\Requests\Admin\Master\FactoryHeadStoreRequest;
 use App\Requests\Admin\Master\FactoryHeadUpdateRequest;
+use App\Models\FactoryHeadMaster;
+use App\Models\MasterOpeningBalance;
 use App\Services\Admin\Payment\Master\FactoryHeadService;
 use Illuminate\Http\Request;
 
@@ -22,7 +24,9 @@ class FactoryHeadController extends Controller
 
     public function index()
     {
-        return view('admin.payment.master.factory_head.index');
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('factory_head');
+        $response['total_current_balance'] = FactoryHeadMaster::where('status', '!=', 3)->sum('balance');
+        return view('admin.payment.master.factory_head.index', $response);
     }
 
     public function indexList(Request $request)

@@ -170,7 +170,7 @@ class FabricReceiptService
 
                         if ($po_item) {
                             $po_item_id = $po_item->id;
-                            $po_item->update(['status' => 1]); // Keep as active/received
+                            $po_item->update(['status' => 1, 'remaining_quantity' => $po_item->remaining_quantity - $meter]); // Keep as active/received
                         }
                     }
 
@@ -390,7 +390,8 @@ class FabricReceiptService
                 }
 
                 $detail = FabricReceiptDetail::find($detail_id);
-                if (!$detail) continue;
+                if (!$detail)
+                    continue;
 
                 $return_meter = (float) $return_data['return_meter'];
                 $price_per_meter = (float) ($return_data['price_per_meter'] ?? $detail->price_per_meter);
@@ -918,12 +919,12 @@ class FabricReceiptService
             foreach ($return->details as $detail) {
                 if ($detail->receipt_detail) {
                     $detail->receipt_detail->remaining_quantity += $detail->return_meter;
-                    
+
                     // Reset status to active if it was returned
                     if ($detail->receipt_detail->status == 2) {
                         $detail->receipt_detail->status = 1;
                     }
-                    
+
                     $detail->receipt_detail->save();
                 }
                 $detail->delete();

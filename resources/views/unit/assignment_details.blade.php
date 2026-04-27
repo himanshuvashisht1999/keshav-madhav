@@ -198,8 +198,16 @@
 
         <div class="info-grid">
             <div class="info-item">
-                <span class="info-label">Order No</span>
-                <span class="info-value">{{ $header['order_no'] }}</span>
+                <!-- <span class="info-label">Order No</span> -->
+                <!-- <span class="info-value">{{ $header['order_no'] }}</span> -->
+                <span class="info-label">CMPO No</span>
+                <span class="info-value">CMPO-{{ $header['id'] }}</span>
+            </div>
+            <div class="info-item">
+                <!-- <span class="info-label">Order No</span> -->
+                <!-- <span class="info-value">{{ $header['order_no'] }}</span> -->
+                <span class="info-label">Company</span>
+                <span class="info-value">{{ $header['customer'] }}</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Date</span>
@@ -312,7 +320,8 @@
                             <td style="padding-left: 5px;"><span class="size-badge">{{ $row['size'] }}</span></td>
                             <td style="color: #475569; font-weight: 500;">{{ $row['color'] }}</td>
                             <td style="text-align: right; font-weight: 800; color: #1e293b; padding-right: 5px;">
-                                {{ number_format($row['pcs'], 0) }}</td>
+                                {{ number_format($row['pcs'], 0) }}
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>

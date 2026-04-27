@@ -112,7 +112,7 @@
 
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label for="exampleInputEmail1">Opening Balance</label>
+                                                <label for="exampleInputEmail1">Opening Balance ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</label>
                                                 <input type="number" name="balance" class="form-control"
                                                     placeholder="Enter opening balance" value="{{old('balance', 0)}}">
                                                 @if ($errors->has('balance'))
@@ -124,7 +124,7 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                 <label>Balance Type</label>
+                                                 <label>Opening Balance Type</label>
                                                  <select name="balance_type" class="form-control select2" style="width: 100%;">
                                                      <option value="Credit" {{old('balance_type') == 'Credit' ? 'selected' : ''}}>Credit</option>
                                                      <option value="Debit" {{old('balance_type') == 'Debit' ? 'selected' : ''}}>Debit</option>
@@ -228,14 +228,14 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label>Opening Balance</label>
+                                                <label>Opening Balance ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</label>
                                                 <input type="number" step="0.01" name="balance" class="form-control"
                                                     placeholder="Enter opening balance" value="{{old('balance', 0)}}">
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                 <label>Balance Type</label>
+                                                 <label>Opening Balance Type</label>
                                                  <select name="balance_type" class="form-control select2" style="width: 100%;">
                                                      <option value="Credit" {{old('balance_type') == 'Credit' ? 'selected' : ''}}>Credit</option>
                                                      <option value="Debit" {{old('balance_type') == 'Debit' ? 'selected' : ''}}>Debit</option>

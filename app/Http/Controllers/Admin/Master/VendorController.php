@@ -7,6 +7,8 @@ use App\Requests\Admin\Master\VendorStoreRequest;
 use App\Requests\Admin\Master\VendorUpdateRequest;
 use Illuminate\Support\Facades\Crypt;
 use Auth;
+use App\Models\Vendor;
+use App\Models\MasterOpeningBalance;
 
 class VendorController extends Controller { 
     protected $service;
@@ -15,6 +17,8 @@ class VendorController extends Controller {
     }
     public function index(){
         $response['items'] = $this->service->items();
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('vendor');
+        $response['total_current_balance'] = Vendor::where('status', '!=', 3)->sum('balance');
         return view('admin.master.vendor.index',$response);
     } 
     public function indexList(Request $request){

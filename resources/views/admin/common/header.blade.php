@@ -19,6 +19,22 @@
             <i class="fas fa-arrow-left"></i>
           </a>
         </li>
+        @php
+          $isCarriedForward = \App\Models\CarryForwardLog::where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())->exists();
+        @endphp
+        <li class="nav-item">
+          @if(!$isCarriedForward)
+            <a class="nav-link text-primary" href="{{ route('admin.carry-forward-balances') }}" 
+               onclick="return confirm('Are you sure you want to carry forward all current balances as opening balances for the financial year {{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }}? This will update existing opening balances for this year.')" 
+               title="Carry Forward Balances">
+              <i class="fas fa-file-invoice-dollar"></i> Carry Forward
+            </a>
+          @else
+            <a class="nav-link text-muted disabled" href="javascript:void(0)" title="Balances already carried forward for this year">
+              <i class="fas fa-check-circle"></i> Carried Forward
+            </a>
+          @endif
+        </li>
         <li class="nav-item">
           <a class="nav-link" data-widget="fullscreen" href="#" role="button">
             <i class="fas fa-expand-arrows-alt"></i>

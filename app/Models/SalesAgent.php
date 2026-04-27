@@ -51,4 +51,11 @@ class SalesAgent extends Authenticatable
     {
         return $this->hasMany(SalesAgentBrandDiscount::class, 'sales_agent_id');
     }
+
+    public function currentOpeningBalance()
+    {
+        return $this->hasOne(MasterOpeningBalance::class, 'master_id')
+            ->where('master_type', 'sales_agent')
+            ->where('financial_year', MasterOpeningBalance::getCurrentFinancialYear());
+    }
 }

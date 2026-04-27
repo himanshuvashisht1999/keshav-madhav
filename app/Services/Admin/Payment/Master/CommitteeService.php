@@ -4,6 +4,7 @@ namespace App\Services\Admin\Payment\Master;
 
 use Illuminate\Http\Request;
 use App\Models\Committee;
+use App\Models\MasterOpeningBalance;
 use App\Http\DataTable\Admin\Payment\Master\CommitteeDataTable as DataTable;
 
 class CommitteeService
@@ -35,12 +36,25 @@ class CommitteeService
         $committee->period = $request->period;
         $committee->status = 1;
         $committee->save();
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'committee',
+                'master_id' => $committee->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($request->balance ?? 0),
+                'balance_type' => $request->balance_type ?? 'Credit',
+            ]
+        );
+
         return true;
     }
 
     public function edit(Request $request)
     {
-        return Committee::find($request->id);
+        return Committee::with('currentOpeningBalance')->find($request->id);
     }
 
     public function update(Request $request)
@@ -57,6 +71,19 @@ class CommitteeService
         $committee->balance = $balance;
         $committee->period = $request->period;
         $committee->save();
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'committee',
+                'master_id' => $committee->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($request->balance ?? 0),
+                'balance_type' => $request->balance_type ?? 'Credit',
+            ]
+        );
+
         return true;
     }
 

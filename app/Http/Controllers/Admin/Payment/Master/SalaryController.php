@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\DataTable\Admin\Payment\Master\SalaryDataTable;
 use App\Requests\Admin\Master\SalaryStoreRequest;
 use App\Requests\Admin\Master\SalaryUpdateRequest;
+use App\Models\SalaryMaster;
+use App\Models\MasterOpeningBalance;
 use App\Services\Admin\Payment\Master\SalaryService;
 use Illuminate\Http\Request;
 
@@ -22,7 +24,9 @@ class SalaryController extends Controller
 
     public function index()
     {
-        return view('admin.payment.master.salary.index');
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('salary');
+        $response['total_current_balance'] = SalaryMaster::where('status', '!=', 3)->sum('balance');
+        return view('admin.payment.master.salary.index', $response);
     }
 
     public function indexList(Request $request)

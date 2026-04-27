@@ -351,8 +351,8 @@
                             <span class="info-value">CMPO-{{ $item->id }}</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Order No</span>
-                            <span class="info-value">{{ $item->productSet->orderMain->sku ?? '-' }}</span>
+                            <span class="info-label">Company</span>
+                            <span class="info-value">{{ $item->productSet->orderMain?->customer->name ?? '-' }}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Design No</span>
@@ -375,7 +375,8 @@
                         <div class="btn-group">
                             @if(!empty($canCloseTasks) && $canCloseTasks)
                                 <form method="POST" class="task-action-form"
-                                    data-action="{{ ($view ?? 'open') === 'closed' ? 'reopen' : 'close' }}" action="{{ ($view ?? 'open') === 'closed'
+                                    data-action="{{ ($view ?? 'open') === 'closed' ? 'reopen' : 'close' }}"
+                                    action="{{ ($view ?? 'open') === 'closed'
                                         ? route('unit.assignments.reopen', ['type' => 'cutting', 'id' => $item->id])
                                         : route('unit.assignments.close', ['type' => 'cutting', 'id' => $item->id]) }}">
                                     @csrf
@@ -408,7 +409,8 @@
                     <div class="assignment-body">
                         <div class="info-item">
                             <span class="info-label">CMPO No</span>
-                            <span class="info-value">CMPO-{{ $item->orderProduct?->orderProductSet?->order_cutting_stage?->id ?? '-' }}</span>
+                            <span
+                                class="info-value">CMPO-{{ $item->orderProduct?->orderProductSet?->order_cutting_stage?->id ?? '-' }}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">From Stage</span>

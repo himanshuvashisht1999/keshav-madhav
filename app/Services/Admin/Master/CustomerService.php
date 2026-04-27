@@ -6,6 +6,7 @@ use Illuminate\Support\Str;
 use Auth;
 use App\Models\MasterCustomer;
 use App\Models\Item;
+use App\Models\MasterOpeningBalance;
 use App\Http\DataTable\Admin\Master\CustomerDataTable as DataTable;
 
 class CustomerService
@@ -56,6 +57,18 @@ class CustomerService
             $shop->status = 1;
             $shop->save();
 
+            MasterOpeningBalance::updateOrCreate(
+                [
+                    'master_type' => 'customer',
+                    'master_id' => $shop->id,
+                    'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+                ],
+                [
+                    'amount' => abs($request->balance ?? 0),
+                    'balance_type' => $request->balance_type ?? 'Credit',
+                ]
+            );
+
             return true;
         }
 
@@ -84,6 +97,18 @@ class CustomerService
 
         $save_data->save();
 
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'customer',
+                'master_id' => $save_data->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($request->balance ?? 0),
+                'balance_type' => $request->balance_type ?? 'Credit',
+            ]
+        );
+
         if ($type == 'domestic' && $subtype == 'direct' && $request->has('brand_discounts')) {
             foreach ($request->brand_discounts as $brand_id => $discount) {
                 if ($discount !== null && $discount !== '') {
@@ -100,7 +125,7 @@ class CustomerService
 
     public function edit(Request $request)
     {
-        $data = $this->customer->with(['shops', 'brandDiscounts'])->where('id', $request->id)->first();
+        $data = $this->customer->with(['shops', 'brandDiscounts', 'currentOpeningBalance'])->where('id', $request->id)->first();
         return $data;
     }
 
@@ -157,6 +182,18 @@ class CustomerService
 
         $update_data->save();
 
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'customer',
+                'master_id' => $update_data->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($request->balance ?? 0),
+                'balance_type' => $request->balance_type ?? 'Credit',
+            ]
+        );
+
         // If it was an existing Agent (no parent_id) and we are adding/updating a SUB-SHOP
         if ($type == 'domestic' && $subtype == 'agent' && !empty($request->shop_name) && !$update_data->parent_id) {
             $shop = $this->customer->where('parent_id', $update_data->id)->first() ?: new MasterCustomer;
@@ -177,6 +214,18 @@ class CustomerService
             $shop->balance = $balance;
             $shop->status = 1;
             $shop->save();
+
+            MasterOpeningBalance::updateOrCreate(
+                [
+                    'master_type' => 'customer',
+                    'master_id' => $shop->id,
+                    'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+                ],
+                [
+                    'amount' => abs($request->balance ?? 0),
+                    'balance_type' => $request->balance_type ?? 'Credit',
+                ]
+            );
         }
 
         if ($type == 'domestic' && $subtype == 'direct' && $request->has('brand_discounts')) {

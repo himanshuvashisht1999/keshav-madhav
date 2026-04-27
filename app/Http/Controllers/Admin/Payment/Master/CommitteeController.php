@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Services\Admin\Payment\Master\CommitteeService as Service;
 use App\Requests\Admin\Master\CommitteeStoreRequest;
 use App\Requests\Admin\Master\CommitteeUpdateRequest;
+use App\Models\Committee;
+use App\Models\MasterOpeningBalance;
 
 class CommitteeController extends Controller
 {
@@ -19,7 +21,9 @@ class CommitteeController extends Controller
 
     public function index()
     {
-        return view('admin.payment.master.committee.index');
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('committee');
+        $response['total_current_balance'] = Committee::where('status', '!=', 3)->sum('balance');
+        return view('admin.payment.master.committee.index', $response);
     }
 
     public function indexList(Request $request)

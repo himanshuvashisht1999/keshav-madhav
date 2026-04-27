@@ -14,7 +14,7 @@ class CustomerDataTable  {
     }
 
     public function indexList($request){
-        $queue = MasterCustomer::where('status', '!=', 3);
+        $queue = MasterCustomer::with('currentOpeningBalance')->where('status', '!=', 3);
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -56,7 +56,15 @@ class CustomerDataTable  {
                 $type = ($balance >= 0) ? 'Credit' : 'Debit';
                 return '<span style="color:' . $color . '; font-weight:bold;">' . number_format(abs($balance), 2) . ' (' . $type . ')</span>';
             })
-            ->rawColumns(['action', 'status', 'balance'])
+            ->addColumn('opening_balance', function ($queue) {
+                if ($queue->currentOpeningBalance) {
+                    $type = $queue->currentOpeningBalance->balance_type == 'Credit' ? 'green' : 'red';
+                    $label = $queue->currentOpeningBalance->balance_type;
+                    return '<span style="color:' . $type . '; font-weight:bold;">' . number_format($queue->currentOpeningBalance->amount, 2) . ' (' . $label . ')</span>';
+                }
+                return '0.00';
+            })
+            ->rawColumns(['action', 'status', 'balance', 'opening_balance'])
             ->make(true);
     }
 }

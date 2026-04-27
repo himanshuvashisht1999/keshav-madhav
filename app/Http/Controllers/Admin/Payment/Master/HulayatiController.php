@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\DataTable\Admin\Payment\Master\HulayatiDataTable;
 use App\Requests\Admin\Master\HulayatiStoreRequest;
 use App\Requests\Admin\Master\HulayatiUpdateRequest;
+use App\Models\HulayatiMaster;
+use App\Models\MasterOpeningBalance;
 use App\Services\Admin\Payment\Master\HulayatiService;
 use Illuminate\Http\Request;
 
@@ -22,7 +24,9 @@ class HulayatiController extends Controller
 
     public function index()
     {
-        return view('admin.payment.master.hulayati.index');
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('hulayati');
+        $response['total_current_balance'] = HulayatiMaster::where('status', '!=', 3)->sum('balance');
+        return view('admin.payment.master.hulayati.index', $response);
     }
 
     public function indexList(Request $request)

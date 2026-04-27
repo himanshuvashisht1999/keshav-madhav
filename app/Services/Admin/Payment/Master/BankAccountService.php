@@ -4,6 +4,7 @@ namespace App\Services\Admin\Payment\Master;
 
 use Illuminate\Http\Request;
 use App\Models\BankAccount;
+use App\Models\MasterOpeningBalance;
 use App\Http\DataTable\Admin\Payment\Master\BankAccountDataTable as DataTable;
 
 class BankAccountService
@@ -37,12 +38,25 @@ class BankAccountService
         $bankAccount->balance = $balance;
         $bankAccount->status = 1;
         $bankAccount->save();
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'bank_account',
+                'master_id' => $bankAccount->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($request->balance ?? 0),
+                'balance_type' => $request->balance_type ?? 'Credit',
+            ]
+        );
+
         return true;
     }
 
     public function edit(Request $request)
     {
-        return BankAccount::find($request->id);
+        return BankAccount::with('currentOpeningBalance')->find($request->id);
     }
 
     public function update(Request $request)
@@ -61,6 +75,19 @@ class BankAccountService
         }
         $bankAccount->balance = $balance;
         $bankAccount->save();
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'bank_account',
+                'master_id' => $bankAccount->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($request->balance ?? 0),
+                'balance_type' => $request->balance_type ?? 'Credit',
+            ]
+        );
+
         return true;
     }
 

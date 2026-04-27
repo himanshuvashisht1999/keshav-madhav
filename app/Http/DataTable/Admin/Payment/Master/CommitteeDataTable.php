@@ -10,7 +10,7 @@ class CommitteeDataTable
 {
     public function indexList($request)
     {
-        $query = Committee::query();
+        $query = Committee::with('currentOpeningBalance');
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -29,13 +29,20 @@ class CommitteeDataTable
                 $type = $row->balance >= 0 ? '<span class="badge badge-success">Cr</span>' : '<span class="badge badge-danger">Dr</span>';
                 return '₹ ' . number_format(abs($row->balance), 2) . ' ' . $type;
             })
+            ->addColumn('opening_balance', function ($row) {
+                if ($row->currentOpeningBalance) {
+                    $type = $row->currentOpeningBalance->balance_type == 'Credit' ? '<span class="badge badge-success">Cr</span>' : '<span class="badge badge-danger">Dr</span>';
+                    return '₹ ' . number_format($row->currentOpeningBalance->amount, 2) . ' ' . $type;
+                }
+                return '₹ 0.00';
+            })
             ->addColumn('action', function ($row) {
                 return '
                 <a href="' . route('admin.payment.master.committee.edit', ['id' => $row->id]) . '" class="text-muted" data-toggle="tooltip" title="Edit"><i class="fas fa-edit"></i></a>
                 <a href="' . route('admin.payment.master.committee.delete', ['id' => $row->id]) . '" class="ml-2 text-danger" data-toggle="tooltip" title="Delete" onclick="return confirm(\'Are you sure you want to delete this committee?\')"><i class="fas fa-trash"></i></a>
                 ';
             })
-            ->rawColumns(['action', 'status', 'balance'])
+            ->rawColumns(['action', 'status', 'balance', 'opening_balance'])
             ->make(true);
     }
 }

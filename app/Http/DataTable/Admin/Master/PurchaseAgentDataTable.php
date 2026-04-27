@@ -10,7 +10,7 @@ class PurchaseAgentDataTable
 {
     public function indexList($request)
     {
-        $queue = PurchaseAgent::withSum('vendors', 'balance');
+        $queue = PurchaseAgent::withSum('vendors', 'balance')->with('currentOpeningBalance');
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -30,6 +30,14 @@ class PurchaseAgentDataTable
                 $type = ($balance >= 0) ? 'Credit' : 'Debit';
                 return '<span style="color:' . $color . '; font-weight:bold;">' . number_format(abs($balance), 2) . ' (' . $type . ')</span>';
             })
+            ->addColumn('opening_balance', function ($queue) {
+                if ($queue->currentOpeningBalance) {
+                    $type = $queue->currentOpeningBalance->balance_type == 'Credit' ? 'green' : 'red';
+                    $label = $queue->currentOpeningBalance->balance_type;
+                    return '<span style="color:' . $type . '; font-weight:bold;">' . number_format($queue->currentOpeningBalance->amount, 2) . ' (' . $label . ')</span>';
+                }
+                return '0.00';
+            })
             ->editColumn('status', function ($queue) {
                 return ($queue->status == 1) 
                     ? '<span class="badge badge-success">Active</span>' 
@@ -41,7 +49,7 @@ class PurchaseAgentDataTable
                 <a href="' . route('admin.master.purchase-agent.delete', ['id' => $queue->id]) . '" class="btn btn-sm btn-danger ml-1" onclick="return confirm(\'Are you sure?\')"><i class="fas fa-trash"></i></a>
                 ';
             })
-            ->rawColumns(['action', 'status', 'balance'])
+            ->rawColumns(['action', 'status', 'balance', 'opening_balance'])
             ->make(true);
     }
 }

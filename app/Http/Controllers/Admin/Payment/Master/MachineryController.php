@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\DataTable\Admin\Payment\Master\MachineryDataTable;
 use App\Requests\Admin\Master\MachineryStoreRequest;
 use App\Requests\Admin\Master\MachineryUpdateRequest;
+use App\Models\MachineryMaster;
+use App\Models\MasterOpeningBalance;
 use App\Services\Admin\Payment\Master\MachineryService;
 use Illuminate\Http\Request;
 
@@ -22,7 +24,9 @@ class MachineryController extends Controller
 
     public function index()
     {
-        return view('admin.payment.master.machinery.index');
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('machinery');
+        $response['total_current_balance'] = MachineryMaster::where('status', '!=', 3)->sum('balance');
+        return view('admin.payment.master.machinery.index', $response);
     }
 
     public function indexList(Request $request)

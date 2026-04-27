@@ -11,7 +11,7 @@ class SalesAgentDataTable
 
     public function indexList($request)
     {
-        $queue = SalesAgent::where('status', '!=', 3)->withSum('shops as total_balance', 'balance');
+        $queue = SalesAgent::where('status', '!=', 3)->withSum('shops as total_balance', 'balance')->with('currentOpeningBalance');
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -42,6 +42,14 @@ class SalesAgentDataTable
                 $type = ($balance >= 0) ? 'Credit' : 'Debit';
                 return '<span style="color:' . $color . '; font-weight:bold;">' . number_format(abs($balance), 2) . ' (' . $type . ')</span>';
             })
+            ->addColumn('opening_balance', function ($queue) {
+                if ($queue->currentOpeningBalance) {
+                    $type = $queue->currentOpeningBalance->balance_type == 'Credit' ? 'green' : 'red';
+                    $label = $queue->currentOpeningBalance->balance_type;
+                    return '<span style="color:' . $type . '; font-weight:bold;">' . number_format($queue->currentOpeningBalance->amount, 2) . ' (' . $label . ')</span>';
+                }
+                return '0.00';
+            })
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
                 return '
@@ -50,7 +58,7 @@ class SalesAgentDataTable
                 ';
             })
 
-            ->rawColumns(['action', 'status', 'total_balance'])
+            ->rawColumns(['action', 'status', 'total_balance', 'opening_balance'])
             ->make(true);
     }
 }

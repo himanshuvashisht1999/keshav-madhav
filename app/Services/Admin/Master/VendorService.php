@@ -7,6 +7,7 @@ use Auth;
 use App\Models\Vendor;
 use App\Models\Item;
 use App\Models\PurchaseAgent;
+use App\Models\MasterOpeningBalance;
 use App\Http\DataTable\Admin\Master\VendorDataTable as DataTable;
 
 class VendorService {
@@ -49,11 +50,24 @@ class VendorService {
         $save_data->status = $request->status;
         $save_data->description = $request->description;
         $save_data->save();
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'vendor',
+                'master_id' => $save_data->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($request->balance ?? 0),
+                'balance_type' => $request->type ?? 'Credit',
+            ]
+        );
+
         return true;
     }
 
     public function edit(Request $request){
-        $data = $this->vendor->where('id',$request->id)->first();
+        $data = $this->vendor->with('currentOpeningBalance')->where('id',$request->id)->first();
         return $data;
     }
     public function update(Request $request){
@@ -78,6 +92,19 @@ class VendorService {
         $update_data->status = $request->status;
         $update_data->description = $request->description;
         $update_data->save();
+
+        MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'vendor',
+                'master_id' => $update_data->id,
+                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($request->balance ?? 0),
+                'balance_type' => $request->type ?? 'Credit',
+            ]
+        );
+
         return true;
     }
 

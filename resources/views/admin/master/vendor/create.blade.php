@@ -99,8 +99,8 @@
 
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="exampleInputEmail1">Balance</label>
-                                    <input type="number" step="0.01" name="balance" class="form-control" placeholder="Enter balance" value="{{old('balance', 0)}}">
+                                    <label for="exampleInputEmail1">Opening Balance ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</label>
+                                    <input type="number" step="0.01" name="balance" class="form-control" placeholder="Enter opening balance" value="{{old('balance', 0)}}">
                                     @if ($errors->has('balance'))
                                         <span class="invalid-feedback d-block">
                                         {{ $errors->first('balance') }}
@@ -128,7 +128,7 @@
 
                             <div class="col-md-6">
                                 <div class="form-group">
-                                     <label>Type</label>
+                                     <label>Opening Balance Type</label>
                                      <select name="type" class="form-control select2" style="width: 100%;">
                                          <option value="Credit" {{old('type') == 'Credit' ? 'selected' : ''}}>Credit</option>
                                          <option value="Debit" {{old('type') == 'Debit' ? 'selected' : ''}}>Debit</option>

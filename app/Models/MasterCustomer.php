@@ -54,4 +54,11 @@ class MasterCustomer extends Model
     {
         return $this->hasMany(OrderMain::class, 'master_customer_id');
     }
+
+    public function currentOpeningBalance()
+    {
+        return $this->hasOne(MasterOpeningBalance::class, 'master_id')
+            ->where('master_type', 'customer')
+            ->where('financial_year', MasterOpeningBalance::getCurrentFinancialYear());
+    }
 }

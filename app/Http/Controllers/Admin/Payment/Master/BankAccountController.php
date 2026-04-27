@@ -8,6 +8,8 @@ use App\Services\Admin\Payment\Master\BankAccountService as Service;
 use App\Requests\Admin\Master\BankAccountStoreRequest;
 use App\Requests\Admin\Master\BankAccountUpdateRequest;
 use Auth;
+use App\Models\BankAccount;
+use App\Models\MasterOpeningBalance;
 
 class BankAccountController extends Controller
 {
@@ -20,7 +22,9 @@ class BankAccountController extends Controller
 
     public function index()
     {
-        return view('admin.payment.master.bank_account.index');
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('bank_account');
+        $response['total_current_balance'] = BankAccount::where('status', '!=', 3)->sum('balance');
+        return view('admin.payment.master.bank_account.index', $response);
     }
 
     public function indexList(Request $request)

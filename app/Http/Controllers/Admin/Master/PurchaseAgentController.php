@@ -7,6 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Services\Admin\Master\PurchaseAgentService as Service;
 use App\Requests\Admin\Master\PurchaseAgentStoreRequest;
 use App\Requests\Admin\Master\PurchaseAgentUpdateRequest;
+use App\Models\PurchaseAgent;
+use App\Models\MasterOpeningBalance;
+use App\Models\Vendor;
 
 class PurchaseAgentController extends Controller
 {
@@ -19,7 +22,9 @@ class PurchaseAgentController extends Controller
 
     public function index()
     {
-        return view('admin.master.purchase_agent.index');
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('purchase_agent');
+        $response['total_current_balance'] = Vendor::where('status', '!=', 3)->whereNotNull('purchase_agent_id')->sum('balance');
+        return view('admin.master.purchase_agent.index', $response);
     }
 
     public function indexList(Request $request)

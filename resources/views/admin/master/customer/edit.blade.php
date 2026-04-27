@@ -101,27 +101,32 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
-                                                <label for="exampleInputEmail1">Opening Balance</label>
-                                                <input type="number" step="0.01" name="balance" class="form-control" placeholder="Enter opening balance" value="{{ old('balance', abs($data->balance)) }}">
-                                                @if ($errors->has('balance'))
-                                                    <span class="invalid-feedback d-block">
-                                                    {{ $errors->first('balance') }}
-                                                    </span>
-                                                @endif
+                                                <label for="exampleInputEmail1">Current Balance</label>
+                                                <div class="form-control" style="background-color: #e9ecef;">
+                                                    ₹ {{ number_format(abs($data->balance), 2) }}
+                                                    @if($data->balance >= 0)
+                                                        <span class="badge badge-success">Cr</span>
+                                                    @else
+                                                        <span class="badge badge-danger">Dr</span>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
-                                                 <label>Balance Type</label>
+                                                <label for="exampleInputEmail1">Opening Balance ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</label>
+                                                <input type="number" step="0.01" name="balance" class="form-control" placeholder="Enter opening balance" value="{{ $data->currentOpeningBalance ? $data->currentOpeningBalance->amount : 0 }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                 <label>Opening Balance Type</label>
                                                  <select name="balance_type" class="form-control select2" style="width: 100%;">
-                                                     <option value="Credit" {{ old('balance_type', ($data->balance >= 0 ? 'Credit' : 'Debit')) == 'Credit' ? 'selected' : '' }}>Credit</option>
-                                                     <option value="Debit" {{ old('balance_type', ($data->balance >= 0 ? 'Credit' : 'Debit')) == 'Debit' ? 'selected' : '' }}>Debit</option>
+                                                     <option value="Credit" {{ ($data->currentOpeningBalance && $data->currentOpeningBalance->balance_type == 'Credit') ? 'selected' : ($data->balance >= 0 ? 'selected' : '') }}>Credit</option>
+                                                     <option value="Debit" {{ ($data->currentOpeningBalance && $data->currentOpeningBalance->balance_type == 'Debit') ? 'selected' : ($data->balance < 0 ? 'selected' : '') }}>Debit</option>
                                                  </select>
-                                                 @if ($errors->has('balance_type'))
-                                                     <span class="invalid-feedback d-block">{{ $errors->first('balance_type') }}</span>
-                                                 @endif
                                              </div>
                                          </div>
                                     </div>
@@ -218,22 +223,32 @@
                                                 <textarea name="shop_address" class="form-control" rows="2" placeholder="Street, landmark, city...">{{ $shop->address ?? '' }}</textarea>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
-                                                <label>Opening Balance</label>
-                                                <input type="number" step="0.01" name="balance" class="form-control" placeholder="Enter opening balance" value="{{ old('balance', abs($shop->balance ?? 0)) }}">
+                                                <label>Current Balance</label>
+                                                <div class="form-control" style="background-color: #e9ecef;">
+                                                    ₹ {{ number_format(abs($shop->balance ?? 0), 2) }}
+                                                    @if(($shop->balance ?? 0) >= 0)
+                                                        <span class="badge badge-success">Cr</span>
+                                                    @else
+                                                        <span class="badge badge-danger">Dr</span>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
-                                                 <label>Balance Type</label>
+                                                <label>Opening Balance ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</label>
+                                                <input type="number" step="0.01" name="balance" class="form-control" placeholder="Enter opening balance" value="{{ ($shop && $shop->currentOpeningBalance) ? $shop->currentOpeningBalance->amount : 0 }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                 <label>Opening Balance Type</label>
                                                  <select name="balance_type" class="form-control select2" style="width: 100%;">
-                                                     <option value="Credit" {{ old('balance_type', (($shop->balance ?? 0) >= 0 ? 'Credit' : 'Debit')) == 'Credit' ? 'selected' : '' }}>Credit</option>
-                                                     <option value="Debit" {{ old('balance_type', (($shop->balance ?? 0) >= 0 ? 'Credit' : 'Debit')) == 'Debit' ? 'selected' : '' }}>Debit</option>
+                                                     <option value="Credit" {{ ($shop && $shop->currentOpeningBalance && $shop->currentOpeningBalance->balance_type == 'Credit') ? 'selected' : (($shop->balance ?? 0) >= 0 ? 'selected' : '') }}>Credit</option>
+                                                     <option value="Debit" {{ ($shop && $shop->currentOpeningBalance && $shop->currentOpeningBalance->balance_type == 'Debit') ? 'selected' : (($shop->balance ?? 0) < 0 ? 'selected' : '') }}>Debit</option>
                                                  </select>
-                                                 @if ($errors->has('balance_type'))
-                                                     <span class="invalid-feedback d-block">{{ $errors->first('balance_type') }}</span>
-                                                 @endif
                                              </div>
                                          </div>
                                     </div>

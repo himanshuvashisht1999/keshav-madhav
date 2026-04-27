@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\DataTable\Admin\Payment\Master\LoanDataTable;
 use App\Requests\Admin\Master\LoanStoreRequest;
 use App\Requests\Admin\Master\LoanUpdateRequest;
+use App\Models\LoanMaster;
+use App\Models\MasterOpeningBalance;
 use App\Services\Admin\Payment\Master\LoanService;
 use Illuminate\Http\Request;
 
@@ -22,7 +24,9 @@ class LoanController extends Controller
 
     public function index()
     {
-        return view('admin.payment.master.loan.index');
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('loan');
+        $response['total_current_balance'] = LoanMaster::where('status', '!=', 3)->sum('balance');
+        return view('admin.payment.master.loan.index', $response);
     }
 
     public function indexList(Request $request)
