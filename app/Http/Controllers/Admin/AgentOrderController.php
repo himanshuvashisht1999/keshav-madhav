@@ -421,12 +421,26 @@ class AgentOrderController extends Controller
             }
         }
 
-        $gst_percentage = $request->gst_percentage ?? 5.00;
         $other_charges = $request->other_charges ?? 0;
-        $discount_percentage = $request->discount_percentage ?? 0;
-        $discount_amount = ($total_amount * $discount_percentage / 100);
+        
+        if ($request->filled('discount_amount')) {
+            $discount_amount = (float) $request->discount_amount;
+            $discount_percentage = ($total_amount > 0) ? ($discount_amount / $total_amount * 100) : 0;
+        } else {
+            $discount_percentage = $request->discount_percentage ?? 0;
+            $discount_amount = ($total_amount * $discount_percentage / 100);
+        }
+
         $taxable_amount = $total_amount - $discount_amount;
-        $gst_amount = $taxable_amount * ($gst_percentage / 100);
+
+        if ($request->filled('gst_amount')) {
+            $gst_amount = (float) $request->gst_amount;
+            $gst_percentage = ($taxable_amount > 0) ? ($gst_amount / $taxable_amount * 100) : 0;
+        } else {
+            $gst_percentage = $request->gst_percentage ?? 5.00;
+            $gst_amount = $taxable_amount * ($gst_percentage / 100);
+        }
+
         $grand_total = $taxable_amount + $gst_amount + $other_charges;
 
         $status = $order_type === 'direct' ? 'dispatched' : 'pending';
@@ -1128,14 +1142,26 @@ class AgentOrderController extends Controller
         }
 
 
-        $discount_percentage = $request->discount_percentage ?? 0;
         $other_charges = $request->other_charges ?? 0;
-        $discount_amount = ($total_amount * $discount_percentage / 100);
+
+        if ($request->filled('discount_amount')) {
+            $discount_amount = (float) $request->discount_amount;
+            $discount_percentage = ($total_amount > 0) ? ($discount_amount / $total_amount * 100) : 0;
+        } else {
+            $discount_percentage = $request->discount_percentage ?? 0;
+            $discount_amount = ($total_amount * $discount_percentage / 100);
+        }
+
         $taxable_amount = $total_amount - $discount_amount;
 
-        $gst_percentage = $request->has('gst_percentage') ? $request->gst_percentage : ($order->gst_percentage ?: 5.00);
+        if ($request->filled('gst_amount')) {
+            $gst_amount = (float) $request->gst_amount;
+            $gst_percentage = ($taxable_amount > 0) ? ($gst_amount / $taxable_amount * 100) : 0;
+        } else {
+            $gst_percentage = $request->has('gst_percentage') ? $request->gst_percentage : ($order->gst_percentage ?: 5.00);
+            $gst_amount = $taxable_amount * ($gst_percentage / 100);
+        }
 
-        $gst_amount = $taxable_amount * ($gst_percentage / 100);
         $grand_total = $taxable_amount + $gst_amount + $other_charges;
 
         $expected_dispatch_date = $request->expected_dispatch_date ?: $order->expected_dispatch_date;

@@ -149,27 +149,40 @@
                             <small class="text-muted font-weight-bold">Subtotal:</small>
                             <span class="font-weight-bold">₹<span id="subTotalAmount">0</span></span>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <small class="text-muted font-weight-bold">Discount (%):</small>
-                            <input type="number" id="discountInput"
-                                class="form-control form-control-sm text-right p-1 py-0"
-                                style="width: 60px; height: 24px;" value="{{ $order->discount_percentage }}" min="0" max="100" step="0.1">
+                        <div class="input-group input-group-sm mb-1" title="Discount Percentage">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text py-0 px-1" style="font-size: 10px;">Disc %</span>
+                            </div>
+                            <input type="number" id="discountPercentage" class="form-control text-right h-auto py-0 px-1" 
+                                style="font-weight: bold;" value="{{ $order->discount_percentage }}" min="0" max="100" step="0.1">
+                        </div>
+                        <div class="input-group input-group-sm" title="Discount Amount">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text py-0 px-1" style="font-size: 10px;">Disc ₹</span>
+                            </div>
+                            <input type="number" id="discountAmountInput" class="form-control text-right h-auto py-0 px-1" 
+                                style="font-weight: bold;" value="{{ $order->discount_amount }}" min="0">
                         </div>
                     </div>
+
                     <div class="col-md-2 border-right">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <small class="text-muted font-weight-bold">Taxable:</small>
                             <span class="font-weight-bold">₹<span id="taxableAmount">0</span></span>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <small class="text-muted font-weight-bold">GST (%):</small>
-                            <input type="number" id="gstInput"
-                                class="form-control form-control-sm text-right p-1 py-0"
-                                style="width: 60px; height: 24px;" value="{{ $order->gst_percentage }}" min="0" max="100">
+                        <div class="input-group input-group-sm mb-1" title="GST Percentage">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text py-0 px-1" style="font-size: 10px;">GST %</span>
+                            </div>
+                            <input type="number" id="gstPercentage" class="form-control text-right h-auto py-0 px-1" 
+                                style="font-weight: bold;" value="{{ $order->gst_percentage }}" min="0" max="100" step="0.1">
                         </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted font-weight-bold">GST Amount:</small>
-                            <span class="font-weight-bold text-danger">+₹<span id="gstAmount">0</span></span>
+                        <div class="input-group input-group-sm" title="GST Amount">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text py-0 px-1" style="font-size: 10px;">GST ₹</span>
+                            </div>
+                            <input type="number" id="gstAmountInput" class="form-control text-right h-auto py-0 px-1" 
+                                style="font-weight: bold;" value="{{ $order->gst_amount }}" min="0">
                         </div>
                     </div>
 
@@ -237,6 +250,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function () {
+            let discount_mode = 'percentage'; // 'percentage' or 'amount'
+            let gst_mode = 'percentage';
             let cart = new Map();
             const initialVariations = @json($selected_quantities);
 
@@ -323,11 +338,12 @@
                 $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
             }
 
+
             function updateUI() {
                 let totalBoxes = 0;
                 let subTotal = 0;
 
-                cart.forEach((item, key) => {
+                cart.forEach((item) => {
                     if (item.qty > 0) {
                         totalBoxes += item.qty;
                         if (item.pcs_per_box) {
@@ -336,18 +352,43 @@
                     }
                 });
 
-                let discountPercent = parseFloat($('#discountInput').val()) || 0;
                 let otherCharges = parseFloat($('#other_charges').val()) || 0;
-                const discountAmount = subTotal * (discountPercent / 100);
+                let discountAmount = 0;
+                let discountPercent = parseFloat($('#discountPercentage').val()) || 0;
+
+                if (discount_mode === 'amount') {
+                    discountAmount = parseFloat($('#discountAmountInput').val()) || 0;
+                    if (!$('#discountPercentage').is(':focus') && subTotal > 0) {
+                        $('#discountPercentage').val((discountAmount / subTotal * 100).toFixed(4));
+                    }
+                } else {
+                    discountAmount = subTotal * (discountPercent / 100);
+                    if (!$('#discountAmountInput').is(':focus')) {
+                        $('#discountAmountInput').val(discountAmount.toFixed(2));
+                    }
+                }
+
                 const taxableAmount = subTotal - discountAmount;
-                const gstPercent = parseFloat($('#gstInput').val()) || 0;
-                const gstAmount = taxableAmount * (gstPercent / 100);
+                let gstAmount = 0;
+                let gstPercent = parseFloat($('#gstPercentage').val()) || 0;
+
+                if (gst_mode === 'amount') {
+                    gstAmount = parseFloat($('#gstAmountInput').val()) || 0;
+                    if (!$('#gstPercentage').is(':focus') && taxableAmount > 0) {
+                        $('#gstPercentage').val((gstAmount / taxableAmount * 100).toFixed(4));
+                    }
+                } else {
+                    gstAmount = taxableAmount * (gstPercent / 100);
+                    if (!$('#gstAmountInput').is(':focus')) {
+                        $('#gstAmountInput').val(gstAmount.toFixed(2));
+                    }
+                }
+
                 const grandTotal = taxableAmount + gstAmount + otherCharges;
 
                 $('#selectedCount').text(totalBoxes);
                 $('#subTotalAmount').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
                 $('#taxableAmount').text(taxableAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                $('#gstAmount').text(gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
                 $('#grandTotalAmount').text(grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
                 $('.variation-row').each(function () {
@@ -392,10 +433,27 @@
                 updateUI();
             });
 
-            $('#discountInput, #gstInput, #other_charges').on('input change', function () {
-                let val = parseFloat($(this).val());
-                if (val < 0 && !$(this).is('#other_charges')) $(this).val(0);
-                if (val > 100 && ($(this).is('#discountInput') || $(this).is('#gstInput'))) $(this).val(100);
+            $(document).on('input', '#discountPercentage', function() {
+                discount_mode = 'percentage';
+                updateUI();
+            });
+
+            $(document).on('input', '#discountAmountInput', function() {
+                discount_mode = 'amount';
+                updateUI();
+            });
+
+            $(document).on('input', '#gstPercentage', function() {
+                gst_mode = 'percentage';
+                updateUI();
+            });
+
+            $(document).on('input', '#gstAmountInput', function() {
+                gst_mode = 'amount';
+                updateUI();
+            });
+
+            $('#other_charges').on('input change', function () {
                 updateUI();
             });
 
@@ -452,8 +510,10 @@
                                 _method: 'PUT',
                                 _token: "{{ csrf_token() }}",
                                 variations: variations,
-                                discount_percentage: discountPercent,
-                                gst_percentage: gstPercent,
+                                discount_percentage: $('#discountPercentage').val(),
+                                discount_amount: $('#discountAmountInput').val(),
+                                gst_percentage: $('#gstPercentage').val(),
+                                gst_amount: $('#gstAmountInput').val(),
                                 other_charges: otherCharges,
                                 expected_dispatch_date: expectedDate,
                                 remark: $('#remark').val(),

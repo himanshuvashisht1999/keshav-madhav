@@ -123,17 +123,41 @@
                                     <span class="text-muted">Subtotal:</span>
                                     <span class="font-weight-bold">₹<span id="subTotalAmount">0.00</span></span>
                                 </li>
-                                <li class="list-group-item d-flex justify-content-between px-0 py-2 border-0 align-items-center">
-                                    <span class="text-muted">Discount (%):</span>
-                                    <input type="number" id="discountPercentage" class="form-control form-control-sm text-right w-25 border-info" value="{{ $order->discount_percentage }}" min="0" max="100">
+                                <li class="list-group-item px-0 py-1 border-0">
+                                    <div class="input-group input-group-sm mb-1" title="Discount Percentage">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text py-0 px-1" style="font-size: 10px; width: 45px;">Disc %</span>
+                                        </div>
+                                        <input type="number" id="discountPercentage" class="form-control text-right h-auto py-1 px-1" 
+                                            style="font-weight: bold;" value="{{ $order->discount_percentage }}" min="0" max="100" step="0.1">
+                                    </div>
+                                    <div class="input-group input-group-sm" title="Discount Amount">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text py-0 px-1" style="font-size: 10px; width: 45px;">Disc ₹</span>
+                                        </div>
+                                        <input type="number" id="discountAmountInput" class="form-control text-right h-auto py-1 px-1" 
+                                            style="font-weight: bold;" value="{{ $order->discount_amount }}" min="0">
+                                    </div>
                                 </li>
-                                <li class="list-group-item d-flex justify-content-between px-0 py-2 border-0 align-items-center">
-                                    <span class="text-muted">GST (%):</span>
-                                    <input type="number" id="gstPercentage" class="form-control form-control-sm text-right w-25 border-info" value="{{ $order->gst_percentage }}" min="0" max="100" step="0.1">
+                                <li class="list-group-item d-flex justify-content-between px-0 py-1 border-0">
+                                    <span class="text-muted small">Taxable:</span>
+                                    <span class="font-weight-bold small">₹<span id="taxableAmount">0.00</span></span>
                                 </li>
-                                <li class="list-group-item d-flex justify-content-between px-0 py-2 border-0">
-                                    <span class="text-muted">GST Amount:</span>
-                                    <span class="font-weight-bold text-danger">+₹<span id="gstAmount">0.00</span></span>
+                                <li class="list-group-item px-0 py-1 border-0">
+                                    <div class="input-group input-group-sm mb-1" title="GST Percentage">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text py-0 px-1" style="font-size: 10px; width: 45px;">GST %</span>
+                                        </div>
+                                        <input type="number" id="gstPercentage" class="form-control text-right h-auto py-1 px-1" 
+                                            style="font-weight: bold;" value="{{ $order->gst_percentage }}" min="0" max="100" step="0.1">
+                                    </div>
+                                    <div class="input-group input-group-sm" title="GST Amount">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text py-0 px-1" style="font-size: 10px; width: 45px;">GST ₹</span>
+                                        </div>
+                                        <input type="number" id="gstAmountInput" class="form-control text-right h-auto py-1 px-1" 
+                                            style="font-weight: bold;" value="{{ $order->gst_amount }}" min="0">
+                                    </div>
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between px-0 py-2 border-0 align-items-center">
                                     <span class="text-muted">Other Charges:</span>
@@ -202,6 +226,8 @@
         const allItems = new Map(); // Global storage for all added rolls: ID -> {fabric_id, data}
         const fabricTargets = new Map(); // fabric_id -> {name, target, price}
         let fabricData = {}; // Cache for rolls data fetched via AJAX
+        let discount_mode = 'percentage';
+        let gst_mode = 'percentage';
 
         // Load existing items
         @foreach($existing_items as $item)
@@ -403,91 +429,139 @@
             calculateTotals();
         });
 
-        function calculateTotals() {
-            let subTotal = 0;
-            let rollCount = 0;
-            const fabricAggr = {};
 
-            $('.roll-item').each(function() {
-                const fid = $(this).data('fabric-id').toString();
-                const meter = parseFloat($(this).find('.order-meter').val()) || 0;
-                const price = parseFloat($(this).find('.roll-price').val()) || 0;
-                const total = meter * price;
-                
-                $(this).find('.row-total').text(total.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
-                
-                subTotal += total;
-                rollCount++;
-                
-                if (!fabricAggr[fid]) fabricAggr[fid] = 0;
-                fabricAggr[fid] += meter;
-            });
+            function calculateTotals() {
+                let subTotal = 0;
+                let rollCount = 0;
+                const fabricAggr = {};
 
-            const targetList = $('#targetList');
-            targetList.empty();
-            let allTargetsMet = true;
+                $('.roll-item').each(function() {
+                    const fid = $(this).data('fabric-id').toString();
+                    const meter = parseFloat($(this).find('.order-meter').val()) || 0;
+                    const price = parseFloat($(this).find('.roll-price').val()) || 0;
+                    const total = meter * price;
+                    
+                    $(this).find('.row-total').text(total.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
+                    
+                    subTotal += total;
+                    rollCount++;
+                    
+                    if (!fabricAggr[fid]) fabricAggr[fid] = 0;
+                    fabricAggr[fid] += meter;
+                });
 
-            fabricTargets.forEach((data, fid) => {
-                const actual = fabricAggr[fid] || 0;
-                const target = data.target;
-                if (target <= 0) return;
+                const targetList = $('#targetList');
+                targetList.empty();
+                let allTargetsMet = true;
 
-                const diff = actual - target;
-                let statusHtml = '';
-                if (Math.abs(diff) < 0.01) {
-                    statusHtml = '<span class="badge badge-success">OK</span>';
-                } else if (diff > 0) {
-                    statusHtml = `<span class="badge badge-danger">+${diff.toFixed(2)}m OVER</span>`;
-                    allTargetsMet = false;
-                } else {
-                    statusHtml = `<span class="badge badge-warning">${Math.abs(diff).toFixed(2)}m SHORT</span>`;
-                    allTargetsMet = false;
+                fabricTargets.forEach((data, fid) => {
+                    const actual = fabricAggr[fid] || 0;
+                    const target = data.target;
+                    if (target <= 0) return;
+
+                    const diff = actual - target;
+                    let statusHtml = '';
+                    if (Math.abs(diff) < 0.01) {
+                        statusHtml = '<span class="badge badge-success">OK</span>';
+                    } else if (diff > 0) {
+                        statusHtml = `<span class="badge badge-danger">+${diff.toFixed(2)}m OVER</span>`;
+                        allTargetsMet = false;
+                    } else {
+                        statusHtml = `<span class="badge badge-warning">${Math.abs(diff).toFixed(2)}m SHORT</span>`;
+                        allTargetsMet = false;
+                    }
+
+                    targetList.append(`
+                        <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">
+                            <div>
+                                <div class="font-weight-bold">${data.name}</div>
+                                <div class="text-muted small">${actual.toFixed(2)} / ${target.toFixed(2)} m</div>
+                            </div>
+                            <div>${statusHtml}</div>
+                        </div>
+                    `);
+                });
+
+                if (targetList.is(':empty')) {
+                    targetList.html('<div class="text-muted text-center py-2 italicText">No targets set yet</div>');
                 }
 
-                targetList.append(`
-                    <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">
-                        <div>
-                            <div class="font-weight-bold">${data.name}</div>
-                            <div class="text-muted small">${actual.toFixed(2)} / ${target.toFixed(2)} m</div>
-                        </div>
-                        <div>${statusHtml}</div>
-                    </div>
-                `);
-            });
+                const otherCharges = parseFloat($('#other_charges').val()) || 0;
+                let discountAmount = 0;
+                let discountPercent = parseFloat($('#discountPercentage').val()) || 0;
 
-            if (targetList.is(':empty')) {
-                targetList.html('<div class="text-muted text-center py-2 italicText">No targets set yet</div>');
+                if (discount_mode === 'amount') {
+                    discountAmount = parseFloat($('#discountAmountInput').val()) || 0;
+                    if (!$('#discountPercentage').is(':focus') && subTotal > 0) {
+                        $('#discountPercentage').val((discountAmount / subTotal * 100).toFixed(4));
+                    }
+                } else {
+                    discountAmount = subTotal * (discountPercent / 100);
+                    if (!$('#discountAmountInput').is(':focus')) {
+                        $('#discountAmountInput').val(discountAmount.toFixed(2));
+                    }
+                }
+
+                const taxableAmount = subTotal - discountAmount;
+                let gstAmount = 0;
+                let gstPercent = parseFloat($('#gstPercentage').val()) || 0;
+
+                if (gst_mode === 'amount') {
+                    gstAmount = parseFloat($('#gstAmountInput').val()) || 0;
+                    if (!$('#gstPercentage').is(':focus') && taxableAmount > 0) {
+                        $('#gstPercentage').val((gstAmount / taxableAmount * 100).toFixed(4));
+                    }
+                } else {
+                    gstAmount = taxableAmount * (gstPercent / 100);
+                    if (!$('#gstAmountInput').is(':focus')) {
+                        $('#gstAmountInput').val(gstAmount.toFixed(2));
+                    }
+                }
+
+                const grandTotal = taxableAmount + gstAmount + otherCharges;
+
+                $('#totalRollsHeader').text(rollCount + ' Rolls Added');
+                $('#subTotalAmount').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
+                $('#taxableAmount').text(taxableAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
+                $('#gstAmount').text(gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
+                $('#grandTotalAmount').text(grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
+
+                const canUpdateOrder = rollCount > 0 && allTargetsMet;
+                $('#placeOrderBtn').prop('disabled', !canUpdateOrder);
+                
+                if (rollCount > 0 && !allTargetsMet) {
+                    $('#placeOrderBtn').attr('title', 'All targets must be met exactly to update order');
+                } else {
+                    $('#placeOrderBtn').removeAttr('title');
+                }
             }
 
-            const discountPercent = parseFloat($('#discountPercentage').val()) || 0;
-            const otherCharges = parseFloat($('#other_charges').val()) || 0;
-            const discountAmount = subTotal * (discountPercent / 100);
-            const taxable = subTotal - discountAmount;
-            const gstPercentInput = parseFloat($('#gstPercentage').val()) || 0;
-            const gst = taxable * (gstPercentInput / 100);
-            const grandTotal = taxable + gst + otherCharges;
-
-            $('#totalRollsHeader').text(rollCount + ' Rolls Added');
-            $('#subTotalAmount').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
-            $('#gstAmount').text(gst.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
-            $('#grandTotalAmount').text(grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
-
-            const canUpdateOrder = rollCount > 0 && allTargetsMet;
-            $('#placeOrderBtn').prop('disabled', !canUpdateOrder);
-            
-            if (rollCount > 0 && !allTargetsMet) {
-                $('#placeOrderBtn').attr('title', 'All targets must be met exactly to update order');
-            } else {
-                $('#placeOrderBtn').removeAttr('title');
-            }
-        }
-
-        $(document).on('input', '.order-meter, .roll-price, #discountPercentage, #targetTotalMeter, #gstPercentage, #other_charges', function() {
+        $(document).on('input', '.order-meter, .roll-price, #targetTotalMeter, #other_charges', function() {
             if ($(this).hasClass('order-meter')) {
                 const max = parseFloat($(this).attr('max')) || 0;
                 let val = parseFloat($(this).val()) || 0;
                 if (val > max) $(this).val(max);
             }
+            calculateTotals();
+        });
+
+        $(document).on('input', '#discountPercentage', function() {
+            discount_mode = 'percentage';
+            calculateTotals();
+        });
+
+        $(document).on('input', '#discountAmountInput', function() {
+            discount_mode = 'amount';
+            calculateTotals();
+        });
+
+        $(document).on('input', '#gstPercentage', function() {
+            gst_mode = 'percentage';
+            calculateTotals();
+        });
+
+        $(document).on('input', '#gstAmountInput', function() {
+            gst_mode = 'amount';
             calculateTotals();
         });
 
@@ -547,7 +621,9 @@
                             sale_type: "fabric",
                             rolls: selections,
                             discount_percentage: $('#discountPercentage').val(),
+                            discount_amount: $('#discountAmountInput').val(),
                             gst_percentage: $('#gstPercentage').val(),
+                            gst_amount: $('#gstAmountInput').val(),
                             other_charges: $('#other_charges').val(),
                             expected_dispatch_date: $('#expectedDispatchDate').val(),
                             booking_station: $('#booking_station').val(),
