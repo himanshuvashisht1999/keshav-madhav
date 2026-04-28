@@ -69,6 +69,7 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Fabric Name (Ordered)</th>
+                                    <th class="text-end">Price</th>
                                     <th class="text-end">Ordered Qty</th>
                                     <th class="text-end">Received Qty</th>
                                     <th class="text-end">Remaining Qty</th>
@@ -89,6 +90,7 @@
                                     <tr>
                                         <td>{{ $sr++ }}</td>
                                         <td class="fw-bold text-primary">{{ $item->fabric?->name ?? 'Unknown Fabric' }}</td>
+                                        <td class="fw-bold text-primary">{{ $item->price }}/mtr</td>
                                         <td class="text-end text-primary fw-bold">{{ number_format($item->meter, 2) }}</td>
                                         <td class="text-end text-success fw-bold">{{ number_format($actualReceived, 2) }}</td>
                                         <td class="text-end text-danger fw-bold">{{ number_format($actualRemaining, 2) }}</td>
