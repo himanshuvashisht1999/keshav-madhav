@@ -178,7 +178,7 @@
                             <th>SKU</th>
                             <th>Cutting Master</th>
                             <th>Assigned QTY</th>
-                            <th>Date</th>
+                            <th>Assigned Date</th>
                         </tr>
                     </thead>
                     <tbody>

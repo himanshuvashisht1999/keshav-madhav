@@ -1029,6 +1029,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/stock/roll-details', [AdminReportController::class, 'fabricRollDetails'])->name('stock.roll.details');
             Route::get('/stock/export', [AdminReportController::class, 'stockExport'])->name('stock.export');
             Route::get('/stock/pdf', [AdminReportController::class, 'stockPdf'])->name('stock.pdf');
+            Route::get('/stock-rolls', [AdminReportController::class, 'stockRolls'])->name('stock.rolls');
+            Route::get('/stock-rolls/tracking', [AdminReportController::class, 'stockRollTracking'])->name('stock.rolls.tracking');
             Route::get('/fabric-return', [AdminReportController::class, 'fabricReturn'])->name('fabric_return');
             Route::get('/fabric-return/view/{id}', [AdminReportController::class, 'fabricReturnView'])->name('fabric_return_view');
             Route::get('/purchase-order', [AdminReportController::class, 'purchaseOrder'])->name('purchase_order');

@@ -107,7 +107,7 @@
             <td>{{ $header['pattern'] }}</td>
 
             {{-- <td class="meta-label">Fitting:</td>
-        <td>{{ $header['fitting'] }}</td> --}}
+            <td>{{ $header['fitting'] }}</td> --}}
         </tr>
         <br>
         <tr>
@@ -138,7 +138,7 @@
             <tr>
                 <td style="font-weight: bold; width: 30%;">SIZE SET:</td>
                 <td style="font-size: 16px;">{{ $header['size_set'] ?? '-' }}</td>
-                
+
                 <td style="font-weight: bold; width: 35%;">TOTAL PIECE IN SET:</td>
                 <td style="font-size: 16px;">{{ $header['pcs_in_set'] ?? 0 }}</td>
             </tr>

@@ -107,7 +107,7 @@
             <td>{{ $header['pattern'] }}</td>
 
             {{-- <td class="meta-label">Fitting:</td>
-        <td>{{ $header['fitting'] }}</td> --}}
+            <td>{{ $header['fitting'] }}</td> --}}
         </tr>
         <br>
         <tr>
@@ -150,14 +150,14 @@
             {{-- @php $totalPcs = 0; @endphp --}}
 
             @foreach ($sizeData as $row)
-                {{-- @php $totalPcs += $row['pcs']; @endphp --}}
-                <tr>
-                    <td>{{ $loop->iteration }}</td>
-                    <td>{{ $row['design_no'] }} ({{ $header['fitting'] }})</td>
-                    <td>{{ $row['color'] }}</td>
-                    <td>{{ $row['size'] }}</td>
-                    <td>{{ $row['pcs'] }}</td>
-                </tr>
+            {{-- @php $totalPcs += $row['pcs']; @endphp --}}
+            <tr>
+                <td>{{ $loop->iteration }}</td>
+                <td>{{ $row['design_no'] }} ({{ $header['fitting'] }})</td>
+                <td>{{ $row['color'] }}</td>
+                <td>{{ $row['size'] }}</td>
+                <td>{{ $row['pcs'] }}</td>
+            </tr>
             @endforeach
         </tbody>
 

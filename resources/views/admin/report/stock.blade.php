@@ -25,6 +25,7 @@
                     </div>
                     <div class="report-meta d-flex align-items-center gap-2">
                         @if($level === 'fabrics')
+                            <a href="{{ route('admin.report.stock.rolls') }}" class="btn btn-sm btn-dark me-3"><i class="fas fa-barcode"></i> Stock Report (Rolls)</a>
                             <form method="GET" action="{{ route('admin.report.stock') }}" class="d-flex me-3">
                                 <select name="warehouse_id" class="form-control form-control-sm me-2 select2"
                                     style="min-width: 200px;">
