@@ -787,7 +787,7 @@ class UnitAuthController extends Controller
                 if ($ops->design_number)
                     $consolidated['design_nos']->push($ops->design_number);
                 if ($ops->fabric)
-                    $consolidated['fabrics']->push($ops->fabric->name);
+                    $consolidated['fabrics']->push($ops->fabric_names);
                 if ($ops->colors)
                     $consolidated['colors']->push($ops->colors->name);
                 if ($ops->orderMain?->customer)
@@ -806,7 +806,7 @@ class UnitAuthController extends Controller
                 if ($ops->design_number)
                     $consolidated['design_nos']->push($ops->design_number);
                 if ($ops->fabric)
-                    $consolidated['fabrics']->push($ops->fabric->name);
+                    $consolidated['fabrics']->push($ops->fabric_names);
                 if ($ops->colors)
                     $consolidated['colors']->push($ops->colors->name);
                 if ($ops->orderMain?->customer)
@@ -825,7 +825,7 @@ class UnitAuthController extends Controller
                 if ($ops->design_number)
                     $consolidated['design_nos']->push($ops->design_number);
                 if ($ops->fabric)
-                    $consolidated['fabrics']->push($ops->fabric->name);
+                    $consolidated['fabrics']->push($ops->fabric_names);
                 if ($ops->colors)
                     $consolidated['colors']->push($ops->colors->name);
                 if ($ops->orderMain?->customer)
@@ -1208,7 +1208,7 @@ class UnitAuthController extends Controller
                 'date' => $data->created_at->format('d-m-Y'),
                 'customer' => $data->orderMain->customer->name ?? '-',
                 'design_no' => $data->design_number ?? '-',
-                'fabric' => $data->fabric->name ?? ($stageAssignment->fabric->name ?? '-'),
+                'fabric' => $data->fabric_names ?? ($stageAssignment->fabric_names ?? '-'),
                 'color' => $data->colors->name ?? '-',
                 'pattern' => $data->master_design_pattern->name ?? ($stageAssignment->pattern->name ?? '-'),
                 'fitting' => $data->master_product_fitting?->name ?? ($stageAssignment->master_fitting?->name ?? '-'),
@@ -1338,7 +1338,7 @@ class UnitAuthController extends Controller
                 'date' => $transaction->created_at->format('d-m-Y'),
                 'customer' => $hOrderMain->customer->name ?? '-',
                 'design_no' => $orderProductSet->design_number ?? '-',
-                'fabric' => $orderProductSet->fabric->name ?? ($orderProductSet->order_cutting_stage->fabric->name ?? '-'),
+                'fabric' => $orderProductSet->fabric_names ?? ($orderProductSet->order_cutting_stage->fabric_names ?? '-'),
                 'color' => $orderProductSet->colors->name ?? '-',
                 'pattern' => $orderProductSet->master_design_pattern->name ?? ($orderProductSet->order_cutting_stage->pattern->name ?? '-'),
                 'fitting' => $orderProductSet->master_product_fitting?->name ?? ($orderProductSet->order_cutting_stage->master_fitting?->name ?? '-'),

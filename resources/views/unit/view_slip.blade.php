@@ -315,7 +315,7 @@
                             </div>
                             <div>
                                 <div class="subsection-label" style="font-size: 9px; margin-bottom: 2px;">Fabric</div>
-                                <div style="font-size: 13px; font-weight: 600;">{{ $lot->orderProductSet->fabric?->name ?? '-' }}</div>
+                                <div style="font-size: 13px; font-weight: 600;">{{ $lot->orderProductSet->fabric_names ?? '-' }}</div>
                             </div>
                             <div>
                                 <div class="subsection-label" style="font-size: 9px; margin-bottom: 2px;">Color</div>
@@ -389,7 +389,7 @@
                             </div>
                             <div>
                                 <div class="subsection-label" style="font-size: 9px; margin-bottom: 2px;">Fabric</div>
-                                <div style="font-size: 13px; font-weight: 600;">{{ $ops->fabric?->name ?? '-' }}</div>
+                                <div style="font-size: 13px; font-weight: 600;">{{ $ops->fabric_names ?? '-' }}</div>
                             </div>
                             <div>
                                 <div class="subsection-label" style="font-size: 9px; margin-bottom: 2px;">Color</div>
@@ -449,7 +449,7 @@
                             </div>
                             <div>
                                 <div class="subsection-label" style="font-size: 9px; margin-bottom: 2px;">Fabric</div>
-                                <div style="font-size: 13px; font-weight: 600;">{{ $ops->fabric?->name ?? '-' }}</div>
+                                <div style="font-size: 13px; font-weight: 600;">{{ $ops->fabric_names ?? '-' }}</div>
                             </div>
                             <div>
                                 <div class="subsection-label" style="font-size: 9px; margin-bottom: 2px;">Color</div>

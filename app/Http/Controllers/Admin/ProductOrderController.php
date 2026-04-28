@@ -442,7 +442,7 @@ class ProductOrderController extends Controller {
             'design_no'   => $data->design_number ?? '-',
             'color'       => $data->colors->name ?? '-',
             // Fallback for fields blank until 100% assignment
-            'fabric'      => $data->fabric->name ?? ($firstAssignment->fabric->name ?? '-'),
+            'fabric'      => $data->fabric_names ?? ($firstAssignment->fabric_names ?? '-'),
             'pattern'     => $data->master_design_pattern->name ?? ($firstAssignment->pattern->name ?? '-'),
             'warehouse_name' => $data->stage_master_unit->masterFabricWarehouse->cutting_master_name ?? ($firstAssignment->cutting_master->masterFabricWarehouse->cutting_master_name ?? '-'),
             'cuttingMaster' => $data->stage_master_unit->name ?? ($firstAssignment->cutting_master->name ?? '-'),

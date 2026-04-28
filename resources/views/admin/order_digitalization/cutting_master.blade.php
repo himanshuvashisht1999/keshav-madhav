@@ -303,6 +303,8 @@
                                             </select>
                                             <div class="card p-2 mt-3 border">
                                                 <h6>Add Roll</h6>
+                                                
+
 
                                                 <div class="row">
                                                     <div class="col-md-6">
@@ -844,7 +846,7 @@
 
                 const firstOsc = (set.order_cutting_stages && set.order_cutting_stages.length > 0) ? set.order_cutting_stages[0] : null;
 
-                $('#show_fabric').text(set.fabric?.name || firstOsc?.fabric?.name || '—');
+                $('#show_fabric').text(set.fabric_names || firstOsc?.fabric_names || '—');
                 $('#show_color').text(set.colors?.name || '—');
                 $('#show_pattern').text(set.master_design_pattern?.name || firstOsc?.pattern?.name || '—');
                 $('#show_fitting').text(set.master_product_fitting?.name || firstOsc?.master_fitting?.name || '—');
@@ -895,32 +897,32 @@
                 }
 
                 /* --------------------
-                   LOAD ROLL NUMBERS
+                   LOAD ALL ROLLS FROM ALL ASSIGNED FABRICS
                 -------------------- */
-                if (!set.fabric || !set.fabric.receipt_details) {
-                    rollSelect.trigger('change');
-                    return;
+                rollSelect = $('#roll_no');
+                rollSelect.empty().append('<option value="">Select Roll No</option>');
+
+                if (set.assigned_fabrics && set.assigned_fabrics.length > 0) {
+                    set.assigned_fabrics.forEach(fabric => {
+                        if (fabric.receipt_details) {
+                            fabric.receipt_details.forEach(detail => {
+                                if (parseFloat(detail.remaining_quantity) <= 0) return;
+
+                                rollSelect.append(
+                                    $('<option>', {
+                                        value: detail.id,
+                                        text: `[${fabric.name}] Roll ${detail.roll_number} (${detail.remaining_quantity} m)`
+                                    })
+                                    .attr('data-meter', detail.remaining_quantity)
+                                    .attr('data-roll', detail.roll_number)
+                                );
+                            });
+                        }
+                    });
                 }
-
-                set.fabric.receipt_details.forEach(detail => {
-
-                    if (parseFloat(detail.remaining_quantity) <= 0) return;
-
-                    rollSelect.append(
-                        $('<option>', {
-                            value: detail.id,
-                            text: `Roll ${detail.roll_number} (${detail.remaining_quantity} m)`
-                        })
-                            .attr('data-meter', detail.remaining_quantity)
-                            .attr('data-roll', detail.roll_number)
-                    );
-                });
-
                 rollSelect.trigger('change'); // refresh select2
             });
 
-
-            // ... (rest of event listeners same) ...
             $('#roll_no').on('change', function () {
                 let selected = $(this).find(':selected');
                 let availableMeter = parseFloat(selected.data('meter')) || 0;

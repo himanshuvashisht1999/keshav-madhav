@@ -8,7 +8,7 @@ class OrderProductSet extends Model
 {
     use HasFactory;
     protected $table = 'order_products_sets';
-    protected $appends = ['size_set_name', 'color_name'];
+    protected $appends = ['size_set_name', 'color_name', 'fabric_names', 'assigned_fabrics'];
     protected $fillable = [
         'id',
         'sno',
@@ -42,6 +42,36 @@ class OrderProductSet extends Model
         'updated_at'
     ];
 
+    public function getFabricNamesAttribute()
+    {
+        if (!$this->fabric_id) return '-';
+        $ids = explode(',', $this->fabric_id);
+        return \App\Models\Fabric::whereIn('id', $ids)->pluck('name')->implode(', ');
+    }
+
+
+    public function getAssignedFabricsAttribute()
+    {
+        $fabricIds = [];
+        if ($this->fabric_id) {
+            $fabricIds = array_filter(array_map('trim', explode(',', $this->fabric_id)));
+        }
+        
+        if (empty($fabricIds) && $this->orderCuttingStages()->exists()) {
+            $stages = $this->orderCuttingStages()->get();
+            foreach ($stages as $osc) {
+                if ($osc->fabric_id) {
+                    $oscIds = array_filter(array_map('trim', explode(',', $osc->fabric_id)));
+                    $fabricIds = array_merge($fabricIds, $oscIds);
+                }
+            }
+            $fabricIds = array_unique($fabricIds);
+        }
+
+        if (empty($fabricIds)) return collect();
+
+        return \App\Models\Fabric::whereIn('id', $fabricIds)->with('receiptDetails')->get();
+    }
     public function cuttingStages()
     {
         return $this->hasMany(OrderCuttingStage::class, 'set_product_id');

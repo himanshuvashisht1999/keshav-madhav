@@ -360,7 +360,7 @@
                         </div>
                         <div class="info-item">
                             <span class="info-label">Fabric</span>
-                            <span class="info-value">{{ $item->productSet->fabric->name ?? '-' }}</span>
+                            <span class="info-value">{{ $item->productSet->fabric_names ?? '-' }}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Color</span>

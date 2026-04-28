@@ -154,7 +154,7 @@
                     <!-- CUTTING MASTER -->
                     <div class="form-group">
                         <label>Fabric</label>
-                        <select id="fabric_id" name="fabric_id" class="form-control select2" required>
+                        <select id="fabric_id" name="fabric_id[]" class="form-control select2" multiple required>
                             @foreach($fabrics as $fabric)
                                 <option value="{{ $fabric->id }}">{{ $fabric->name }} ({{ ($fabric->receipt_details_sum_remaining_quantity ?? 0) }} meter)</option>
                             @endforeach

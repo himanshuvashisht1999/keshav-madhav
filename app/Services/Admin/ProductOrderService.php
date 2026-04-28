@@ -834,12 +834,15 @@ class ProductOrderService
                     $cuttingCount = OrderCuttingStage::where('order_main_id', $data->order_main_id)->count() + 1;
                     $cuttingSku = $data->sku . "/C" . $cuttingCount;
 
+                    // Support multiple fabrics
+                    $fabricId = is_array($request->fabric_id) ? implode(',', $request->fabric_id) : $request->fabric_id;
+
                     $cuttingStage = new OrderCuttingStage();
                     $cuttingStage->sku = $cuttingSku;
                     $cuttingStage->order_main_id = $data->order_main_id;
                     $cuttingStage->set_product_id = $data->id;
                     $cuttingStage->to_assign_id = $request->master_cutting_id; // StageMasterUnit ID
-                    $cuttingStage->fabric_id = $request->fabric_id ?? null;
+                    $cuttingStage->fabric_id = $fabricId ?? null;
                     $cuttingStage->master_fitting_id = $request->master_fitting_id;
                     $cuttingStage->master_pattern_id = $request->master_pattern_id;
                     $cuttingStage->quantity = $assignQty;
@@ -866,7 +869,7 @@ class ProductOrderService
                     if ($data->remain_total_quantity <= 0) {
                         $data->status = 2;
                         $data->stage_master_unit_id = $request->master_cutting_id;
-                        $data->fabric_id = $request->fabric_id ?? null;
+                        $data->fabric_id = $fabricId ?? null;
                         $data->master_product_fitting_id = $request->master_fitting_id;
                         $data->master_design_pattern_id = $request->master_pattern_id;
                         $data->remark = $request->remark ?? null;
@@ -1139,12 +1142,15 @@ class ProductOrderService
 
                 $cuttingSku = $save_orderProductSet->sku . "/C1";
 
+                // Support multiple fabrics
+                $fabricId = is_array($request->fabric_id) ? implode(',', $request->fabric_id) : $request->fabric_id;
+
                 $cuttingStage = new OrderCuttingStage();
                 $cuttingStage->sku = $cuttingSku;
                 $cuttingStage->order_main_id = $save_data_main->id;
                 $cuttingStage->set_product_id = $save_orderProductSet->id;
                 $cuttingStage->to_assign_id = $request->master_cutting_id;
-                $cuttingStage->fabric_id = $request->fabric_id ?? null;
+                $cuttingStage->fabric_id = $fabricId ?? null;
                 $cuttingStage->master_fitting_id = $request->master_fitting_id;
                 $cuttingStage->master_pattern_id = $request->master_pattern_id;
                 $cuttingStage->quantity = $assignQty;
@@ -1159,7 +1165,7 @@ class ProductOrderService
                 $save_orderProductSet->remain_set_quantity = 0;
                 $save_orderProductSet->status = 2; // Fully assigned
                 $save_orderProductSet->stage_master_unit_id = $request->master_cutting_id;
-                $save_orderProductSet->fabric_id = $request->fabric_id ?? null;
+                $save_orderProductSet->fabric_id = $fabricId ?? null;
                 $save_orderProductSet->master_product_fitting_id = $request->master_fitting_id;
                 $save_orderProductSet->master_design_pattern_id = $request->master_pattern_id;
                 $save_orderProductSet->remark = $request->remark ?? null;

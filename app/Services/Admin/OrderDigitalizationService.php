@@ -1117,9 +1117,12 @@ class OrderDigitalizationService
                 if ($detail->orderProductSetDetail) {
                     $productSet = $detail->orderProductSetDetail->orderProductSet;
                     if ($productSet) {
-                        // Get fabric name
-                        if ($productSet->fabric) {
-                            $fabricNames[$productSet->fabric->name] = true;
+                        // Get fabric names
+                        if ($productSet->fabric_names) {
+                            $names = explode(',', $productSet->fabric_names);
+                            foreach ($names as $n) {
+                                $fabricNames[trim($n)] = true;
+                            }
                         }
 
                         // Get order SKU
@@ -1199,9 +1202,11 @@ class OrderDigitalizationService
 
         // Get fabric names
         $fabricNames = \App\Models\OrderProductSet::whereIn('id', $orderProductSetIds)
-            ->with('fabric')
             ->get()
-            ->pluck('fabric.name')
+            ->pluck('fabric_names')
+            ->flatMap(function($names) {
+                return array_map('trim', explode(',', $names));
+            })
             ->filter()
             ->unique()
             ->values()

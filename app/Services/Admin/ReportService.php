@@ -382,11 +382,12 @@ class ReportService
                 ])
                 ->leftJoin('fabric_receipt_details', 'fabrics.id', '=', 'fabric_receipt_details.fabric_id')
                 ->leftJoin('vendors', 'fabrics.vendor_id', '=', 'vendors.id')
-                ->when($request->filled('warehouse_id'), function($q) use ($request) {
+                ->when($request->filled('warehouse_id'), function ($q) use ($request) {
                     $q->where('fabric_receipt_details.master_fabric_warehouse_id', $request->warehouse_id);
                 })
                 ->groupBy('fabrics.id', 'fabrics.name', 'vendors.name')
-                ->when($request->filled('search'), function($q) use ($request) {
+                ->having('total_received', '>', 0)
+                ->when($request->filled('search'), function ($q) use ($request) {
                     $q->where('fabrics.name', 'LIKE', '%' . $request->search . '%');
                 })
                 ->orderBy('fabrics.name');
@@ -426,7 +427,7 @@ class ReportService
 
             $query = FabricReceiptDetail::with(['fabric_receipt.vendor', 'purchase_order', 'master_fabric_warehouse', 'returns'])
                 ->where('fabric_id', $fabricId)
-                ->when($warehouseId, function($q) use ($warehouseId) {
+                ->when($warehouseId, function ($q) use ($warehouseId) {
                     $q->where('master_fabric_warehouse_id', $warehouseId);
                 })
                 ->orderBy('created_at', 'desc');
@@ -456,29 +457,81 @@ class ReportService
             }
             $rollNumbers = $rollQuery->pluck('roll_number')->filter()->unique();
 
-            if ($rollNumbers->isEmpty()) {
-                return [
-                    'level' => 'usages',
-                    'fabric' => Fabric::find($fabricId),
-                    'data' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20)
-                ];
+            $internalUsages = \App\Models\FabricRollAssigning::with(['orderProductSet.colors', 'stageMasterUnit'])
+                ->whereIn('roll_no', $rollNumbers->isEmpty() ? ['NOT_REAL_ROLL'] : $rollNumbers)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $agentUsagesQuery = \App\Models\AgentOrderFabricItem::with(['order.party', 'roll'])
+                ->where('fabric_id', $fabricId);
+
+            if ($warehouseId) {
+                $agentUsagesQuery->whereHas('roll', function ($q) use ($warehouseId) {
+                    $q->where('master_fabric_warehouse_id', $warehouseId);
+                });
             }
 
-            $query = \App\Models\FabricRollAssigning::with(['orderProductSet.colors', 'stageMasterUnit'])
-                ->whereIn('roll_no', $rollNumbers)
-                ->orderBy('created_at', 'desc');
+            $agentUsages = $agentUsagesQuery->orderBy('created_at', 'desc')->get();
+
+            $unifiedUsages = collect();
+
+            foreach ($internalUsages as $u) {
+                $unifiedUsages->push((object) [
+                    'id' => $u->id,
+                    'created_at' => $u->created_at,
+                    'roll_no' => $u->roll_no,
+                    'lot_no' => $u->lot_no,
+                    'order_no' => $u->order_no,
+                    'meter' => $u->meter,
+                    'orderProductSet' => $u->orderProductSet,
+                    'stageMasterUnit' => $u->stageMasterUnit
+                ]);
+            }
+
+            foreach ($agentUsages as $a) {
+                $partyName = $a->order?->party?->name ?? 'Unknown';
+                $unifiedUsages->push((object) [
+                    'id' => $a->id,
+                    'created_at' => $a->created_at,
+                    'roll_no' => $a->roll?->roll_number ?? '-',
+                    'lot_no' => 'Agent Order',
+                    'order_no' => $a->order?->sku ?? ('PO-' . $a->agent_order_id),
+                    'meter' => $a->meter,
+                    'orderProductSet' => (object) [
+                        'design_number' => 'Selling Price: ' . number_format($a->selling_price, 2),
+                        'colors' => (object) ['name' => 'Party: ' . $partyName]
+                    ],
+                    'stageMasterUnit' => (object) ['name' => 'Direct Sale']
+                ]);
+            }
+
+            // Sort by created_at desc
+            $unifiedUsages = $unifiedUsages->sortByDesc('created_at')->values();
 
             if ($request->has('is_export')) {
                 return [
                     'level' => 'usages',
                     'fabric' => Fabric::find($fabricId),
-                    'data' => $query->get()
+                    'data' => $unifiedUsages
                 ];
             }
+
+            // Paginate manually
+            $perPage = 20;
+            $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+            $currentPageItems = $unifiedUsages->slice(($currentPage - 1) * $perPage, $perPage)->values();
+            $paginatedData = new \Illuminate\Pagination\LengthAwarePaginator(
+                $currentPageItems,
+                $unifiedUsages->count(),
+                $perPage,
+                $currentPage,
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+            );
+
             return [
                 'level' => 'usages',
                 'fabric' => Fabric::find($fabricId),
-                'data' => $query->paginate(20)->withQueryString()
+                'data' => $paginatedData->withQueryString()
             ];
         }
 
@@ -491,7 +544,7 @@ class ReportService
             ->orderBy('date', 'desc');
 
         if ($request->filled('vendor_id')) {
-            $query->whereHas('receipt', function($q) use ($request) {
+            $query->whereHas('receipt', function ($q) use ($request) {
                 $q->where('vendor_id', $request->vendor_id);
             });
         }
@@ -505,7 +558,7 @@ class ReportService
         }
 
         if ($request->filled('search')) {
-            $query->whereHas('receipt', function($q) use ($request) {
+            $query->whereHas('receipt', function ($q) use ($request) {
                 $q->where('sku', 'LIKE', '%' . $request->search . '%');
             });
         }
@@ -638,7 +691,39 @@ class ReportService
             ];
         }
 
-        usort($ledger, function($a, $b) {
+        $agentUsagesQuery = \App\Models\AgentOrderFabricItem::with(['order.party', 'roll'])
+            ->where('fabric_id', $fabricId);
+
+        if (!empty($warehouseId)) {
+            $agentUsagesQuery->whereHas('roll', function ($q) use ($warehouseId) {
+                $q->where('master_fabric_warehouse_id', $warehouseId);
+            });
+        }
+
+        $agentUsages = $agentUsagesQuery->get();
+
+        foreach ($agentUsages as $a) {
+            $partyName = $a->order?->party?->name ?? '-';
+            $refList = [
+                'Agent Order ID: ' . $a->agent_order_id,
+                'Party: ' . $partyName,
+                'Selling Price: ' . number_format($a->selling_price, 2),
+            ];
+
+            $ledger[] = [
+                'date' => $a->created_at->format('Y-m-d H:i:s'),
+                'sort_date' => $a->created_at->timestamp,
+                'type' => 'Usage (Agent Order)',
+                'shipment_no' => '-',
+                'po_number' => '-',
+                'roll_number' => $a->roll?->roll_number ?? '-',
+                'reference' => implode("\n", $refList),
+                'in' => 0,
+                'out' => $a->meter,
+            ];
+        }
+
+        usort($ledger, function ($a, $b) {
             return $a['sort_date'] <=> $b['sort_date'];
         });
 

@@ -8,6 +8,7 @@ class OrderCuttingStage extends Model
 {
     use HasFactory, \App\Traits\TrackCreator;
     protected $table= 'order_cutting_stage';
+    protected $appends = ['fabric_names'];
     protected $fillable = [
         'id',
         'sno',
@@ -73,9 +74,11 @@ class OrderCuttingStage extends Model
         return $this->belongsTo('App\Models\OrderMain', 'order_main_id');
     }
 
-    public function cuttingMaster()
+    public function getFabricNamesAttribute()
     {
-        return $this->belongsTo('App\Models\MasterFabricWarehouse', 'to_assign_id');
+        if (!$this->fabric_id) return '-';
+        $ids = explode(',', $this->fabric_id);
+        return \App\Models\Fabric::whereIn('id', $ids)->pluck('name')->implode(', ');
     }
-
 }
+

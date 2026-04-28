@@ -249,8 +249,12 @@ class UploadedSlipsController extends Controller
                 $ops = $lot->orderProductSet;
                 if ($ops->design_number)
                     $consolidated['design_nos']->push($ops->design_number);
-                if ($ops->fabric)
-                    $consolidated['fabrics']->push($ops->fabric->name);
+                if ($ops->fabric_names) {
+                    $names = explode(',', $ops->fabric_names);
+                    foreach ($names as $n) {
+                        $consolidated['fabrics']->push(trim($n));
+                    }
+                }
                 if ($ops->colors)
                     $consolidated['colors']->push($ops->colors->name);
                 if ($ops->master_design_pattern)
@@ -273,8 +277,12 @@ class UploadedSlipsController extends Controller
                     $consolidated['order_nos']->push($ops->orderMain->sku);
                 if ($ops->design_number)
                     $consolidated['design_nos']->push($ops->design_number);
-                if ($ops->fabric)
-                    $consolidated['fabrics']->push($ops->fabric->name);
+                if ($ops->fabric_names) {
+                    $names = explode(',', $ops->fabric_names);
+                    foreach ($names as $n) {
+                        $consolidated['fabrics']->push(trim($n));
+                    }
+                }
                 if ($ops->colors)
                     $consolidated['colors']->push($ops->colors->name);
                 if ($ops->master_design_pattern)
@@ -297,8 +305,12 @@ class UploadedSlipsController extends Controller
                     $consolidated['order_nos']->push($ops->orderMain->sku);
                 if ($ops->design_number)
                     $consolidated['design_nos']->push($ops->design_number);
-                if ($ops->fabric)
-                    $consolidated['fabrics']->push($ops->fabric->name);
+                if ($ops->fabric_names) {
+                    $names = explode(',', $ops->fabric_names);
+                    foreach ($names as $n) {
+                        $consolidated['fabrics']->push(trim($n));
+                    }
+                }
                 if ($ops->colors)
                     $consolidated['colors']->push($ops->colors->name);
                 if ($ops->master_design_pattern)

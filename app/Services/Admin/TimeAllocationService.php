@@ -77,7 +77,13 @@ class TimeAllocationService {
             return null;
         }
 
-        $fabric_names = $rolls->pluck('order_product_set.fabric.name')->unique()->filter()->implode(', ');
+        $fabric_names = $rolls->pluck('order_product_set.fabric_names')
+            ->flatMap(function($names) {
+                return array_map('trim', explode(',', $names));
+            })
+            ->unique()
+            ->filter()
+            ->implode(', ');
         $color_names = $rolls->pluck('order_product_set.colors.name')->unique()->filter()->implode(', ');
         $order_nos = $rolls->pluck('order_no')->unique()->filter()->implode(', ');
         $total_meter = $rolls->sum('meter');
@@ -90,7 +96,7 @@ class TimeAllocationService {
             return [
                 'roll_no' => $roll->roll_no,
                 'meter' => $roll->meter,
-                'fabric' => $roll->order_product_set->fabric->name ?? '',
+                'fabric' => $roll->order_product_set->fabric_names ?? '',
                 'color' => $roll->order_product_set->colors->name ?? '',
                 'quantity'=> $roll->fabricRollAssigningsDetail->sum('quantity')
             ];
