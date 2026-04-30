@@ -47,11 +47,18 @@ class CuttingPaymentMasterService
 
     public function delete($request)
     {
-        $cuttingPayment = CuttingPaymentMaster::find($request->id);
-        if ($cuttingPayment) {
-            $cuttingPayment->delete();
-            return true;
+        $adjustmentMasterIds = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\CuttingPaymentMaster')->pluck('id');
+        $hasAdjustments = \App\Models\PaymentAdjustment::whereIn('adjustment_master_id', $adjustmentMasterIds)->where('ref_id', (string)$request->id)->exists();
+
+        if (!$hasAdjustments) {
+            $cuttingPayment = \App\Models\CuttingPaymentMaster::find($request->id);
+            if ($cuttingPayment) {
+                $cuttingPayment->delete();
+                return true;
+            }
+            return false;
         }
-        return false;
+
+        return \App\Models\CuttingPaymentMaster::where('id', $request->id)->update(['status' => 0]);
     }
 }

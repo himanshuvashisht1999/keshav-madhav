@@ -47,11 +47,18 @@ class SkExpenseService
 
     public function delete($request)
     {
-        $skExpense = SkExpense::find($request->id);
-        if ($skExpense) {
-            $skExpense->delete();
-            return true;
+        $adjustmentMasterIds = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\SkExpense')->pluck('id');
+        $hasAdjustments = \App\Models\PaymentAdjustment::whereIn('adjustment_master_id', $adjustmentMasterIds)->where('ref_id', (string)$request->id)->exists();
+
+        if (!$hasAdjustments) {
+            $skExpense = \App\Models\SkExpense::find($request->id);
+            if ($skExpense) {
+                $skExpense->delete();
+                return true;
+            }
+            return false;
         }
-        return false;
+
+        return \App\Models\SkExpense::where('id', $request->id)->update(['status' => 0]);
     }
 }

@@ -47,11 +47,18 @@ class AgentPaymentMasterService
 
     public function delete($request)
     {
-        $agentPayment = AgentPaymentMaster::find($request->id);
-        if ($agentPayment) {
-            $agentPayment->delete();
-            return true;
+        $adjustmentMasterIds = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\AgentPaymentMaster')->pluck('id');
+        $hasAdjustments = \App\Models\PaymentAdjustment::whereIn('adjustment_master_id', $adjustmentMasterIds)->where('ref_id', (string)$request->id)->exists();
+
+        if (!$hasAdjustments) {
+            $agentPayment = \App\Models\AgentPaymentMaster::find($request->id);
+            if ($agentPayment) {
+                $agentPayment->delete();
+                return true;
+            }
+            return false;
         }
-        return false;
+
+        return \App\Models\AgentPaymentMaster::where('id', $request->id)->update(['status' => 0]);
     }
 }

@@ -23,6 +23,18 @@ class RentService
 
     public function delete($id)
     {
+        $adjustmentMasterIds = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\Rent')->pluck('id');
+        $hasAdjustments = \App\Models\PaymentAdjustment::whereIn('adjustment_master_id', $adjustmentMasterIds)->where('ref_id', (string)$id)->exists();
+
+        if (!$hasAdjustments) {
+            $model = Model::find($id);
+            if ($model) {
+                $model->delete();
+                return true;
+            }
+            return false;
+        }
+
         $model = Model::find($id);
         if ($model) {
             $model->status = 0;

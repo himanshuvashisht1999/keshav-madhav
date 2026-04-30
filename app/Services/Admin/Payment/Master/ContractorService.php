@@ -48,6 +48,13 @@ class ContractorService
 
     public function delete(Request $request)
     {
-        return Contractor::where('id', $request->id)->update(['status' => 0]);
+        $adjustmentMasterIds = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\Contractor')->pluck('id');
+        $hasAdjustments = \App\Models\PaymentAdjustment::whereIn('adjustment_master_id', $adjustmentMasterIds)->where('ref_id', (string)$request->id)->exists();
+
+        if (!$hasAdjustments) {
+            return \App\Models\Contractor::where('id', $request->id)->delete();
+        }
+
+        return \App\Models\Contractor::where('id', $request->id)->update(['status' => 0]);
     }
 }

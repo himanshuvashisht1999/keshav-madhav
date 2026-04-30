@@ -44,6 +44,13 @@ class TourExpenseService
 
     public function delete(Request $request)
     {
-        return TourExpense::where('id', $request->id)->update(['status' => 0]);
+        $adjustmentMasterIds = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\TourExpense')->pluck('id');
+        $hasAdjustments = \App\Models\PaymentAdjustment::whereIn('adjustment_master_id', $adjustmentMasterIds)->where('ref_id', (string)$request->id)->exists();
+
+        if (!$hasAdjustments) {
+            return \App\Models\TourExpense::where('id', $request->id)->delete();
+        }
+
+        return \App\Models\TourExpense::where('id', $request->id)->update(['status' => 0]);
     }
 }

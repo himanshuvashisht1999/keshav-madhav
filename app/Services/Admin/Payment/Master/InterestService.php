@@ -46,6 +46,13 @@ class InterestService
 
     public function delete(Request $request)
     {
-        return Interest::where('id', $request->id)->update(['status' => 0]);
+        $adjustmentMasterIds = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\Interest')->pluck('id');
+        $hasAdjustments = \App\Models\PaymentAdjustment::whereIn('adjustment_master_id', $adjustmentMasterIds)->where('ref_id', (string)$request->id)->exists();
+
+        if (!$hasAdjustments) {
+            return \App\Models\Interest::where('id', $request->id)->delete();
+        }
+
+        return \App\Models\Interest::where('id', $request->id)->update(['status' => 0]);
     }
 }

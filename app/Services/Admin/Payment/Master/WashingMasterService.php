@@ -47,11 +47,18 @@ class WashingMasterService
 
     public function delete($request)
     {
-        $washingMaster = WashingMaster::find($request->id);
-        if ($washingMaster) {
-            $washingMaster->delete();
-            return true;
+        $adjustmentMasterIds = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\WashingMaster')->pluck('id');
+        $hasAdjustments = \App\Models\PaymentAdjustment::whereIn('adjustment_master_id', $adjustmentMasterIds)->where('ref_id', (string)$request->id)->exists();
+
+        if (!$hasAdjustments) {
+            $washingMaster = \App\Models\WashingMaster::find($request->id);
+            if ($washingMaster) {
+                $washingMaster->delete();
+                return true;
+            }
+            return false;
         }
-        return false;
+
+        return \App\Models\WashingMaster::where('id', $request->id)->update(['status' => 0]);
     }
 }

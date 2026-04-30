@@ -75,7 +75,19 @@ class MachineryService
 
     public function delete($id)
     {
-        $item = MachineryMaster::findOrFail($id);
+        $adjustmentMasterIds = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\MachineryMaster')->pluck('id');
+        $hasAdjustments = \App\Models\PaymentAdjustment::whereIn('adjustment_master_id', $adjustmentMasterIds)->where('ref_id', (string)$id)->exists();
+
+        if (!$hasAdjustments) {
+            \App\Models\MasterOpeningBalance::where('master_type', 'machinery')
+                ->where('master_id', $id)
+                ->delete();
+                
+            $item = \App\Models\MachineryMaster::findOrFail($id);
+            return $item->delete();
+        }
+
+        $item = \App\Models\MachineryMaster::findOrFail($id);
         return $item->update(['status' => 0]);
     }
 }

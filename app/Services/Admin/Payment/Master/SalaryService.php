@@ -75,7 +75,19 @@ class SalaryService
 
     public function delete($id)
     {
-        $item = SalaryMaster::findOrFail($id);
+        $adjustmentMasterIds = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\SalaryMaster')->pluck('id');
+        $hasAdjustments = \App\Models\PaymentAdjustment::whereIn('adjustment_master_id', $adjustmentMasterIds)->where('ref_id', (string)$id)->exists();
+
+        if (!$hasAdjustments) {
+            \App\Models\MasterOpeningBalance::where('master_type', 'salary')
+                ->where('master_id', $id)
+                ->delete();
+                
+            $item = \App\Models\SalaryMaster::findOrFail($id);
+            return $item->delete();
+        }
+
+        $item = \App\Models\SalaryMaster::findOrFail($id);
         return $item->update(['status' => 0]);
     }
 }

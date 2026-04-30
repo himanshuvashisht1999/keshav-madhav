@@ -89,6 +89,20 @@ class CommitteeService
 
     public function delete(Request $request)
     {
+        $adjustmentMasterIds = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\Committee')->pluck('id');
+        
+        $hasAdjustments = \App\Models\PaymentAdjustment::whereIn('adjustment_master_id', $adjustmentMasterIds)
+            ->where('ref_id', (string)$request->id)
+            ->exists();
+
+        if (!$hasAdjustments) {
+            \App\Models\MasterOpeningBalance::where('master_type', 'committee')
+                ->where('master_id', $request->id)
+                ->delete();
+                
+            return Committee::where('id', $request->id)->delete();
+        }
+
         return Committee::where('id', $request->id)->update(['status' => 0]);
     }
 }
