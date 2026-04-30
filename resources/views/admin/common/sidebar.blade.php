@@ -152,7 +152,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                     @endcan
                     @can('manage-time-allocation')
                         <li class="nav-item">
-                            <a href="{{ route('admin.time_allocation.create') }}"
+                            <a href="{{ route('admin.time_allocation.index') }}"
                                 class="{{ str_contains($page_url, 'admin/time-allocation') ? 'nav-link active' : 'nav-link' }} border_class"
                                 style="position:static;">
                                 <i class="fas fa-clock"></i>
@@ -957,9 +957,17 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
 
                                                         <li class="nav-item">
                                                             <a href="{{ route('admin.master.product_stage.index') }}"
-                                                                class="{{ (str_contains($page_url, 'admin/master/product-stage') || str_contains($page_url, 'admin/master/product-sub-stage')) ? 'nav-link active' : 'nav-link' }}">
+                                                                class="{{ ((str_contains($page_url, 'admin/master/product-stage') && !str_contains($page_url, 'lot-time')) || str_contains($page_url, 'admin/master/product-sub-stage')) ? 'nav-link active' : 'nav-link' }}">
                                                                 <i class="fas fa-circle"></i>
                                                                 <p>Stages</p>
+                                                            </a>
+                                                        </li>
+                                                        
+                                                        <li class="nav-item">
+                                                            <a href="{{ route('admin.master.product_stage.lot_time.index') }}"
+                                                                class="{{ str_contains($page_url, 'admin/master/product-stage/lot-time') ? 'nav-link active' : 'nav-link' }}">
+                                                                <i class="fas fa-circle"></i>
+                                                                <p>Stage Lot Times</p>
                                                             </a>
                                                         </li>
 

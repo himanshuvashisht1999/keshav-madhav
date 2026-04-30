@@ -18,7 +18,7 @@
 
             <div class="card p-3 shadow-sm">
                 
-                <form method="POST" id="timeAllocationForm" action="{{ route('admin.time_allocation.store') }}">
+                <form method="POST" id="timeAllocationForm" action="{{ route('admin.time_allocation.update', $allocation->id) }}">
                     @csrf
 
                     <div class="row">
@@ -32,22 +32,15 @@
                                     <label>Start Date & Time</label>
                                     <!-- <input type="datetime-local" name="start_date_time" class="form-control datetime-picker" value="{{ date('Y-m-d\TH:i') }}" required> -->
                                     <input type="text"
-                                            name="start_date_time"
-                                            class="form-control datetime-picker"
-                                            placeholder="Select date & time"
-                                            required>
+                                            class="form-control"
+                                            value="{{ date('Y-m-d H:i:s', strtotime($allocation->start_date_time)) }}"
+                                            readonly>
                                 </div>
 
                                 <!-- LOT NO -->
                                 <div class="form-group mb-3">
                                     <label class="font-weight-bold">Lot No. *</label>
-                                    <select name="lot_no" id="lot_no" class="form-control select2" required style="width: 100%;">
-                                        <option value="">Select Lot No</option>
-                                        @foreach($available_lots as $lot)
-                                            <option value="{{ $lot }}">{{ $lot }}</option>
-                                        @endforeach
-                                    </select>
-                                    <small class="text-danger" id="err_lot_no"></small>
+                                    <input type="text" class="form-control" id="lot_no" value="{{ $allocation->lot_no }}" readonly>
                                 </div>
                             </div>
 
@@ -107,6 +100,7 @@
                                                     <input type="number" class="form-control bg-light" 
                                                         placeholder="Days"
                                                         name="stages[{{ $stage->id }}]" 
+                                                        value="{{ $allocation->{'stage_id_'.$stage->id} ?? '' }}"
                                                         min="0" step="0.5" required>
                                                 </div>
                                             </div>
@@ -134,15 +128,8 @@ $(function(){
     // Initialize Select2
     $('.select2').select2();
 
-    // Fetch Lot Details on Change
-    $('#lot_no').on('change', function(){
-        let lotNo = $(this).val();
-        
-        if(!lotNo) {
-            $('#lotDetailsCard').addClass('d-none');
-            return;
-        }
-
+    let lotNo = $('#lot_no').val();
+    if(lotNo) {
         $.ajax({
             url: "{{ route('admin.time_allocation.get-lot-details') }}",
             type: "POST",
@@ -182,10 +169,10 @@ $(function(){
                 }
             },
             error: function(){
-                alert('Error fetching lot details');
+                console.log('Error fetching lot details');
             }
         });
-    });
+    }
 });
 </script>
 @endsection

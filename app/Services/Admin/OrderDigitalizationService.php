@@ -30,6 +30,7 @@ use App\Models\OrderPrintingToStichingTransactionDetail;
 use App\Models\OrderStageTransactionDetail;
 use App\Models\OrderGodamStageTransaction;
 use App\Models\OrderGodamStageTransactionDetail;
+use App\Models\MasterProductStage;
 
 
 
@@ -86,6 +87,9 @@ class OrderDigitalizationService
                 $save_lot->lot_no = $lotNo;
                 $save_lot->production_datetime = $request->production_datetime;
                 $save_lot->save();
+
+                // Auto-allocate time for the newly created lot
+                $this->autoAllocateTime($lotNo, $request->production_datetime, $request->production_slip_digitization_id);
             }
 
 
@@ -395,6 +399,52 @@ class OrderDigitalizationService
             return $return_data;
         }
     }
+
+    public function autoAllocateTime($lotNo, $production_datetime, $slip_id)
+    {
+        $stages = MasterProductStage::orderBy('sequence', 'asc')->get();
+        $stagesData = [];
+        foreach ($stages as $stage) {
+            $stagesData[$stage->id] = $stage->lot_time_in_days ?? 1; // Default to 1 day
+        }
+
+        $tracking_columns = \Illuminate\Support\Facades\Schema::getColumnListing('order_stage_wise_time_tracking');
+        $master_columns = \Illuminate\Support\Facades\Schema::getColumnListing('master_stage_wise_time_allocation');
+
+        // 1. OrderStageWiseTimeTracking
+        $save_data_main = new OrderStageWiseTimeTracking;
+        $datetime = date('Y-m-d H:i:s', strtotime($production_datetime));
+        $save_data_main->sku = '';
+        $save_data_main->lot_no = $lotNo;
+        $save_data_main->production_slip_digitization_id = $slip_id;
+        $save_data_main->start_date_time = $datetime;
+        
+        foreach ($stagesData as $stage_id => $days) {
+            if (in_array('stage_id_'.$stage_id, $tracking_columns)) {
+                $expected = $this->calculateExpectedCompletion($datetime, $days);
+                $save_data_main->{'stage_id_'.$stage_id} = $expected;
+                $datetime = $expected;
+            }
+        }
+        $save_data_main->status = 1;
+        $save_data_main->save();
+
+        // 2. MasterStageWiseTimeAllocation
+        $save_data_master = new MasterStageWiseTimeAllocation;
+        $save_data_master->sku = '';
+        $save_data_master->lot_no = $lotNo;
+        $save_data_master->production_slip_digitization_id = $slip_id;
+        $save_data_master->start_date_time = $production_datetime;
+        
+        foreach ($stagesData as $stage_id => $days) {
+            if (in_array('stage_id_'.$stage_id, $master_columns)) {
+                $save_data_master->{'stage_id_'.$stage_id} = $days;
+            }
+        }
+        $save_data_master->status = 1;
+        $save_data_master->save();
+    }
+
     public function view(Request $request)
     {
         $data = Order::with('products.product_details.product_detail_stocks', 'products.order_stages.stage', 'products.order_stage_trnsactions')->where('id', $request->id)->first();

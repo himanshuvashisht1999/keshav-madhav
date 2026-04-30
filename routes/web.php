@@ -450,8 +450,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         });
 
         Route::prefix('/time-allocation')->name('time_allocation.')->group(function () {
-            Route::get('/create', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'create'])->name('create');
-            Route::post('/store', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'store'])->name('store');
+            Route::get('/index', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'index'])->name('index');
+            Route::get('/indexList', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'indexList'])->name('indexList');
+            Route::get('/edit/{id}', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'edit'])->name('edit');
+            Route::post('/update/{id}', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'update'])->name('update');
             Route::post('/get-lot-details', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'getLotDetails'])->name('get-lot-details');
         });
 
@@ -790,6 +792,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/edit', [AdminMasterProductStageController::class, 'edit'])->name('edit');
             Route::post('/update', [AdminMasterProductStageController::class, 'update'])->name('update');
             Route::get('/delete', [AdminMasterProductStageController::class, 'delete'])->name('delete');
+
+            Route::get('/lot-time', [AdminMasterProductStageController::class, 'lotTimeIndex'])->name('lot_time.index');
+            Route::post('/lot-time', [AdminMasterProductStageController::class, 'lotTimeUpdate'])->name('lot_time.update');
 
             // Route::get('/index',[AdminMasterProductStageController::class,'subStageIndex'])->name('index');
             // Route::get('/subStageList',[AdminMasterProductStageController::class,'subStageList'])->name('subStageList');

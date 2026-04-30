@@ -148,7 +148,8 @@ class SampleProductController extends Controller
                 ->unique('id')
                 ->values();
             
-            return $product->available_sizes->count() > 0;
+            $totalBoxes = $product->color_stock->sum('total_boxes');
+            return $product->available_sizes->count() > 0 && $totalBoxes > 0;
         })->values();
 
         return response()->json($products);

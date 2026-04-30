@@ -198,7 +198,64 @@ class TimeAllocationService {
                 'status_code' => 0,
                 'message' => $e->getMessage()
             ];
-            // dd($e->getMessage());
+        }
+    }
+
+    public function updateTimeAllocation(Request $request, $id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $save_data_master = MasterStageWiseTimeAllocation::findOrFail($id);
+            $startDatetime = Carbon::parse($save_data_master->start_date_time);
+            $currentDatetime = $startDatetime->copy();
+
+            $save_data_main = OrderStageWiseTimeTracking::where('lot_no', $save_data_master->lot_no)
+                ->where('production_slip_digitization_id', $save_data_master->production_slip_digitization_id)
+                ->first();
+
+            if (!$save_data_main) {
+                // Should not happen but fallback
+                $save_data_main = new OrderStageWiseTimeTracking;
+                $save_data_main->sku = $save_data_master->sku;
+                $save_data_main->lot_no = $save_data_master->lot_no;
+                $save_data_main->production_slip_digitization_id = $save_data_master->production_slip_digitization_id;
+                $save_data_main->start_date_time = $startDatetime->toDateTimeString();
+                $save_data_main->status = 1;
+            }
+
+            if ($request->stages && is_array($request->stages)) {
+                $tracking_columns = \Illuminate\Support\Facades\Schema::getColumnListing('order_stage_wise_time_tracking');
+                $master_columns = \Illuminate\Support\Facades\Schema::getColumnListing('master_stage_wise_time_allocation');
+
+                foreach ($request->stages as $stage_id => $days) {
+                    if (in_array('stage_id_'.$stage_id, $master_columns)) {
+                        $save_data_master->{'stage_id_'.$stage_id} = $days;
+                    }
+
+                    if (in_array('stage_id_'.$stage_id, $tracking_columns)) {
+                        $currentDatetime = $this->calculateExpectedCompletion($currentDatetime, $days);
+                        $save_data_main->{'stage_id_'.$stage_id} = $currentDatetime->toDateTimeString();
+                    }
+                }
+            }
+
+            $save_data_main->save();
+            $save_data_master->save();
+
+            DB::commit();
+
+            return [
+                'status_code' => 1,
+                'message' => 'Time allocation successfully updated.'
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return [
+                'status_code' => 0,
+                'message' => $e->getMessage()
+            ];
         }
     }
 
