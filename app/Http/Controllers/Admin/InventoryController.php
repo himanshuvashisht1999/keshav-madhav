@@ -225,7 +225,15 @@ class InventoryController extends Controller
             'products.*.total_boxes' => 'required|integer|min:1',
             'products.*.pieces_per_box' => 'required|integer|min:1',
             'products.*.mrp' => 'required|numeric|min:0',
+            'products.*.purchase_rate' => 'nullable|numeric|min:0',
             'products.*.rack_id' => 'nullable|exists:racks,id',
+            'sub_total' => 'nullable|numeric|min:0',
+            'gst_type' => 'nullable|string',
+            'gst_value' => 'nullable|numeric|min:0',
+            'gst' => 'nullable|numeric|min:0',
+            'other_amount' => 'nullable|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0',
+            'total_amount' => 'nullable|numeric|min:0',
         ]);
 
         DB::beginTransaction();
@@ -251,6 +259,24 @@ class InventoryController extends Controller
             $source_type = $request->source_type ?? 'production';
             $vendor_id = $request->vendor_id ?? null;
             $customer_id = $request->customer_id ?? null;
+
+            // Create Purchase Summary if Vendor/Customer
+            $purchase = null;
+            if ($source_type !== 'production') {
+                $purchase = \App\Models\DomesticInventoryPurchase::create([
+                    'vendor_id' => $vendor_id,
+                    'customer_id' => $customer_id,
+                    'user_id' => auth()->id(),
+                    'sub_total' => $request->sub_total ?? 0,
+                    'gst_type' => $request->gst_type ?? 'percentage',
+                    'gst_value' => $request->gst_value ?? 0,
+                    'gst' => $request->gst ?? 0,
+                    'other_amount' => $request->other_amount ?? 0,
+                    'discount' => $request->discount ?? 0,
+                    'total_amount' => $request->total_amount ?? 0,
+                    'remarks' => $request->remarks ?? null,
+                ]);
+            }
 
             foreach ($request->products as $item) {
                 // Handle Consumption Logic
@@ -284,10 +310,12 @@ class InventoryController extends Controller
                     }
                 }
 
-                $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'] . 'P' . $item['pattern_id'] . 'F' . $item['fitting_id'];                // Consolidated Inventory Logic: Manage stock as aggregate counts per barcode
+                // Consistent Barcode Format: D{id}S{id}C{id}P{id}F{id} (using 0 for nulls)
+                $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'] . 'P' . ($item['pattern_id'] ?: 0) . 'F' . ($item['fitting_id'] ?: 0);
+                
                 $inventory = DomesticInventory::where('barcode', $barcode)
                     ->where('rack_id', $item['rack_id'] ?? null)
-                    // ->where('order_main_id', 0) // Unassigned stock
+                    ->where('order_main_id', 0) // Unassigned stock
                     ->first();
 
                 if ($inventory) {
@@ -303,16 +331,18 @@ class InventoryController extends Controller
                         'quantity' => $item['pieces_per_box'],
                         'total_boxes' => $item['total_boxes'],
                         'barcode' => $barcode,
+                        'qrcode' => $barcode,
                         'packing_main_id' => $packingMain->id,
                         'rack_id' => $item['rack_id'] ?? null,
                         'order_main_id' => 0,
-                        'status' => 1
+                        'status' => 1,
                     ]);
                 }
 
                 // Log History for stock addition
                 \App\Models\DomesticInventoryHistory::create([
                     'user_id' => auth()->id(),
+                    'purchase_id' => $purchase ? $purchase->id : null,
                     'vendor_id' => ($source_type == 'vendor') ? $vendor_id : null,
                     'customer_id' => ($source_type == 'customer') ? $customer_id : null,
                     'new_product_id' => $item['product_id'],
@@ -322,6 +352,9 @@ class InventoryController extends Controller
                     'new_pattern_id' => $item['pattern_id'],
                     'new_rack_id' => $item['rack_id'] ?? null,
                     'box_quantity' => $item['total_boxes'],
+                    'pieces_per_box' => $item['pieces_per_box'],
+                    'mrp' => $item['mrp'] ?? 0,
+                    'purchase_rate' => $item['purchase_rate'] ?? 0,
                     'type' => 'creation'
                 ]);
 
@@ -810,5 +843,62 @@ class InventoryController extends Controller
         }
 
         return response()->json(['success' => false, 'message' => 'No matching inventory found']);
+    }
+
+    public function purchaseHistory()
+    {
+        return view('admin.inventory.purchase_history.index');
+    }
+
+    public function purchaseHistoryList(Request $request)
+    {
+        $query = \App\Models\DomesticInventoryPurchase::with(['user', 'vendor', 'customer']);
+
+        return Datatables::of($query)
+            ->addIndexColumn()
+            ->addColumn('source', function($row) {
+                if ($row->vendor_id) return 'Vendor: ' . ($row->vendor->company_name ?? $row->vendor->name ?? 'N/A');
+                if ($row->customer_id) return 'Customer: ' . ($row->customer->company_name ?? $row->customer->name ?? 'N/A');
+                return 'N/A';
+            })
+            ->addColumn('action', function($row) {
+                return '<a href="'.route('admin.inventory.purchase_history.edit', $row->id).'" class="btn btn-sm btn-primary">Edit / View</a>';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
+    public function purchaseHistoryEdit($id)
+    {
+        $purchase = \App\Models\DomesticInventoryPurchase::with('items.newProduct', 'items.newSizeSet', 'items.newColor')->findOrFail($id);
+        $vendors = \App\Models\Vendor::where('status', '1')->get();
+        $customers = \App\Models\MasterCustomer::where('status', '1')->get();
+        return view('admin.inventory.purchase_history.edit', compact('purchase', 'vendors', 'customers'));
+    }
+
+    public function purchaseHistoryUpdate(Request $request, $id)
+    {
+        $purchase = \App\Models\DomesticInventoryPurchase::findOrFail($id);
+        $request->validate([
+            'sub_total' => 'required|numeric|min:0',
+            'gst_type' => 'nullable|string',
+            'gst_value' => 'nullable|numeric|min:0',
+            'gst' => 'nullable|numeric|min:0',
+            'other_amount' => 'nullable|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0',
+            'total_amount' => 'required|numeric|min:0',
+        ]);
+
+        $purchase->update([
+            'sub_total' => $request->sub_total,
+            'gst_type' => $request->gst_type ?? 'percentage',
+            'gst_value' => $request->gst_value ?? 0,
+            'gst' => $request->gst ?? 0,
+            'other_amount' => $request->other_amount ?? 0,
+            'discount' => $request->discount ?? 0,
+            'total_amount' => $request->total_amount,
+        ]);
+
+        return redirect()->route('admin.inventory.purchase_history.index')->with('success', 'Purchase details updated successfully.');
     }
 }

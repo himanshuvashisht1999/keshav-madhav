@@ -28,6 +28,10 @@ class DomesticInventoryHistory extends Model
         'new_pattern_id',
         'new_rack_id',
         'box_quantity',
+        'mrp',
+        'pieces_per_box',
+        'purchase_rate',
+        'purchase_id',
         'type'
     ];
 

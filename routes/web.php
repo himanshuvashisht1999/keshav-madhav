@@ -763,6 +763,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/generate-pdf-batch/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'generatePdfFromBatch'])->name('generate-pdf-batch');
                 Route::delete('/destroy/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'destroy'])->name('destroy');
             });
+            Route::prefix('/purchase-history')->name('purchase_history.')->group(function () {
+                Route::get('/', [AdminInventoryController::class, 'purchaseHistory'])->name('index');
+                Route::get('/list', [AdminInventoryController::class, 'purchaseHistoryList'])->name('list');
+                Route::get('/{id}/edit', [AdminInventoryController::class, 'purchaseHistoryEdit'])->name('edit');
+                Route::post('/{id}/update', [AdminInventoryController::class, 'purchaseHistoryUpdate'])->name('update');
+            });
         });
 
 

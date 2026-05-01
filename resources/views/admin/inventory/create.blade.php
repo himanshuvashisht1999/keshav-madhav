@@ -457,7 +457,7 @@
                                 <div class="col-md-2 input-group-premium">
                                     <label class="label-premium">Pcs / Box</label>
                                     <input type="number" name="products[0][pieces_per_box]"
-                                        class="form-control form-control-premium bg-light" placeholder="Pcs/Box" readonly
+                                        class="form-control form-control-premium bg-light pcs-per-box-input" placeholder="Pcs/Box" readonly
                                         required>
                                 </div>
                                 <div class="col-md-2 input-group-premium">
@@ -467,11 +467,57 @@
                                         step="0.01" min="0" readonly required>
                                 </div>
                             </div>
+
+                            <div class="row purchase-details-row mt-3" style="display: none;">
+                                <div class="col-md-3 input-group-premium">
+                                    <label class="label-premium">Purchase Rate *</label>
+                                    <input type="number" name="products[0][purchase_rate]" class="form-control form-control-premium purchase-rate-input" placeholder="Rate" step="0.01" min="0">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <button type="button" class="btn btn-add-item" id="addNewItem">
+                <div id="purchaseSummaryContainer" class="card mt-4 shadow-sm border-0" style="display: none;">
+                    <div class="card-header bg-soft-primary py-3">
+                        <h5 class="mb-0 text-primary font-weight-bold"><i class="fas fa-file-invoice-dollar mr-2"></i>Purchase Summary (Complete)</h5>
+                    </div>
+                    <div class="card-body bg-light-gray">
+                        <div class="row">
+                            <div class="col-md-3 input-group-premium">
+                                <label class="label-premium">Sub Total</label>
+                                <input type="number" name="sub_total" id="global_sub_total" class="form-control form-control-premium bg-light" placeholder="0.00" step="0.01" readonly>
+                            </div>
+                            <div class="col-md-3 input-group-premium">
+                                <label class="label-premium">GST</label>
+                                <div class="input-group">
+                                    <input type="number" name="gst_value" id="global_gst_value" class="form-control form-control-premium" placeholder="Value" step="0.01" min="0">
+                                    <div class="input-group-append">
+                                        <select name="gst_type" id="global_gst_type" class="custom-select form-control-premium bg-light" style="width: auto; border-radius: 0 8px 8px 0;">
+                                            <option value="percentage">%</option>
+                                            <option value="amount">₹</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="gst" id="global_gst_amount">
+                            </div>
+                            <div class="col-md-2 input-group-premium">
+                                <label class="label-premium">Other Amount</label>
+                                <input type="number" name="other_amount" id="global_other_amount" class="form-control form-control-premium" placeholder="Other" step="0.01" min="0">
+                            </div>
+                            <div class="col-md-2 input-group-premium">
+                                <label class="label-premium">Discount</label>
+                                <input type="number" name="discount" id="global_discount" class="form-control form-control-premium" placeholder="Disc" step="0.01" min="0">
+                            </div>
+                            <div class="col-md-3 input-group-premium">
+                                <label class="label-premium text-primary font-weight-bold">Grand Total Amount</label>
+                                <input type="number" name="total_amount" id="global_total_amount" class="form-control form-control-premium bg-light" placeholder="0.00" step="0.01" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-add-item mt-3" id="addNewItem">
                     <i class="fas fa-plus-circle"></i> Add Stock Generate
                 </button>
 
@@ -503,22 +549,27 @@
 
                 $('#sourceType').on('change', function() {
                     let type = $(this).val();
-                    if (type === 'vendor') {
-                        $('#vendorContainer').show();
-                        $('#customerContainer').hide();
+                    if (type === 'vendor' || type === 'customer') {
+                        if (type === 'vendor') {
+                            $('#vendorContainer').show();
+                            $('#customerContainer').hide();
+                        } else {
+                            $('#vendorContainer').hide();
+                            $('#customerContainer').show();
+                        }
                         $('.btn-stock-consume').hide();
                         $('.consume-selection-row').slideUp();
                         $('.consume-source-id').val('');
-                    } else if (type === 'customer') {
-                        $('#vendorContainer').hide();
-                        $('#customerContainer').show();
-                        $('.btn-stock-consume').hide();
-                        $('.consume-selection-row').slideUp();
-                        $('.consume-source-id').val('');
+                        $('.purchase-details-row').show();
+                        $('#purchaseSummaryContainer').show();
+                        $('.purchase-rate-input').attr('required', true);
                     } else {
                         $('#vendorContainer').hide();
                         $('#customerContainer').hide();
                         $('.btn-stock-consume').show();
+                        $('.purchase-details-row').hide();
+                        $('#purchaseSummaryContainer').hide();
+                        $('.purchase-rate-input').removeAttr('required');
                     }
                 });
 
@@ -672,6 +723,14 @@
                                     <div class="col-md-2 input-group-premium">
                                         <label class="label-premium">MRP *</label>
                                         <input type="number" name="products[${idx}][mrp]" class="form-control form-control-premium mrp-input bg-light" placeholder="Price" step="0.01" min="0" readonly required>
+                                    </div>
+                                </div>
+
+                                <!-- Row 3: Purchase Details (Hidden for Production) -->
+                                <div class="row purchase-details-row mt-3" style="display: none;">
+                                    <div class="col-md-3 input-group-premium">
+                                        <label class="label-premium">Purchase Rate *</label>
+                                        <input type="number" name="products[${idx}][purchase_rate]" class="form-control form-control-premium purchase-rate-input" placeholder="Rate" step="0.01" min="0">
                                     </div>
                                 </div>
                             </div>
@@ -1029,6 +1088,46 @@
                         });
                     }
                 });
+
+                $(document).on('input', '.total-boxes-input, .purchase-rate-input, #global_gst_value, #global_other_amount, #global_discount', function() {
+                    calculateGlobalTotal();
+                });
+
+                $(document).on('change', '#global_gst_type', function() {
+                    calculateGlobalTotal();
+                });
+
+                function calculateGlobalTotal() {
+                    let subTotal = 0;
+                    
+                    $('.inventory-item-card').each(function() {
+                        let card = $(this);
+                        let totalBoxes = parseFloat(card.find('.total-boxes-input').val()) || 0;
+                        let pcsPerBox = parseFloat(card.find('.pcs-per-box-input').val()) || 0;
+                        let rate = parseFloat(card.find('.purchase-rate-input').val()) || 0;
+                        
+                        subTotal += (totalBoxes * pcsPerBox * rate);
+                    });
+
+                    $('#global_sub_total').val(subTotal.toFixed(2));
+
+                    let gstValue = parseFloat($('#global_gst_value').val()) || 0;
+                    let gstType = $('#global_gst_type').val();
+                    let other = parseFloat($('#global_other_amount').val()) || 0;
+                    let discount = parseFloat($('#global_discount').val()) || 0;
+
+                    let gstAmount = 0;
+                    if (gstType === 'percentage') {
+                        gstAmount = (subTotal * gstValue) / 100;
+                    } else {
+                        gstAmount = gstValue;
+                    }
+
+                    $('#global_gst_amount').val(gstAmount.toFixed(2));
+                    let grandTotal = subTotal + gstAmount + other - discount;
+
+                    $('#global_total_amount').val(grandTotal.toFixed(2));
+                }
 
                 $('#addStockForm').on('submit', function (e) {
                     e.preventDefault();
