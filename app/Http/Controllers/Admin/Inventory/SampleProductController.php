@@ -88,6 +88,14 @@ class SampleProductController extends Controller
             });
         }
 
+        if ($request->mrp_from || $request->mrp_to) {
+            $query->whereHas('variants', function($q) use ($request) {
+                if ($request->mrp_from) $q->where('mrp', '>=', $request->mrp_from);
+                if ($request->mrp_to) $q->where('mrp', '<=', $request->mrp_to);
+                if ($request->size_set_id) $q->where('master_size_measurement_id', $request->size_set_id);
+            });
+        }
+
         $products = $query->get();
 
         $products = $products->filter(function($product) use ($request) {

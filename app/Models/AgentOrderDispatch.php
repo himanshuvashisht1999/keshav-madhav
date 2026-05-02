@@ -21,6 +21,7 @@ class AgentOrderDispatch extends Model
         'discount_amount',
         'gst_amount',
         'gst_percentage',
+        'other_charges',
         'grand_total',
         'status',
         'created_by'

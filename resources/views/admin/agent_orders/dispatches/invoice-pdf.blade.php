@@ -168,6 +168,13 @@
                     <td class="text-right">{{ number_format($filteredGst, 2) }}</td>
                 </tr>
 
+                @if($dispatch->other_charges > 0 && !$brandId)
+                <tr class="summary-row">
+                    <td colspan="6" class="text-right">Other Charges</td>
+                    <td class="text-right">{{ number_format($dispatch->other_charges, 2) }}</td>
+                </tr>
+                @endif
+
                 <tr class="summary-row" style="background-color: #f8f9fa; border-top: 2px solid #000;">
                     <td colspan="6" class="text-right" style="font-size: 13px;">Grand Total :</td>
                     <td class="text-right" style="font-size: 13px;">{{ number_format($filteredGrandTotal, 2) }}</td>

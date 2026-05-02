@@ -157,6 +157,16 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-3 mb-2">
+                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">MRP From</label>
+                                <input type="number" id="mrp_from" class="form-control" placeholder="Min MRP">
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">MRP To</label>
+                                <input type="number" id="mrp_to" class="form-control" placeholder="Max MRP">
+                            </div>
+                        </div>
                         <div class="text-right mt-2">
                             <button type="button" id="btn-filter" class="btn btn-primary px-4 btn-sm">
                                 <i class="fas fa-search mr-2"></i> Find Products
@@ -252,8 +262,10 @@
                 let series_id = $('#series_id').val();
                 let design_number = $('#design_number').val();
                 let size_set_id = $('#size_set_id').val();
+                let mrp_from = $('#mrp_from').val();
+                let mrp_to = $('#mrp_to').val();
 
-                if (!brand_id && !fitting_id && !pattern_id && !series_id && !design_number && !size_set_id) {
+                if (!brand_id && !fitting_id && !pattern_id && !series_id && !design_number && !size_set_id && !mrp_from && !mrp_to) {
                     toastr.error('Please select at least one filter');
                     return;
                 }
@@ -269,7 +281,9 @@
                         pattern_id: pattern_id,
                         series_id: series_id,
                         design_number: design_number,
-                        size_set_id: size_set_id
+                        size_set_id: size_set_id,
+                        mrp_from: mrp_from,
+                        mrp_to: mrp_to
                     },
                     success: function (response) {
                         if (response.length === 0) {

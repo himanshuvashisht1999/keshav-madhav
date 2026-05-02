@@ -72,6 +72,7 @@
                                     <th>LR No.</th>
                                     <th>Transport</th>
                                     <th>Grand Total</th>
+                                    <th>Other Charges</th>
                                     <th>Date</th>
                                     <th class="text-right">Actions</th>
                                 </tr>
@@ -93,6 +94,7 @@
                                         <td>{{ $dispatch->lr_no ?? 'Pending' }}</td>
                                         <td>{{ $dispatch->transport_name ?? 'N/A' }}</td>
                                         <td><span class="text-primary font-weight-bold">₹{{ number_format($dispatch->grand_total, 2) }}</span></td>
+                                        <td>₹{{ number_format($dispatch->other_charges ?? 0, 2) }}</td>
                                         <td>{{ $dispatch->dispatch_date ? date('d M Y', strtotime($dispatch->dispatch_date)) : 'N/A' }}</td>
                                         <td class="text-right">
                                             <a href="{{ route('admin.agent-orders.dispatches.show', $dispatch->id) }}"

@@ -84,6 +84,15 @@
                                     <input type="number" step="0.01" class="form-control border-left-0" id="discount_amount" name="discount_amount" value="{{ $dispatch->discount_amount ?? 0 }}">
                                 </div>
                             </div>
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold text-muted small text-uppercase">Other Charges</label>
+                                <div class="input-group shadow-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-plus-circle text-info"></i></span>
+                                    </div>
+                                    <input type="number" step="0.01" class="form-control border-left-0" id="other_charges" name="other_charges" value="{{ $dispatch->other_charges ?? 0 }}">
+                                </div>
+                            </div>
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group mb-3">
@@ -124,7 +133,7 @@
             <div class="container-fluid">
 
                 <!-- KPI Summary Cards -->
-                <div class="row mb-4">
+                <div class="row">
                     <div class="col-md-3">
                         <div class="card shadow-sm border-0 h-100">
                             <div class="card-body text-center py-4">
@@ -160,10 +169,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
                 
-                <!-- Financial Summary Cards -->
-                <div class="row mb-4">
                     <div class="col-md-3">
                         <div class="card shadow-sm border-0 border-left-primary h-100">
                             <div class="card-body py-3">
@@ -179,7 +185,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3 mt-4 mb-4">
                         <div class="card shadow-sm border-0 border-left-danger h-100">
                             <div class="card-body py-3">
                                 <div class="row no-gutters align-items-center">
@@ -194,7 +200,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3 mt-4 mb-4">
                         <div class="card shadow-sm border-0 border-left-info h-100">
                             <div class="card-body py-3">
                                 <div class="row no-gutters align-items-center">
@@ -209,7 +215,22 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3 mt-4 mb-4">
+                        <div class="card shadow-sm border-0 border-left-warning h-100">
+                            <div class="card-body py-3">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Other Charges</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ number_format($dispatch->other_charges ?? 0, 2) }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-plus fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mt-4 mb-4">
                         <div class="card shadow-sm bg-success border-0 h-100 text-white">
                             <div class="card-body py-3">
                                 <div class="row no-gutters align-items-center">
@@ -361,15 +382,17 @@
                 const discountAmount = parseFloat($('#discount_amount').val()) || 0;
                 const gstPercentage = parseFloat($('#gst_percentage').val()) || 0;
 
+                const otherCharges = parseFloat($('#other_charges').val()) || 0;
+
                 const taxableAmount = totalAmount - discountAmount;
                 const gstAmount = taxableAmount * (gstPercentage / 100);
-                const grandTotal = taxableAmount + gstAmount;
+                const grandTotal = taxableAmount + gstAmount + otherCharges;
 
                 $('#gst_amount_display').val(gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
                 $('#grand_total_display').text('₹' + grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
             }
 
-            $('#total_amount, #discount_amount, #gst_percentage').on('input', calculateInvoice);
+            $('#total_amount, #discount_amount, #gst_percentage, #other_charges').on('input', calculateInvoice);
 
             // Invoice Modal Submission
             $('#editInvoiceForm').on('submit', function(e) {

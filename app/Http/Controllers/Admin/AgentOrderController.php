@@ -2123,7 +2123,8 @@ class AgentOrderController extends Controller
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.dispatches.invoice-pdf-fabric', compact(
                 'dispatch',
                 'fabricItems',
-                'settings'
+                'settings',
+                'brandId'
             ));
             return $pdf->download("Dispatch_Invoice_Fabric_{$dispatch->id}.pdf");
         }
@@ -2182,7 +2183,8 @@ class AgentOrderController extends Controller
             'filteredGst',
             'filteredGrandTotal',
             'brandCount',
-            'discountAmt'
+            'discountAmt',
+            'brandId'
         ));
         return $pdf->download('Dispatch_Invoice_' . $dispatch->id . '.pdf');
     }
@@ -2193,6 +2195,7 @@ class AgentOrderController extends Controller
             'total_amount' => 'required|numeric|min:0',
             'discount_amount' => 'nullable|numeric|min:0',
             'gst_percentage' => 'nullable|numeric|min:0|max:100',
+            'other_charges' => 'nullable|numeric|min:0',
         ]);
 
         $dispatch = \App\Models\AgentOrderDispatch::findOrFail($id);
@@ -2202,10 +2205,11 @@ class AgentOrderController extends Controller
         $total_amount = $request->total_amount;
         $discount_amount = $request->discount_amount ?? 0;
         $gst_percentage = $request->gst_percentage ?? 5;
+        $other_charges = $request->other_charges ?? 0;
 
         $taxable_amount = $total_amount - $discount_amount;
         $gst_amount = $taxable_amount * ($gst_percentage / 100);
-        $grandTotal = $taxable_amount + $gst_amount;
+        $grandTotal = $taxable_amount + $gst_amount + $other_charges;
 
         DB::beginTransaction();
         try {
@@ -2214,6 +2218,7 @@ class AgentOrderController extends Controller
                 'discount_amount' => $discount_amount,
                 'gst_percentage' => $gst_percentage,
                 'gst_amount' => $gst_amount,
+                'other_charges' => $other_charges,
                 'grand_total' => $grandTotal,
             ]);
 
