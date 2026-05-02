@@ -138,7 +138,7 @@ class OrderSummaryReportService
 
             ->when($searchOrder, function ($q) use ($searchOrder) {
                 $q->whereHas('orderProductSet.orderMain', function ($qq) use ($searchOrder) {
-                    $qq->where('id', 'like', "%{$searchOrder}%");
+                    $qq->where('id', $searchOrder);
                 });
             })
 
