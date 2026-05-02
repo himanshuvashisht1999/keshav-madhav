@@ -24,8 +24,20 @@
         <section class="content">
             <div class="container-fluid">
                 @php
-                    function is_lot_deletable($lot) {
-                        return ($lot->is_printing == 0 && $lot->is_stitching == 0);
+                    function is_lot_deletable($lot, $printings, $stage_transactions) {
+                        // Check if any printing records for this lot have moved forward
+                        $lp = $printings->where('lot_no', $lot->lot_no);
+                        foreach($lp as $p) {
+                            if ($p->remaining_quantity != $p->quantity) return false;
+                        }
+
+                        // Check if any stage transactions from Cutting (stage 3) for this lot have moved forward
+                        $lt = $stage_transactions->where('lot_no', $lot->lot_no)->where('from_stage_id', 3);
+                        foreach($lt as $t) {
+                            if ($t->remaining_quantity != $t->quantity) return false;
+                        }
+
+                        return true;
                     }
                     function is_transaction_deletable($tx) {
                         return ($tx->remaining_quantity == $tx->quantity);
@@ -78,7 +90,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h4 class="fw-bold text-dark mb-0">Digitization Session #{{ $index + 1 }}</h4>
                                 <div>
-                                    @if(is_lot_deletable($lot))
+                                    @if(is_lot_deletable($lot, $printings, $stage_transactions))
                                         <a href="{{ route('admin.uploaded-slips.delete-session', ['type' => 'lot', 'id' => $lot->id]) }}" 
                                            class="btn btn-sm btn-outline-danger border shadow-xs me-2"
                                            onclick="return confirm('Are you sure you want to delete this session and restore used quantities?')">

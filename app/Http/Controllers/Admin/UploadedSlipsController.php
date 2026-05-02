@@ -594,8 +594,37 @@ class UploadedSlipsController extends Controller
                 $session = OrderLot::findOrFail($id);
                 $slip_id = $session->production_slip_digitization_id;
 
-                if ($session->is_printing == 1 || $session->is_stitching == 1) {
-                    throw new \Exception('Cannot delete. This lot has already been moved forward.');
+                // NEW: Relaxed check. Instead of blocking if is_printing/is_stitching == 1,
+                // we check if those stages have actually moved anything forward.
+                
+                $printingTx = OrderPrintingStageTransaction::where('lot_no', $session->lot_no)->get();
+                foreach($printingTx as $ptx) {
+                    if ($ptx->remaining_quantity != $ptx->quantity) {
+                        throw new \Exception('Cannot delete Lot. Printing stage has already moved quantity forward.');
+                    }
+                }
+
+                $stageTx = OrderStageTransaction::where('lot_no', $session->lot_no)->where('from_stage_id', 3)->get();
+                foreach($stageTx as $stx) {
+                    if ($stx->remaining_quantity != $stx->quantity) {
+                        throw new \Exception('Cannot delete Lot. Next stage has already moved quantity forward.');
+                    }
+                }
+
+                // If we reach here, we can delete the associated pristine transactions first
+                foreach($printingTx as $ptx) {
+                    FabricRollAssigning::where('lot_no', $session->lot_no)
+                        ->where('to_stage_id', 1)
+                        ->update(['status' => 1, 'to_stage_id' => null]);
+                    OrderPrintingStageTransactionDetail::where('order_printing_stage_transaction_id', $ptx->id)->delete();
+                    $ptx->delete();
+                }
+                foreach($stageTx as $stx) {
+                    FabricRollAssigning::where('lot_no', $session->lot_no)
+                        ->where('to_stage_id', $stx->to_stage_id)
+                        ->update(['status' => 1, 'to_stage_id' => null]);
+                    OrderStageTransactionDetail::where('order_stage_transaction_id', $stx->id)->delete();
+                    $stx->delete();
                 }
 
                 // Revert FabricRollAssigning
