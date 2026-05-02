@@ -332,32 +332,6 @@
             <p class="app-hero-subtitle">Wednesday, 04 Feb 2026</p>
         </div>
 
-        <div class="app-stats-container">
-            <div class="app-stats-grid">
-                <div class="app-stat-card">
-                    <span class="app-stat-value">{{ $total_orders }}</span>
-                    <span class="app-stat-label">Orders</span>
-                </div>
-                <div class="app-stat-card">
-                    <span class="app-stat-value">{{ number_format($total_stock, 0) }}</span>
-                    <span class="app-stat-label">Mtrs</span>
-                </div>
-                <div class="app-stat-card">
-                    <span class="app-stat-value">{{ $total_lots }}</span>
-                    <span class="app-stat-label">Lots</span>
-                </div>
-            </div>
-            <div class="app-stats-grid mt-3">
-                <div class="app-stat-card border-success" style="grid-column: span 1.5; border: 1px solid #28a745;">
-                    <span class="app-stat-value text-success">₹{{ number_format($total_received, 0) }}</span>
-                    <span class="app-stat-label">Total Received</span>
-                </div>
-                <div class="app-stat-card border-danger" style="grid-column: span 1.5; border: 1px solid #dc3545;">
-                    <span class="app-stat-value text-danger">₹{{ number_format($total_paid, 0) }}</span>
-                    <span class="app-stat-label">Total Paid</span>
-                </div>
-            </div>
-        </div>
 
         <div class="app-menu-section">
             <div class="section-header">
@@ -386,6 +360,17 @@
                 <i class="fas fa-chevron-right app-nav-arrow"></i>
             </a>
 
+            <a href="{{ route('owner.report.stock.rolls') }}" class="app-nav-card">
+                <div class="app-nav-icon" style="background: rgba(79, 70, 229, 0.1); color: #4f46e5;">
+                    <i class="fas fa-barcode"></i>
+                </div>
+                <div class="app-nav-content">
+                    <span class="app-nav-title">Stock by Roll</span>
+                    <span class="app-nav-desc">Search and track individual rolls</span>
+                </div>
+                <i class="fas fa-chevron-right app-nav-arrow"></i>
+            </a>
+
             <a href="{{ route('owner.lots') }}" class="app-nav-card">
                 <div class="app-nav-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
                     <i class="fas fa-layer-group"></i>
@@ -396,34 +381,24 @@
                 </div>
                 <i class="fas fa-chevron-right app-nav-arrow"></i>
             </a>
+            <a href="{{ route('owner.ready-stock.index') }}" class="app-nav-card">
+                <div class="app-nav-icon" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <div class="app-nav-content">
+                    <span class="app-nav-title">Ready Stock</span>
+                    <span class="app-nav-desc">Domestic finished goods</span>
+                </div>
+                <i class="fas fa-chevron-right app-nav-arrow"></i>
+            </a>
 
-            <a href="{{ route('owner.payment-dashboard.index') }}" class="app-nav-card">
+            <a href="{{ route('owner.payment-adjustment.index') }}" class="app-nav-card">
                 <div class="app-nav-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
-                    <i class="fas fa-chart-line"></i>
+                    <i class="fas fa-balance-scale"></i>
                 </div>
                 <div class="app-nav-content">
-                    <span class="app-nav-title">Payment Analytics</span>
-                    <span class="app-nav-desc">Financial flow & charts</span>
-                </div>
-                <i class="fas fa-chevron-right app-nav-arrow"></i>
-            </a>
-            <a href="{{ route('owner.payment.pending.index') }}" class="app-nav-card shadow-sm border-warning">
-                <div class="app-nav-icon" style="background: rgba(255, 193, 7, 0.1); color: #ffc107;">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="app-nav-content">
-                    <span class="app-nav-title">Pending Payments</span>
-                    <span class="app-nav-desc">Outstanding payables & receivables</span>
-                </div>
-                <i class="fas fa-chevron-right app-nav-arrow"></i>
-            </a>
-            <a href="{{ route('owner.payment.history.index') }}" class="app-nav-card">
-                <div class="app-nav-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
-                    <i class="fas fa-history"></i>
-                </div>
-                <div class="app-nav-content">
-                    <span class="app-nav-title">Payment History</span>
-                    <span class="app-nav-desc">Complete payment records</span>
+                    <span class="app-nav-title">Payment Adjustments</span>
+                    <span class="app-nav-desc">Record & view adjustments</span>
                 </div>
                 <i class="fas fa-chevron-right app-nav-arrow"></i>
             </a>
@@ -441,54 +416,6 @@
             </div>
         </div>
 
-        <div class="dashboard-grid">
-            <div class="stat-card-desktop">
-                <div class="stat-icon-desktop" style="background: rgba(111, 66, 193, 0.1); color: var(--KM-purple);">
-                    <i class="fas fa-shopping-cart"></i>
-                </div>
-                <div class="stat-info-desktop">
-                    <span class="stat-label">Total Orders</span>
-                    <span class="stat-value">{{ $total_orders }}</span>
-                </div>
-            </div>
-            <div class="stat-card-desktop">
-                <div class="stat-icon-desktop" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
-                    <i class="fas fa-boxes"></i>
-                </div>
-                <div class="stat-info-desktop">
-                    <span class="stat-label">Fabric Stock</span>
-                    <span class="stat-value">{{ number_format($total_stock, 2) }} <small
-                            class="font-weight-bold">Mtr</small></span>
-                </div>
-            </div>
-            <div class="stat-card-desktop">
-                <div class="stat-icon-desktop" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
-                    <i class="fas fa-layer-group"></i>
-                </div>
-                <div class="stat-info-desktop">
-                    <span class="stat-label">Active Lots</span>
-                    <span class="stat-value">{{ $total_lots }}</span>
-                </div>
-            </div>
-            <div class="stat-card-desktop border-success">
-                <div class="stat-icon-desktop" style="background: rgba(40, 167, 69, 0.1); color: #28a745;">
-                    <i class="fas fa-hand-holding-usd"></i>
-                </div>
-                <div class="stat-info-desktop">
-                    <span class="stat-label">Total Received</span>
-                    <span class="stat-value text-success">₹{{ number_format($total_received, 2) }}</span>
-                </div>
-            </div>
-            <div class="stat-card-desktop border-danger">
-                <div class="stat-icon-desktop" style="background: rgba(220, 53, 69, 0.1); color: #dc3545;">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                </div>
-                <div class="stat-info-desktop">
-                    <span class="stat-label">Total Paid</span>
-                    <span class="stat-value text-danger">₹{{ number_format($total_paid, 2) }}</span>
-                </div>
-            </div>
-        </div>
 
         <div class="quick-actions-card">
             <div class="card-header-new">
@@ -505,17 +432,21 @@
                         <i class="fas fa-warehouse"></i>
                         <span>Fabric Stock</span>
                     </a>
+                    <a href="{{ route('owner.report.stock.rolls') }}" class="action-btn-modern">
+                        <i class="fas fa-barcode text-primary"></i>
+                        <span>Stock by Roll</span>
+                    </a>
                     <a href="{{ route('owner.lots') }}" class="action-btn-modern">
                         <i class="fas fa-industry"></i>
                         <span>Production Lots</span>
                     </a>
-                    <a href="{{ route('owner.payment-dashboard.index') }}" class="action-btn-modern">
-                        <i class="fas fa-chart-pie"></i>
-                        <span>Payment Analytics</span>
+                    <a href="{{ route('owner.ready-stock.index') }}" class="action-btn-modern">
+                        <i class="fas fa-boxes text-info"></i>
+                        <span>Ready Stock</span>
                     </a>
-                    <a href="{{ route('owner.payment.pending.index') }}" class="action-btn-modern">
-                        <i class="fas fa-clock text-warning"></i>
-                        <span>Pending Payments</span>
+                    <a href="{{ route('owner.payment-adjustment.index') }}" class="action-btn-modern">
+                        <i class="fas fa-balance-scale text-danger"></i>
+                        <span>Adjustments</span>
                     </a>
                 </div>
             </div>

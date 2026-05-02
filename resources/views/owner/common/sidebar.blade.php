@@ -20,17 +20,10 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ route('owner.payment-dashboard.index') }}"
-                        class="nav-link {{ request()->routeIs('owner.payment-dashboard.*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-chart-pie"></i>
-                        <p>Payment Analytics</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ route('owner.payment.pending.index') }}"
-                        class="nav-link {{ request()->routeIs('owner.payment.pending.*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-clock"></i>
-                        <p>Pending Payments</p>
+                    <a href="{{ route('owner.payment-adjustment.index') }}"
+                        class="nav-link {{ request()->routeIs('owner.payment-adjustment.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-balance-scale"></i>
+                        <p>Payment Adjustments</p>
                     </a>
                 </li>
                 <li class="nav-header">REPORTS</li>
@@ -53,6 +46,13 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                         class="nav-link {{ request()->routeIs('owner.lots') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-layer-group"></i>
                         <p>Lot Details</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('owner.ready-stock.index') }}"
+                        class="nav-link {{ request()->routeIs('owner.ready-stock.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-boxes"></i>
+                        <p>Ready Stock</p>
                     </a>
                 </li>
                 <li class="nav-item mt-4">

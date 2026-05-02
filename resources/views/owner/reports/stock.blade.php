@@ -1,407 +1,435 @@
 @extends('owner.layouts.app')
 
-@section('content')
-    <style>
-        /* MOBILE APP LIST STYLES */
-        @media (max-width: 991.98px) {
-            .app-container {
-                padding: 15px;
-            }
+@section('title', 'Fabric Stock')
 
-            .stock-card {
-                background: white;
-                border: 1px solid #f1f5f9;
-                border-radius: 16px;
-                padding: 18px;
-                margin-bottom: 16px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-            }
+@section('styles')
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        --glass-bg: rgba(255, 255, 255, 0.9);
+        --glass-border: rgba(255, 255, 255, 0.2);
+        --card-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
+    }
 
-            .card-header-top {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 15px;
-            }
+    body {
+        background: #fdf2ff;
+        background-image: radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 0.03) 0, transparent 50%), 
+                          radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 0.03) 0, transparent 50%), 
+                          radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 0.03) 0, transparent 50%);
+    }
 
-            .sku-label {
-                font-size: 15px;
-                font-weight: 800;
-                color: #1e293b;
-            }
+    .app-header {
+        background: var(--primary-gradient);
+        padding: 40px 20px 60px;
+        border-radius: 0 0 40px 40px;
+        color: white;
+        margin-bottom: -30px;
+        position: relative;
+        z-index: 1;
+    }
 
-            .wh-pill {
-                padding: 4px 10px;
-                border-radius: 20px;
-                font-size: 10px;
-                font-weight: 800;
-                letter-spacing: 0.5px;
-                background: #f1f5f9;
-                color: #64748b;
-            }
+    .app-header h1 {
+        font-size: 26px;
+        font-weight: 900;
+        letter-spacing: -0.5px;
+        margin-bottom: 5px;
+    }
 
-            .card-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 15px;
-                padding-bottom: 15px;
-                border-bottom: 1px solid #f1f5f9;
-                margin-bottom: 15px;
-            }
+    .breadcrumb-custom {
+        display: flex;
+        gap: 8px;
+        font-size: 12px;
+        opacity: 0.8;
+        margin-bottom: 20px;
+        align-items: center;
+    }
 
-            .info-item label {
-                display: block;
-                font-size: 10px;
-                color: #94a3b8;
-                text-transform: uppercase;
-                font-weight: 700;
-                margin-bottom: 2px;
-            }
+    .breadcrumb-custom a {
+        color: white;
+        text-decoration: none;
+    }
 
-            .info-item .value {
-                font-size: 15px;
-                font-weight: 700;
-                color: #334155;
-            }
+    .search-container {
+        position: relative;
+        z-index: 10;
+        padding: 0 20px;
+    }
 
-            .stock-value {
-                color: var(--primary);
-                font-weight: 900;
-            }
+    .search-box {
+        background: white;
+        border-radius: 20px;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: var-card-shadow;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
 
-            .card-action {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
+    .search-box input {
+        border: none;
+        outline: none;
+        width: 100%;
+        font-size: 15px;
+        font-weight: 500;
+        color: #1e293b;
+    }
 
-            .stock-meta {
-                font-size: 11px;
-                color: #94a3b8;
-                font-weight: 600;
-            }
+    .stock-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: var(--card-shadow);
+        transition: transform 0.2s;
+        text-decoration: none !important;
+        display: block;
+    }
 
-            .btn-view-app {
-                background: var(--primary);
-                color: white !important;
-                padding: 8px 16px;
-                border-radius: 10px;
-                font-size: 12px;
-                font-weight: 700;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                text-decoration: none !important;
-                box-shadow: 0 4px 10px rgba(111, 66, 193, 0.2);
-                border: none;
-            }
+    .stock-card:active {
+        transform: scale(0.98);
+    }
 
-            /* Modal Styling */
-            .modal-content {
-                border-radius: 20px;
-                border: none;
-                overflow: hidden;
-            }
+    .fabric-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-            .modal-header {
-                background: var(--primary);
-                color: white;
-                border: none;
-                padding: 20px;
-            }
+    .vendor-badge {
+        font-size: 10px;
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+        padding: 4px 10px;
+        border-radius: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
 
-            .modal-header .close {
-                color: white;
-                opacity: 1;
-                text-shadow: none;
-            }
-        }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
 
-        @media (min-width: 992px) {
-            .desktop-wrapper {
-                padding: 25px;
-            }
+    .stat-item {
+        text-align: center;
+    }
 
-            .table-card {
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-                border: none;
-            }
-        }
-    </style>
+    .stat-label {
+        font-size: 9px;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        display: block;
+        margin-bottom: 4px;
+    }
 
-    <!-- MOBILE CONTENT -->
-    <div class="mobile-only">
-        <div class="app-container" style="padding-top: 20px;">
-            <h5 class="mb-4 font-weight-bold" style="color: #1e293b;">Fabric Inventory</h5>
+    .stat-value {
+        font-size: 14px;
+        font-weight: 900;
+        color: #1e293b;
+    }
 
-            <!-- Mobile Filters -->
-            <div class="card mb-3" style="border-radius: 12px; border: 1px solid #f1f5f9;">
-                <div class="card-body p-3">
-                    <form action="{{ route('owner.stock') }}" method="GET">
-                        <div class="mb-2">
-                            <label class="small font-weight-bold text-muted mb-1 d-block">Warehouse</label>
-                            <select name="warehouse_id" class="form-control" style="border-radius: 8px; font-size: 13px;">
-                                <option value="">All Warehouses</option>
-                                @foreach($warehouses as $warehouse)
-                                    <option value="{{ $warehouse->id }}" {{ ($filters['warehouse_id'] ?? '') == $warehouse->id ? 'selected' : '' }}>
-                                        {{ $warehouse->cutting_master_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-2">
-                            <label class="small font-weight-bold text-muted mb-1 d-block">Fabric SKU</label>
-                            <select name="fabric_sku" class="form-control" style="border-radius: 8px; font-size: 13px;">
-                                <option value="">All Fabrics</option>
-                                @foreach ($fabrics as $fabric)
-                                    <option value="{{ $fabric->sku }}" {{ ($filters['fabric_sku'] ?? '') == $fabric->sku ? 'selected' : '' }}>
-                                        {{ $fabric->sku }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <label class="small font-weight-bold text-muted mb-1 d-block">Qty From</label>
-                                <input type="number" name="meter_from" class="form-control"
-                                    style="border-radius: 8px; font-size: 13px;" value="{{ $filters['meter_from'] ?? '' }}"
-                                    placeholder="0">
-                            </div>
-                            <div class="col-6">
-                                <label class="small font-weight-bold text-muted mb-1 d-block">Qty To</label>
-                                <input type="number" name="meter_to" class="form-control"
-                                    style="border-radius: 8px; font-size: 13px;" value="{{ $filters['meter_to'] ?? '' }}"
-                                    placeholder="Max">
-                            </div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary btn-sm flex-fill" style="border-radius: 8px;">Apply
-                                Filter</button>
-                            <a href="{{ route('owner.stock') }}" class="btn btn-light btn-sm flex-fill"
-                                style="border-radius: 8px;">Reset</a>
-                        </div>
-                    </form>
-                </div>
-            </div>
+    .stat-value.remaining {
+        color: #a855f7;
+    }
 
-            @foreach ($stocks as $sku => $whStocks)
-                @foreach ($whStocks as $stock)
-                    <div class="stock-card">
-                        <div class="card-header-top">
-                            <div class="sku-label">{{ $sku }}</div>
-                            <div class="wh-pill">
-                                <i class="fas fa-warehouse"></i>
-                                {{ \Illuminate\Support\Str::limit($stock->master_fabric_warehouse->cutting_master_name, 12) }}
-                            </div>
-                        </div>
+    .wh-badge {
+        background: #f1f5f9;
+        color: #475569;
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 15px;
+    }
 
-                        <div class="card-grid">
-                            <div class="info-item">
-                                <label>Available Stock</label>
-                                <div class="value stock-value">{{ number_format($stock->total_remaining, 2) }} Mtr</div>
-                            </div>
-                            <div class="info-item">
-                                <label>Status</label>
-                                <div class="value" style="font-size: 12px; color: #16a34a;">In Stock</div>
-                            </div>
-                        </div>
+    .action-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
 
-                        <div class="card-action">
-                            <div class="stock-meta">
-                                <i class="fas fa-box"></i> Roll Details Available
-                            </div>
-                            <button class="btn-view-app"
-                                onclick="viewRollDetails('{{ $sku }}', '{{ $stock->master_fabric_warehouse_id }}')">
-                                View Rolls <i class="fas fa-arrow-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                @endforeach
-            @endforeach
-        </div>
-    </div>
+    .btn-action {
+        padding: 8px 16px;
+        border-radius: 14px;
+        font-size: 12px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
 
-    <!-- DESKTOP CONTENT -->
-    <div class="desktop-only desktop-wrapper">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 style="font-weight: 800; color: var(--text-main);">Fabric Stock Report</h2>
-        </div>
+    .btn-receipts {
+        background: #ecfdf5;
+        color: #059669;
+    }
 
-        <!-- Desktop Filters -->
-        <div class="card mb-4" style="border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-            <div class="card-body p-4">
-                <form action="{{ route('owner.stock') }}" method="GET">
-                    <div class="row align-items-end">
-                        <div class="col-md-3">
-                            <label class="small font-weight-bold text-muted mb-2 d-block">WAREHOUSE</label>
-                            <select name="warehouse_id" class="form-control select2">
-                                <option value="">All Warehouses</option>
-                                @foreach($warehouses as $warehouse)
-                                    <option value="{{ $warehouse->id }}" {{ ($filters['warehouse_id'] ?? '') == $warehouse->id ? 'selected' : '' }}>
-                                        {{ $warehouse->cutting_master_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="small font-weight-bold text-muted mb-2 d-block">FABRIC SKU</label>
-                            <select name="fabric_sku" class="form-control select2">
-                                <option value="">All Fabrics</option>
-                                @foreach($fabrics as $fabric)
-                                    <option value="{{ $fabric->sku }}" {{ ($filters['fabric_sku'] ?? '') == $fabric->sku ? 'selected' : '' }}>
-                                        {{ $fabric->sku }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="small font-weight-bold text-muted mb-2 d-block">QTY FROM</label>
-                            <input type="number" name="meter_from" class="form-control"
-                                value="{{ $filters['meter_from'] ?? '' }}" placeholder="0" style="height: 38px;">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="small font-weight-bold text-muted mb-2 d-block">QTY TO</label>
-                            <input type="number" name="meter_to" class="form-control"
-                                value="{{ $filters['meter_to'] ?? '' }}" placeholder="Max" style="height: 38px;">
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary px-3 mr-1"
-                                style="border-radius: 8px; height: 38px;">Filter</button>
-                            <a href="{{ route('owner.stock') }}" class="btn btn-outline-secondary px-2"
-                                style="border-radius: 8px; height: 38px; line-height: 24px;">Reset</a>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
+    .btn-usages {
+        background: #fff7ed;
+        color: #d97706;
+    }
 
-        <div class="card table-card">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="bg-light">
-                            <tr>
-                                <th>Fabric SKU</th>
-                                <th>Warehouse</th>
-                                <th class="text-right">Remaining Qty (Mtrs)</th>
-                                <th class="text-center">Details</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($stocks as $sku => $whStocks)
-                                @foreach ($whStocks as $stock)
-                                    <tr>
-                                        <td class="font-weight-bold">{{ $sku }}</td>
-                                        <td>{{ $stock->master_fabric_warehouse->cutting_master_name }}</td>
-                                        <td class="text-right font-weight-bold">{{ number_format($stock->total_remaining, 2) }}
-                                        </td>
-                                        <td class="text-center">
-                                            <button class="btn btn-sm btn-outline-primary" style="border-radius: 6px;"
-                                                onclick="viewRollDetails('{{ $sku }}', '{{ $stock->master_fabric_warehouse_id }}')">
-                                                View Rolls
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: #64748b;
+    }
 
-    <!-- UNIFIED MODAL -->
-    <div class="modal fade" id="rollModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title font-weight-bold" id="rollModalTitle">Roll Details</h5>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                </div>
-                <div class="modal-body p-0">
-                    <div id="rollDetailsContent">
-                        <div class="p-5 text-center loading-spinner">
-                            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    .empty-state i {
+        font-size: 48px;
+        margin-bottom: 20px;
+        opacity: 0.3;
+    }
+
+    .fab-container {
+        position: fixed;
+        bottom: 30px;
+        right: 20px;
+        z-index: 100;
+    }
+
+    .fab {
+        width: 56px;
+        height: 56px;
+        background: var(--primary-gradient);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 20px;
+        box-shadow: 0 10px 25px rgba(168, 85, 247, 0.4);
+        text-decoration: none !important;
+    }
+</style>
 @endsection
 
-@section('scripts')
-    <script>
-        $(document).ready(function () {
-            // Initialize Select2 if exists
-            if ($.fn.select2) {
-                $('.select2').select2({
-                    placeholder: "Select an option",
-                    allowClear: true
-                });
-            }
-        });
+@section('content')
+<div class="mobile-only">
+    <div class="app-header">
+        <div class="breadcrumb-custom">
+            <a href="{{ route('owner.dashboard') }}">Home</a>
+            <i class="fas fa-chevron-right" style="font-size: 8px;"></i>
+            <a href="{{ route('owner.stock') }}">Stock</a>
+            @if(isset($fabric))
+                <i class="fas fa-chevron-right" style="font-size: 8px;"></i>
+                <span>{{ $fabric->name }}</span>
+            @endif
+        </div>
+        <h1>Fabric Stock</h1>
+        <p class="mb-0 opacity-75">Real-time inventory management</p>
+    </div>
 
-        function viewRollDetails(sku, whId) {
-            $('#rollModalTitle').text(`SKU: ${sku} - Details`);
-            $('#rollDetailsContent').html(
-                '<div class="p-5 text-center"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i></div>');
-            $('#rollModal').modal('show');
+    <div class="search-container">
+        @if($level === 'fabrics')
+        <form action="{{ route('owner.stock') }}" method="GET">
+            <div class="search-box">
+                <i class="fas fa-search text-muted"></i>
+                <input type="text" name="search" placeholder="Search fabrics..." value="{{ request('search') }}">
+                <input type="hidden" name="warehouse_id" value="{{ request('warehouse_id') }}">
+            </div>
+        </form>
+        <div class="mt-3 px-1">
+            <a href="{{ route('owner.report.stock.rolls') }}" class="btn btn-block btn-primary shadow-sm" style="border-radius: 15px; font-weight: 800; padding: 12px; background: var(--primary-gradient); border: none;">
+                <i class="fas fa-list-ul mr-2"></i> View Stock by Roll Number
+            </a>
+        </div>
+        @else
+        <div class="search-box justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-arrow-left text-muted" onclick="history.back()"></i>
+                <span class="font-weight-bold" style="font-size: 14px;">Back to Summary</span>
+            </div>
+            <a href="{{ route('owner.stock') }}" class="text-primary font-weight-bold" style="font-size: 12px;">Reset</a>
+        </div>
+        @endif
+    </div>
 
-            fetch(`{{ route('owner.stock.roll.details') }}?fabric_sku=${sku}&warehouse_id=${whId}`)
-                .then(r => r.json())
-                .then(data => {
-                    let html = '';
-                    if (window.innerWidth < 992) {
-                        // Mobile View for Modal
-                        data.forEach(shipment => {
-                            shipment.rolls.forEach(roll => {
-                                html += `
-                                                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                                                    <div>
-                                                        <div class="font-weight-bold" style="font-size:14px;">Roll #${roll.roll_number}</div>
-                                                        <div class="text-xs text-muted">PO: ${shipment.po_number || 'N/A'}</div>
-                                                    </div>
-                                                    <div class="text-right">
-                                                        <div class="font-weight-bold text-primary">${roll.remaining_quantity}</div>
-                                                        <div class="text-xs text-muted">Meters</div>
-                                                    </div>
-                                                </div>
-                                            `;
-                            });
-                        });
-                    } else {
-                        // Desktop Table for Modal
-                        html = `
-                                        <div class="p-3">
-                                            <table class="table table-sm table-bordered">
-                                                <thead>
-                                                    <tr class="bg-light">
-                                                        <th>Roll No</th>
-                                                        <th>PO No</th>
-                                                        <th class="text-right">Quantity</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                    `;
-                        data.forEach(shipment => {
-                            shipment.rolls.forEach(roll => {
-                                html += `
-                                                <tr>
-                                                    <td>${roll.roll_number}</td>
-                                                    <td>${shipment.po_number || 'N/A'}</td>
-                                                    <td class="text-right font-weight-bold">${roll.remaining_quantity}</td>
-                                                </tr>
-                                            `;
-                            });
-                        });
-                        html += '</tbody></table></div>';
-                    }
-                    $('#rollDetailsContent').html(html);
-                });
-        }
-    </script>
+    <div class="container-fluid mt-4 pb-5">
+        @if($level === 'fabrics')
+            @foreach($data as $row)
+                <a href="{{ route('owner.stock', ['fabric_id' => $row->id, 'warehouse_id' => request('warehouse_id')]) }}" class="stock-card">
+                    <div class="fabric-title">
+                        {{ $row->name }}
+                        <span class="vendor-badge">{{ $row->vendor_name ?: 'Global' }}</span>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Received</span>
+                            <span class="stat-value">{{ number_format($row->total_received, 1) }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Issued</span>
+                            <span class="stat-value">{{ number_format($row->total_issued, 1) }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Stock</span>
+                            <span class="stat-value remaining">{{ number_format($row->total_remaining, 1) }}</span>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-right">
+                        <i class="fas fa-chevron-right text-muted opacity-50"></i>
+                    </div>
+                </a>
+            @endforeach
+            
+            @if($data->isEmpty())
+                <div class="empty-state">
+                    <i class="fas fa-box-open"></i>
+                    <p>No fabrics found in stock</p>
+                </div>
+            @endif
+
+            <div class="px-2">
+                {{ $data->links('pagination::simple-bootstrap-4') }}
+            </div>
+
+        @elseif($level === 'warehouses')
+            <div class="wh-badge">
+                <i class="fas fa-info-circle"></i> Showing stock by warehouse
+            </div>
+            @foreach($data as $row)
+                <div class="stock-card">
+                    <div class="fabric-title">
+                        {{ $row->master_fabric_warehouse?->cutting_master_name ?: 'Unknown' }}
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Received</span>
+                            <span class="stat-value">{{ number_format($row->total_received, 1) }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Issued</span>
+                            <span class="stat-value">{{ number_format($row->total_issued, 1) }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Stock</span>
+                            <span class="stat-value remaining">{{ number_format($row->total_remaining, 1) }}</span>
+                        </div>
+                    </div>
+                    <div class="action-row">
+                        <a href="{{ route('owner.stock', ['fabric_id' => $fabric->id, 'warehouse_id' => $row->master_fabric_warehouse_id, 'type' => 'receipts']) }}" class="btn-action btn-receipts">
+                            <i class="fas fa-file-import"></i> Shipments
+                        </a>
+                        <a href="{{ route('owner.stock', ['fabric_id' => $fabric->id, 'warehouse_id' => $row->master_fabric_warehouse_id, 'type' => 'usages']) }}" class="btn-action btn-usages">
+                            <i class="fas fa-industry"></i> Usages
+                        </a>
+                    </div>
+                </div>
+            @endforeach
+
+        @elseif($level === 'receipts')
+            <div class="wh-badge">
+                <i class="fas fa-ship"></i> Shipment History
+            </div>
+            @foreach($data as $row)
+                <div class="stock-card">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="font-weight-bold" style="font-size: 16px;">{{ $row->fabric_receipt?->sku ?: 'Shipment #' . $row->id }}</div>
+                            <div class="text-muted" style="font-size: 11px;">{{ $row->created_at->format('d M Y, h:i A') }}</div>
+                        </div>
+                        <span class="vendor-badge">{{ $row->fabric_receipt?->vendor?->name ?: 'Direct' }}</span>
+                    </div>
+                    
+                    <div class="p-3 rounded-xl bg-light mb-3 d-flex justify-content-around">
+                        <div class="text-center">
+                            <span class="stat-label">Roll No</span>
+                            <span class="font-weight-black">{{ $row->roll_number }}</span>
+                        </div>
+                        <div class="text-center">
+                            <span class="stat-label">Received</span>
+                            <span class="font-weight-black">{{ number_format($row->meter, 1) }}m</span>
+                        </div>
+                        <div class="text-center">
+                            <span class="stat-label">In Stock</span>
+                            <span class="font-weight-black text-success">{{ number_format($row->remaining_quantity, 1) }}m</span>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 12px; color: #64748b;">
+                        <i class="fas fa-warehouse mr-1"></i> {{ $row->master_fabric_warehouse?->cutting_master_name ?: '-' }}
+                        <span class="mx-2">|</span>
+                        <i class="fas fa-barcode mr-1"></i> {{ $row->qrcode_number ?: '-' }}
+                    </div>
+                </div>
+            @endforeach
+            <div class="px-2">
+                {{ $data->links('pagination::simple-bootstrap-4') }}
+            </div>
+
+        @elseif($level === 'usages')
+            <div class="wh-badge">
+                <i class="fas fa-history"></i> Usage Records
+            </div>
+            @foreach($data as $row)
+                <div class="stock-card">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="font-weight-bold" style="font-size: 15px;">{{ $row->order_no }}</div>
+                            <div class="text-muted" style="font-size: 11px;">{{ \Carbon\Carbon::parse($row->created_at)->format('d M Y, h:i A') }}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-weight-black text-danger" style="font-size: 16px;">-{{ number_format($row->meter, 1) }}m</div>
+                            <div class="stat-label">Consumed</div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-light" style="font-size: 12px;">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <span class="text-muted">Lot No:</span> <strong>{{ $row->lot_no }}</strong>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-muted">Roll No:</span> <strong>{{ $row->roll_no }}</strong>
+                            </div>
+                            <div class="col-6 mt-2">
+                                <span class="text-muted">Stage:</span> <strong>{{ $row->stageMasterUnit?->name ?: '-' }}</strong>
+                            </div>
+                            <div class="col-12 mt-2 border-top pt-2">
+                                <span class="text-muted">Details:</span> 
+                                <span class="font-weight-bold">
+                                    {{ $row->orderProductSet?->design_number ?: '' }} 
+                                    ({{ $row->orderProductSet?->colors?->name ?: '' }})
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+            <div class="px-2">
+                {{ $data->links('pagination::simple-bootstrap-4') }}
+            </div>
+        @endif
+    </div>
+
+    <div class="fab-container">
+        <a href="{{ route('owner.report.stock.rolls') }}" class="fab">
+            <i class="fas fa-barcode"></i>
+        </a>
+    </div>
+</div>
+
+<div class="desktop-only p-5 text-center">
+    <h3>Please use a mobile device or responsive view to see the app interface.</h3>
+    <p>This module is optimized for mobile app experience.</p>
+    <a href="{{ route('admin.report.stock') }}" class="btn btn-primary mt-3">Go to Admin Version</a>
+</div>
 @endsection

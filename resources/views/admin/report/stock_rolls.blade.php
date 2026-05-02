@@ -16,36 +16,53 @@
 
     <section class="content">
         <div class="container-fluid">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body py-2">
-                    <form method="GET" action="{{ route('admin.report.stock.rolls') }}" class="row g-2 align-items-end">
-                        <div class="col-md-3">
-                            <label class="form-label font-weight-bold mb-1">Fabric</label>
-                            <select name="fabric_id" class="form-control select2">
-                                <option value="">All Fabrics</option>
-                                @foreach($fabrics as $f)
-                                    <option value="{{ $f->id }}" {{ request('fabric_id') == $f->id ? 'selected' : '' }}>{{ $f->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body p-3">
+                    <form method="GET" action="{{ route('admin.report.stock.rolls') }}">
+                        <div class="row align-items-end g-2">
+                            <div class="col-md-3">
+                                <label class="small fw-bold mb-1">Fabric</label>
+                                <select name="fabric_id" class="form-control form-control-sm select2">
+                                    <option value="">All Fabrics</option>
+                                    @foreach($fabrics as $f)
+                                        <option value="{{ $f->id }}" {{ request('fabric_id') == $f->id ? 'selected' : '' }}>{{ $f->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label font-weight-bold mb-1">Warehouse</label>
-                            <select name="warehouse_id" class="form-control select2">
-                                <option value="">All Warehouses</option>
-                                @foreach($warehouses as $wh)
-                                    <option value="{{ $wh->id }}" {{ request('warehouse_id') == $wh->id ? 'selected' : '' }}>{{ $wh->cutting_master_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                            <div class="col-md-2">
+                                <label class="small fw-bold mb-1">Warehouse</label>
+                                <select name="warehouse_id" class="form-control form-control-sm select2">
+                                    <option value="">All Warehouses</option>
+                                    @foreach($warehouses as $wh)
+                                        <option value="{{ $wh->id }}" {{ request('warehouse_id') == $wh->id ? 'selected' : '' }}>{{ $wh->cutting_master_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label font-weight-bold mb-1">Roll No</label>
-                            <input type="text" name="roll_no" class="form-control" placeholder="Search Roll No..." value="{{ request('roll_no') }}">
-                        </div>
+                            <div class="col-md-2">
+                                <label class="small fw-bold mb-1">Roll No</label>
+                                <input type="text" name="roll_no" class="form-control form-control-sm" placeholder="Search Roll..." value="{{ request('roll_no') }}">
+                            </div>
 
-                        <div class="col-md-3">
-                            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> Filter Results</button>
+                            <div class="col-md-3">
+                                <label class="small fw-bold mb-1">Remaining Qty (Range)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light border-end-0">From</span>
+                                    <input type="number" step="0.01" name="qty_from" class="form-control" placeholder="0.00" value="{{ request('qty_from') }}">
+                                    <span class="input-group-text bg-light border-x-0">To</span>
+                                    <input type="number" step="0.01" name="qty_to" class="form-control" placeholder="Any" value="{{ request('qty_to') }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-2 d-flex gap-1">
+                                <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
+                                    <i class="fas fa-search"></i> Filter
+                                </button>
+                                <a href="{{ route('admin.report.stock.rolls') }}" class="btn btn-sm btn-outline-secondary" title="Reset">
+                                    <i class="fas fa-undo"></i>
+                                </a>
+                            </div>
                         </div>
                     </form>
                 </div>

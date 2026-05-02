@@ -132,10 +132,17 @@ Route::prefix('owner')->name('owner.')->group(function () {
 
         // Report specific routes
         Route::get('/orders', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'orders'])->name('orders');
-        Route::get('/lots', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'lots'])->name('lots');
-        Route::get('/lot-details', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'lotDetails'])->name('lot-details');
-        Route::get('/stock', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'stock'])->name('stock');
-        Route::get('/stock/roll-details', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'stockRollDetails'])->name('stock.roll.details');
+        Route::get('/lots', [\App\Http\Controllers\Owner\ReportController::class, 'lots'])->name('lots');
+        Route::get('/lot-details', [\App\Http\Controllers\Owner\ReportController::class, 'lotDetails'])->name('lot-details');
+        Route::get('/lot-details/pdf', [\App\Http\Controllers\Owner\ReportController::class, 'lotDetailsPdf'])->name('lot-details.pdf');
+        
+        // Stock Reports
+        Route::get('/stock', [\App\Http\Controllers\Owner\ReportController::class, 'stock'])->name('stock');
+        Route::get('/stock-rolls', [\App\Http\Controllers\Owner\ReportController::class, 'stockRolls'])->name('report.stock.rolls');
+        Route::get('/stock-rolls/tracking', [\App\Http\Controllers\Owner\ReportController::class, 'stockRollTracking'])->name('report.stock.rolls.tracking');
+        Route::get('/stock/roll-details', [\App\Http\Controllers\Owner\ReportController::class, 'stockRollDetails'])->name('stock.roll.details');
+        Route::get('/ready-stock', [\App\Http\Controllers\Owner\InventoryController::class, 'index'])->name('ready-stock.index');
+        Route::get('/ready-stock/list', [\App\Http\Controllers\Owner\InventoryController::class, 'indexList'])->name('ready-stock.list');
 
         Route::prefix('order-summary')->name('order-summary.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'orderSummary'])->name('index');
@@ -144,9 +151,9 @@ Route::prefix('owner')->name('owner.')->group(function () {
             Route::get('/pdf', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'orderSummaryPdf'])->name('pdf');
         });
 
-        Route::prefix('payment-dashboard')->name('payment-dashboard.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Owner\OwnerPaymentDashboardController::class, 'index'])->name('index');
-            Route::get('/data', [\App\Http\Controllers\Owner\OwnerPaymentDashboardController::class, 'getData'])->name('data');
+        Route::prefix('payment-adjustment')->name('payment-adjustment.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Owner\PaymentAdjustmentController::class, 'index'])->name('index');
+            Route::get('/show/{batchId}', [\App\Http\Controllers\Owner\PaymentAdjustmentController::class, 'show'])->name('show');
         });
 
         Route::get('/pending-payments', [\App\Http\Controllers\Admin\Payment\PendingPaymentController::class, 'index'])->name('payment.pending.index');

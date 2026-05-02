@@ -76,6 +76,14 @@ class ReportController extends Controller
             $query->where('roll_number', 'LIKE', '%' . $request->roll_no . '%');
         }
 
+        if ($request->filled('qty_from')) {
+            $query->where('remaining_quantity', '>=', $request->qty_from);
+        }
+
+        if ($request->filled('qty_to')) {
+            $query->where('remaining_quantity', '<=', $request->qty_to);
+        }
+
         $rolls = $query->paginate(30)->withQueryString();
         $warehouses = $this->service->warehouses();
         $fabrics = $this->service->fabrics();

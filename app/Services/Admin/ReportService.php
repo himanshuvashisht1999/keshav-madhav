@@ -387,6 +387,12 @@ class ReportService
                 })
                 ->groupBy('fabrics.id', 'fabrics.name', 'vendors.name')
                 ->having('total_received', '>', 0)
+                ->when($request->filled('qty_from'), function ($q) use ($request) {
+                    $q->having('total_remaining', '>=', $request->qty_from);
+                })
+                ->when($request->filled('qty_to'), function ($q) use ($request) {
+                    $q->having('total_remaining', '<=', $request->qty_to);
+                })
                 ->when($request->filled('search'), function ($q) use ($request) {
                     $q->where('fabrics.name', 'LIKE', '%' . $request->search . '%');
                 })
@@ -412,7 +418,13 @@ class ReportService
                 ])
                 ->with('master_fabric_warehouse:id,cutting_master_name')
                 ->where('fabric_id', $fabricId)
-                ->groupBy('master_fabric_warehouse_id');
+                ->groupBy('master_fabric_warehouse_id')
+                ->when($request->filled('qty_from'), function ($q) use ($request) {
+                    $q->having('total_remaining', '>=', $request->qty_from);
+                })
+                ->when($request->filled('qty_to'), function ($q) use ($request) {
+                    $q->having('total_remaining', '<=', $request->qty_to);
+                });
 
             return [
                 'level' => 'warehouses',
@@ -429,6 +441,12 @@ class ReportService
                 ->where('fabric_id', $fabricId)
                 ->when($warehouseId, function ($q) use ($warehouseId) {
                     $q->where('master_fabric_warehouse_id', $warehouseId);
+                })
+                ->when($request->filled('qty_from'), function ($q) use ($request) {
+                    $q->where('remaining_quantity', '>=', $request->qty_from);
+                })
+                ->when($request->filled('qty_to'), function ($q) use ($request) {
+                    $q->where('remaining_quantity', '<=', $request->qty_to);
                 })
                 ->orderBy('created_at', 'desc');
 

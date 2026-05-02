@@ -105,12 +105,6 @@ class OwnerAuthController extends Controller
         );
     }
 
-    public function lots(Request $request)
-    {
-        $data['lots'] = $this->reportService->orderLotsDetailed($request);
-        $data['lotNos'] = $this->reportService->lot_numbers();
-        return view('owner.reports.lots', $data);
-    }
 
     public function logout()
     {
@@ -193,28 +187,5 @@ class OwnerAuthController extends Controller
         return $pdf->download('order-summary.pdf');
     }
 
-    public function lotDetails(Request $request)
-    {
-        $response['data'] = $this->reportService->lotDetails($request->lot_no);
-        $response['master_stages'] = $this->reportService->master_stages();
 
-        if (!$response['data']) {
-            return redirect()->back()->with('error', 'Lot not found');
-        }
-
-        return view('owner.reports.lot_details', $response);
-    }
-
-    public function lotDetailsPdf(Request $request)
-    {
-        $response['data'] = $this->reportService->lotDetails($request->lot_no);
-        $response['master_stages'] = $this->reportService->master_stages();
-
-        if (!$response['data']) {
-            return redirect()->back()->with('error', 'Lot not found');
-        }
-
-        $pdf = PDF::loadView('owner.reports.lot_details_pdf', $response)->setPaper('A4', 'portrait');
-        return $pdf->download('lot-details-' . $request->lot_no . '.pdf');
-    }
 }

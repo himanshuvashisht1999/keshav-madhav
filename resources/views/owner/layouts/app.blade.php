@@ -195,10 +195,10 @@
                 <i class="fas fa-layer-group"></i>
                 <span>Lots</span>
             </a>
-            <a href="{{ route('owner.payment-dashboard.index') }}"
-                class="nav-link-mobile {{ request()->routeIs('owner.payment-dashboard.*') ? 'active' : '' }}">
-                <i class="fas fa-chart-line"></i>
-                <span>Analytics</span>
+            <a href="{{ route('owner.payment-adjustment.index') }}"
+                class="nav-link-mobile {{ request()->routeIs('owner.payment-adjustment.*') ? 'active' : '' }}">
+                <i class="fas fa-balance-scale"></i>
+                <span>Adjust</span>
             </a>
         </nav>
 
