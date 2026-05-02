@@ -89,7 +89,7 @@ class FabricReceiptService
                         $po_item->fabric_sku = $fabric->sku;
                         $po_item->fabric_id = $fabric->id;
                         $po_item->meter = $fab_info['meter'];
-                        $po_item->remaining_quantity = 0; // Fully received
+                        $po_item->remaining_quantity = $fab_info['meter']; // Will be reduced in the loop below
                         $po_item->price = $fab_info['price'];
                         $po_item->total_price = $fab_info['meter'] * $fab_info['price'];
                         $po_item->status = 1; // Mark as active
@@ -170,7 +170,7 @@ class FabricReceiptService
 
                         if ($po_item) {
                             $po_item_id = $po_item->id;
-                            $po_item->update(['status' => 1, 'remaining_quantity' => $po_item->remaining_quantity - $meter]); // Keep as active/received
+                            $po_item->update(['status' => 1, 'remaining_quantity' => max(0, $po_item->remaining_quantity - $meter)]); // Keep as active/received
                         }
                     }
 
