@@ -301,6 +301,33 @@ class ReportController extends Controller
         return view('admin.report.purchase_order', $response);
     }
 
+    public function purchaseOrderFabricWise(Request $request)
+    {
+        $fabricId = $request->fabric_id;
+
+        if ($fabricId) {
+            $fabric = \App\Models\Fabric::findOrFail($fabricId);
+            $history = $this->service->purchaseOrderFabricWise($request);
+            $vendors = $this->service->vendors();
+            $filters = $request->all();
+            return view('admin.report.purchase_order_fabric_wise_details', compact('fabric', 'history', 'vendors', 'filters'));
+        }
+
+        $response['data'] = $this->service->purchaseOrderFabricWise($request);
+        $response['filters'] = $request->all();
+        return view('admin.report.purchase_order_fabric_wise', $response);
+    }
+
+    public function purchaseOrderFabricWiseShipments(Request $request)
+    {
+        $fabricId = $request->fabric_id;
+        $fabric = \App\Models\Fabric::findOrFail($fabricId);
+        $shipments = $this->service->purchaseOrderFabricWiseShipments($request);
+        $vendors = $this->service->vendors();
+        $filters = $request->all();
+        return view('admin.report.purchase_order_fabric_wise_shipments', compact('fabric', 'shipments', 'vendors', 'filters'));
+    }
+
     public function purchaseOrderItemDetails(Request $request)
     {
         return $this->service->purchaseOrderItemReceipts(

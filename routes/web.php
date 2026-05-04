@@ -1052,6 +1052,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/fabric-return', [AdminReportController::class, 'fabricReturn'])->name('fabric_return');
             Route::get('/fabric-return/view/{id}', [AdminReportController::class, 'fabricReturnView'])->name('fabric_return_view');
             Route::get('/purchase-order', [AdminReportController::class, 'purchaseOrder'])->name('purchase_order');
+            Route::get('/purchase-order-fabric-wise', [AdminReportController::class, 'purchaseOrderFabricWise'])->name('purchase_order_fabric_wise');
+            Route::get('/purchase-order-fabric-wise-shipments', [AdminReportController::class, 'purchaseOrderFabricWiseShipments'])->name('purchase_order_fabric_wise_shipments');
             Route::get('/purchase-order/item-details', [AdminReportController::class, 'purchaseOrderItemDetails'])->name('purchase_order.item.details');
 
             // Order Summary Report

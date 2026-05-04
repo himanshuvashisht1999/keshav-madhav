@@ -628,9 +628,16 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
 
                                 <li class="nav-item">
                                     <a href="{{ route('admin.report.purchase_order') }}"
-                                        class="{{ str_contains(strtolower($page_url), 'admin/report/purchase-order') ? 'nav-link active' : 'nav-link' }}">
+                                        class="{{ str_contains(strtolower($page_url), 'admin/report/purchase-order') && !str_contains(strtolower($page_url), 'fabric-wise') ? 'nav-link active' : 'nav-link' }}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Purchase Order</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.report.purchase_order_fabric_wise') }}"
+                                        class="{{ str_contains(strtolower($page_url), 'admin/report/purchase-order-fabric-wise') ? 'nav-link active' : 'nav-link' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Purchase Order (Fabric Wise)</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">

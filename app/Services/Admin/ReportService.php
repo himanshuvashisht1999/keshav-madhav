@@ -782,6 +782,74 @@ class ReportService
 
 
 
+    public function purchaseOrderFabricWise(Request $request)
+    {
+        $fabricId = $request->fabric_id;
+
+        if ($fabricId) {
+            // Case 2: History for a specific fabric
+            return \App\Models\PurchaseOrderItem::with(['purchaseOrder.vendor', 'fabric'])
+                ->where('fabric_id', $fabricId)
+                ->when($request->filled('start_date'), function ($q) use ($request) {
+                    $q->whereHas('purchaseOrder', function($po) use ($request) {
+                        $po->whereDate('date', '>=', $request->start_date);
+                    });
+                })
+                ->when($request->filled('end_date'), function ($q) use ($request) {
+                    $q->whereHas('purchaseOrder', function($po) use ($request) {
+                        $po->whereDate('date', '<=', $request->end_date);
+                    });
+                })
+                ->when($request->filled('vendor_id'), function ($q) use ($request) {
+                    $q->whereHas('purchaseOrder', function($po) use ($request) {
+                        $po->where('vendor_id', $request->vendor_id);
+                    });
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
+        // Case 1: List of fabrics with purchase summary
+        $query = \App\Models\Fabric::query()
+            ->select([
+                'fabrics.id',
+                'fabrics.name',
+                \DB::raw('COUNT(purchase_order_items.id) as total_purchase_orders'),
+                \DB::raw('SUM(purchase_order_items.meter) as total_meters'),
+                \DB::raw('AVG(purchase_order_items.price) as avg_rate')
+            ])
+            ->join('purchase_order_items', 'fabrics.id', '=', 'purchase_order_items.fabric_id')
+            ->groupBy('fabrics.id', 'fabrics.name')
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $q->where('fabrics.name', 'LIKE', '%' . $request->search . '%');
+            })
+            ->orderBy('fabrics.name');
+
+        return $query->paginate(20)->withQueryString();
+    }
+
+    public function purchaseOrderFabricWiseShipments(Request $request)
+    {
+        $fabricId = $request->fabric_id;
+
+        return \App\Models\FabricReceiptDetail::with(['purchase_order', 'master_fabric_warehouse', 'fabric', 'fabric_receipt.vendor'])
+            ->where('fabric_id', $fabricId)
+            ->where('status', 2) // Received/Adjusted
+            ->when($request->filled('start_date'), function ($q) use ($request) {
+                $q->whereDate('created_at', '>=', $request->start_date);
+            })
+            ->when($request->filled('end_date'), function ($q) use ($request) {
+                $q->whereDate('created_at', '<=', $request->end_date);
+            })
+            ->when($request->filled('vendor_id'), function ($q) use ($request) {
+                $q->whereHas('fabric_receipt', function($r) use ($request) {
+                    $r->where('vendor_id', $request->vendor_id);
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
     public function warehouses()
     {
         $warehouses = MasterFabricWarehouse::orderBy('cutting_master_name')->get();
@@ -837,6 +905,8 @@ class ReportService
                 'barcode',
                 'qrcode_number',
                 'master_fabric_warehouse_id',
+                'price_per_meter',
+                'shipment_number',
                 'created_at'
             ]);
     }
