@@ -147,10 +147,10 @@
 
                                         @php
                                             $totalOrdered = $po->items->sum('meter');
-                                            $totalRemaining = $po->items->sum(function($item) {
-                                                return max(0, $item->remaining_quantity);
+                                            $totalReceived = $po->items->sum(function($item) {
+                                                return $item->receipts->sum('meter');
                                             });
-                                            $totalReceived = $totalOrdered - $totalRemaining;
+                                            $totalRemaining = max(0, $totalOrdered - $totalReceived);
 
                                             $isDelayed = $totalRemaining > 0 && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($po->delivery_date));
                                         @endphp

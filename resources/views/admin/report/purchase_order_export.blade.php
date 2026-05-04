@@ -30,8 +30,10 @@
             @foreach($po->items as $item)
 
                 @php
-                    $receivedQty = $item->meter - $item->remaining_quantity;
-                    $rows = $receipts[$item->id] ?? collect();
+                    $itemReceipts = $receipts->get($item->id, collect());
+                    $actualReceived = $itemReceipts->sum('meter');
+                    $actualRemaining = max(0, $item->meter - $actualReceived);
+                    $rows = $itemReceipts;
                 @endphp
 
                 @foreach($rows as $receipt)
@@ -42,8 +44,8 @@
                         <td>{{ $item->fabric_sku }}</td>
 
                         <td>{{ number_format($item->meter,2) }}</td>
-                        <td>{{ number_format($receivedQty,2) }}</td>
-                        <td>{{ number_format($item->remaining_quantity,2) }}</td>
+                        <td>{{ number_format($actualReceived,2) }}</td>
+                        <td>{{ number_format($actualRemaining,2) }}</td>
 
                         <td>{{ \Carbon\Carbon::parse($receipt->created_at)->format('d M Y') }}</td>
                         <td>{{ $receipt->master_fabric_warehouse?->cutting_master_name }}</td>

@@ -34,5 +34,10 @@ class PurchaseOrderItem extends Model
     {
         return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id', 'id');
     }
+
+    public function receipts()
+    {
+        return $this->hasMany(FabricReceiptDetail::class, 'purchase_order_item_id', 'id');
+    }
     
 }

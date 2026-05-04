@@ -801,7 +801,7 @@ class ReportService
     {
         $query = PurchaseOrder::with([
             'vendor',
-            'items'
+            'items.receipts'
         ])
             ->when($request->filled('sku'), function ($q) use ($request) {
                 $q->where('sku', 'like', '%' . $request->sku . '%');
