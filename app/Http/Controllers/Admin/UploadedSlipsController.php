@@ -347,6 +347,33 @@ class UploadedSlipsController extends Controller
 
         $data['orderProductSet'] = $orderSet;
 
+        // Collect all unique sizes from all types of transactions
+        $all_sizes_collector = collect();
+
+        // 1. From Rolls (Type 1)
+        foreach ($data['rolls'] as $roll) {
+            foreach ($roll->fabricRollAssigningsDetail as $det) {
+                $all_sizes_collector->push($det->size);
+            }
+        }
+
+        // 2. From Printings (Type 2)
+        foreach ($data['printings'] as $pr) {
+            foreach ($pr->details as $det) {
+                $all_sizes_collector->push($det->size);
+            }
+        }
+
+        // 3. From Stage Transactions (Type 3)
+        foreach ($data['stage_transactions'] as $st) {
+            foreach ($st->details as $det) {
+                $all_sizes_collector->push($det->size);
+            }
+        }
+
+        // Sort sizes if possible (numeric vs labels)
+        $data['all_sizes'] = $all_sizes_collector->unique()->filter()->values();
+
         // Robust Size Set Info Calculation
         $sizes = [];
         $pcs_in_set = '-';

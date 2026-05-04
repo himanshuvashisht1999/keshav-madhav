@@ -270,7 +270,13 @@
             foreach($printings as $p) { foreach($p->details as $rs) { $all_sizes[] = $rs->size; } }
             foreach($stage_transactions as $st) { foreach($st->details as $rs) { $all_sizes[] = $rs->size; } }
             $all_sizes = array_unique(array_filter($all_sizes));
-            $actual_range = count($all_sizes) > 0 ? min($all_sizes) . '-' . max($all_sizes) : '-';
+            if (count($all_sizes) > 0) {
+                natsort($all_sizes);
+                $all_sizes = array_values($all_sizes);
+                $actual_range = $all_sizes[0] . '-' . $all_sizes[count($all_sizes)-1];
+            } else {
+                $actual_range = '-';
+            }
         @endphp
 
         {{-- ================= SLIP SUMMARY ================= --}}
@@ -305,7 +311,13 @@
             foreach($printings as $p) { foreach($p->details as $rs) { $all_sizes[] = $rs->size; } }
             foreach($stage_transactions as $st) { foreach($st->details as $rs) { $all_sizes[] = $rs->size; } }
             $all_sizes = array_unique(array_filter($all_sizes));
-            $actual_range = count($all_sizes) > 0 ? min($all_sizes) . '-' . max($all_sizes) : '-';
+            if (count($all_sizes) > 0) {
+                natsort($all_sizes);
+                $all_sizes = array_values($all_sizes);
+                $actual_range = $all_sizes[0] . '-' . $all_sizes[count($all_sizes)-1];
+            } else {
+                $actual_range = '-';
+            }
         @endphp
 
         {{-- =====================================================
