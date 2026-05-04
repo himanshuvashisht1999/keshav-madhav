@@ -1079,6 +1079,14 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             });
         });
 
+        // Ledger Reports
+        Route::prefix('/ledger')->name('ledger.')->group(function () {
+            Route::prefix('/fabric')->name('fabric.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Admin\Ledger\FabricLedgerController::class, 'index'])->name('index');
+                Route::get('/show/{id}', [App\Http\Controllers\Admin\Ledger\FabricLedgerController::class, 'show'])->name('show');
+            });
+        });
+
         Route::prefix('/reports')->name('reports.')->group(function () {
             Route::get('/fabric-receipt', [AdminReportController::class, 'fabricReceipt'])->name('fabricReceipt');
             Route::get('/fabric-receipt-list', [AdminReportController::class, 'fabricReceiptList'])->name('fabricReceiptList');

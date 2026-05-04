@@ -729,6 +729,28 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                             </ul>
                         </li>
                     @endcan
+
+                    @can('manage-ledger')
+                        <li class="{{ (str_contains($page_url, 'admin/ledger')) ? 'nav-item menu-open' : 'nav-item' }}">
+                            <a href="#"
+                                class="{{ (str_contains($page_url, 'admin/ledger')) ? 'nav-link active' : 'nav-link' }} border_class">
+                                <i class="nav-icon fas fa-book"></i>
+                                <p>
+                                    LEDGER
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.ledger.fabric.index') }}"
+                                        class="{{ str_contains(strtolower($page_url), 'admin/ledger/fabric') ? 'nav-link active' : 'nav-link' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Fabric Ledger</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    @endcan
                     {{-- <li
                         class="{{ (str_contains($page_url, 'admin/order_digitalization') || str_contains($page_url, 'admin/order_digitalization/create-slips-production')) ? 'nav-item menu-open' : 'nav-item' }} ">
                         <a href="#"

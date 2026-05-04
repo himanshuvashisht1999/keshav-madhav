@@ -834,7 +834,7 @@ class ReportService
 
         return \App\Models\FabricReceiptDetail::with(['purchase_order', 'master_fabric_warehouse', 'fabric', 'fabric_receipt.vendor'])
             ->where('fabric_id', $fabricId)
-            ->where('status', 2) // Received/Adjusted
+            ->where('status', '>', 0) // Arrived (1) or Received (2)
             ->when($request->filled('start_date'), function ($q) use ($request) {
                 $q->whereDate('created_at', '>=', $request->start_date);
             })
@@ -896,7 +896,7 @@ class ReportService
     {
         return FabricReceiptDetail::with('master_fabric_warehouse')
             ->where('purchase_order_item_id', $poItemId)
-            ->where('status', 2) // adjusted
+            ->where('status', '>', 0) // Arrived or Received
             ->orderBy('id', 'asc')
             ->get([
                 'id',

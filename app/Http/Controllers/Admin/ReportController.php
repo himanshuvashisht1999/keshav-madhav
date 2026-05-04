@@ -118,6 +118,13 @@ class ReportController extends Controller
           ->orderBy('created_at', 'desc')
           ->get();
 
+        $returns = \App\Models\FabricReturnDetail::whereHas('receipt_detail', function($q) use ($rollNo) {
+            $q->where('roll_number', $rollNo);
+        })->where('fabric_id', $fabricId)
+          ->with(['fabric_return.receipt.vendor'])
+          ->orderBy('created_at', 'desc')
+          ->get();
+
         $rollLedger = collect();
 
         foreach ($shipping as $s) {
@@ -153,6 +160,18 @@ class ReportController extends Controller
                 'details' => 'Party: ' . $partyName . ' | Price: ' . number_format($a->selling_price, 2),
                 'order_no' => $a->order?->sku ?? ('PO-' . $a->agent_order_id),
                 'lot_no' => 'Agent Order',
+            ]);
+        }
+
+        foreach ($returns as $r) {
+            $vendorName = $r->fabric_return?->receipt?->vendor?->name ?? 'Vendor';
+            $rollLedger->push((object)[
+                'date' => $r->created_at,
+                'type' => 'Return to Vendor',
+                'qty' => -$r->return_meter,
+                'details' => 'Supplier: ' . $vendorName . ' | Return Remarks: ' . ($r->fabric_return?->remarks ?? 'N/A'),
+                'order_no' => $r->fabric_return?->return_number ?? '-',
+                'lot_no' => 'Return',
             ]);
         }
 
