@@ -194,6 +194,7 @@ Route::prefix('agent')->group(function () {
         Route::put('orders/{id}', [App\Http\Controllers\SalesAgent\OrderController::class, 'update'])->name('agent.orders.update');
 
         Route::get('orders', [App\Http\Controllers\SalesAgent\OrderController::class, 'myOrders'])->name('agent.orders.index');
+        Route::get('orders/get-variation-by-barcode', [App\Http\Controllers\SalesAgent\OrderController::class, 'getVariationByBarcode'])->name('agent.orders.get-variation-by-barcode');
         Route::get('orders/{id}', [App\Http\Controllers\SalesAgent\OrderController::class, 'orderDetails'])->name('agent.orders.show');
         Route::get('orders/{id}/invoice', [App\Http\Controllers\SalesAgent\OrderController::class, 'downloadInvoice'])->name('agent.orders.invoice');
     });

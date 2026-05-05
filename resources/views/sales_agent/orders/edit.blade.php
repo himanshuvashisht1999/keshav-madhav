@@ -12,6 +12,10 @@
                         <small class="text-muted"><i class="fas fa-store mr-1"></i> {{ $shop->name }}</small>
                     </div>
                     <div class="d-flex align-items-center">
+                        <button class="btn btn-primary btn-sm rounded-circle mr-2 shadow-sm" id="btnScanQR"
+                            style="width: 40px; height: 40px;">
+                            <i class="fas fa-qrcode"></i>
+                        </button>
                         <button class="btn btn-light btn-sm rounded-circle mr-2" id="toggleFilters"
                             style="width: 36px; height: 36px;">
                             <i class="fas fa-filter text-primary"></i>
@@ -200,6 +204,62 @@
         </div>
     </div>
 
+    <!-- Scanner Modal -->
+    <div class="modal fade" id="scannerModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title font-weight-bold text-muted uppercase tracking-wider mx-auto">Scan Product Barcode</h6>
+                    <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="reader" style="width: 100%; border-radius: 15px; overflow: hidden; background: #000;"></div>
+                    <div class="mt-3 text-center">
+                        <p class="small text-muted mb-2">Scan the 'Fair Product' barcode to select colors</p>
+                        <div class="input-group input-group-sm rounded-pill bg-light px-2" style="border: 1px solid #eee;">
+                            <input type="text" id="manual_barcode" class="form-control border-0 bg-transparent" placeholder="Enter barcode manually...">
+                            <div class="input-group-append">
+                                <button class="btn btn-link text-primary font-weight-bold" id="btnManualSubmit">Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan Selection Modal -->
+    <div class="modal fade bottom-drawer" id="scanSelectionModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0" style="border-radius: 20px 20px 0 0;">
+                <div class="modal-header border-0 bg-white pb-0" style="border-radius: 20px 20px 0 0;">
+                    <h6 class="modal-title font-weight-bold text-dark mx-auto text-uppercase tracking-wider">Select Color & Quantity</h6>
+                    <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body bg-white pt-2">
+                    <div id="scanProductHeader" class="mb-3 p-3 bg-light rounded-lg">
+                        <h6 id="scanProductName" class="font-weight-bold text-dark mb-1">Product Name</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge badge-primary" id="scanDesignNo">Design No</span>
+                            <span class="small text-muted font-weight-bold" id="scanSizeSet">Size Set</span>
+                        </div>
+                    </div>
+
+                    <div id="colorSelectionList" class="pb-3">
+                        <!-- Colors will be injected here -->
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-white shadow-lg">
+                    <button type="button" class="btn btn-primary btn-block btn-lg rounded-xl font-weight-bold" data-dismiss="modal">Apply Selections</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <style>
         .bg-primary-soft {
             background-color: rgba(0, 123, 255, 0.1);
@@ -292,6 +352,7 @@
 @endsection
 
 @push('scripts')
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
         $(document).ready(function () {
             if ($.fn.select2) {
@@ -312,6 +373,178 @@
                     pcs_per_box: parseFloat(item.pcs_per_box),
                     unit_price: parseFloat(item.unit_price)
                 });
+            });
+
+            // --- SCANNER LOGIC ---
+            let html5QrcodeScanner = null;
+
+            $('#btnScanQR').click(function() {
+                $('#scannerModal').modal('show');
+            });
+
+            $('#scannerModal').on('shown.bs.modal', function () {
+                startScanner();
+            });
+
+            $('#scannerModal').on('hidden.bs.modal', function () {
+                stopScanner();
+            });
+
+            function startScanner() {
+                if (html5QrcodeScanner) return;
+                
+                html5QrcodeScanner = new Html5Qrcode("reader");
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+                html5QrcodeScanner.start(
+                    { facingMode: "environment" }, 
+                    config, 
+                    onScanSuccess
+                ).catch(err => {
+                    console.error("Scanner error:", err);
+                    Swal.fire('Camera Error', 'Could not start camera scanner. Please ensure you have given camera permissions.', 'error');
+                });
+            }
+
+            function stopScanner() {
+                if (html5QrcodeScanner) {
+                    html5QrcodeScanner.stop().then(() => {
+                        html5QrcodeScanner = null;
+                    }).catch(err => console.error(err));
+                }
+            }
+
+            function onScanSuccess(decodedText) {
+                stopScanner();
+                $('#scannerModal').modal('hide');
+                handleBarcode(decodedText);
+            }
+
+            $('#btnManualSubmit').click(function() {
+                const bc = $('#manual_barcode').val().trim();
+                if (bc) {
+                    $('#scannerModal').modal('hide');
+                    handleBarcode(bc);
+                }
+            });
+
+            function handleBarcode(barcode) {
+                // If the barcode is a URL, extract the last segment (the actual barcode)
+                if (barcode.includes('/fc/')) {
+                    const parts = barcode.split('/');
+                    barcode = parts[parts.length - 1];
+                } else if (barcode.startsWith('http')) {
+                    // Fallback for any other URL format
+                    const parts = barcode.split('/');
+                    barcode = parts[parts.length - 1];
+                }
+
+                Swal.fire({
+                    title: 'Processing...',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                $.ajax({
+                    url: "{{ route('agent.orders.get-variation-by-barcode') }}",
+                    data: { barcode: barcode },
+                    success: function(res) {
+                        Swal.close();
+                        if (res.success) {
+                            showColorSelection(res);
+                        } else {
+                            Swal.fire('Error', res.message, 'error');
+                        }
+                    },
+                    error: function() {
+                        Swal.close();
+                        Swal.fire('Error', 'Failed to fetch product details.', 'error');
+                    }
+                });
+            }
+
+            function showColorSelection(data) {
+                $('#scanProductName').text(data.product.name);
+                $('#scanDesignNo').text(data.product.design_number);
+                $('#scanSizeSet').text(data.product.size_set_name);
+
+                const list = $('#colorSelectionList');
+                list.empty();
+
+                data.colors.forEach(color => {
+                    const vKey = data.product.id + '_' + color.id + '_' + data.product.size_set_id;
+                    const item = cart.get(vKey);
+                    const currentQty = item ? item.qty : 0;
+
+                    const html = `
+                        <div class="card border-0 shadow-sm mb-2 rounded-lg" data-key="${vKey}">
+                            <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="font-weight-bold text-dark mb-0">${color.name}</h6>
+                                    <small class="text-muted">${color.available_boxes} Boxes available</small>
+                                </div>
+                                <div class="quantity-control-app d-flex align-items-center p-1">
+                                    <button class="btn-q btn-minus-scan" data-key="${vKey}">-</button>
+                                    <input type="number" class="box-qty-scan-input" 
+                                        data-product-id="${data.product.id}"
+                                        data-color-id="${color.id}"
+                                        data-size-set-id="${data.product.size_set_id}"
+                                        data-pcs="${color.pcs_per_box}"
+                                        data-price="${data.product.unit_price}"
+                                        max="${color.available_boxes}"
+                                        value="${currentQty}">
+                                    <button class="btn-q btn-plus-scan" data-key="${vKey}">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    list.append(html);
+                });
+
+                $('#scanSelectionModal').modal('show');
+            }
+
+            $(document).on('click', '.btn-plus-scan', function() {
+                const input = $(this).closest('.quantity-control-app').find('.box-qty-scan-input');
+                const max = parseInt(input.attr('max'));
+                let val = parseInt(input.val()) || 0;
+                if (val < max) {
+                    val++;
+                    input.val(val).trigger('change');
+                }
+            });
+
+            $(document).on('click', '.btn-minus-scan', function() {
+                const input = $(this).closest('.quantity-control-app').find('.box-qty-scan-input');
+                let val = parseInt(input.val()) || 0;
+                if (val > 0) {
+                    val--;
+                    input.val(val).trigger('change');
+                }
+            });
+
+            $(document).on('change', '.box-qty-scan-input', function() {
+                const key = $(this).closest('.card').data('key');
+                let qty = parseInt($(this).val()) || 0;
+                const max = parseInt($(this).attr('max'));
+                
+                if (qty < 0) qty = 0;
+                if (qty > max) qty = max;
+                $(this).val(qty);
+
+                if (qty > 0) {
+                    cart.set(key, {
+                        product_id: $(this).data('product-id'),
+                        color_id: $(this).data('color-id'),
+                        size_set_id: $(this).data('size-set-id'),
+                        qty: qty,
+                        pcs_per_box: parseFloat($(this).data('pcs')),
+                        unit_price: parseFloat($(this).data('price'))
+                    });
+                } else {
+                    cart.delete(key);
+                }
+                updateUI();
             });
 
             $('#toggleFilters').click(function () {
@@ -384,8 +617,6 @@
                 if (!$('#gstAmountInput').is(':focus') && !isManualGst && taxableAmount > 0) {
                     gstAmount = taxableAmount * (defaultGstPercent / 100);
                     $('#gstAmountInput').val(gstAmount.toFixed(2));
-                } else {
-                    gstAmount = parseFloat($('#gstAmountInput').val()) || 0;
                 }
 
                 const grandTotal = taxableAmount + gstAmount + otherCharges;
@@ -433,8 +664,16 @@
                         pcs_per_box: parseFloat(card.data('pcs')),
                         unit_price: parseFloat(card.data('price'))
                     });
+
+                    // Move to top
+                    const row = card.closest('.variation-row-container');
+                    if (!row.hasClass('has-qty-top')) {
+                        row.addClass('has-qty-top').prependTo('#variation-container');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
                 } else {
                     cart.delete(key);
+                    card.closest('.variation-row-container').removeClass('has-qty-top');
                 }
                 updateUI();
             });

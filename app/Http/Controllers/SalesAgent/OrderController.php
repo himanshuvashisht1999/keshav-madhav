@@ -12,6 +12,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\FairProduct;
+use App\Models\ProductionGoods;
+use App\Models\MasterColor;
 
 class OrderController extends Controller
 {
@@ -818,5 +821,89 @@ class OrderController extends Controller
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download('Invoice-ORD-' . $id . '.pdf');
+    }
+
+    public function getVariationByBarcode(Request $request)
+    {
+        try {
+            $barcode = $request->get('barcode');
+            if (!$barcode) return response()->json(['success' => false, 'message' => 'No barcode provided.']);
+
+            // Format: FAIR-{{ productId }}-{{ sizeSetId }}-{{ timestamp }}{{ rand }}
+            if (strpos($barcode, 'FAIR-') === 0) {
+                $parts = explode('-', $barcode);
+                if (count($parts) < 3) return response()->json(['success' => false, 'message' => 'Invalid Fair barcode format.']);
+                
+                $productId = $parts[1];
+                $sizeSetId = $parts[2];
+                
+                \Log::info("Scanning Fair Barcode", ['barcode' => $barcode, 'productId' => $productId, 'sizeSetId' => $sizeSetId]);
+
+                $fairProduct = \App\Models\FairProduct::where('barcode', $barcode)->first();
+                
+                $product = \App\Models\ProductionGoods::with(['series', 'variants' => function($q) use ($sizeSetId) {
+                    $q->where('master_size_measurement_id', $sizeSetId);
+                }])->find($productId);
+
+                if (!$product) {
+                    \Log::error("Product not found for Fair barcode", ['productId' => $productId]);
+                    return response()->json(['success' => false, 'message' => 'Product not found.']);
+                }
+
+                // Get available colors from DomesticInventory
+                $availableColors = \App\Models\DomesticInventory::where('product_id', $productId)
+                    ->where('size_set_id', $sizeSetId)
+                    ->where('domestic_inventories.status', 1)
+                    ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
+                    ->select('master_colors.id', 'master_colors.name', DB::raw('SUM(domestic_inventories.total_boxes) as available_boxes'), DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'))
+                    ->groupBy('master_colors.id', 'master_colors.name')
+                    ->get();
+
+                // Discount: Prioritize FairProduct discount if found
+                if ($fairProduct) {
+                    $discount_percentage = $fairProduct->discount_percent;
+                } else {
+                    $agent_id = Auth::guard('sales_agent')->id();
+                    $discount_percentage = DB::table('sales_agent_brand_discounts')
+                        ->where('sales_agent_id', $agent_id)
+                        ->where('brand_id', $product->brand_id)
+                        ->value('discount_percentage') ?? 0;
+                }
+
+                $variant = $product->variants->first();
+                if (!$variant) {
+                    \Log::warning("No variant found for product and size set", ['productId' => $productId, 'sizeSetId' => $sizeSetId]);
+                    // Try to get any variant to at least show a price
+                    $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $productId)->first();
+                }
+
+                $mrp = $variant->mrp ?? 0;
+                $unit_price = $mrp - ($mrp * $discount_percentage / 100);
+
+                return response()->json([
+                    'success' => true,
+                    'product' => [
+                        'id' => $product->id,
+                        'name' => trim(($product->series->name ?? '') . ' ' . $product->name_of_garment),
+                        'design_number' => $product->design_number,
+                        'size_set_id' => (int)$sizeSetId,
+                        'size_set_name' => DB::table('master_size_measurements')->where('id', $sizeSetId)->value('name'),
+                        'mrp' => $mrp,
+                        'unit_price' => $unit_price,
+                    ],
+                    'colors' => $availableColors
+                ]);
+            }
+
+            return response()->json(['success' => false, 'message' => 'Barcode type not recognized.']);
+        } catch (\Exception $e) {
+            \Log::error("Error in getVariationByBarcode", [
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+                'barcode' => $request->get('barcode')
+            ]);
+            return response()->json(['success' => false, 'message' => 'Internal server error while fetching details.']);
+        }
     }
 }
