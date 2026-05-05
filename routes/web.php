@@ -104,6 +104,7 @@ Route::get('/', [AdminLoginController::class, 'login'])->name('web.homepage');
 Route::get('/upload-production-slip/{encryptedId}', [AdminLoginController::class, 'uploadProductionSlip'])->name('uploadProductionSlip');
 Route::post('/submit-production-slip', [AdminLoginController::class, 'submitProductionSlip'])->name('submitProductionSlip');
 Route::get('/sc/{barcode}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'showColorChart'])->name('sample-product.color-chart');
+Route::get('/fc/{barcode}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'showColorChart'])->name('fair-product.color-chart');
 
 Route::get('/scan', [AdminFabricReceiptController::class, 'scan'])->name('scan');
 
@@ -772,6 +773,18 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::put('/update/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'update'])->name('update');
                 Route::get('/generate-pdf-batch/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'generatePdfFromBatch'])->name('generate-pdf-batch');
                 Route::delete('/destroy/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'destroy'])->name('destroy');
+            });
+
+            // Fair Product Routes
+            Route::prefix('/fair-product')->name('fair-product.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'create'])->name('create');
+                Route::get('/get-products', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'getProducts'])->name('get-products');
+                Route::post('/store', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'store'])->name('store');
+                Route::get('/edit/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'edit'])->name('edit');
+                Route::put('/update/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'update'])->name('update');
+                Route::get('/generate-pdf-batch/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'generatePdfFromBatch'])->name('generate-pdf-batch');
+                Route::delete('/destroy/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'destroy'])->name('destroy');
             });
             Route::prefix('/purchase-history')->name('purchase_history.')->group(function () {
                 Route::get('/', [AdminInventoryController::class, 'purchaseHistory'])->name('index');

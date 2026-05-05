@@ -109,7 +109,10 @@
                                     <div class="form-group mb-3">
                                         <label class="font-weight-bold text-muted small text-uppercase">GST Amount</label>
                                         <div class="input-group shadow-sm">
-                                            <input type="text" class="form-control bg-light" id="gst_amount_display" readonly value="{{ number_format($dispatch->gst_amount, 2) }}">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text bg-white border-right-0"><i class="fas fa-rupee-sign text-muted"></i></span>
+                                            </div>
+                                            <input type="number" step="0.01" class="form-control border-left-0" id="gst_amount_input" value="{{ round($dispatch->gst_amount, 2) }}">
                                         </div>
                                     </div>
                                 </div>
@@ -377,22 +380,49 @@
             updateUrls();
 
             // Invoice Modal Calculations
-            function calculateInvoice() {
+            function calculateInvoice(source) {
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const discountAmount = parseFloat($('#discount_amount').val()) || 0;
-                const gstPercentage = parseFloat($('#gst_percentage').val()) || 0;
-
                 const otherCharges = parseFloat($('#other_charges').val()) || 0;
-
                 const taxableAmount = totalAmount - discountAmount;
-                const gstAmount = taxableAmount * (gstPercentage / 100);
-                const grandTotal = taxableAmount + gstAmount + otherCharges;
 
-                $('#gst_amount_display').val(gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                $('#grand_total_display').text('₹' + grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                let gstPercentage = parseFloat($('#gst_percentage').val()) || 0;
+                let gstAmount = parseFloat($('#gst_amount_input').val()) || 0;
+
+                if (source === 'percentage') {
+                    gstAmount = taxableAmount * (gstPercentage / 100);
+                    $('#gst_amount_input').val(gstAmount.toFixed(2));
+                } else if (source === 'amount') {
+                    if (taxableAmount > 0) {
+                        gstPercentage = (gstAmount / taxableAmount) * 100;
+                        $('#gst_percentage').val(gstPercentage.toFixed(2));
+                    } else {
+                        $('#gst_percentage').val(0);
+                    }
+                } else {
+                    // Default/Other fields changed - update amount from percentage
+                    gstAmount = taxableAmount * (gstPercentage / 100);
+                    $('#gst_amount_input').val(gstAmount.toFixed(2));
+                }
+
+                const grandTotal = taxableAmount + gstAmount + otherCharges;
+                $('#grand_total_display').text('₹' + grandTotal.toLocaleString('en-IN', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }));
             }
 
-            $('#total_amount, #discount_amount, #gst_percentage, #other_charges').on('input', calculateInvoice);
+            $('#gst_percentage').on('input', function() {
+                calculateInvoice('percentage');
+            });
+
+            $('#gst_amount_input').on('input', function() {
+                calculateInvoice('amount');
+            });
+
+            $('#total_amount, #discount_amount, #other_charges').on('input', function() {
+                calculateInvoice('default');
+            });
 
             // Invoice Modal Submission
             $('#editInvoiceForm').on('submit', function(e) {

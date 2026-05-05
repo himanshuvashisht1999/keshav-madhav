@@ -1,444 +1,292 @@
 @extends('sales_agent.layouts.app', ['title' => 'Edit Order'])
 
 @section('content')
-    <div class="container-fluid pb-5 mb-5 mt-3">
-        <!-- Header -->
-        <div class="mb-3">
-            <a href="{{ route('agent.orders.show', $order->id) }}"
-                class="text-muted small text-decoration-none hover-primary">
-                <i class="fas fa-arrow-left mr-1"></i> Back to Order Details
-            </a>
-            <div class="bg-white p-3 rounded shadow-sm mt-2 border-left border-warning"
-                style="border-left-width: 4px !important;">
+    <div class="content-wrapper bg-light" style="min-height: 100vh; padding-bottom: 180px;">
+        <!-- Header App Bar -->
+        <div class="bg-white shadow-sm sticky-top" style="z-index: 1040;">
+            <div class="container-fluid py-2 px-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h5 class="font-weight-bold mb-0 text-dark">Edit Order #{{ $order->id }}</h5>
+                        <h5 class="mb-0 font-weight-bold text-dark" style="font-size: 1.1rem;">Edit Order #{{ $order->id }}
+                        </h5>
                         <small class="text-muted"><i class="fas fa-store mr-1"></i> {{ $shop->name }}</small>
                     </div>
-                    <div>
-                        <span class="badge badge-warning px-3 py-2">Pending</span>
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-light btn-sm rounded-circle mr-2" id="toggleFilters"
+                            style="width: 36px; height: 36px;">
+                            <i class="fas fa-filter text-primary"></i>
+                        </button>
+                        <a href="{{ route('agent.orders.show', $order->id) }}" class="btn btn-light btn-sm rounded-circle"
+                            style="width: 36px; height: 36px;">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Filters Section -->
-        <div class="card shadow-sm border-0 mb-4 bg-light">
-            <div class="card-body p-3">
+            <!-- Collapsible Filters -->
+            <div id="filterContainer" style="display: none;"
+                class="bg-white border-top animate__animated animate__fadeInDown p-3 shadow-sm">
                 <form method="GET" action="{{ route('agent.orders.edit', $order->id) }}" id="filterForm">
-                    <div class="row align-items-end">
-                        <div class="col-md-4 col-6 mb-2">
-                            <label class="small font-weight-bold text-muted mb-1">Design No</label>
+                    <div class="row">
+                        <div class="col-6 col-md-3 mb-2">
+                            <label class="small text-muted font-weight-bold uppercase mb-1">Design No</label>
                             <select name="design_number" class="form-control form-control-sm select2">
                                 <option value="">All Designs</option>
                                 @foreach($designs as $design)
                                     <option value="{{ $design }}" {{ request('design_number') == $design ? 'selected' : '' }}>
-                                        {{ $design }}
-                                    </option>
+                                        {{ $design }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4 col-6 mb-2">
-                            <label class="small font-weight-bold text-muted mb-1">Color</label>
+                        <div class="col-6 col-md-3 mb-2">
+                            <label class="small text-muted font-weight-bold uppercase mb-1">Color</label>
                             <select name="color_name" class="form-control form-control-sm select2">
                                 <option value="">All Colors</option>
                                 @foreach($colors as $color)
                                     <option value="{{ $color }}" {{ request('color_name') == $color ? 'selected' : '' }}>
-                                        {{ $color }}
-                                    </option>
+                                        {{ $color }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4 col-12 mb-2">
-                            <label class="small font-weight-bold text-muted mb-1">Size Set</label>
+                        <div class="col-12 col-md-3 mb-2">
+                            <label class="small text-muted font-weight-bold uppercase mb-1">Size Set</label>
                             <select name="size_set_name" class="form-control form-control-sm select2">
                                 <option value="">All Sets</option>
                                 @foreach($size_sets as $set)
-                                    <option value="{{ $set }}" {{ request('size_set_name') == $set ? 'selected' : '' }}>
-                                        {{ $set }}
+                                    <option value="{{ $set }}" {{ request('size_set_name') == $set ? 'selected' : '' }}>{{ $set }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-12 col-12 mb-2 d-flex gap-2 justify-content-end">
-                            <button type="submit" class="btn btn-primary btn-sm px-4">
-                                <i class="fas fa-search"></i> Filter
-                            </button>
-                            <a href="{{ route('agent.orders.edit', $order->id) }}" class="btn btn-secondary btn-sm px-3">
-                                <i class="fas fa-redo"></i>
-                            </a>
-                        </div>
+                    </div>
+                    <div class="d-flex mt-2">
+                        <button type="submit"
+                            class="btn btn-primary btn-sm flex-grow-1 mr-2 rounded-pill font-weight-bold">Apply
+                            Filters</button>
+                        <a href="{{ route('agent.orders.edit', $order->id) }}" class="btn btn-light btn-sm rounded-pill"><i
+                                class="fas fa-undo"></i></a>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Inventory Table -->
-        <div class="card shadow-sm border-0 overflow-hidden" style="border-radius: 12px;">
-            <div class="card-header bg-white py-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="font-weight-bold mb-0 text-dark">
-                        <i class="fas fa-boxes mr-2 text-primary"></i> Inventory Selection
-                    </h6>
-                    <span class="badge badge-light border text-muted px-3 py-2">
-                        {{ $boxes->total() }} Boxes Available
-                    </span>
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <form id="orderForm">
-                    @csrf
-
-                    <div class="table-responsive d-none d-md-block">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th width="80">Image</th>
-                                    <th>Design & Color</th>
-                                    <th>Size Set</th>
-                                    <th class="text-center">Pcs/Box</th>
-                                    <th class="text-center">Available</th>
-                                    @if(Auth::guard('sales_agent')->user()->see_price)
-                                        <th class="text-right">Price</th>
-                                    @endif
-                                    <th width="150" class="text-center px-4">Order Qty (Boxes)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($boxes as $variation)
-                                    @php
-                                        $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
-                                        $image = $boxImages[$vKey] ?? null;
-                                        $itemData = $selected_quantities[$vKey] ?? null;
-                                        $initialQty = $itemData ? $itemData['qty'] : 0;
-                                    @endphp
-                                    <tr class="variation-row {{ $initialQty > 0 ? 'has-qty' : '' }}" data-key="{{ $vKey }}"
-                                        data-product-id="{{ $variation->product_id }}"
-                                        data-color-id="{{ $variation->color_id }}"
-                                        data-size-set-id="{{ $variation->size_set_id }}"
-                                        data-pcs="{{ $variation->pcs_per_box }}" data-price="{{ $variation->unit_price }}"
-                                        data-available="{{ $variation->available_boxes }}">
-                                        <td>
-                                            @if($image)
-                                                <img src="{{ asset('uploads/inventory_prices/' . $image) }}" alt="Product"
-                                                    class="rounded border shadow-xs"
-                                                    style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
-                                                    onclick="window.open(this.src)">
-                                            @else
-                                                <div class="bg-light rounded border d-flex align-items-center justify-content-center"
-                                                    style="width: 50px; height: 50px;">
-                                                    <i class="fas fa-image text-muted opacity-50"></i>
-                                                </div>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <div class="text-dark font-weight-500">{{ $variation->design_number }}</div>
-                                            <div class="text-muted small"><i class="fas fa-palette mr-1"></i>
-                                                {{ $variation->color_name }}</div>
-                                        </td>
-                                        <td>
-                                            <span
-                                                class="badge badge-outline-secondary px-2 py-1">{{ $variation->size_set_name }}</span>
-                                        </td>
-                                        <td class="text-center font-weight-bold">{{ number_format($variation->pcs_per_box, 0) }}
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge badge-info px-2 py-1">{{ $variation->available_boxes }}
-                                                Boxes</span>
-                                        </td>
-                                        @if(Auth::guard('sales_agent')->user()->see_price)
-                                            <td class="text-right">
-                                                <div class="text-dark font-weight-bold">
-                                                    ₹{{ number_format($variation->unit_price, 2) }}</div>
-                                                <small class="text-muted">per pc</small>
-                                            </td>
-                                        @endif
-                                        <td class="text-center px-4">
-                                            <div class="input-group input-group-sm quantity-control">
-                                                <div class="input-group-prepend">
-                                                    <button class="btn btn-outline-secondary btn-minus" type="button">-</button>
-                                                </div>
-                                                <input type="number" class="form-control text-center box-qty-input"
-                                                    value="{{ $initialQty }}" min="0" max="{{ $variation->available_boxes }}"
-                                                    data-key="{{ $vKey }}">
-                                                <div class="input-group-append">
-                                                    <button class="btn btn-outline-secondary btn-plus" type="button">+</button>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="7" class="text-center py-5">
-                                            <div class="py-4">
-                                                <i class="fas fa-search-minus fa-3x text-muted mb-3"></i>
-                                                <h6 class="text-muted">No variations found.</h6>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+        <!-- Main Content Area -->
+        <div class="container-fluid mt-3">
+            <!-- Variation Cards -->
+            <div id="variation-container" class="row">
+                @forelse($boxes as $variation)
+                    @php
+                        $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
+                        $image = $boxImages[$vKey] ?? null;
+                    @endphp
+                    <div class="col-md-4 col-lg-3 mb-3 variation-row-container" id="row-{{ $vKey }}">
+                        @include('sales_agent.orders.partials.variation_card', ['variation' => $variation, 'vKey' => $vKey, 'image' => $image])
                     </div>
-
-                    <!-- Mobile Card View -->
-                    <div class="d-md-none space-y-3">
-                        @forelse($boxes as $variation)
-                            @php
-                                $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
-                                $image = $boxImages[$vKey] ?? null;
-                                $itemData = $selected_quantities[$vKey] ?? null;
-                                $initialQty = $itemData ? $itemData['qty'] : 0;
-                            @endphp
-                            <div class="card border-0 shadow-sm rounded-lg mb-2 variation-row overflow-hidden {{ $initialQty > 0 ? 'has-qty' : '' }}"
-                                data-key="{{ $vKey }}" data-product-id="{{ $variation->product_id }}"
-                                data-color-id="{{ $variation->color_id }}" data-size-set-id="{{ $variation->size_set_id }}"
-                                data-pcs="{{ $variation->pcs_per_box }}" data-price="{{ $variation->unit_price }}"
-                                data-available="{{ $variation->available_boxes }}">
-                                <div class="card-body p-2">
-                                    <div class="d-flex">
-                                        <!-- Image -->
-                                        <div class="mr-3">
-                                            @if($image)
-                                                <img src="{{ asset('uploads/inventory_prices/' . $image) }}" alt="Product"
-                                                    class="rounded-lg border" style="width: 70px; height: 70px; object-fit: cover;">
-                                            @else
-                                                <div class="bg-light rounded-lg border d-flex align-items-center justify-content-center"
-                                                    style="width: 70px; height: 70px;">
-                                                    <i class="fas fa-image text-muted opacity-50"></i>
-                                                </div>
-                                            @endif
-                                        </div>
-
-                                        <!-- Details -->
-                                        <div class="flex-grow-1 min-w-0">
-                                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                                <div>
-                                                    <h6 class="font-weight-bold text-dark mb-0 text-truncate"
-                                                        style="max-width: 150px;">
-                                                        {{ $variation->design_number }}
-                                                    </h6>
-                                                    <small class="text-muted d-block text-truncate" style="max-width: 150px;">
-                                                        {{ $variation->color_name }} • {{ $variation->size_set_name }}
-                                                    </small>
-                                                </div>
-                                                @if(Auth::guard('sales_agent')->user()->see_price)
-                                                    <div class="text-right">
-                                                        <div class="font-weight-bold text-dark">
-                                                            ₹{{ number_format($variation->unit_price, 0) }}</div>
-                                                        <small class="text-muted" style="font-size: 10px;">/pc</small>
-                                                    </div>
-                                                @endif
-                                            </div>
-
-                                            <div class="d-flex justify-content-between align-items-end mt-2">
-                                                <div class="small text-muted" style="font-size: 11px; line-height: 1.2;">
-                                                    <div>{{ $variation->pcs_per_box }} pcs/box</div>
-                                                    <div
-                                                        class="{{ $variation->available_boxes < 10 ? 'text-danger' : 'text-success' }}">
-                                                        {{ $variation->available_boxes }} boxes left
-                                                    </div>
-                                                </div>
-
-                                                <div class="quantity-control input-group input-group-sm border rounded-pill overflow-hidden"
-                                                    style="width: 100px;">
-                                                    <div class="input-group-prepend">
-                                                        <button class="btn btn-light btn-minus border-0 text-muted px-2"
-                                                            type="button">
-                                                            <i class="fas fa-minus fa-xs"></i>
-                                                        </button>
-                                                    </div>
-                                                    <input type="number"
-                                                        class="form-control text-center box-qty-input border-0 bg-transparent p-0 h-auto"
-                                                        value="{{ $initialQty }}" min="0"
-                                                        max="{{ $variation->available_boxes }}" data-key="{{ $vKey }}"
-                                                        style="font-size: 14px; font-weight: 600;">
-                                                    <div class="input-group-append">
-                                                        <button class="btn btn-light btn-plus border-0 text-primary px-2"
-                                                            type="button">
-                                                            <i class="fas fa-plus fa-xs"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="text-center py-5">
-                                <i class="fas fa-search-minus fa-3x text-muted mb-3"></i>
-                                <h6 class="text-muted">No variations found.</h6>
-                            </div>
-                        @endforelse
+                @empty
+                    <div class="col-12 text-center py-5">
+                        <div class="bg-white p-4 rounded-lg shadow-sm border">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5 class="text-dark">No Products Found</h5>
+                            <p class="text-muted small">Try adjusting your filters.</p>
+                        </div>
                     </div>
-                </form>
+                @endforelse
             </div>
+
             @if($boxes->hasPages())
-                <div class="card-footer bg-white py-3">
-                    <div class="d-flex justify-content-center">
-                        {{ $boxes->links() }}
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
-
-    <!-- Sticky Bottom Summary Bar -->
-    <!-- Desktop View -->
-    <div class="fixed-bottom bg-white shadow-lg border-top p-3 d-none d-md-block animate__animated animate__fadeInUp"
-        id="summaryBarDesktop" style="z-index: 1050;">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-md-2 border-right">
-                    <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Status</small>
-                    <span class="text-dark font-weight-bold d-block">Modifying Order #{{ $order->id }}</span>
-                </div>
-                <div class="col-md-2 text-center border-right">
-                    <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Selected</small>
-                    <span class="h5 font-weight-bold text-dark mb-0" id="selectedCountDesktop">0</span>
-                    <small class="text-muted ml-1">Boxes</small>
-                </div>
-                @if(Auth::guard('sales_agent')->user()->see_price)
-                    <!-- Discount & GST Section -->
-                    <div class="col-md-3 border-right">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <small class="text-muted font-weight-bold">Subtotal:</small>
-                            <span class="font-weight-bold">₹<span id="subTotalAmountDesktop">0</span></span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted font-weight-bold">GST ({{ $gst_percentage }}%):</small>
-                            <span class="font-weight-bold text-danger">+₹<span id="gstAmountDesktop">0</span></span>
-                        </div>
-                    </div>
-                @endif
-                <!-- Expected Dispatch -->
-                <div class="col-md-2 border-right">
-                    <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Expected Dispatch</small>
-                    <input type="date" id="expectedDispatchDateDesktop" class="form-control form-control-sm mt-1"
-                        value="{{ $order->expected_dispatch_date ?: date('Y-m-d', strtotime('+3 days')) }}"
-                        min="{{ date('Y-m-d') }}">
-                </div>
-                @if(Auth::guard('sales_agent')->user()->see_price)
-                    <div class="col-md-2 text-center pl-4">
-                        <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Grand Total</small>
-                        <span class="h4 font-weight-bold text-primary mb-0">₹<span id="grandTotalAmountDesktop">0</span></span>
-                    </div>
-                @endif
-                <div class="col-md-3">
-                    <button type="button"
-                        class="btn btn-primary btn-block btn-lg py-2 font-weight-bold shadow-sm update-order-btn">
-                        Update Order <i class="fas fa-save ml-2"></i>
+                <div class="text-center mt-3">
+                    <button type="button" id="loadMoreBtn"
+                        class="btn btn-white btn-sm px-5 rounded-pill shadow-sm border font-weight-bold text-primary">
+                        Load More Products
                     </button>
                 </div>
-            </div>
+            @endif
         </div>
     </div>
 
-    <!-- Mobile View -->
-    <div class="fixed-bottom bg-white shadow-lg border-top d-md-none" id="summaryBarMobile"
-        style="z-index: 1050; display: none;">
-        <div class="p-2">
-            <!-- Summary Info -->
-            <div class="row mb-1">
-                @if(Auth::guard('sales_agent')->user()->see_price)
-                    <div class="col-6">
-                        <small class="text-muted d-block" style="font-size: 11px;">Subtotal</small>
-                        <span class="font-weight-bold text-dark">₹<span id="subTotalAmountMobile">0</span></span>
+    <!-- Compact App Summary Bar -->
+    <div class="fixed-bottom bg-white shadow-lg border-top animate__animated animate__slideInUp" id="summaryBar"
+        style="z-index: 1050; display: none; bottom: 60px; border-radius: 20px 20px 0 0;">
+        <div class="p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary-soft rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center"
+                        style="width: 45px; height: 45px;">
+                        <i class="fas fa-edit text-primary"></i>
                     </div>
-                @endif
-                <div class="col-{{Auth::guard('sales_agent')->user()->see_price ? '6' : '12'}} text-right">
-                    <small class="text-muted d-block" style="font-size: 11px;">Boxes</small>
-                    <span class="font-weight-bold text-dark"><span id="selectedCountMobile">0</span></span>
-                </div>
-            </div>
-
-            <!-- Discount & GST Row -->
-            @if(Auth::guard('sales_agent')->user()->see_price)
-                <div class="row mb-1">
-                    <div class="col-6">
-                    </div>
-                    <div class="col-6 text-right">
-                        <small class="text-muted d-block" style="font-size: 11px;">GST ({{ $gst_percentage }}%)</small>
-                        <span class="text-success font-weight-bold">+₹<span id="gstAmountMobile">0</span></span>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Expected Dispatch Row -->
-            <div class="row mb-1 align-items-center">
-                <div class="col-12">
-                    <div class="d-flex align-items-center justify-content-between bg-light p-1 rounded">
-                        <small class="text-muted font-weight-bold" style="font-size: 11px;">Exp. Dispatch:</small>
-                        <input type="date" id="expectedDispatchDateMobile"
-                            class="form-control form-control-sm border-0 bg-transparent py-0 text-right"
-                            style="width: 130px; height: 24px; font-size: 12px; font-weight: bold;"
-                            value="{{ $order->expected_dispatch_date ?: date('Y-m-d', strtotime('+3 days')) }}"
-                            min="{{ date('Y-m-d') }}">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Grand Total & Button -->
-            <div class="d-flex justify-content-between align-items-center pt-1 border-top">
-                @if(Auth::guard('sales_agent')->user()->see_price)
                     <div>
-                        <small class="text-muted d-block" style="font-size: 11px;">Grand Total</small>
-                        <span class="h5 font-weight-bold text-primary mb-0">₹<span id="grandTotalAmountMobile">0</span></span>
+                        <span class="h5 font-weight-bold mb-0 d-block text-dark">₹<span
+                                id="grandTotalAmount">0</span></span>
+                        <small class="text-muted"><span id="selectedCount">0</span> Boxes Selected</small>
                     </div>
-                @endif
-                <div class="{{Auth::guard('sales_agent')->user()->see_price ? '' : 'w-100'}}">
-                    <button type="button" class="btn btn-primary px-4 py-2 font-weight-bold shadow-sm update-order-btn {{Auth::guard('sales_agent')->user()->see_price ? '' : 'w-100'}}">
-                        Update <i class="fas fa-save ml-1"></i>
+                </div>
+                <button class="btn btn-light btn-sm rounded-pill px-3 font-weight-bold text-primary" id="btnShowDetails">
+                    Details <i class="fas fa-chevron-up ml-1"></i>
+                </button>
+            </div>
+            <button type="button"
+                class="btn btn-primary btn-block btn-lg py-3 rounded-xl font-weight-bold shadow-lg update-order-btn"
+                style="border-radius: 12px; font-size: 1.1rem;">
+                Update Order <i class="fas fa-save ml-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal fade bottom-drawer" id="detailsModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0" style="border-radius: 20px 20px 0 0;">
+                <div class="modal-header border-0 bg-light pb-0" style="border-radius: 20px 20px 0 0;">
+                    <h6 class="modal-title font-weight-bold mx-auto text-muted uppercase tracking-wider">Order Summary &
+                        Adjustments</h6>
+                    <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
                     </button>
+                </div>
+                <div class="modal-body bg-light">
+                    <div class="card shadow-none border-0 mb-3" style="border-radius: 15px;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Subtotal:</span>
+                                <span class="font-weight-bold">₹<span id="subTotalAmount">0</span></span>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="small font-weight-bold text-muted uppercase">Manual Discount (₹)</label>
+                                <input type="number" id="discountAmountInput"
+                                    class="form-control form-control-lg border-0 bg-light font-weight-bold"
+                                    value="{{ $order->discount_amount }}" data-manual="true">
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Taxable Amount:</span>
+                                <span class="font-weight-bold">₹<span id="taxableAmount">0</span></span>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="small font-weight-bold text-muted uppercase">GST Amount (₹)</label>
+                                <input type="number" id="gstAmountInput"
+                                    class="form-control form-control-lg border-0 bg-light font-weight-bold"
+                                    value="{{ $order->gst_amount }}" data-manual="true">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="small font-weight-bold text-muted uppercase">Other Charges (₹)</label>
+                                <input type="number" id="other_charges"
+                                    class="form-control form-control-lg border-0 bg-light font-weight-bold"
+                                    value="{{ $order->other_charges }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card shadow-none border-0 mb-3" style="border-radius: 15px;">
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="small font-weight-bold text-muted uppercase">Dispatch & Shipping</label>
+                                <input type="date" id="expectedDispatchDate" class="form-control form-control-sm mb-2"
+                                    value="{{ $order->expected_dispatch_date ?: date('Y-m-d', strtotime('+3 days')) }}">
+                                <input type="text" id="booking_station" class="form-control form-control-sm mb-2"
+                                    placeholder="Booking Station" value="{{ $order->booking_station }}">
+                                <input type="text" id="transport" class="form-control form-control-sm mb-2"
+                                    placeholder="Transport Name" value="{{ $order->transport }}">
+                                <textarea id="remark" class="form-control form-control-sm" rows="2"
+                                    placeholder="Any special instructions...">{{ $order->remark }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-dark btn-block btn-lg rounded-pill"
+                        data-dismiss="modal">Done</button>
                 </div>
             </div>
         </div>
     </div>
 
     <style>
-        .font-weight-500 {
-            font-weight: 500;
+        .bg-primary-soft {
+            background-color: rgba(0, 123, 255, 0.1);
         }
 
-        .shadow-xs {
-            shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        .rounded-xl {
+            border-radius: 12px !important;
         }
 
-        .variation-row {
-            transition: background 0.2s;
+        .uppercase {
+            text-transform: uppercase;
         }
 
-        .variation-row:hover {
-            background-color: #f8f9fa;
+        .tracking-wider {
+            letter-spacing: 0.5px;
         }
 
-        .variation-row.has-qty {
-            background-color: #e3f2fd;
+        .variation-row-container {
+            animation: fadeInUp 0.5s ease backwards;
         }
 
-        .badge-outline-secondary {
-            border: 1px solid #6c757d;
-            color: #6c757d;
-            background: transparent;
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .hover-primary:hover {
-            color: #007bff !important;
+        @media (max-width: 768px) {
+            .modal.bottom-drawer .modal-dialog {
+                margin: 0;
+                margin-top: auto;
+                align-items: flex-end;
+                display: flex;
+            }
+
+            .modal.bottom-drawer .modal-content {
+                border-radius: 20px 20px 0 0;
+                width: 100%;
+            }
+
+            .modal-body {
+                max-height: 70vh;
+                overflow-y: auto;
+            }
         }
 
-        .quantity-control {
-            max-width: 140px;
-            margin: 0 auto;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            border-radius: 6px;
+        .variation-card {
+            border-radius: 15px;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .variation-card.has-qty {
+            border-color: #007bff;
+            background-color: #f0f7ff;
+        }
+
+        .quantity-control-app {
+            background: #f8f9fa;
+            border-radius: 10px;
             overflow: hidden;
         }
 
-        .quantity-control input {
-            border-left: 0;
-            border-right: 0;
-            font-weight: bold;
+        .quantity-control-app input {
+            background: transparent;
+            border: 0;
+            font-weight: 800;
+            text-align: center;
+            width: 40px;
+        }
+
+        .quantity-control-app .btn-q {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            color: #007bff;
         }
     </style>
 @endsection
@@ -446,133 +294,144 @@
 @push('scripts')
     <script>
         $(document).ready(function () {
-            // State: Map of VariationKey -> {product_id, color_id, size_set_id, qty, pcs_per_box, unit_price}
-            let cart = new Map();
-
-            // Initial variations from the order
-            const initialVariations = @json($selected_quantities);
-
-            // Populate cart with initial variations (handle enriched metadata)
-            Object.keys(initialVariations).forEach(key => {
-                const itemData = initialVariations[key];
-                const row = $(`.variation-row[data-key="${key}"]`);
-
-                if (row.length) {
-                    // Item is on current page, prefer DOM data but use qty from controller
-                    cart.set(key, {
-                        product_id: row.data('product-id'),
-                        color_id: row.data('color-id'),
-                        size_set_id: row.data('size-set-id'),
-                        qty: parseInt(itemData.qty) || 0,
-                        pcs_per_box: parseFloat(row.data('pcs')),
-                        unit_price: parseFloat(row.data('price'))
-                    });
-                } else {
-                    // Item is on another page, use full metadata from controller
-                    cart.set(key, {
-                        product_id: itemData.product_id,
-                        color_id: itemData.color_id,
-                        size_set_id: itemData.size_set_id,
-                        qty: parseInt(itemData.qty) || 0,
-                        pcs_per_box: parseFloat(itemData.pcs_per_box),
-                        unit_price: parseFloat(itemData.unit_price)
-                    });
-                }
-            });
-
-            // Initialize Select2
             if ($.fn.select2) {
                 $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
             }
 
+            let cart = new Map();
+            const initialVariations = @json($selected_quantities);
+
+            // Populate cart with initial variations from the order
+            Object.keys(initialVariations).forEach(key => {
+                const item = initialVariations[key];
+                cart.set(key, {
+                    product_id: item.product_id,
+                    color_id: item.color_id,
+                    size_set_id: item.size_set_id,
+                    qty: parseInt(item.qty) || 0,
+                    pcs_per_box: parseFloat(item.pcs_per_box),
+                    unit_price: parseFloat(item.unit_price)
+                });
+            });
+
+            $('#toggleFilters').click(function () {
+                $('#filterContainer').slideToggle();
+            });
+
+            $('#btnShowDetails').click(function () {
+                $('#detailsModal').modal('show');
+            });
+
+            // --- INFINITE SCROLL / LOAD MORE ---
+            let nextPage = {{ $boxes->nextPageUrl() ? ($boxes->currentPage() + 1) : 'null' }};
+            let loading = false;
+            const container = $('#variation-container');
+
+            $('#loadMoreBtn').click(function () {
+                loadMore();
+            });
+
+            function loadMore() {
+                if (loading || !nextPage) return;
+                loading = true;
+                $('#loading-spinner').show();
+                $('#loadMoreBtn').prop('disabled', true).text('Loading...');
+
+                let formData = $('#filterForm').serialize();
+                let requestData = formData + '&load_more=1&page=' + nextPage;
+
+                $.ajax({
+                    url: window.location.pathname,
+                    method: 'GET',
+                    data: requestData,
+                    success: function (response) {
+                        container.append(response.html);
+                        nextPage = response.next_page;
+                        loading = false;
+                        $('#loading-spinner').hide();
+
+                        if (!nextPage) {
+                            $('#loadMoreBtn').hide();
+                        } else {
+                            $('#loadMoreBtn').prop('disabled', false).text('Load More Variations');
+                        }
+                        updateUI();
+                    }
+                });
+            }
+
             function updateUI() {
                 let totalBoxes = 0;
-                let totalPieces = 0;
                 let subTotal = 0;
 
-                cart.forEach((item, key) => {
+                cart.forEach((item) => {
                     if (item.qty > 0) {
                         totalBoxes += item.qty;
-                        // For items on other pages, metadata might be missing in this simple implementation
-                        if (item.pcs_per_box) {
-                            totalPieces += (item.qty * item.pcs_per_box);
-                            subTotal += (item.qty * item.pcs_per_box * item.unit_price);
-                        }
+                        subTotal += (item.qty * item.pcs_per_box * item.unit_price);
                     }
                 });
 
-                // No separate manual discount, already baked into unit_price
-                let discountPercent = 0;
+                const discountAmount = parseFloat($('#discountAmountInput').val()) || 0;
+                const taxableAmount = subTotal - discountAmount;
 
-                const discountAmount = 0;
-                const taxableAmount = subTotal;
-                const gstPercent = {{ $gst_percentage }};
-                const gstAmount = taxableAmount * (gstPercent / 100);
-                const grandTotal = taxableAmount + gstAmount;
+                const otherCharges = parseFloat($('#other_charges').val()) || 0;
 
-                // Update Desktop Summary
-                $('#selectedCountDesktop').text(totalBoxes);
-                $('#subTotalAmountDesktop').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                $('#gstAmountDesktop').text(gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                $('#grandTotalAmountDesktop').text(grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                // Auto-calculate GST if it's not focused and not manually overridden
+                let gstAmount = parseFloat($('#gstAmountInput').val()) || 0;
+                const defaultGstPercent = {{ $gst_percentage }};
+                const isManualGst = $('#gstAmountInput').data('manual') === true;
 
-                // Update Mobile Summary
-                $('#selectedCountMobile').text(totalBoxes);
-                $('#miniBoxCount').text(totalBoxes);
-                $('#subTotalAmountMobile').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                $('#gstAmountMobile').text(gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                $('#grandTotalAmountMobile').text(grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                if (!$('#gstAmountInput').is(':focus') && !isManualGst && taxableAmount > 0) {
+                    gstAmount = taxableAmount * (defaultGstPercent / 100);
+                    $('#gstAmountInput').val(gstAmount.toFixed(2));
+                } else {
+                    gstAmount = parseFloat($('#gstAmountInput').val()) || 0;
+                }
 
-                // Sync inputs
-                $('.variation-row').each(function () {
+                const grandTotal = taxableAmount + gstAmount + otherCharges;
+
+                $('#selectedCount').text(totalBoxes);
+                $('#subTotalAmount').text(subTotal.toFixed(2));
+                $('#taxableAmount').text(taxableAmount.toFixed(2));
+                $('#grandTotalAmount').text(grandTotal.toFixed(2));
+
+                if (totalBoxes > 0) {
+                    $('#summaryBar').fadeIn();
+                } else {
+                    $('#summaryBar').fadeOut();
+                }
+
+                $('.variation-card').each(function () {
                     const key = $(this).data('key');
                     const item = cart.get(key);
                     const input = $(this).find('.box-qty-input');
                     if (item && item.qty > 0) {
                         input.val(item.qty);
                         $(this).addClass('has-qty');
-                        $(this).find('.card').addClass('border-primary bg-light'); // Highlight mobile card
-                        // Ensure we have metadata if it was missing (loaded from other page previously)
-                        if (!item.pcs_per_box) {
-                            item.product_id = $(this).data('product-id');
-                            item.color_id = $(this).data('color-id');
-                            item.size_set_id = $(this).data('size-set-id');
-                            item.pcs_per_box = parseFloat($(this).data('pcs'));
-                            item.unit_price = parseFloat($(this).data('price'));
-                        }
                     } else {
                         input.val(0);
                         $(this).removeClass('has-qty');
-                        $(this).find('.card').removeClass('border-primary bg-light');
                     }
                 });
             }
 
-            // Numeric Input Change
             $(document).on('change', '.box-qty-input', function () {
-                const row = $(this).closest('.variation-row');
-                const key = row.data('key');
+                const card = $(this).closest('.variation-card');
+                const key = card.data('key');
                 let qty = parseInt($(this).val()) || 0;
                 const max = parseInt($(this).attr('max'));
 
                 if (qty < 0) qty = 0;
-                if (qty > max) {
-                    Swal.fire('Limit Exceeded', 'Only ' + max + ' boxes available.', 'warning');
-                    qty = max;
-                    $(this).val(qty);
-                }
-
-                // Find all inputs for this key (both desktop and mobile) and update them
-                $(`.variation-row[data-key="${key}"] .box-qty-input`).val(qty);
+                if (qty > max) { qty = max; $(this).val(qty); }
 
                 if (qty > 0) {
                     cart.set(key, {
-                        product_id: row.data('product-id'),
-                        color_id: row.data('color-id'),
-                        size_set_id: row.data('size-set-id'),
+                        product_id: card.data('product-id'),
+                        color_id: card.data('color-id'),
+                        size_set_id: card.data('size-set-id'),
                         qty: qty,
-                        pcs_per_box: parseFloat(row.data('pcs')),
-                        unit_price: parseFloat(row.data('price'))
+                        pcs_per_box: parseFloat(card.data('pcs')),
+                        unit_price: parseFloat(card.data('price'))
                     });
                 } else {
                     cart.delete(key);
@@ -580,73 +439,42 @@
                 updateUI();
             });
 
+            $(document).on('input', '#discountAmountInput, #gstAmountInput, #other_charges', function () {
+                if ($(this).attr('id') === 'gstAmountInput' || $(this).attr('id') === 'discountAmountInput') {
+                    $(this).data('manual', true);
+                }
+                updateUI();
+            });
 
-
-            // Plus/Minus Buttons
             $(document).on('click', '.btn-plus', function () {
-                const input = $(this).closest('.quantity-control').find('.box-qty-input');
+                const input = $(this).closest('.variation-card').find('.box-qty-input');
                 const current = parseInt(input.val()) || 0;
-                const max = parseInt(input.attr('max'));
-                if (current < max) input.val(current + 1).trigger('change');
+                if (current < parseInt(input.attr('max'))) input.val(current + 1).trigger('change');
             });
 
             $(document).on('click', '.btn-minus', function () {
-                const input = $(this).closest('.quantity-control').find('.box-qty-input');
+                const input = $(this).closest('.variation-card').find('.box-qty-input');
                 const current = parseInt(input.val()) || 0;
                 if (current > 0) input.val(current - 1).trigger('change');
             });
 
-            // Initial UI Update
-            updateUI();
-
-            // Update Order AJAX
             $('.update-order-btn').click(function () {
                 const btn = $(this);
-                const originalText = btn.html();
-
                 let variations = [];
-                cart.forEach((item) => {
-                    if (item.qty > 0) {
-                        // We need full metadata for the request
-                        // If it was only on another page and never visited, we might lack metadata here
-                        // In a robust system, we'd pass all metadata from the controller
-                        if (!item.product_id) {
-                            // Split key to recover IDs if metadata missing
-                            const parts = key.split('_');
-                            item.product_id = parts[0];
-                            item.color_id = parts[1];
-                            item.size_set_id = parts[2];
-                        }
-                        variations.push(item);
-                    }
-                });
+                cart.forEach((item) => { if (item.qty > 0) variations.push(item); });
 
-                if (variations.length === 0) {
-                    Swal.fire('Empty Selection', 'Please select at least one item.', 'warning');
-                    return;
-                }
-
-                // Get expected date from visible input
-                let discountPercent = 0;
-                let expectedDate = '';
-                if ($('#summaryBarDesktop').is(':visible')) {
-                    expectedDate = $('#expectedDispatchDateDesktop').val();
-                } else {
-                    expectedDate = $('#expectedDispatchDateMobile').val();
-                }
+                if (variations.length === 0) return;
 
                 Swal.fire({
                     title: 'Update Order?',
-                    text: "Order Summary: " + variations.reduce((a, b) => a + b.qty, 0) + " boxes total.",
+                    text: "Update order with " + variations.reduce((a, b) => a + b.qty, 0) + " boxes?",
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonColor: '#007bff',
-                    confirmButtonText: 'Yes, Update'
+                    confirmButtonText: 'Yes, Update',
+                    confirmButtonColor: '#007bff'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        // Disable all update order buttons
-                        $('.update-order-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating Order...');
-
+                        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
                         $.ajax({
                             url: "{{ route('agent.orders.update', $order->id) }}",
                             method: "POST",
@@ -654,27 +482,30 @@
                                 _method: 'PUT',
                                 _token: "{{ csrf_token() }}",
                                 variations: variations,
-                                discount_percentage: discountPercent,
-                                expected_dispatch_date: expectedDate,
+                                expected_dispatch_date: $('#expectedDispatchDate').val(),
+                                discount_amount: $('#discountAmountInput').val(),
+                                gst_amount: $('#gstAmountInput').val(),
+                                other_charges: $('#other_charges').val(),
+                                remark: $('#remark').val(),
+                                booking_station: $('#booking_station').val(),
+                                transport: $('#transport').val()
                             },
                             success: function (response) {
                                 if (response.success) {
-                                    Swal.fire('Success!', response.message, 'success').then(() => {
+                                    Swal.fire('Updated!', 'Order has been updated successfully.', 'success').then(() => {
                                         window.location.href = response.redirect_url;
                                     });
                                 } else {
                                     Swal.fire('Error', response.message, 'error');
-                                    $('.update-order-btn').prop('disabled', false).html(originalText);
+                                    btn.prop('disabled', false).html('Update Order <i class="fas fa-save ml-2"></i>');
                                 }
-                            },
-                            error: function (xhr) {
-                                Swal.fire('Error', xhr.responseJSON?.message || 'Something went wrong', 'error');
-                                $('.update-order-btn').prop('disabled', false).html(originalText);
                             }
                         });
                     }
                 });
             });
+
+            updateUI();
         });
     </script>
 @endpush

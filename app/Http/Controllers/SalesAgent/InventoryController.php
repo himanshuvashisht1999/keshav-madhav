@@ -4,6 +4,9 @@ namespace App\Http\Controllers\SalesAgent;
 
 use App\Http\Controllers\Controller;
 use App\Models\DomesticInventory;
+use App\Models\ProductionGoods;
+use App\Models\MasterColor;
+use App\Models\MasterSizeMeasurement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -12,109 +15,56 @@ class InventoryController extends Controller
 {
     public function index(Request $request)
     {
-        // Fetch Filter Options from domestic_inventories
-        $designs = DomesticInventory::distinct()->pluck('design_number');
-        $colors = DomesticInventory::distinct()->pluck('color_name');
-        $size_sets = DomesticInventory::distinct()->pluck('size_set_name');
+        // Fetch Filter Options
+        $size_sets = DomesticInventory::join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
+            ->select('domestic_inventories.size_set_id', 'master_size_measurements.name as size_set_name')
+            ->distinct()->get();
+
+        $products = DomesticInventory::join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
+            ->select('domestic_inventories.product_id', 'production_goods.name_of_garment as product_name', 'production_goods.design_number')
+            ->distinct()->get();
+
+        $colors = DomesticInventory::join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
+            ->select('domestic_inventories.color_id', 'master_colors.name as color_name')
+            ->distinct()->get();
 
         $agent_discount = Auth::guard('sales_agent')->user()->discount_percentage ?? 0;
 
-        // Build Query - Join with production_goods_variants to get mrp
-        $prices = DB::table('production_goods_variants')
-            ->select('production_goods_id as product_id', 'master_size_measurement_id as size_set_id', DB::raw('MAX(mrp) as mrp'))
-            ->groupBy('production_goods_id', 'master_size_measurement_id');
-
-        $query = DomesticInventory::where('domestic_inventories.status', 1)
-            ->leftJoinSub($prices, 'ip', function ($join) {
-                $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
-                    ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
-            });
+        // Build Query
+        $query = DomesticInventory::select(
+            'domestic_inventories.size_set_id',
+            'domestic_inventories.color_id',
+            'domestic_inventories.fitting_id',
+            'domestic_inventories.pattern_id',
+            'domestic_inventories.product_id',
+            'pg.design_number',
+            'pg.name_of_garment as product_name',
+            'mc.name as color_name',
+            'msm.name as size_set_name',
+            'fittings.name as fitting_name',
+            'patterns.name as pattern_name',
+            'variants.mrp as mrp',
+            DB::raw('SUM(domestic_inventories.total_boxes) as available_boxes'),
+            DB::raw('SUM(domestic_inventories.total_boxes * domestic_inventories.quantity) as total_qty'),
+            DB::raw('(MAX(COALESCE(variants.mrp, 0)) * (100 - ' . $agent_discount . ') / 100) as selling_price')
+        )
+            ->leftJoin('production_goods as pg', 'domestic_inventories.product_id', '=', 'pg.id')
+            ->leftJoin('master_colors as mc', 'domestic_inventories.color_id', '=', 'mc.id')
+            ->leftJoin('master_size_measurements as msm', 'domestic_inventories.size_set_id', '=', 'msm.id')
+            ->leftJoin('master_product_fittings as fittings', 'domestic_inventories.fitting_id', '=', 'fittings.id')
+            ->leftJoin('master_design_patterns as patterns', 'domestic_inventories.pattern_id', '=', 'patterns.id')
+            ->leftJoin('production_goods_variants as variants', function ($join) {
+                $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
+                    ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
+            })
+            ->where('domestic_inventories.status', 1);
 
         // Apply Filters
         if ($request->filled('design_number')) {
-            $query->where('domestic_inventories.design_number', $request->design_number);
+            $query->where('pg.design_number', 'LIKE', '%' . $request->design_number . '%');
         }
-        if ($request->filled('color_name')) {
-            $query->where('domestic_inventories.color_name', $request->color_name);
-        }
-        if ($request->filled('size_set_name')) {
-            $query->where('domestic_inventories.size_set_name', $request->size_set_name);
-        }
-
-        // Group by variation
-        $inventories = $query->select(
-            'domestic_inventories.product_id',
-            'domestic_inventories.product_name',
-            'domestic_inventories.design_number',
-            'domestic_inventories.color_id',
-            'domestic_inventories.color_name',
-            'domestic_inventories.size_set_id',
-            'domestic_inventories.size_set_name',
-            DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
-            DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $agent_discount . ') / 100) as selling_price'),
-            DB::raw('COUNT(DISTINCT domestic_inventories.packing_box_id) as available_boxes'),
-            DB::raw('SUM(domestic_inventories.quantity) as total_qty')
-        )
-            ->groupBy(
-                'domestic_inventories.product_id',
-                'domestic_inventories.product_name',
-                'domestic_inventories.design_number',
-                'domestic_inventories.color_id',
-                'domestic_inventories.color_name',
-                'domestic_inventories.size_set_id',
-                'domestic_inventories.size_set_name'
-            )
-            ->orderBy('domestic_inventories.design_number')
-            ->get();
-
-        // Fetch images for the variations
-        $boxImages = [];
-        foreach ($inventories as $variation) {
-            // First look for color-specific variant image
-            $image = DB::table('production_goods_variant_colors')
-                ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
-                ->where('production_goods_variants.production_goods_id', $variation->product_id)
-                ->where('production_goods_variants.master_size_measurement_id', $variation->size_set_id)
-                ->where('production_goods_variant_colors.master_color_id', $variation->color_id)
-                ->whereNotNull('production_goods_variant_colors.image')
-                ->value('production_goods_variant_colors.image');
-
-            // Fallback to variant image if no color-specific image found
-            if (!$image) {
-                $image = DB::table('production_goods_variants')
-                    ->where('production_goods_id', $variation->product_id)
-                    ->where('master_size_measurement_id', $variation->size_set_id)
-                    ->whereNotNull('image')
-                    ->value('image');
-            }
-
-            $key = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
-            $boxImages[$key] = $image;
-        }
-
-        return view('sales_agent.inventory.index', compact('inventories', 'designs', 'colors', 'size_sets', 'boxImages'));
-    }
-
-    public function show(Request $request)
-    {
-        $agent_discount = Auth::guard('sales_agent')->user()->discount_percentage ?? 0;
-
-        // Join with prices to show correct discounted price per box
-        $prices = DB::table('production_goods_variants')
-            ->select('production_goods_id as product_id', 'master_size_measurement_id as size_set_id', DB::raw('MAX(mrp) as mrp'))
-            ->groupBy('production_goods_id', 'master_size_measurement_id');
-
-        $query = DomesticInventory::where('domestic_inventories.status', 1)
-            ->leftJoinSub($prices, 'ip', function ($join) {
-                $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
-                    ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
-            });
-
-        if ($request->filled('product_name')) {
-            $query->where('domestic_inventories.product_name', $request->product_name);
-        }
-        if ($request->filled('design_number')) {
-            $query->where('domestic_inventories.design_number', $request->design_number);
+        if ($request->filled('product_id')) {
+            $query->where('domestic_inventories.product_id', $request->product_id);
         }
         if ($request->filled('color_id')) {
             $query->where('domestic_inventories.color_id', $request->color_id);
@@ -123,18 +73,81 @@ class InventoryController extends Controller
             $query->where('domestic_inventories.size_set_id', $request->size_set_id);
         }
 
+        $query->groupBy(
+            'domestic_inventories.size_set_id',
+            'domestic_inventories.color_id',
+            'domestic_inventories.fitting_id',
+            'domestic_inventories.pattern_id',
+            'domestic_inventories.product_id',
+            'pg.design_number',
+            'pg.name_of_garment',
+            'mc.name',
+            'msm.name',
+            'fittings.name',
+            'patterns.name',
+            'variants.mrp'
+        )->orderBy('pg.design_number', 'asc');
+
+        if ($request->ajax() && $request->has('load_more')) {
+            $inventories = $query->paginate(20);
+            $html = '';
+            foreach ($inventories as $index => $row) {
+                $html .= view('sales_agent.inventory.partials.row', [
+                    'row' => $row,
+                    'index' => ($inventories->currentPage() - 1) * 20 + ($index + 1)
+                ])->render();
+            }
+            return response()->json([
+                'html' => $html,
+                'next_page' => $inventories->nextPageUrl() ? $inventories->currentPage() + 1 : null
+            ]);
+        }
+
+        $inventories = $query->paginate(20);
+
+        return view('sales_agent.inventory.index', compact('inventories', 'size_sets', 'products', 'colors'));
+    }
+
+    public function show(Request $request)
+    {
+        $agent_discount = Auth::guard('sales_agent')->user()->discount_percentage ?? 0;
+
+        $query = DomesticInventory::where('domestic_inventories.status', 1)
+            ->leftJoin('production_goods as pg', 'domestic_inventories.product_id', '=', 'pg.id')
+            ->leftJoin('master_colors as mc', 'domestic_inventories.color_id', '=', 'mc.id')
+            ->leftJoin('master_size_measurements as msm', 'domestic_inventories.size_set_id', '=', 'msm.id')
+            ->leftJoin('production_goods_variants as variants', function ($join) {
+                $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
+                    ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
+            });
+
+        if ($request->filled('product_id')) {
+            $query->where('domestic_inventories.product_id', $request->product_id);
+        }
+        if ($request->filled('color_id')) {
+            $query->where('domestic_inventories.color_id', $request->color_id);
+        }
+        if ($request->filled('size_set_id')) {
+            $query->where('domestic_inventories.size_set_id', $request->size_set_id);
+        }
+        if ($request->filled('fitting_id')) {
+            $query->where('domestic_inventories.fitting_id', $request->fitting_id);
+        }
+        if ($request->filled('pattern_id')) {
+            $query->where('domestic_inventories.pattern_id', $request->pattern_id);
+        }
+
         $items = $query->select(
             'domestic_inventories.packing_box_id',
             'domestic_inventories.box_no',
             'domestic_inventories.carton_no',
-            DB::raw('SUM(domestic_inventories.quantity) as total_qty'),
-            DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $agent_discount . ') / 100) as price')
+            'domestic_inventories.quantity as total_qty',
+            'pg.design_number',
+            'pg.name_of_garment as product_name',
+            'mc.name as color_name',
+            'msm.name as size_set_name',
+            DB::raw('(COALESCE(variants.mrp, 0) * (100 - ' . $agent_discount . ') / 100) as price')
         )
-            ->groupBy(
-                'domestic_inventories.packing_box_id',
-                'domestic_inventories.box_no',
-                'domestic_inventories.carton_no'
-            )
             ->get();
 
         if ($items->isEmpty()) {
@@ -142,10 +155,6 @@ class InventoryController extends Controller
         }
 
         $variation = $items->first();
-        // Add more context for the header if needed
-        $variation->design_number = $request->design_number;
-        $variation->color_name = DomesticInventory::where('color_id', $request->color_id)->value('color_name');
-        $variation->size_set_name = DomesticInventory::where('size_set_id', $request->size_set_id)->value('size_set_name');
 
         return view('sales_agent.inventory.show', compact('items', 'variation'));
     }
