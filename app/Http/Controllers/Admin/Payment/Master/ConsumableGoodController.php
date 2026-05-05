@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Services\Admin\Payment\Master\ConsumableGoodService as Service;
 use App\Requests\Admin\Master\ConsumableGoodStoreRequest;
 use App\Requests\Admin\Master\ConsumableGoodUpdateRequest;
+use App\Models\MasterOpeningBalance;
+use App\Models\ConsumableGood;
 use Auth;
 
 class ConsumableGoodController extends Controller
@@ -20,7 +22,9 @@ class ConsumableGoodController extends Controller
 
     public function index()
     {
-        return view('admin.payment.master.consumable_good.index');
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('consumable_good');
+        $response['total_current_balance'] = ConsumableGood::where('status', '!=', 3)->sum('balance');
+        return view('admin.payment.master.consumable_good.index', $response);
     }
 
     public function indexList(Request $request)

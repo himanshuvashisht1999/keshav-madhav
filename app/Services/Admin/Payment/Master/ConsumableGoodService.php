@@ -22,23 +22,68 @@ class ConsumableGoodService
 
     public function store(Request $request)
     {
-        $consumableGood = new ConsumableGood();
-        $consumableGood->name = $request->name;
-        $consumableGood->status = 1;
-        $consumableGood->save();
+        $data = $request->all();
+        $balance = $data['balance'] ?? 0;
+        if (($data['balance_type'] ?? '') == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+
+        $consumableGood = ConsumableGood::create([
+            'name' => $request->name,
+            'balance' => $balance,
+            'status' => 1,
+        ]);
+
+        \App\Models\MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'consumable_good',
+                'master_id' => $consumableGood->id,
+                'financial_year' => \App\Models\MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($data['balance'] ?? 0),
+                'balance_type' => $data['balance_type'] ?? 'Credit',
+            ]
+        );
+
         return true;
     }
 
     public function edit(Request $request)
     {
-        return ConsumableGood::find($request->id);
+        return ConsumableGood::with('currentOpeningBalance')->find($request->id);
     }
 
     public function update(Request $request)
     {
+        $data = $request->all();
+        $balance = $data['balance'] ?? 0;
+        if (($data['balance_type'] ?? '') == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+
         $consumableGood = ConsumableGood::find($request->id);
-        $consumableGood->name = $request->name;
-        $consumableGood->save();
+        $consumableGood->update([
+            'name' => $request->name,
+            'balance' => $balance,
+        ]);
+
+        \App\Models\MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'consumable_good',
+                'master_id' => $consumableGood->id,
+                'financial_year' => \App\Models\MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($data['balance'] ?? 0),
+                'balance_type' => $data['balance_type'] ?? 'Credit',
+            ]
+        );
+
         return true;
     }
 

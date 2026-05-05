@@ -16,6 +16,8 @@ class ConsumableGoodUpdateRequest extends FormRequest
         return [
             'id' => 'required|exists:consumable_goods,id',
             'name' => 'required|string|max:255|unique:consumable_goods,name,' . $this->id,
+            'balance' => 'required|numeric',
+            'balance_type' => 'required|string|in:Credit,Debit',
         ];
     }
 }

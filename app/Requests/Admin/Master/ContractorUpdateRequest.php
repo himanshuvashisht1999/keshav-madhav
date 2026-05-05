@@ -18,6 +18,8 @@ class ContractorUpdateRequest extends FormRequest
             'name' => 'required|string|max:255|unique:contractors,name,' . $this->id,
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
+            'balance' => 'required|numeric',
+            'balance_type' => 'required|string|in:Credit,Debit',
         ];
     }
 }

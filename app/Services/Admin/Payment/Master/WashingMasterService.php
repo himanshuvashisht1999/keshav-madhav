@@ -21,25 +21,70 @@ class WashingMasterService
 
     public function store($request)
     {
-        $input = $request->validated();
-        $input['name'] = $request->name;
-        $input['status'] = 1;
-        return WashingMaster::create($input);
+        $data = $request->validated();
+        $balance = $data['balance'] ?? 0;
+        if (($data['balance_type'] ?? '') == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+
+        $item = WashingMaster::create([
+            'name' => $data['name'],
+            'balance' => $balance,
+            'status' => 1,
+        ]);
+
+        \App\Models\MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'washing_master',
+                'master_id' => $item->id,
+                'financial_year' => \App\Models\MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($data['balance'] ?? 0),
+                'balance_type' => $data['balance_type'] ?? 'Credit',
+            ]
+        );
+
+        return $item;
     }
 
     public function edit(Request $request)
     {
-        return WashingMaster::find($request->id);
+        return WashingMaster::with('currentOpeningBalance')->find($request->id);
     }
 
     public function update($request)
     {
-        $input = $request->validated();
-        $input['name'] = $request->name;
-        $input['status'] = $request->status ?? 1;
+        $data = $request->validated();
+        $balance = $data['balance'] ?? 0;
+        if (($data['balance_type'] ?? '') == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+
         $washingMaster = WashingMaster::find($request->id);
         if ($washingMaster) {
-            $washingMaster->update($input);
+            $washingMaster->update([
+                'name' => $data['name'],
+                'balance' => $balance,
+                'status' => $request->status ?? 1,
+            ]);
+
+            \App\Models\MasterOpeningBalance::updateOrCreate(
+                [
+                    'master_type' => 'washing_master',
+                    'master_id' => $washingMaster->id,
+                    'financial_year' => \App\Models\MasterOpeningBalance::getCurrentFinancialYear(),
+                ],
+                [
+                    'amount' => abs($data['balance'] ?? 0),
+                    'balance_type' => $data['balance_type'] ?? 'Credit',
+                ]
+            );
+
             return $washingMaster;
         }
         return false;

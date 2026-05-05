@@ -15,6 +15,8 @@ class ConsumableGoodStoreRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255|unique:consumable_goods,name',
+            'balance' => 'required|numeric',
+            'balance_type' => 'required|string|in:Credit,Debit',
         ];
     }
 }

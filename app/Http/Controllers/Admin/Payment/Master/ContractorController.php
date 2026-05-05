@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Services\Admin\Payment\Master\ContractorService as Service;
 use App\Requests\Admin\Master\ContractorStoreRequest;
 use App\Requests\Admin\Master\ContractorUpdateRequest;
+use App\Models\MasterOpeningBalance;
+use App\Models\Contractor;
 use Auth;
 
 class ContractorController extends Controller
@@ -20,7 +22,9 @@ class ContractorController extends Controller
 
     public function index()
     {
-        return view('admin.payment.master.contractor.index');
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('contractor');
+        $response['total_current_balance'] = Contractor::where('status', '!=', 3)->sum('balance');
+        return view('admin.payment.master.contractor.index', $response);
     }
 
     public function indexList(Request $request)

@@ -22,27 +22,72 @@ class ContractorService
 
     public function store(Request $request)
     {
-        $contractor = new Contractor();
-        $contractor->name = $request->name;
-        $contractor->phone = $request->phone;
-        $contractor->address = $request->address;
-        $contractor->status = 1;
-        $contractor->save();
+        $data = $request->all();
+        $balance = $data['balance'] ?? 0;
+        if (($data['balance_type'] ?? '') == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+
+        $contractor = Contractor::create([
+            'name' => $request->name,
+            'balance' => $balance,
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'status' => 1,
+        ]);
+
+        \App\Models\MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'contractor',
+                'master_id' => $contractor->id,
+                'financial_year' => \App\Models\MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($data['balance'] ?? 0),
+                'balance_type' => $data['balance_type'] ?? 'Credit',
+            ]
+        );
+
         return true;
     }
 
     public function edit(Request $request)
     {
-        return Contractor::find($request->id);
+        return Contractor::with('currentOpeningBalance')->find($request->id);
     }
 
     public function update(Request $request)
     {
+        $data = $request->all();
+        $balance = $data['balance'] ?? 0;
+        if (($data['balance_type'] ?? '') == 'Debit') {
+            $balance = -abs($balance);
+        } else {
+            $balance = abs($balance);
+        }
+
         $contractor = Contractor::find($request->id);
-        $contractor->name = $request->name;
-        $contractor->phone = $request->phone;
-        $contractor->address = $request->address;
-        $contractor->save();
+        $contractor->update([
+            'name' => $request->name,
+            'balance' => $balance,
+            'phone' => $request->phone,
+            'address' => $request->address,
+        ]);
+
+        \App\Models\MasterOpeningBalance::updateOrCreate(
+            [
+                'master_type' => 'contractor',
+                'master_id' => $contractor->id,
+                'financial_year' => \App\Models\MasterOpeningBalance::getCurrentFinancialYear(),
+            ],
+            [
+                'amount' => abs($data['balance'] ?? 0),
+                'balance_type' => $data['balance_type'] ?? 'Credit',
+            ]
+        );
+
         return true;
     }
 

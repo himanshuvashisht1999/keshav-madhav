@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Requests\Admin\Master\WashingMasterStoreRequest;
 use App\Requests\Admin\Master\WashingMasterUpdateRequest;
 use App\Services\Admin\Payment\Master\WashingMasterService;
+use App\Models\MasterOpeningBalance;
+use App\Models\WashingMaster;
 use Illuminate\Http\Request;
 
 class WashingMasterController extends Controller
@@ -19,7 +21,9 @@ class WashingMasterController extends Controller
 
     public function index()
     {
-        return view('admin.payment.master.washing_master.index');
+        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('washing_master');
+        $response['total_current_balance'] = WashingMaster::where('status', '!=', 3)->sum('balance');
+        return view('admin.payment.master.washing_master.index', $response);
     }
 
     public function indexList(Request $request)

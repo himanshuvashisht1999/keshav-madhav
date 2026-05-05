@@ -15,6 +15,8 @@ class WashingMasterStoreRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255|unique:washing_masters,name',
+            'balance' => 'required|numeric',
+            'balance_type' => 'required|string|in:Credit,Debit',
         ];
     }
 }

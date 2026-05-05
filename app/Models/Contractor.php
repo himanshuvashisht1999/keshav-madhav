@@ -8,5 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class Contractor extends Model
 {
     use HasFactory;
-    protected $fillable = ['name', 'phone', 'address', 'status'];
+    protected $fillable = ['name', 'balance', 'phone', 'address', 'status'];
+
+    public function currentOpeningBalance()
+    {
+        return $this->hasOne(MasterOpeningBalance::class, 'master_id')
+            ->where('master_type', 'contractor')
+            ->where('financial_year', MasterOpeningBalance::getCurrentFinancialYear());
+    }
 }
