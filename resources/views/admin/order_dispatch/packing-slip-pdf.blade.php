@@ -89,7 +89,9 @@
                     <tr>
                         <td class="text-center" style="border-bottom: 0.5px solid #eee;">{{ $index + 1 }}.</td>
                         <td style="border-bottom: 0.5px solid #eee; text-transform: uppercase;">
-                            <strong>{{ $item['product_name'] }} {{ $item['size_set_name'] }} {{ $item['color_name'] }}</strong>
+                            <strong>{{ $item['product_name'] }} {{ $item['size_set_name'] }} 
+                            <!-- {{ $item['color_name'] }} -->
+                        </strong>
                         </td>
                         <td class="text-right" style="border-bottom: 0.5px solid #eee;">{{ number_format($item['total_qty'], 0) }}</td>
                         <td class="text-right" style="border-bottom: 0.5px solid #eee;">{{ number_format($item['box_count'], 0) }}</td>
