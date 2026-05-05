@@ -79,6 +79,9 @@
                                 <a href="{{ route('admin.inventory.fair-product.generate-pdf-batch', $batch->id) }}?show_wsp=no" class="btn btn-sm btn-outline-primary mr-1" title="PDF No Price">
                                     <i class="fas fa-file-pdf"></i> NO WSP
                                 </a>
+                                <a href="{{ route('admin.inventory.fair-product.download-prn') }}?batch_id={{ $batch->id }}" class="btn btn-sm btn-outline-dark mr-1" title="Download PRN (Printer)">
+                                    <i class="fas fa-print"></i> PRN
+                                </a>
                                 <form action="{{ route('admin.inventory.fair-product.destroy', $batch->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this entire catalog batch?')">
                                     @csrf
                                     @method('DELETE')

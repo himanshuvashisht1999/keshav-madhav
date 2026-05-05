@@ -324,4 +324,24 @@ class FairProductController extends Controller
 
         return view('admin.inventory.fair_product.color_chart', compact('sample', 'variant'));
     }
+
+    public function downloadPrn(Request $request)
+    {
+        $batchId = $request->get('batch_id');
+        if (!$batchId) return back()->with('error', 'No batch selected.');
+
+        $samples = FairProduct::with(['product.series', 'product.fitting', 'product.pattern', 'sizeSet'])
+            ->where('fair_batch_id', $batchId)
+            ->get();
+
+        if ($samples->isEmpty()) return back()->with('error', 'No products found in this batch.');
+
+        $tspl = generateFairBulkTspl($samples);
+        
+        $filename = "Fair_Batch_" . $batchId . "_" . date('Ymd_His') . ".prn";
+        
+        return response($tspl)
+            ->header('Content-Type', 'text/plain')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
 }

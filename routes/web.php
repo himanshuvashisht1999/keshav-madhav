@@ -785,6 +785,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/edit/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'edit'])->name('edit');
                 Route::put('/update/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'update'])->name('update');
                 Route::get('/generate-pdf-batch/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'generatePdfFromBatch'])->name('generate-pdf-batch');
+                Route::get('/download-prn', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'downloadPrn'])->name('download-prn');
                 Route::delete('/destroy/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'destroy'])->name('destroy');
             });
             Route::prefix('/purchase-history')->name('purchase_history.')->group(function () {
