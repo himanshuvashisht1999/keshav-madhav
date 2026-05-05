@@ -553,6 +553,39 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                                                                                     </li> -->
                                     </ul>
                                 </li>
+                                <li class="nav-item {{ (str_contains($page_url, 'payment/voucher')) ? 'menu-open' : '' }}">
+                                    <a href="#"
+                                        class="nav-link {{ (str_contains($page_url, 'payment/voucher')) ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon text-info"></i>
+                                        <p>
+                                            Voucher
+                                            <i class="right fas fa-angle-left"></i>
+                                        </p>
+                                    </a>
+                                    <ul class="nav nav-treeview">
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.payment.voucher.consumable.index') }}"
+                                                class="{{ str_contains($page_url, 'payment/voucher/consumable') ? 'active' : '' }} nav-link">
+                                                <i class="fas fa-circle nav-icon" style="font-size: 12px;"></i>
+                                                <p>Consumable Voucher</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.payment.voucher.contractor.index') }}"
+                                                class="{{ str_contains($page_url, 'payment/voucher/contractor') ? 'active' : '' }} nav-link">
+                                                <i class="fas fa-circle nav-icon" style="font-size: 12px;"></i>
+                                                <p>Contractor Voucher</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.payment.voucher.washing.index') }}"
+                                                class="{{ str_contains($page_url, 'payment/voucher/washing') ? 'active' : '' }} nav-link">
+                                                <i class="fas fa-circle nav-icon" style="font-size: 12px;"></i>
+                                                <p>Washing Voucher</p>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
                                 <li class="nav-item">
                                     <a href="{{ route('admin.payment.adjustment.index') }}"
                                         class="nav-link {{ str_contains($page_url, 'payment/adjustment') ? 'active' : '' }}">

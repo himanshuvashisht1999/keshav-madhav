@@ -80,6 +80,9 @@ use App\Http\Controllers\Admin\Payment\Master\SkExpenseController as AdminSkExpe
 use App\Http\Controllers\Admin\Payment\Master\AgentPaymentMasterController as AdminAgentPaymentMasterController;
 use App\Http\Controllers\Admin\Payment\Master\WashingMasterController as AdminWashingMasterController;
 use App\Http\Controllers\Admin\Payment\Master\CuttingPaymentMasterController as AdminCuttingPaymentMasterController;
+use App\Http\Controllers\Admin\Payment\Voucher\ConsumableVoucherController as AdminConsumableVoucherController;
+use App\Http\Controllers\Admin\Payment\Voucher\ContractorVoucherController as AdminContractorVoucherController;
+use App\Http\Controllers\Admin\Payment\Voucher\WashingVoucherController as AdminWashingVoucherController;
 use App\Http\Controllers\Admin\Payment\PaymentAdjustmentController as AdminPaymentAdjustmentController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 
@@ -1425,6 +1428,38 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                     Route::get('/edit/{id}', [AdminAdjustmentMasterController::class, 'edit'])->name('edit');
                     Route::post('/update/{id}', [AdminAdjustmentMasterController::class, 'update'])->name('update');
                     Route::get('/delete/{id}', [AdminAdjustmentMasterController::class, 'delete'])->name('delete');
+                });
+            });
+
+            Route::prefix('voucher')->name('voucher.')->group(function () {
+                Route::prefix('consumable')->name('consumable.')->group(function () {
+                    Route::get('/index', [AdminConsumableVoucherController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminConsumableVoucherController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminConsumableVoucherController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminConsumableVoucherController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminConsumableVoucherController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminConsumableVoucherController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminConsumableVoucherController::class, 'delete'])->name('delete');
+                });
+
+                Route::prefix('contractor')->name('contractor.')->group(function () {
+                    Route::get('/index', [AdminContractorVoucherController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminContractorVoucherController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminContractorVoucherController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminContractorVoucherController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminContractorVoucherController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminContractorVoucherController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminContractorVoucherController::class, 'delete'])->name('delete');
+                });
+
+                Route::prefix('washing')->name('washing.')->group(function () {
+                    Route::get('/index', [AdminWashingVoucherController::class, 'index'])->name('index');
+                    Route::get('/indexList', [AdminWashingVoucherController::class, 'indexList'])->name('indexList');
+                    Route::get('/create', [AdminWashingVoucherController::class, 'create'])->name('create');
+                    Route::post('/store', [AdminWashingVoucherController::class, 'store'])->name('store');
+                    Route::get('/edit', [AdminWashingVoucherController::class, 'edit'])->name('edit');
+                    Route::post('/update', [AdminWashingVoucherController::class, 'update'])->name('update');
+                    Route::get('/delete', [AdminWashingVoucherController::class, 'delete'])->name('delete');
                 });
             });
 
