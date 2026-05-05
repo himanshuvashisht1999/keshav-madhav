@@ -38,7 +38,9 @@ class UploadedSlipsController extends Controller
             'orderPrintingStageTransaction.to_stage',
             'orderPrintingStageTransaction.getToUnitMaster',
             'orderPrintingToStichingTransaction.to_stage',
-            'orderPrintingToStichingTransaction.getToUnitMaster'
+            'orderPrintingToStichingTransaction.getToUnitMaster',
+            'packingMain',
+            'fabricRollAssignings'
         ])
             ->orderBy('id', 'desc')
             ->where('status', '!=', 3);
@@ -414,8 +416,20 @@ class UploadedSlipsController extends Controller
     public function destroy($id)
     {
         $slip = ProductionSlipDigitization::findOrFail($id);
-        $slip->delete();
 
+        // Check for any associated sessions/transactions
+        $hasSessions = $slip->orderLots()->exists() ||
+            $slip->orderStageTransaction()->exists() ||
+            $slip->orderPrintingStageTransaction()->exists() ||
+            $slip->orderPrintingToStichingTransaction()->exists() ||
+            $slip->fabricRollAssignings()->exists() ||
+            $slip->packingMain()->exists();
+
+        if ($hasSessions) {
+            return redirect()->back()->with('error', 'Cannot delete slip. It has associated sessions or transactions. Please delete the sessions first.');
+        }
+
+        $slip->delete();
         return redirect()->back()->with('success', 'Slip deleted successfully.');
     }
 

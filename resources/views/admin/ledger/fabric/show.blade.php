@@ -101,6 +101,7 @@
                                         <th class="text-right">Inward (Mtrs)</th>
                                         <th class="text-right">Outward (Mtrs)</th>
                                         <th class="text-right">Running Balance</th>
+                                        <th class="text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -112,8 +113,9 @@
                                     <tr class="table-light">
                                         <td colspan="5" class="text-right fw-bold">Opening Balance</td>
                                         <td class="text-right fw-bold">{{ number_format($openingBalance, 2) }}</td>
+                                        <td></td>
                                     </tr>
-                                    @forelse($transactions as $tx)
+                                    @forelse($transactions as $index => $tx)
                                         @php
                                             $totalInward += $tx->inward;
                                             $totalOutward += $tx->outward;
@@ -125,10 +127,47 @@
                                             <td class="text-right text-inward">{{ $tx->inward > 0 ? number_format($tx->inward, 2) : '-' }}</td>
                                             <td class="text-right text-outward">{{ $tx->outward > 0 ? number_format($tx->outward, 2) : '-' }}</td>
                                             <td class="text-right fw-bold">{{ number_format($tx->running_balance, 2) }}</td>
+                                            <td class="text-center">
+                                                @if(isset($tx->rolls) && count($tx->rolls) > 0)
+                                                    <button class="btn btn-xs btn-info" type="button" data-toggle="collapse" data-target="#rolls-{{ $index }}" aria-expanded="false">
+                                                        <i class="fas fa-eye"></i> Details
+                                                    </button>
+                                                @endif
+                                            </td>
                                         </tr>
+                                        @if(isset($tx->rolls) && count($tx->rolls) > 0)
+                                            <tr class="collapse" id="rolls-{{ $index }}">
+                                                <td colspan="7" class="bg-light p-0">
+                                                    <div class="px-4 py-2">
+                                                        <table class="table table-sm table-bordered bg-white mb-0 mt-1 shadow-sm" style="width: 300px;">
+                                                            <thead class="thead-light">
+                                                                <tr>
+                                                                    <th>Roll Number</th>
+                                                                    <th class="text-right">Meters</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @foreach($tx->rolls as $roll)
+                                                                    <tr>
+                                                                        <td>{{ $roll['number'] }}</td>
+                                                                        <td class="text-right">{{ number_format($roll['meter'], 2) }}</td>
+                                                                    </tr>
+                                                                @endforeach
+                                                            </tbody>
+                                                            <tfoot class="font-weight-bold">
+                                                                <tr>
+                                                                    <td>Total</td>
+                                                                    <td class="text-right">{{ number_format(collect($tx->rolls)->sum('meter'), 2) }}</td>
+                                                                </tr>
+                                                            </tfoot>
+                                                        </table>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endif
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="text-center py-4 text-muted">No transactions found for the selected period.</td>
+                                            <td colspan="7" class="text-center py-4 text-muted">No transactions found for the selected period.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -139,6 +178,7 @@
                                             <th class="text-right text-success">{{ number_format($totalInward, 2) }}</th>
                                             <th class="text-right text-danger">{{ number_format($totalOutward, 2) }}</th>
                                             <th class="text-right">{{ number_format($transactions->last()->running_balance, 2) }}</th>
+                                            <th></th>
                                         </tr>
                                     </tfoot>
                                 @endif

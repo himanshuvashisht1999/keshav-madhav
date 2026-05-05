@@ -104,20 +104,22 @@ class FabricLedgerController extends Controller
         // 3. Unify Transactions
         $transactions = collect();
 
-        // Add Inwards
-        foreach ($inwards as $in) {
+        // Add Grouped Inwards (Shipments)
+        $groupedInwards = $inwards->groupBy('fabric_receipt_id');
+        foreach ($groupedInwards as $receiptId => $rolls) {
+            $first = $rolls->first();
             $transactions->push((object)[
-                'date' => $in->created_at,
+                'date' => $first->created_at,
                 'type' => 'Inward',
-                'party' => $in->fabric_receipt?->vendor?->name ?? 'Direct Purchase',
-                'particulars' => 'Receipt: Roll ' . $in->roll_number . ' (Shp: ' . ($in->fabric_receipt?->shipment_id ?? '-') . ')',
-                'inward' => (float)$in->meter,
+                'party' => $first->fabric_receipt?->vendor?->name ?? 'Direct Purchase',
+                'particulars' => 'Receipt (Shipment: ' . ($first->fabric_receipt?->shipment_id ?? '-') . ')',
+                'inward' => (float)$rolls->sum('meter'),
                 'outward' => 0,
+                'rolls' => $rolls->map(fn($r) => ['number' => $r->roll_number, 'meter' => $r->meter])->values()
             ]);
         }
 
         // Add reconciliation adjustments for each roll (if any)
-        // We do this roll-by-roll to ensure local accuracy
         $allInwardRollsForCalc = FabricReceiptDetail::whereIn('id', $receivedRollIds)->get();
         foreach ($allInwardRollsForCalc as $roll) {
             $totalUsed = (float)$roll->meter - (float)$roll->remaining_quantity;
@@ -129,59 +131,73 @@ class FabricLedgerController extends Controller
 
                 $unaccounted = $totalUsed - $recordedOutflow;
                 if ($unaccounted > 0.01) {
-                    // Only show in transactions if within date range (use updated_at as proxy for usage date)
                     $showAdj = true;
                     if ($startDate && $roll->updated_at->format('Y-m-d') < $startDate) $showAdj = false;
                     if ($endDate && $roll->updated_at->format('Y-m-d') > $endDate) $showAdj = false;
-                    if ($vendorId || $customerId) $showAdj = false; // Adjustments are internal
+                    if ($vendorId || $customerId) $showAdj = false;
 
                     if ($showAdj) {
                         $transactions->push((object)[
                             'date' => $roll->updated_at,
                             'type' => 'Outward',
                             'party' => 'Internal Production',
-                            'particulars' => 'Usage: Roll ' . $roll->roll_number . ' (Cutting/Sampling)',
+                            'particulars' => 'Internal Usage (Roll ' . $roll->roll_number . ')',
                             'inward' => 0,
                             'outward' => $unaccounted,
+                            'rolls' => [['number' => $roll->roll_number, 'meter' => $unaccounted]]
                         ]);
                     }
                 }
             }
         }
 
-        // Add recorded outflows
-        foreach ($salesOutwards as $sale) {
+        // Add Grouped Sales
+        $groupedSales = $salesOutwards->groupBy('agent_order_id');
+        foreach ($groupedSales as $orderId => $items) {
+            $first = $items->first();
             $transactions->push((object)[
-                'date' => $sale->created_at,
+                'date' => $first->created_at,
                 'type' => 'Outward',
-                'party' => $sale->order?->party?->name ?? 'Customer',
-                'particulars' => 'Sale: Order ' . ($sale->order?->sku ?? '-'),
+                'party' => $first->order?->party?->name ?? 'Customer',
+                'particulars' => 'Sale: Order ' . ($first->order?->sku ?? '-'),
                 'inward' => 0,
-                'outward' => (float)$sale->meter,
+                'outward' => (float)$items->sum('meter'),
+                'rolls' => $items->map(fn($s) => ['number' => $s->roll?->roll_number ?? '-', 'meter' => $s->meter])->values()
             ]);
         }
 
-        foreach ($returnsOutwards as $ret) {
+        // Add Grouped Returns
+        $groupedReturns = $returnsOutwards->groupBy('fabric_return_id');
+        foreach ($groupedReturns as $returnId => $details) {
+            $first = $details->first();
             $transactions->push((object)[
-                'date' => $ret->created_at,
+                'date' => $first->created_at,
                 'type' => 'Outward',
-                'party' => $ret->fabric_return?->receipt?->vendor?->name ?? 'Vendor',
-                'particulars' => 'Return: Roll ' . ($ret->receipt_detail?->roll_number ?? '-') . ' (Ret: ' . ($ret->fabric_return?->return_number ?? '-') . ')',
+                'party' => $first->fabric_return?->receipt?->vendor?->name ?? 'Vendor',
+                'particulars' => 'Return: ' . ($first->fabric_return?->return_number ?? '-'),
                 'inward' => 0,
-                'outward' => (float)$ret->return_meter,
+                'outward' => (float)$details->sum('return_meter'),
+                'rolls' => $details->map(fn($r) => ['number' => $r->receipt_detail?->roll_number ?? '-', 'meter' => $r->return_meter])->values()
             ]);
         }
 
-        foreach ($productionOutwards as $prod) {
+        // Add Grouped Production
+        $groupedProduction = $productionOutwards->groupBy(function($item) {
+            return $item->order_no . '|' . $item->lot_no;
+        });
+        foreach ($groupedProduction as $key => $items) {
+            $first = $items->first();
             $transactions->push((object)[
-                'date' => $prod->created_at,
+                'date' => $first->created_at,
                 'type' => 'Outward',
-                'party' => $prod->stageMasterUnit?->name ?? 'Internal Unit',
-                'particulars' => 'Production: Lot ' . ($prod->lot_no ?? '-') . ' (Ord: ' . ($prod->order_no ?? '-') . ')',
+                'party' => $first->stageMasterUnit?->name ?? 'Internal Unit',
+                'particulars' => 'Production: Lot ' . ($first->lot_no ?? '-') . ' (Ord: ' . ($first->order_no ?? '-') . ')',
                 'inward' => 0,
-                'outward' => (float)$prod->meter,
+                'outward' => (float)$items->sum('meter'),
+                'rolls' => $items->map(fn($p) => ['number' => $p->roll_no ?? '-', 'meter' => $p->meter])->values()
             ]);
         }
+
 
         // 4. Final Sort and Balance Calculation
         $transactions = $transactions->sortBy('date')->values();

@@ -202,7 +202,18 @@
                                                     <i class="fas fa-check"></i>
                                                 </button>
                                             </form>
+                                        @endif
 
+                                        @php
+                                            $totalSessions = $slip->orderLots->count() + 
+                                                            $slip->orderStageTransaction->count() + 
+                                                            $slip->orderPrintingStageTransaction->count() + 
+                                                            $slip->orderPrintingToStichingTransaction->count() +
+                                                            $slip->fabricRollAssignings->count() +
+                                                            ($slip->packingMain ? 1 : 0);
+                                        @endphp
+
+                                        @if($totalSessions == 0)
                                             <form action="{{ route('admin.uploaded-slips.destroy', $slip->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this slip?');" style="display:inline-block;">
                                                 @csrf
                                                 @method('DELETE')
