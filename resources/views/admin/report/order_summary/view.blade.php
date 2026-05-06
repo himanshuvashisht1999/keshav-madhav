@@ -84,6 +84,7 @@
                                                 <th>Barcode</th>
                                                 <th>Design No.</th>
                                                 <th>Set Size (Set Group)</th>
+                                                <th>Lot No's</th>
                                                 <th>Colour</th>
                                                 <th>Fabric</th>
                                                 <th>Fitting</th>
@@ -99,6 +100,7 @@
                                                     <td>{{ $setData->design_number ?? " " }}</td>
                                                     <td>{{ $setData->size_measurement->name ?? "- " }}
                                                         ({{ $setData->size_measurement->size_group ?? "-" }})</td>
+                                                    <td>{{ $setData->lots->pluck('lot_no')->unique()->implode(', ') ?: '-' }}</td>
                                                     <td>{{ $setData->colors->name ?? " " }}</td>
                                                     <td>{{ $setData->fabric->name ?? " " }}</td>
                                                     <td>{{ $setData->master_product_fitting->name ?? " " }}</td>
@@ -193,8 +195,7 @@
                                         <tr>
                                             <th>#</th>
                                             <th>Lot No</th>
-                                            <th>Order No</th>
-                                            <th>Customer Name</th>
+                                            <th>Design No</th>
                                             <th>Lot Quantity</th>
                                             <th class="text-end">Action</th>
                                         </tr>
@@ -202,10 +203,9 @@
                                     <tbody>
                                         @forelse($lotsData as $index => $row)
                                             <tr>
-                                                <td>{{ $lotsData->firstItem() + $index }}</td>
+                                                <td>{{ $index + 1 }}</td>
                                                 <td>{{ $row['lot_no'] }}</td>
-                                                <td>{{ $row['order_no'] }}</td>
-                                                <td>{{ $row['customer_name'] }}</td>
+                                                <td>{{ $row['design_number'] ?? 'N/A' }}</td>
                                                 <td class="text-end fw-bold">
                                                     {{ $row['lot_quantity'] ?? '0' }}
                                                 </td>

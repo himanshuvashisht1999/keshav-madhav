@@ -67,6 +67,15 @@
                         @csrf
                         <div class="modal-body p-4">
                             <div class="form-group mb-3">
+                                <label class="font-weight-bold text-muted small text-uppercase">Dispatch Date</label>
+                                <div class="input-group shadow-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-calendar-alt text-primary"></i></span>
+                                    </div>
+                                    <input type="datetime-local" class="form-control border-left-0" id="dispatch_date" name="dispatch_date" value="{{ date('Y-m-d\TH:i', strtotime($dispatch->dispatch_date)) }}" required>
+                                </div>
+                            </div>
+                            <div class="form-group mb-3">
                                 <label class="font-weight-bold text-muted small text-uppercase">Subtotal Amount (Total Pcs * Price)</label>
                                 <div class="input-group shadow-sm">
                                     <div class="input-group-prepend">

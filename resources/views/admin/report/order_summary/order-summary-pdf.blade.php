@@ -72,6 +72,7 @@
                 <th>Barcode</th>
                 <th>Design No</th>
                 <th>Size</th>
+                <th>Lot No's</th>
                 <th>Colour</th>
                 <th>Fabric</th>
                 <th>Set Qty</th>
@@ -84,6 +85,7 @@
                     <td>{{ $set->bar_code }}</td>
                     <td>{{ $set->design_number }}</td>
                     <td>{{ $set->size_measurement->name ?? '-' }}</td>
+                    <td>{{ $set->lots->pluck('lot_no')->unique()->implode(', ') ?: '-' }}</td>
                     <td>{{ $set->colors->name ?? '-' }}</td>
                     <td>{{ $set->fabric->name ?? '-' }}</td>
                     <td class="text-right">{{ $set->set_quantity }}</td>
@@ -93,7 +95,7 @@
         </tbody>
         <tfoot>
             <tr>
-                <th colspan="5" class="text-right">Total</th>
+                <th colspan="6" class="text-right">Total</th>
                 <th class="text-right">{{ $order->orderProductSets->sum('set_quantity') }}</th>
                 <th class="text-right">{{ $order->orderProductSets->sum('total_quantity') }}</th>
             </tr>
@@ -106,8 +108,7 @@
             <tr>
                 <th>#</th>
                 <th>Lot No</th>
-                <th>Order No</th>
-                <th>Customer</th>
+                <th>Design No</th>
                 <th>Quantity</th>
             </tr>
         </thead>
@@ -116,8 +117,7 @@
                 <tr>
                     <td>{{ $i + 1 }}</td>
                     <td>{{ $lot['lot_no'] }}</td>
-                    <td>{{ $lot['order_no'] }}</td>
-                    <td>{{ $lot['customer_name'] }}</td>
+                    <td>{{ $lot['design_number'] ?? 'N/A' }}</td>
                     <td class="text-right">{{ $lot['lot_quantity'] }}</td>
                 </tr>
             @endforeach

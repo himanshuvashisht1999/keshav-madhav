@@ -337,7 +337,7 @@
                 @if($order->gst_amount > 0)
                 <tr class="summary-row">
                     <td colspan="5" class="text-right">GST</td>
-                    <td class="text-right">@ {{ number_format($order->gst_percentage, 2) }} %</td>
+                    <td class="text-right"></td>
                     <td class="text-right">{{ number_format($order->gst_amount, 2) }}</td>
                 </tr>
                 @endif

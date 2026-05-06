@@ -150,4 +150,8 @@ class OrderProductSet extends Model
     {
         return $this->colors ? $this->colors->name : 'N/A';
     }
+    public function lots()
+    {
+        return $this->hasMany(FabricRollAssigning::class, 'order_products_set_id');
+    }
 }

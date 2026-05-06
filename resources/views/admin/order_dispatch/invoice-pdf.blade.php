@@ -130,7 +130,7 @@
 
                 <tr class="summary-row">
                     <td colspan="5" class="text-right">GST (+)</td>
-                    <td class="text-right">@ {{ number_format($dispatch->gst_percentage ?? 5, 1) }} %</td>
+                    <td class="text-right"></td>
                     <td class="text-right">Rs. {{ number_format($filteredGst, 2) }}</td>
                 </tr>
 

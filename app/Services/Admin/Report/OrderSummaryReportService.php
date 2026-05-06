@@ -66,7 +66,7 @@ class OrderSummaryReportService
             'orderProductSets.fabric.receiptDetails',
             'orderProductSets.master_design_pattern',
             'orderProductSets.master_product_fitting',
-            'orderProductSets.stage_master_unit',
+            'orderProductSets.lots',
             'orderProductSets.product_set_details'
         ])->find($id);
 
@@ -121,6 +121,8 @@ class OrderSummaryReportService
     {
         // $searchLot   = $request->lot_no;
         $searchOrder = $id;
+        $orderMain = \App\Models\OrderMain::find($searchOrder);
+        $orderSku = $orderMain->sku ?? '';
 
         $lots = \App\Models\FabricRollAssigning::query()
 
@@ -136,18 +138,21 @@ class OrderSummaryReportService
                 'orderProductSet.orderMain.customer'
             ])
 
-            ->when($searchOrder, function ($q) use ($searchOrder) {
-                $q->whereHas('orderProductSet.orderMain', function ($qq) use ($searchOrder) {
-                    $qq->where('id', $searchOrder);
+            ->when($searchOrder, function ($q) use ($searchOrder, $orderSku) {
+                $q->where(function($qq) use ($searchOrder, $orderSku) {
+                    $qq->whereHas('orderProductSet.orderMain', function ($qqq) use ($searchOrder) {
+                        $qqq->where('id', $searchOrder);
+                    });
+                    if ($orderSku) {
+                        $qq->orWhere('order_no', $orderSku);
+                    }
                 });
             })
 
             ->groupBy('lot_no')
+            ->get();
 
-            ->paginate(10)
-            ->withQueryString();
-        // dd($lots);
-        $result = $lots->through(function ($lot) {
+        $result = $lots->map(function ($lot) {
 
             $orderMain = $lot->orderProductSet?->orderMain;
 
@@ -157,6 +162,7 @@ class OrderSummaryReportService
                 'customer_name' => $orderMain->customer->name ?? '',
                 'lot_no' => $lot->lot_no,
                 'lot_quantity' => $lot->lot_quantity ?? 0,
+                'design_number' => $lot->orderProductSet->design_number ?? 'N/A',
             ];
         });
 

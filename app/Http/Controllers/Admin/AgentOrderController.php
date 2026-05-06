@@ -2214,6 +2214,7 @@ class AgentOrderController extends Controller
         DB::beginTransaction();
         try {
             $dispatch->update([
+                'dispatch_date' => $request->dispatch_date ?? $dispatch->dispatch_date,
                 'total_amount' => $total_amount,
                 'discount_amount' => $discount_amount,
                 'gst_percentage' => $gst_percentage,
