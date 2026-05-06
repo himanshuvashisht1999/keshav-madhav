@@ -179,14 +179,16 @@ class FairProductController extends Controller
             $sizeSetId = $item['size_set_id'];
             $discountPercent = $item['discount_percent'] ?? 0;
             
-            $barcode = 'FAIR-' . $productId . '-' . $sizeSetId . '-' . time() . rand(10, 99);
-            
-            FairProduct::create([
+            $fairProduct = FairProduct::create([
                 'fair_batch_id' => $batch->id,
                 'product_id' => $productId,
                 'size_set_id' => $sizeSetId,
-                'barcode' => $barcode,
+                'barcode' => 'TEMP',
                 'discount_percent' => $discountPercent
+            ]);
+
+            $fairProduct->update([
+                'barcode' => 'F' . strtoupper(base_convert($fairProduct->id, 10, 36))
             ]);
         }
 
@@ -209,14 +211,16 @@ class FairProductController extends Controller
             $sizeSetId = $item['size_set_id'];
             $discountPercent = $item['discount_percent'] ?? 0;
             
-            $barcode = 'FAIR-' . $productId . '-' . $sizeSetId . '-' . time() . rand(10, 99);
-            
-            FairProduct::create([
+            $fairProduct = FairProduct::create([
                 'fair_batch_id' => $batch->id,
                 'product_id' => $productId,
                 'size_set_id' => $sizeSetId,
-                'barcode' => $barcode,
+                'barcode' => 'TEMP',
                 'discount_percent' => $discountPercent
+            ]);
+
+            $fairProduct->update([
+                'barcode' => 'F' . strtoupper(base_convert($fairProduct->id, 10, 36))
             ]);
         }
 
