@@ -129,20 +129,40 @@
                                     <span class="font-weight-bold">₹<span id="subTotal">0.00</span></span>
                                 </div>
                                 <div class="form-group mb-2">
-                                    <label class="small font-weight-bold text-muted mb-1">Discount (%)</label>
-                                    <div class="input-group input-group-sm shadow-sm">
-                                        <input type="number" id="discountPercentage" class="form-control" value="{{ $return->discount_percentage }}" step="0.01">
-                                        <div class="input-group-append"><span class="input-group-text">%</span></div>
+                                    <label class="small font-weight-bold text-muted mb-1">Discount</label>
+                                    <div class="row no-gutters">
+                                        <div class="col-5">
+                                            <div class="input-group input-group-sm shadow-sm">
+                                                <input type="number" id="discountPercentage" name="discount_percentage" class="form-control" value="{{ $return->discount_percentage }}" step="any">
+                                                <div class="input-group-append"><span class="input-group-text">%</span></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-7 pl-1">
+                                            <div class="input-group input-group-sm shadow-sm">
+                                                <div class="input-group-prepend"><span class="input-group-text">₹</span></div>
+                                                <input type="number" id="discountAmountInput" class="form-control" value="{{ $return->discount_amount }}" step="any">
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="text-right small text-danger font-weight-bold mt-1">-₹<span id="discountAmount">0.00</span></div>
+                                    <div class="text-right small text-danger font-weight-bold mt-1" style="display:none">-₹<span id="discountAmount">0.00</span></div>
                                 </div>
                                 <div class="form-group mb-2 border-top pt-2">
-                                    <label class="small font-weight-bold text-muted mb-1">GST (%)</label>
-                                    <div class="input-group input-group-sm shadow-sm">
-                                        <input type="number" id="gstPercentage" class="form-control" value="{{ $return->gst_percentage }}" step="0.01">
-                                        <div class="input-group-append"><span class="input-group-text">%</span></div>
+                                    <label class="small font-weight-bold text-muted mb-1">GST</label>
+                                    <div class="row no-gutters">
+                                        <div class="col-5">
+                                            <div class="input-group input-group-sm shadow-sm">
+                                                <input type="number" id="gstPercentage" name="gst_percentage" class="form-control" value="{{ $return->gst_percentage }}" step="any">
+                                                <div class="input-group-append"><span class="input-group-text">%</span></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-7 pl-1">
+                                            <div class="input-group input-group-sm shadow-sm">
+                                                <div class="input-group-prepend"><span class="input-group-text">₹</span></div>
+                                                <input type="number" id="gstAmountInput" class="form-control" value="{{ $return->gst_amount }}" step="any">
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="text-right small text-success font-weight-bold mt-1">+₹<span id="gstAmount">0.00</span></div>
+                                    <div class="text-right small text-success font-weight-bold mt-1" style="display:none">+₹<span id="gstAmount">0.00</span></div>
                                 </div>
                                 <div class="form-group mb-3 border-top pt-2">
                                     <label class="small font-weight-bold text-muted mb-1">Other Charges</label>
@@ -179,7 +199,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     $(document).ready(function() {
-        function calculateTotals() {
+        function calculateTotals(source = 'default') {
             let subTotal = 0;
             let hasSelection = false;
 
@@ -203,13 +223,46 @@
                 }
             });
 
-            const discountPercent = parseFloat($('#discountPercentage').val()) || 0;
-            const gstPercent = parseFloat($('#gstPercentage').val()) || 0;
-            const otherCharges = parseFloat($('#otherCharges').val()) || 0;
+            let discountPercent = parseFloat($('#discountPercentage').val()) || 0;
+            let discountAmt = parseFloat($('#discountAmountInput').val()) || 0;
 
-            const discountAmt = subTotal * (discountPercent / 100);
+            if (source === 'discount_percentage') {
+                discountAmt = subTotal * (discountPercent / 100);
+                $('#discountAmountInput').val(discountAmt.toFixed(2));
+            } else if (source === 'discount_amount') {
+                if (subTotal > 0) {
+                    discountPercent = (discountAmt / subTotal) * 100;
+                    $('#discountPercentage').val(discountPercent.toFixed(6));
+                } else {
+                    $('#discountPercentage').val(0);
+                }
+            } else {
+                // Initial or subtotal change - sync amount from percentage
+                discountAmt = subTotal * (discountPercent / 100);
+                $('#discountAmountInput').val(discountAmt.toFixed(2));
+            }
+
             const taxableAmt = subTotal - discountAmt;
-            const gstAmt = taxableAmt * (gstPercent / 100);
+            let gstPercent = parseFloat($('#gstPercentage').val()) || 0;
+            let gstAmt = parseFloat($('#gstAmountInput').val()) || 0;
+
+            if (source === 'gst_percentage') {
+                gstAmt = taxableAmt * (gstPercent / 100);
+                $('#gstAmountInput').val(gstAmt.toFixed(2));
+            } else if (source === 'gst_amount') {
+                if (taxableAmt > 0) {
+                    gstPercent = (gstAmt / taxableAmt) * 100;
+                    $('#gstPercentage').val(gstPercent.toFixed(6));
+                } else {
+                    $('#gstPercentage').val(0);
+                }
+            } else {
+                // Initial or subtotal change - sync amount from percentage
+                gstAmt = taxableAmt * (gstPercent / 100);
+                $('#gstAmountInput').val(gstAmt.toFixed(2));
+            }
+
+            const otherCharges = parseFloat($('#otherCharges').val()) || 0;
             const grandTotal = taxableAmt + gstAmt + otherCharges;
 
             $('#subTotal').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
@@ -220,15 +273,20 @@
             $('.submit-return-btn').prop('disabled', !hasSelection);
         }
 
-        $(document).on('input', '.return-qty, .return-price, #discountPercentage, #gstPercentage, #otherCharges', function() {
+        $(document).on('input', '.return-qty, .return-price, #otherCharges', function() {
             if ($(this).hasClass('return-qty')) {
                 const max = parseFloat($(this).attr('max'));
                 let val = parseFloat($(this).val());
                 if (val > max) $(this).val(max);
                 if (val < 0) $(this).val(0);
             }
-            calculateTotals();
+            calculateTotals('default');
         });
+
+        $('#discountPercentage').on('input', function() { calculateTotals('discount_percentage'); });
+        $('#discountAmountInput').on('input', function() { calculateTotals('discount_amount'); });
+        $('#gstPercentage').on('input', function() { calculateTotals('gst_percentage'); });
+        $('#gstAmountInput').on('input', function() { calculateTotals('gst_amount'); });
 
         // Initial calculation
         calculateTotals();

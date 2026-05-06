@@ -154,7 +154,7 @@
                                 <span class="input-group-text py-0 px-1" style="font-size: 10px;">Disc %</span>
                             </div>
                             <input type="number" id="discountPercentage" class="form-control text-right h-auto py-0 px-1" 
-                                style="font-weight: bold;" value="{{ $order->discount_percentage }}" min="0" max="100" step="0.1">
+                                style="font-weight: bold;" value="{{ $order->discount_percentage }}" min="0" max="100" step="any">
                         </div>
                         <div class="input-group input-group-sm" title="Discount Amount">
                             <div class="input-group-prepend">
@@ -175,7 +175,7 @@
                                 <span class="input-group-text py-0 px-1" style="font-size: 10px;">GST %</span>
                             </div>
                             <input type="number" id="gstPercentage" class="form-control text-right h-auto py-0 px-1" 
-                                style="font-weight: bold;" value="{{ $order->gst_percentage }}" min="0" max="100" step="0.1">
+                                style="font-weight: bold;" value="{{ $order->gst_percentage }}" min="0" max="100" step="any">
                         </div>
                         <div class="input-group input-group-sm" title="GST Amount">
                             <div class="input-group-prepend">
@@ -359,7 +359,7 @@
                 if (discount_mode === 'amount') {
                     discountAmount = parseFloat($('#discountAmountInput').val()) || 0;
                     if (!$('#discountPercentage').is(':focus') && subTotal > 0) {
-                        $('#discountPercentage').val((discountAmount / subTotal * 100).toFixed(4));
+                        $('#discountPercentage').val((discountAmount / subTotal * 100).toFixed(6));
                     }
                 } else {
                     discountAmount = subTotal * (discountPercent / 100);
@@ -375,7 +375,7 @@
                 if (gst_mode === 'amount') {
                     gstAmount = parseFloat($('#gstAmountInput').val()) || 0;
                     if (!$('#gstPercentage').is(':focus') && taxableAmount > 0) {
-                        $('#gstPercentage').val((gstAmount / taxableAmount * 100).toFixed(4));
+                        $('#gstPercentage').val((gstAmount / taxableAmount * 100).toFixed(6));
                     }
                 } else {
                     gstAmount = taxableAmount * (gstPercent / 100);

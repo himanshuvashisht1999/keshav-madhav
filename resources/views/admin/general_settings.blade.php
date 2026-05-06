@@ -164,7 +164,7 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="exampleInputEmail1">GST % (Order Default)</label>
-                                            <input type="number" step="0.01" name="gst_order" class="form-control"
+                                            <input type="number" step="any" name="gst_order" class="form-control"
                                                 placeholder="Enter GST %" value="{{$data->gst_order}}">
                                             @if ($errors->has('gst_order'))
                                                 <span class="invalid-feedback d-block">

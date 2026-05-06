@@ -98,7 +98,7 @@
                                     <div class="form-group mb-3">
                                         <label class="font-weight-bold text-muted small text-uppercase">GST %</label>
                                         <div class="input-group shadow-sm">
-                                            <input type="number" step="0.01" class="form-control" id="gst_percentage" name="gst_percentage" value="{{ $dispatch->gst_percentage ?? 5 }}">
+                                            <input type="number" step="any" class="form-control" id="gst_percentage" name="gst_percentage" value="{{ $dispatch->gst_percentage ?? 5 }}">
                                             <div class="input-group-append">
                                                 <span class="input-group-text bg-white"><i class="fas fa-percentage text-secondary"></i></span>
                                             </div>
@@ -112,7 +112,7 @@
                                             <div class="input-group-prepend">
                                                 <span class="input-group-text bg-white border-right-0"><i class="fas fa-rupee-sign text-muted"></i></span>
                                             </div>
-                                            <input type="number" step="0.01" class="form-control border-left-0" id="gst_amount_input" value="{{ round($dispatch->gst_amount, 2) }}">
+                                            <input type="number" step="any" class="form-control border-left-0" id="gst_amount_input" value="{{ round($dispatch->gst_amount, 2) }}">
                                         </div>
                                     </div>
                                 </div>
@@ -395,7 +395,7 @@
                 } else if (source === 'amount') {
                     if (taxableAmount > 0) {
                         gstPercentage = (gstAmount / taxableAmount) * 100;
-                        $('#gst_percentage').val(gstPercentage.toFixed(2));
+                        $('#gst_percentage').val(gstPercentage.toFixed(6));
                     } else {
                         $('#gst_percentage').val(0);
                     }
