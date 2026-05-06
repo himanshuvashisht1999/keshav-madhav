@@ -1977,11 +1977,10 @@ class AgentOrderController extends Controller
                 'sales_agent_id' => $firstOrder->sales_agent_id,
                 'status' => 'dispatched',
                 'created_by' => Auth::id(),
-                'dispatch_date' => now(),
+                'dispatch_date' => $request->dispatch_date ? date('Y-m-d H:i:s', strtotime($request->dispatch_date)) : now(),
             ]);
 
-            $grandTotalSubtotal = 0;
-            $grandTotalGst = 0;
+            $calculatedSubtotal = 0;
 
             foreach ($orders as $order) {
                 if ($order->status == 'dispatched')
@@ -2043,8 +2042,7 @@ class AgentOrderController extends Controller
 
                 $gst = $subtotal * (($order->gst_percentage ?? 5) / 100);
 
-                $grandTotalSubtotal += $subtotal;
-                $grandTotalGst += $gst;
+                $calculatedSubtotal += $subtotal;
 
                 // 2. Update Order Status
                 $remainingItems = DB::table('agent_order_items')
@@ -2062,12 +2060,24 @@ class AgentOrderController extends Controller
                 ]);
             }
 
-            // Update Dispatch Totals
-            $dispatch->total_amount = $grandTotalSubtotal;
-            $dispatch->gst_amount = $grandTotalGst;
-            $dispatch->gst_percentage = $firstOrder->gst_percentage ?? 5;
-            $dispatch->grand_total = $grandTotalSubtotal + $grandTotalGst;
-            $dispatch->save();
+            // Update Dispatch Totals from manual overrides or calculation
+            $finalSubtotal = (float) ($request->total_amount ?? $calculatedSubtotal);
+            $discount_amount = (float) ($request->discount_amount ?? 0);
+            $gst_percentage = (float) ($request->gst_percentage ?? 5);
+            $other_charges = (float) ($request->other_charges ?? 0);
+
+            $taxable_amount = $finalSubtotal - $discount_amount;
+            $gst_amount = $taxable_amount * ($gst_percentage / 100);
+            $grand_total = $taxable_amount + $gst_amount + $other_charges;
+
+            $dispatch->update([
+                'total_amount' => $finalSubtotal,
+                'discount_amount' => $discount_amount,
+                'gst_percentage' => $gst_percentage,
+                'gst_amount' => $gst_amount,
+                'other_charges' => $other_charges,
+                'grand_total' => $grand_total,
+            ]);
 
             // Finally: Update Party Balance (Increase model)
             if ($dispatch->party_type === 'vendor') {

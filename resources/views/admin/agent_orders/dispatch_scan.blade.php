@@ -10,15 +10,11 @@
                         <p class="text-muted mb-0">Order #ORD-{{ $order->id }} | {{ $order->shop_name }}</p>
                     </div>
                     <div class="d-flex align-items-center">
-                        <form action="{{ route('admin.agent-orders.dispatch-selected') }}" method="POST"
-                            class="d-inline mr-2">
-                            @csrf
-                            <input type="hidden" name="order_ids[]" value="{{ $order->id }}">
-                            <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm"
-                                onclick="return confirm('Are you sure you want to finalize and dispatch scanned items for this order?')">
+                        <div class="d-inline mr-2">
+                            <button type="button" class="btn btn-success rounded-pill px-4 shadow-sm" data-toggle="modal" data-target="#dispatchModal">
                                 <i class="fas fa-shipping-fast mr-1"></i> DISPATCH NOW
                             </button>
-                        </form>
+                        </div>
                         <a href="{{ route('admin.agent-orders.show', $order->id) }}"
                             class="btn btn-outline-secondary rounded-pill px-4">
                             <i class="fas fa-arrow-left mr-1"></i> Back to Details
@@ -181,6 +177,95 @@
                 </div>
             </div>
         </section>
+    </div>
+
+    <!-- Dispatch Configuration Modal -->
+    <div class="modal fade" id="dispatchModal" tabindex="-1" role="dialog" aria-labelledby="dispatchModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+                <div class="modal-header bg-success text-white" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                    <h5 class="modal-title font-weight-bold" id="dispatchModalLabel"><i class="fas fa-shipping-fast mr-2"></i> Configure Dispatch</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="dispatchForm" action="{{ route('admin.agent-orders.dispatch-selected') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="order_ids[]" value="{{ $order->id }}">
+                    <div class="modal-body p-4">
+                        <div class="form-group mb-3">
+                            <label class="font-weight-bold text-muted small text-uppercase">Dispatch Date</label>
+                            <div class="input-group shadow-sm">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-calendar-alt text-success"></i></span>
+                                </div>
+                                <input type="datetime-local" class="form-control border-left-0" id="dispatch_date" name="dispatch_date" value="{{ date('Y-m-d\TH:i') }}" required>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="font-weight-bold text-muted small text-uppercase">Subtotal Amount</label>
+                            <div class="input-group shadow-sm">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-rupee-sign text-primary"></i></span>
+                                </div>
+                                <input type="number" step="0.01" class="form-control border-left-0" id="modal_total_amount" name="total_amount" value="{{ $order->grand_total }}" required>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="font-weight-bold text-muted small text-uppercase">Extra Discount</label>
+                            <div class="input-group shadow-sm">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-minus-circle text-danger"></i></span>
+                                </div>
+                                <input type="number" step="0.01" class="form-control border-left-0" id="modal_discount_amount" name="discount_amount" value="0">
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="font-weight-bold text-muted small text-uppercase">Other Charges</label>
+                            <div class="input-group shadow-sm">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-plus-circle text-info"></i></span>
+                                </div>
+                                <input type="number" step="0.01" class="form-control border-left-0" id="modal_other_charges" name="other_charges" value="0">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="font-weight-bold text-muted small text-uppercase">GST %</label>
+                                    <div class="input-group shadow-sm">
+                                        <input type="number" step="any" class="form-control" id="modal_gst_percentage" name="gst_percentage" value="{{ $order->gst_percentage ?? 5 }}">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text bg-white"><i class="fas fa-percentage text-secondary"></i></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="font-weight-bold text-muted small text-uppercase">GST Amount</label>
+                                    <div class="input-group shadow-sm">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text bg-white border-right-0"><i class="fas fa-rupee-sign text-muted"></i></span>
+                                        </div>
+                                        <input type="number" step="any" class="form-control border-left-0" id="modal_gst_amount_input" value="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="my-4">
+                        <div class="bg-light p-3 rounded-lg text-center shadow-sm border">
+                            <h6 class="text-muted text-uppercase mb-1 small font-weight-bold">Final Grand Total</h6>
+                            <h3 class="mb-0 text-success font-weight-bold" id="modal_grand_total_display">₹0.00</h3>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light p-3" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                        <button type="button" class="btn btn-outline-secondary px-4 mr-2" data-dismiss="modal" style="border-radius: 8px;">Cancel</button>
+                        <button type="submit" class="btn btn-success px-5 font-weight-bold" style="border-radius: 8px;">CONFIRM DISPATCH</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <style>
@@ -527,6 +612,46 @@
                     console.log('Audio feedback failed', e);
                 }
             }
+
+            // Modal Calculation Logic
+            function calculateDispatch(source) {
+                const totalAmount = parseFloat($('#modal_total_amount').val()) || 0;
+                const discountAmount = parseFloat($('#modal_discount_amount').val()) || 0;
+                const otherCharges = parseFloat($('#modal_other_charges').val()) || 0;
+                const taxableAmount = totalAmount - discountAmount;
+
+                let gstPercentage = parseFloat($('#modal_gst_percentage').val()) || 0;
+                let gstAmount = parseFloat($('#modal_gst_amount_input').val()) || 0;
+
+                if (source === 'percentage') {
+                    gstAmount = taxableAmount * (gstPercentage / 100);
+                    $('#modal_gst_amount_input').val(gstAmount.toFixed(2));
+                } else if (source === 'amount') {
+                    if (taxableAmount > 0) {
+                        gstPercentage = (gstAmount / taxableAmount) * 100;
+                        $('#modal_gst_percentage').val(gstPercentage.toFixed(6));
+                    } else {
+                        $('#modal_gst_percentage').val(0);
+                    }
+                } else {
+                    gstAmount = taxableAmount * (gstPercentage / 100);
+                    $('#modal_gst_amount_input').val(gstAmount.toFixed(2));
+                }
+
+                const grandTotal = taxableAmount + gstAmount + otherCharges;
+                $('#modal_grand_total_display').text('₹' + grandTotal.toLocaleString('en-IN', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }));
+            }
+
+            $('#modal_gst_percentage').on('input', function() { calculateDispatch('percentage'); });
+            $('#modal_gst_amount_input').on('input', function() { calculateDispatch('amount'); });
+            $('#modal_total_amount, #modal_discount_amount, #modal_other_charges').on('input', function() { calculateDispatch('default'); });
+
+            $('#dispatchModal').on('show.bs.modal', function() {
+                calculateDispatch('default');
+            });
         });
     </script>
 @endpush
