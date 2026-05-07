@@ -214,7 +214,7 @@ class InventoryController extends Controller
     {
         // dd($request->all());
         $request->validate([
-            'source_type' => 'required|in:production,vendor,customer',
+            'source_type' => 'required|in:production,vendor,customer,consume',
             'vendor_id' => 'required_if:source_type,vendor',
             'customer_id' => 'required_if:source_type,customer',
             'products.*.product_id' => 'required',
@@ -262,7 +262,7 @@ class InventoryController extends Controller
 
             // Create Purchase Summary if Vendor/Customer
             $purchase = null;
-            if ($source_type !== 'production') {
+            if ($source_type !== 'production' && $source_type !== 'consume') {
                 $purchase = \App\Models\DomesticInventoryPurchase::create([
                     'vendor_id' => $vendor_id,
                     'customer_id' => $customer_id,
@@ -810,10 +810,21 @@ class InventoryController extends Controller
     {
         $query = DomesticInventory::where('product_id', $request->product_id)
             ->where('size_set_id', $request->size_set_id)
-            ->where('color_id', $request->color_id)
-            ->where('pattern_id', $request->pattern_id)
-            ->where('fitting_id', $request->fitting_id)
-            ->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+            ->where('color_id', $request->color_id);
+
+        if ($request->filled('pattern_id')) {
+            $query->where('domestic_inventories.pattern_id', $request->pattern_id);
+        } else {
+            $query->whereNull('domestic_inventories.pattern_id');
+        }
+
+        if ($request->filled('fitting_id')) {
+            $query->where('domestic_inventories.fitting_id', $request->fitting_id);
+        } else {
+            $query->whereNull('domestic_inventories.fitting_id');
+        }
+
+        $query->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
             ->where('racks.storeroom_id', $request->warehouse_id)
             ->where('domestic_inventories.rack_id', $request->rack_id);
 
@@ -828,17 +839,52 @@ class InventoryController extends Controller
         )->first();
 
         if ($inventory) {
-            // Get MRP from variants
-            $variant = ProductionGoodVariant::where('production_goods_id', $request->product_id)
-                ->where('master_size_measurement_id', $request->size_set_id)
-                ->first();
+            // Get FULL details like getProductFullDetails to populate the primary card
+            $product = ProductionGoods::with(['variants.items.color', 'fitting', 'pattern'])->find($request->product_id);
+            
+            $variants = [];
+            $all_colors = [];
+            if ($product) {
+                foreach ($product->variants as $variant) {
+                    $colors = [];
+                    foreach ($variant->items as $item) {
+                        $colorData = [
+                            'id' => $item->master_color_id,
+                            'name' => $item->color->name ?? 'Unknown'
+                        ];
+                        $colors[] = $colorData;
+                        
+                        // If this is the selected size set, collect all colors for the primary dropdown
+                        if ($variant->master_size_measurement_id == $request->size_set_id) {
+                            $all_colors[] = $colorData;
+                        }
+                    }
+
+                    $variants[] = [
+                        'size_set_id' => $variant->master_size_measurement_id,
+                        'size_set_name' => $variant->sizeSet->name ?? 'Unknown',
+                        'mrp' => $variant->mrp,
+                        'colors' => $colors
+                    ];
+                }
+            }
+
+            $mrp = 0;
+            foreach($variants as $v) {
+                if ($v['size_set_id'] == $request->size_set_id) {
+                    $mrp = $v['mrp'];
+                    break;
+                }
+            }
 
             return response()->json([
                 'success' => true,
                 'inventory_id' => $inventory->id,
                 'total_boxes' => $inventory->aggregate_boxes,
                 'pieces_per_box' => $inventory->quantity,
-                'mrp' => $variant ? $variant->mrp : 0
+                'mrp' => $mrp,
+                'variants' => $variants,
+                'all_colors' => $all_colors
             ]);
         }
 
