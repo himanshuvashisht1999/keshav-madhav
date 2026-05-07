@@ -139,7 +139,7 @@ class OrderSummaryReportService
             ])
 
             ->when($searchOrder, function ($q) use ($searchOrder, $orderSku) {
-                $q->where(function($qq) use ($searchOrder, $orderSku) {
+                $q->where(function ($qq) use ($searchOrder, $orderSku) {
                     $qq->whereHas('orderProductSet.orderMain', function ($qqq) use ($searchOrder) {
                         $qqq->where('id', $searchOrder);
                     });
@@ -153,8 +153,15 @@ class OrderSummaryReportService
             ->get();
 
         $result = $lots->map(function ($lot) {
-
             $orderMain = $lot->orderProductSet?->orderMain;
+
+            // Fetch Cutting Master (Stage 3) info
+            $cuttingMaster = $lot->stageMasterUnit->name ?? 'N/A';
+
+            // Fetch Timing for Cutting Stage (ID 3)
+            $timing = \App\Models\OrderLotStageTiming::where('lot_no', $lot->lot_no)
+                ->where('master_stage_id', 3)
+                ->first();
 
             return [
                 'order_id' => $orderMain->id ?? null,
@@ -163,6 +170,10 @@ class OrderSummaryReportService
                 'lot_no' => $lot->lot_no,
                 'lot_quantity' => $lot->lot_quantity ?? 0,
                 'design_number' => $lot->orderProductSet->design_number ?? 'N/A',
+                'cutting_master' => $cuttingMaster,
+                'start_time' => $timing->start_date ?? null,
+                'end_time' => $timing->end_date ?? null,
+                'status' => $timing->status ?? 0
             ];
         });
 

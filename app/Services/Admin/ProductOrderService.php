@@ -850,8 +850,30 @@ class ProductOrderService
                     $cuttingStage->remarks = $request->remark ?? null;
                     $cuttingStage->belt = $request->belt ?? null;
                     $cuttingStage->processed_by = auth()->id();
+                    $cuttingStage->lot_no = $data->design_number; // Set initial lot_no
                     $cuttingStage->status = 1; // Pending at cutting
+                    
+                    // Set Timing Details
+                    $cuttingStage->start_date = now();
+                    $unit = StageMasterUnit::find($request->master_cutting_id);
+                    $days = $unit->lot_time_in_days ?? 0;
+                    if ($days > 0) {
+                        $cuttingStage->end_date = now()->addDays($days);
+                    }
+                    
                     $cuttingStage->save();
+
+                    // ✅ Removed: Populate Unified Timing table (only for printing/stitching)
+                    // \App\Models\OrderLotStageTiming::updateOrCreate(
+                    //     ['lot_no' => $data->design_number, 'master_stage_id' => 3],
+                    //     [
+                    //         'unit_id' => $request->master_cutting_id,
+                    //         'start_date' => $cuttingStage->start_date,
+                    //         'end_date' => $cuttingStage->end_date,
+                    //         'days_allocated' => $days,
+                    //         'status' => 1 // Progress
+                    //     ]
+                    // );
 
                     // Update Order Product Set
                     $data->remain_total_quantity -= $assignQty;
@@ -1158,7 +1180,28 @@ class ProductOrderService
                 $cuttingStage->remarks = $request->remark ?? null;
                 $cuttingStage->processed_by = auth()->id();
                 $cuttingStage->status = 1;
+                
+                // Set Timing Details
+                $cuttingStage->start_date = now();
+                $unit = StageMasterUnit::find($request->master_cutting_id);
+                $days = $unit->lot_time_in_days ?? 0;
+                if ($days > 0) {
+                    $cuttingStage->end_date = now()->addDays($days);
+                }
+                
                 $cuttingStage->save();
+                
+                // ✅ Removed: Populate Unified Timing table for Domestic Order
+                // \App\Models\OrderLotStageTiming::updateOrCreate(
+                //     ['lot_no' => $save_orderProductSet->design_number, 'master_stage_id' => 3],
+                //     [
+                //         'unit_id' => $request->master_cutting_id,
+                //         'start_date' => $cuttingStage->start_date,
+                //         'end_date' => $cuttingStage->end_date,
+                //         'days_allocated' => $days,
+                //         'status' => 1 // Progress
+                //     ]
+                // );
 
                 // Update Order Product Set status
                 $save_orderProductSet->remain_total_quantity = 0;

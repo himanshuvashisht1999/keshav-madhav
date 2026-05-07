@@ -75,27 +75,39 @@
                 <th>Lot No's</th>
                 <th>Colour</th>
                 <th>Fabric</th>
+                <th>Cutting Master</th>
+                <th>Start Date</th>
+                <th>Expected End Date</th>
+                <th>Completed Date</th>
                 <th>Set Qty</th>
                 <th>Total Qty</th>
             </tr>
         </thead>
         <tbody>
             @foreach($order->orderProductSets as $set)
-                <tr>
-                    <td>{{ $set->bar_code }}</td>
-                    <td>{{ $set->design_number }}</td>
-                    <td>{{ $set->size_measurement->name ?? '-' }}</td>
-                    <td>{{ $set->lots->pluck('lot_no')->unique()->implode(', ') ?: '-' }}</td>
-                    <td>{{ $set->colors->name ?? '-' }}</td>
-                    <td>{{ $set->fabric->name ?? '-' }}</td>
-                    <td class="text-right">{{ $set->set_quantity }}</td>
-                    <td class="text-right">{{ $set->total_quantity }}</td>
-                </tr>
+                        <tr>
+                            <td>{{ $set->bar_code }}</td>
+                            <td>{{ $set->design_number }}</td>
+                            <td>{{ $set->size_measurement->name ?? '-' }}</td>
+                            <td>{{ $set->lots->pluck('lot_no')->unique()->implode(', ') ?: '-' }}</td>
+                            <td>{{ $set->colors->name ?? '-' }}</td>
+                            <td>{{ $set->fabric->name ?? '-' }}</td>
+                            <td>
+                                {{ $set->lots->map(function ($lot) {
+                                    return $lot->stageMasterUnit->name ?? null;
+                                })->unique()->filter()->implode(', ') ?: '-' }}
+                            </td>
+                            <td>{{ $set->order_cutting_stage->start_date ? date('d M Y H:i', strtotime($set->order_cutting_stage->start_date)) : '-' }}</td>
+                            <td>{{ $set->order_cutting_stage->end_date ? date('d M Y H:i', strtotime($set->order_cutting_stage->end_date)) : '-' }}</td>
+                            <td>{{ $set->order_cutting_stage->complete_date ? date('d M Y H:i', strtotime($set->order_cutting_stage->complete_date)) : '-' }}</td>
+                            <td class="text-right">{{ $set->set_quantity }}</td>
+                            <td class="text-right">{{ $set->total_quantity }}</td>
+                        </tr>
             @endforeach
         </tbody>
         <tfoot>
             <tr>
-                <th colspan="6" class="text-right">Total</th>
+                <th colspan="10" class="text-right">Total</th>
                 <th class="text-right">{{ $order->orderProductSets->sum('set_quantity') }}</th>
                 <th class="text-right">{{ $order->orderProductSets->sum('total_quantity') }}</th>
             </tr>

@@ -45,17 +45,18 @@
                         <table class="table table-bordered table-sm">
                             <thead>
                                 <tr>
-                                    <th width="25%">Stage</th>
-                                    <th width="25%">Unit Name</th>
-                                    <th width="20%">Phone</th>
+                                    <th width="20%">Stage</th>
+                                    <th width="20%">Unit Name</th>
+                                    <th width="15%">Phone</th>
                                     <th width="15%">Employee ID</th>
                                     <th width="15%">Password</th>
+                                    <th width="15%">Time (Days)</th>
                                 </tr>
                             </thead>
 
                             <tbody id="stageUnitContainer">
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">
+                                    <td colspan="6" class="text-center text-muted">
                                         Select warehouse
                                     </td>
                                 </tr>
@@ -111,7 +112,7 @@
 
             if (!master_fabric_warehouse_id) {
                 $('#stageUnitContainer').html(`
-                                    <tr><td colspan="5" class="text-center text-muted">Select warehouse</td></tr>
+                                    <tr><td colspan="6" class="text-center text-muted">Select warehouse</td></tr>
                                 `);
                 return;
             }
@@ -142,7 +143,7 @@
                         // header
                         html += `
                                 <tr class="table-primary">
-                                    <td colspan="4"><strong>${stage.stage_name}</strong></td>
+                                    <td colspan="5"><strong>${stage.stage_name}</strong></td>
                                     <td class="text-right">
                                         <button type="button"
                                                 class="btn btn-success btn-sm add-unit-btn"
@@ -174,6 +175,9 @@
                                                 <td>
                                                     <input type="text" name="rows[${rowIndex}][password]" class="form-control form-control-sm">
                                                 </td>
+                                                <td>
+                                                    <input type="number" name="rows[${rowIndex}][lot_time_in_days]" class="form-control form-control-sm" value="1">
+                                                </td>
                                             </tr>`;
                             rowIndex++;
                         }
@@ -203,6 +207,10 @@
                                                  <td>
                                                     <input type="text" name="rows[${rowIndex}][password]" class="form-control form-control-sm"
                                                            value="${row.password ?? ''}">
+                                                </td>
+                                                <td>
+                                                    <input type="number" name="rows[${rowIndex}][lot_time_in_days]" class="form-control form-control-sm"
+                                                           value="${row.lot_time_in_days ?? 1}">
                                                 </td>
                                             </tr>`;
 
@@ -243,6 +251,9 @@
                                     </td>
                                      <td>
                                         <input type="text" name="rows[${index}][password]" class="form-control form-control-sm">
+                                    </td>
+                                    <td>
+                                        <input type="number" name="rows[${index}][lot_time_in_days]" class="form-control form-control-sm" value="1">
                                     </td>
                                 </tr>
                             `);

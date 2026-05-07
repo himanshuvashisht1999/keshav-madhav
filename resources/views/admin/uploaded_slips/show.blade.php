@@ -90,7 +90,7 @@
                 </div>
 
                 {{-- ================= TYPE 1 : ROLLS ================= --}}
-                @if($slip->save_type == 1 && count($lots) > 0)
+                @if(count($lots) > 0)
                     @foreach($lots as $index => $lot)
                         <div class="mb-5 p-4 border rounded bg-white shadow-sm" style="border-top: 5px solid #10b981 !important;">
                             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -202,7 +202,7 @@
                 @endif
 
                 {{-- ================= TYPE 2 : PRINTING ================= --}}
-                @if($slip->save_type == 2 && count($printings) > 0)
+                @if(count($printings) > 0)
                     @foreach($printings as $index => $printing)
                         <div class="mb-5 p-4 border rounded bg-white shadow-sm" style="border-top: 5px solid #3b82f6 !important;">
                             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -263,7 +263,7 @@
                                     <div class="row mb-4">
                                         <div class="col-md-3"><strong>Lot No:</strong> <span class="text-dark">#{{ $printing->lot_no }}</span></div>
                                         <div class="col-md-3"><strong>Date:</strong> {{ getformatDateTime($printing->production_datetime) }}</div>
-                                        <div class="col-md-3"><strong>Route:</strong> <span class="text-muted small">{{ $printing->from_stage?->name }}</span> <i class="fas fa-arrow-right mx-1 small"></i> <span class="text-primary">{{ $printing->getToUnitMaster?->name }}</span></div>
+                                        <div class="col-md-3"><strong>Route:</strong> <span class="text-muted small">{{ $printing->from_stage?->name }}</span> <i class="fas fa-arrow-right mx-1 small"></i> <span class="text-primary fw-bold">{{ $printing->to_stage?->name }}</span> <span class="text-muted small">({{ $printing->getToUnitMaster?->name }})</span></div>
                                         <div class="col-md-3 text-end"><strong>Total Pieces:</strong> <span class="badge bg-primary px-3 fs-6">{{ $printing->quantity }}</span></div>
                                     </div>
 
@@ -299,7 +299,7 @@
                 @endif
 
                 {{-- ================= TYPE 3 : OTHER ================= --}}
-                @if($slip->save_type == 3 && count($stage_transactions) > 0)
+                @if(count($stage_transactions) > 0)
                     @foreach($stage_transactions as $index => $transaction)
                         <div class="mb-5 p-4 border rounded bg-white shadow-sm" style="border-top: 5px solid #f59e0b !important;">
                             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -363,7 +363,7 @@
                                     <div class="row mb-4">
                                         <div class="col-md-3"><strong>Lot No:</strong> <span class="text-dark">#{{ $transaction->lot_no }}</span></div>
                                         <div class="col-md-3"><strong>Date:</strong> {{ getformatDateTime($transaction->production_datetime) }}</div>
-                                        <div class="col-md-3"><strong>Transfer:</strong> <span class="text-muted small">{{ $transaction->from_stage?->name }}</span> <i class="fas fa-arrow-right mx-1 small"></i> <span class="text-warning fw-bold">{{ $transaction->getToUnitMaster?->name }}</span></div>
+                                        <div class="col-md-3"><strong>Transfer:</strong> <span class="text-muted small">{{ $transaction->from_stage?->name }}</span> <i class="fas fa-arrow-right mx-1 small"></i> <span class="text-warning fw-bold">{{ $transaction->to_stage?->name }}</span> <span class="text-muted small">({{ $transaction->getToUnitMaster?->name }})</span></div>
                                         <div class="col-md-3 text-end"><strong>Total Pieces:</strong> <span class="badge bg-warning text-dark px-3 fs-6">{{ $transaction->quantity }}</span></div>
                                     </div>
 

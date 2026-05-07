@@ -278,24 +278,29 @@
                 
                 <table class="metric-table">
                     <tr>
-                        <td style="width: 23%;">
+                        <td style="width: 18%;">
                             <span class="metric-label">Total</span>
                             <span class="metric-value">{{ number_format($total) }}</span>
                         </td>
                         <td style="width: 2%;"></td>
-                        <td style="width: 23%;">
+                        <td style="width: 18%;">
                             <span class="metric-label">Remaining</span>
                             <span class="metric-value" style="color: {{ $remaining > 0 ? '#dc2626' : '#16a34a' }}">{{ number_format($remaining) }}</span>
                         </td>
                         <td style="width: 2%;"></td>
-                        <td style="width: 23%;">
-                            <span class="metric-label">ETA</span>
-                            <span class="metric-value">{{ $eta->format('d M, Y') }}</span>
+                        <td style="width: 18%;">
+                            <span class="metric-label">Start</span>
+                            <span class="metric-value">{{ $d['start_date'] ? Carbon::parse($d['start_date'])->format('d M') : '-' }}</span>
                         </td>
                         <td style="width: 2%;"></td>
-                        <td style="width: 23%;">
+                        <td style="width: 18%;">
+                            <span class="metric-label">ETA</span>
+                            <span class="metric-value">{{ $eta->format('d M') }}</span>
+                        </td>
+                        <td style="width: 2%;"></td>
+                        <td style="width: 20%;">
                             <span class="metric-label">Completed</span>
-                            <span class="metric-value">{{ $completed ? $completed->format('d M, Y') : '-' }}</span>
+                            <span class="metric-value">{{ $completed ? $completed->format('d M') : '-' }}</span>
                         </td>
                     </tr>
                 </table>

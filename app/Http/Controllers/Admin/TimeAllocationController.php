@@ -26,6 +26,7 @@ class TimeAllocationController extends Controller {
     public function edit($id){
         $response['production_stages'] = $this->service->getProductionStages();
         $response['allocation'] = \App\Models\MasterStageWiseTimeAllocation::findOrFail($id);
+        $response['transactions'] = $this->service->getLotStageTransactions($response['allocation']->lot_no);
         
         return view('admin.time_allocation.edit', $response);
     } 

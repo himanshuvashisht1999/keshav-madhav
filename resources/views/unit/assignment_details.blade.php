@@ -256,6 +256,35 @@
             </div>
         </div>
 
+        @if(isset($header['start_date']) || isset($header['end_date']))
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #f1f5f9;">
+            <div class="section-title">
+                <i class="fas fa-clock"></i> Timing Info
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Start Date</span>
+                    <span class="info-value">{{ $header['start_date'] ? date('d M Y, h:i A', strtotime($header['start_date'])) : '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Expected End</span>
+                    <span class="info-value @if(!$header['complete_date'] && now() > $header['end_date']) text-danger @endif">
+                        {{ $header['end_date'] ? date('d M Y, h:i A', strtotime($header['end_date'])) : '-' }}
+                        @if(!$header['complete_date'] && now() > $header['end_date'])
+                            <span style="font-size: 10px; color: #dc2626; font-weight: 800; text-transform: uppercase;">(Delayed)</span>
+                        @endif
+                    </span>
+                </div>
+                @if($header['complete_date'])
+                <div class="info-item info-full">
+                    <span class="info-label">Completed At</span>
+                    <span class="info-value text-success">{{ date('d M Y, h:i A', strtotime($header['complete_date'])) }}</span>
+                </div>
+                @endif
+            </div>
+        @endif
+    </div>
+
         @if($header['remark'] && $header['remark'] != '-')
             <div
                 style="margin-top: 15px; padding: 12px; background: #fffbe6; border-radius: 12px; border: 1px solid #ffe58f; font-size: 13px; color: #856404;">

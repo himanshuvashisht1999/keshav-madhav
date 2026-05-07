@@ -23,6 +23,7 @@ class StageMasterUnit extends Model
         'status',
         'employee_id',
         'password',
+        'lot_time_in_days',
         'created_at',
         'updated_at'
     ];

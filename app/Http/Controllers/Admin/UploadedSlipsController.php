@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\OrderProductSetDetail;
 use App\Models\FabricReceiptDetail;
 use App\Models\OrderStageTransactionDetail;
+use App\Services\Admin\PackingService;
 
 class UploadedSlipsController extends Controller
 {
@@ -146,7 +147,6 @@ class UploadedSlipsController extends Controller
         /* =====================================================
          * 🟢 TYPE 1 → LOT / ROLLS ALLOT
          * ===================================================== */
-        // Fetch all lots for this slip
         $data['lots'] = OrderLot::where('production_slip_digitization_id', $slip->id)
             ->with([
                 'orderMain',
@@ -169,6 +169,7 @@ class UploadedSlipsController extends Controller
             ->with([
                 'from_stage',
                 'to_stage',
+                'getToUnitMaster',
                 'orderProduct.orderProductSet.fabric',
                 'orderProduct.orderProductSet.colors',
                 'orderProduct.orderProductSet.master_design_pattern',
@@ -178,51 +179,54 @@ class UploadedSlipsController extends Controller
             ])->get();
 
         /* =====================================================
-         * 🟠 TYPE 3 → OTHER (STITCHING / HAND SLIP)
+         * 🟠 TYPE 3 → OTHER (STITCHING / HAND SLIP / TRANSFERS)
          * ===================================================== */
-        if ($slip->from_stage_id == 1) {
-            $data['stage_transactions'] = OrderPrintingToStichingTransaction::where('production_slip_digitization_id', $slip->id)
-                ->with([
-                    'from_stage',
-                    'to_stage',
-                    'orderProduct.orderProductSet.fabric',
-                    'orderProduct.orderProductSet.colors',
-                    'orderProduct.orderProductSet.master_design_pattern',
-                    'orderProduct.orderProductSet.master_product_fitting',
-                    'orderProduct.orderProductSet.orderMain.customer',
-                    'details'
-                ])->get();
-        } else {
-            $data['stage_transactions'] = OrderStageTransaction::where('production_slip_digitization_id', $slip->id)
-                ->with([
-                    'from_stage',
-                    'to_stage',
-                    'orderProduct.orderProductSet.fabric',
-                    'orderProduct.orderProductSet.colors',
-                    'orderProduct.orderProductSet.master_design_pattern',
-                    'orderProduct.orderProductSet.master_product_fitting',
-                    'orderProduct.orderProductSet.orderMain.customer',
-                    'details'
-                ])->get();
-        }
+        $stage_tx = OrderStageTransaction::where('production_slip_digitization_id', $slip->id)
+            ->with([
+                'from_stage',
+                'to_stage',
+                'getToUnitMaster',
+                'orderProduct.orderProductSet.fabric',
+                'orderProduct.orderProductSet.colors',
+                'orderProduct.orderProductSet.master_design_pattern',
+                'orderProduct.orderProductSet.master_product_fitting',
+                'orderProduct.orderProductSet.orderMain.customer',
+                'details'
+            ])->get();
 
-        // NEW: If this is a Packing stage slip, fetch the packing details
+        $printing_to_stitching_tx = OrderPrintingToStichingTransaction::where('production_slip_digitization_id', $slip->id)
+            ->with([
+                'from_stage',
+                'to_stage',
+                'getToUnitMaster',
+                'orderProduct.orderProductSet.fabric',
+                'orderProduct.orderProductSet.colors',
+                'orderProduct.orderProductSet.master_design_pattern',
+                'orderProduct.orderProductSet.master_product_fitting',
+                'orderProduct.orderProductSet.orderMain.customer',
+                'details'
+            ])->get();
+
+        $data['stage_transactions'] = $stage_tx->concat($printing_to_stitching_tx);
+
+        // Fetch packing details and outflows if applicable
         if ($slip->from_stage_id == 11) {
             $data['packing_details'] = \App\Models\PackingMain::where('slip_id', $slip->id)
                 ->with(['order', 'cartons.boxes.items.detail', 'cartons.items.detail'])
                 ->get();
 
-            // Fetch outflows (Dead, Sampling, Debit) for this slip
             $data['outflows'] = \App\Models\ProductionOutflowInventory::where('slip_id', $slip->id)
                 ->with(['product', 'color', 'size', 'rack.storeroom', 'responsibleStage', 'responsibleUnit'])
                 ->get();
 
-            // Fetch reworks for this slip
             $data['reworks'] = \App\Models\OrderStageTransaction::where('production_slip_digitization_id', $slip->id)
                 ->where('type', 'rework')
                 ->with(['toStage', 'toUnit', 'details'])
                 ->get();
         } else {
+            $data['packing_details'] = \App\Models\PackingMain::where('slip_id', $slip->id)
+                ->with(['order', 'cartons.boxes.items.detail', 'cartons.items.detail'])
+                ->get();
             $data['outflows'] = collect();
             $data['reworks'] = collect();
         }
@@ -243,88 +247,57 @@ class UploadedSlipsController extends Controller
         // 1. From Lots
         foreach ($data['lots'] as $lot) {
             $consolidated['lot_nos']->push($lot->lot_no);
-            if ($lot->production_datetime)
-                $consolidated['production_dates']->push($lot->production_datetime);
-            if ($lot->orderMain)
-                $consolidated['order_nos']->push($lot->orderMain->sku);
+            if ($lot->production_datetime) $consolidated['production_dates']->push($lot->production_datetime);
+            if ($lot->orderMain) $consolidated['order_nos']->push($lot->orderMain->sku);
             if ($lot->orderProductSet) {
                 $ops = $lot->orderProductSet;
-                if ($ops->design_number)
-                    $consolidated['design_nos']->push($ops->design_number);
+                if ($ops->design_number) $consolidated['design_nos']->push($ops->design_number);
                 if ($ops->fabric_names) {
-                    $names = explode(',', $ops->fabric_names);
-                    foreach ($names as $n) {
-                        $consolidated['fabrics']->push(trim($n));
-                    }
+                    foreach (explode(',', $ops->fabric_names) as $n) $consolidated['fabrics']->push(trim($n));
                 }
-                if ($ops->colors)
-                    $consolidated['colors']->push($ops->colors->name);
-                if ($ops->master_design_pattern)
-                    $consolidated['patterns']->push($ops->master_design_pattern->name);
-                if ($ops->master_product_fitting)
-                    $consolidated['fittings']->push($ops->master_product_fitting->name);
-                if ($ops->orderMain?->customer)
-                    $consolidated['customers']->push($ops->orderMain->customer->name);
+                if ($ops->colors) $consolidated['colors']->push($ops->colors->name);
+                if ($ops->master_design_pattern) $consolidated['patterns']->push($ops->master_design_pattern->name);
+                if ($ops->master_product_fitting) $consolidated['fittings']->push($ops->master_product_fitting->name);
+                if ($ops->orderMain?->customer) $consolidated['customers']->push($ops->orderMain->customer->name);
             }
         }
 
         // 2. From Printings
         foreach ($data['printings'] as $printing) {
             $consolidated['lot_nos']->push($printing->lot_no);
-            if ($printing->production_datetime)
-                $consolidated['production_dates']->push($printing->production_datetime);
+            if ($printing->production_datetime) $consolidated['production_dates']->push($printing->production_datetime);
             if ($printing->orderProduct?->orderProductSet) {
                 $ops = $printing->orderProduct->orderProductSet;
-                if ($ops->orderMain)
-                    $consolidated['order_nos']->push($ops->orderMain->sku);
-                if ($ops->design_number)
-                    $consolidated['design_nos']->push($ops->design_number);
+                if ($ops->orderMain) $consolidated['order_nos']->push($ops->orderMain->sku);
+                if ($ops->design_number) $consolidated['design_nos']->push($ops->design_number);
                 if ($ops->fabric_names) {
-                    $names = explode(',', $ops->fabric_names);
-                    foreach ($names as $n) {
-                        $consolidated['fabrics']->push(trim($n));
-                    }
+                    foreach (explode(',', $ops->fabric_names) as $n) $consolidated['fabrics']->push(trim($n));
                 }
-                if ($ops->colors)
-                    $consolidated['colors']->push($ops->colors->name);
-                if ($ops->master_design_pattern)
-                    $consolidated['patterns']->push($ops->master_design_pattern->name);
-                if ($ops->master_product_fitting)
-                    $consolidated['fittings']->push($ops->master_product_fitting->name);
-                if ($ops->orderMain?->customer)
-                    $consolidated['customers']->push($ops->orderMain->customer->name);
+                if ($ops->colors) $consolidated['colors']->push($ops->colors->name);
+                if ($ops->master_design_pattern) $consolidated['patterns']->push($ops->master_design_pattern->name);
+                if ($ops->master_product_fitting) $consolidated['fittings']->push($ops->master_product_fitting->name);
+                if ($ops->orderMain?->customer) $consolidated['customers']->push($ops->orderMain->customer->name);
             }
         }
 
         // 3. From Stage Transactions
         foreach ($data['stage_transactions'] as $tx) {
             $consolidated['lot_nos']->push($tx->lot_no);
-            if ($tx->production_datetime)
-                $consolidated['production_dates']->push($tx->production_datetime);
+            if ($tx->production_datetime) $consolidated['production_dates']->push($tx->production_datetime);
             if ($tx->orderProduct?->orderProductSet) {
                 $ops = $tx->orderProduct->orderProductSet;
-                if ($ops->orderMain)
-                    $consolidated['order_nos']->push($ops->orderMain->sku);
-                if ($ops->design_number)
-                    $consolidated['design_nos']->push($ops->design_number);
+                if ($ops->orderMain) $consolidated['order_nos']->push($ops->orderMain->sku);
+                if ($ops->design_number) $consolidated['design_nos']->push($ops->design_number);
                 if ($ops->fabric_names) {
-                    $names = explode(',', $ops->fabric_names);
-                    foreach ($names as $n) {
-                        $consolidated['fabrics']->push(trim($n));
-                    }
+                    foreach (explode(',', $ops->fabric_names) as $n) $consolidated['fabrics']->push(trim($n));
                 }
-                if ($ops->colors)
-                    $consolidated['colors']->push($ops->colors->name);
-                if ($ops->master_design_pattern)
-                    $consolidated['patterns']->push($ops->master_design_pattern->name);
-                if ($ops->master_product_fitting)
-                    $consolidated['fittings']->push($ops->master_product_fitting->name);
-                if ($ops->orderMain?->customer)
-                    $consolidated['customers']->push($ops->orderMain->customer->name);
+                if ($ops->colors) $consolidated['colors']->push($ops->colors->name);
+                if ($ops->master_design_pattern) $consolidated['patterns']->push($ops->master_design_pattern->name);
+                if ($ops->master_product_fitting) $consolidated['fittings']->push($ops->master_product_fitting->name);
+                if ($ops->orderMain?->customer) $consolidated['customers']->push($ops->orderMain->customer->name);
             }
         }
 
-        // Unique values only
         $data['summary'] = [
             'lot_no' => $consolidated['lot_nos']->unique()->implode(', '),
             'order_no' => $consolidated['order_nos']->unique()->implode(', '),
@@ -337,66 +310,26 @@ class UploadedSlipsController extends Controller
             'production_date' => $consolidated['production_dates']->unique()->map(fn($d) => getformatDateTime($d))->implode(' | ')
         ];
 
-        // For Size Set calc, still use first orderSet as baseline or aggregate from all?
-        // Usually slips share a size group even if different orders.
         $orderSet = $slip->orderProductSet;
-        if (!$orderSet && $data['lots']->isNotEmpty())
-            $orderSet = $data['lots']->first()->orderProductSet;
-        if (!$orderSet && $data['printings']->isNotEmpty())
-            $orderSet = $data['printings']->first()->orderProduct?->orderProductSet;
-        if (!$orderSet && $data['stage_transactions']->isNotEmpty())
-            $orderSet = $data['stage_transactions']->first()->orderProduct?->orderProductSet;
-
+        if (!$orderSet && $data['lots']->isNotEmpty()) $orderSet = $data['lots']->first()->orderProductSet;
+        if (!$orderSet && $data['printings']->isNotEmpty()) $orderSet = $data['printings']->first()->orderProduct?->orderProductSet;
+        if (!$orderSet && $data['stage_transactions']->isNotEmpty()) $orderSet = $data['stage_transactions']->first()->orderProduct?->orderProductSet;
         $data['orderProductSet'] = $orderSet;
 
-        // Collect all unique sizes from all types of transactions
         $all_sizes_collector = collect();
-
-        // 1. From Rolls (Type 1)
-        foreach ($data['rolls'] as $roll) {
-            foreach ($roll->fabricRollAssigningsDetail as $det) {
-                $all_sizes_collector->push($det->size);
-            }
-        }
-
-        // 2. From Printings (Type 2)
-        foreach ($data['printings'] as $pr) {
-            foreach ($pr->details as $det) {
-                $all_sizes_collector->push($det->size);
-            }
-        }
-
-        // 3. From Stage Transactions (Type 3)
-        foreach ($data['stage_transactions'] as $st) {
-            foreach ($st->details as $det) {
-                $all_sizes_collector->push($det->size);
-            }
-        }
-
-        // Sort sizes if possible (numeric vs labels)
+        foreach ($data['rolls'] as $roll) { foreach ($roll->fabricRollAssigningsDetail as $det) $all_sizes_collector->push($det->size); }
+        foreach ($data['printings'] as $pr) { foreach ($pr->details as $det) $all_sizes_collector->push($det->size); }
+        foreach ($data['stage_transactions'] as $st) { foreach ($st->details as $det) $all_sizes_collector->push($det->size); }
         $data['all_sizes'] = $all_sizes_collector->unique()->filter()->values();
 
-        // Robust Size Set Info Calculation
         $sizes = [];
         $pcs_in_set = '-';
-
-        if ($orderSet) {
-            $orderSet->loadMissing('size_measurement');
-            if ($orderSet->size_measurement && !empty($orderSet->size_measurement->size_group)) {
-                $sizes = array_filter(array_map('trim', explode(',', $orderSet->size_measurement->size_group)));
-            } elseif (!empty($orderSet->set_size)) {
-                $sizes = [$orderSet->set_size];
-            }
-
-            if ($orderSet->size_measurement) {
-                $pcs_in_set = $orderSet->size_measurement->no_of_pcs ?? count($sizes);
-            } else {
-                $pcs_in_set = count($sizes) > 0 ? count($sizes) : '-';
-            }
+        if ($orderSet && $orderSet->size_measurement) {
+            $sizes = explode(',', $orderSet->size_measurement->size_group);
+            $pcs_in_set = count($sizes);
         }
-
-        $data['size_set'] = count($sizes) > 0 ? min($sizes) . '-' . max($sizes) : '-';
         $data['pcs_in_set'] = $pcs_in_set;
+        $data['size_set'] = count($sizes) > 0 ? min($sizes) . '-' . max($sizes) : '-';
 
         return $data;
     }
@@ -693,6 +626,14 @@ class UploadedSlipsController extends Controller
                     $roll->delete();
                 }
                 $session->delete();
+
+            } elseif ($type == 'packing') {
+                $service = new PackingService();
+                $result = $service->deletePackingSession($id); // In this case $id is slip_id
+                if ($result['status'] == 'error') {
+                    throw new \Exception($result['message']);
+                }
+                $slip_id = $id;
 
             } elseif ($type == 'printing' || $type == 'transfer' || $type == 'printing_stitching') {
                 $modelMap = [

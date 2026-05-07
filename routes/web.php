@@ -139,7 +139,7 @@ Route::prefix('owner')->name('owner.')->group(function () {
         Route::get('/lots', [\App\Http\Controllers\Owner\ReportController::class, 'lots'])->name('lots');
         Route::get('/lot-details', [\App\Http\Controllers\Owner\ReportController::class, 'lotDetails'])->name('lot-details');
         Route::get('/lot-details/pdf', [\App\Http\Controllers\Owner\ReportController::class, 'lotDetailsPdf'])->name('lot-details.pdf');
-        
+
         // Stock Reports
         Route::get('/stock', [\App\Http\Controllers\Owner\ReportController::class, 'stock'])->name('stock');
         Route::get('/stock-rolls', [\App\Http\Controllers\Owner\ReportController::class, 'stockRolls'])->name('report.stock.rolls');
@@ -467,6 +467,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/edit/{id}', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'edit'])->name('edit');
             Route::post('/update/{id}', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'update'])->name('update');
             Route::post('/get-lot-details', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'getLotDetails'])->name('get-lot-details');
+            Route::get('/backfill', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'backfill'])->name('backfill');
         });
 
         Route::prefix('/packing-carton')->name('packing-carton.')->group(function () {
@@ -824,8 +825,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/update', [AdminMasterProductStageController::class, 'update'])->name('update');
             Route::get('/delete', [AdminMasterProductStageController::class, 'delete'])->name('delete');
 
-            Route::get('/lot-time', [AdminMasterProductStageController::class, 'lotTimeIndex'])->name('lot_time.index');
-            Route::post('/lot-time', [AdminMasterProductStageController::class, 'lotTimeUpdate'])->name('lot_time.update');
+
 
             // Route::get('/index',[AdminMasterProductStageController::class,'subStageIndex'])->name('index');
             // Route::get('/subStageList',[AdminMasterProductStageController::class,'subStageList'])->name('subStageList');
@@ -1538,5 +1538,6 @@ Route::get('/debug-stages', function () {
         'transactions' => \App\Models\OrderStageTransaction::latest()->take(5)->get()
     ];
 });
+
 
 

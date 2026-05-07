@@ -243,8 +243,18 @@ class UnitAuthController extends Controller
                             $qs->where('sku', 'like', '%' . $customerSearch . '%'); });
 
                     foreach ($qAssign->get() as $item) {
+                        // Fetch Timing with Fallback
+                        $timing = \App\Models\OrderLotStageTiming::where('lot_no', $item->productSet->design_number)
+                            ->where('master_stage_id', $unit->master_stage_id)
+                            ->first();
+                        
+                        $startDate = $timing->start_date ?? $item->start_date ?? null;
+                        $endDate = $timing->end_date ?? $item->end_date ?? null;
+                        $completeDate = $timing->complete_date ?? $item->complete_date ?? null;
+
                         $tasks->push([
                             'id' => $item->id,
+                            'slip_id' => $item->production_slip_digitization_id ?? null,
                             'event_type' => 'received',
                             'type' => 'cutting',
                             'lot_no' => $item->lot_no ?? '-',
@@ -254,6 +264,9 @@ class UnitAuthController extends Controller
                             'from_stage' => 'Admin Assignment',
                             'quantity' => $item->quantity,
                             'created_at' => $item->created_at,
+                            'start_date' => $startDate,
+                            'end_date' => $endDate,
+                            'complete_date' => $completeDate,
                             'status' => ($item->status == 1 || $item->image) ? 1 : 0
                         ]);
                     }
@@ -286,17 +299,43 @@ class UnitAuthController extends Controller
                             $sku = $lRef->orderMain->sku ?? $lRef->order_no ?? '-';
                         }
 
+                        $lotNoForTiming = $item->lot_no ?? $item->orderProduct?->orderProductSet?->design_number;
+                        $timing = \App\Models\OrderLotStageTiming::where('lot_no', $lotNoForTiming)
+                            ->where('master_stage_id', $unit->master_stage_id)
+                            ->first();
+
+                        $startDate = $timing->start_date ?? $item->start_date ?? null;
+                        $endDate = $timing->end_date ?? $item->end_date ?? null;
+                        $completeDate = $timing->complete_date ?? $item->complete_date ?? null;
+
+                        $designNo = $item->orderProduct?->orderProductSet?->design_number ?? '-';
+                        $customer = $item->orderProduct?->orderMain?->customer?->name ?? '-';
+                        $sizeSets = $item->orderProduct?->orderProductSet?->size_set_name ?? '-';
+
+                        if (($designNo === '-' || $customer === '-') && !empty($item->lot_no)) {
+                            $lRef = \App\Models\OrderLot::where('lot_no', $item->lot_no)->with(['orderProductSet', 'orderMain.customer'])->first();
+                            if ($lRef) {
+                                if ($designNo === '-') $designNo = $lRef->orderProductSet->design_number ?? '-';
+                                if ($customer === '-') $customer = $lRef->orderMain?->customer?->name ?? '-';
+                                if ($sizeSets === '-') $sizeSets = $lRef->orderProductSet?->size_set_name ?? '-';
+                            }
+                        }
+
                         $tasks->push([
                             'id' => $item->id,
+                            'slip_id' => $item->production_slip_digitization_id ?? null,
                             'event_type' => 'received',
                             'type' => $txTypes[$idx],
                             'lot_no' => $item->lot_no ?? '-',
-                            'design_no' => $item->orderProduct?->orderProductSet?->design_number ?? '-',
-                            'customer' => $item->orderProduct?->orderMain?->customer?->name ?? '-',
-                            'size_sets' => $item->orderProduct?->orderProductSet?->size_set_name ?? '-',
+                            'design_no' => $designNo,
+                            'customer' => $customer,
+                            'size_sets' => $sizeSets,
                             'from_stage' => $item->from_stage->name ?? '-',
                             'quantity' => $item->quantity,
                             'created_at' => $item->created_at,
+                            'start_date' => $startDate,
+                            'end_date' => $endDate,
+                            'complete_date' => $completeDate,
                             'status' => ($item->image) ? 1 : 0
                         ]);
                     }
@@ -327,6 +366,7 @@ class UnitAuthController extends Controller
 
                     $tasks->push([
                         'id' => $item->id,
+                        'slip_id' => $item->production_slip_digitization_id ?? $item->id,
                         'event_type' => 'sent',
                         'type' => 'fabric',
                         'lot_no' => $item->lot_no ?? '-',
@@ -366,14 +406,28 @@ class UnitAuthController extends Controller
                             $sku = $lRef->orderMain->sku ?? $lRef->order_no ?? '-';
                         }
 
+                        $designNo = $item->orderProduct?->orderProductSet?->design_number ?? '-';
+                        $customer = $item->orderProduct?->orderMain?->customer?->name ?? '-';
+                        $sizeSets = $item->orderProduct?->orderProductSet?->size_set_name ?? '-';
+
+                        if (($designNo === '-' || $customer === '-') && !empty($item->lot_no)) {
+                            $lRef = \App\Models\OrderLot::where('lot_no', $item->lot_no)->with(['orderProductSet', 'orderMain.customer'])->first();
+                            if ($lRef) {
+                                if ($designNo === '-') $designNo = $lRef->orderProductSet->design_number ?? '-';
+                                if ($customer === '-') $customer = $lRef->orderMain?->customer?->name ?? '-';
+                                if ($sizeSets === '-') $sizeSets = $lRef->orderProductSet?->size_set_name ?? '-';
+                            }
+                        }
+
                         $tasks->push([
                             'id' => $item->id,
+                            'slip_id' => $item->production_slip_digitization_id ?? null,
                             'event_type' => 'sent',
                             'type' => $txTypes[$idx],
                             'lot_no' => $item->lot_no ?? '-',
-                            'design_no' => $item->orderProduct?->orderProductSet?->design_number ?? '-',
-                            'customer' => $item->orderProduct?->orderMain?->customer?->name ?? '-',
-                            'size_sets' => $item->orderProduct?->orderProductSet?->size_set_name ?? '-',
+                            'design_no' => $designNo,
+                            'customer' => $customer,
+                            'size_sets' => $sizeSets,
                             'from_stage' => $item->to_stage->name ?? 'Next Stage',
                             'quantity' => $item->quantity,
                             'created_at' => $item->created_at,
@@ -777,8 +831,15 @@ class UnitAuthController extends Controller
 
         foreach ($stage_transactions as $tx) {
             if ($tx->lot_no) $consolidated['lot_nos']->push($tx->lot_no);
-            if ($tx->orderProduct?->orderProductSet) {
-                $ops = $tx->orderProduct->orderProductSet;
+            $ops = $tx->orderProduct?->orderProductSet;
+            
+            // Fallback to OrderLot if direct relationship is missing
+            if (!$ops && !empty($tx->lot_no)) {
+                $lRef = \App\Models\OrderLot::where('lot_no', $tx->lot_no)->with(['orderProductSet', 'orderMain.customer'])->first();
+                if ($lRef) $ops = $lRef->orderProductSet;
+            }
+
+            if ($ops) {
                 if ($ops->orderMain) $consolidated['order_nos']->push($ops->orderMain->sku);
                 if ($ops->design_number) $consolidated['design_nos']->push($ops->design_number);
                 if ($ops->fabric) $consolidated['fabrics']->push($ops->fabric_names);
@@ -797,7 +858,13 @@ class UnitAuthController extends Controller
         $orderSet = $slip->orderProductSet;
         if (!$orderSet && $lots->isNotEmpty()) $orderSet = $lots->first()->orderProductSet;
         if (!$orderSet && $printings->isNotEmpty()) $orderSet = $printings->first()->orderProduct?->orderProductSet;
-        if (!$orderSet && $stage_transactions->isNotEmpty()) $orderSet = $stage_transactions->first()->orderProduct?->orderProductSet;
+        if (!$orderSet && $stage_transactions->isNotEmpty()) {
+            $orderSet = $stage_transactions->first()->orderProduct?->orderProductSet;
+            if (!$orderSet && !empty($stage_transactions->first()->lot_no)) {
+                $lRef = \App\Models\OrderLot::where('lot_no', $stage_transactions->first()->lot_no)->with('orderProductSet')->first();
+                if ($lRef) $orderSet = $lRef->orderProductSet;
+            }
+        }
 
         $pcs_in_set = '-';
         if ($orderSet) {
@@ -906,10 +973,11 @@ class UnitAuthController extends Controller
             $assignments = $ass1->merge($ass2)->merge($ass3)->sortByDesc('created_at');
         }
 
-        $assignments->each(function($item) {
+        $assignments->each(function($item) use ($unit) {
             if (isset($item->productSet)) {
                 $item->order_sku = $item->productSet->orderMain->sku ?? '-';
                 $item->customer_name = $item->productSet->orderMain?->customer->name ?? '-';
+                $item->lot_number = $item->lot_no ?? ($item->productSet->design_number ?? null);
             } else {
                 $sku = $item->orderProduct->orderMain->sku ?? $item->sku ?? '-';
                 if ($sku === '-' || empty($sku)) $sku = $item->orderProduct?->orderProductSet?->orderMain?->sku ?? '-';
@@ -919,7 +987,13 @@ class UnitAuthController extends Controller
                 }
                 $item->order_sku = $sku;
                 $item->customer_name = $item->orderProduct?->orderMain?->customer?->name ?? '-';
+                $item->lot_number = $item->lot_no;
             }
+
+            // ✅ Fetch Timing Information
+            $item->timing = \App\Models\OrderLotStageTiming::where('lot_no', $item->lot_number)
+                ->where('master_stage_id', $unit->master_stage_id)
+                ->first();
         });
 
         $grouped = $assignments->groupBy('order_sku');
@@ -931,11 +1005,28 @@ class UnitAuthController extends Controller
         }
 
         $orders = $grouped->map(function($items, $sku) {
+            $isDelayed = $items->contains(function($item) {
+                return isset($item->timing) && !$item->timing->complete_date && now() > $item->timing->end_date;
+            });
+
+            // Find min start and max end
+            $startDate = null;
+            $endDate = null;
+            foreach($items as $item) {
+                if(isset($item->timing)) {
+                    if(!$startDate || ($item->timing->start_date && $item->timing->start_date < $startDate)) $startDate = $item->timing->start_date;
+                    if(!$endDate || ($item->timing->end_date && $item->timing->end_date > $endDate)) $endDate = $item->timing->end_date;
+                }
+            }
+
             return [
                 'sku' => $sku,
                 'customer' => $items->first()->customer_name ?? '-',
                 'task_count' => $items->count(),
-                'latest_task' => $items->first()->created_at
+                'latest_task' => $items->first()->created_at,
+                'is_delayed' => $isDelayed,
+                'start_date' => $startDate,
+                'end_date' => $endDate
             ];
         })->sortByDesc('latest_task');
 
@@ -953,7 +1044,39 @@ class UnitAuthController extends Controller
         $record = $this->findAssignmentRecordForUnit($type, $id, $unitId);
         if (!$record) return redirect()->back()->withError('Assignment not found or access denied.');
         $record->is_closed_for_unit = 1;
+        $record->complete_date = now();
+        
+        // Ensure end_date is set based on assignment time if not already present
+        if (!$record->end_date && $record->start_date) {
+            $days = $unit->lot_time_in_days ?? 0;
+            if ($days > 0) {
+                $record->end_date = \Carbon\Carbon::parse($record->start_date)->addDays($days);
+            }
+        }
         $record->save();
+
+        // ✅ NEW: Update Unified Timing Table
+        $lotNo = $record->lot_no;
+        if (!$lotNo) {
+             if ($type === 'cutting' && $record->productSet) {
+                 // Try to find if a lot has been created for this product set already
+                 $lot = \App\Models\OrderLot::where('order_products_set_id', $record->set_product_id)->first();
+                 $lotNo = $lot->lot_no ?? $record->productSet->design_number ?? null;
+             } elseif (method_exists($record, 'orderProduct') && $record->orderProduct) {
+                 $lotNo = $record->orderProduct->orderProductSet->design_number ?? null;
+             }
+        }
+        
+        if ($lotNo && $unit->master_stage_id != 3) {
+            \App\Models\OrderLotStageTiming::updateOrCreate(
+                ['lot_no' => $lotNo, 'master_stage_id' => $unit->master_stage_id],
+                [
+                    'complete_date' => $record->complete_date,
+                    'end_date' => $record->end_date, // Use the calculated/expected end date
+                    'status' => 2
+                ]
+            );
+        }
         return redirect()->route('unit.assignments')->withSuccess('Task closed successfully.');
     }
 
@@ -1009,6 +1132,15 @@ class UnitAuthController extends Controller
             $sizeSetRange = count($sizes) > 0 ? min($sizes) . '-' . max($sizes) : '-';
             $totalPcsInSet = $data->size_measurement->no_of_pcs ?? count($sizes);
             $header = [ 'id' => $stageAssignment->id, 'order_no' => $data->orderMain->sku ?? '-', 'date' => $data->created_at->format('d-m-Y'), 'customer' => $data->orderMain->customer->name ?? '-', 'design_no' => $data->design_number ?? '-', 'fabric' => $data->fabric_names ?? ($stageAssignment->fabric_names ?? '-'), 'color' => $data->colors->name ?? '-', 'pattern' => $data->master_design_pattern->name ?? ($stageAssignment->pattern->name ?? '-'), 'fitting' => $data->master_product_fitting?->name ?? ($stageAssignment->master_fitting?->name ?? '-'), 'warehouse' => $unit->masterFabricWarehouse->cutting_master_name ?? '-', 'unit_name' => $unit->name ?? '-', 'remark' => $stageAssignment->remarks ?? $data->remark ?? '-', 'belt' => $stageAssignment->belt ?? '-', 'total_pcs' => $stageAssignment->quantity ?? 0, 'lot_no' => 'Pending', 'size_set' => $sizeSetRange, 'pcs_in_set' => $totalPcsInSet ];
+            
+            // ✅ NEW: Fetch Timing Information
+            $timing = \App\Models\OrderLotStageTiming::where('lot_no', $data->design_number)
+                ->where('master_stage_id', $unit->master_stage_id)
+                ->first();
+            
+            $header['start_date'] = $timing->start_date ?? $stageAssignment->start_date ?? null;
+            $header['end_date'] = $timing->end_date ?? $stageAssignment->end_date ?? null;
+            $header['complete_date'] = $timing->complete_date ?? $stageAssignment->complete_date ?? null;
             $totalInRatio = count($sizes);
             $sizeCounts = array_count_values($sizes);
             foreach ($sizeCounts as $size => $count) { $sizeData[] = [ 'size' => $size, 'color' => $data->colors->name, 'pcs' => $totalInRatio > 0 ? ($count * $stageAssignment->quantity) / $totalInRatio : 0 ]; }
@@ -1035,7 +1167,33 @@ class UnitAuthController extends Controller
             $isRework = ($transaction && isset($transaction->type) && $transaction->type === 'rework');
             $sizeSetRange = count($sizes) > 0 ? min($sizes) . '-' . max($sizes) : '-';
             $totalPcsInSet = $orderProductSet->size_measurement->no_of_pcs ?? count($sizes);
-            $header = [ 'id' => $id, 'order_no' => $hOrderMain->sku ?? '-', 'date' => $transaction->created_at->format('d-m-Y'), 'customer' => $hOrderMain->customer->name ?? '-', 'design_no' => $orderProductSet->design_number ?? '-', 'fabric' => $orderProductSet->fabric_names ?? ($orderProductSet->order_cutting_stage->fabric_names ?? '-'), 'color' => $orderProductSet->colors->name ?? '-', 'pattern' => $orderProductSet->master_design_pattern->name ?? ($orderProductSet->order_cutting_stage->pattern->name ?? '-'), 'fitting' => $orderProductSet->master_product_fitting?->name ?? ($orderProductSet->order_cutting_stage->master_fitting?->name ?? '-'), 'lot_no' => $transaction->lot_no, 'from_stage' => $transaction->from_stage->name ?? '-', 'sent_by' => $transaction->getFromUnitMaster->name ?? '-', 'total_pcs' => $transaction->remaining_quantity, 'remark' => $transaction->remarks ?? '-', 'size_set' => $sizeSetRange, 'pcs_in_set' => $totalPcsInSet ];
+            $header = [
+                'id' => $id,
+                'order_no' => $hOrderMain->sku ?? '-',
+                'date' => $transaction->created_at->format('d-m-Y'),
+                'customer' => $hOrderMain->customer->name ?? '-',
+                'design_no' => $orderProductSet->design_number ?? '-',
+                'fabric' => $orderProductSet->fabric_names ?? ($orderProductSet->order_cutting_stage->fabric_names ?? '-'),
+                'color' => $orderProductSet->colors->name ?? '-',
+                'pattern' => $orderProductSet->master_design_pattern->name ?? ($orderProductSet->order_cutting_stage->pattern->name ?? '-'),
+                'fitting' => $orderProductSet->master_product_fitting?->name ?? ($orderProductSet->order_cutting_stage->master_fitting?->name ?? '-'),
+                'lot_no' => $transaction->lot_no,
+                'from_stage' => $transaction->from_stage->name ?? '-',
+                'sent_by' => $transaction->getFromUnitMaster->name ?? '-',
+                'total_pcs' => $transaction->remaining_quantity,
+                'remark' => $transaction->remarks ?? '-',
+                'size_set' => $sizeSetRange,
+                'pcs_in_set' => $totalPcsInSet,
+                'belt' => $orderProductSet->order_cutting_stage->belt ?? '-'
+            ];
+
+            // ✅ NEW: Fetch Timing Information
+            $timing = \App\Models\OrderLotStageTiming::where('lot_no', $transaction->lot_no)
+                ->where('master_stage_id', $unit->master_stage_id)
+                ->first();
+            $header['start_date'] = $timing->start_date ?? $transaction->start_date ?? null;
+            $header['end_date'] = $timing->end_date ?? $transaction->end_date ?? null;
+            $header['complete_date'] = $timing->complete_date ?? $transaction->complete_date ?? null;
             if ($type === 'printing' && method_exists($transaction, 'printingDetails')) {
                 foreach ($transaction->printingDetails as $det) $sizeData[] = ['size' => $det->size, 'color' => $header['color'], 'pcs' => $det->quantity];
             } elseif ($type === 'stage' || $type === 'printing_to_stitching') {

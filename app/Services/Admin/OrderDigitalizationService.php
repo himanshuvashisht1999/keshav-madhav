@@ -88,8 +88,34 @@ class OrderDigitalizationService
                 $save_lot->production_datetime = $request->production_datetime;
                 $save_lot->save();
 
+                // ✅ NEW: Update Cutting Stage with actual Lot No for future timing updates
+                \App\Models\OrderCuttingStage::where('set_product_id', $order_product_set->id)
+                    ->where(function($q) {
+                        $q->whereNull('lot_no')->orWhere('lot_no', '');
+                    })
+                    ->update(['lot_no' => $lotNo]);
+
                 // Auto-allocate time for the newly created lot
                 $this->autoAllocateTime($lotNo, $request->production_datetime, $request->production_slip_digitization_id);
+            }
+
+            // Update timing for Cutting (CMPO)
+            if ($order_product_set && $slip->stage_master_unit_id) {
+                $unit = StageMasterUnit::find($slip->stage_master_unit_id);
+                $days = $unit->lot_time_in_days ?? 0;
+                $pDate = $request->production_datetime ?: now()->toDateTimeString();
+                
+                $order_product_set->update([
+                    'start_date' => $pDate,
+                    'end_date' => $this->calculateExpectedCompletion($pDate, $days),
+                ]);
+
+                // Also update the Cutting Stage records
+                \App\Models\OrderCuttingStage::where('set_product_id', $order_product_set->id)
+                    ->update([
+                        'start_date' => $pDate,
+                        'end_date' => $this->calculateExpectedCompletion($pDate, $days),
+                    ]);
             }
 
 
@@ -402,47 +428,50 @@ class OrderDigitalizationService
 
     public function autoAllocateTime($lotNo, $production_datetime, $slip_id)
     {
-        $stages = MasterProductStage::orderBy('sequence', 'asc')->get();
-        $stagesData = [];
+        $exists = \App\Models\MasterStageWiseTimeAllocation::where('lot_no', $lotNo)->exists();
+        if ($exists) return;
+
+        // 1. Create the Master Allocation record (skeleton)
+        $master = new \App\Models\MasterStageWiseTimeAllocation();
+        $master->lot_no = $lotNo;
+        
+        // Pre-fill with unit-specific times if available
+        $stages = \App\Models\MasterProductStage::where('status', 1)->get();
         foreach ($stages as $stage) {
-            $stagesData[$stage->id] = $stage->lot_time_in_days ?? 1; // Default to 1 day
-        }
+            $col = 'stage_id_' . $stage->id;
+            if (\Illuminate\Support\Facades\Schema::hasColumn('master_stage_wise_time_allocation', $col)) {
+                // Try to find a unit assigned to this stage for this lot to get their default time
+                $unitTime = 0;
+                $tx = \App\Models\OrderStageTransaction::where('lot_no', $lotNo)->where('to_stage_id', $stage->id)->first()
+                    ?? \App\Models\OrderPrintingStageTransaction::where('lot_no', $lotNo)->where('to_stage_id', $stage->id)->first();
+                
+                if ($tx && $tx->getToUnitMaster) {
+                    $unitTime = $tx->getToUnitMaster->lot_time_in_days ?? 0;
+                }
+                
+                $master->$col = $unitTime;
 
-        $tracking_columns = \Illuminate\Support\Facades\Schema::getColumnListing('order_stage_wise_time_tracking');
-        $master_columns = \Illuminate\Support\Facades\Schema::getColumnListing('master_stage_wise_time_allocation');
-
-        // 1. OrderStageWiseTimeTracking
-        $save_data_main = new OrderStageWiseTimeTracking;
-        $datetime = date('Y-m-d H:i:s', strtotime($production_datetime));
-        $save_data_main->sku = '';
-        $save_data_main->lot_no = $lotNo;
-        $save_data_main->production_slip_digitization_id = $slip_id;
-        $save_data_main->start_date_time = $datetime;
-        
-        foreach ($stagesData as $stage_id => $days) {
-            if (in_array('stage_id_'.$stage_id, $tracking_columns)) {
-                $expected = $this->calculateExpectedCompletion($datetime, $days);
-                $save_data_main->{'stage_id_'.$stage_id} = $expected;
-                $datetime = $expected;
+                // ✅ Removed: Populate Unified Timing table during rolls allotment
+                // if ($unitTime > 0 || $stage->id == 3) {
+                //      \App\Models\OrderLotStageTiming::updateOrCreate(
+                //         ['lot_no' => $lotNo, 'master_stage_id' => $stage->id],
+                //         [
+                //             'days_allocated' => $unitTime,
+                //             'status' => ($stage->id == 3) ? 1 : 0,
+                //             'start_date' => $production_datetime,
+                //             'end_date' => $this->calculateExpectedCompletion($production_datetime, $unitTime)
+                //         ]
+                //     );
+                // }
             }
         }
-        $save_data_main->status = 1;
-        $save_data_main->save();
+        $master->save();
 
-        // 2. MasterStageWiseTimeAllocation
-        $save_data_master = new MasterStageWiseTimeAllocation;
-        $save_data_master->sku = '';
-        $save_data_master->lot_no = $lotNo;
-        $save_data_master->production_slip_digitization_id = $slip_id;
-        $save_data_master->start_date_time = $production_datetime;
-        
-        foreach ($stagesData as $stage_id => $days) {
-            if (in_array('stage_id_'.$stage_id, $master_columns)) {
-                $save_data_master->{'stage_id_'.$stage_id} = $days;
-            }
-        }
-        $save_data_master->status = 1;
-        $save_data_master->save();
+        // 2. Create the Tracking record
+        $tracking = new \App\Models\OrderStageWiseTimeTracking();
+        $tracking->lot_no = $lotNo;
+        $tracking->start_date_time = $production_datetime;
+        $tracking->save();
     }
 
     public function view(Request $request)
@@ -656,27 +685,146 @@ class OrderDigitalizationService
     {
         DB::beginTransaction();
         try {
-            //    dd($request->all());
-
             $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
+            if (!$slip) throw new \Exception('Slip not found');
 
-            $slip->update([
-                'status' => 3
-            ]);
+            // --- 1. REVERSION LOGIC BY SLIP TYPE ---
+            
+            // A. If it's a Cutting/Rolls Allotment Slip (Initial Stage 3 Allotment)
+            if ($slip->from_stage_id == 3) { 
+                $fras = \App\Models\FabricRollAssigning::where('production_slip_digitization_id', $slip->id)->get();
+                foreach ($fras as $fra) {
+                    // Restore Roll Meter in Fabric Receipt
+                    $roll = \App\Models\FabricReceiptDetail::where('roll_number', $fra->roll_no)->first();
+                    if ($roll) {
+                        $roll->increment('remaining_quantity', $fra->meter);
+                    }
 
-            // Commit everything if all successful
+                    // Restore Sizes and Cutting Stage Remaining Quantities
+                    $details = \App\Models\FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id', $fra->id)->get();
+                    foreach ($details as $det) {
+                        // Restore OrderProductSetDetail remaining_lot_allocated
+                        if ($det->order_product_set_detail_id) {
+                            \App\Models\OrderProductSetDetail::where('id', $det->order_product_set_detail_id)
+                                ->increment('remaining_lot_allocated', $det->quantity);
+                        }
+
+                        // Restore OrderCuttingStage remaining_quantity
+                        $cs = \App\Models\OrderCuttingStage::where('set_product_id', $fra->order_products_set_id)
+                            ->where('to_assign_id', $fra->stage_master_unit_id)
+                            ->where('status', '!=', 0)
+                            ->orderBy('updated_at', 'desc')
+                            ->first();
+                        if ($cs) {
+                            $cs->increment('remaining_quantity', $det->quantity);
+                            $cs->update(['status' => 1]); // Back to partial/assigned
+                        }
+                        $det->delete();
+                    }
+                    $fra->delete();
+                }
+
+                // Delete associated Lots created for this slip
+                \App\Models\OrderLot::where('production_slip_digitization_id', $slip->id)->delete();
+            } else {
+                // B. If it's a Movement Slip (e.g., Printing -> Stitching, Stitching -> Washing, etc.)
+                
+                // 1. Restore Source Transactions (those closed using this slip's image/file)
+                $updateRevert = [
+                    'image' => null,
+                    'is_closed_for_unit' => 0,
+                    'complete_date' => null,
+                    'remaining_quantity' => DB::raw('quantity') // Reset to full available quantity
+                ];
+
+                \App\Models\OrderStageTransaction::where('image', $slip->slip_file)->update($updateRevert);
+                \App\Models\OrderPrintingStageTransaction::where('image', $slip->slip_file)->update($updateRevert);
+                \App\Models\OrderPrintingToStichingTransaction::where('image', $slip->slip_file)->update($updateRevert);
+
+                // 2. Revert Source Timing Table (Mark previous stage as In Progress again)
+                $involvedLots = \App\Models\OrderStageTransaction::where('production_slip_digitization_id', $slip->id)->pluck('lot_no')
+                    ->merge(\App\Models\OrderPrintingStageTransaction::where('production_slip_digitization_id', $slip->id)->pluck('lot_no'))
+                    ->merge(\App\Models\OrderPrintingToStichingTransaction::where('production_slip_digitization_id', $slip->id)->pluck('lot_no'))
+                    ->unique();
+
+                foreach ($involvedLots as $lot) {
+                    \App\Models\OrderLotStageTiming::where('lot_no', $lot)
+                        ->where('master_stage_id', $slip->from_stage_id)
+                        ->update([
+                            'complete_date' => null,
+                            'status' => 1 // Back to In Progress
+                        ]);
+                }
+
+                // 3. Delete Target Transactions and their details
+                $targetModels = [
+                    \App\Models\OrderStageTransaction::class => \App\Models\OrderStageTransactionDetail::class,
+                    \App\Models\OrderPrintingStageTransaction::class => \App\Models\OrderPrintingStageTransactionDetail::class,
+                    \App\Models\OrderGodamStageTransaction::class => \App\Models\OrderGodamStageTransactionDetail::class,
+                    \App\Models\OrderPrintingToStichingTransaction::class => \App\Models\OrderPrintingToStichingTransactionDetail::class,
+                ];
+
+                foreach ($targetModels as $txModel => $detModel) {
+                    $txs = $txModel::where('production_slip_digitization_id', $slip->id)->get();
+                    foreach ($txs as $tx) {
+                        $fk = (new $detModel)->getForeignKey();
+                        $detModel::where($fk, $tx->id)->delete();
+                        $tx->delete();
+                    }
+                }
+            }
+
+            // --- 2. PACKING SPECIFIC CLEANUP ---
+            if ($slip->to_stage_id == 11 || $slip->type == 'rework') {
+                $packingMain = \App\Models\PackingMain::where('slip_id', $slip->id)->first();
+                if ($packingMain) {
+                    \App\Models\PackingItem::where('packing_main_id', $packingMain->id)->delete();
+                    \App\Models\PackingBox::where('packing_main_id', $packingMain->id)->delete();
+                    \App\Models\PackingCarton::where('packing_main_id', $packingMain->id)->delete();
+                    $packingMain->delete();
+                }
+            }
+
+            // --- 3. UNIFIED TIMING & ALLOCATION CLEANUP ---
+            $lotNos = \App\Models\OrderLot::where('production_slip_digitization_id', $slip->id)->pluck('lot_no');
+            if ($lotNos->isEmpty() && $slip->lot_no) {
+                $lotNos = collect(explode(',', $slip->lot_no))->map(fn($l) => trim($l))->filter();
+            }
+
+            if ($lotNos->isNotEmpty()) {
+                // Delete timing for the target stage (since the move is being undone)
+                \App\Models\OrderLotStageTiming::whereIn('lot_no', $lotNos)
+                    ->where('master_stage_id', '!=', $slip->from_stage_id)
+                    ->delete();
+
+                // If it was the initial digitization (Stage 3), clean up tracking/allocation
+                if ($slip->from_stage_id == 3) {
+                    \App\Models\MasterStageWiseTimeAllocation::whereIn('lot_no', $lotNos)->delete();
+                    \App\Models\OrderStageWiseTimeTracking::whereIn('lot_no', $lotNos)->delete();
+                }
+            }
+
+            // --- 4. SLIP PARTS CLEANUP ---
+            $parts = \App\Models\ProductionSlipDigitizationParts::where('production_slip_digitization_id', $slip->id)->get();
+            foreach ($parts as $part) {
+                \App\Models\ProductionDigitizationSetsDetails::where('production_slip_digitization_parts_id', $part->id)->delete();
+                $part->delete();
+            }
+
+            // Finally, mark slip as deleted (status 3)
+            $slip->update(['status' => 3]);
+
             DB::commit();
 
             return [
                 'status_code' => 1,
-                'message' => 'Slip Digitization Delete successfully.'
+                'message' => 'Slip Digitization and all associated production data have been properly reverted.'
             ];
 
         } catch (\Exception $e) {
-            //  Rollback everything on any error
             DB::rollBack();
 
-            $return_data['message'] = $e->getMessage();
+            $return_data['message'] = 'Deletion failed: ' . $e->getMessage();
             $return_data['status_code'] = 0;
             return $return_data;
         }
@@ -1331,7 +1479,7 @@ class OrderDigitalizationService
 
             if ($request->is_final == 1) {
                 // Close ANY incoming assignments for this lot and this unit to hide from Unit assignments list
-                $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file);
+                $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file, $request->production_datetime);
             }
 
             /////new code
@@ -1434,7 +1582,7 @@ class OrderDigitalizationService
 
             if ($request->is_final == 1) {
                 // Close ANY incoming assignments for this lot and this unit
-                $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file);
+                $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file, $request->production_datetime);
             }
 
             DB::commit();
@@ -1468,19 +1616,51 @@ class OrderDigitalizationService
             $detailsSource = FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id', $production_fabric_roll_assigning_id)->get();
         }
 
+        $unitTo = StageMasterUnit::find($sub_stage_id_to);
+        $days = $unitTo->lot_time_in_days ?? 0;
+        $startTime = $production_datetime ?: now()->toDateTimeString();
+        $expectedAt = $this->calculateExpectedCompletion($startTime, $days);
+
+        $commonData = [
+            'from_stage_id' => $from_stage_id,
+            'to_stage_id' => $to_stage_id,
+            'lot_no' => $lot_no,
+            'quantity' => $totalQuantity,
+            'remaining_quantity' => $totalQuantity,
+            'sub_stage_id' => $sub_stage_id,
+            'sub_stage_id_to' => $sub_stage_id_to,
+            'processed_by' => auth()->id(),
+            'production_datetime' => $production_datetime,
+            'production_slip_digitization_id' => $slip_id,
+            'status' => 1,
+            'start_date' => $startTime,
+            'end_date' => $expectedAt,
+        ];
+
+        // ✅ NEW: Update Unified Timing Table
+        $timingData = [
+            'unit_id' => $sub_stage_id_to,
+            'days_allocated' => $days,
+            'status' => 1
+        ];
+
+        // Only set start/end date if it's not stitching (4) OR if stitching timing isn't set yet
+        // As per user: "When slip digitilised of printing then stiching time of start and end date will not change"
+        $existingTiming = \App\Models\OrderLotStageTiming::where('lot_no', $lot_no)->where('master_stage_id', $to_stage_id)->first();
+        if ($to_stage_id != 4 || !$existingTiming || (!$existingTiming->start_date && !$existingTiming->end_date)) {
+            $timingData['start_date'] = $startTime;
+            $timingData['end_date'] = $expectedAt;
+        }
+
+        if ($to_stage_id != 3) {
+            \App\Models\OrderLotStageTiming::updateOrCreate(
+                ['lot_no' => $lot_no, 'master_stage_id' => $to_stage_id],
+                $timingData
+            );
+        }
+
         if ($to_stage_id == 1) {
-            $transaction = OrderPrintingStageTransaction::create([
-                'from_stage_id' => $from_stage_id,
-                'to_stage_id' => $to_stage_id,
-                'lot_no' => $lot_no,
-                'quantity' => $totalQuantity,
-                'remaining_quantity' => $totalQuantity,
-                'status' => 1,
-                'sub_stage_id' => $sub_stage_id,
-                'sub_stage_id_to' => $sub_stage_id_to,
-                'production_datetime' => $production_datetime,
-                'production_slip_digitization_id' => $slip_id,
-            ]);
+            $transaction = OrderPrintingStageTransaction::create($commonData);
 
             foreach ($detailsSource as $item) {
                 OrderPrintingStageTransactionDetail::create([
@@ -1490,18 +1670,7 @@ class OrderDigitalizationService
                 ]);
             }
         } else {
-            $transaction = OrderStageTransaction::create([
-                'from_stage_id' => $from_stage_id,
-                'to_stage_id' => $to_stage_id,
-                'lot_no' => $lot_no,
-                'quantity' => $totalQuantity,
-                'remaining_quantity' => $totalQuantity,
-                'status' => 1,
-                'sub_stage_id' => $sub_stage_id,
-                'sub_stage_id_to' => $sub_stage_id_to,
-                'production_datetime' => $production_datetime,
-                'production_slip_digitization_id' => $slip_id,
-            ]);
+            $transaction = OrderStageTransaction::create($commonData);
 
             foreach ($detailsSource as $item) {
                 OrderStageTransactionDetail::create([
@@ -1890,6 +2059,11 @@ class OrderDigitalizationService
             $transaction = null;
             if ($from_stage_id == 1 && $to_stage_id == 4) {
                 // Printing -> Stitching
+                $unitTo = StageMasterUnit::find($stage_master_unit_to->id);
+                $days = $unitTo->lot_time_in_days ?? 0;
+                $pTime = $request->production_datetime ?: now()->toDateTimeString();
+                $expectedAt = $this->calculateExpectedCompletion($pTime, $days);
+
                 $transaction = OrderPrintingToStichingTransaction::create([
                     'from_stage_id' => $from_stage_id,
                     'to_stage_id' => $to_stage_id,
@@ -1902,7 +2076,11 @@ class OrderDigitalizationService
                     'production_slip_digitization_id' => $slip->id,
                     'status' => 1,
                     'type' => $movement_type,
+                    'start_date' => $pTime,
+                    'end_date' => $expectedAt,
                 ]);
+
+
 
                 foreach ($sizes as $size => $qty) {
                     if ($qty > 0) {
@@ -1915,6 +2093,11 @@ class OrderDigitalizationService
                 }
             } elseif ($to_stage_id == 1) {
                 // To Printing
+                $unitTo = StageMasterUnit::find($stage_master_unit_to->id);
+                $days = $unitTo->lot_time_in_days ?? 0;
+                $pTime = $request->production_datetime ?: now()->toDateTimeString();
+                $expectedAt = $this->calculateExpectedCompletion($pTime, $days);
+
                 $transaction = OrderPrintingStageTransaction::create([
                     'from_stage_id' => $from_stage_id,
                     'to_stage_id' => $to_stage_id,
@@ -1927,6 +2110,8 @@ class OrderDigitalizationService
                     'production_slip_digitization_id' => $slip->id,
                     'status' => 1,
                     'type' => $movement_type,
+                    'start_date' => $pTime,
+                    'end_date' => $expectedAt,
                 ]);
 
                 foreach ($sizes as $size => $qty) {
@@ -1940,6 +2125,11 @@ class OrderDigitalizationService
                 }
             } elseif ($to_stage_id == 13) {
                 // To Godam
+                $unitTo = StageMasterUnit::find($stage_master_unit_to->id);
+                $days = $unitTo->lot_time_in_days ?? 0;
+                $pTime = $request->production_datetime ?: now()->toDateTimeString();
+                $expectedAt = $this->calculateExpectedCompletion($pTime, $days);
+
                 $transaction = OrderGodamStageTransaction::create([
                     'from_stage_id' => $from_stage_id,
                     'to_stage_id' => $to_stage_id,
@@ -1952,6 +2142,8 @@ class OrderDigitalizationService
                     'production_slip_digitization_id' => $slip->id,
                     'status' => 1,
                     'type' => $movement_type,
+                    'start_date' => $pTime,
+                    'end_date' => $expectedAt,
                 ]);
 
                 foreach ($sizes as $size => $qty) {
@@ -1968,6 +2160,11 @@ class OrderDigitalizationService
 
             if (!$transaction) {
                 // Default Standard Movement
+                $unitTo = StageMasterUnit::find($stage_master_unit_to->id);
+                $days = $unitTo->lot_time_in_days ?? 0;
+                $pTime = $request->production_datetime ?: now()->toDateTimeString();
+                $expectedAt = $this->calculateExpectedCompletion($pTime, $days);
+
                 $transaction = OrderStageTransaction::create([
                     'from_stage_id' => $from_stage_id,
                     'to_stage_id' => $to_stage_id,
@@ -1980,6 +2177,8 @@ class OrderDigitalizationService
                     'production_slip_digitization_id' => $slip->id,
                     'status' => 1,
                     'type' => $movement_type,
+                    'start_date' => $pTime,
+                    'end_date' => $expectedAt,
                 ]);
 
                 foreach ($sizes as $size => $qty) {
@@ -2009,7 +2208,35 @@ class OrderDigitalizationService
 
             $slip->update($slipUpdate);
             if ($request->is_final == 1) {
-                $this->closeIncomingAssignments($lot_no, $slip->stage_master_unit_id, $slip->slip_file);
+                $this->closeIncomingAssignments($lot_no, $slip->stage_master_unit_id, $slip->slip_file, $request->production_datetime);
+            }
+
+            // ✅ NEW: Sync with Unified Timing Table for the TARGET stage (with Protection)
+            if ($transaction && $to_stage_id != 3) {
+                // Fetch unit info again to be sure (days, etc)
+                $uTo = \App\Models\StageMasterUnit::find($stage_master_unit_to->id);
+                $dAllocated = $uTo->lot_time_in_days ?? 0;
+                $startTime = $request->production_datetime ?: now()->toDateTimeString();
+                $finishEta = $this->calculateExpectedCompletion($startTime, $dAllocated);
+
+                $timingData = [
+                    'unit_id' => $stage_master_unit_to->id,
+                    'days_allocated' => $dAllocated,
+                    'status' => 1
+                ];
+
+                // Protection: Do not overwrite start/end dates for Stitching (4) if they are already set
+                // As per user request: "no data should be update of the stiching start date , end date"
+                $existingTiming = \App\Models\OrderLotStageTiming::where('lot_no', $lot_no)->where('master_stage_id', $to_stage_id)->first();
+                if ($to_stage_id != 4 || !$existingTiming || (!$existingTiming->start_date && !$existingTiming->end_date)) {
+                    $timingData['start_date'] = $startTime;
+                    $timingData['end_date'] = $finishEta;
+                }
+
+                \App\Models\OrderLotStageTiming::updateOrCreate(
+                    ['lot_no' => $lot_no, 'master_stage_id' => $to_stage_id],
+                    $timingData
+                );
             }
 
             DB::commit();
@@ -2057,11 +2284,14 @@ class OrderDigitalizationService
     /**
      * Core logic to mark incoming assignments as consumed after admin digitization.
      */
-    private function closeIncomingAssignments($lot_no, $unit_id, $slip_file)
+    private function closeIncomingAssignments($lot_no, $unit_id, $slip_file, $completeDate = null)
     {
+        $finishTime = $completeDate ?: now();
         $update = [
             'image' => $slip_file,
-            'remaining_quantity' => 0
+            'remaining_quantity' => 0,
+            'complete_date' => $finishTime,
+            'is_closed_for_unit' => 1
         ];
 
         // 1. Regular/Legacy stage transfers
@@ -2081,6 +2311,17 @@ class OrderDigitalizationService
             ->where('sub_stage_id_to', $unit_id)
             ->whereNull('image')
             ->update($update);
+
+        // ✅ Update Unified Timing
+        $unit = \App\Models\StageMasterUnit::find($unit_id);
+        if ($unit) {
+            \App\Models\OrderLotStageTiming::where('lot_no', $lot_no)
+                ->where('master_stage_id', $unit->master_stage_id)
+                ->update([
+                    'complete_date' => $finishTime,
+                    'status' => 2
+                ]);
+        }
     }
 
     public function getAssignments($unitId)

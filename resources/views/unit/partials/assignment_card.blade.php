@@ -132,10 +132,30 @@
     .btn-simple-success:hover {
         background: #d1fae5;
     }
+
+    .timing-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-left: 4px;
+    }
+    .badge-delay { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+    .badge-on-time { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+
+    .assignment-card-delayed {
+        border-color: #fca5a5 !important;
+        background-color: #fffbfa !important;
+    }
 </style>
 
+@php
+    $isDelayed = isset($item->timing) && !$item->timing->complete_date && now() > $item->timing->end_date;
+@endphp
+
 @if($type == 'cutting')
-    <div class="assignment-card">
+    <div class="assignment-card {{ $isDelayed ? 'assignment-card-delayed' : '' }}">
         <div class="card-header-simple">
             <span class="type-label">Cutting Master</span>
             <span class="status-badge-simple {{ (!empty($canCloseTasks) && $canCloseTasks && ($view ?? 'open') === 'closed') ? 'badge-closed' : 'badge-assigned' }}">
@@ -175,6 +195,37 @@
                 <span class="info-label-simple">Quantity</span>
                 <span class="info-value-simple" style="color: #4f46e5;">{{ $item->quantity ?? 0 }} Pcs</span>
             </div>
+
+            @php
+                $startDate = $item->timing->start_date ?? $item->start_date ?? null;
+                $endDate = $item->timing->end_date ?? $item->end_date ?? null;
+                $completeDate = $item->timing->complete_date ?? $item->complete_date ?? null;
+                $isDelayed = !$completeDate && $endDate && now() > $endDate;
+            @endphp
+
+            @if($startDate || $endDate)
+                <hr class="my-2 border-f1f5f9">
+                <div class="info-row">
+                    <div class="info-col">
+                        <span class="info-label-simple">Start</span>
+                        <span class="info-value-simple text-xs">{{ $startDate ? date('d M H:i', strtotime($startDate)) : '-' }}</span>
+                    </div>
+                    <div class="info-col">
+                        <span class="info-label-simple">Expected End @if($isDelayed) <span class="timing-badge badge-delay">Delayed</span> @endif</span>
+                        <span class="info-value-simple text-xs {{ $isDelayed ? 'text-danger' : '' }}">
+                            {{ $endDate ? date('d M H:i', strtotime($endDate)) : '-' }}
+                        </span>
+                    </div>
+                </div>
+                @if($completeDate)
+                <div class="info-row">
+                    <div class="info-col">
+                        <span class="info-label-simple">Completed</span>
+                        <span class="info-value-simple text-xs text-success">{{ date('d M H:i', strtotime($completeDate)) }}</span>
+                    </div>
+                </div>
+                @endif
+            @endif
         </div>
         <div class="card-footer-simple">
             @if(!empty($canCloseTasks) && $canCloseTasks)
@@ -197,7 +248,7 @@
         </div>
     </div>
 @else
-    <div class="assignment-card">
+    <div class="assignment-card {{ $isDelayed ? 'assignment-card-delayed' : '' }}">
         <div class="card-header-simple">
             <span class="type-label">{{ ucfirst($item->transaction_type ?? 'Task') }}</span>
             <span class="status-badge-simple {{ (!empty($canCloseTasks) && $canCloseTasks && ($view ?? 'open') === 'closed') ? 'badge-closed' : 'badge-incoming' }}">
@@ -233,6 +284,37 @@
                 <span class="info-label-simple">Sent By</span>
                 <span class="info-value-simple">{{ $item->getFromUnitMaster->name ?? $item->getUnitMaster->name ?? '-' }}</span>
             </div>
+
+            @php
+                $startDate = $item->timing->start_date ?? $item->start_date ?? null;
+                $endDate = $item->timing->end_date ?? $item->end_date ?? null;
+                $completeDate = $item->timing->complete_date ?? $item->complete_date ?? null;
+                $isDelayed = !$completeDate && $endDate && now() > $endDate;
+            @endphp
+
+            @if($startDate || $endDate)
+                <hr class="my-2 border-f1f5f9">
+                <div class="info-row">
+                    <div class="info-col">
+                        <span class="info-label-simple">Start</span>
+                        <span class="info-value-simple text-xs">{{ $startDate ? date('d M H:i', strtotime($startDate)) : '-' }}</span>
+                    </div>
+                    <div class="info-col">
+                        <span class="info-label-simple">Expected End @if($isDelayed) <span class="timing-badge badge-delay">Delayed</span> @endif</span>
+                        <span class="info-value-simple text-xs {{ $isDelayed ? 'text-danger' : '' }}">
+                            {{ $endDate ? date('d M H:i', strtotime($endDate)) : '-' }}
+                        </span>
+                    </div>
+                </div>
+                @if($completeDate)
+                <div class="info-row">
+                    <div class="info-col">
+                        <span class="info-label-simple">Completed</span>
+                        <span class="info-value-simple text-xs text-success">{{ date('d M H:i', strtotime($completeDate)) }}</span>
+                    </div>
+                </div>
+                @endif
+            @endif
         </div>
         <div class="card-footer-simple">
             @if(!empty($canCloseTasks) && $canCloseTasks)

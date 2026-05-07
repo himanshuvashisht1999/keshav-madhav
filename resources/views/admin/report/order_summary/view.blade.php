@@ -89,6 +89,10 @@
                                                 <th>Fabric</th>
                                                 <th>Fitting</th>
                                                 <th>Pattern</th>
+                                                <th>Cutting Master</th>
+                                                <th>Start Date</th>
+                                                <th>Expected End Date</th>
+                                                <th>Completed Date</th>
                                                 <th>Set Quantity</th>
                                                 <th>Total Quantity</th>
                                             </tr>
@@ -105,13 +109,21 @@
                                                     <td>{{ $setData->fabric->name ?? " " }}</td>
                                                     <td>{{ $setData->master_product_fitting->name ?? " " }}</td>
                                                     <td>{{ $setData->master_design_pattern->name ?? " " }}</td>
+                                                    <td>
+                                                        {{ $setData->lots->map(function($lot) { 
+                                                            return $lot->stageMasterUnit->name ?? null; 
+                                                        })->unique()->filter()->implode(', ') ?: '-' }}
+                                                    </td>
+                                                    <td>{{ $setData->order_cutting_stage->start_date ? date('d M, Y H:i', strtotime($setData->order_cutting_stage->start_date)) : '-' }}</td>
+                                                    <td>{{ $setData->order_cutting_stage->end_date ? date('d M, Y H:i', strtotime($setData->order_cutting_stage->end_date)) : '-' }}</td>
+                                                    <td>{{ $setData->order_cutting_stage->complete_date ? date('d M, Y H:i', strtotime($setData->order_cutting_stage->complete_date)) : '-' }}</td>
                                                     <td class="text-right">{{ $setData->set_quantity ?? 0 }}</td>
                                                     <td class="text-right">{{ $setData->total_quantity ?? 0 }}</td>
 
                                                 </tr>
                                             @empty
                                                 <tr>
-                                                    <td colspan="9" class="text-center text-muted py-3">
+                                                    <td colspan="14" class="text-center text-muted py-3">
                                                         No Product Data Available
                                                     </td>
                                                 </tr>
@@ -121,7 +133,7 @@
                                         @if($order->orderProductSets->count())
                                             <tfoot class="bg-light font-weight-bold">
                                                 <tr>
-                                                    <td colspan="7" class="text-right">Total</td>
+                                                    <td colspan="12" class="text-center text-right">Total</td>
                                                     <td class="text-right">
                                                         {{ $order->orderProductSets->sum('set_quantity') }}
                                                     </td>

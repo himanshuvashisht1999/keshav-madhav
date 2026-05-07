@@ -989,7 +989,7 @@ class PackingService
         }
     }
 
-    public function finalizePacking($main_id)
+    public function finalizePacking($main_id, $completion_date = null)
     {
         DB::beginTransaction();
         try {
@@ -1003,6 +1003,52 @@ class PackingService
 
             // Mark Packing Main as Finalized (1)
             $packing_main->update(['status' => 1]);
+
+            // Update Stage Timing for all lots in this slip
+            if ($completion_date) {
+                $completion_datetime = date('Y-m-d H:i:s', strtotime($completion_date));
+                
+                // Robust lot identification
+                $lotNumbers = \App\Models\OrderLot::where('production_slip_digitization_id', $packing_main->slip_id)
+                    ->pluck('lot_no')
+                    ->toArray();
+
+                // Fallback 1: Use the lot_no directly from the slip record
+                $slip = \App\Models\ProductionSlipDigitization::find($packing_main->slip_id);
+                if ($slip && $slip->lot_no) {
+                    $slipLots = explode(',', $slip->lot_no);
+                    $lotNumbers = array_unique(array_merge($lotNumbers, array_map('trim', $slipLots)));
+                }
+
+                // Fallback 2: If still empty, check all lots for the order
+                if (empty($lotNumbers) && $packing_main->order_main_id) {
+                    $lotNumbers = \App\Models\OrderLot::where('order_main_id', $packing_main->order_main_id)
+                        ->pluck('lot_no')
+                        ->toArray();
+                }
+
+                foreach ($lotNumbers as $lotNo) {
+                    if (empty($lotNo)) continue;
+                    
+                    // We update complete_date. If start/end date are missing, we set them to now as well.
+                    $timing = \App\Models\OrderLotStageTiming::where('lot_no', $lotNo)
+                        ->where('master_stage_id', 11) // Packing
+                        ->first();
+                    
+                    $timingData = ['complete_date' => $completion_datetime];
+                    if ($timing && !$timing->start_date) {
+                        $timingData['start_date'] = $completion_datetime;
+                    }
+                    if ($timing && !$timing->end_date) {
+                        $timingData['end_date'] = $completion_datetime;
+                    }
+
+                    \App\Models\OrderLotStageTiming::updateOrCreate(
+                        ['lot_no' => $lotNo, 'master_stage_id' => 11],
+                        $timingData
+                    );
+                }
+            }
 
             // Determine status for cartons
             $carton_status = $is_domestic ? 3 : 1; // 3=Inventory, 1=Ready for Dispatch
@@ -1143,7 +1189,12 @@ class PackingService
             ]);
 
             DB::commit();
-            return ['status' => 'success'];
+            return [
+                'status' => 'success', 
+                'message' => 'Packing finalized successfully.',
+                'order_type' => $order ? strtolower(trim($order->order_type)) : '',
+                'packing_main_id' => $packing_main->id
+            ];
         } catch (\Exception $e) {
             DB::rollBack();
             return ['status' => 'error', 'message' => $e->getMessage()];
@@ -1653,6 +1704,60 @@ class PackingService
 
             DB::commit();
             return ['status' => 'success', 'message' => 'Rework deleted and pieces reverted to stock.'];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function deletePackingSession($slipId)
+    {
+        DB::beginTransaction();
+        try {
+            $main = PackingMain::where('slip_id', $slipId)->first();
+            if (!$main) {
+                throw new \Exception("Packing session not found for this slip.");
+            }
+
+            // 1. Revert All Outflows (Dead/Sampling/Debit)
+            $outflows = \App\Models\ProductionOutflowInventory::where('slip_id', $slipId)->get();
+            foreach ($outflows as $outflow) {
+                $this->deleteOutflow($outflow->id);
+            }
+
+            // 2. Revert Reworks (though usually reworks are from StageTransaction, but sometimes linked to slip)
+            $orderLots = \App\Models\OrderLot::where('order_main_id', $main->order_main_id)->pluck('lot_no')->toArray();
+            $reworks = \App\Models\OrderStageTransaction::whereIn('lot_no', $orderLots)
+                ->where('from_stage_id', 11)
+                ->where('status', 1)
+                ->where('type', 'rework')
+                ->get();
+            foreach ($reworks as $rework) {
+                $this->deleteRework($rework->id);
+            }
+
+            // 3. Delete All Cartons (This will restore OrderStageTransaction stock)
+            $cartons = PackingCarton::where('packing_main_id', $main->id)->get();
+            foreach ($cartons as $carton) {
+                // We use the existing deleteCarton but remove the finalized check temporarily
+                $carton->main->status = 0; // Temporarily un-finalize to allow deletion
+                $carton->main->save();
+                $this->deleteCarton($carton->id);
+            }
+
+            // 4. Clear Timing
+            foreach ($orderLots as $lotNo) {
+                \App\Models\OrderLotStageTiming::where('lot_no', $lotNo)
+                    ->where('master_stage_id', 11)
+                    ->update(['complete_date' => null]);
+            }
+
+            // 5. Delete Domestic Inventory and Main Record
+            \App\Models\DomesticInventory::where('packing_main_id', $main->id)->delete();
+            $main->delete();
+
+            DB::commit();
+            return ['status' => 'success', 'message' => 'Packing session deleted and stock restored successfully.'];
         } catch (\Exception $e) {
             DB::rollBack();
             return ['status' => 'error', 'message' => $e->getMessage()];

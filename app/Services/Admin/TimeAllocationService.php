@@ -46,8 +46,9 @@ class TimeAllocationService {
     public function getProductionStages()
     {
         $stages = \App\Models\MasterProductStage::where('status', 1)
+            ->where('id', '!=', 3) // Exclude Cutting as it's lot-based and handled separately
             ->orderBy('sequence', 'asc')
-            ->select('id', 'name', 'sequence') // Fetch necessary columns
+            ->select('id', 'name', 'sequence')
             ->get();
             
         return $stages;
@@ -65,6 +66,47 @@ class TimeAllocationService {
             ->pluck('lot_no');
             
         return $lots;
+    }
+
+    public function getLotStageTransactions($lotNo)
+    {
+        $stages = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+        $data = [];
+
+        $timings = \App\Models\OrderLotStageTiming::where('lot_no', $lotNo)->get()->keyBy('master_stage_id');
+
+        foreach ($stages as $stageId) {
+            $record = $timings->get($stageId);
+
+            $startDate = $record->start_date ?? null;
+            $endDate = $record->end_date ?? null;
+            $completeDate = $record->complete_date ?? null;
+            $days = $record->days_allocated ?? 0;
+
+            // Fallback for Cutting (Stage 3)
+            if ($stageId == 3 && (!$startDate || !$endDate)) {
+                $cutting = \App\Models\OrderCuttingStage::where('lot_no', $lotNo)->first();
+                if ($cutting) {
+                    $startDate = $startDate ?: $cutting->start_date;
+                    $endDate = $endDate ?: $cutting->end_date;
+                    $completeDate = $completeDate ?: $cutting->complete_date;
+                    
+                    // If record exists but days are 0, try to get them from the unit assigned to the cutting record
+                    if ($days == 0 && $cutting->to_assign_id) {
+                        $unit = StageMasterUnit::find($cutting->to_assign_id);
+                        $days = $unit->lot_time_in_days ?? 0;
+                    }
+                }
+            }
+
+            $data[$stageId] = [
+                'start_date' => $startDate ? date('Y-m-d\TH:i', strtotime($startDate)) : null,
+                'end_date' => $endDate ? date('Y-m-d\TH:i', strtotime($endDate)) : null,
+                'complete_date' => $completeDate ? date('Y-m-d\TH:i', strtotime($completeDate)) : null,
+                'days_allocated' => $days
+            ];
+        }
+        return $data;
     }
 
     public function getLotDetailsForDisplay($lot_no)
@@ -229,14 +271,21 @@ class TimeAllocationService {
                 $master_columns = \Illuminate\Support\Facades\Schema::getColumnListing('master_stage_wise_time_allocation');
 
                 foreach ($request->stages as $stage_id => $days) {
-                    if (in_array('stage_id_'.$stage_id, $master_columns)) {
-                        $save_data_master->{'stage_id_'.$stage_id} = $days;
+                    if (in_array('stage_id_' . $stage_id, $master_columns)) {
+                        $save_data_master->{'stage_id_' . $stage_id} = $days;
                     }
 
-                    if (in_array('stage_id_'.$stage_id, $tracking_columns)) {
+                    if (in_array('stage_id_' . $stage_id, $tracking_columns)) {
                         $currentDatetime = $this->calculateExpectedCompletion($currentDatetime, $days);
-                        $save_data_main->{'stage_id_'.$stage_id} = $currentDatetime->toDateTimeString();
+                        $save_data_main->{'stage_id_' . $stage_id} = $currentDatetime->toDateTimeString();
                     }
+
+                    // ✅ Propagate timing to actual transactions
+                    $start = $request->start_dates[$stage_id] ?? null;
+                    $end = $request->end_dates[$stage_id] ?? null;
+                    $complete = $request->complete_dates[$stage_id] ?? null;
+
+                    $this->updateTransactionTiming($save_data_master->lot_no, $stage_id, $start, $end, $complete, $days);
                 }
             }
 
@@ -256,6 +305,42 @@ class TimeAllocationService {
                 'status_code' => 0,
                 'message' => $e->getMessage()
             ];
+        }
+    }
+
+    protected function updateTransactionTiming($lotNo, $stageId, $start, $end, $complete, $days = null)
+    {
+        $updateData = [
+            'start_date' => $start ?: null,
+            'end_date' => $end ?: null,
+            'complete_date' => $complete ?: null,
+            'status' => $complete ? 2 : 1
+        ];
+
+        if ($days !== null) {
+            $updateData['days_allocated'] = $days;
+        }
+
+        \App\Models\OrderLotStageTiming::updateOrCreate(
+            ['lot_no' => $lotNo, 'master_stage_id' => $stageId],
+            $updateData
+        );
+
+        // ✅ Also propagate back to original tables for legacy compatibility (optional but safe for now)
+        if ($stageId == 3) {
+            $orderLot = \App\Models\OrderLot::where('lot_no', $lotNo)->first();
+            if ($orderLot) {
+                \App\Models\OrderCuttingStage::where('set_product_id', $orderLot->order_products_set_id)->update($updateData);
+            }
+        } elseif ($stageId == 1) {
+            \App\Models\OrderPrintingStageTransaction::where('lot_no', $lotNo)->where('to_stage_id', $stageId)->update($updateData);
+        } elseif ($stageId == 4) {
+            \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lotNo)->where('to_stage_id', $stageId)->update($updateData);
+            \App\Models\OrderStageTransaction::where('lot_no', $lotNo)->where('to_stage_id', 4)->update($updateData);
+        } elseif ($stageId == 12) {
+            \App\Models\OrderGodamStageTransaction::where('lot_no', $lotNo)->where('to_stage_id', $stageId)->update($updateData);
+        } else {
+            \App\Models\OrderStageTransaction::where('lot_no', $lotNo)->where('to_stage_id', $stageId)->update($updateData);
         }
     }
 

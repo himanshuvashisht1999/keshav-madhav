@@ -30,6 +30,9 @@ class OrderStageTransaction extends Model
         'image',
         'status',
         'type',
+        'start_date',
+        'end_date',
+        'complete_date',
         'created_at',
         'updated_at'
     ];

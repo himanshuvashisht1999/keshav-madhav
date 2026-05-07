@@ -1625,19 +1625,17 @@ class ReportService
         if ($stageId == 3) {
             $type = 'cutting';
 
-            $query = OrderProductSet::with(['orderMain.customer', 'fabric', 'colors', 'master_design_pattern', 'stage_master_unit'])
+            $query = \App\Models\OrderCuttingStage::with(['orderMain.customer', 'productSet.fabric', 'productSet.colors', 'productSet.master_design_pattern', 'cutting_master'])
                 ->orderBy('created_at', 'desc');
 
             if ($unitId) {
-                $query->whereIn('stage_master_unit_id', $unitIds);
-            } else {
-                $query->whereHas('stage_master_unit', function ($q) {
-                    $q->where('master_stage_id', 3);
-                });
+                $query->whereIn('to_assign_id', $unitIds);
             }
 
             if ($lotNo) {
-                $query->where('design_number', 'like', '%' . $lotNo . '%');
+                $query->whereHas('productSet', function($q) use ($lotNo) {
+                    $q->where('design_number', 'like', '%' . $lotNo . '%');
+                });
             }
 
             if ($orderNo) {
@@ -1646,22 +1644,25 @@ class ReportService
                 });
             }
 
-            $sets = $query->get();
+            $records = $query->get();
 
-            foreach ($sets as $item) {
-                $timeTracking = OrderStageWiseTimeTracking::where('lot_no', $item->design_number)->first();
-                $eta = $timeTracking ? ($timeTracking->stage_id_3 ? \Carbon\Carbon::parse($timeTracking->stage_id_3) : null) : null;
+            foreach ($records as $item) {
+                // Fetch Unified Timing
+                $timing = \App\Models\OrderLotStageTiming::where('lot_no', $item->productSet->design_number ?? '')
+                    ->where('master_stage_id', 3)
+                    ->first();
 
-                $assignedQty = $item->total_quantity;
-                $pendingQty = (int) $item->remain_total_quantity;
+                $eta = $timing?->end_date ?? $item->end_date;
+                $assignedQty = $item->quantity;
+                $pendingQty = (int) $item->remaining_quantity;
                 $isClosed = $item->is_closed_for_unit == 1;
 
                 // Status Logic
                 if ($isClosed || $pendingQty <= 0) {
                     $item->status_text = 'Done';
                     $item->status_class = 'success';
-                    $endTime = $item->updated_at;
-                    if ($eta && $endTime->gt($eta)) {
+                    $endTime = $timing?->complete_date ?? $item->complete_date ?? $item->updated_at;
+                    if ($eta && \Carbon\Carbon::parse($endTime)->gt($eta)) {
                         $item->status_text = 'Delayed Done';
                         $item->status_class = 'danger';
                     }
@@ -1680,11 +1681,15 @@ class ReportService
                     continue;
                 }
 
-                $item->start_time = $item->created_at;
-                $item->end_time = ($isClosed || $pendingQty <= 0) ? $item->updated_at : null;
-                $item->estimated_time = $eta;
+                // Map for View
+                $item->design_number = $item->productSet->design_number ?? '-';
+                $item->stage_master_unit = $item->cutting_master;
+                $item->start_time = $item->start_date ? \Carbon\Carbon::parse($item->start_date) : (($timing?->start_date) ? \Carbon\Carbon::parse($timing->start_date) : $item->created_at);
+                $item->end_time = $timing?->complete_date ? \Carbon\Carbon::parse($timing->complete_date) : ($item->complete_date ? \Carbon\Carbon::parse($item->complete_date) : (($isClosed || $pendingQty <= 0) ? $item->updated_at : null));
+                $item->estimated_time = $eta ? \Carbon\Carbon::parse($eta) : null;
                 $item->assigned_qty = $assignedQty;
                 $item->pending_qty = $pendingQty;
+                
                 $assignments[] = $item;
             }
 
@@ -1744,9 +1749,15 @@ class ReportService
 
             foreach ($allTransactions as $item) {
                 $t_stage_id = $item->to_stage_id;
+                
+                // Fetch Unified Timing
+                $timing = \App\Models\OrderLotStageTiming::where('lot_no', $item->lot_no)
+                    ->where('master_stage_id', $t_stage_id)
+                    ->first();
+
                 $column_namevar = 'stage_id_' . $t_stage_id;
                 $timeTracking = OrderStageWiseTimeTracking::where('lot_no', $item->lot_no)->first();
-                $eta = $timeTracking && isset($timeTracking->$column_namevar) ? \Carbon\Carbon::parse($timeTracking->$column_namevar) : null;
+                $eta = $timing?->end_date ?? ($item->end_date ?? ($timeTracking && isset($timeTracking->$column_namevar) ? \Carbon\Carbon::parse($timeTracking->$column_namevar) : null));
 
                 $assignedQty = $item->quantity;
                 $pendingQty = (int) $item->remaining_quantity;
@@ -1756,8 +1767,8 @@ class ReportService
                 if ($isClosed || $pendingQty <= 0) {
                     $item->status_text = 'Done';
                     $item->status_class = 'success';
-                    $endTime = $item->updated_at;
-                    if ($eta && $endTime->gt($eta)) {
+                    $endTime = $timing?->complete_date ?? ($item->complete_date ?? $item->updated_at);
+                    if ($eta && \Carbon\Carbon::parse($endTime)->gt($eta)) {
                         $item->status_text = 'Delayed Done';
                         $item->status_class = 'danger';
                     }
@@ -1776,9 +1787,9 @@ class ReportService
                     continue;
                 }
 
-                $item->start_time = $item->created_at;
-                $item->end_time = ($isClosed || $pendingQty <= 0) ? $item->updated_at : null;
-                $item->estimated_time = $eta;
+                $item->start_time = $timing?->start_date ? \Carbon\Carbon::parse($timing->start_date) : ($item->start_date ? \Carbon\Carbon::parse($item->start_date) : $item->created_at);
+                $item->end_time = $timing?->complete_date ? \Carbon\Carbon::parse($timing->complete_date) : ($item->complete_date ? \Carbon\Carbon::parse($item->complete_date) : (($isClosed || $pendingQty <= 0) ? $item->updated_at : null));
+                $item->estimated_time = $eta ? \Carbon\Carbon::parse($eta) : null;
                 $item->assigned_qty = $assignedQty;
                 $item->pending_qty = $pendingQty;
                 $assignments[] = $item;
@@ -1815,6 +1826,7 @@ class ReportService
         $record = $this->findAssignmentRecordForAdmin($type, $id);
         if ($record) {
             $record->is_closed_for_unit = 1;
+            $record->complete_date = now();
             $record->save();
             return true;
         }

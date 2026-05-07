@@ -8,6 +8,11 @@
                 <div class="col-sm-6">
                     <h1>Time Allocation</h1>
                 </div>
+                <div class="col-sm-6 text-right">
+                    <a href="{{ route('admin.time_allocation.backfill') }}" class="btn btn-info shadow-sm">
+                        <i class="fas fa-sync-alt mr-1"></i> Sync Missing Lots
+                    </a>
+                </div>
             </div>
         </div>
     </section>

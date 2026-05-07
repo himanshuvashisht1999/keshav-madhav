@@ -378,6 +378,7 @@
                                 <div class="stage-metrics">
                                     <div class="metric">Total<strong>{{ $total }}</strong></div>
                                     <div class="metric">Remaining<strong>{{ $remaining }}</strong></div>
+                                    <div class="metric">Start<strong>{{ $d['start_date'] ? Carbon::parse($d['start_date'])->format('d M H:i') : '-' }}</strong></div>
                                     <div class="metric">ETA<strong>{{ $eta->format('d M Y') }}</strong></div>
                                     <div class="metric">
                                         Completed<strong>{{ $completed ? $completed->format('d M Y') : '-' }}</strong></div>

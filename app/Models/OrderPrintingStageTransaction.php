@@ -30,6 +30,9 @@ class OrderPrintingStageTransaction extends Model
         'production_slip_digitization_id',
         'image',
         'type',
+        'start_date',
+        'end_date',
+        'complete_date',
         'created_at',
         'updated_at'
     ];

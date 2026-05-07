@@ -51,6 +51,7 @@ class StageUnitService
                         'phone' => $unit->phone,
                         'employee_id' => $unit->employee_id,
                         'password' => $unit->password,
+                        'lot_time_in_days' => $unit->lot_time_in_days,
                     ];
                 }
 
@@ -66,6 +67,7 @@ class StageUnitService
                     'phone' => '',
                     'employee_id' => '',
                     'password' => '',
+                    'lot_time_in_days' => 1,
                 ];
             }
         }
@@ -99,6 +101,7 @@ class StageUnitService
                     'phone' => $row['phone'] ?? '',
                     'employee_id' => $row['employee_id'] ?? null,
                     'password' => $row['password'] ?? null,
+                    'lot_time_in_days' => $row['lot_time_in_days'] ?? 1,
                     'status' => 1,
                 ]
             );

@@ -601,7 +601,7 @@
                     // IF SENT: Go to the slip view (because it's already done)
                     $detailUrl = $isReceived 
                         ? route('unit.assignments.details', ['type' => $task['type'], 'id' => $task['id']])
-                        : route('unit.view.slip', ['type' => ($task['type'] === 'fabric' ? 'fabric' : 'production'), 'id' => $task['id']]);
+                        : route('unit.view.slip', ['type' => ($task['type'] === 'fabric' ? 'fabric' : 'production'), 'id' => $task['slip_id'] ?? $task['id']]);
                 @endphp
                 <a href="{{ $detailUrl }}" class="task-card {{ $cardClass }}">
                     
@@ -644,13 +644,25 @@
                         </div>
                     </div>
 
-                    <div class="task-footer">
-                        <div class="task-date">
-                            <i class="far fa-calendar-alt"></i> 
-                            <strong>{{ $isReceived ? 'Received On:' : 'Sent On:' }}</strong> 
-                            {{ $task['created_at']->format('d M Y, h:i A') }}
+                    <div class="task-footer" style="flex-direction: column; align-items: start; gap: 10px;">
+                        <div class="d-flex justify-content-between w-100 align-items-center">
+                            <div class="task-date">
+                                <i class="far fa-calendar-alt"></i> 
+                                <strong>{{ $isReceived ? 'Received:' : 'Sent:' }}</strong> 
+                                {{ $task['created_at']->format('d M, h:i A') }}
+                            </div>
+                            <i class="fas fa-chevron-right chevron"></i>
                         </div>
-                        <i class="fas fa-chevron-right chevron"></i>
+
+                        @if(isset($task['start_date']) || isset($task['end_date']))
+                            <div style="display: flex; gap: 15px; font-size: 11px; color: #6b7280; width: 100%; border-top: 1px dashed #f3f4f6; padding-top: 8px;">
+                                <span><strong>Start:</strong> {{ $task['start_date'] ? date('d M, H:i', strtotime($task['start_date'])) : '-' }}</span>
+                                <span><strong>ETA:</strong> {{ $task['end_date'] ? date('d M, H:i', strtotime($task['end_date'])) : '-' }}</span>
+                                @if($task['complete_date'])
+                                    <span class="text-success"><strong>Done:</strong> {{ date('d M, H:i', strtotime($task['complete_date'])) }}</span>
+                                @endif
+                            </div>
+                        @endif
                     </div>
                 </a>
             @empty

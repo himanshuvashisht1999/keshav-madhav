@@ -1035,14 +1035,6 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                                         </li>
                                                         
                                                         <li class="nav-item">
-                                                            <a href="{{ route('admin.master.product_stage.lot_time.index') }}"
-                                                                class="{{ str_contains($page_url, 'admin/master/product-stage/lot-time') ? 'nav-link active' : 'nav-link' }}">
-                                                                <i class="fas fa-circle"></i>
-                                                                <p>Stage Lot Times</p>
-                                                            </a>
-                                                        </li>
-
-                                                        <li class="nav-item">
                                                             <a href="{{ route('admin.master.design-pattern.index') }}"
                                                                 class="{{ str_contains($page_url, 'admin/master/design-pattern') ? 'nav-link active' : 'nav-link' }}">
                                                                 <i class="fas fa-circle"></i>

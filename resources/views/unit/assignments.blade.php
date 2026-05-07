@@ -105,6 +105,30 @@
         padding-top: 12px;
         border-top: 1px solid #f1f5f9;
     }
+
+    .order-card-delayed {
+        border-color: #fca5a5 !important;
+        background-color: #fff1f2 !important;
+    }
+
+    .order-card-delayed:hover {
+        border-color: #ef4444 !important;
+    }
+
+    .order-card-delayed .order-sku-simple {
+        color: #991b1b !important;
+    }
+
+    .delay-indicator {
+        background: #ef4444;
+        color: white;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 800;
+        text-transform: uppercase;
+        margin-left: 8px;
+    }
 </style>
 @endpush
 
@@ -133,12 +157,15 @@
     <div class="row">
         @forelse($orders as $sku => $order)
             <div class="col-12 col-md-6 col-lg-4">
-                <a href="{{ route('unit.assignments', ['order_sku' => $order['sku'], 'view' => $view]) }}" class="order-card-simple">
+                <a href="{{ route('unit.assignments', ['order_sku' => $order['sku'], 'view' => $view]) }}" class="order-card-simple {{ $order['is_delayed'] ? 'order-card-delayed' : '' }}">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <div class="order-sku-simple">
                                 <i class="fas fa-box text-muted mr-2"></i>
                                 {{ $order['sku'] }}
+                                @if($order['is_delayed'])
+                                    <span class="delay-indicator">Delayed</span>
+                                @endif
                             </div>
                             <div class="customer-info-simple">
                                 {{ $order['customer'] }}
@@ -148,6 +175,17 @@
                             {{ $order['task_count'] }} {{ Str::plural('Task', $order['task_count']) }}
                         </span>
                     </div>
+                    
+                    @if($order['start_date'] || $order['end_date'])
+                        <div class="mt-2 d-flex gap-3" style="font-size: 11px; color: #64748b;">
+                            <span><i class="far fa-calendar-alt mr-1"></i> {{ $order['start_date'] ? date('d M', strtotime($order['start_date'])) : '-' }}</span>
+                            <span><i class="fas fa-arrow-right mx-1" style="font-size: 9px; opacity: 0.5;"></i></span>
+                            <span class="{{ $order['is_delayed'] ? 'text-danger font-weight-bold' : '' }}">
+                                <i class="far fa-calendar-check mr-1"></i> {{ $order['end_date'] ? date('d M', strtotime($order['end_date'])) : '-' }}
+                            </span>
+                        </div>
+                    @endif
+
                     <div class="latest-activity-simple">
                         <i class="far fa-clock mr-1"></i>
                         Updated {{ $order['latest_task'] ? \Carbon\Carbon::parse($order['latest_task'])->diffForHumans() : 'Recently' }}

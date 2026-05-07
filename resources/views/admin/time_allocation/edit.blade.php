@@ -88,23 +88,50 @@
                                 <hr class="mt-0">
 
                                 @if(isset($production_stages) && $production_stages->count() > 0)
-                                    <div class="row">
-                                        @foreach($production_stages as $stage)
-                                            <div class="col-md-6 mb-3">
-                                                <div class="input-group">
-                                                    <div class="input-group-prepend">
-                                                        <span class="input-group-text bg-white" style="width: 180px; text-align: left; display: inline-block;">
-                                                            {{ $stage->name }}
-                                                        </span>
-                                                    </div>
-                                                    <input type="number" class="form-control bg-light" 
-                                                        placeholder="Days"
-                                                        name="stages[{{ $stage->id }}]" 
-                                                        value="{{ $allocation->{'stage_id_'.$stage->id} ?? '' }}"
-                                                        min="0" step="0.5" required>
-                                                </div>
-                                            </div>
-                                        @endforeach
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm">
+                                            <thead class="bg-light">
+                                                <tr>
+                                                    <th>Stage</th>
+                                                    <th style="width: 80px;">Days</th>
+                                                    <th>Start Date</th>
+                                                    <th>End Date (Expected)</th>
+                                                    <th>Complete Date (Actual)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($production_stages as $stage)
+                                                    @php
+                                                        if($stage->id == 3) continue; // Skip Cutting stage as it's lot-based
+                                                        $tx = $transactions[$stage->id] ?? null;
+                                                    @endphp
+                                                    <tr>
+                                                        <td class="align-middle fw-bold">{{ $stage->name }}</td>
+                                                        <td>
+                                                            <input type="number" class="form-control form-control-sm" 
+                                                                name="stages[{{ $stage->id }}]" 
+                                                                value="{{ ($tx['days_allocated'] ?? 0) > 0 ? $tx['days_allocated'] : ($allocation->{'stage_id_'.$stage->id} ?? '') }}"
+                                                                min="0" step="0.5" required>
+                                                        </td>
+                                                        <td>
+                                                            <input type="datetime-local" class="form-control form-control-sm" 
+                                                                name="start_dates[{{ $stage->id }}]" 
+                                                                value="{{ $tx['start_date'] ?? '' }}">
+                                                        </td>
+                                                        <td>
+                                                            <input type="datetime-local" class="form-control form-control-sm" 
+                                                                name="end_dates[{{ $stage->id }}]" 
+                                                                value="{{ $tx['end_date'] ?? '' }}">
+                                                        </td>
+                                                        <td>
+                                                            <input type="datetime-local" class="form-control form-control-sm" 
+                                                                name="complete_dates[{{ $stage->id }}]" 
+                                                                value="{{ $tx['complete_date'] ?? '' }}">
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
                                     </div>
                                 @else
                                     <div class="alert alert-warning">No Stages Found</div>

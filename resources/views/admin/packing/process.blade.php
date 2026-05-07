@@ -609,6 +609,40 @@
         </div>
     </div>
 
+    <!-- Finalize Session Modal -->
+    <div class="modal fade" id="finalizeSessionModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title font-weight-bold">
+                        <i class="fas fa-check-circle mr-2"></i> Finalize Packing Session
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning small py-2 mb-3">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        Once finalized, you cannot make any more changes to this session.
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold text-dark mb-1">Completion Date & Time</label>
+                        <input type="datetime-local" id="packing_completion_date" class="form-control" 
+                               value="{{ date('Y-m-d\TH:i') }}">
+                        <small class="text-muted">Select the actual date and time this packing was completed.</small>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success px-4 font-weight-bold" onclick="submitFinalize()">
+                        <i class="fas fa-check mr-1"></i> Finalize Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bulk Packing Modal -->
     <div class="modal fade" id="bulkPackingModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -2859,28 +2893,33 @@
             }
 
             function finalizePacking() {
-                if (!EXISTING_PACKING || !EXISTING_PACKING.id) {
-                    alert("No packing session found to finalize.");
+                $('#finalizeSessionModal').modal('show');
+            }
+
+            function submitFinalize() {
+                let completionDate = $('#packing_completion_date').val();
+                if (!completionDate) {
+                    alert('Please select completion date and time.');
                     return;
                 }
 
-                if (!confirm("Are you sure you want to finalize this packing? This will mark it as complete.")) {
-                    return;
-                }
+                if (!confirm('Are you sure you want to finalize this packing session? No more changes allowed.')) return;
 
                 $.post("{{ route('admin.packing.finalize') }}", {
                     _token: "{{ csrf_token() }}",
-                    packing_main_id: EXISTING_PACKING.id
+                    packing_main_id: EXISTING_PACKING.id,
+                    completion_date: completionDate
                 }, function (response) {
                     if (response.status === 'success') {
-                        // 1. Trigger Barcode Download (If Domestic)
                         if (response.order_type === 'domestic' && response.packing_main_id) {
                             let downloadUrl = "{{ route('admin.packing.downloadSlipBarcode', ':id') }}".replace(':id', response.packing_main_id);
-                            window.location.href = downloadUrl;
+                            window.open(downloadUrl, '_blank');
                         }
 
-                        alert("Packing Finalized Successfully!");
-                        window.location.href = "{{ route('admin.uploaded-slips.index') }}";
+                        setTimeout(function() {
+                            alert("Packing Finalized Successfully!");
+                            window.location.href = "{{ route('admin.uploaded-slips.index') }}";
+                        }, 500);
                     } else {
                         alert("Error: " + response.message);
                     }

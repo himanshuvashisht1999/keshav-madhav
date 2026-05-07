@@ -38,6 +38,9 @@ class OrderProductSet extends Model
         'master_design_pattern_id',
         'remark',
         'status',
+        'start_date',
+        'end_date',
+        'complete_date',
         'created_at',
         'updated_at'
     ];

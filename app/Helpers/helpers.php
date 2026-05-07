@@ -177,38 +177,79 @@ function getLotDetailsOld($lot_id, $master_stage)
 
 function getLotDetails($lot_id, $master_stage)
 {
-    // 🔹 Decide model dynamically
-    $model = ($master_stage == 1)
-        ? OrderPrintingStageTransaction::class
-        : OrderStageTransaction::class;
+    // 1. Fetch from Unified Timing Table
+    $timing = \App\Models\OrderLotStageTiming::where('lot_no', $lot_id)
+        ->where('master_stage_id', $master_stage)
+        ->first();
 
-    // 🔹 Fetch ALL entries for this lot & stage
-    $records = $model::with('getToUnitMaster')
-        ->where('lot_no', $lot_id)
-        ->where('to_stage_id', $master_stage)
-        ->get();
+    // 2. Fetch basic info (Unit, Qty) from original tables (since timing table doesn't store all quantities yet)
+    $unitName = '-';
+    $totalQuantity = 0;
+    $remainingQuantity = 0;
 
-    // 🔹 Aggregate data from multiple rows
-    $unitName = $records->first()?->getToUnitMaster?->name;
+    if ($master_stage == 3) {
+        $records = \App\Models\OrderProductSet::with('stage_master_unit')
+            ->where('design_number', $lot_id)
+            ->get();
+        $unitName = $records->first()?->stage_master_unit?->name ?? '-';
+        $totalQuantity = $records->sum('total_quantity');
+        $remainingQuantity = $records->sum('remain_total_quantity');
+    } elseif ($master_stage == 1) {
+        $records = \App\Models\OrderPrintingStageTransaction::with('getToUnitMaster')
+            ->where('lot_no', $lot_id)
+            ->where('to_stage_id', $master_stage)
+            ->get();
+        $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
+        $totalQuantity = $records->sum('quantity');
+        $remainingQuantity = $records->sum('remaining_quantity');
+    } elseif ($master_stage == 4) {
+        $records = \App\Models\OrderPrintingToStichingTransaction::with('getToUnitMaster')
+            ->where('lot_no', $lot_id)
+            ->where('to_stage_id', $master_stage)
+            ->get();
+        if ($records->isEmpty()) {
+            $records = \App\Models\OrderStageTransaction::with('getToUnitMaster')
+                ->where('lot_no', $lot_id)
+                ->where('to_stage_id', $master_stage)
+                ->get();
+        }
+        $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
+        $totalQuantity = $records->sum('quantity');
+        $remainingQuantity = $records->sum('remaining_quantity');
+    } elseif ($master_stage == 12) {
+        $records = \App\Models\OrderGodamStageTransaction::with('getToUnitMaster')
+            ->where('lot_no', $lot_id)
+            ->where('to_stage_id', $master_stage)
+            ->get();
+        $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
+        $totalQuantity = $records->sum('quantity');
+        $remainingQuantity = $records->sum('remaining_quantity');
+    } else {
+        $records = \App\Models\OrderStageTransaction::with('getToUnitMaster')
+            ->where('lot_no', $lot_id)
+            ->where('to_stage_id', $master_stage)
+            ->get();
+        $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
+        $totalQuantity = $records->sum('quantity');
+        $remainingQuantity = $records->sum('remaining_quantity');
+    }
 
-    $totalQuantity = $records->sum('quantity');
-    $remainingQuantity = $records->sum('remaining_quantity');
+    $timeAllocation = $timing->end_date ?? null;
+    $completedTime = $timing->complete_date ?? null;
 
-    $completedTime = $records->max('updated_at');
-
-    // 🔹 Dynamic stage column
-    $column_namevar = 'stage_id_' . $master_stage;
-
-    $time_allocation = OrderStageWiseTimeTracking::where('lot_no', $lot_id)
-        ->whereNotNull($column_namevar)
-        ->value($column_namevar);
+    // Fallback for Unit Name if timing has it
+    if ($unitName === '-' && $timing && $timing->unit_id) {
+        $u = \App\Models\StageMasterUnit::find($timing->unit_id);
+        $unitName = $u->name ?? '-';
+    }
 
     return [
         'unit_name' => $unitName,
         'quantity' => $totalQuantity,
         'remaining_quantity' => $remainingQuantity,
-        'time_allocation' => $time_allocation,
+        'time_allocation' => $timeAllocation,
         'completed_time' => $completedTime,
+        'start_date' => $timing->start_date ?? null,
     ];
 }
 

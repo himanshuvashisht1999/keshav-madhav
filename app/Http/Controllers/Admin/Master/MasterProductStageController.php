@@ -54,25 +54,7 @@ class MasterProductStageController extends Controller
         return redirect()->route('admin.master.product_stage.index')->withSuccess('The production stage has been successfully updated.');
     }
 
-    public function lotTimeIndex(Request $request)
-    {
-        $response['stages'] = MasterProductStage::orderBy('sequence', 'asc')->where('status', '1')->get();
-        return view('admin.master.product_stage.lot_time', $response);
-    }
 
-    public function lotTimeUpdate(Request $request)
-    {
-        $request->validate([
-            'lot_times' => 'required|array',
-            'lot_times.*' => 'required|integer|min:1',
-        ]);
-
-        foreach ($request->lot_times as $id => $time) {
-            MasterProductStage::where('id', $id)->update(['lot_time_in_days' => $time]);
-        }
-
-        return redirect()->route('admin.master.product_stage.lot_time.index')->withSuccess('Lot times successfully updated.');
-    }
 
     /////// sub stage
     public function indexSubStage(Request $request)

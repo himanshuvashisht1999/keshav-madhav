@@ -29,6 +29,9 @@ class OrderGodamStageTransaction extends Model
         'production_datetime',
         'production_slip_digitization_id',
         'type',
+        'start_date',
+        'end_date',
+        'complete_date',
         'created_at',
         'updated_at'
     ];

@@ -1030,14 +1030,7 @@ class PackingController extends Controller
     public function finalize(Request $request)
     {
         try {
-            $result = $this->service->finalizePacking($request->packing_main_id);
-            if ($result['status'] === 'success') {
-                $packingMain = \App\Models\PackingMain::find($request->packing_main_id);
-                $order = $packingMain ? $packingMain->order : null;
-                $result['packing_main_id'] = $request->packing_main_id;
-                $result['slip_id'] = $packingMain ? $packingMain->slip_id : null;
-                $result['order_type'] = $order ? strtolower(trim($order->order_type)) : '';
-            }
+            $result = $this->service->finalizePacking($request->packing_main_id, $request->completion_date);
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
