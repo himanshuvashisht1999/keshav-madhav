@@ -114,7 +114,10 @@
                                         <td>
                                             @if($order->status != 'dispatched')
                                             <div class="custom-control custom-checkbox ml-2">
-                                                <input type="checkbox" name="order_ids[]" value="{{ $order->id }}" class="custom-control-input order-checkbox" id="check_{{ $order->id }}">
+                                                <input type="checkbox" name="order_ids[]" value="{{ $order->id }}" 
+                                                    class="custom-control-input order-checkbox" id="check_{{ $order->id }}"
+                                                    data-scanned-amount="{{ $order->scanned_amount }}"
+                                                    data-scanned-count="{{ $order->scanned_count }}">
                                                 <label class="custom-control-label" for="check_{{ $order->id }}"></label>
                                             </div>
                                             @endif
@@ -367,11 +370,20 @@ $(document).ready(function() {
 
         if (diffShop) {
             dispatchBtn.attr('disabled', true);
-            // Note: setCustomValidity is for native form validation, 
-            // using toastr for UI feedback as requested in logic
             toastr.warning('Please select orders for the SAME Shop only.');
         } else {
-            dispatchBtn.attr('disabled', false);
+            // Check if at least one selected order has scanned items
+            let totalScanned = 0;
+            checked.each(function() {
+                totalScanned += parseInt($(this).data('scanned-count')) || 0;
+            });
+
+            if (totalScanned === 0) {
+                dispatchBtn.attr('disabled', true);
+                // toastr.info('None of the selected orders have scanned items.');
+            } else {
+                dispatchBtn.attr('disabled', false);
+            }
         }
     }
 
@@ -423,10 +435,7 @@ $(document).ready(function() {
     $('#dispatchModal').on('show.bs.modal', function() {
         let total = 0;
         $('.order-checkbox:checked').each(function() {
-            // Need a way to get the order's current subtotal based on scanned pcs
-            // For now we'll fetch it from a data attribute or estimate from grand_total if simple
-            // But better to add a data-subtotal to the row
-            total += parseFloat($(this).closest('tr').find('td:nth-child(8) .font-weight-bold').text().replace(/[^0-9.-]+/g,"")) || 0;
+            total += parseFloat($(this).data('scanned-amount')) || 0;
         });
         
         // Since grand_total includes GST/Discount, we might need a better way to get subtotal.

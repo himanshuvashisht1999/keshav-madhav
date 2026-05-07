@@ -485,6 +485,14 @@ class ReportController extends Controller
             );
     }
 
+    public function unitAssignmentsPdf(Request $request)
+    {
+        $response = $this->service->unitAssignments($request);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.report.pdf.unit_assignments', $response);
+        $pdf->setPaper('a4', 'landscape');
+        return $pdf->download('unit-assignments-report-' . now()->format('d-m-Y_H-i') . '.pdf');
+    }
+
     public function designWip(Request $request)
     {
         $response = $this->service->designWip($request);

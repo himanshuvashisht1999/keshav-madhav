@@ -594,7 +594,8 @@ class AgentOrderController extends Controller
                 DB::raw('COALESCE(sales_agents.name, "Direct (No Agent)") as agent_name'),
                 DB::raw('COALESCE(master_customers.name, vendors.name) as shop_name'),
                 DB::raw('(SELECT COALESCE(SUM(box_qty), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id) + (SELECT COALESCE(COUNT(id), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id) as total_boxes'),
-                DB::raw('(SELECT COALESCE(SUM(scanned_box_qty), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id) as scanned_count'),
+                DB::raw('(SELECT COALESCE(SUM(scanned_box_qty), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) as scanned_count'),
+                DB::raw('(SELECT COALESCE(SUM(scanned_quantity * selling_price), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) as scanned_amount'),
                 DB::raw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE paymentable_id = agent_orders.id AND paymentable_type = "App\\\\Models\\\\AgentOrder") as total_paid')
             );
 
@@ -1644,7 +1645,12 @@ class AgentOrderController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        return view('admin.agent_orders.dispatch_scan', compact('order', 'groupedItems', 'scannedBoxes'));
+        $scannedTotal = DB::table('agent_order_items')
+            ->where('agent_order_id', $id)
+            ->whereNull('dispatched_at')
+            ->sum(DB::raw('scanned_quantity * selling_price'));
+
+        return view('admin.agent_orders.dispatch_scan', compact('order', 'groupedItems', 'scannedBoxes', 'scannedTotal'));
     }
 
     public function processScan(Request $request, $id)
@@ -1680,6 +1686,7 @@ class AgentOrderController extends Controller
         $item = DB::table('agent_order_items')
             ->where('agent_order_id', $id)
             ->where('barcode', $inventory->barcode)
+            ->whereNull('dispatched_at')
             // Still have boxes to scan in this variant row
             ->whereRaw('scanned_box_qty < box_qty')
             ->first();
@@ -1715,6 +1722,11 @@ class AgentOrderController extends Controller
 
             DB::commit();
 
+            $scannedTotal = DB::table('agent_order_items')
+                ->where('agent_order_id', $id)
+                ->whereNull('dispatched_at')
+                ->sum(DB::raw('scanned_quantity * selling_price'));
+
             return response()->json([
                 'success' => true,
                 'message' => 'Box scanned: ' . $inventory->box_no,
@@ -1726,7 +1738,8 @@ class AgentOrderController extends Controller
                 'required' => $item->box_qty,
                 'product_name' => $item->product_name,
                 'color_name' => $item->color_name,
-                'barcode' => $item->barcode
+                'barcode' => $item->barcode,
+                'scanned_total' => $scannedTotal
             ]);
 
         } catch (\Exception $e) {
@@ -1753,6 +1766,7 @@ class AgentOrderController extends Controller
         $item = DB::table('agent_order_items')
             ->where('agent_order_id', $id)
             ->where('barcode', $barcode)
+            ->whereNull('dispatched_at')
             ->where('scanned_box_qty', '>', 0)
             ->first();
 
@@ -1774,6 +1788,11 @@ class AgentOrderController extends Controller
 
             DB::commit();
 
+            $scannedTotal = DB::table('agent_order_items')
+                ->where('agent_order_id', $id)
+                ->whereNull('dispatched_at')
+                ->sum(DB::raw('scanned_quantity * selling_price'));
+
             return response()->json([
                 'success' => true,
                 'message' => 'Scan removed successfully!',
@@ -1783,7 +1802,8 @@ class AgentOrderController extends Controller
                 'design_number' => $item->design_number,
                 'product_name' => $item->product_name,
                 'color_name' => $item->color_name,
-                'barcode' => $item->barcode
+                'barcode' => $item->barcode,
+                'scanned_total' => $scannedTotal
             ]);
 
         } catch (\Exception $e) {
@@ -1965,6 +1985,17 @@ class AgentOrderController extends Controller
             if ($currentId !== $partyId) {
                 return redirect()->back()->with('error', 'Please select orders for the same shop/party.');
             }
+        }
+
+        // Ensure at least one item is scanned for dispatch
+        $hasScanned = DB::table('agent_order_items')
+            ->whereIn('agent_order_id', $orderIds)
+            ->where('scanned_box_qty', '>', 0)
+            ->whereNull('dispatched_at')
+            ->exists();
+
+        if (!$hasScanned) {
+            return redirect()->back()->with('error', 'No items have been scanned for dispatch.');
         }
 
         DB::beginTransaction();

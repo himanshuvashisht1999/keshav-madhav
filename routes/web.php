@@ -1155,6 +1155,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
             Route::get('/unit-assignments', [AdminReportController::class, 'unitAssignments'])->name('unit-assignments');
             Route::get('/unit-assignments/export', [AdminReportController::class, 'unitAssignmentsExport'])->name('unit-assignments.export');
+            Route::get('/unit-assignments/pdf', [AdminReportController::class, 'unitAssignmentsPdf'])->name('unit-assignments.pdf');
             Route::post('/unit-assignments/{type}/{id}/close', [AdminReportController::class, 'closeUnitAssignment'])->name('unit-assignments.close');
             Route::post('/unit-assignments/{type}/{id}/reopen', [AdminReportController::class, 'reopenUnitAssignment'])->name('unit-assignments.reopen');
 

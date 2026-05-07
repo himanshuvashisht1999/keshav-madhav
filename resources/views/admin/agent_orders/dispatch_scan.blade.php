@@ -11,7 +11,7 @@
                     </div>
                     <div class="d-flex align-items-center">
                         <div class="d-inline mr-2">
-                            <button type="button" class="btn btn-success rounded-pill px-4 shadow-sm" data-toggle="modal" data-target="#dispatchModal">
+                            <button type="button" id="dispatchBtn" class="btn btn-success rounded-pill px-4 shadow-sm" data-toggle="modal" data-target="#dispatchModal" {{ $scannedTotal > 0 ? '' : 'disabled' }}>
                                 <i class="fas fa-shipping-fast mr-1"></i> DISPATCH NOW
                             </button>
                         </div>
@@ -208,7 +208,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text bg-white border-right-0"><i class="fas fa-rupee-sign text-primary"></i></span>
                                 </div>
-                                <input type="number" step="0.01" class="form-control border-left-0" id="modal_total_amount" name="total_amount" value="{{ $order->grand_total }}" required>
+                                <input type="number" step="0.01" class="form-control border-left-0" id="modal_total_amount" name="total_amount" value="{{ $scannedTotal }}" required>
                             </div>
                         </div>
                         <div class="form-group mb-3">
@@ -503,6 +503,13 @@
                     const historyItem = `<div class="list-group-item animate__animated animate__fadeInDown" id="history_${boxNo}">${historyHTML}</div>`;
                     $('#scan_history').prepend(historyItem);
                 }
+
+                // Update totals and button state
+                if (response.scanned_total !== undefined) {
+                    $('#modal_total_amount').val(response.scanned_total);
+                    $('#dispatchBtn').prop('disabled', response.scanned_total <= 0);
+                    if (typeof calculateDispatch === 'function') calculateDispatch('default');
+                }
             }
 
             function revertUI(key, boxNo, response) {
@@ -541,6 +548,13 @@
                         existingHistory.addClass('animate__animated animate__shakeY');
                         setTimeout(() => existingHistory.removeClass('animate__animated animate__shakeY'), 1000);
                     }
+                }
+
+                // Update totals and button state
+                if (response.scanned_total !== undefined) {
+                    $('#modal_total_amount').val(response.scanned_total);
+                    $('#dispatchBtn').prop('disabled', response.scanned_total <= 0);
+                    if (typeof calculateDispatch === 'function') calculateDispatch('default');
                 }
             }
 

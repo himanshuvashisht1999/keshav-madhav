@@ -791,17 +791,17 @@ class ReportService
             return \App\Models\PurchaseOrderItem::with(['purchaseOrder.vendor', 'fabric'])
                 ->where('fabric_id', $fabricId)
                 ->when($request->filled('start_date'), function ($q) use ($request) {
-                    $q->whereHas('purchaseOrder', function($po) use ($request) {
+                    $q->whereHas('purchaseOrder', function ($po) use ($request) {
                         $po->whereDate('date', '>=', $request->start_date);
                     });
                 })
                 ->when($request->filled('end_date'), function ($q) use ($request) {
-                    $q->whereHas('purchaseOrder', function($po) use ($request) {
+                    $q->whereHas('purchaseOrder', function ($po) use ($request) {
                         $po->whereDate('date', '<=', $request->end_date);
                     });
                 })
                 ->when($request->filled('vendor_id'), function ($q) use ($request) {
-                    $q->whereHas('purchaseOrder', function($po) use ($request) {
+                    $q->whereHas('purchaseOrder', function ($po) use ($request) {
                         $po->where('vendor_id', $request->vendor_id);
                     });
                 })
@@ -842,7 +842,7 @@ class ReportService
                 $q->whereDate('created_at', '<=', $request->end_date);
             })
             ->when($request->filled('vendor_id'), function ($q) use ($request) {
-                $q->whereHas('fabric_receipt', function($r) use ($request) {
+                $q->whereHas('fabric_receipt', function ($r) use ($request) {
                     $r->where('vendor_id', $request->vendor_id);
                 });
             })
@@ -1633,7 +1633,7 @@ class ReportService
             }
 
             if ($lotNo) {
-                $query->whereHas('productSet', function($q) use ($lotNo) {
+                $query->whereHas('productSet', function ($q) use ($lotNo) {
                     $q->where('design_number', 'like', '%' . $lotNo . '%');
                 });
             }
@@ -1647,12 +1647,7 @@ class ReportService
             $records = $query->get();
 
             foreach ($records as $item) {
-                // Fetch Unified Timing
-                $timing = \App\Models\OrderLotStageTiming::where('lot_no', $item->productSet->design_number ?? '')
-                    ->where('master_stage_id', 3)
-                    ->first();
-
-                $eta = $timing?->end_date ?? $item->end_date;
+                $eta = $item->end_date;
                 $assignedQty = $item->quantity;
                 $pendingQty = (int) $item->remaining_quantity;
                 $isClosed = $item->is_closed_for_unit == 1;
@@ -1661,7 +1656,7 @@ class ReportService
                 if ($isClosed || $pendingQty <= 0) {
                     $item->status_text = 'Done';
                     $item->status_class = 'success';
-                    $endTime = $timing?->complete_date ?? $item->complete_date ?? $item->updated_at;
+                    $endTime = $item->complete_date ?? $item->updated_at;
                     if ($eta && \Carbon\Carbon::parse($endTime)->gt($eta)) {
                         $item->status_text = 'Delayed Done';
                         $item->status_class = 'danger';
@@ -1684,12 +1679,14 @@ class ReportService
                 // Map for View
                 $item->design_number = $item->productSet->design_number ?? '-';
                 $item->stage_master_unit = $item->cutting_master;
-                $item->start_time = $item->start_date ? \Carbon\Carbon::parse($item->start_date) : (($timing?->start_date) ? \Carbon\Carbon::parse($timing->start_date) : $item->created_at);
-                $item->end_time = $timing?->complete_date ? \Carbon\Carbon::parse($timing->complete_date) : ($item->complete_date ? \Carbon\Carbon::parse($item->complete_date) : (($isClosed || $pendingQty <= 0) ? $item->updated_at : null));
+                $item->start_time = $item->start_date ? \Carbon\Carbon::parse($item->start_date) : $item->created_at;
+                $item->end_time = ($isClosed || $pendingQty <= 0)
+                    ? ($item->complete_date ? \Carbon\Carbon::parse($item->complete_date) : $item->updated_at)
+                    : null;
                 $item->estimated_time = $eta ? \Carbon\Carbon::parse($eta) : null;
                 $item->assigned_qty = $assignedQty;
                 $item->pending_qty = $pendingQty;
-                
+
                 $assignments[] = $item;
             }
 
@@ -1749,7 +1746,7 @@ class ReportService
 
             foreach ($allTransactions as $item) {
                 $t_stage_id = $item->to_stage_id;
-                
+
                 // Fetch Unified Timing
                 $timing = \App\Models\OrderLotStageTiming::where('lot_no', $item->lot_no)
                     ->where('master_stage_id', $t_stage_id)
@@ -1788,7 +1785,9 @@ class ReportService
                 }
 
                 $item->start_time = $timing?->start_date ? \Carbon\Carbon::parse($timing->start_date) : ($item->start_date ? \Carbon\Carbon::parse($item->start_date) : $item->created_at);
-                $item->end_time = $timing?->complete_date ? \Carbon\Carbon::parse($timing->complete_date) : ($item->complete_date ? \Carbon\Carbon::parse($item->complete_date) : (($isClosed || $pendingQty <= 0) ? $item->updated_at : null));
+                $item->end_time = ($isClosed || $pendingQty <= 0)
+                    ? ($timing?->complete_date ? \Carbon\Carbon::parse($timing->complete_date) : ($item->complete_date ? \Carbon\Carbon::parse($item->complete_date) : $item->updated_at))
+                    : null;
                 $item->estimated_time = $eta ? \Carbon\Carbon::parse($eta) : null;
                 $item->assigned_qty = $assignedQty;
                 $item->pending_qty = $pendingQty;
@@ -1971,8 +1970,9 @@ class ReportService
             }
 
             // 3. Domestic Inventory
-            $inventoryQty = \App\Models\DomesticInventory::where('design_number', $designNumber)
-                ->sum('quantity');
+            $inventoryQty = \App\Models\DomesticInventory::whereHas('product', function ($q) use ($designNumber) {
+                $q->where('design_number', $designNumber);
+            })->sum('quantity');
 
             if ($inventoryQty > 0) {
                 $itemStage = 'Inventory';

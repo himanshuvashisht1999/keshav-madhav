@@ -6,23 +6,23 @@
             </th>
         </tr>
         <tr>
-            <th style="background-color: #f2f2f2; font-weight: bold;">Date</th>
+            <!-- <th style="background-color: #f2f2f2; font-weight: bold;">Date</th> -->
             <th style="background-color: #f2f2f2; font-weight: bold;">Unit Person</th>
             <th style="background-color: #f2f2f2; font-weight: bold;">Stage</th>
             <th style="background-color: #f2f2f2; font-weight: bold;">Lot No</th>
             <th style="background-color: #f2f2f2; font-weight: bold;">Order No</th>
             <th style="background-color: #f2f2f2; font-weight: bold;">Assigned Qty</th>
             <th style="background-color: #f2f2f2; font-weight: bold;">Pending Qty</th>
-            <th style="background-color: #f2f2f2; font-weight: bold;">Start Time</th>
-            <th style="background-color: #f2f2f2; font-weight: bold;">End Time</th>
-            <th style="background-color: #f2f2f2; font-weight: bold;">Estimated Time</th>
+            <th style="background-color: #f2f2f2; font-weight: bold;">Start Date</th>
+            <th style="background-color: #f2f2f2; font-weight: bold;">Completed Date</th>
+            <th style="background-color: #f2f2f2; font-weight: bold;">Estimated Date</th>
             <th style="background-color: #f2f2f2; font-weight: bold;">Status</th>
         </tr>
     </thead>
     <tbody>
         @foreach($assignments as $item)
             <tr>
-                <td>{{ $item->created_at->format('d-m-Y') }}</td>
+                <!-- <td>{{ $item->created_at->format('d-m-Y') }}</td> -->
                 <td>
                     @if($type === 'cutting')
                         {{ $item->stage_master_unit->name ?? '-' }}
@@ -47,9 +47,9 @@
                 </td>
                 <td>{{ $item->assigned_qty ?? 0 }}</td>
                 <td>{{ $item->pending_qty ?? 0 }}</td>
-                <td>{{ $item->start_time ? $item->start_time->format('d-m-Y h:i A') : '-' }}</td>
-                <td>{{ $item->end_time ? $item->end_time->format('d-m-Y h:i A') : '-' }}</td>
-                <td>{{ $item->estimated_time ? $item->estimated_time->format('d-m-Y h:i A') : '-' }}</td>
+                <td>{{ $item->start_time ? $item->start_time->format('d-m-Y') : '-' }}</td>
+                <td>{{ $item->end_time ? $item->end_time->format('d-m-Y') : '-' }}</td>
+                <td>{{ $item->estimated_time ? $item->estimated_time->format('d-m-Y') : '-' }}</td>
                 <td>{{ $item->status_text ?? '-' }}</td>
             </tr>
         @endforeach

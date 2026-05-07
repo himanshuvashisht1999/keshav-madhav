@@ -104,7 +104,7 @@
                                 </div>
 
                                 <div class="col-md-2 align-items-end d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary w-100 mr-2">
+                                    <button type="submit" class="btn btn-primary w-100">
                                         Search
                                     </button>
                                     <a href="{{ route('admin.reports.unit-assignments') }}" class="btn btn-secondary w-100">
@@ -112,9 +112,12 @@
                                     </a>
                                 </div>
 
-                                <div class="col-md-1 align-items-end d-flex">
+                                <div class="col-md-2 align-items-end d-flex gap-2">
                                     <a href="{{ route('admin.reports.unit-assignments.export', request()->query()) }}" class="btn btn-success w-100" title="Export Excel">
                                         <i class="fas fa-file-excel"></i>
+                                    </a>
+                                    <a href="{{ route('admin.reports.unit-assignments.pdf', request()->query()) }}" class="btn btn-danger w-100" title="Export PDF">
+                                        <i class="fas fa-file-pdf"></i>
                                     </a>
                                 </div>
 
@@ -138,7 +141,7 @@
                                     <table class="table table-bordered table-report">
                                         <thead>
                                             <tr>
-                                                <th>Date</th>
+                                                <!-- <th>Date</th> -->
                                                 <th>Unit Person</th>
                                                 <th>Order No</th>
                                                 <th>Design No</th>
@@ -146,9 +149,9 @@
                                                 <th>Color</th> --}}
                                                 <th>Assigned Qty</th>
                                                 <th>Pending Qty</th>
-                                                <th>Start Time</th>
-                                                <th>End Time</th>
-                                                <th>Estimated Time</th>
+                                                <th>Start Date</th>
+                                                <th>Completed Date</th>
+                                                <th>Estimated Date</th>
                                                 <th>Status</th>
                                                 @if($canCloseTasks)
                                                     <th class="text-center">Action</th>
@@ -158,7 +161,7 @@
                                         <tbody>
                                             @foreach($assignments as $item)
                                                 <tr>
-                                                    <td>{{ $item->created_at->format('d M Y') }}</td>
+                                                    <!-- <td>{{ $item->created_at->format('d M Y') }}</td> -->
                                                     <td>
                                                         {{ $item->stage_master_unit->name ?? '-' }}
                                                         @if(isset($item->stage_master_unit->phone) && $item->stage_master_unit->phone)
@@ -173,9 +176,9 @@
                                                     <td>{{ $item->colors->name ?? '-' }}</td> --}}
                                                     <td>{{ $item->assigned_qty ?? 0 }} Pcs</td>
                                                     <td>{{ $item->pending_qty ?? 0 }} Pcs</td>
-                                                    <td>{{ $item->start_time ? $item->start_time->format('d M Y h:i A') : '-' }}</td>
-                                                    <td>{{ $item->end_time ? $item->end_time->format('d M Y h:i A') : '-' }}</td>
-                                                    <td>{{ $item->estimated_time ? $item->estimated_time->format('d M Y h:i A') : '-' }}</td>
+                                                    <td>{{ $item->start_time ? $item->start_time->format('d M Y') : '-' }}</td>
+                                                    <td>{{ $item->end_time ? $item->end_time->format('d M Y') : '-' }}</td>
+                                                    <td>{{ $item->estimated_time ? $item->estimated_time->format('d M Y') : '-' }}</td>
                                                     <td>
                                                         <span class="badge badge-{{ $item->status_class ?? 'secondary' }}">
                                                             {{ $item->status_text ?? 'Unknown' }}
@@ -205,16 +208,16 @@
                                     <table class="table table-bordered table-report">
                                         <thead>
                                             <tr>
-                                                <th>Date</th>
+                                                <!-- <th>Date</th> -->
                                                 <th>Unit Person</th>
                                                 <th>From Stage</th>
                                                 <th>Lot No</th>
                                                 <th>Sent By</th>
                                                 <th>Assigned Qty</th>
                                                 <th>Pending Qty</th>
-                                                <th>Start Time</th>
-                                                <th>End Time</th>
-                                                <th>Estimated Time</th>
+                                                <th>Start Date</th>
+                                                <th>Completed Date</th>
+                                                <th>Estimated Date</th>
                                                 <th>Status</th>
                                                 @if($canCloseTasks)
                                                     <th class="text-center">Action</th>
@@ -224,7 +227,7 @@
                                         <tbody>
                                             @foreach($assignments as $item)
                                                 <tr>
-                                                    <td>{{ $item->created_at->format('d M Y') }}</td>
+                                                    <!-- <td>{{ $item->created_at->format('d M Y') }}</td> -->
                                                     <td>
                                                         {{ $item->getToUnitMaster->name ?? $item->stage_master_unit->name ?? '-' }}
                                                         @php $phone = $item->getToUnitMaster->phone ?? $item->stage_master_unit->phone ?? null; @endphp
@@ -239,9 +242,9 @@
                                                     <td>{{ $item->getFromUnitMaster->name ?? $item->getUnitMaster->name ?? '-' }}</td>
                                                     <td>{{ $item->assigned_qty ?? 0 }} Pcs</td>
                                                     <td>{{ $item->pending_qty ?? 0 }} Pcs</td>
-                                                    <td>{{ $item->start_time ? $item->start_time->format('d M Y h:i A') : '-' }}</td>
-                                                    <td>{{ $item->end_time ? $item->end_time->format('d M Y h:i A') : '-' }}</td>
-                                                    <td>{{ $item->estimated_time ? $item->estimated_time->format('d M Y h:i A') : '-' }}</td>
+                                                    <td>{{ $item->start_time ? $item->start_time->format('d M Y') : '-' }}</td>
+                                                    <td>{{ $item->end_time ? $item->end_time->format('d M Y') : '-' }}</td>
+                                                    <td>{{ $item->estimated_time ? $item->estimated_time->format('d M Y') : '-' }}</td>
                                                     <td>
                                                         <span class="badge badge-{{ $item->status_class ?? 'secondary' }}">
                                                             {{ $item->status_text ?? 'Unknown' }}
