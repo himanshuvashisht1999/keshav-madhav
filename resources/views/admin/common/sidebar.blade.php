@@ -603,6 +603,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                     </a>
                                 </li>
                                 <li class="nav-item">
+                                    <a href="{{ route('admin.payment.journal-voucher.index') }}"
+                                        class="nav-link {{ str_contains($page_url, 'payment/journal-voucher') ? 'active' : '' }}">
+                                        <i class="fas fa-file-invoice-dollar nav-icon"></i>
+                                        <p>Journal Voucher</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
                                     <a href="{{ route('admin.payment.pending.index') }}"
                                         class="{{ str_contains($page_url, 'admin/payment/pending') ? 'nav-link active' : 'nav-link' }}">
                                         <i class="fas fa-clock nav-icon"></i>

@@ -84,6 +84,7 @@ use App\Http\Controllers\Admin\Payment\Voucher\ConsumableVoucherController as Ad
 use App\Http\Controllers\Admin\Payment\Voucher\ContractorVoucherController as AdminContractorVoucherController;
 use App\Http\Controllers\Admin\Payment\Voucher\WashingVoucherController as AdminWashingVoucherController;
 use App\Http\Controllers\Admin\Payment\PaymentAdjustmentController as AdminPaymentAdjustmentController;
+use App\Http\Controllers\Admin\Payment\JournalVoucherController as AdminJournalVoucherController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 
 ///// Reports
@@ -1491,6 +1492,15 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/getSubMastersAll', [AdminPaymentAdjustmentController::class, 'getSubMastersAll'])->name('getSubMastersAll');
                 Route::get('/getVendorShipments', [AdminPaymentAdjustmentController::class, 'getVendorShipments'])->name('getVendorShipments');
                 Route::get('/getAccounts', [AdminPaymentAdjustmentController::class, 'getAccounts'])->name('getAccounts');
+            });
+
+            Route::prefix('journal-voucher')->name('journal-voucher.')->group(function () {
+                Route::get('/index', [AdminJournalVoucherController::class, 'index'])->name('index');
+                Route::get('/create', [AdminJournalVoucherController::class, 'create'])->name('create');
+                Route::post('/store', [AdminJournalVoucherController::class, 'store'])->name('store');
+                Route::get('/edit/{id}', [AdminJournalVoucherController::class, 'edit'])->name('edit');
+                Route::post('/update/{id}', [AdminJournalVoucherController::class, 'update'])->name('update');
+                Route::get('/delete/{id}', [AdminJournalVoucherController::class, 'destroy'])->name('delete');
             });
         });
 
