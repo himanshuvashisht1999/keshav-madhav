@@ -377,6 +377,7 @@
             var newRow = $('#row_template').clone().removeAttr('id');
             $('#adjustment_rows').append(newRow);
             newRow.find('select').addClass('select2').select2({ width: '100%' });
+            populateAllItemSelects();
             calculateTotals();
         });
 
@@ -421,45 +422,117 @@
             }
         });
 
-        $(document).on('change', '.master-type', function() {
+        // Global variable to store all items
+        var allMasterItems = [];
+
+        // Fetch all items on load
+        function fetchAllItems() {
+            return $.ajax({
+                url: "{{ route('admin.payment.adjustment.getSubMastersAll') }}",
+                type: "GET",
+                success: function(data) {
+                    allMasterItems = data;
+                    populateAllItemSelects();
+                }
+            });
+        }
+
+        function populateAllItemSelects() {
+            $('.master-item').each(function() {
+                var $select = $(this);
+                var $row = $select.closest('tr');
+                var currentMasterId = $row.find('.master-type').val();
+                var currentValue = $select.val();
+                
+                if (!currentMasterId || currentMasterId == "") {
+                    // Populate with all items if no master type is selected
+                    $select.empty().append('<option value="">-- Select Item --</option>');
+                    $.each(allMasterItems, function(key, value) {
+                        var selected = (value.id == currentValue) ? 'selected' : '';
+                        $select.append('<option value="' + value.id + '" data-master-id="' + value.master_id + '" data-balance="' + value.balance + '" '+selected+'>' + value.name + '</option>');
+                    });
+                    $select.prop('disabled', false).trigger('change.select2');
+                } else {
+                    // Filter items if master type is already selected (e.g. on page load for existing rows)
+                    var filteredItems = allMasterItems.filter(function(item) {
+                        return item.master_id == currentMasterId;
+                    });
+                    
+                    var existingOptions = $select.find('option').map(function() { return $(this).val(); }).get();
+                    
+                    $.each(filteredItems, function(key, value) {
+                        if (!existingOptions.includes(value.id.toString())) {
+                            $select.append('<option value="' + value.id + '" data-master-id="' + value.master_id + '" data-balance="' + value.balance + '">' + value.name + '</option>');
+                        }
+                    });
+                    $select.prop('disabled', false).trigger('change.select2');
+                }
+            });
+        }
+
+        fetchAllItems();
+
+        $(document).on('change', '.master-type', function(e, isAutoFill) {
+            if (isAutoFill) return; // Prevent loop
+
             var $row = $(this).closest('tr');
             var masterId = $(this).val();
             var $itemSelect = $row.find('.master-item');
             
-            // Clear current items
-            $itemSelect.empty().append('<option value="">-- Select Item --</option>').prop('disabled', true).trigger('change');
+            // Clear current items and related areas
             $row.find('.shipment-selection-area').hide().find('.shipment-list').empty();
             $row.find('.real-ref-id').val('');
 
             if (masterId) {
-                $.ajax({
-                    url: "{{ route('admin.payment.adjustment.getSubMasters') }}",
-                    type: "GET",
-                    data: { master_id: masterId },
-                    success: function(data) {
-                        var bulkAccountId = $('#bulk_account_id').val();
-                        var bulkMode = $('#bulk_payment_mode').val();
-                        var masterText = $row.find('.master-type :selected').text().toLowerCase();
-                        var isFinancialSource = masterText.includes('bank') || masterText.includes('cash');
-
-                        $.each(data, function(key, value) {
-                            if (isFinancialSource && bulkMode && bulkMode.startsWith(masterText.split(' ')[0].toLowerCase()) && value.id == bulkAccountId) {
-                                return;
-                            }
-                            $itemSelect.append('<option value="' + value.id + '">' + value.name + '</option>');
-                        });
-                        $itemSelect.prop('disabled', false).trigger('change');
-                    }
+                // Filter allMasterItems for this masterId
+                var filteredItems = allMasterItems.filter(function(item) {
+                    return item.master_id == masterId;
                 });
+
+                $itemSelect.empty().append('<option value="">-- Select Item --</option>');
+                $.each(filteredItems, function(key, value) {
+                    var balanceText = (value.balance !== undefined) ? ' (Bal: ' + value.balance + ')' : '';
+                    $itemSelect.append('<option value="' + value.id + '" data-master-id="' + value.master_id + '" data-balance="' + value.balance + '">' + value.name + balanceText + '</option>');
+                });
+                $itemSelect.prop('disabled', false).trigger('change.select2');
+            } else {
+                // Restore all items if master type is cleared
+                $itemSelect.empty().append('<option value="">-- Select Item --</option>');
+                $.each(allMasterItems, function(key, value) {
+                    $itemSelect.append('<option value="' + value.id + '" data-master-id="' + value.master_id + '" data-balance="' + value.balance + '">' + value.name + '</option>');
+                });
+                $itemSelect.prop('disabled', false).trigger('change.select2');
             }
         });
 
+        // Handle Master Item Change (to auto-fill Master Type)
         $(document).on('change', '.master-item', function() {
             var $row = $(this).closest('tr');
-            var masterId = $row.find('.master-type').val();
+            var $masterTypeSelect = $row.find('.master-type');
+            var selectedOption = $(this).find(':selected');
+            var masterId = selectedOption.data('master-id');
             var refId = $(this).val();
 
-            var isShipmentRow = [14, 16, 18, vendorMasterId, domesticMasterId].includes(Number(masterId));
+            if (masterId && (!$masterTypeSelect.val() || $masterTypeSelect.val() == "")) {
+                $masterTypeSelect.val(masterId).trigger('change', [true]);
+                $(this).trigger('change');
+                return;
+            }
+
+            // Balance display
+            var balance = selectedOption.data('balance');
+            var $balanceDisplay = $row.find('.item-balance-display');
+            if ($balanceDisplay.length == 0) {
+                $balanceDisplay = $('<small class="text-muted item-balance-display d-block"></small>');
+                $(this).after($balanceDisplay);
+            }
+            if (balance !== undefined && refId && !refId.includes(',')) {
+                $balanceDisplay.text('Current Balance: ' + balance);
+            } else {
+                $balanceDisplay.text('');
+            }
+
+            var isShipmentRow = [14, 16, 18, vendorMasterId, domesticMasterId].includes(Number($masterTypeSelect.val()));
 
             if (!isShipmentRow) {
                 $row.find('.real-ref-id').val(refId);
@@ -469,7 +542,7 @@
                 $.ajax({
                     url: "{{ route('admin.payment.adjustment.getVendorShipments') }}",
                     type: "GET",
-                    data: { vendor_id: refId, master_id: masterId, batch_id: "{{ $batchId }}" },
+                    data: { vendor_id: refId, master_id: $masterTypeSelect.val(), batch_id: "{{ $batchId }}" },
                     success: function(data) {
                         var $list = $row.find('.shipment-list');
                         $list.empty();

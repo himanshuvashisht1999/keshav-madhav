@@ -1488,6 +1488,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::post('/update/{batchId}', [AdminPaymentAdjustmentController::class, 'update'])->name('update');
                 Route::get('/delete/{batchId}', [AdminPaymentAdjustmentController::class, 'delete'])->name('delete');
                 Route::get('/getSubMasters', [AdminPaymentAdjustmentController::class, 'getSubMasters'])->name('getSubMasters');
+                Route::get('/getSubMastersAll', [AdminPaymentAdjustmentController::class, 'getSubMastersAll'])->name('getSubMastersAll');
                 Route::get('/getVendorShipments', [AdminPaymentAdjustmentController::class, 'getVendorShipments'])->name('getVendorShipments');
                 Route::get('/getAccounts', [AdminPaymentAdjustmentController::class, 'getAccounts'])->name('getAccounts');
             });

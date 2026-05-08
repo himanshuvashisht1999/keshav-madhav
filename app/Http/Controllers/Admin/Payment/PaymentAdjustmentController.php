@@ -302,6 +302,59 @@ class PaymentAdjustmentController extends Controller
         return response()->json([]);
     }
 
+    public function getSubMastersAll(Request $request)
+    {
+        $masters = AdjustmentMaster::where('status', 1)->get();
+        $allData = [];
+
+        foreach ($masters as $master) {
+            $modelName = $master->model_name;
+            if (class_exists($modelName)) {
+                $items = [];
+                if ($modelName == 'App\Models\FabricReceipt') {
+                    $items = \App\Models\Vendor::where('status', 1)->get()->map(function ($v) use ($master) {
+                        return [
+                            'id' => $v->id, 
+                            'name' => $v->name . ' [Vendor]', 
+                            'master_id' => $master->id,
+                            'balance' => 0
+                        ];
+                    })->toArray();
+                } elseif ($modelName == 'App\Models\AgentOrder') {
+                    $items = \App\Models\MasterCustomer::with('agent')
+                        ->whereIn('type', ['domestic', 'corporate'])
+                        ->get()
+                        ->map(function ($c) use ($master) {
+                            $agentName = $c->agent ? $c->agent->name : 'Direct';
+                            $prefix = ($c->type == 'corporate') ? '[Corp] ' : '';
+                            return [
+                                'id' => $c->id, 
+                                'name' => $prefix . $c->name . ' (Agent: ' . $agentName . ') [Customer]', 
+                                'master_id' => $master->id,
+                                'balance' => 0
+                            ];
+                        })->toArray();
+                } else {
+                    $items = $modelName::where('status', 1)->get()->map(function ($item) use ($modelName, $master) {
+                        $name = $item->name;
+                        if ($modelName == 'App\Models\BankAccount') {
+                            $name = $item->bank_name . ' (' . $item->account_number . ')';
+                        }
+                        return [
+                            'id' => $item->id, 
+                            'name' => $name . ' [' . $master->name . ']', 
+                            'master_id' => $master->id,
+                            'balance' => $item->balance ?? $item->amount ?? 0
+                        ];
+                    })->toArray();
+                }
+                $allData = array_merge($allData, $items);
+            }
+        }
+
+        return response()->json($allData);
+    }
+
     public function getAccounts(Request $request)
     {
         $mode = $request->mode;

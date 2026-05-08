@@ -267,6 +267,7 @@
             var newRow = $('#row_template').clone().removeAttr('id');
             $('#adjustment_rows').append(newRow);
             newRow.find('select').addClass('select2').select2({ width: '100%' });
+            populateAllItemSelects();
             calculateTotals();
         });
 
@@ -327,47 +328,88 @@
             }
         });
 
+        // Global variable to store all items
+        var allMasterItems = [];
+
+        // Fetch all items on load
+        function fetchAllItems() {
+            return $.ajax({
+                url: "{{ route('admin.payment.adjustment.getSubMastersAll') }}",
+                type: "GET",
+                success: function(data) {
+                    allMasterItems = data;
+                    populateAllItemSelects();
+                }
+            });
+        }
+
+        function populateAllItemSelects() {
+            $('.master-item').each(function() {
+                var $select = $(this);
+                var $row = $select.closest('tr');
+                var currentMasterId = $row.find('.master-type').val();
+                
+                if (!currentMasterId) {
+                    $select.empty().append('<option value="">-- Select Item --</option>');
+                    $.each(allMasterItems, function(key, value) {
+                        $select.append('<option value="' + value.id + '" data-master-id="' + value.master_id + '" data-balance="' + value.balance + '">' + value.name + '</option>');
+                    });
+                    $select.prop('disabled', false).trigger('change.select2');
+                }
+            });
+        }
+
+        fetchAllItems();
+
         // Handle Master Type Change
-        $(document).on('change', '.master-type', function() {
+        $(document).on('change', '.master-type', function(e, isAutoFill) {
+            if (isAutoFill) return; // Prevent loop
+
             var $row = $(this).closest('tr');
             var masterId = $(this).val();
             var $itemSelect = $row.find('.master-item');
             
-            // Clear current items
-            $itemSelect.empty().append('<option value="">-- Select Item --</option>').prop('disabled', true).trigger('change');
-
             if (masterId) {
-                $.ajax({
-                    url: "{{ route('admin.payment.adjustment.getSubMasters') }}",
-                    type: "GET",
-                    data: { master_id: masterId },
-                    success: function(data) {
-                        var bulkAccountId = $('#bulk_account_id').val();
-                        var bulkMode = $('#bulk_payment_mode').val();
-                        var masterText = $row.find('.master-type :selected').text().toLowerCase();
-                        var isFinancialSource = masterText.includes('bank') || masterText.includes('cash');
-
-                        $.each(data, function(key, value) {
-                            if (isFinancialSource && bulkMode && bulkMode.startsWith(masterText.split(' ')[0].toLowerCase()) && value.id == bulkAccountId) {
-                                return;
-                            }
-                            var balanceText = (value.balance !== undefined) ? ' (Bal: ' + value.balance + ')' : '';
-                            $itemSelect.append('<option value="' + value.id + '" data-balance="' + value.balance + '">' + value.name + balanceText + '</option>');
-                        });
-                        $itemSelect.prop('disabled', false).trigger('change');
-                    }
+                // Filter allMasterItems for this masterId
+                var filteredItems = allMasterItems.filter(function(item) {
+                    return item.master_id == masterId;
                 });
+
+                $itemSelect.empty().append('<option value="">-- Select Item --</option>');
+                $.each(filteredItems, function(key, value) {
+                    var balanceText = (value.balance !== undefined) ? ' (Bal: ' + value.balance + ')' : '';
+                    $itemSelect.append('<option value="' + value.id + '" data-master-id="' + value.master_id + '" data-balance="' + value.balance + '">' + value.name + balanceText + '</option>');
+                });
+                $itemSelect.prop('disabled', false).trigger('change.select2');
+            } else {
+                // Restore all items if master type is cleared
+                $itemSelect.empty().append('<option value="">-- Select Item --</option>');
+                $.each(allMasterItems, function(key, value) {
+                    $itemSelect.append('<option value="' + value.id + '" data-master-id="' + value.master_id + '" data-balance="' + value.balance + '">' + value.name + '</option>');
+                });
+                $itemSelect.prop('disabled', false).trigger('change.select2');
             }
         });
 
-        // Show balance for master item
+        // Handle Master Item Change (to auto-fill Master Type)
         $(document).on('change', '.master-item', function() {
             var $row = $(this).closest('tr');
-            var balance = $(this).find(':selected').data('balance');
+            var $masterTypeSelect = $row.find('.master-type');
+            var selectedOption = $(this).find(':selected');
+            var masterId = selectedOption.data('master-id');
+            
+            if (masterId && !$masterTypeSelect.val()) {
+                $masterTypeSelect.val(masterId).trigger('change', [true]);
+                // Re-trigger change to let other handlers (like shipment picker) react to the newly set master-type
+                $(this).trigger('change');
+                return;
+            }
+
+            var balance = selectedOption.data('balance');
             var $balanceDisplay = $row.find('.item-balance-display');
             
             if ($balanceDisplay.length == 0) {
-                $balanceDisplay = $('<small class="text-muted item-balance-display"></small>');
+                $balanceDisplay = $('<small class="text-muted item-balance-display d-block"></small>');
                 $(this).after($balanceDisplay);
             }
 
