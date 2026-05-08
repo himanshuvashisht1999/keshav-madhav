@@ -234,7 +234,7 @@
                                 <div class="price-row" style="margin-top: 5px;">
                                     <span class="price-label"
                                         style="font-size: 14px; font-weight: bold; color: #1b4332;">WSP:</span>
-                                    <span class="price-value net-price">Rs. {{ number_format($sample->final_price, 2) }}</span>
+                                    <span class="price-value net-price">{{ number_format($sample->final_price, 2) }}</span>
                                 </div>
                             </div>
                         @endif
