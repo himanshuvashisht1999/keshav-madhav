@@ -424,13 +424,21 @@ function generateFairBulkTspl($samples)
 {
     $labels = [];
     foreach ($samples as $sample) {
+        // Calculate WSP
+        $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $sample->product_id)
+            ->where('master_size_measurement_id', $sample->size_set_id)
+            ->first();
+        $mrp = $variant->mrp ?? 0;
+        $final_price = $mrp - ($mrp * ($sample->discount_percent / 100));
+
         $labels[] = (object) [
             'product_name' => trim(($sample->product->series->name ?? '') . ' ' . ($sample->product->name_of_garment ?? '')),
             'fitting_name' => $sample->product->fitting->name ?? '',
             'pattern_name' => $sample->product->pattern->name ?? '',
             'size_group' => $sample->sizeSet->name,
             'no_of_pcs' => $sample->sizeSet->no_of_pcs ?? '',
-            'design_number' => $sample->product->design_number,
+            'wsp' => 'Rs. ' . number_format($final_price, 2),
+            'barcode' => $sample->barcode,
             'url' => route('fair-product.color-chart', ['barcode' => $sample->barcode])
         ];
     }
@@ -460,9 +468,11 @@ CLS
             $tspl .= "TEXT 80,230,\"3\",0,2,2,\"{$left->no_of_pcs} PCS\"\n";
             $tspl .= "TEXT 40,310,\"2\",0,1,1,\"{$left->pattern_name}\"\n";
             $tspl .= "TEXT 40,350,\"2\",0,1,1,\"{$left->fitting_name}\"\n";
-            $tspl .= "TEXT 40,390,\"2\",0,1,1,\"# {$left->design_number}\"\n";
-            // QR Code instead of Barcode, adjusted position to avoid overlap
-            $tspl .= "QRCODE 40,450,M,6,A,0,\"{$left->url}\"\n";
+            $tspl .= "TEXT 40,390,\"2\",0,1,1,\"WSP: {$left->wsp}\"\n";
+            // QR Code
+            $tspl .= "QRCODE 40,430,M,6,A,0,\"{$left->url}\"\n";
+            // Barcode text under QR
+            $tspl .= "TEXT 40,580,\"2\",0,1,1,\"{$left->barcode}\"\n";
         }
 
         if ($right) {
@@ -471,9 +481,11 @@ CLS
             $tspl .= "TEXT 480,230,\"3\",0,2,2,\"{$right->no_of_pcs} PCS\"\n";
             $tspl .= "TEXT 440,310,\"2\",0,1,1,\"{$right->pattern_name}\"\n";
             $tspl .= "TEXT 440,350,\"2\",0,1,1,\"{$right->fitting_name}\"\n";
-            $tspl .= "TEXT 440,390,\"2\",0,1,1,\"# {$right->design_number}\"\n";
-            // QR Code instead of Barcode
-            $tspl .= "QRCODE 440,450,M,6,A,0,\"{$right->url}\"\n";
+            $tspl .= "TEXT 440,390,\"2\",0,1,1,\"WSP: {$right->wsp}\"\n";
+            // QR Code
+            $tspl .= "QRCODE 440,430,M,6,A,0,\"{$right->url}\"\n";
+            // Barcode text under QR
+            $tspl .= "TEXT 440,580,\"2\",0,1,1,\"{$right->barcode}\"\n";
         }
 
         $tspl .= "PRINT 1\n";
