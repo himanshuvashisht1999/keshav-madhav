@@ -5,6 +5,8 @@ use App\Http\Controllers\Controller;
 use App\Services\Admin\ProductOrderService as Service;
 use App\Requests\Admin\ProductOrderStoreRequest;
 use App\Requests\Admin\ProductOrderUpdateRequest;
+use App\Models\ProductionPO;
+use Illuminate\Support\Facades\DB;
 use App\Models\OrderProduct;
 use App\Models\OrderProductDetailStock;
 use App\Models\OrderCuttingStage;
@@ -49,6 +51,8 @@ class ProductOrderController extends Controller {
         $response['fabrics'] = $this->service->fabrics();
         // dd( $response['fabrics']);
         $response['fittings'] = $this->service->fittings();
+        $response['vendors'] = \App\Models\Vendor::where('status', 1)->get();
+        $response['customers'] = \App\Models\MasterCustomer::where('status', 1)->get();
         return view('admin.product_order.index-order-set', $response);
     } 
     public function indexListOrderSet(Request $request){
@@ -241,6 +245,117 @@ class ProductOrderController extends Controller {
     {
         $response = $this->service->deleteAssignment($request);
         return response()->json($response);
+    }
+    public function createPO(Request $request){
+        $response = $this->service->createPO($request);
+        return response()->json($response);
+    }
+    public function downloadPO(Request $request)
+    {
+        $id = $request->id;
+        $po = OrderCuttingStage::with(['vendor', 'customer', 'productSet.colors'])->findOrFail($id);
+
+        $pdf = \PDF::loadView('admin.product_order.download-po', compact('po'));
+        return $pdf->download('PO_' . $po->sku . '.pdf');
+    }
+
+    public function bulkPO()
+    {
+        $response['vendors'] = \App\Models\Vendor::where('status', 1)->get();
+        $response['customers'] = \App\Models\MasterCustomer::where('status', 1)->get();
+        $response['fabrics'] = $this->service->fabrics();
+        $response['fittings'] = $this->service->fittings();
+        $response['patterns'] = $this->service->getPatterns();
+        return view('admin.product_order.bulk-po', $response);
+    }
+
+    public function getUnassignedSets(Request $request)
+    {
+        $query = OrderProductSet::with(['orderMain', 'colors'])
+            ->where('remain_total_quantity', '>', 0)
+            ->where('status', '!=', 2); // Not fully assigned/PO
+
+        if ($request->ids && is_array($request->ids)) {
+            $query->whereIn('id', $request->ids);
+        } elseif ($request->order_id) {
+            $query->where('order_main_id', $request->order_id);
+        } elseif ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('design_number', 'LIKE', "%{$request->search}%")
+                  ->orWhere('sku', 'LIKE', "%{$request->search}%");
+            });
+        }
+
+        $sets = $query->limit(50)->get();
+
+        return response()->json($sets);
+    }
+
+    public function getUnassignedOrders(Request $request)
+    {
+        $query = OrderMain::whereHas('productSets', function($q) {
+            $q->where('remain_total_quantity', '>', 0)
+              ->where('status', '!=', 2);
+        });
+
+        if ($request->search) {
+            $query->where('sku', 'LIKE', "%{$request->search}%");
+        }
+
+        $orders = $query->limit(20)->get();
+        return response()->json($orders);
+    }
+
+    public function storeBulkPO(Request $request)
+    {
+        $response = $this->service->storeBulkPO($request);
+        return response()->json($response);
+    }
+
+    public function poList()
+    {
+        $pos = ProductionPO::with(['vendor', 'customer', 'orderMain', 'items'])->orderBy('created_at', 'desc')->paginate(20);
+        return view('admin.product_order.po-list', compact('pos'));
+    }
+
+    public function viewBulkPO($id)
+    {
+        $po = ProductionPO::with(['vendor', 'customer', 'orderMain', 'items.productSet', 'items.pattern', 'items.master_fitting'])->findOrFail($id);
+        $general_setting = \App\Models\GeneralSettings::first();
+        return view('admin.product_order.po-view', compact('po', 'general_setting'));
+    }
+
+    public function deletePO($id)
+    {
+        DB::beginTransaction();
+        try {
+            $po = ProductionPO::findOrFail($id);
+            // Restore quantities to OrderProductSet before deleting items
+            foreach ($po->items as $item) {
+                $set = OrderProductSet::find($item->set_product_id);
+                if ($set) {
+                    $set->remain_total_quantity += $item->quantity;
+                    $set->status = 1; // Back to active/partial
+                    $set->save();
+                }
+                $item->delete();
+            }
+            $po->delete();
+            DB::commit();
+            return response()->json(['status' => true, 'message' => 'PO deleted successfully.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function downloadBulkPO($id)
+    {
+        $po = ProductionPO::with(['vendor', 'customer', 'orderMain', 'items.productSet', 'items.pattern', 'items.master_fitting'])->findOrFail($id);
+        $general_setting = \App\Models\GeneralSettings::first();
+        
+        $pdf = \PDF::loadView('admin.product_order.download-bulk-po', compact('po', 'general_setting'));
+        return $pdf->download($po->po_number . '.pdf');
     }
 
     public function indexOrderSetDownload(Request $request)

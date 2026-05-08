@@ -230,12 +230,20 @@ class ProductOrderDataTable  {
             ->addColumn('assign_to', function ($queue) {
                 // If the entire set is NOT assigned, or IF there's still partial remaining
                 if ($queue->remain_total_quantity <= 0) {
+                    $cuttingStage = $queue->order_cutting_stage;
+                    if ($cuttingStage && $cuttingStage->is_po) {
+                        $entity = $cuttingStage->vendor_id ? ($cuttingStage->vendor->name ?? 'Vendor') : ($cuttingStage->customer->name ?? 'Customer');
+                        return '<span class="badge badge-info">PO: '.$entity.'</span>
+                                <a href="'.route('admin.product_order.downloadPO', ['id' => $cuttingStage->id]).'" class="btn btn-xs btn-outline-info ml-1" title="Download PO">
+                                    <i class="fa fa-download"></i>
+                                </a>';
+                    }
                     return '<span class="badge badge-success">Fully Assigned</span>';
                 }
 
                 $color = $queue->colors->name ?? '';
                 $set_size = $queue->size_measurement;
-                return '
+                $btns = '
                     <button 
                         class="btn btn-sm btn-primary assign-btn"
                         data-id="'.$queue->id.'"
@@ -247,6 +255,12 @@ class ProductOrderDataTable  {
                         data-remain="'.$queue->remain_total_quantity.'">
                         Assign
                     </button>';
+                
+                if ($queue->remain_total_quantity == $queue->total_quantity) {
+                    // Removed individual PO link as per user request
+                }
+                
+                return $btns;
             })
 
             ->addColumn('status', function ($queue) {

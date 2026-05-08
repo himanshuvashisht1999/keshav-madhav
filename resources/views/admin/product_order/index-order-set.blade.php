@@ -29,6 +29,9 @@
                             <button type="button" id="bulkAssignBtn" class="btn btn-primary btn-sm">
                                 Assign Selected to Cutting Master
                             </button>
+                            <a href="{{ route('admin.product_order.bulkPO', ['order_id' => $order_main_id]) }}" class="btn btn-outline-info btn-sm">
+                                Create PO
+                            </a>
                         </div>
                     </div>
 
@@ -212,6 +215,90 @@
     </div>
 </div>
 
+<!-- PO MODAL -->
+<div class="modal fade" id="poModal" tabindex="-1">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+
+            <form id="poForm">
+                @csrf
+                <input type="hidden" id="po_order_set_id" name="order_product_set_id">
+                <input type="hidden" id="po_order_set_ids" name="order_product_set_ids">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Production PO</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="border rounded p-2 mb-3 bg-light">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Design No:</strong>
+                                <span id="po_modal_design_number"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Color:</strong>
+                                <span id="po_modal_color"></span>
+                            </div>
+                            <div class="col-md-12 mt-1">
+                                <strong>Total Qty:</strong>
+                                <span id="po_modal_total_qty"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>PO To</label>
+                        <select name="po_type" id="po_type" class="form-control" onchange="togglePoTo(this.value)">
+                            <option value="vendor">Vendor</option>
+                            <option value="customer">Customer</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="vendor_group">
+                        <label>Vendor</label>
+                        <select name="vendor_id" class="form-control select2">
+                            @foreach($vendors as $v)
+                                <option value="{{ $v->id }}">{{ $v->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="customer_group" style="display:none;">
+                        <label>Customer</label>
+                        <select name="customer_id" class="form-control select2">
+                            @foreach($customers as $c)
+                                <option value="{{ $c->id }}">{{ $c->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Delivery Date</label>
+                        <input type="date" name="delivery_date" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Rate per Piece</label>
+                        <input type="number" name="rate" class="form-control" placeholder="0.00" step="0.01">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Remark</label>
+                        <textarea name="remark" class="form-control"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-info">Create PO</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- PHP DATA TO JS -->
 <script>
     const warehouses = Object.values(@json($cutting_units));
@@ -219,6 +306,26 @@
 
 <!-- SCRIPTS -->
 <script>
+function togglePoTo(val) {
+    if (val === 'vendor') {
+        $('#vendor_group').show();
+        $('#customer_group').hide();
+        // Reset customer selection
+        $('#customer_group select').val('').trigger('change');
+    } else {
+        $('#vendor_group').hide();
+        $('#customer_group').show();
+        // Reset vendor selection
+        $('#vendor_group select').val('').trigger('change');
+        
+        // Re-initialize or adjust Select2 if width issue exists
+        $('#customer_group select').select2({
+            width: '100%',
+            dropdownParent: $('#poModal')
+        });
+    }
+}
+
 $(document).ready(function () {
 
     $('.select2').select2({ width: '100%' });
@@ -226,7 +333,70 @@ $(document).ready(function () {
     // Load default warehouse cutting masters
     warehouseChange($('#warehouse_id').val());
 
-    // Open modal (single row)
+
+    $(document).on('click', '.po-btn', function() {
+        const id = $(this).data('id');
+        const design = $(this).data('design');
+        const color = $(this).data('color');
+        const total = $(this).data('total');
+
+        $('#po_order_set_id').val(id);
+        $('#po_order_set_ids').val('');
+        
+        // Reset PO To to Vendor
+        $('#po_type').val('vendor').trigger('change');
+        togglePoTo('vendor');
+        
+        $('#po_modal_design_number').text(design);
+        $('#po_modal_color').text(color);
+        $('#po_modal_total_qty').text(total);
+
+        $('#poModal').modal('show');
+    });
+
+    $('#poForm').on('submit', function(e) {
+        e.preventDefault();
+        const btn = $(this).find('button[type="submit"]');
+        btn.prop('disabled', true).text('Creating PO...');
+
+        $.ajax({
+            url: "{{ route('admin.product_order.createPO') }}",
+            method: 'POST',
+            data: $(this).serialize(),
+            success: function(res) {
+                if (res.status) {
+                    toastr.success(res.message);
+                    $('#poModal').modal('hide');
+                    $('#poForm')[0].reset();
+                    table.ajax.reload();
+                } else {
+                    toastr.error(res.message);
+                }
+            },
+            error: function() {
+                toastr.error('Something went wrong!');
+            },
+            complete: function() {
+                btn.prop('disabled', false).text('Create PO');
+            }
+        });
+    });
+
+    // Bulk PO button
+    $('#bulkPoBtn').on('click', function () {
+        const selectedIds = $('.row-select:checked').map(function () {
+            return $(this).val();
+        }).get();
+
+        if (selectedIds.length === 0) {
+            alert('Please select at least one set.');
+            return;
+        }
+
+        const idsStr = selectedIds.join(',');
+        window.location.href = "{{ route('admin.product_order.bulkPO') }}?set_ids=" + idsStr;
+    });
+
     $(document).on('click', '.assign-btn', function () {
         $('#modal_order_set_id').val($(this).data('id'));
         $('#modal_order_set_ids').val('');

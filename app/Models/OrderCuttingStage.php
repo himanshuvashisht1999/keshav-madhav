@@ -19,6 +19,10 @@ class OrderCuttingStage extends Model
         'order_main_id',
         'from_assign_id',
         'to_assign_id',
+        'vendor_id',
+        'customer_id',
+        'is_po',
+        'rate',
         'set_product_id',
         'lot_no',
         'fabric_id',
@@ -32,11 +36,17 @@ class OrderCuttingStage extends Model
         'processed_by',
         'remarks',
         'belt',
+        'production_po_id',
         'status',
         'created_by',
         'created_at',
         'updated_at'
     ];
+
+    public function productionPO()
+    {
+        return $this->belongsTo(ProductionPO::class, 'production_po_id');
+    }
 
     // public function from_stage(){
     //     return $this->hasOne('App\Models\MasterProductStage','id','from_stage_id');
@@ -62,6 +72,12 @@ class OrderCuttingStage extends Model
     }
     public function master_fitting(){
         return $this->hasOne('App\Models\MasterProductFitting','id','master_fitting_id');
+    }
+    public function vendor(){
+        return $this->belongsTo('App\Models\Vendor','vendor_id','id');
+    }
+    public function customer(){
+        return $this->belongsTo('App\Models\MasterCustomer','customer_id','id');
     }
 
     public function productSet()

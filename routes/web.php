@@ -361,7 +361,19 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
             Route::post('/assign_to', [AdminProductOrderController::class, 'assign_to'])->name('assign_to');
             Route::post('/delete-assignment', [AdminProductOrderController::class, 'deleteAssignment'])->name('deleteAssignment');
+            Route::post('/create-po', [AdminProductOrderController::class, 'createPO'])->name('createPO');
+            Route::get('/download-po', [AdminProductOrderController::class, 'downloadPO'])->name('downloadPO');
             Route::get('/download-cutting-slip', [AdminProductOrderController::class, 'downloadCuttingSlip'])->name('downloadCuttingSlip');
+            
+            Route::get('/bulk-po', [AdminProductOrderController::class, 'bulkPO'])->name('bulkPO');
+            Route::post('/store-bulk-po', [AdminProductOrderController::class, 'storeBulkPO'])->name('storeBulkPO');
+            Route::get('/get-unassigned-sets', [AdminProductOrderController::class, 'getUnassignedSets'])->name('getUnassignedSets');
+            Route::get('/get-unassigned-orders', [AdminProductOrderController::class, 'getUnassignedOrders'])->name('getUnassignedOrders');
+            
+            Route::get('/po-list', [AdminProductOrderController::class, 'poList'])->name('poList');
+            Route::get('/po/{id}/view', [AdminProductOrderController::class, 'viewBulkPO'])->name('viewBulkPO');
+            Route::get('/po/{id}/download', [AdminProductOrderController::class, 'downloadBulkPO'])->name('downloadBulkPO');
+            Route::delete('/po/{id}/delete', [AdminProductOrderController::class, 'deletePO'])->name('deletePO');
 
             // Route::get('/fabric_combined_receipt',[AdminProductOrderController::class,'fabric_combined_receipt'])->name('fabric_combined_receipt');
             Route::post('/getCuttingUnit', [AdminProductOrderController::class, 'getCuttingUnit'])->name('getCuttingUnit');

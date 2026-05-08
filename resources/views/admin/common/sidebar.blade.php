@@ -124,10 +124,18 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                     @can('manage-sales-order')
                         <li class="nav-item">
                             <a href="{{ route('admin.product_order.indexOrder') }}"
-                                class="{{ str_contains($page_url, 'admin/production-order') ? 'nav-link active' : 'nav-link' }} border_class"
+                                class="{{ str_contains($page_url, 'admin/production-order') && !str_contains($page_url, 'po-list') ? 'nav-link active' : 'nav-link' }} border_class"
                                 style="position:static;">
                                 <i class="nav-icon fas fa-industry"></i>
                                 <p>SALES ORDER</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.product_order.poList') }}"
+                                class="{{ str_contains($page_url, 'admin/production-order/po-list') ? 'nav-link active' : 'nav-link' }} border_class"
+                                style="position:static;">
+                                <i class="nav-icon fas fa-list-alt"></i>
+                                <p>PRODUCTION PO LIST</p>
                             </a>
                         </li>
                     @endcan
