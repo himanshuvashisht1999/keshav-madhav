@@ -97,9 +97,10 @@
                                     return $lot->stageMasterUnit->name ?? null;
                                 })->unique()->filter()->implode(', ') ?: '-' }}
                             </td>
-                            <td>{{ $set->order_cutting_stage->start_date ? date('d M Y H:i', strtotime($set->order_cutting_stage->start_date)) : '-' }}</td>
-                            <td>{{ $set->order_cutting_stage->end_date ? date('d M Y H:i', strtotime($set->order_cutting_stage->end_date)) : '-' }}</td>
-                            <td>{{ $set->order_cutting_stage->complete_date ? date('d M Y H:i', strtotime($set->order_cutting_stage->complete_date)) : '-' }}</td>
+                            @php $cuttingStage = $set->order_cutting_stage; @endphp
+                            <td>{{ ($cuttingStage && $cuttingStage->start_date) ? date('d M Y H:i', strtotime($cuttingStage->start_date)) : '-' }}</td>
+                            <td>{{ ($cuttingStage && $cuttingStage->end_date) ? date('d M Y H:i', strtotime($cuttingStage->end_date)) : '-' }}</td>
+                            <td>{{ ($cuttingStage && $cuttingStage->complete_date) ? date('d M Y H:i', strtotime($cuttingStage->complete_date)) : '-' }}</td>
                             <td class="text-right">{{ $set->set_quantity }}</td>
                             <td class="text-right">{{ $set->total_quantity }}</td>
                         </tr>

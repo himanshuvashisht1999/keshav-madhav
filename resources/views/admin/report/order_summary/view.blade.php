@@ -89,7 +89,7 @@
                                                 <th>Fabric</th>
                                                 <th>Fitting</th>
                                                 <th>Pattern</th>
-                                                <th>Cutting Master</th>
+                                                <!-- <th>Cutting Master</th> -->
                                                 <th>Start Date</th>
                                                 <th>Expected End Date</th>
                                                 <th>Completed Date</th>
@@ -109,14 +109,15 @@
                                                     <td>{{ $setData->fabric->name ?? " " }}</td>
                                                     <td>{{ $setData->master_product_fitting->name ?? " " }}</td>
                                                     <td>{{ $setData->master_design_pattern->name ?? " " }}</td>
-                                                    <td>
+                                                    <!-- <td>
                                                         {{ $setData->lots->map(function($lot) { 
                                                             return $lot->stageMasterUnit->name ?? null; 
                                                         })->unique()->filter()->implode(', ') ?: '-' }}
-                                                    </td>
-                                                    <td>{{ $setData->order_cutting_stage->start_date ? date('d M, Y H:i', strtotime($setData->order_cutting_stage->start_date)) : '-' }}</td>
-                                                    <td>{{ $setData->order_cutting_stage->end_date ? date('d M, Y H:i', strtotime($setData->order_cutting_stage->end_date)) : '-' }}</td>
-                                                    <td>{{ $setData->order_cutting_stage->complete_date ? date('d M, Y H:i', strtotime($setData->order_cutting_stage->complete_date)) : '-' }}</td>
+                                                    </td> -->
+                                                    @php $cuttingStage = $setData->order_cutting_stage; @endphp
+                                                    <td>{{ ($cuttingStage && $cuttingStage->start_date) ? date('d M, Y H:i', strtotime($cuttingStage->start_date)) : '-' }}</td>
+                                                    <td>{{ ($cuttingStage && $cuttingStage->end_date) ? date('d M, Y H:i', strtotime($cuttingStage->end_date)) : '-' }}</td>
+                                                    <td>{{ ($cuttingStage && $cuttingStage->complete_date) ? date('d M, Y H:i', strtotime($cuttingStage->complete_date)) : '-' }}</td>
                                                     <td class="text-right">{{ $setData->set_quantity ?? 0 }}</td>
                                                     <td class="text-right">{{ $setData->total_quantity ?? 0 }}</td>
 

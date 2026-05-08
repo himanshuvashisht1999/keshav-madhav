@@ -169,11 +169,11 @@ class OrderSummaryReportService
                 'customer_name' => $orderMain->customer->name ?? '',
                 'lot_no' => $lot->lot_no,
                 'lot_quantity' => $lot->lot_quantity ?? 0,
-                'design_number' => $lot->orderProductSet->design_number ?? 'N/A',
+                'design_number' => $lot->orderProductSet?->design_number ?? 'N/A',
                 'cutting_master' => $cuttingMaster,
-                'start_time' => $timing->start_date ?? null,
-                'end_time' => $timing->end_date ?? null,
-                'status' => $timing->status ?? 0
+                'start_time' => $timing ? $timing->start_date : null,
+                'end_time' => $timing ? $timing->end_date : null,
+                'status' => $timing ? $timing->status : 0
             ];
         });
 

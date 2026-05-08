@@ -33,10 +33,10 @@ class AdminOrderSummaryReportController extends Controller
     public function view(Request $request)
     {
         $data = $this->service->view($request->id);
-        $data['lotsData'] = $this->service->lots($request->id);
         if (!$data) {
             return redirect()->back()->with('error', 'Order not found');
         }
+        $data['lotsData'] = $this->service->lots($request->id);
         // dd($data);
         return view('admin.report.order_summary.view', $data);
     }

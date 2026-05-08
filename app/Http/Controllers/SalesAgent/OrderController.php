@@ -829,13 +829,88 @@ class OrderController extends Controller
             $barcode = $request->get('barcode');
             if (!$barcode) return response()->json(['success' => false, 'message' => 'No barcode provided.']);
 
-            // Format: FAIR-{{ productId }}-{{ sizeSetId }}-{{ timestamp }}{{ rand }}
-            if (strpos($barcode, 'FAIR-') === 0) {
-                $parts = explode('-', $barcode);
-                if (count($parts) < 3) return response()->json(['success' => false, 'message' => 'Invalid Fair barcode format.']);
+            // Format: BX-{{ boxNo }}
+            if (strpos($barcode, 'BX-') === 0) {
+                $box = DB::table('packing_boxes')->where('box_no', $barcode)->first();
+                if ($box && $box->barcode) {
+                    $barcode = $box->barcode;
+                } else {
+                    return response()->json(['success' => false, 'message' => 'Box not found in records.']);
+                }
+            }
+
+            // Format: D{productId}S{sizeSetId}C{colorId}P{patternId}F{fittingId}
+            if (strpos($barcode, 'D') === 0 && strpos($barcode, 'S') !== false) {
+                if (preg_match('/^D(\d+)S(\d+)C(\d+)P(\d+)F(\d+)$/', $barcode, $matches)) {
+                    $productId = $matches[1];
+                    $sizeSetId = $matches[2];
+                    $colorId = $matches[3];
+                    // pattern and fitting also available in $matches[4] and $matches[5] if needed
+                    
+                    \Log::info("Scanning Domestic Barcode", ['barcode' => $barcode, 'productId' => $productId, 'sizeSetId' => $sizeSetId, 'colorId' => $colorId]);
+
+                    $product = \App\Models\ProductionGoods::with(['series', 'variants' => function($q) use ($sizeSetId) {
+                        $q->where('master_size_measurement_id', $sizeSetId);
+                    }])->find($productId);
+
+                    if (!$product) {
+                        return response()->json(['success' => false, 'message' => 'Product not found.']);
+                    }
+
+                    // Get available colors from DomesticInventory
+                    $availableColors = \App\Models\DomesticInventory::where('product_id', $productId)
+                        ->where('size_set_id', $sizeSetId)
+                        ->where('domestic_inventories.status', 1)
+                        ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
+                        ->select('master_colors.id', 'master_colors.name', DB::raw('SUM(domestic_inventories.total_boxes) as available_boxes'), DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'))
+                        ->groupBy('master_colors.id', 'master_colors.name')
+                        ->get();
+
+                    $agent_id = Auth::guard('sales_agent')->id();
+                    $discount_percentage = DB::table('sales_agent_brand_discounts')
+                        ->where('sales_agent_id', $agent_id)
+                        ->where('brand_id', $product->brand_id)
+                        ->value('discount_percentage') ?? 0;
+
+                    $variant = $product->variants->first();
+                    if (!$variant) {
+                        $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $productId)->first();
+                    }
+
+                    $mrp = $variant->mrp ?? 0;
+                    $unit_price = $mrp - ($mrp * $discount_percentage / 100);
+
+                    return response()->json([
+                        'success' => true,
+                        'product' => [
+                            'id' => $product->id,
+                            'name' => trim(($product->series->name ?? '') . ' ' . $product->name_of_garment),
+                            'design_number' => $product->design_number,
+                            'size_set_id' => (int)$sizeSetId,
+                            'size_set_name' => DB::table('master_size_measurements')->where('id', $sizeSetId)->value('name'),
+                            'mrp' => $mrp,
+                            'unit_price' => $unit_price,
+                        ],
+                        'colors' => $availableColors
+                    ]);
+                }
+            }
+
+            // Format: FAIR-{{ productId }}-{{ sizeSetId }}-{{ timestamp }} OR F{{ id_base36 }}
+            if (strpos($barcode, 'FAIR-') === 0 || preg_match('/^F[A-Z0-9]+$/', $barcode)) {
+                $fairProduct = \App\Models\FairProduct::where('barcode', $barcode)->first();
                 
-                $productId = $parts[1];
-                $sizeSetId = $parts[2];
+                if (strpos($barcode, 'FAIR-') === 0) {
+                    $parts = explode('-', $barcode);
+                    if (count($parts) < 3) return response()->json(['success' => false, 'message' => 'Invalid Fair barcode format.']);
+                    $productId = $parts[1];
+                    $sizeSetId = $parts[2];
+                } elseif ($fairProduct) {
+                    $productId = $fairProduct->product_id;
+                    $sizeSetId = $fairProduct->size_set_id;
+                } else {
+                    return response()->json(['success' => false, 'message' => 'Fair product not found.']);
+                }
                 
                 \Log::info("Scanning Fair Barcode", ['barcode' => $barcode, 'productId' => $productId, 'sizeSetId' => $sizeSetId]);
 
