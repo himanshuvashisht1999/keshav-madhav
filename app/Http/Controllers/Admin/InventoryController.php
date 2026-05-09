@@ -129,7 +129,7 @@ class InventoryController extends Controller
         if ($request->has('load_more')) {
             $perPage = 20;
             $results = $query->paginate($perPage);
-            
+
             $html = '';
             $start = ($results->currentPage() - 1) * $perPage + 1;
             foreach ($results as $index => $row) {
@@ -203,11 +203,27 @@ class InventoryController extends Controller
         $patterns = \App\Models\MasterDesignPattern::all();
         $size_sets = \App\Models\MasterSizeMeasurement::all();
         $storerooms = \App\Models\Storeroom::where('status', '1')->get();
-        
+
         $vendors = \App\Models\Vendor::where('status', '1')->get();
         $customers = \App\Models\MasterCustomer::where('status', '1')->get();
 
         return view('admin.inventory.create', compact('products', 'colors', 'fittings', 'patterns', 'size_sets', 'storerooms', 'vendors', 'customers'));
+    }
+
+    public function purchase()
+    {
+        $products = \App\Models\ProductionGoods::with('series')->get();
+        $colors = \App\Models\MasterColor::all();
+        $fittings = \App\Models\MasterProductFitting::all();
+        $patterns = \App\Models\MasterDesignPattern::all();
+        $size_sets = \App\Models\MasterSizeMeasurement::all();
+        $storerooms = \App\Models\Storeroom::where('status', '1')->get();
+
+        $vendors = \App\Models\Vendor::where('status', '1')->get();
+        $customers = \App\Models\MasterCustomer::where('status', '1')->get();
+        $productionPOs = \App\Models\ProductionPO::where('status', 1)->orderBy('id', 'desc')->get();
+
+        return view('admin.inventory.purchase', compact('products', 'colors', 'fittings', 'patterns', 'size_sets', 'storerooms', 'vendors', 'customers', 'productionPOs'));
     }
 
     public function store(Request $request)
@@ -266,6 +282,7 @@ class InventoryController extends Controller
                 $purchase = \App\Models\DomesticInventoryPurchase::create([
                     'vendor_id' => $vendor_id,
                     'customer_id' => $customer_id,
+                    'production_po_id' => $request->production_po_id,
                     'user_id' => auth()->id(),
                     'sub_total' => $request->sub_total ?? 0,
                     'gst_type' => $request->gst_type ?? 'percentage',
@@ -284,7 +301,7 @@ class InventoryController extends Controller
                     $source = DomesticInventory::find($item['consume_source_id']);
                     if ($source) {
                         if ($source->total_boxes < $item['total_boxes']) {
-                             throw new \Exception("Insufficient stock in source for Design: " . $source->barcode);
+                            throw new \Exception("Insufficient stock in source for Design: " . $source->barcode);
                         }
                         $source->total_boxes -= $item['total_boxes'];
                         if ($source->total_boxes <= 0) {
@@ -294,7 +311,7 @@ class InventoryController extends Controller
                         }
 
                         // Add history for consumption
-                         \App\Models\DomesticInventoryHistory::create([
+                        \App\Models\DomesticInventoryHistory::create([
                             'user_id' => auth()->id(),
                             'old_product_id' => $source->product_id,
                             'old_size_set_id' => $source->size_set_id,
@@ -312,7 +329,7 @@ class InventoryController extends Controller
 
                 // Consistent Barcode Format: D{id}S{id}C{id}P{id}F{id} (using 0 for nulls)
                 $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'] . 'P' . ($item['pattern_id'] ?: 0) . 'F' . ($item['fitting_id'] ?: 0);
-                
+
                 $inventory = DomesticInventory::where('barcode', $barcode)
                     ->where('rack_id', $item['rack_id'] ?? null)
                     ->where('order_main_id', 0) // Unassigned stock
@@ -832,16 +849,16 @@ class InventoryController extends Controller
             'domestic_inventories.*',
             DB::raw('SUM(domestic_inventories.total_boxes) as aggregate_boxes')
         )->groupBy(
-            'domestic_inventories.product_id',
-            'domestic_inventories.size_set_id',
-            'domestic_inventories.color_id',
-            'domestic_inventories.rack_id'
-        )->first();
+                'domestic_inventories.product_id',
+                'domestic_inventories.size_set_id',
+                'domestic_inventories.color_id',
+                'domestic_inventories.rack_id'
+            )->first();
 
         if ($inventory) {
             // Get FULL details like getProductFullDetails to populate the primary card
             $product = ProductionGoods::with(['variants.items.color', 'fitting', 'pattern'])->find($request->product_id);
-            
+
             $variants = [];
             $all_colors = [];
             if ($product) {
@@ -853,7 +870,7 @@ class InventoryController extends Controller
                             'name' => $item->color->name ?? 'Unknown'
                         ];
                         $colors[] = $colorData;
-                        
+
                         // If this is the selected size set, collect all colors for the primary dropdown
                         if ($variant->master_size_measurement_id == $request->size_set_id) {
                             $all_colors[] = $colorData;
@@ -870,7 +887,7 @@ class InventoryController extends Controller
             }
 
             $mrp = 0;
-            foreach($variants as $v) {
+            foreach ($variants as $v) {
                 if ($v['size_set_id'] == $request->size_set_id) {
                     $mrp = $v['mrp'];
                     break;
@@ -898,53 +915,247 @@ class InventoryController extends Controller
 
     public function purchaseHistoryList(Request $request)
     {
-        $query = \App\Models\DomesticInventoryPurchase::with(['user', 'vendor', 'customer']);
+        $query = \App\Models\DomesticInventoryPurchase::with(['user', 'vendor', 'customer', 'productionPO'])
+            ->withSum('items as total_boxes', 'box_quantity');
 
         return Datatables::of($query)
             ->addIndexColumn()
-            ->addColumn('source', function($row) {
-                if ($row->vendor_id) return 'Vendor: ' . ($row->vendor->company_name ?? $row->vendor->name ?? 'N/A');
-                if ($row->customer_id) return 'Customer: ' . ($row->customer->company_name ?? $row->customer->name ?? 'N/A');
+            ->addColumn('production_po', function ($row) {
+                return $row->productionPO ? $row->productionPO->po_number : '<span class="text-muted small">Manual</span>';
+            })
+            ->addColumn('source', function ($row) {
+                if ($row->vendor_id)
+                    return 'Vendor: ' . ($row->vendor->company_name ?? $row->vendor->name ?? 'N/A');
+                if ($row->customer_id)
+                    return 'Customer: ' . ($row->customer->company_name ?? $row->customer->name ?? 'N/A');
                 return 'N/A';
             })
-            ->addColumn('action', function($row) {
-                return '<a href="'.route('admin.inventory.purchase_history.edit', $row->id).'" class="btn btn-sm btn-primary">Edit / View</a>';
+            ->addColumn('action', function ($row) {
+                return '<div class="btn-group">
+                            <a href="' . route('admin.inventory.purchase_history.show', $row->id) . '" class="btn btn-sm btn-soft-info mr-1" title="View Details"><i class="fas fa-eye"></i></a>
+                            <a href="' . route('admin.inventory.purchase_history.edit', $row->id) . '" class="btn btn-sm btn-soft-primary mr-1" title="Edit"><i class="fas fa-edit"></i></a>
+                            <button class="btn btn-sm btn-soft-danger btn-delete-purchase" data-id="' . $row->id . '" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>';
             })
-            ->rawColumns(['action'])
+            ->rawColumns(['action', 'production_po'])
             ->make(true);
     }
 
     public function purchaseHistoryEdit($id)
     {
-        $purchase = \App\Models\DomesticInventoryPurchase::with('items.newProduct', 'items.newSizeSet', 'items.newColor')->findOrFail($id);
+        $purchase = \App\Models\DomesticInventoryPurchase::with('items.newProduct', 'items.newSizeSet', 'items.newColor', 'items.newWarehouse', 'items.newRack')->findOrFail($id);
+        $products = \App\Models\ProductionGoods::with('series')->get();
+        $colors = \App\Models\MasterColor::all();
+        $fittings = \App\Models\MasterProductFitting::all();
+        $patterns = \App\Models\MasterDesignPattern::all();
+        $size_sets = \App\Models\MasterSizeMeasurement::all();
+        $storerooms = \App\Models\Storeroom::where('status', '1')->get();
+
         $vendors = \App\Models\Vendor::where('status', '1')->get();
         $customers = \App\Models\MasterCustomer::where('status', '1')->get();
-        return view('admin.inventory.purchase_history.edit', compact('purchase', 'vendors', 'customers'));
+        $productionPOs = \App\Models\ProductionPO::where('status', 1)->orderBy('id', 'desc')->get();
+
+        return view('admin.inventory.purchase_history.edit', compact('purchase', 'products', 'colors', 'fittings', 'patterns', 'size_sets', 'storerooms', 'vendors', 'customers', 'productionPOs'));
+    }
+
+    public function purchaseHistoryShow($id)
+    {
+        $purchase = \App\Models\DomesticInventoryPurchase::with([
+            'items.newProduct.series',
+            'items.newSizeSet',
+            'items.newColor',
+            'items.newWarehouse',
+            'items.newRack.storeroom',
+            'items.newPattern',
+            'items.newFitting',
+            'vendor',
+            'customer',
+            'user',
+            'productionPO'
+        ])->findOrFail($id);
+
+        return view('admin.inventory.purchase_history.show', compact('purchase'));
     }
 
     public function purchaseHistoryUpdate(Request $request, $id)
     {
-        $purchase = \App\Models\DomesticInventoryPurchase::findOrFail($id);
-        $request->validate([
-            'sub_total' => 'required|numeric|min:0',
-            'gst_type' => 'nullable|string',
-            'gst_value' => 'nullable|numeric|min:0',
-            'gst' => 'nullable|numeric|min:0',
-            'other_amount' => 'nullable|numeric|min:0',
-            'discount' => 'nullable|numeric|min:0',
-            'total_amount' => 'required|numeric|min:0',
-        ]);
+        DB::beginTransaction();
+        try {
+            $purchase = \App\Models\DomesticInventoryPurchase::findOrFail($id);
 
-        $purchase->update([
-            'sub_total' => $request->sub_total,
-            'gst_type' => $request->gst_type ?? 'percentage',
-            'gst_value' => $request->gst_value ?? 0,
-            'gst' => $request->gst ?? 0,
-            'other_amount' => $request->other_amount ?? 0,
-            'discount' => $request->discount ?? 0,
-            'total_amount' => $request->total_amount,
-        ]);
+            $request->validate([
+                'sub_total' => 'required|numeric|min:0',
+                'total_amount' => 'required|numeric|min:0',
+                'products' => 'required|array|min:1',
+            ]);
 
-        return redirect()->route('admin.inventory.purchase_history.index')->with('success', 'Purchase details updated successfully.');
+            // 1. Revert Old Stock
+            $oldItems = \App\Models\DomesticInventoryHistory::where('purchase_id', $id)->get();
+            foreach ($oldItems as $oldItem) {
+                $barcode = 'D' . $oldItem->new_product_id . 'S' . $oldItem->new_size_set_id . 'C' . $oldItem->new_color_id . 'P' . ($oldItem->new_pattern_id ?: 0) . 'F' . ($oldItem->new_fitting_id ?: 0);
+
+                $inventory = \App\Models\DomesticInventory::where('barcode', $barcode)
+                    ->where('rack_id', $oldItem->new_rack_id)
+                    ->where('order_main_id', 0)
+                    ->first();
+
+                if ($inventory) {
+                    $inventory->total_boxes -= $oldItem->box_quantity;
+                    if ($inventory->total_boxes <= 0) {
+                        $inventory->delete();
+                    } else {
+                        $inventory->save();
+                    }
+                }
+                $oldItem->delete();
+            }
+
+            // 2. Process New Items
+            foreach ($request->products as $item) {
+                // Determine source fields
+                $vendorId = $request->source_type == 'vendor' ? $request->vendor_id : null;
+                $customerId = $request->source_type == 'customer' ? $request->customer_id : null;
+
+                // Create/Update Inventory
+                $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'] . 'P' . ($item['pattern_id'] ?: 0) . 'F' . ($item['fitting_id'] ?: 0);
+
+                $inventory = \App\Models\DomesticInventory::updateOrCreate([
+                    'barcode' => $barcode,
+                    'rack_id' => $item['rack_id'],
+                    // 'order_main_id' => 0, // Master stock
+                ], [
+                    'product_id' => $item['product_id'],
+                    'size_set_id' => $item['size_set_id'],
+                    'color_id' => $item['color_id'],
+                    'pattern_id' => $item['pattern_id'] ?: null,
+                    'fitting_id' => $item['fitting_id'] ?: null,
+                    'quantity' => $item['pieces_per_box'], // Usually quantity per box
+                ]);
+
+                $inventory->total_boxes += $item['total_boxes'];
+                $inventory->save();
+
+                // Create History Record
+                \App\Models\DomesticInventoryHistory::create([
+                    'purchase_id' => $purchase->id,
+                    'new_product_id' => $item['product_id'],
+                    'new_size_set_id' => $item['size_set_id'],
+                    'new_color_id' => $item['color_id'],
+                    'new_pattern_id' => $item['pattern_id'] ?: null,
+                    'new_fitting_id' => $item['fitting_id'] ?: null,
+                    'new_warehouse_id' => $item['warehouse_id'],
+                    'new_rack_id' => $item['rack_id'],
+                    'box_quantity' => $item['total_boxes'],
+                    'pieces_per_box' => $item['pieces_per_box'],
+                    'mrp' => $item['mrp'],
+                    'purchase_rate' => $item['purchase_rate'],
+                ]);
+            }
+
+            // 3. Update Purchase Header
+            $purchase->update([
+                'vendor_id' => $request->source_type == 'vendor' ? $request->vendor_id : null,
+                'customer_id' => $request->source_type == 'customer' ? $request->customer_id : null,
+                'production_po_id' => $request->production_po_id,
+                'sub_total' => $request->sub_total,
+                'gst_type' => $request->gst_type ?? 'percentage',
+                'gst_value' => $request->gst_value ?? 0,
+                'gst' => $request->gst ?? 0,
+                'other_amount' => $request->other_amount ?? 0,
+                'discount' => $request->discount ?? 0,
+                'total_amount' => $request->total_amount,
+            ]);
+
+            DB::commit();
+            return redirect()->route('admin.inventory.purchase_history.index')->with('success', 'Purchase updated and inventory reconciled successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error updating purchase: ' . $e->getMessage());
+        }
+    }
+
+    public function purchaseHistoryDestroy($id)
+    {
+        DB::beginTransaction();
+        try {
+            $purchase = \App\Models\DomesticInventoryPurchase::findOrFail($id);
+            $items = \App\Models\DomesticInventoryHistory::where('purchase_id', $id)->get();
+
+            foreach ($items as $item) {
+                // Reconstruct barcode (must match the logic in store)
+                $barcode = 'D' . $item->new_product_id . 'S' . $item->new_size_set_id . 'C' . $item->new_color_id . 'P' . ($item->new_pattern_id ?: 0) . 'F' . ($item->new_fitting_id ?: 0);
+
+                $inventory = \App\Models\DomesticInventory::where('barcode', $barcode)
+                    ->where('rack_id', $item->new_rack_id)
+                    ->where('order_main_id', 0)
+                    ->first();
+
+                if ($inventory) {
+                    $inventory->total_boxes -= $item->box_quantity;
+                    if ($inventory->total_boxes <= 0) {
+                        $inventory->delete();
+                    } else {
+                        $inventory->save();
+                    }
+                }
+                $item->delete();
+            }
+
+            $purchase->delete();
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Purchase deleted and stock reverted.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getProductionPOItems($id)
+    {
+        $po = \App\Models\ProductionPO::with(['items.productSet.product', 'items.productSet.size_measurement', 'items.productSet.colors', 'items.master_fitting', 'items.pattern'])->findOrFail($id);
+
+        $items = $po->items->map(function ($item) {
+            $productSet = $item->productSet;
+            if (!$productSet)
+                return null;
+
+            $product = $productSet->product;
+            $sizeSet = $productSet->size_measurement;
+            $color = $productSet->colors;
+
+            // Get MRP from ProductionGoodVariant if exists
+            $mrp = 0;
+            if ($product && $sizeSet) {
+                $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $product->id)
+                    ->where('master_size_measurement_id', $sizeSet->id)
+                    ->first();
+                $mrp = $variant ? $variant->mrp : 0;
+            }
+
+            return [
+                'product_id' => $product->id ?? null,
+                'product_name' => $product->name_of_garment ?? 'N/A',
+                'design_number' => $product->design_number ?? 'N/A',
+                'pattern_id' => $item->master_pattern_id,
+                'pattern_name' => $item->pattern->name ?? 'N/A',
+                'fitting_id' => $item->master_fitting_id,
+                'fitting_name' => $item->master_fitting->name ?? 'N/A',
+                'size_set_id' => $productSet->set_size,
+                'size_set_name' => $sizeSet->name ?? 'N/A',
+                'color_id' => $productSet->color_id,
+                'color_name' => $color->name ?? 'N/A',
+                'total_boxes' => $item->quantity, // Usually PO quantity is sets/boxes
+                'pieces_per_box' => $productSet->no_of_pcs ?? 0,
+                'mrp' => $mrp,
+                'purchase_rate' => $item->rate ?? 0,
+            ];
+        })->filter();
+
+        return response()->json([
+            'success' => true,
+            'items' => $items,
+            'vendor_id' => $po->vendor_id,
+            'customer_id' => $po->customer_id
+        ]);
     }
 }

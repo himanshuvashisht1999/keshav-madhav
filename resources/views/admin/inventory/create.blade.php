@@ -258,1129 +258,1032 @@
     </style>
 
     <div class="content-wrapper">
-        <div class="container-fluid">
-            <form action="{{ route('admin.inventory.store') }}" method="POST" id="addStockForm">
-                @csrf
-
+        <section class="content-header">
+            <div class="container-fluid">
                 <header class="premium-page-header">
                     <h1 class="page-title">Inventory Stock Entry</h1>
                     <p class="page-subtitle">Add new production goods to your warehouse stock.</p>
                 </header>
+            </div>
+        </section>
 
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <label class="label-premium">Source Type</label>
-                        <select name="source_type" id="sourceType" class="form-control select2">
-                            <option value="production">Self Production</option>
-                            <option value="consume">Stock Consume</option>
-                            <option value="vendor">Vendor</option>
-                            <option value="customer">Customer</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4" id="vendorContainer" style="display: none;">
-                        <label class="label-premium">Select Vendor</label>
-                        <select name="vendor_id" class="form-control select2">
-                            <option value="">Select Vendor</option>
-                            @foreach($vendors as $vendor)
-                                <option value="{{ $vendor->id }}">{{ $vendor->company_name ?? $vendor->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-4" id="customerContainer" style="display: none;">
-                        <label class="label-premium">Select Customer</label>
-                        <select name="customer_id" class="form-control select2">
-                            <option value="">Select Customer</option>
-                            @foreach($customers as $customer)
-                                <option value="{{ $customer->id }}">{{ $customer->company_name ?? $customer->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
+        <section class="content">
+            <div class="container-fluid">
+                <form action="{{ route('admin.inventory.store') }}" method="POST" id="addStockForm">
+                    @csrf
 
-                <div id="itemsContainer">
-                    <!-- Initial Item Card -->
-                    <div class="inventory-item-card animate-in" data-index="0">
-                        <div class="card-header-premium">
-                            <span class="item-number">
-                                <i class="fas fa-barcode"></i> Stock Generate #1
-                            </span>
-                            <div class="header-actions">
-                                <button type="button" class="btn btn-outline-primary btn-sm btn-duplicate-item mr-2"
-                                    data-card-index="0">
-                                    <i class="fas fa-copy mr-1"></i> Duplicate
-                                </button>
-
-                            </div>
-                        </div>
-                        <div class="card-body-premium">
-                            <!-- Hidden Consume Selection Row -->
-                            <div class="consume-selection-row mb-4 p-3 bg-light rounded"
-                                style="display: none; border: 1px dashed var(--primary-color);">
-                                <h6 class="font-weight-bold text-primary mb-2"><i class="fas fa-search mr-1"></i> Search
-                                    Domestic Inventory</h6>
-                                <p class="small text-muted mb-3">Selecting from here will <b>subtract</b> from this source
-                                    and <b>add</b> to your new entry below.</p>
-                                <input type="hidden" name="products[0][consume_source_id]" class="consume-source-id">
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <label class="label-premium text-primary">Design No</label>
-                                        <select class="form-control select2 consume-design-select">
-                                            <option value="">Select Design</option>
-                                            @foreach($products as $product)
-                                                <option value="{{ $product->id }}">
-                                                    {{ $product->design_number }} ({{ $product->series->name ?? '' }}
-                                                    {{ $product->name_of_garment }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="label-premium text-primary">Pattern</label>
-                                        <select class="form-control select2 consume-pattern-select">
-                                            <option value="">Pattern</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="label-premium text-primary">Fitting</label>
-                                        <select class="form-control select2 consume-fitting-select">
-                                            <option value="">Fitting</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="label-premium text-primary">Warehouse</label>
-                                        <select class="form-control select2 consume-warehouse-select">
-                                            <option value="">Warehouse</option>
-                                            @foreach($storerooms as $room)
-                                                <option value="{{ $room->id }}">{{ $room->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="label-premium text-primary">Rack</label>
-                                        <select class="form-control select2 consume-rack-select">
-                                            <option value="">Rack</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="row mt-3">
-                                    <div class="col-md-3">
-                                        <label class="label-premium text-primary">Size Set</label>
-                                        <select class="form-control select2 consume-size-set-select">
-                                            <option value="">Size Set</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="label-premium text-primary">Color</label>
-                                        <select class="form-control select2 consume-color-select">
-                                            <option value="">Color</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6 d-flex align-items-end justify-content-end">
-                                        <div class="mr-4 text-right">
-                                            <label class="label-premium text-success d-block mb-0">Total Available
-                                                Stock</label>
-                                            <div class="consume-available-display font-weight-bold text-success"
-                                                style="font-size: 1.5rem; line-height: 1;">-</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Row 1: Primary Details -->
-                            <div class="row">
-                                <div class="col-md-3 input-group-premium">
-                                    <label class="label-premium">Design No *</label>
-                                    <select name="products[0][product_id]" class="form-control select2 design-select"
-                                        required>
-                                        <option value="">Select Design</option>
-                                        @foreach($products as $product)
-                                            <option value="{{ $product->id }}" data-name="{{ $product->name_of_garment }}">
-                                                {{ $product->design_number }} ({{ $product->series->name ?? '' }}
-                                                {{ $product->name_of_garment }})
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-2 input-group-premium">
-                                    <label class="label-premium">Pattern *</label>
-                                    <select name="products[0][pattern_id]" class="form-control select2 pattern-select"
-                                        required>
-                                        <option value="">Pattern</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2 input-group-premium">
-                                    <label class="label-premium">Fitting *</label>
-                                    <select name="products[0][fitting_id]" class="form-control select2 fitting-select"
-                                        required>
-                                        <option value="">Fitting</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3 input-group-premium">
-                                    <label class="label-premium">Warehouse *</label>
-                                    <select name="products[0][warehouse_id]" class="form-control select2 warehouse-select"
-                                        required>
-                                        <option value="">Warehouse</option>
-                                        @foreach($storerooms as $room)
-                                            <option value="{{ $room->id }}">{{ $room->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-2 input-group-premium">
-                                    <label class="label-premium">Rack</label>
-                                    <select name="products[0][rack_id]" class="form-control select2 rack-select" required>
-                                        <option value="">Rack</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Row 2: Secondary Details -->
-                            <div class="row">
-                                <div class="col-md-3 input-group-premium">
-                                    <label class="label-premium">Size Set *</label>
-                                    <select name="products[0][size_set_id]" class="form-control select2 size-set-select"
-                                        required>
-                                        <option value="">Select Size Set</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3 input-group-premium">
-                                    <label class="label-premium">Color *</label>
-                                    <select name="products[0][color_id]" class="form-control select2 color-select" required>
-                                        <option value="">Color</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2 input-group-premium">
-                                    <label class="label-premium">Total Boxes *</label>
-                                    <input type="number" name="products[0][total_boxes]"
-                                        class="form-control form-control-premium total-boxes-input" placeholder="Qty"
-                                        min="1" required>
-                                </div>
-                                <div class="col-md-2 input-group-premium">
-                                    <label class="label-premium">Pcs / Box</label>
-                                    <input type="number" name="products[0][pieces_per_box]"
-                                        class="form-control form-control-premium bg-light pcs-per-box-input"
-                                        placeholder="Pcs/Box" readonly required>
-                                </div>
-                                <div class="col-md-2 input-group-premium">
-                                    <label class="label-premium">MRP *</label>
-                                    <input type="number" name="products[0][mrp]"
-                                        class="form-control form-control-premium mrp-input bg-light" placeholder="Price"
-                                        step="0.01" min="0" readonly required>
-                                </div>
-                            </div>
-
-                            <div class="row purchase-details-row mt-3" style="display: none;">
-                                <div class="col-md-3 input-group-premium">
-                                    <label class="label-premium">Purchase Rate *</label>
-                                    <input type="number" name="products[0][purchase_rate]"
-                                        class="form-control form-control-premium purchase-rate-input" placeholder="Rate"
-                                        step="0.01" min="0">
-                                </div>
-                            </div>
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label class="label-premium">Source Type</label>
+                            <select name="source_type" id="sourceType" class="form-control select2">
+                                <option value="production">Self Production</option>
+                                <option value="consume">Stock Consume</option>
+                            </select>
                         </div>
                     </div>
-                </div>
 
-                <div id="purchaseSummaryContainer" class="card mt-4 shadow-sm border-0" style="display: none;">
-                    <div class="card-header bg-soft-primary py-3">
-                        <h5 class="mb-0 text-primary font-weight-bold"><i
-                                class="fas fa-file-invoice-dollar mr-2"></i>Purchase Summary (Complete)</h5>
-                    </div>
-                    <div class="card-body bg-light-gray">
-                        <div class="row">
-                            <div class="col-md-3 input-group-premium">
-                                <label class="label-premium">Sub Total</label>
-                                <input type="number" name="sub_total" id="global_sub_total"
-                                    class="form-control form-control-premium bg-light" placeholder="0.00" step="0.01"
-                                    readonly>
-                            </div>
-                            <div class="col-md-3 input-group-premium">
-                                <label class="label-premium">GST</label>
-                                <div class="input-group">
-                                    <input type="number" name="gst_value" id="global_gst_value"
-                                        class="form-control form-control-premium" placeholder="Value" step="0.01" min="0">
-                                    <div class="input-group-append">
-                                        <select name="gst_type" id="global_gst_type"
-                                            class="custom-select form-control-premium bg-light"
-                                            style="width: auto; border-radius: 0 8px 8px 0;">
-                                            <option value="percentage">%</option>
-                                            <option value="amount">₹</option>
-                                        </select>
-                                    </div>
+                    <div id="itemsContainer">
+                        <!-- Initial Item Card -->
+                        <div class="inventory-item-card animate-in" data-index="0">
+                            <div class="card-header-premium">
+                                <span class="item-number">
+                                    <i class="fas fa-barcode"></i> Stock Generate #1
+                                </span>
+                                <div class="header-actions">
+                                    <button type="button" class="btn btn-outline-primary btn-sm btn-duplicate-item mr-2"
+                                        data-card-index="0">
+                                        <i class="fas fa-copy mr-1"></i> Duplicate
+                                    </button>
+
                                 </div>
-                                <input type="hidden" name="gst" id="global_gst_amount">
                             </div>
-                            <div class="col-md-2 input-group-premium">
-                                <label class="label-premium">Other Amount</label>
-                                <input type="number" name="other_amount" id="global_other_amount"
-                                    class="form-control form-control-premium" placeholder="Other" step="0.01" min="0">
-                            </div>
-                            <div class="col-md-2 input-group-premium">
-                                <label class="label-premium">Discount</label>
-                                <input type="number" name="discount" id="global_discount"
-                                    class="form-control form-control-premium" placeholder="Disc" step="0.01" min="0">
-                            </div>
-                            <div class="col-md-3 input-group-premium">
-                                <label class="label-premium text-primary font-weight-bold">Grand Total Amount</label>
-                                <input type="number" name="total_amount" id="global_total_amount"
-                                    class="form-control form-control-premium bg-light" placeholder="0.00" step="0.01"
-                                    readonly>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="button" class="btn btn-add-item mt-3" id="addNewItem">
-                    <i class="fas fa-plus-circle"></i> Add Stock Generate
-                </button>
-
-                <div class="sticky-actions">
-                    <a href="{{ route('admin.inventory.index') }}" class="btn-cancel">Cancel and Exit</a>
-                    <button type="submit" class="btn btn-confirm">
-                        <i class="fas fa-check-double mr-2"></i> Confirm and Upload Stock
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <script>
-            $(function () {
-                let itemCount = 0;
-
-                function initSelect2(container) {
-                    container.find('.select2').each(function () {
-                        $(this).select2({
-                            theme: 'bootstrap4',
-                            width: '100%',
-                            dropdownAutoWidth: true,
-                            dropdownParent: $('body')
-                        });
-                    });
-                }
-
-                initSelect2($('.content-wrapper'));
-
-                $('#sourceType').on('change', function () {
-                    let type = $(this).val();
-                    if (type === 'vendor' || type === 'customer') {
-                        if (type === 'vendor') {
-                            $('#vendorContainer').show();
-                            $('#customerContainer').hide();
-                        } else {
-                            $('#vendorContainer').hide();
-                            $('#customerContainer').show();
-                        }
-                        $('.consume-selection-row').slideUp();
-                        $('.consume-source-id').val('');
-                        $('.purchase-details-row').show();
-                        $('#purchaseSummaryContainer').show();
-                        $('.purchase-rate-input').attr('required', true);
-                    } else if (type === 'consume') {
-                        $('#vendorContainer').hide();
-                        $('#customerContainer').hide();
-                        $('.consume-selection-row').slideDown();
-                        $('.purchase-details-row').hide();
-                        $('#purchaseSummaryContainer').hide();
-                        $('.purchase-rate-input').removeAttr('required');
-
-                        // Auto-select first warehouse for all consume rows
-                        $('.consume-warehouse-select').each(function() {
-                            if (!$(this).val() && $(this).find('option').length > 1) {
-                                $(this).val($(this).find('option:eq(1)').val()).trigger('change');
-                            }
-                        });
-                    } else {
-                        $('#vendorContainer').hide();
-                        $('#customerContainer').hide();
-                        $('.consume-selection-row').slideUp();
-                        $('.consume-source-id').val('');
-                        $('.purchase-details-row').hide();
-                        $('#purchaseSummaryContainer').hide();
-                        $('.purchase-rate-input').removeAttr('required');
-                    }
-                });
-
-                function addItem(values = null) {
-                    itemCount++;
-                    let idx = itemCount;
-                    let newItem = `
-                            <div class="inventory-item-card animate-in" data-index="${idx}">
-                                <div class="card-header-premium">
-                                    <span class="item-number">
-                                        <i class="fas fa-barcode"></i> Stock Generate #${idx + 1}
-                                    </span>
-                                    <div class="header-actions">
-                                        <button type="button" class="btn btn-outline-primary btn-sm btn-duplicate-item mr-2" data-card-index="${idx}">
-                                            <i class="fas fa-copy mr-1"></i> Duplicate
-                                        </button>
-
-                                        <button type="button" class="btn btn-danger btn-sm btn-remove-item ml-2">
-                                            <i class="fas fa-trash-alt mr-1"></i> Remove
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="card-body-premium">
-                                    <div class="consume-selection-row mb-4 p-3 bg-light rounded" style="display: none; border: 1px dashed var(--primary-color);">
-                                        <h6 class="font-weight-bold text-primary mb-2"><i class="fas fa-search mr-1"></i> Search Domestic Inventory</h6>
-                                        <p class="small text-muted mb-3">Selecting from here will <b>subtract</b> from this source and <b>add</b> to your new entry below.</p>
-                                        <input type="hidden" name="products[${idx}][consume_source_id]" class="consume-source-id">
-                                        <div class="row">
-                                            <div class="col-md-3">
-                                                <label class="label-premium text-primary">Design No</label>
-                                                <select class="form-control select2 consume-design-select">
-                                                    <option value="">Select Design</option>
-                                                    @foreach($products as $product)
-                                                        <option value="{{ $product->id }}">
-                                                            {{ $product->design_number }} ({{ $product->series->name ?? '' }} {{ $product->name_of_garment }})
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="label-premium text-primary">Pattern</label>
-                                                <select class="form-control select2 consume-pattern-select">
-                                                    <option value="">Pattern</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="label-premium text-primary">Fitting</label>
-                                                <select class="form-control select2 consume-fitting-select">
-                                                    <option value="">Fitting</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="label-premium text-primary">Warehouse</label>
-                                                <select class="form-control select2 consume-warehouse-select">
-                                                    <option value="">Warehouse</option>
-                                                    @foreach($storerooms as $room)
-                                                        <option value="{{ $room->id }}">{{ $room->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="label-premium text-primary">Rack</label>
-                                                <select class="form-control select2 consume-rack-select">
-                                                    <option value="">Rack</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="row mt-3">
-                                            <div class="col-md-3">
-                                                <label class="label-premium text-primary">Size Set</label>
-                                                <select class="form-control select2 consume-size-set-select">
-                                                    <option value="">Size Set</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="label-premium text-primary">Color</label>
-                                                <select class="form-control select2 consume-color-select">
-                                                    <option value="">Color</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-6 d-flex align-items-end justify-content-end">
-                                                <div class="mr-4 text-right">
-                                                    <label class="label-premium text-success d-block mb-0">Total Available Stock</label>
-                                                    <div class="consume-available-display font-weight-bold text-success" style="font-size: 1.5rem; line-height: 1;">-</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
+                            <div class="card-body-premium">
+                                <!-- Hidden Consume Selection Row -->
+                                <div class="consume-selection-row mb-4 p-3 bg-light rounded"
+                                    style="display: none; border: 1px dashed var(--primary-color);">
+                                    <h6 class="font-weight-bold text-primary mb-2"><i class="fas fa-search mr-1"></i> Search
+                                        Domestic Inventory</h6>
+                                    <p class="small text-muted mb-3">Selecting from here will <b>subtract</b> from this
+                                        source
+                                        and <b>add</b> to your new entry below.</p>
+                                    <input type="hidden" name="products[0][consume_source_id]" class="consume-source-id">
                                     <div class="row">
-                                        <div class="col-md-3 input-group-premium">
-                                            <label class="label-premium">Design No *</label>
-                                            <select name="products[${idx}][product_id]" class="form-control select2 design-select" required>
+                                        <div class="col-md-3">
+                                            <label class="label-premium text-primary">Design No</label>
+                                            <select class="form-control select2 consume-design-select">
                                                 <option value="">Select Design</option>
                                                 @foreach($products as $product)
-                                                    <option value="{{ $product->id }}" data-name="{{ $product->name_of_garment }}">{{ $product->design_number }} ({{ $product->series->name ?? '' }} {{ $product->name_of_garment }})</option>
+                                                    <option value="{{ $product->id }}">
+                                                        {{ $product->design_number }} ({{ $product->series->name ?? '' }}
+                                                        {{ $product->name_of_garment }})
+                                                    </option>
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-2 input-group-premium">
-                                            <label class="label-premium">Pattern *</label>
-                                            <select name="products[${idx}][pattern_id]" class="form-control select2 pattern-select" required>
+                                        <div class="col-md-2">
+                                            <label class="label-premium text-primary">Pattern</label>
+                                            <select class="form-control select2 consume-pattern-select">
                                                 <option value="">Pattern</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-2 input-group-premium">
-                                            <label class="label-premium">Fitting *</label>
-                                            <select name="products[${idx}][fitting_id]" class="form-control select2 fitting-select" required>
+                                        <div class="col-md-2">
+                                            <label class="label-premium text-primary">Fitting</label>
+                                            <select class="form-control select2 consume-fitting-select">
                                                 <option value="">Fitting</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-3 input-group-premium">
-                                            <label class="label-premium">Warehouse *</label>
-                                            <select name="products[${idx}][warehouse_id]" class="form-control select2 warehouse-select" required>
+                                        <div class="col-md-2">
+                                            <label class="label-premium text-primary">Warehouse</label>
+                                            <select class="form-control select2 consume-warehouse-select">
                                                 <option value="">Warehouse</option>
                                                 @foreach($storerooms as $room)
                                                     <option value="{{ $room->id }}">{{ $room->name }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-2 input-group-premium">
-                                            <label class="label-premium">Rack</label>
-                                            <select name="products[${idx}][rack_id]" class="form-control select2 rack-select" required>
+                                        <div class="col-md-3">
+                                            <label class="label-premium text-primary">Rack</label>
+                                            <select class="form-control select2 consume-rack-select">
                                                 <option value="">Rack</option>
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-md-3 input-group-premium">
-                                            <label class="label-premium">Size Set *</label>
-                                            <select name="products[${idx}][size_set_id]" class="form-control select2 size-set-select" required>
-                                                <option value="">Select Size Set</option>
+                                    <div class="row mt-3">
+                                        <div class="col-md-3">
+                                            <label class="label-premium text-primary">Size Set</label>
+                                            <select class="form-control select2 consume-size-set-select">
+                                                <option value="">Size Set</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-3 input-group-premium">
-                                            <label class="label-premium">Color *</label>
-                                            <select name="products[${idx}][color_id]" class="form-control select2 color-select" required>
+                                        <div class="col-md-3">
+                                            <label class="label-premium text-primary">Color</label>
+                                            <select class="form-control select2 consume-color-select">
                                                 <option value="">Color</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-2 input-group-premium">
-                                            <label class="label-premium">Total Boxes *</label>
-                                            <input type="number" name="products[${idx}][total_boxes]" class="form-control form-control-premium total-boxes-input" placeholder="Qty" min="1" required>
-                                        </div>
-                                        <div class="col-md-2 input-group-premium">
-                                            <label class="label-premium">Pcs / Box</label>
-                                            <input type="number" name="products[${idx}][pieces_per_box]" class="form-control form-control-premium bg-light" placeholder="Pcs/Box" readonly required>
-                                        </div>
-                                        <div class="col-md-2 input-group-premium">
-                                            <label class="label-premium">MRP *</label>
-                                            <input type="number" name="products[${idx}][mrp]" class="form-control form-control-premium mrp-input bg-light" placeholder="Price" step="0.01" min="0" readonly required>
-                                        </div>
-                                    </div>
-
-                                    <!-- Row 3: Purchase Details (Hidden for Production) -->
-                                    <div class="row purchase-details-row mt-3" style="display: none;">
-                                        <div class="col-md-3 input-group-premium">
-                                            <label class="label-premium">Purchase Rate *</label>
-                                            <input type="number" name="products[${idx}][purchase_rate]" class="form-control form-control-premium purchase-rate-input" placeholder="Rate" step="0.01" min="0">
+                                        <div class="col-md-6 d-flex align-items-end justify-content-end">
+                                            <div class="mr-4 text-right">
+                                                <label class="label-premium text-success d-block mb-0">Total Available
+                                                    Stock</label>
+                                                <div class="consume-available-display font-weight-bold text-success"
+                                                    style="font-size: 1.5rem; line-height: 1;">-</div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>`;
 
-                    $('#itemsContainer').append(newItem);
-                    let newCard = $('#itemsContainer').find(`.inventory-item-card[data-index="${idx}"]`);
-                    initSelect2(newCard);
+                                <!-- Row 1: Primary Details -->
+                                <div class="row">
+                                    <div class="col-md-3 input-group-premium">
+                                        <label class="label-premium">Design No *</label>
+                                        <select name="products[0][product_id]" class="form-control select2 design-select"
+                                            required>
+                                            <option value="">Select Design</option>
+                                            @foreach($products as $product)
+                                                <option value="{{ $product->id }}" data-name="{{ $product->name_of_garment }}">
+                                                    {{ $product->design_number }} ({{ $product->series->name ?? '' }}
+                                                    {{ $product->name_of_garment }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 input-group-premium">
+                                        <label class="label-premium">Pattern *</label>
+                                        <select name="products[0][pattern_id]" class="form-control select2 pattern-select"
+                                            required>
+                                            <option value="">Pattern</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 input-group-premium">
+                                        <label class="label-premium">Fitting *</label>
+                                        <select name="products[0][fitting_id]" class="form-control select2 fitting-select"
+                                            required>
+                                            <option value="">Fitting</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 input-group-premium">
+                                        <label class="label-premium">Warehouse *</label>
+                                        <select name="products[0][warehouse_id]"
+                                            class="form-control select2 warehouse-select" required>
+                                            <option value="">Warehouse</option>
+                                            @foreach($storerooms as $room)
+                                                <option value="{{ $room->id }}">{{ $room->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 input-group-premium">
+                                        <label class="label-premium">Rack</label>
+                                        <select name="products[0][rack_id]" class="form-control select2 rack-select"
+                                            required>
+                                            <option value="">Rack</option>
+                                        </select>
+                                    </div>
+                                </div>
 
-                    if (values) {
-                        populateCard(newCard, values);
-                    } else {
-                        // Auto-select first warehouse for new items
-                        let warehouseSelect = newCard.find('.warehouse-select');
-                        if (warehouseSelect.find('option').length > 1) {
-                            warehouseSelect.val(warehouseSelect.find('option:eq(1)').val()).trigger('change');
-                        }
+                                <!-- Row 2: Secondary Details -->
+                                <div class="row">
+                                    <div class="col-md-3 input-group-premium">
+                                        <label class="label-premium">Size Set *</label>
+                                        <select name="products[0][size_set_id]" class="form-control select2 size-set-select"
+                                            required>
+                                            <option value="">Select Size Set</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 input-group-premium">
+                                        <label class="label-premium">Color *</label>
+                                        <select name="products[0][color_id]" class="form-control select2 color-select"
+                                            required>
+                                            <option value="">Color</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 input-group-premium">
+                                        <label class="label-premium">Total Boxes *</label>
+                                        <input type="number" name="products[0][total_boxes]"
+                                            class="form-control form-control-premium total-boxes-input" placeholder="Qty"
+                                            min="1" required>
+                                    </div>
+                                    <div class="col-md-2 input-group-premium">
+                                        <label class="label-premium">Pcs / Box</label>
+                                        <input type="number" name="products[0][pieces_per_box]"
+                                            class="form-control form-control-premium bg-light pcs-per-box-input"
+                                            placeholder="Pcs/Box" readonly required>
+                                    </div>
+                                    <div class="col-md-2 input-group-premium">
+                                        <label class="label-premium">MRP *</label>
+                                        <input type="number" name="products[0][mrp]"
+                                            class="form-control form-control-premium mrp-input bg-light" placeholder="Price"
+                                            step="0.01" min="0" readonly required>
+                                    </div>
+                                </div>
 
-                        // Also auto-select first warehouse for consume part if active
-                        if ($('#sourceType').val() === 'consume') {
-                            let consumeWarehouse = newCard.find('.consume-warehouse-select');
-                            if (consumeWarehouse.find('option').length > 1) {
-                                consumeWarehouse.val(consumeWarehouse.find('option:eq(1)').val()).trigger('change');
-                            }
-                        }
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <button type="button" class="btn btn-add-item mt-3" id="addNewItem">
+                        <i class="fas fa-plus-circle"></i> Add Stock Generate
+                    </button>
+
+                    <div class="sticky-actions">
+                        <a href="{{ route('admin.inventory.index') }}" class="btn-cancel">Cancel and Exit</a>
+                        <button type="submit" class="btn btn-confirm">
+                            <i class="fas fa-check-double mr-2"></i> Confirm and Upload Stock
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        $(function () {
+            let itemCount = 0;
+
+            function initSelect2(container) {
+                container.find('.select2').each(function () {
+                    $(this).select2({
+                        theme: 'bootstrap4',
+                        width: '100%',
+                        dropdownAutoWidth: true,
+                        dropdownParent: $('body')
+                    });
+                });
+            }
+
+            initSelect2($('.content-wrapper'));
+
+            // Initial trigger for source type
+            $('#sourceType').trigger('change');
+
+            $('#sourceType').on('change', function () {
+                let type = $(this).val();
+                if (type === 'consume') {
+                    $('.consume-selection-row').slideDown();
+                } else {
+                    $('.consume-selection-row').slideUp();
+                    $('.consume-source-id').val('');
+                }
+            });
+
+            const itemLabel = "Stock Generate";
+
+            function addItem(values = null) {
+                itemCount++;
+                let idx = itemCount;
+                let newItem = `
+                                    <div class="inventory-item-card animate-in" data-index="${idx}">
+                                        <div class="card-header-premium">
+                                            <span class="item-number">
+                                                <i class="fas fa-barcode"></i> ${itemLabel} #${idx + 1}
+                                            </span>
+                                            <div class="header-actions">
+                                                <button type="button" class="btn btn-outline-primary btn-sm btn-duplicate-item mr-2" data-card-index="${idx}">
+                                                    <i class="fas fa-copy mr-1"></i> Duplicate
+                                                </button>
+
+                                                <button type="button" class="btn btn-danger btn-sm btn-remove-item ml-2">
+                                                    <i class="fas fa-trash-alt mr-1"></i> Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body-premium">
+                                            <div class="consume-selection-row mb-4 p-3 bg-light rounded" style="display: none; border: 1px dashed var(--primary-color);">
+                                                <h6 class="font-weight-bold text-primary mb-2"><i class="fas fa-search mr-1"></i> Search Domestic Inventory</h6>
+                                                <p class="small text-muted mb-3">Selecting from here will <b>subtract</b> from this source and <b>add</b> to your new entry below.</p>
+                                                <input type="hidden" name="products[${idx}][consume_source_id]" class="consume-source-id">
+                                                <div class="row">
+                                                    <div class="col-md-3">
+                                                        <label class="label-premium text-primary">Design No</label>
+                                                        <select class="form-control select2 consume-design-select">
+                                                            <option value="">Select Design</option>
+                                                            @foreach($products as $product)
+                                                                <option value="{{ $product->id }}">
+                                                                    {{ $product->design_number }} ({{ $product->series->name ?? '' }} {{ $product->name_of_garment }})
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <label class="label-premium text-primary">Pattern</label>
+                                                        <select class="form-control select2 consume-pattern-select">
+                                                            <option value="">Pattern</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <label class="label-premium text-primary">Fitting</label>
+                                                        <select class="form-control select2 consume-fitting-select">
+                                                            <option value="">Fitting</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <label class="label-premium text-primary">Warehouse</label>
+                                                        <select class="form-control select2 consume-warehouse-select">
+                                                            <option value="">Warehouse</option>
+                                                            @foreach($storerooms as $room)
+                                                                <option value="{{ $room->id }}">{{ $room->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="label-premium text-primary">Rack</label>
+                                                        <select class="form-control select2 consume-rack-select">
+                                                            <option value="">Rack</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="col-md-3">
+                                                        <label class="label-premium text-primary">Size Set</label>
+                                                        <select class="form-control select2 consume-size-set-select">
+                                                            <option value="">Size Set</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="label-premium text-primary">Color</label>
+                                                        <select class="form-control select2 consume-color-select">
+                                                            <option value="">Color</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6 d-flex align-items-end justify-content-end">
+                                                        <div class="mr-4 text-right">
+                                                            <label class="label-premium text-success d-block mb-0">Total Available Stock</label>
+                                                            <div class="consume-available-display font-weight-bold text-success" style="font-size: 1.5rem; line-height: 1;">-</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-md-3 input-group-premium">
+                                                    <label class="label-premium">Design No *</label>
+                                                    <select name="products[${idx}][product_id]" class="form-control select2 design-select" required>
+                                                        <option value="">Select Design</option>
+                                                        @foreach($products as $product)
+                                                            <option value="{{ $product->id }}" data-name="{{ $product->name_of_garment }}">{{ $product->design_number }} ({{ $product->series->name ?? '' }} {{ $product->name_of_garment }})</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2 input-group-premium">
+                                                    <label class="label-premium">Pattern *</label>
+                                                    <select name="products[${idx}][pattern_id]" class="form-control select2 pattern-select" required>
+                                                        <option value="">Pattern</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2 input-group-premium">
+                                                    <label class="label-premium">Fitting *</label>
+                                                    <select name="products[${idx}][fitting_id]" class="form-control select2 fitting-select" required>
+                                                        <option value="">Fitting</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3 input-group-premium">
+                                                    <label class="label-premium">Warehouse *</label>
+                                                    <select name="products[${idx}][warehouse_id]" class="form-control select2 warehouse-select" required>
+                                                        <option value="">Warehouse</option>
+                                                        @foreach($storerooms as $room)
+                                                            <option value="{{ $room->id }}">{{ $room->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2 input-group-premium">
+                                                    <label class="label-premium">Rack</label>
+                                                    <select name="products[${idx}][rack_id]" class="form-control select2 rack-select" required>
+                                                        <option value="">Rack</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-3 input-group-premium">
+                                                    <label class="label-premium">Size Set *</label>
+                                                    <select name="products[${idx}][size_set_id]" class="form-control select2 size-set-select" required>
+                                                        <option value="">Select Size Set</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3 input-group-premium">
+                                                    <label class="label-premium">Color *</label>
+                                                    <select name="products[${idx}][color_id]" class="form-control select2 color-select" required>
+                                                        <option value="">Color</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2 input-group-premium">
+                                                    <label class="label-premium">Total Boxes *</label>
+                                                    <input type="number" name="products[${idx}][total_boxes]" class="form-control form-control-premium total-boxes-input" placeholder="Qty" min="1" required>
+                                                </div>
+                                                <div class="col-md-2 input-group-premium">
+                                                    <label class="label-premium">Pcs / Box</label>
+                                                    <input type="number" name="products[${idx}][pieces_per_box]" class="form-control form-control-premium bg-light" placeholder="Pcs/Box" readonly required>
+                                                </div>
+                                                <div class="col-md-2 input-group-premium">
+                                                    <label class="label-premium">MRP *</label>
+                                                    <input type="number" name="products[${idx}][mrp]" class="form-control form-control-premium mrp-input bg-light" placeholder="Price" step="0.01" min="0" readonly required>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>`;
+
+                $('#itemsContainer').append(newItem);
+                let newCard = $('#itemsContainer').find(`.inventory-item-card[data-index="${idx}"]`);
+                initSelect2(newCard);
+
+                if (values) {
+                    populateCard(newCard, values);
+                } else {
+                    // Auto-select first warehouse for new items
+                    let warehouseSelect = newCard.find('.warehouse-select');
+                    if (warehouseSelect.find('option').length > 1) {
+                        warehouseSelect.val(warehouseSelect.find('option:eq(1)').val()).trigger('change');
                     }
 
-                    updateItemNumbers();
-
-                    // apply source type check
-                    $('#sourceType').trigger('change');
+                    // Also auto-select first warehouse for consume part if active
+                    if ($('#sourceType').val() === 'consume') {
+                        let consumeWarehouse = newCard.find('.consume-warehouse-select');
+                        if (consumeWarehouse.find('option').length > 1) {
+                            consumeWarehouse.val(consumeWarehouse.find('option:eq(1)').val()).trigger('change');
+                        }
+                    }
                 }
 
-                let isPopulating = false;
+                updateItemNumbers();
 
-                function populateCard(card, values) {
-                    if (!values.product_id) return;
+                // apply source type check
+                $('#sourceType').trigger('change');
+            }
 
-                    isPopulating = true;
+            let isPopulating = false;
 
-                    // 0. Set Consume Fields if they exist
-                    if (values.consume_product_id) {
-                        card.find('.consume-design-select').val(values.consume_product_id).trigger('change.select2');
-                        if (values.consume_pattern_id) {
-                            card.find('.consume-pattern-select').empty().append(`<option value="${values.consume_pattern_id}" selected>${values.consume_pattern_name}</option>`).trigger('change.select2');
-                        }
-                        if (values.consume_variants) {
-                            card.data('consume_variants', values.consume_variants);
-                            let cSizeSelect = card.find('.consume-size-set-select');
-                            cSizeSelect.empty().append('<option value="">Select Size Set</option>');
-                            let uniqueSizeSets = [];
-                            values.consume_variants.forEach(function (v) {
-                                if (!uniqueSizeSets.includes(v.size_set_id)) {
-                                    cSizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
-                                    uniqueSizeSets.push(v.size_set_id);
-                                }
-                            });
-                            cSizeSelect.val(values.consume_size_set_id).trigger('change.select2');
+            function populateCard(card, values) {
+                if (!values.product_id) return;
 
-                            let cColorSelect = card.find('.consume-color-select');
-                            cColorSelect.empty().append('<option value="">Select Color</option>');
-                            let variant = values.consume_variants.find(v => v.size_set_id == values.consume_size_set_id);
-                            if (variant) {
-                                variant.colors.forEach(function (c) {
-                                    cColorSelect.append(`<option value="${c.id}">${c.name}</option>`);
-                                });
+                isPopulating = true;
+
+                // 0. Set Consume Fields if they exist
+                if (values.consume_product_id) {
+                    card.find('.consume-design-select').val(values.consume_product_id).trigger('change.select2');
+                    if (values.consume_pattern_id) {
+                        card.find('.consume-pattern-select').empty().append(`<option value="${values.consume_pattern_id}" selected>${values.consume_pattern_name}</option>`).trigger('change.select2');
+                    }
+                    if (values.consume_variants) {
+                        card.data('consume_variants', values.consume_variants);
+                        let cSizeSelect = card.find('.consume-size-set-select');
+                        cSizeSelect.empty().append('<option value="">Select Size Set</option>');
+                        let uniqueSizeSets = [];
+                        values.consume_variants.forEach(function (v) {
+                            if (!uniqueSizeSets.includes(v.size_set_id)) {
+                                cSizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                                uniqueSizeSets.push(v.size_set_id);
                             }
-                            cColorSelect.val(values.consume_color_id).trigger('change.select2');
-                        } else {
-                            if (values.consume_size_set_id) {
-                                card.find('.consume-size-set-select').empty().append(`<option value="${values.consume_size_set_id}" selected>${values.consume_size_set_name}</option>`).trigger('change.select2');
-                            }
-                            if (values.consume_color_id) {
-                                card.find('.consume-color-select').empty().append(`<option value="${values.consume_color_id}" selected>${values.consume_color_name}</option>`).trigger('change.select2');
-                            }
-                        }
-                        card.find('.consume-source-id').val(values.consume_source_id || '');
-                        card.find('.consume-available-display').text(values.consume_available || '-');
-                        if (values.consume_available) {
-                            card.find('.total-boxes-input').attr('max', values.consume_available);
-                        }
-                    }
-
-                    // 1. Set variants data immediately if available
-                    if (values.variants) {
-                        card.data('variants', values.variants);
-                    }
-
-                    // 2. Set Product
-                    card.find('.design-select').val(values.product_id).trigger('change.select2');
-
-                    // 3. Set Pattern & Fitting
-                    if (values.pattern_id) {
-                        card.find('.pattern-select').empty().append(`<option value="${values.pattern_id}" selected>${values.pattern_name || 'Pattern'}</option>`).trigger('change.select2');
-                    }
-                    if (values.fitting_id) {
-                        card.find('.fitting-select').empty().append(`<option value="${values.fitting_id}" selected>${values.fitting_name || 'Fitting'}</option>`).trigger('change.select2');
-                    }
-
-                    // 4. Set Warehouse
-                    if (values.warehouse_id) {
-                        card.find('.warehouse-select').val(values.warehouse_id).trigger('change.select2');
-                    }
-
-                    // 5. Populate dropdowns and set values
-                    if (values.variants) {
-                        let sizeSelect = card.find('.size-set-select');
-                        sizeSelect.empty().append('<option value="">Select Size Set</option>');
-                        values.variants.forEach(function (v) {
-                            sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
                         });
-                        sizeSelect.val(values.size_set_id).trigger('change.select2');
+                        cSizeSelect.val(values.consume_size_set_id).trigger('change.select2');
 
-                        let colorSelect = card.find('.color-select');
-                        colorSelect.empty().append('<option value="">Color</option>');
-                        let variant = values.variants.find(v => v.size_set_id == values.size_set_id);
+                        let cColorSelect = card.find('.consume-color-select');
+                        cColorSelect.empty().append('<option value="">Select Color</option>');
+                        let variant = values.consume_variants.find(v => v.size_set_id == values.consume_size_set_id);
                         if (variant) {
                             variant.colors.forEach(function (c) {
-                                colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
+                                cColorSelect.append(`<option value="${c.id}">${c.name}</option>`);
                             });
                         }
-                        colorSelect.val(values.color_id).trigger('change.select2');
+                        cColorSelect.val(values.consume_color_id).trigger('change.select2');
                     } else {
-                        // Fallback: Always ensure the selected options exist in the DOM
-                        if (values.size_set_id) {
-                            let select = card.find('.size-set-select');
-                            if (select.find(`option[value="${values.size_set_id}"]`).length === 0) {
-                                select.append(`<option value="${values.size_set_id}" selected>${values.size_set_name || 'Size Set'}</option>`);
-                            }
-                            select.val(values.size_set_id).trigger('change.select2');
+                        if (values.consume_size_set_id) {
+                            card.find('.consume-size-set-select').empty().append(`<option value="${values.consume_size_set_id}" selected>${values.consume_size_set_name}</option>`).trigger('change.select2');
                         }
-                        if (values.color_id) {
-                            let select = card.find('.color-select');
-                            if (select.find(`option[value="${values.color_id}"]`).length === 0) {
-                                select.append(`<option value="${values.color_id}" selected>${values.color_name || 'Color'}</option>`);
-                            }
-                            select.val(values.color_id).trigger('change.select2');
+                        if (values.consume_color_id) {
+                            card.find('.consume-color-select').empty().append(`<option value="${values.consume_color_id}" selected>${values.consume_color_name}</option>`).trigger('change.select2');
                         }
                     }
-
-                    // Set Rack
-                    if (values.rack_id) {
-                        let select = card.find('.rack-select');
-                        if (select.find(`option[value="${values.rack_id}"]`).length === 0) {
-                            select.append(`<option value="${values.rack_id}" selected>${values.rack_name || 'Rack'}</option>`);
-                        }
-                        select.val(values.rack_id).trigger('change.select2');
+                    card.find('.consume-source-id').val(values.consume_source_id || '');
+                    card.find('.consume-available-display').text(values.consume_available || '-');
+                    if (values.consume_available) {
+                        card.find('.total-boxes-input').attr('max', values.consume_available);
                     }
-
-                    // Set Numeric Inputs
-                    if (values.total_boxes) card.find('.total-boxes-input').val(values.total_boxes);
-                    if (values.pieces_per_box) card.find('input[name*="pieces_per_box"]').val(values.pieces_per_box);
-                    if (values.mrp) card.find('.mrp-input').val(values.mrp);
-
-                    isPopulating = false;
                 }
 
-                $('#addNewItem').on('click', function () {
-                    addItem();
-                });
-
-                $(document).on('click', '.btn-duplicate-item', function () {
-                    let sourceCard = $(this).closest('.inventory-item-card');
-                    let values = {
-                        product_id: sourceCard.find('.design-select').val(),
-                        pattern_id: sourceCard.find('.pattern-select').val(),
-                        pattern_name: sourceCard.find('.pattern-select option:selected').text(),
-                        fitting_id: sourceCard.find('.fitting-select').val(),
-                        fitting_name: sourceCard.find('.fitting-select option:selected').text(),
-                        warehouse_id: sourceCard.find('.warehouse-select').val(),
-                        rack_id: sourceCard.find('.rack-select').val(),
-                        rack_name: sourceCard.find('.rack-select option:selected').text(),
-                        size_set_id: sourceCard.find('.size-set-select').val(),
-                        size_set_name: sourceCard.find('.size-set-select option:selected').text(),
-                        color_id: sourceCard.find('.color-select').val(),
-                        color_name: sourceCard.find('.color-select option:selected').text(),
-                        total_boxes: sourceCard.find('.total-boxes-input').val(),
-                        pieces_per_box: sourceCard.find('input[name*="pieces_per_box"]').val(),
-                        mrp: sourceCard.find('.mrp-input').val(),
-                        variants: sourceCard.data('variants'),
-                        
-                        // Consume fields
-                        consume_product_id: sourceCard.find('.consume-design-select').val(),
-                        consume_variants: sourceCard.data('consume_variants'),
-                        consume_pattern_id: sourceCard.find('.consume-pattern-select').val(),
-                        consume_pattern_name: sourceCard.find('.consume-pattern-select option:selected').text(),
-                        consume_fitting_id: sourceCard.find('.consume-fitting-select').val(),
-                        consume_fitting_name: sourceCard.find('.consume-fitting-select option:selected').text(),
-                        consume_warehouse_id: sourceCard.find('.consume-warehouse-select').val(),
-                        consume_rack_id: sourceCard.find('.consume-rack-select').val(),
-                        consume_rack_name: sourceCard.find('.consume-rack-select option:selected').text(),
-                        consume_size_set_id: sourceCard.find('.consume-size-set-select').val(),
-                        consume_size_set_name: sourceCard.find('.consume-size-set-select option:selected').text(),
-                        consume_color_id: sourceCard.find('.consume-color-select').val(),
-                        consume_color_name: sourceCard.find('.consume-color-select option:selected').text(),
-                        consume_source_id: sourceCard.find('.consume-source-id').val(),
-                        consume_available: sourceCard.find('.consume-available-display').text()
-                    };
-                    addItem(values);
-                    toastr.info('Item duplicated. You can now modify specific fields.');
-                    
-                    // Validate duplication usage
-                    let lastCard = $('.inventory-item-card').last();
-                    validateStockAvailability(lastCard);
-                });
-
-                $(document).on('click', '.btn-remove-item', function () {
-                    $(this).closest('.inventory-item-card').fadeOut(300, function () {
-                        $(this).remove();
-                        updateItemNumbers();
-                    });
-                });
-
-                function updateItemNumbers() {
-                    $('.inventory-item-card').each(function (index) {
-                        $(this).find('.item-number').html(`<i class="fas fa-barcode"></i> Stock Generate #${index + 1}`);
-                    });
+                // 1. Set variants data immediately if available
+                if (values.variants) {
+                    card.data('variants', values.variants);
                 }
 
-                $(document).on('change', '.design-select', function () {
-                    if (isPopulating) return;
-                    let productId = $(this).val();
-                    let card = $(this).closest('.inventory-item-card');
-                    let patternSelect = card.find('.pattern-select');
-                    let fittingSelect = card.find('.fitting-select');
+                // 2. Set Product
+                card.find('.design-select').val(values.product_id).trigger('change.select2');
+
+                // 3. Set Pattern & Fitting
+                if (values.pattern_id) {
+                    card.find('.pattern-select').empty().append(`<option value="${values.pattern_id}" selected>${values.pattern_name || 'Pattern'}</option>`).trigger('change.select2');
+                }
+                if (values.fitting_id) {
+                    card.find('.fitting-select').empty().append(`<option value="${values.fitting_id}" selected>${values.fitting_name || 'Fitting'}</option>`).trigger('change.select2');
+                }
+
+                // 4. Set Warehouse
+                if (values.warehouse_id) {
+                    card.find('.warehouse-select').val(values.warehouse_id).trigger('change.select2');
+                }
+
+                // 5. Populate dropdowns and set values
+                if (values.variants) {
                     let sizeSelect = card.find('.size-set-select');
+                    sizeSelect.empty().append('<option value="">Select Size Set</option>');
+                    values.variants.forEach(function (v) {
+                        sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                    });
+                    sizeSelect.val(values.size_set_id).trigger('change.select2');
+
                     let colorSelect = card.find('.color-select');
-
-                    // Clear subsequent dropdowns
-                    patternSelect.empty().append('<option value="">Pattern</option>').trigger('change.select2');
-                    fittingSelect.empty().append('<option value="">Fitting</option>').trigger('change.select2');
-                    sizeSelect.empty().append('<option value="">Select Size Set</option>').trigger('change.select2');
-                    colorSelect.empty().append('<option value="">Color</option>').trigger('change.select2');
-                    card.find('input[name*="pieces_per_box"]').val('');
-                    card.find('.mrp-input').val('');
-
-                    if (productId) {
-                        $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function (data) {
-                            if (data.success) {
-                                if (data.pattern_id) {
-                                    patternSelect.empty().append(`<option value="${data.pattern_id}" selected>${data.pattern_name}</option>`).trigger('change.select2');
-                                }
-
-                                if (data.fitting_id) {
-                                    fittingSelect.empty().append(`<option value="${data.fitting_id}" selected>${data.fitting_name}</option>`).trigger('change.select2');
-                                }
-
-                                card.data('variants', data.variants);
-
-                                sizeSelect.empty().append('<option value="">Select Size Set</option>');
-                                data.variants.forEach(function (v) {
-                                    sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
-                                });
-                                sizeSelect.trigger('change.select2');
-                            }
+                    colorSelect.empty().append('<option value="">Color</option>');
+                    let variant = values.variants.find(v => v.size_set_id == values.size_set_id);
+                    if (variant) {
+                        variant.colors.forEach(function (c) {
+                            colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
                         });
+                    }
+                    colorSelect.val(values.color_id).trigger('change.select2');
+                } else {
+                    // Fallback: Always ensure the selected options exist in the DOM
+                    if (values.size_set_id) {
+                        let select = card.find('.size-set-select');
+                        if (select.find(`option[value="${values.size_set_id}"]`).length === 0) {
+                            select.append(`<option value="${values.size_set_id}" selected>${values.size_set_name || 'Size Set'}</option>`);
+                        }
+                        select.val(values.size_set_id).trigger('change.select2');
+                    }
+                    if (values.color_id) {
+                        let select = card.find('.color-select');
+                        if (select.find(`option[value="${values.color_id}"]`).length === 0) {
+                            select.append(`<option value="${values.color_id}" selected>${values.color_name || 'Color'}</option>`);
+                        }
+                        select.val(values.color_id).trigger('change.select2');
+                    }
+                }
+
+                // Set Rack
+                if (values.rack_id) {
+                    let select = card.find('.rack-select');
+                    if (select.find(`option[value="${values.rack_id}"]`).length === 0) {
+                        select.append(`<option value="${values.rack_id}" selected>${values.rack_name || 'Rack'}</option>`);
+                    }
+                    select.val(values.rack_id).trigger('change.select2');
+                }
+
+                // Set Numeric Inputs
+                if (values.total_boxes) card.find('.total-boxes-input').val(values.total_boxes);
+                if (values.pieces_per_box) card.find('input[name*="pieces_per_box"]').val(values.pieces_per_box);
+                if (values.mrp) card.find('.mrp-input').val(values.mrp);
+
+                isPopulating = false;
+            }
+
+            $('#addNewItem').on('click', function () {
+                addItem();
+            });
+
+            $(document).on('click', '.btn-duplicate-item', function () {
+                let sourceCard = $(this).closest('.inventory-item-card');
+                let values = {
+                    product_id: sourceCard.find('.design-select').val(),
+                    pattern_id: sourceCard.find('.pattern-select').val(),
+                    pattern_name: sourceCard.find('.pattern-select option:selected').text(),
+                    fitting_id: sourceCard.find('.fitting-select').val(),
+                    fitting_name: sourceCard.find('.fitting-select option:selected').text(),
+                    warehouse_id: sourceCard.find('.warehouse-select').val(),
+                    rack_id: sourceCard.find('.rack-select').val(),
+                    rack_name: sourceCard.find('.rack-select option:selected').text(),
+                    size_set_id: sourceCard.find('.size-set-select').val(),
+                    size_set_name: sourceCard.find('.size-set-select option:selected').text(),
+                    color_id: sourceCard.find('.color-select').val(),
+                    color_name: sourceCard.find('.color-select option:selected').text(),
+                    total_boxes: sourceCard.find('.total-boxes-input').val(),
+                    pieces_per_box: sourceCard.find('input[name*="pieces_per_box"]').val(),
+                    mrp: sourceCard.find('.mrp-input').val(),
+                    variants: sourceCard.data('variants'),
+
+                    // Consume fields
+                    consume_product_id: sourceCard.find('.consume-design-select').val(),
+                    consume_variants: sourceCard.data('consume_variants'),
+                    consume_pattern_id: sourceCard.find('.consume-pattern-select').val(),
+                    consume_pattern_name: sourceCard.find('.consume-pattern-select option:selected').text(),
+                    consume_fitting_id: sourceCard.find('.consume-fitting-select').val(),
+                    consume_fitting_name: sourceCard.find('.consume-fitting-select option:selected').text(),
+                    consume_warehouse_id: sourceCard.find('.consume-warehouse-select').val(),
+                    consume_rack_id: sourceCard.find('.consume-rack-select').val(),
+                    consume_rack_name: sourceCard.find('.consume-rack-select option:selected').text(),
+                    consume_size_set_id: sourceCard.find('.consume-size-set-select').val(),
+                    consume_size_set_name: sourceCard.find('.consume-size-set-select option:selected').text(),
+                    consume_color_id: sourceCard.find('.consume-color-select').val(),
+                    consume_color_name: sourceCard.find('.consume-color-select option:selected').text(),
+                    consume_source_id: sourceCard.find('.consume-source-id').val(),
+                    consume_available: sourceCard.find('.consume-available-display').text()
+                };
+                addItem(values);
+                toastr.info('Item duplicated. You can now modify specific fields.');
+
+                // Validate duplication usage
+                let lastCard = $('.inventory-item-card').last();
+                validateStockAvailability(lastCard);
+            });
+
+            $(document).on('click', '.btn-remove-item', function () {
+                $(this).closest('.inventory-item-card').fadeOut(300, function () {
+                    $(this).remove();
+                    updateItemNumbers();
+                });
+            });
+
+            function updateItemNumbers() {
+                $('.inventory-item-card').each(function (index) {
+                    $(this).find('.item-number').html(`<i class="fas fa-barcode"></i> Stock Generate #${index + 1}`);
+                });
+            }
+
+            $(document).on('change', '.design-select', function () {
+                if (isPopulating) return;
+                let productId = $(this).val();
+                let card = $(this).closest('.inventory-item-card');
+                let patternSelect = card.find('.pattern-select');
+                let fittingSelect = card.find('.fitting-select');
+                let sizeSelect = card.find('.size-set-select');
+                let colorSelect = card.find('.color-select');
+
+                // Clear subsequent dropdowns
+                patternSelect.empty().append('<option value="">Pattern</option>').trigger('change.select2');
+                fittingSelect.empty().append('<option value="">Fitting</option>').trigger('change.select2');
+                sizeSelect.empty().append('<option value="">Select Size Set</option>').trigger('change.select2');
+                colorSelect.empty().append('<option value="">Color</option>').trigger('change.select2');
+                card.find('input[name*="pieces_per_box"]').val('');
+                card.find('.mrp-input').val('');
+
+                if (productId) {
+                    $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function (data) {
+                        if (data.success) {
+                            if (data.pattern_id) {
+                                patternSelect.empty().append(`<option value="${data.pattern_id}" selected>${data.pattern_name}</option>`).trigger('change.select2');
+                            }
+
+                            if (data.fitting_id) {
+                                fittingSelect.empty().append(`<option value="${data.fitting_id}" selected>${data.fitting_name}</option>`).trigger('change.select2');
+                            }
+
+                            card.data('variants', data.variants);
+
+                            sizeSelect.empty().append('<option value="">Select Size Set</option>');
+                            data.variants.forEach(function (v) {
+                                sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                            });
+                            sizeSelect.trigger('change.select2');
+                        }
+                    });
+                }
+            });
+
+            $(document).on('change', '.size-set-select', function () {
+                if (isPopulating) return;
+                let sizeSetId = $(this).val();
+                let card = $(this).closest('.inventory-item-card');
+                let variants = card.data('variants') || [];
+                let colorSelect = card.find('.color-select');
+
+                // Clear color when size changes
+                colorSelect.empty().append('<option value="">Color</option>').trigger('change.select2');
+                card.find('input[name*="pieces_per_box"]').val('');
+                card.find('.mrp-input').val('');
+
+                if (sizeSetId) {
+                    $.get("{{ url('admin/inventory/get-size-set-info') }}/" + sizeSetId, function (data) {
+                        card.find('input[name*="pieces_per_box"]').val(data.no_of_pcs);
+                    });
+
+                    let variant = variants.find(v => v.size_set_id == sizeSetId);
+                    if (variant) {
+                        card.find('.mrp-input').val(variant.mrp);
+                        variant.colors.forEach(function (c) {
+                            colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
+                        });
+                        colorSelect.trigger('change.select2');
+                    }
+                }
+            });
+
+            $(document).on('change', '.warehouse-select', function () {
+                if (isPopulating) return;
+                let warehouseId = $(this).val();
+                let card = $(this).closest('.inventory-item-card');
+                let rackSelect = card.find('.rack-select');
+
+                rackSelect.empty().append('<option value="">Rack</option>');
+                if (warehouseId) {
+                    $.get("{{ url('admin/inventory/warehouse-stock/racks') }}/" + warehouseId, function (data) {
+                        data.forEach(function (rack) {
+                            rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
+                        });
+                        rackSelect.trigger('change.select2');
+
+                        // Auto-select first rack if any
+                        if (data.length > 0) {
+                            rackSelect.val(data[0].id).trigger('change.select2');
+                        }
+                    });
+                }
+            });
+
+
+
+            $(document).on('input', '.total-boxes-input', function () {
+                validateStockAvailability($(this).closest('.inventory-item-card'));
+            });
+
+            function validateStockAvailability(currentCard) {
+                if ($('#sourceType').val() !== 'consume') return;
+
+                let sourceId = currentCard.find('.consume-source-id').val();
+                if (!sourceId) return;
+
+                let available = parseInt(currentCard.find('.consume-available-display').text()) || 0;
+                let totalConsumed = 0;
+
+                // Sum up all cards using this same source
+                $('.inventory-item-card').each(function () {
+                    if ($(this).find('.consume-source-id').val() === sourceId) {
+                        totalConsumed += parseInt($(this).find('.total-boxes-input').val()) || 0;
                     }
                 });
 
-                $(document).on('change', '.size-set-select', function () {
-                    if (isPopulating) return;
-                    let sizeSetId = $(this).val();
-                    let card = $(this).closest('.inventory-item-card');
-                    let variants = card.data('variants') || [];
-                    let colorSelect = card.find('.color-select');
+                if (totalConsumed > available) {
+                    toastr.error(`Total consumption (${totalConsumed}) exceeds available stock (${available}) for this source.`);
 
-                    // Clear color when size changes
-                    colorSelect.empty().append('<option value="">Color</option>').trigger('change.select2');
-                    card.find('input[name*="pieces_per_box"]').val('');
-                    card.find('.mrp-input').val('');
+                    // Calculate how much was already used by OTHER cards
+                    let consumedByOthers = 0;
+                    $('.inventory-item-card').not(currentCard).each(function () {
+                        if ($(this).find('.consume-source-id').val() === sourceId) {
+                            consumedByOthers += parseInt($(this).find('.total-boxes-input').val()) || 0;
+                        }
+                    });
 
-                    if (sizeSetId) {
-                        $.get("{{ url('admin/inventory/get-size-set-info') }}/" + sizeSetId, function (data) {
-                            card.find('input[name*="pieces_per_box"]').val(data.no_of_pcs);
+                    let remaining = Math.max(0, available - consumedByOthers);
+                    currentCard.find('.total-boxes-input').val(remaining);
+                    calculateGlobalTotal();
+                }
+            }
+
+            $(document).on('change', '.consume-warehouse-select', function () {
+                if (isPopulating) return;
+                let warehouseId = $(this).val();
+                let card = $(this).closest('.inventory-item-card');
+                let rackSelect = card.find('.consume-rack-select');
+                rackSelect.empty().append('<option value="">Select Rack</option>');
+                if (warehouseId) {
+                    $.get("{{ url('admin/inventory/warehouse-stock/racks') }}/" + warehouseId, function (data) {
+                        data.forEach(function (rack) {
+                            rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
                         });
+                        rackSelect.trigger('change.select2');
 
-                        let variant = variants.find(v => v.size_set_id == sizeSetId);
-                        if (variant) {
-                            card.find('.mrp-input').val(variant.mrp);
-                            variant.colors.forEach(function (c) {
+                        // Auto-select first rack if any
+                        if (data.length > 0) {
+                            rackSelect.val(data[0].id).trigger('change.select2');
+                        }
+                    });
+                }
+            });
+
+            $(document).on('change', '.consume-design-select', function () {
+                if (isPopulating) return;
+                let productId = $(this).val();
+                let card = $(this).closest('.inventory-item-card');
+                let sizeSelect = card.find('.consume-size-set-select');
+                let patternSelect = card.find('.consume-pattern-select');
+                let fittingSelect = card.find('.consume-fitting-select');
+
+                sizeSelect.empty().append('<option value="">Select Size Set</option>').trigger('change.select2');
+                card.find('.consume-color-select').empty().append('<option value="">Select Color</option>').trigger('change.select2');
+                patternSelect.empty().append('<option value="">Pattern</option>').trigger('change.select2');
+                fittingSelect.empty().append('<option value="">Fitting</option>').trigger('change.select2');
+
+                if (productId) {
+                    $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function (data) {
+                        if (data.success) {
+                            card.data('consume_variants', data.variants);
+                            if (data.pattern_id) {
+                                patternSelect.empty().append(`<option value="${data.pattern_id}" selected>${data.pattern_name}</option>`).trigger('change.select2');
+                            }
+                            if (data.fitting_id) {
+                                fittingSelect.empty().append(`<option value="${data.fitting_id}" selected>${data.fitting_name}</option>`).trigger('change.select2');
+                            }
+                            if (data.variants) {
+                                let uniqueSizeSets = [];
+                                data.variants.forEach(function (v) {
+                                    if (!uniqueSizeSets.includes(v.size_set_id)) {
+                                        sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                                        uniqueSizeSets.push(v.size_set_id);
+                                    }
+                                });
+                            }
+                            sizeSelect.trigger('change.select2');
+                        }
+                    });
+                }
+            });
+
+            $(document).on('change', '.consume-size-set-select', function () {
+                if (isPopulating) return;
+                let sizeSetId = $(this).val();
+                let card = $(this).closest('.inventory-item-card');
+                let productId = card.find('.consume-design-select').val();
+                let colorSelect = card.find('.consume-color-select');
+                colorSelect.empty().append('<option value="">Select Color</option>').trigger('change.select2');
+
+                if (sizeSetId && productId) {
+                    $.get("{{ url('admin/inventory/get-colors-by-product-size') }}/" + productId + "/" + sizeSetId, function (data) {
+                        if (data.status === 'success') {
+                            data.colors.forEach(function (c) {
                                 colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
                             });
                             colorSelect.trigger('change.select2');
                         }
-                    }
-                });
-
-                $(document).on('change', '.warehouse-select', function () {
-                    if (isPopulating) return;
-                    let warehouseId = $(this).val();
-                    let card = $(this).closest('.inventory-item-card');
-                    let rackSelect = card.find('.rack-select');
-
-                    rackSelect.empty().append('<option value="">Rack</option>');
-                    if (warehouseId) {
-                        $.get("{{ url('admin/inventory/warehouse-stock/racks') }}/" + warehouseId, function (data) {
-                            data.forEach(function (rack) {
-                                rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
-                            });
-                            rackSelect.trigger('change.select2');
-
-                            // Auto-select first rack if any
-                            if (data.length > 0) {
-                                rackSelect.val(data[0].id).trigger('change.select2');
-                            }
-                        });
-                    }
-                });
-
-
-
-                $(document).on('input', '.total-boxes-input', function () {
-                    validateStockAvailability($(this).closest('.inventory-item-card'));
-                });
-
-                function validateStockAvailability(currentCard) {
-                    if ($('#sourceType').val() !== 'consume') return;
-
-                    let sourceId = currentCard.find('.consume-source-id').val();
-                    if (!sourceId) return;
-
-                    let available = parseInt(currentCard.find('.consume-available-display').text()) || 0;
-                    let totalConsumed = 0;
-
-                    // Sum up all cards using this same source
-                    $('.inventory-item-card').each(function() {
-                        if ($(this).find('.consume-source-id').val() === sourceId) {
-                            totalConsumed += parseInt($(this).find('.total-boxes-input').val()) || 0;
-                        }
                     });
-
-                    if (totalConsumed > available) {
-                        toastr.error(`Total consumption (${totalConsumed}) exceeds available stock (${available}) for this source.`);
-                        
-                        // Calculate how much was already used by OTHER cards
-                        let consumedByOthers = 0;
-                        $('.inventory-item-card').not(currentCard).each(function() {
-                            if ($(this).find('.consume-source-id').val() === sourceId) {
-                                consumedByOthers += parseInt($(this).find('.total-boxes-input').val()) || 0;
-                            }
-                        });
-
-                        let remaining = Math.max(0, available - consumedByOthers);
-                        currentCard.find('.total-boxes-input').val(remaining);
-                        calculateGlobalTotal();
-                    }
                 }
+            });
 
-                $(document).on('change', '.consume-warehouse-select', function () {
-                    if (isPopulating) return;
-                    let warehouseId = $(this).val();
-                    let card = $(this).closest('.inventory-item-card');
-                    let rackSelect = card.find('.consume-rack-select');
-                    rackSelect.empty().append('<option value="">Select Rack</option>');
-                    if (warehouseId) {
-                        $.get("{{ url('admin/inventory/warehouse-stock/racks') }}/" + warehouseId, function (data) {
-                            data.forEach(function (rack) {
-                                rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
-                            });
-                            rackSelect.trigger('change.select2');
+            $(document).on('change', '.consume-design-select, .consume-warehouse-select, .consume-rack-select, .consume-size-set-select, .consume-color-select, .consume-pattern-select, .consume-fitting-select', function () {
+                if (isPopulating) return;
+                let card = $(this).closest('.inventory-item-card');
+                let productId = card.find('.consume-design-select').val();
+                let warehouseId = card.find('.consume-warehouse-select').val();
+                let rackId = card.find('.consume-rack-select').val();
+                let sizeSetId = card.find('.consume-size-set-select').val();
+                let colorId = card.find('.consume-color-select').val();
+                let patternId = card.find('.consume-pattern-select').val();
+                let fittingId = card.find('.consume-fitting-select').val();
 
-                            // Auto-select first rack if any
-                            if (data.length > 0) {
-                                rackSelect.val(data[0].id).trigger('change.select2');
+                if (productId && warehouseId && rackId && sizeSetId && colorId) {
+                    $.get("{{ route('admin.inventory.get_domestic_inventory_for_consume') }}", {
+                        product_id: productId,
+                        warehouse_id: warehouseId,
+                        rack_id: rackId,
+                        size_set_id: sizeSetId,
+                        color_id: colorId,
+                        pattern_id: patternId,
+                        fitting_id: fittingId
+                    }, function (data) {
+                        if (data.success) {
+                            card.find('.consume-source-id').val(data.inventory_id);
+                            card.find('.consume-available-display').text(data.total_boxes);
+                            card.find('.total-boxes-input').attr('max', data.total_boxes);
+
+                            // Auto-fill primary card fields with immediate option injection to avoid race conditions
+                            card.find('.design-select').val(productId).trigger('change.select2');
+                            card.find('.warehouse-select').val(warehouseId).trigger('change.select2');
+
+                            // Manually inject options into primary selects to ensure they are selected immediately
+                            let patternSelect = card.find('.pattern-select');
+                            let fittingSelect = card.find('.fitting-select');
+                            let rackSelect = card.find('.rack-select');
+                            let sizeSelect = card.find('.size-set-select');
+                            let colorSelect = card.find('.color-select');
+
+                            let patternName = card.find('.consume-pattern-select option:selected').text();
+                            let fittingName = card.find('.consume-fitting-select option:selected').text();
+                            let rackName = card.find('.consume-rack-select option:selected').text();
+                            let sizeName = card.find('.consume-size-set-select option:selected').text();
+                            let colorName = card.find('.consume-color-select option:selected').text();
+
+                            if (patternId && patternSelect.find(`option[value="${patternId}"]`).length === 0) {
+                                patternSelect.append(`<option value="${patternId}" selected>${patternName}</option>`);
                             }
-                        });
-                    }
-                });
+                            patternSelect.val(patternId || '').trigger('change.select2');
 
-                $(document).on('change', '.consume-design-select', function () {
-                    if (isPopulating) return;
-                    let productId = $(this).val();
-                    let card = $(this).closest('.inventory-item-card');
-                    let sizeSelect = card.find('.consume-size-set-select');
-                    let patternSelect = card.find('.consume-pattern-select');
-                    let fittingSelect = card.find('.consume-fitting-select');
-
-                    sizeSelect.empty().append('<option value="">Select Size Set</option>').trigger('change.select2');
-                    card.find('.consume-color-select').empty().append('<option value="">Select Color</option>').trigger('change.select2');
-                    patternSelect.empty().append('<option value="">Pattern</option>').trigger('change.select2');
-                    fittingSelect.empty().append('<option value="">Fitting</option>').trigger('change.select2');
-
-                    if (productId) {
-                        $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function (data) {
-                            if (data.success) {
-                                card.data('consume_variants', data.variants);
-                                if (data.pattern_id) {
-                                    patternSelect.empty().append(`<option value="${data.pattern_id}" selected>${data.pattern_name}</option>`).trigger('change.select2');
-                                }
-                                if (data.fitting_id) {
-                                    fittingSelect.empty().append(`<option value="${data.fitting_id}" selected>${data.fitting_name}</option>`).trigger('change.select2');
-                                }
-                                if (data.variants) {
-                                    let uniqueSizeSets = [];
-                                    data.variants.forEach(function (v) {
-                                        if (!uniqueSizeSets.includes(v.size_set_id)) {
-                                            sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
-                                            uniqueSizeSets.push(v.size_set_id);
-                                        }
-                                    });
-                                }
-                                sizeSelect.trigger('change.select2');
+                            if (fittingId && fittingSelect.find(`option[value="${fittingId}"]`).length === 0) {
+                                fittingSelect.append(`<option value="${fittingId}" selected>${fittingName}</option>`);
                             }
-                        });
-                    }
-                });
+                            fittingSelect.val(fittingId || '').trigger('change.select2');
 
-                $(document).on('change', '.consume-size-set-select', function () {
-                    if (isPopulating) return;
-                    let sizeSetId = $(this).val();
-                    let card = $(this).closest('.inventory-item-card');
-                    let productId = card.find('.consume-design-select').val();
-                    let colorSelect = card.find('.consume-color-select');
-                    colorSelect.empty().append('<option value="">Select Color</option>').trigger('change.select2');
+                            if (rackSelect.find(`option[value="${rackId}"]`).length === 0) {
+                                rackSelect.append(`<option value="${rackId}" selected>${rackName}</option>`);
+                            }
+                            rackSelect.val(rackId).trigger('change.select2');
 
-                    if (sizeSetId && productId) {
-                        $.get("{{ url('admin/inventory/get-colors-by-product-size') }}/" + productId + "/" + sizeSetId, function (data) {
-                            if (data.status === 'success') {
-                                data.colors.forEach(function (c) {
+                            // Store variants data for the primary card
+                            card.data('variants', data.variants);
+
+                            // Populate all available size sets first if not already there
+                            if (sizeSelect.find('option').length <= 1) {
+                                sizeSelect.empty().append('<option value="">Select Size Set</option>');
+                                data.variants.forEach(function (v) {
+                                    sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                                });
+                            }
+                            sizeSelect.val(sizeSetId).trigger('change.select2');
+
+                            // Populate ALL available colors for this size set, not just the one being consumed
+                            colorSelect.empty().append('<option value="">Color</option>');
+                            if (data.all_colors && data.all_colors.length > 0) {
+                                data.all_colors.forEach(function (c) {
                                     colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
                                 });
-                                colorSelect.trigger('change.select2');
-                            }
-                        });
-                    }
-                });
-
-                $(document).on('change', '.consume-design-select, .consume-warehouse-select, .consume-rack-select, .consume-size-set-select, .consume-color-select, .consume-pattern-select, .consume-fitting-select', function () {
-                    if (isPopulating) return;
-                    let card = $(this).closest('.inventory-item-card');
-                    let productId = card.find('.consume-design-select').val();
-                    let warehouseId = card.find('.consume-warehouse-select').val();
-                    let rackId = card.find('.consume-rack-select').val();
-                    let sizeSetId = card.find('.consume-size-set-select').val();
-                    let colorId = card.find('.consume-color-select').val();
-                    let patternId = card.find('.consume-pattern-select').val();
-                    let fittingId = card.find('.consume-fitting-select').val();
-
-                    if (productId && warehouseId && rackId && sizeSetId && colorId) {
-                        $.get("{{ route('admin.inventory.get_domestic_inventory_for_consume') }}", {
-                            product_id: productId,
-                            warehouse_id: warehouseId,
-                            rack_id: rackId,
-                            size_set_id: sizeSetId,
-                            color_id: colorId,
-                            pattern_id: patternId,
-                            fitting_id: fittingId
-                        }, function (data) {
-                            if (data.success) {
-                                card.find('.consume-source-id').val(data.inventory_id);
-                                card.find('.consume-available-display').text(data.total_boxes);
-                                card.find('.total-boxes-input').attr('max', data.total_boxes);
-
-                                // Auto-fill primary card fields with immediate option injection to avoid race conditions
-                                card.find('.design-select').val(productId).trigger('change.select2');
-                                card.find('.warehouse-select').val(warehouseId).trigger('change.select2');
-
-                                // Manually inject options into primary selects to ensure they are selected immediately
-                                let patternSelect = card.find('.pattern-select');
-                                let fittingSelect = card.find('.fitting-select');
-                                let rackSelect = card.find('.rack-select');
-                                let sizeSelect = card.find('.size-set-select');
-                                let colorSelect = card.find('.color-select');
-
-                                let patternName = card.find('.consume-pattern-select option:selected').text();
-                                let fittingName = card.find('.consume-fitting-select option:selected').text();
-                                let rackName = card.find('.consume-rack-select option:selected').text();
-                                let sizeName = card.find('.consume-size-set-select option:selected').text();
-                                let colorName = card.find('.consume-color-select option:selected').text();
-
-                                if (patternId && patternSelect.find(`option[value="${patternId}"]`).length === 0) {
-                                    patternSelect.append(`<option value="${patternId}" selected>${patternName}</option>`);
-                                }
-                                patternSelect.val(patternId || '').trigger('change.select2');
-
-                                if (fittingId && fittingSelect.find(`option[value="${fittingId}"]`).length === 0) {
-                                    fittingSelect.append(`<option value="${fittingId}" selected>${fittingName}</option>`);
-                                }
-                                fittingSelect.val(fittingId || '').trigger('change.select2');
-
-                                if (rackSelect.find(`option[value="${rackId}"]`).length === 0) {
-                                    rackSelect.append(`<option value="${rackId}" selected>${rackName}</option>`);
-                                }
-                                rackSelect.val(rackId).trigger('change.select2');
-
-                                // Store variants data for the primary card
-                                card.data('variants', data.variants);
-
-                                // Populate all available size sets first if not already there
-                                if (sizeSelect.find('option').length <= 1) {
-                                    sizeSelect.empty().append('<option value="">Select Size Set</option>');
-                                    data.variants.forEach(function (v) {
-                                        sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
-                                    });
-                                }
-                                sizeSelect.val(sizeSetId).trigger('change.select2');
-
-                                // Populate ALL available colors for this size set, not just the one being consumed
-                                colorSelect.empty().append('<option value="">Color</option>');
-                                if (data.all_colors && data.all_colors.length > 0) {
-                                    data.all_colors.forEach(function(c) {
-                                        colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
-                                    });
-                                } else {
-                                    // Fallback if no colors returned (shouldn't happen with updated backend)
-                                    colorSelect.append(`<option value="${colorId}" selected>${colorName}</option>`);
-                                }
-                                colorSelect.val(colorId).trigger('change.select2');
-
-                                card.find('input[name*="total_boxes"]').val(data.total_boxes);
-                                card.find('input[name*="pieces_per_box"]').val(data.pieces_per_box);
-                                card.find('.mrp-input').val(data.mrp);
-
-                                toastr.success('Existing stock details applied.');
-                                
-                                // Trigger validation after auto-fill
-                                validateStockAvailability(card);
                             } else {
-                                toastr.warning(data.message);
+                                // Fallback if no colors returned (shouldn't happen with updated backend)
+                                colorSelect.append(`<option value="${colorId}" selected>${colorName}</option>`);
                             }
-                        });
-                    } else {
-                        card.find('.consume-available-display').text('-');
-                        card.find('.total-boxes-input').removeAttr('max');
-                        card.find('.consume-source-id').val('');
-                    }
-                });
+                            colorSelect.val(colorId).trigger('change.select2');
 
-                $(document).on('input', '.total-boxes-input, .purchase-rate-input, #global_gst_value, #global_other_amount, #global_discount', function () {
-                    calculateGlobalTotal();
-                });
+                            card.find('input[name*="total_boxes"]').val(data.total_boxes);
+                            card.find('input[name*="pieces_per_box"]').val(data.pieces_per_box);
+                            card.find('.mrp-input').val(data.mrp);
 
-                $(document).on('change', '#global_gst_type', function () {
-                    calculateGlobalTotal();
-                });
+                            toastr.success('Existing stock details applied.');
 
-                function calculateGlobalTotal() {
-                    let subTotal = 0;
-
-                    $('.inventory-item-card').each(function () {
-                        let card = $(this);
-                        let totalBoxes = parseFloat(card.find('.total-boxes-input').val()) || 0;
-                        let pcsPerBox = parseFloat(card.find('.pcs-per-box-input').val()) || 0;
-                        let rate = parseFloat(card.find('.purchase-rate-input').val()) || 0;
-
-                        subTotal += (totalBoxes * pcsPerBox * rate);
-                    });
-
-                    $('#global_sub_total').val(subTotal.toFixed(2));
-
-                    let gstValue = parseFloat($('#global_gst_value').val()) || 0;
-                    let gstType = $('#global_gst_type').val();
-                    let other = parseFloat($('#global_other_amount').val()) || 0;
-                    let discount = parseFloat($('#global_discount').val()) || 0;
-
-                    let gstAmount = 0;
-                    if (gstType === 'percentage') {
-                        gstAmount = (subTotal * gstValue) / 100;
-                    } else {
-                        gstAmount = gstValue;
-                    }
-
-                    $('#global_gst_amount').val(gstAmount.toFixed(2));
-                    let grandTotal = subTotal + gstAmount + other - discount;
-
-                    $('#global_total_amount').val(grandTotal.toFixed(2));
-                }
-
-                $('#addStockForm').on('submit', function (e) {
-                    e.preventDefault();
-                    let form = $(this);
-                    let btn = form.find('button[type="submit"]');
-                    let originalHtml = btn.html();
-
-                    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Saving...');
-
-                    $.ajax({
-                        url: form.attr('action'),
-                        method: 'POST',
-                        data: form.serialize(),
-                        success: function (response) {
-                            if (response.success) {
-                                toastr.success(response.message);
-
-                                let pdfForm = $('<form>', {
-                                    action: "{{ route('admin.inventory.barcode-generator.generate-bulk-tspl') }}",
-                                    method: 'POST',
-                                    target: '_blank'
-                                }).append($('<input>', {
-                                    type: 'hidden',
-                                    name: '_token',
-                                    value: "{{ csrf_token() }}"
-                                }));
-
-                                response.ids.forEach(id => {
-                                    pdfForm.append($('<input>', {
-                                        type: 'hidden',
-                                        name: 'ids[]',
-                                        value: id
-                                    }));
-                                });
-
-                                $('body').append(pdfForm);
-                                pdfForm.submit();
-                                pdfForm.remove();
-
-                                setTimeout(() => {
-                                    window.location.href = "{{ route('admin.inventory.index') }}";
-                                }, 1000);
-                            }
-                        },
-                        error: function (xhr) {
-                            btn.prop('disabled', false).html(originalHtml);
-                            let error = xhr.responseJSON ? xhr.responseJSON.message : 'Error adding stock';
-                            toastr.error(error);
+                            // Trigger validation after auto-fill
+                            validateStockAvailability(card);
+                        } else {
+                            toastr.warning(data.message);
                         }
                     });
+                } else {
+                    card.find('.consume-available-display').text('-');
+                    card.find('.total-boxes-input').removeAttr('max');
+                    card.find('.consume-source-id').val('');
+                }
+            });
+
+            $(document).on('input', '.total-boxes-input, .purchase-rate-input, #global_gst_value, #global_other_amount, #global_discount', function () {
+                calculateGlobalTotal();
+            });
+
+            $(document).on('change', '#global_gst_type', function () {
+                calculateGlobalTotal();
+            });
+
+            function calculateGlobalTotal() {
+                let subTotal = 0;
+
+                $('.inventory-item-card').each(function () {
+                    let card = $(this);
+                    let totalBoxes = parseFloat(card.find('.total-boxes-input').val()) || 0;
+                    let pcsPerBox = parseFloat(card.find('.pcs-per-box-input').val()) || 0;
+                    let rate = parseFloat(card.find('.purchase-rate-input').val()) || 0;
+
+                    subTotal += (totalBoxes * pcsPerBox * rate);
                 });
 
-                // Initial auto-select for the first card on page load
-                (function() {
-                    let firstWarehouse = $('.warehouse-select').first();
-                    if (firstWarehouse.length && firstWarehouse.find('option').length > 1 && !firstWarehouse.val()) {
-                        firstWarehouse.val(firstWarehouse.find('option:eq(1)').val()).trigger('change');
+                $('#global_sub_total').val(subTotal.toFixed(2));
+
+                let gstValue = parseFloat($('#global_gst_value').val()) || 0;
+                let gstType = $('#global_gst_type').val();
+                let other = parseFloat($('#global_other_amount').val()) || 0;
+                let discount = parseFloat($('#global_discount').val()) || 0;
+
+                let gstAmount = 0;
+                if (gstType === 'percentage') {
+                    gstAmount = (subTotal * gstValue) / 100;
+                } else {
+                    gstAmount = gstValue;
+                }
+
+                $('#global_gst_amount').val(gstAmount.toFixed(2));
+                let grandTotal = subTotal + gstAmount + other - discount;
+
+                $('#global_total_amount').val(grandTotal.toFixed(2));
+            }
+
+            $('#addStockForm').on('submit', function (e) {
+                e.preventDefault();
+                let form = $(this);
+                let btn = form.find('button[type="submit"]');
+                let originalHtml = btn.html();
+
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Saving...');
+
+                $.ajax({
+                    url: form.attr('action'),
+                    method: 'POST',
+                    data: form.serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+
+                            let pdfForm = $('<form>', {
+                                action: "{{ route('admin.inventory.barcode-generator.generate-bulk-tspl') }}",
+                                method: 'POST',
+                                target: '_blank'
+                            }).append($('<input>', {
+                                type: 'hidden',
+                                name: '_token',
+                                value: "{{ csrf_token() }}"
+                            }));
+
+                            response.ids.forEach(id => {
+                                pdfForm.append($('<input>', {
+                                    type: 'hidden',
+                                    name: 'ids[]',
+                                    value: id
+                                }));
+                            });
+
+                            $('body').append(pdfForm);
+                            pdfForm.submit();
+                            pdfForm.remove();
+
+                            setTimeout(() => {
+                                window.location.href = "{{ route('admin.inventory.index') }}";
+                            }, 1000);
+                        }
+                    },
+                    error: function (xhr) {
+                        btn.prop('disabled', false).html(originalHtml);
+                        let error = xhr.responseJSON ? xhr.responseJSON.message : 'Error adding stock';
+                        toastr.error(error);
                     }
-                })();
+                });
             });
-        </script>
+
+            // Initial auto-select for the first card on page load
+            (function () {
+                let firstWarehouse = $('.warehouse-select').first();
+                if (firstWarehouse.length && firstWarehouse.find('option').length > 1 && !firstWarehouse.val()) {
+                    firstWarehouse.val(firstWarehouse.find('option:eq(1)').val()).trigger('change');
+                }
+            })();
+        });
+    </script>
 @endsection

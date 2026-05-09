@@ -727,6 +727,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/delete-boxes', [AdminInventoryController::class, 'deleteBoxes'])->name('delete_boxes');
             Route::get('/show', [AdminInventoryController::class, 'show'])->name('show');
             Route::get('/create', [AdminInventoryController::class, 'create'])->name('create');
+            Route::get('/purchase', [AdminInventoryController::class, 'purchase'])->name('purchase');
+            Route::get('/get-po-items/{id}', [AdminInventoryController::class, 'getProductionPOItems'])->name('get_po_items');
+            Route::get('/purchase-list', [AdminInventoryController::class, 'purchaseList'])->name('purchase_list');
+            Route::get('/purchase-list/data', [AdminInventoryController::class, 'purchaseListData'])->name('purchase_list.data');
+            Route::delete('/purchase/{id}', [AdminInventoryController::class, 'destroyPurchase'])->name('purchase.destroy');
 
             // Warehouse Stock Routes
             Route::get('/warehouse-stock', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'index'])->name('warehouse_stock');
@@ -806,7 +811,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/', [AdminInventoryController::class, 'purchaseHistory'])->name('index');
                 Route::get('/list', [AdminInventoryController::class, 'purchaseHistoryList'])->name('list');
                 Route::get('/{id}/edit', [AdminInventoryController::class, 'purchaseHistoryEdit'])->name('edit');
+                Route::get('/{id}/view', [AdminInventoryController::class, 'purchaseHistoryShow'])->name('show');
+                Route::get('/{id}/download-prn', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generatePurchasePrn'])->name('download-prn');
                 Route::post('/{id}/update', [AdminInventoryController::class, 'purchaseHistoryUpdate'])->name('update');
+                Route::delete('/{id}/delete', [AdminInventoryController::class, 'purchaseHistoryDestroy'])->name('destroy');
             });
         });
 

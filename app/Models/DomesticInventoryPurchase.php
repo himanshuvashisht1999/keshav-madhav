@@ -14,6 +14,7 @@ class DomesticInventoryPurchase extends Model
     protected $fillable = [
         'vendor_id',
         'customer_id',
+        'production_po_id',
         'user_id',
         'sub_total',
         'gst_type',
@@ -24,6 +25,11 @@ class DomesticInventoryPurchase extends Model
         'total_amount',
         'remarks'
     ];
+
+    public function productionPO()
+    {
+        return $this->belongsTo(ProductionPO::class, 'production_po_id');
+    }
 
     public function user()
     {

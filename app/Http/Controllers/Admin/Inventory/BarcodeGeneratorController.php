@@ -235,4 +235,38 @@ class BarcodeGeneratorController extends Controller
         ]);
     }
 
+    public function generatePurchasePrn($id)
+    {
+        $purchase = \App\Models\DomesticInventoryPurchase::with('items')->findOrFail($id);
+        $barcodeList = [];
+
+        foreach ($purchase->items as $item) {
+            // Reconstruct barcode logic (consistent with InventoryController)
+            $barcode = 'D' . $item->new_product_id . 
+                      'S' . $item->new_size_set_id . 
+                      'C' . $item->new_color_id . 
+                      'P' . ($item->new_pattern_id ?: 0) . 
+                      'F' . ($item->new_fitting_id ?: 0);
+
+            $boxes = (int) $item->box_quantity;
+
+            for ($i = 0; $i < $boxes; $i++) {
+                $barcodeList[] = $barcode;
+            }
+        }
+
+        if (empty($barcodeList)) {
+            return back()->withError('No valid barcodes found for this purchase.');
+        }
+
+        // Use the global helper method
+        $tspl = generateBulkTsplByBarcodes($barcodeList);
+
+        $fileName = 'purchase_labels_' . $purchase->id . '_' . time() . '.prn';
+
+        return response($tspl, 200, [
+            'Content-Type' => 'application/octet-stream',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
+    }
 }

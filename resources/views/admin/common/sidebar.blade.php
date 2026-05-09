@@ -291,6 +291,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                     </a>
                                 </li>
                                 <li class="nav-item">
+                                    <a href="{{ route('admin.inventory.purchase_history.index') }}"
+                                        class="{{ str_contains($page_url, 'admin/inventory/purchase-history') ? 'nav-link active' : 'nav-link' }}"
+                                        style="position:static;">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Purchase</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
                                     <a href="{{ route('admin.inventory.stock_transfer.index') }}"
                                         class="{{ str_contains($page_url, 'admin/inventory/stock-transfer') ? 'nav-link active' : 'nav-link' }}"
                                         style="position:static;">

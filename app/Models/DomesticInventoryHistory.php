@@ -21,12 +21,14 @@ class DomesticInventoryHistory extends Model
         'old_fitting_id',
         'old_pattern_id',
         'old_rack_id',
+        'old_warehouse_id',
         'new_product_id',
         'new_size_set_id',
         'new_color_id',
         'new_fitting_id',
         'new_pattern_id',
         'new_rack_id',
+        'new_warehouse_id',
         'box_quantity',
         'mrp',
         'pieces_per_box',
@@ -108,5 +110,15 @@ class DomesticInventoryHistory extends Model
     public function newRack()
     {
         return $this->belongsTo(Rack::class, 'new_rack_id');
+    }
+
+    public function oldWarehouse()
+    {
+        return $this->belongsTo(Storeroom::class, 'old_warehouse_id');
+    }
+
+    public function newWarehouse()
+    {
+        return $this->belongsTo(Storeroom::class, 'new_warehouse_id');
     }
 }
