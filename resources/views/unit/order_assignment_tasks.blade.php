@@ -102,11 +102,11 @@
                     <li class="active">Tasks</li>
                 </ul>
                 <h1 class="title-simple">
-                    Tasks for Order <span class="order-badge-simple">{{ $orderSku }}</span>
+                    Tasks for {{ $groupLabel ?? 'Order' }} <span class="order-badge-simple">{{ $orderSku }}</span>
                 </h1>
             </div>
             <a href="{{ route('unit.assignments') }}" class="btn-back-simple">
-                <i class="fas fa-arrow-left mr-2"></i> Back to Orders
+                <i class="fas fa-arrow-left mr-2"></i> Back to {{ Str::plural($groupLabel ?? 'Order') }}
             </a>
         </div>
     </div>
@@ -123,7 +123,7 @@
         <div class="card border-0 shadow-sm p-5 text-center">
             <i class="fas fa-clipboard-list fa-3x text-muted mb-3 opacity-25"></i>
             <h4 class="text-dark">No Active Tasks</h4>
-            <p class="text-muted">All tasks for this order are either completed or archived.</p>
+            <p class="text-muted">All tasks for this {{ strtolower($groupLabel ?? 'order') }} are either completed or archived.</p>
             <a href="{{ route('unit.assignments') }}" class="btn btn-primary mt-3">Go to Dashboard</a>
         </div>
     @else

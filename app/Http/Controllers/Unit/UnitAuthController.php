@@ -996,15 +996,22 @@ class UnitAuthController extends Controller
                 ->first();
         });
 
-        $grouped = $assignments->groupBy('order_sku');
+        if ($isCutting) {
+            $grouped = $assignments->groupBy('order_sku');
+            $groupLabel = 'Order';
+        } else {
+            $grouped = $assignments->groupBy('lot_number');
+            $groupLabel = 'Lot';
+        }
+        
         $orderSku = $request->get('order_sku');
 
         if ($orderSku) {
             $assignments = $grouped->get($orderSku, collect());
-            return view('unit.order_assignment_tasks', compact('assignments', 'unit', 'type', 'view', 'canCloseTasks', 'orderSku'));
+            return view('unit.order_assignment_tasks', compact('assignments', 'unit', 'type', 'view', 'canCloseTasks', 'orderSku', 'groupLabel'));
         }
 
-        $orders = $grouped->map(function($items, $sku) {
+        $orders = $grouped->map(function($items, $sku) use ($groupLabel) {
             $isDelayed = $items->contains(function($item) {
                 return isset($item->timing) && !$item->timing->complete_date && now() > $item->timing->end_date;
             });
@@ -1019,18 +1026,49 @@ class UnitAuthController extends Controller
                 }
             }
 
+            $taskCount = $items->count();
+            $directUrl = null;
+            if ($taskCount === 1 && $groupLabel === 'Lot') {
+                $single = $items->first();
+                $directUrl = route('unit.assignments.details', [
+                    'type' => $single->transaction_type ?? 'cutting',
+                    'id' => $single->id
+                ]);
+            }
+
+            $first = $items->first();
+            $designNo = '-';
+            $color = '-';
+            if (isset($first->productSet)) {
+                $designNo = $first->productSet->design_number ?? '-';
+                $color = $first->productSet->colors->name ?? '-';
+            } else {
+                $designNo = $first->orderProduct?->orderProductSet?->design_number ?? '-';
+                $color = $first->orderProduct?->orderProductSet?->colors->name ?? '-';
+                if ($designNo === '-' && !empty($first->lot_no)) {
+                    $lRef = \App\Models\OrderLot::where('lot_no', $first->lot_no)->with('orderProductSet.colors')->first();
+                    $designNo = $lRef->orderProductSet->design_number ?? '-';
+                    $color = $lRef->orderProductSet->colors->name ?? '-';
+                }
+            }
+
             return [
                 'sku' => $sku,
-                'customer' => $items->first()->customer_name ?? '-',
-                'task_count' => $items->count(),
-                'latest_task' => $items->first()->created_at,
+                'customer' => $first->customer_name ?? '-',
+                'task_count' => $taskCount,
+                'latest_task' => $first->created_at,
                 'is_delayed' => $isDelayed,
                 'start_date' => $startDate,
-                'end_date' => $endDate
+                'end_date' => $endDate,
+                'group_label' => $groupLabel,
+                'direct_url' => $directUrl,
+                'design_no' => $designNo,
+                'color' => $color,
+                'total_quantity' => $items->sum(function($i) { return $i->quantity ?? $i->remaining_quantity ?? 0; })
             ];
         })->sortByDesc('latest_task');
 
-        return view('unit.assignments', compact('orders', 'unit', 'type', 'view', 'canCloseTasks'));
+        return view('unit.assignments', compact('orders', 'unit', 'type', 'view', 'canCloseTasks', 'groupLabel'));
     }
 
     public function closeAssignment($type, $id)
