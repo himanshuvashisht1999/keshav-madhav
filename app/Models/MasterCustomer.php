@@ -21,6 +21,8 @@ class MasterCustomer extends Model
         'see_price',
         'balance',
         'password',
+        'contact_person',
+        'gst_number',
     ];
 
     public function brandDiscounts()

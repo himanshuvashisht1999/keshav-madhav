@@ -185,8 +185,7 @@ Route::prefix('agent')->group(function () {
         Route::post('shops/{id}/toggle-status', [App\Http\Controllers\SalesAgent\ShopController::class, 'toggleStatus'])->name('agent.shops.toggle-status');
 
         // Inventory & Ordering
-        Route::get('inventory', [App\Http\Controllers\SalesAgent\InventoryController::class, 'index'])->name('agent.inventory.index');
-        Route::get('inventory/show', [App\Http\Controllers\SalesAgent\InventoryController::class, 'show'])->name('agent.inventory.show');
+
 
         // Order Creation & Editing
         Route::get('orders/create', [App\Http\Controllers\SalesAgent\OrderController::class, 'create'])->name('agent.orders.create');

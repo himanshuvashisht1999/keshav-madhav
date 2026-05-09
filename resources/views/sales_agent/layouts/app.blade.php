@@ -171,11 +171,7 @@
                 <i class="fas fa-store"></i>
                 <span>Shops</span>
             </a>
-            <a href="{{ route('agent.inventory.index') }}"
-                class="nav-item {{ request()->routeIs('agent.inventory.*') ? 'active' : '' }}">
-                <i class="fas fa-boxes"></i>
-                <span>Stock</span>
-            </a>
+
 
             <a href="{{ route('agent.orders.index') }}"
                 class="nav-item {{ request()->routeIs('agent.orders.index') ? 'active' : '' }}">

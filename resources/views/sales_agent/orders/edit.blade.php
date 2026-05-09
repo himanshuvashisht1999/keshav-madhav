@@ -33,13 +33,14 @@
                 class="bg-white border-top animate__animated animate__fadeInDown p-3 shadow-sm">
                 <form method="GET" action="{{ route('agent.orders.edit', $order->id) }}" id="filterForm">
                     <div class="row">
+
                         <div class="col-6 col-md-3 mb-2">
-                            <label class="small text-muted font-weight-bold uppercase mb-1">Design No</label>
-                            <select name="design_number" class="form-control form-control-sm select2">
-                                <option value="">All Designs</option>
-                                @foreach($designs as $design)
-                                    <option value="{{ $design }}" {{ request('design_number') == $design ? 'selected' : '' }}>
-                                        {{ $design }}</option>
+                            <label class="small text-muted font-weight-bold uppercase mb-1">Product</label>
+                            <select name="product_name" class="form-control form-control-sm select2">
+                                <option value="">All Products</option>
+                                @foreach($product_names as $name)
+                                    <option value="{{ $name }}" {{ request('product_name') == $name ? 'selected' : '' }}>
+                                        {{ $name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -89,10 +90,17 @@
                     </div>
                 @empty
                     <div class="col-12 text-center py-5">
-                        <div class="bg-white p-4 rounded-lg shadow-sm border">
-                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                            <h5 class="text-dark">No Products Found</h5>
-                            <p class="text-muted small">Try adjusting your filters.</p>
+                        <div class="bg-white p-5 rounded-lg shadow-sm border" style="border-radius: 20px;">
+                            <div class="mb-4">
+                                <div class="bg-primary-soft rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                    <i class="fas fa-search fa-2x text-primary"></i>
+                                </div>
+                            </div>
+                            <h5 class="text-dark font-weight-bold">Looking for Products?</h5>
+                            <p class="text-muted px-4">Use the <b>filters</b> above or <b>scan a barcode</b> to find variations and update your order.</p>
+                            <button class="btn btn-primary rounded-pill px-4 mt-2 font-weight-bold" onclick="$('#toggleFilters').click()">
+                                <i class="fas fa-filter mr-2"></i> Open Filters
+                            </button>
                         </div>
                     </div>
                 @endforelse
@@ -244,7 +252,7 @@
                     <div id="scanProductHeader" class="mb-3 p-3 bg-light rounded-lg">
                         <h6 id="scanProductName" class="font-weight-bold text-dark mb-1">Product Name</h6>
                         <div class="d-flex justify-content-between align-items-center">
-                            <span class="badge badge-primary" id="scanDesignNo">Design No</span>
+
                             <span class="small text-muted font-weight-bold" id="scanSizeSet">Size Set</span>
                         </div>
                     </div>
@@ -465,7 +473,7 @@
 
             function showColorSelection(data) {
                 $('#scanProductName').text(data.product.name);
-                $('#scanDesignNo').text(data.product.design_number);
+
                 $('#scanSizeSet').text(data.product.size_set_name);
 
                 const list = $('#colorSelectionList');

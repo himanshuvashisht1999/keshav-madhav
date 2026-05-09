@@ -63,7 +63,7 @@
                         <form method="GET" action="{{ route('admin.reports.unit-assignments') }}">
                             <div class="row">
 
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label class="fw-bold">Stage</label>
                                     <select name="stage_id" id="stage_id" class="form-control select2"
                                         onchange="this.form.submit()">
@@ -76,14 +76,14 @@
                                     </select>
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label class="fw-bold">Unit Person</label>
                                     <select name="unit_id" id="unit_id" class="form-control select2"
                                         onchange="this.form.submit()">
                                         <option value="">All Units</option>
                                         @foreach($units as $unit)
                                             <option value="{{ $unit->id }}" {{ request('unit_id') == $unit->id ? 'selected' : '' }}>
-                                                {{ $unit->name }} ({{ $unit->masterStage->name ?? 'Unknown' }})
+                                                {{ $unit->name }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -103,22 +103,33 @@
                                         placeholder="Search Lot No">
                                 </div>
 
-                                <div class="col-md-2 align-items-end d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        Search
-                                    </button>
-                                    <a href="{{ route('admin.reports.unit-assignments') }}" class="btn btn-secondary w-100">
-                                        Reset
-                                    </a>
+                                <div class="col-md-2">
+                                    <label class="fw-bold">Start Date</label>
+                                    <input type="date" name="start_date" value="{{ request('start_date') }}" class="form-control">
                                 </div>
 
-                                <div class="col-md-2 align-items-end d-flex gap-2">
-                                    <a href="{{ route('admin.reports.unit-assignments.export', request()->query()) }}" class="btn btn-success w-100" title="Export Excel">
-                                        <i class="fas fa-file-excel"></i>
-                                    </a>
-                                    <a href="{{ route('admin.reports.unit-assignments.pdf', request()->query()) }}" class="btn btn-danger w-100" title="Export PDF">
-                                        <i class="fas fa-file-pdf"></i>
-                                    </a>
+                                <div class="col-md-2">
+                                    <label class="fw-bold">End Date</label>
+                                    <input type="date" name="end_date" value="{{ request('end_date') }}" class="form-control">
+                                </div>
+
+                                <div class="col-md-12 mt-3 d-flex justify-content-between">
+                                    <div class="d-flex gap-2" style="width: 300px;">
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-search mr-1"></i>Search
+                                        </button>
+                                        <a href="{{ route('admin.reports.unit-assignments') }}" class="btn btn-secondary w-100">
+                                            Reset
+                                        </a>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ route('admin.reports.unit-assignments.export', request()->query()) }}" class="btn btn-success" title="Export Excel">
+                                            <i class="fas fa-file-excel mr-1"></i>Export Excel
+                                        </a>
+                                        <a href="{{ route('admin.reports.unit-assignments.pdf', request()->query()) }}" class="btn btn-danger" title="Export PDF">
+                                            <i class="fas fa-file-pdf mr-1"></i>Export PDF
+                                        </a>
+                                    </div>
                                 </div>
 
                             </div>
@@ -159,7 +170,15 @@
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            @php 
+                                                $totalAssigned = 0;
+                                                $totalPending = 0;
+                                            @endphp
                                             @foreach($assignments as $item)
+                                                @php 
+                                                    $totalAssigned += ($item->assigned_qty ?? 0);
+                                                    $totalPending += ($item->pending_qty ?? 0);
+                                                @endphp
                                                 <tr>
                                                     <!-- <td>{{ $item->created_at->format('d M Y') }}</td> -->
                                                     <td>
@@ -203,6 +222,14 @@
                                                 </tr>
                                             @endforeach
                                         </tbody>
+                                        <tfoot>
+                                            <tr class="bg-light font-weight-bold">
+                                                <td colspan="3" class="text-right">Grand Total:</td>
+                                                <td>{{ number_format($totalAssigned) }} Pcs</td>
+                                                <td>{{ number_format($totalPending) }} Pcs</td>
+                                                <td colspan="4"></td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 @else
                                     <table class="table table-bordered table-report">
@@ -225,7 +252,15 @@
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            @php 
+                                                $totalAssignedOther = 0;
+                                                $totalPendingOther = 0;
+                                            @endphp
                                             @foreach($assignments as $item)
+                                                @php 
+                                                    $totalAssignedOther += ($item->assigned_qty ?? 0);
+                                                    $totalPendingOther += ($item->pending_qty ?? 0);
+                                                @endphp
                                                 <tr>
                                                     <!-- <td>{{ $item->created_at->format('d M Y') }}</td> -->
                                                     <td>
@@ -253,22 +288,30 @@
                                                     @if($canCloseTasks)
                                                         <td class="text-center">
                                                             <form method="POST"
-                                                                action="{{ $item->is_closed_for_unit == 1 ? route('admin.reports.unit-assignments.reopen', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id] + request()->query()) : route('admin.reports.unit-assignments.close', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id] + request()->query()) }}"
-                                                                class="d-inline">
-                                                                @csrf
-                                                                <button type="submit"
-                                                                    class="btn btn-sm {{ $item->is_closed_for_unit == 1 ? 'btn-secondary' : 'btn-outline-danger' }}"
-                                                                    onclick="return confirm('{{ $item->is_closed_for_unit == 1 ? "Are you sure you want to Re-open?" : "Are you sure you want to Close?" }}')">
-                                                                    <i
-                                                                        class="fas {{ $item->is_closed_for_unit == 1 ? 'fa-undo' : 'fa-times' }}"></i>
-                                                                    {{ $item->is_closed_for_unit == 1 ? 'Re-open' : 'Close' }}
-                                                                </button>
+                                                                 action="{{ $item->is_closed_for_unit == 1 ? route('admin.reports.unit-assignments.reopen', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id] + request()->query()) : route('admin.reports.unit-assignments.close', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id] + request()->query()) }}"
+                                                                 class="d-inline">
+                                                                 @csrf
+                                                                 <button type="submit"
+                                                                     class="btn btn-sm {{ $item->is_closed_for_unit == 1 ? 'btn-secondary' : 'btn-outline-danger' }}"
+                                                                     onclick="return confirm('{{ $item->is_closed_for_unit == 1 ? "Are you sure you want to Re-open?" : "Are you sure you want to Close?" }}')">
+                                                                     <i
+                                                                         class="fas {{ $item->is_closed_for_unit == 1 ? 'fa-undo' : 'fa-times' }}"></i>
+                                                                     {{ $item->is_closed_for_unit == 1 ? 'Re-open' : 'Close' }}
+                                                                 </button>
                                                             </form>
                                                         </td>
                                                     @endif
                                                 </tr>
                                             @endforeach
                                         </tbody>
+                                        <tfoot>
+                                            <tr class="bg-light font-weight-bold">
+                                                <td colspan="4" class="text-right">Grand Total:</td>
+                                                <td>{{ number_format($totalAssignedOther) }} Pcs</td>
+                                                <td>{{ number_format($totalPendingOther) }} Pcs</td>
+                                                <td colspan="4"></td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 @endif
 

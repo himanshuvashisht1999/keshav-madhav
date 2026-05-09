@@ -88,7 +88,7 @@
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2 mb-2">
-                    <span class="text-muted small bg-light px-2 rounded mr-2">Des: {{ $group->design_number }}</span>
+
                     <span class="text-muted small bg-light px-2 rounded mr-2">Col: {{ $group->color_name }}</span>
                     <span class="text-muted small bg-light px-2 rounded mr-2">Set: {{ $group->size_set_name }}</span>
                     @if($group->fitting_name)
@@ -130,7 +130,7 @@
                             <div class="p-3 bg-light border-bottom">
                                 <h6 class="font-weight-bold mb-1">{{ $group->product_name }}</h6>
                                 <p class="small text-muted mb-0">
-                                    {{ $group->design_number }} | {{ $group->color_name }} | {{ $group->size_set_name }}
+                                    {{ $group->color_name }} | {{ $group->size_set_name }}
                                     @if($group->fitting_name) | {{ $group->fitting_name }} @endif
                                     @if($group->pattern_name) | {{ $group->pattern_name }} @endif
                                 </p>

@@ -36,12 +36,15 @@ class ShopController extends Controller
             'phone' => 'required|string|max:20',
             'address' => 'nullable|string',
             'email' => 'nullable|email|max:255',
+            'contact_person' => 'nullable|string|max:255',
+            'gst_number' => 'nullable|string|max:50',
             'balance' => 'nullable|numeric',
-            'balance_type' => 'required|in:Credit,Debit',
+            'balance_type' => 'nullable|in:Credit,Debit',
         ]);
         
         $balance = $validated['balance'] ?? 0;
-        if ($request->balance_type == 'Debit') {
+        $balance_type = $validated['balance_type'] ?? 'Credit';
+        if ($balance_type == 'Debit') {
             $balance = -abs($balance);
         } else {
             $balance = abs($balance);
@@ -76,17 +79,22 @@ class ShopController extends Controller
             'phone' => 'required|string|max:20',
             'address' => 'nullable|string',
             'email' => 'nullable|email|max:255',
+            'contact_person' => 'nullable|string|max:255',
+            'gst_number' => 'nullable|string|max:50',
             'balance' => 'nullable|numeric',
-            'balance_type' => 'required|in:Credit,Debit',
+            'balance_type' => 'nullable|in:Credit,Debit',
         ]);
         
-        $balance = $validated['balance'] ?? 0;
-        if ($request->balance_type == 'Debit') {
-            $balance = -abs($balance);
-        } else {
-            $balance = abs($balance);
+        if ($request->has('balance')) {
+            $balance = $validated['balance'] ?? 0;
+            $balance_type = $validated['balance_type'] ?? 'Credit';
+            if ($balance_type == 'Debit') {
+                $balance = -abs($balance);
+            } else {
+                $balance = abs($balance);
+            }
+            $validated['balance'] = $balance;
         }
-        $validated['balance'] = $balance;
 
         $shop->update($validated);
 

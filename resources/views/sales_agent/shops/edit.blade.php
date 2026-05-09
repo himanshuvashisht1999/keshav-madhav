@@ -20,23 +20,16 @@
                 </div>
 
                 <div class="form-group mb-3">
-                    <label class="small font-weight-bold text-muted">Phone Number</label>
-                    <input type="tel" name="phone" class="form-control rounded-lg" value="{{ old('phone', $shop->phone) }}"
-                        placeholder="e.g. 9876543210" required>
+                    <label class="small font-weight-bold text-muted">Contact Person (Optional)</label>
+                    <input type="text" name="contact_person" class="form-control rounded-lg" value="{{ old('contact_person', $shop->contact_person) }}" placeholder="e.g. John Doe">
                 </div>
 
                 <div class="form-group mb-3">
-                    <label class="small font-weight-bold text-muted">Opening Balance</label>
-                    <input type="number" name="balance" step="0.01" class="form-control rounded-lg" value="{{ old('balance', abs($shop->balance)) }}" placeholder="e.g. 0.00">
+                    <label class="small font-weight-bold text-muted">GST Number (Optional)</label>
+                    <input type="text" name="gst_number" class="form-control rounded-lg" value="{{ old('gst_number', $shop->gst_number) }}" placeholder="e.g. 07AAAAA0000A1Z5">
                 </div>
 
-                <div class="form-group mb-3">
-                    <label class="small font-weight-bold text-muted">Balance Type</label>
-                    <select name="balance_type" class="form-control rounded-lg" required>
-                        <option value="Credit" {{ old('balance_type', ($shop->balance >= 0 ? 'Credit' : 'Debit')) == 'Credit' ? 'selected' : '' }}>Credit</option>
-                        <option value="Debit" {{ old('balance_type', ($shop->balance >= 0 ? 'Credit' : 'Debit')) == 'Debit' ? 'selected' : '' }}>Debit</option>
-                    </select>
-                </div>
+
 
                 <div class="form-group mb-3">
                     <label class="small font-weight-bold text-muted">Email Address (Optional)</label>

@@ -20,21 +20,15 @@
                 <div class="form-group mb-3">
                     <label class="small font-weight-bold text-muted">Phone Number</label>
                     <input type="tel" name="phone" class="form-control rounded-lg" placeholder="e.g. 9876543210" required>
+                </div>                <div class="form-group mb-3">
+                    <label class="small font-weight-bold text-muted">Contact Person (Optional)</label>
+                    <input type="text" name="contact_person" class="form-control rounded-lg" placeholder="e.g. John Doe">
                 </div>
 
                 <div class="form-group mb-3">
-                    <label class="small font-weight-bold text-muted">Opening Balance</label>
-                    <input type="number" name="balance" step="0.01" class="form-control rounded-lg" placeholder="e.g. 0.00">
+                    <label class="small font-weight-bold text-muted">GST Number (Optional)</label>
+                    <input type="text" name="gst_number" class="form-control rounded-lg" placeholder="e.g. 07AAAAA0000A1Z5">
                 </div>
-
-                <div class="form-group mb-3">
-                    <label class="small font-weight-bold text-muted">Balance Type</label>
-                    <select name="balance_type" class="form-control rounded-lg" required>
-                        <option value="Credit">Credit</option>
-                        <option value="Debit">Debit</option>
-                    </select>
-                </div>
-
                 <div class="form-group mb-3">
                     <label class="small font-weight-bold text-muted">Email Address (Optional)</label>
                     <input type="email" name="email" class="form-control rounded-lg" placeholder="shop@example.com">

@@ -17,9 +17,6 @@
                 <i class="fas fa-image fa-3x text-muted opacity-25"></i>
             </div>
         @endif
-        <div class="position-absolute top-0 right-0 m-2">
-            <span class="badge badge-primary shadow-sm px-2 py-1">{{ $variation->design_number }}</span>
-        </div>
     </div>
     
     <div class="card-body p-3">

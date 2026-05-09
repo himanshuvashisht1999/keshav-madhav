@@ -122,26 +122,35 @@ class OrderController extends Controller
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp')
             );
 
-        $boxes = $query->groupBy(
-            'domestic_inventories.product_id',
-            'domestic_inventories.color_id',
-            'domestic_inventories.size_set_id',
-            'production_goods.design_number',
-            'production_goods.name_of_garment',
-            'master_series.name',
-            'master_colors.name',
-            'master_size_measurements.name',
-            'master_product_fittings.name',
-            'master_design_patterns.name',
-            'domestic_inventories.fitting_id',
-            'domestic_inventories.pattern_id',
-            DB::raw($discount_col)
-        )
-            ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
-            ->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0')
-            ->orderBy('production_goods.design_number')
-            ->paginate(50)
-            ->appends($request->except('page'));
+        $hasFilters = $request->filled('design_number') || 
+                      $request->filled('product_name') || 
+                      $request->filled('color_name') || 
+                      $request->filled('size_set_name');
+
+        if (!$hasFilters && !$request->has('load_more') && !$request->has('page')) {
+            $boxes = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 50);
+        } else {
+            $boxes = $query->groupBy(
+                'domestic_inventories.product_id',
+                'domestic_inventories.color_id',
+                'domestic_inventories.size_set_id',
+                'production_goods.design_number',
+                'production_goods.name_of_garment',
+                'master_series.name',
+                'master_colors.name',
+                'master_size_measurements.name',
+                'master_product_fittings.name',
+                'master_design_patterns.name',
+                'domestic_inventories.fitting_id',
+                'domestic_inventories.pattern_id',
+                DB::raw($discount_col)
+            )
+                ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
+                ->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0')
+                ->orderBy('production_goods.design_number')
+                ->paginate(50)
+                ->appends($request->except('page'));
+        }
 
         // Fetch images for the boxes
         $boxImages = [];
@@ -413,6 +422,12 @@ class OrderController extends Controller
         $size_sets = DomesticInventory::where('domestic_inventories.status', 1)
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
             ->distinct()->pluck('master_size_measurements.name');
+            
+        $product_names = DomesticInventory::where('domestic_inventories.status', 1)
+            ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
+            ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
+            ->select(DB::raw('DISTINCT(TRIM(CONCAT(COALESCE(master_series.name, " "), " ", production_goods.name_of_garment))) as full_name'))
+            ->pluck('full_name');
 
         // Build Query for All Boxes
         $prices = DB::table('production_goods_variants')
@@ -435,6 +450,7 @@ class OrderController extends Controller
                 $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
             })
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
+            ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
             ->leftJoin('master_product_fittings', 'domestic_inventories.fitting_id', '=', 'master_product_fittings.id')
@@ -451,6 +467,9 @@ class OrderController extends Controller
         if ($request->filled('design_number')) {
             $query->where('production_goods.design_number', $request->design_number);
         }
+        if ($request->filled('product_name')) {
+            $query->where(DB::raw('TRIM(CONCAT(COALESCE(master_series.name, ""), " ", production_goods.name_of_garment))'), $request->product_name);
+        }
         if ($request->filled('color_name')) {
             $query->where('master_colors.name', $request->color_name);
         }
@@ -464,7 +483,7 @@ class OrderController extends Controller
                     ->on('domestic_inventories.size_set_id', '=', 'alloc.size_set_id');
             });
 
-        $boxes = $query->select(
+        $query->select(
             'domestic_inventories.product_id',
             'domestic_inventories.color_id',
             'domestic_inventories.size_set_id',
@@ -479,8 +498,50 @@ class OrderController extends Controller
             DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
             DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - COALESCE(sales_agent_brand_discounts.discount_percentage, 0)) / 100) as unit_price'),
             DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp')
-        )
-            ->groupBy(
+        );
+        $hasFilters = $request->filled('design_number') || 
+                      $request->filled('product_name') || 
+                      $request->filled('color_name') || 
+                      $request->filled('size_set_name');
+
+        if (!$hasFilters && !$request->has('load_more') && !$request->has('page')) {
+            $existingItemVariations = AgentOrderItem::where('agent_order_id', $id)
+                ->select('product_id', 'color_id', 'size_set_id')
+                ->get();
+            
+            if ($existingItemVariations->isEmpty()) {
+                $boxes = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 50);
+            } else {
+                $query->where(function($q) use ($existingItemVariations) {
+                    foreach($existingItemVariations as $v) {
+                        $q->orWhere(function($sq) use ($v) {
+                            $sq->where('domestic_inventories.product_id', $v->product_id)
+                               ->where('domestic_inventories.color_id', $v->color_id)
+                               ->where('domestic_inventories.size_set_id', $v->size_set_id);
+                        });
+                    }
+                });
+                
+                $boxes = $query->groupBy(
+                    'domestic_inventories.product_id', 
+                    'domestic_inventories.color_id', 
+                    'domestic_inventories.size_set_id', 
+                    'production_goods.design_number', 
+                    'master_colors.name', 
+                    'master_size_measurements.name',
+                    'master_product_fittings.name',
+                    'master_design_patterns.name',
+                    'domestic_inventories.fitting_id',
+                    'domestic_inventories.pattern_id',
+                    'sales_agent_brand_discounts.discount_percentage'
+                )
+                    ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
+                    ->orderBy('production_goods.design_number')
+                    ->paginate(50)
+                    ->appends($request->except('page'));
+            }
+        } else {
+            $boxes = $query->groupBy(
                 'domestic_inventories.product_id', 
                 'domestic_inventories.color_id', 
                 'domestic_inventories.size_set_id', 
@@ -493,10 +554,11 @@ class OrderController extends Controller
                 'domestic_inventories.pattern_id',
                 'sales_agent_brand_discounts.discount_percentage'
             )
-            ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
-            ->orderBy('production_goods.design_number')
-            ->paginate(50)
-            ->appends($request->except('page'));
+                ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
+                ->orderBy('production_goods.design_number')
+                ->paginate(50)
+                ->appends($request->except('page'));
+        }
 
         // Fetch images for the boxes
         $boxImages = [];
@@ -572,7 +634,7 @@ class OrderController extends Controller
         // Fetch GST setting
         $gst_percentage = DB::table('settings')->value('gst_order') ?? 5.00;
 
-        return view('sales_agent.orders.edit', compact('shop', 'boxes', 'designs', 'colors', 'size_sets', 'order', 'selected_quantities', 'boxImages', 'gst_percentage'));
+        return view('sales_agent.orders.edit', compact('shop', 'boxes', 'designs', 'product_names', 'colors', 'size_sets', 'order', 'selected_quantities', 'boxImages', 'gst_percentage'));
     }
 
     public function update(Request $request, $id)

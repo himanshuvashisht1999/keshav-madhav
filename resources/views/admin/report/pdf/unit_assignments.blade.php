@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: sans-serif;
-            font-size: 10px;
+            font-size: 12px;
         }
 
         table {
@@ -18,7 +18,7 @@
         th,
         td {
             border: 1px solid #ddd;
-            padding: 6px;
+            padding: 8px;
             text-align: left;
         }
 
@@ -37,9 +37,14 @@
         }
 
         .meta {
-            font-size: 10px;
+            font-size: 11px;
             color: #666;
             margin-top: 5px;
+        }
+        
+        .footer-total {
+            background-color: #f9f9f9;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -67,7 +72,15 @@
             </tr>
         </thead>
         <tbody>
+            @php 
+                $totalAssigned = 0;
+                $totalPending = 0;
+            @endphp
             @foreach($assignments as $item)
+                @php 
+                    $totalAssigned += ($item->assigned_qty ?? 0);
+                    $totalPending += ($item->pending_qty ?? 0);
+                @endphp
                 <tr>
                     <!-- <td>{{ $item->created_at->format('d-m-Y') }}</td> -->
                     <td>
@@ -101,6 +114,14 @@
                 </tr>
             @endforeach
         </tbody>
+        <tfoot>
+            <tr class="footer-total">
+                <td colspan="4" style="text-align: right;">Grand Total:</td>
+                <td>{{ number_format($totalAssigned) }}</td>
+                <td>{{ number_format($totalPending) }}</td>
+                <td colspan="4"></td>
+            </tr>
+        </tfoot>
     </table>
 </body>
 

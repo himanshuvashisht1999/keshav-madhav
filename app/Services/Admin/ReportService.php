@@ -1626,7 +1626,16 @@ class ReportService
             $type = 'cutting';
 
             $query = \App\Models\OrderCuttingStage::with(['orderMain.customer', 'productSet.fabric', 'productSet.colors', 'productSet.master_design_pattern', 'cutting_master'])
-                ->orderBy('created_at', 'desc');
+                ->where('is_po', 0)
+                ->where('to_assign_id', '>', 0)
+                ->orderBy('created_at', 'asc');
+
+            if ($request->filled('start_date')) {
+                $query->whereDate('created_at', '>=', $request->start_date);
+            }
+            if ($request->filled('end_date')) {
+                $query->whereDate('created_at', '<=', $request->end_date);
+            }
 
             if ($unitId) {
                 $query->whereIn('to_assign_id', $unitIds);
@@ -1729,11 +1738,22 @@ class ReportService
                 $ass3Query->where($orderFilter);
             }
 
-            $results1 = $ass1Query->get()->map(function ($item) {
+            if ($request->filled('start_date')) {
+                $ass1Query->whereDate('created_at', '>=', $request->start_date);
+                $ass2Query->whereDate('created_at', '>=', $request->start_date);
+                $ass3Query->whereDate('created_at', '>=', $request->start_date);
+            }
+            if ($request->filled('end_date')) {
+                $ass1Query->whereDate('created_at', '<=', $request->end_date);
+                $ass2Query->whereDate('created_at', '<=', $request->end_date);
+                $ass3Query->whereDate('created_at', '<=', $request->end_date);
+            }
+
+            $results1 = $ass1Query->orderBy('created_at', 'asc')->get()->map(function ($item) {
                 $item->transaction_type = 'stage';
                 return $item;
             });
-            $results2 = $ass2Query->get()->map(function ($item) {
+            $results2 = $ass2Query->orderBy('created_at', 'asc')->get()->map(function ($item) {
                 $item->transaction_type = 'printing';
                 return $item;
             });

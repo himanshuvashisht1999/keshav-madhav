@@ -56,40 +56,7 @@
             </div>
         </div>
 
-        <!-- RECENT ORDERS -->
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h5 class="font-weight-bold mb-0">Recent Orders</h5>
-            <a href="{{ route('agent.orders.index') }}" class="small text-primary font-weight-bold">View All</a>
-        </div>
 
-        <div class="recent-list">
-            @forelse($recent_orders as $order)
-                <a href="{{ route('agent.orders.show', $order->id) }}" class="text-decoration-none">
-                    <div class="app-card p-3 d-flex align-items-center mb-3">
-                        <div class="bg-light p-3 rounded-lg mr-3">
-                            <i class="fas fa-receipt text-muted"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="font-weight-bold text-dark mb-1">{{ $order->shop_name }}</h6>
-                            <p class="text-muted small mb-0">
-                                {{ \Carbon\Carbon::parse($order->order_date)->format('d M, h:i A') }}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-weight-bold text-primary mb-0">₹{{ number_format($order->total_amount, 2) }}</p>
-                            <span
-                                class="badge {{ $order->status == 'pending' ? 'badge-warning' : 'badge-success' }} small rounded-pill">
-                                {{ ucfirst($order->status) }}
-                            </span>
-                        </div>
-                    </div>
-                </a>
-            @empty
-                <div class="text-center py-5">
-                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No recent orders yet.</p>
-                </div>
-            @endforelse
-        </div>
     </div>
 @endsection
 
