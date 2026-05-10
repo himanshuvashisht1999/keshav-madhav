@@ -47,7 +47,8 @@ class OrderProductSet extends Model
 
     public function getFabricNamesAttribute()
     {
-        if (!$this->fabric_id) return '-';
+        if (!$this->fabric_id)
+            return '-';
         $ids = explode(',', $this->fabric_id);
         return \App\Models\Fabric::whereIn('id', $ids)->pluck('name')->implode(', ');
     }
@@ -59,7 +60,7 @@ class OrderProductSet extends Model
         if ($this->fabric_id) {
             $fabricIds = array_filter(array_map('trim', explode(',', $this->fabric_id)));
         }
-        
+
         if (empty($fabricIds) && $this->orderCuttingStages()->exists()) {
             $stages = $this->orderCuttingStages()->get();
             foreach ($stages as $osc) {
@@ -71,7 +72,8 @@ class OrderProductSet extends Model
             $fabricIds = array_unique($fabricIds);
         }
 
-        if (empty($fabricIds)) return collect();
+        if (empty($fabricIds))
+            return collect();
 
         return \App\Models\Fabric::whereIn('id', $fabricIds)->with('receiptDetails')->get();
     }

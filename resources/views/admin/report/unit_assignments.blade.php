@@ -113,6 +113,16 @@
                                     <input type="date" name="end_date" value="{{ request('end_date') }}" class="form-control">
                                 </div>
 
+                                <div class="col-md-2">
+                                    <label class="fw-bold">Production Status</label>
+                                    <select name="production_status" class="form-control select2" onchange="this.form.submit()">
+                                        <option value="">Select</option>
+                                        <option value="not_printing" {{ request('production_status') == 'not_printing' ? 'selected' : '' }}>Not sent to Printing</option>
+                                        <option value="not_stitching" {{ request('production_status') == 'not_stitching' ? 'selected' : '' }}>Not sent to Stitching</option>
+                                        <option value="not_both" {{ request('production_status') == 'not_both' ? 'selected' : '' }}>Both not sent</option>
+                                    </select>
+                                </div>
+
                                 <div class="col-md-12 mt-3 d-flex justify-content-between">
                                     <div class="d-flex gap-2" style="width: 300px;">
                                         <button type="submit" class="btn btn-primary w-100">
@@ -237,14 +247,26 @@
                                             <tr>
                                                 <!-- <th>Date</th> -->
                                                 <th>Unit Person</th>
-                                                <th>From Stage</th>
+                                                @if(!$productionStatus)
+                                                    <th>From Stage</th>
+                                                @endif
                                                 <th>Lot No</th>
-                                                <th>Sent By</th>
-                                                <th>Assigned Qty</th>
-                                                <th>Pending Qty</th>
-                                                <th>Start Date</th>
-                                                <th>Completed Date</th>
-                                                <th>Estimated Date</th>
+                                                @if(!$productionStatus)
+                                                    <th>Sent By</th>
+                                                @endif
+                                                @if($productionStatus)
+                                                    <th>Total Quantity</th>
+                                                @else
+                                                    <th>Assigned Qty</th>
+                                                    <th>Pending Qty</th>
+                                                @endif
+                                                @if($productionStatus)
+                                                    <th>Lot Date</th>
+                                                @else
+                                                    <th>Start Date</th>
+                                                    <th>Completed Date</th>
+                                                    <th>Estimated Date</th>
+                                                @endif
                                                 <th>Status</th>
                                                 @if($canCloseTasks)
                                                     <th class="text-center">Action</th>
@@ -272,14 +294,26 @@
                                                             </a>
                                                         @endif
                                                     </td>
-                                                    <td>{{ $item->from_stage->name ?? $item->fromStage->name ?? '-' }}</td>
+                                                    @if(!$productionStatus)
+                                                        <td>{{ $item->from_stage->name ?? $item->fromStage->name ?? '-' }}</td>
+                                                    @endif
                                                     <td>{{ $item->lot_no ?? 'Pending' }}</td>
-                                                    <td>{{ $item->getFromUnitMaster->name ?? $item->getUnitMaster->name ?? '-' }}</td>
-                                                    <td>{{ $item->assigned_qty ?? 0 }} Pcs</td>
-                                                    <td>{{ $item->pending_qty ?? 0 }} Pcs</td>
-                                                    <td>{{ $item->start_time ? $item->start_time->format('d M Y') : '-' }}</td>
-                                                    <td>{{ $item->end_time ? $item->end_time->format('d M Y') : '-' }}</td>
-                                                    <td>{{ $item->estimated_time ? $item->estimated_time->format('d M Y') : '-' }}</td>
+                                                    @if(!$productionStatus)
+                                                        <td>{{ $item->getFromUnitMaster->name ?? $item->getUnitMaster->name ?? '-' }}</td>
+                                                    @endif
+                                                    @if($productionStatus)
+                                                        <td>{{ $item->assigned_qty ?? 0 }} Pcs</td>
+                                                    @else
+                                                        <td>{{ $item->assigned_qty ?? 0 }} Pcs</td>
+                                                        <td>{{ $item->pending_qty ?? 0 }} Pcs</td>
+                                                    @endif
+                                                    @if($productionStatus)
+                                                        <td>{{ $item->production_date ?? '-' }}</td>
+                                                    @else
+                                                        <td>{{ $item->start_time ? $item->start_time->format('d M Y') : '-' }}</td>
+                                                        <td>{{ $item->end_time ? $item->end_time->format('d M Y') : '-' }}</td>
+                                                        <td>{{ $item->estimated_time ? $item->estimated_time->format('d M Y') : '-' }}</td>
+                                                    @endif
                                                     <td>
                                                         <span class="badge badge-{{ $item->status_class ?? 'secondary' }}">
                                                             {{ $item->status_text ?? 'Unknown' }}

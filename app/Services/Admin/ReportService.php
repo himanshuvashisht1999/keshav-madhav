@@ -1599,6 +1599,77 @@ class ReportService
     {
         $assignments = [];
         $type = '';
+        $productionStatus = $request->get('production_status');
+
+        if ($productionStatus) {
+            $type = 'other';
+            $query = \App\Models\OrderLot::with(['orderMain.customer', 'orderProductSet.colors', 'orderProductSet.master_design_pattern', 'orderProductSet.order_cutting_stage.cutting_master'])
+                ->orderBy('created_at', 'desc');
+
+            if ($productionStatus === 'not_printing') {
+                $query->where('is_printing', 0);
+            } elseif ($productionStatus === 'not_stitching') {
+                $query->where('is_stitching', 0);
+            } elseif ($productionStatus === 'not_both') {
+                $query->where('is_printing', 0)->where('is_stitching', 0);
+            }
+
+            if ($request->filled('lot_no')) {
+                $query->where('lot_no', 'like', '%' . $request->lot_no . '%');
+            }
+            if ($request->filled('start_date')) {
+                $query->whereDate('created_at', '>=', $request->start_date);
+            }
+            if ($request->filled('end_date')) {
+                $query->whereDate('created_at', '<=', $request->end_date);
+            }
+
+            if ($request->filled('unit_id')) {
+                $query->whereHas('orderProductSet.order_cutting_stage', function ($q) use ($request) {
+                    $q->where('to_assign_id', $request->unit_id);
+                });
+            }
+
+            $records = $query->get();
+
+            foreach ($records as $item) {
+                $item->transaction_type = 'cutting_lot';
+                $item->design_number = $item->orderProductSet->design_number ?? '-';
+                $item->stage_master_unit = $item->orderProductSet->order_cutting_stage->cutting_master ?? null;
+                
+                $rolls = \App\Models\FabricRollAssigning::where('order_lot_id', $item->id)->with('fabricRollAssigningsDetail')->get();
+                $totalPieces = 0;
+                foreach ($rolls as $roll) {
+                    $totalPieces += $roll->fabricRollAssigningsDetail->sum('quantity');
+                }
+                
+                $item->assigned_qty = $totalPieces;
+                $item->pending_qty = $totalPieces;
+                $item->to_stage = (object)['name' => 'Cutting'];
+                $item->from_stage = (object)['name' => 'Admin'];
+                $item->status_text = ($item->is_printing && $item->is_stitching) ? 'Done' : 'Pending';
+                $item->status_class = ($item->is_printing && $item->is_stitching) ? 'success' : 'warning';
+                $item->production_date = $item->production_datetime ? \Carbon\Carbon::parse($item->production_datetime)->format('j M Y') : \Carbon\Carbon::parse($item->created_at)->format('j M Y');
+                $item->created_at = \Carbon\Carbon::parse($item->created_at);
+                
+                $assignments[] = $item;
+            }
+
+            return [
+                'assignments' => collect($assignments),
+                'type' => $type,
+                'view' => 'open',
+                'canCloseTasks' => false,
+                'stages' => \App\Models\MasterProductStage::where('status', 1)->orderBy('sequence', 'asc')->get(),
+                'units' => \App\Models\StageMasterUnit::where('master_stage_id', 3)->where('status', 1)->get(),
+                'selectedStage' => '',
+                'selectedUnit' => $request->get('unit_id'),
+                'lotNo' => $request->get('lot_no'),
+                'orderNo' => $request->get('order_no'),
+                'productionStatus' => $productionStatus
+            ];
+        }
+
         $unitId = $request->get('unit_id');
         $stageId = $request->get('stage_id');
         $view = $request->get('view', 'open') === 'closed' ? 'closed' : 'open';

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class OrderPrintingToStichingTransaction extends Model
 {
     use HasFactory;
-    protected $table= 'order_printing_to_stiching_transactions';
+    protected $table = 'order_printing_to_stiching_transactions';
     protected $fillable = [
         'id',
         'sno',
@@ -42,11 +42,13 @@ class OrderPrintingToStichingTransaction extends Model
         return $this->belongsTo(ProductionSlipDigitization::class, 'production_slip_digitization_id');
     }
 
-    public function from_stage(){
-        return $this->hasOne('App\Models\MasterProductStage','id','from_stage_id');
+    public function from_stage()
+    {
+        return $this->hasOne('App\Models\MasterProductStage', 'id', 'from_stage_id');
     }
-    public function to_stage(){
-        return $this->hasOne('App\Models\MasterProductStage','id','to_stage_id');
+    public function to_stage()
+    {
+        return $this->hasOne('App\Models\MasterProductStage', 'id', 'to_stage_id');
     }
     public function orderProduct()
     {
@@ -80,5 +82,5 @@ class OrderPrintingToStichingTransaction extends Model
             'id'
         );
     }
-    
+
 }
