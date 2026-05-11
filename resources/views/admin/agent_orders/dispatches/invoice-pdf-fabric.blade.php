@@ -160,7 +160,7 @@
         <table class="footer-table">
             <tr>
                 <td width="60%">
-                    <div style="margin-bottom: 10px;"><strong>Remarks :</strong> {{ $dispatch->remarks ?? '' }}</div>
+                    <div style="margin-bottom: 10px;"><strong>Remarks :</strong> {{ $dispatch->remark ?? '' }}</div>
                     <strong>Terms & Conditions</strong><br>
                     E.& O.E.<br>
                     1. Goods once sold will not be taken back.<br>

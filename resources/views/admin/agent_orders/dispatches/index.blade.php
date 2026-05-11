@@ -74,6 +74,7 @@
                                     <th>Grand Total</th>
                                     <th>Other Charges</th>
                                     <th>Date</th>
+                                    <th>Remark</th>
                                     <th class="text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -96,6 +97,7 @@
                                         <td><span class="text-primary font-weight-bold">₹{{ number_format($dispatch->grand_total, 2) }}</span></td>
                                         <td>₹{{ number_format($dispatch->other_charges ?? 0, 2) }}</td>
                                         <td>{{ $dispatch->dispatch_date ? date('d M Y', strtotime($dispatch->dispatch_date)) : 'N/A' }}</td>
+                                        <td><small class="text-muted">{{ Str::limit($dispatch->remark, 30) }}</small></td>
                                         <td class="text-right">
                                             <a href="{{ route('admin.agent-orders.dispatches.show', $dispatch->id) }}"
                                                 class="btn btn-primary btn-sm px-3 shadow-sm" style="border-radius: 6px;">

@@ -147,7 +147,7 @@
         <table width="100%" style="border-top: 1px solid #000; border-collapse: collapse; margin-top: 5px;">
             <tr>
                 <td colspan="2" style="padding: 10px 15px 5px 15px;">
-                    <strong>Remarks :</strong> {{ $dispatch->remarks ?? '' }}
+                    <strong>Remarks :</strong> {{ $dispatch->remark ?? '' }}
                 </td>
             </tr>
             <tr>

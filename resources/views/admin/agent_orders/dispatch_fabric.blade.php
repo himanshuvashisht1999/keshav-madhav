@@ -79,7 +79,12 @@
                                 <div class="col-md-6 text-muted small">
                                     <i class="fas fa-info-circle mr-1"></i> Selected rolls will be marked as dispatched and added to a new dispatch record.
                                 </div>
-                                <div class="col-md-6 text-right">
+                                <div class="col-md-5">
+                                    <div class="form-group mb-0">
+                                        <textarea name="remark" class="form-control" rows="2" placeholder="Enter dispatch remark (optional)"></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 text-right">
                                     <button type="submit" class="btn btn-success btn-lg px-5 shadow-sm rounded-pill font-weight-bold" id="dispatchBtn" disabled>
                                         <i class="fas fa-shipping-fast mr-2"></i> DISPATCH SELECTED ROLLS
                                     </button>

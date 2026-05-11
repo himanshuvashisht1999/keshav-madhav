@@ -126,6 +126,10 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold text-muted small text-uppercase">Remark</label>
+                                <textarea name="remark" class="form-control shadow-sm" rows="2" placeholder="Update dispatch remark">{{ $dispatch->remark }}</textarea>
+                            </div>
                             <hr class="my-4">
                             <div class="bg-light p-3 rounded-lg text-center shadow-sm border">
                                 <h6 class="text-muted text-uppercase mb-1 small font-weight-bold">Final Grand Total</h6>
@@ -258,6 +262,19 @@
                         </div>
                     </div>
                 </div>
+
+                @if($dispatch->remark)
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card shadow-sm border-0 border-left-info">
+                            <div class="card-body py-3">
+                                <h6 class="text-info font-weight-bold text-uppercase small mb-2"><i class="fas fa-comment-dots mr-2"></i>Dispatch Remark</h6>
+                                <p class="mb-0 text-dark font-weight-bold">{{ $dispatch->remark }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 <!-- Items Grouped By Order -->
                 @foreach($dispatch->orders as $order)

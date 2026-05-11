@@ -11,15 +11,17 @@ use App\Models\PackingMain;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 
-class ProductOrderDataTable  {
+class ProductOrderDataTable
+{
 
-    public function indexList($request){
+    public function indexList($request)
+    {
         $queue = Order::with('product');
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $query->orderBy('id','desc');
-                
+                $query->orderBy('id', 'desc');
+
                 $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
                 if ($request->has('product_sku') && !empty($request->product_sku)) {
                     $productSku = $request->product_sku;
@@ -39,14 +41,14 @@ class ProductOrderDataTable  {
                 if ($request->has('status') && !empty($request->status)) {
                     $query->where('status', $request->get('status'));
                 }
-                $query->where('order_main_id',$request->order_main_id);
-                
-            }) 
-         
+                $query->where('order_main_id', $request->order_main_id);
+
+            })
+
             ->addColumn('status', function ($queue) {
                 if ($queue->status == 1) {
                     return '<span class="badge badge-primary">Not Issued</span>';
-                }elseif($queue->status == 3){
+                } elseif ($queue->status == 3) {
                     return '<span class="badge badge-success">Completed</span>';
                 } else {
                     return '<span class="badge badge-warning">In Progress</span>';
@@ -54,28 +56,29 @@ class ProductOrderDataTable  {
             })
 
             ->editColumn('product_sku', function ($queue) {
-				return $queue->product?->product_sku;
-                
+                return $queue->product?->product_sku;
+
             })
             ->editColumn('quantity', function ($queue) {
-				return $queue->product?->quantity;
-                
+                return $queue->product?->quantity;
+
             })
-            
+
             ->addColumn('action', function ($queue) {
-				$parameter = $queue->id;
-                
-                $view = '<a href="' . route('admin.product_order.produce',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
-                $status = '<a href="javascript:void(0);" data-id="'.$parameter.'" data-order_sku="'.$queue->sku.'" title="Status" class="statusLink" style="margin-left: 8px;"><i class="fas fa-chart-line text-muted"></i> </a>';
-                
+                $parameter = $queue->id;
+
+                $view = '<a href="' . route('admin.product_order.produce', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-eye text-muted" title="View"></i></a>';
+                $status = '<a href="javascript:void(0);" data-id="' . $parameter . '" data-order_sku="' . $queue->sku . '" title="Status" class="statusLink" style="margin-left: 8px;"><i class="fas fa-chart-line text-muted"></i> </a>';
+
                 return $view . ' ' . (($queue->status != 1) ? $status : '');
             })
-            
-            ->rawColumns(['action','product_sku','quantity','status'])
+
+            ->rawColumns(['action', 'product_sku', 'quantity', 'status'])
             ->make(true);
     }
 
-    public function indexListOrder($request){
+    public function indexListOrder($request)
+    {
         $queue = OrderMain::query()->where('order_main.status', '!=', 0);
 
         return DataTables::of($queue)->addIndexColumn()
@@ -112,8 +115,8 @@ class ProductOrderDataTable  {
                     $query->where('status', $request->get('status'));
                 }
 
-            }) 
-         
+            })
+
             ->addColumn('status', function ($queue) {
 
                 $stats = getOrderDispatchData($queue->id);
@@ -132,13 +135,13 @@ class ProductOrderDataTable  {
             ->addColumn('dispatch_pcs', function ($queue) {
                 return getOrderDispatchData($queue->id)['packed'] ?? 0;
             })
-            
+
             ->editColumn('master_customer_id', function ($queue) {
-				return $queue->customer?->name;
-                
+                return $queue->customer?->name;
+
             })
             ->editColumn('order_type', function ($queue) {
-				return ucfirst($queue->order_type);
+                return ucfirst($queue->order_type);
             })
             ->editColumn('created_at', function ($queue) {
                 return $queue->created_at ? getformatDate($queue->created_at) : '-';
@@ -158,31 +161,32 @@ class ProductOrderDataTable  {
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
 
-                $view = '<a href="' . route('admin.product_order.indexOrderSet',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="View"><i class="fas fa-eye text-muted" title="View"></i></a>';
-                $report = '<a href="' . route('admin.report.order-summary.view',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Report" data-original-title="Report"><i class="fas fa-chart-bar text-muted" title="Report"></i></a>';
-                
+                $view = '<a href="' . route('admin.product_order.indexOrderSet', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="View"><i class="fas fa-eye text-muted" title="View"></i></a>';
+                $report = '<a href="' . route('admin.report.order-summary.view', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Report" data-original-title="Report"><i class="fas fa-chart-bar text-muted" title="Report"></i></a>';
+
                 $edit = '';
                 $delete = '';
-                
+
                 if ($queue->orderLots()->count() == 0) {
-                    $edit = '<a href="' . route('admin.product_order.editOrderMain',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted" title="Edit"></i></a>';
-                    $delete = '<a href="javascript:void(0);" onclick="deleteOrder('.$parameter.')" class="" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash text-danger" title="Delete"></i></a>';
+                    $edit = '<a href="' . route('admin.product_order.editOrderMain', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted" title="Edit"></i></a>';
+                    $delete = '<a href="javascript:void(0);" onclick="deleteOrder(' . $parameter . ')" class="" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash text-danger" title="Delete"></i></a>';
                 }
 
                 return $view . ' ' . $edit . ' ' . $report . ' ' . $delete;
             })
-            
-            ->rawColumns(['action','master_customer_id', 'total_pcs', 'dispatch_pcs', 'created_at','status'])
+
+            ->rawColumns(['action', 'master_customer_id', 'total_pcs', 'dispatch_pcs', 'created_at', 'status'])
             ->make(true);
     }
 
-    public function indexListOrderSet($request){
+    public function indexListOrderSet($request)
+    {
         // dd($request->all());
-        $queue = OrderProductSet::query()->where('order_main_id',$request->get('id'));
+        $queue = OrderProductSet::query()->where('order_main_id', $request->get('id'));
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $query->orderBy('id','asc');
+                $query->orderBy('id', 'asc');
                 // $query->orWhere('sku', 'like', "%{$request->get('search')['value']}%");
                 if ($request->has('bar_code') && !empty($request->bar_code)) {
                     $query->where('bar_code', 'like', "%{$request->get('bar_code')}%");
@@ -203,17 +207,17 @@ class ProductOrderDataTable  {
                         $query->whereNull('stage_master_unit_id');
                     }
                 }
-                
-            }) 
+
+            })
             ->addColumn('select', function ($queue) {
                 $status = $queue->status;
 
                 if ($status == 2) {
                     return '';
-                }else{
-                    return '<input type="checkbox" class="row-select" value="'.$queue->id.'">';
+                } else {
+                    return '<input type="checkbox" class="row-select" value="' . $queue->id . '">';
                 }
-                
+
             })
             ->addColumn('set_size', function ($queue) {
                 $set_size = $queue->size_measurement;
@@ -233,10 +237,8 @@ class ProductOrderDataTable  {
                     $cuttingStage = $queue->order_cutting_stage;
                     if ($cuttingStage && $cuttingStage->is_po) {
                         $entity = $cuttingStage->vendor_id ? ($cuttingStage->vendor->name ?? 'Vendor') : ($cuttingStage->customer->name ?? 'Customer');
-                        return '<span class="badge badge-info">PO: '.$entity.'</span>
-                                <a href="'.route('admin.product_order.downloadPO', ['id' => $cuttingStage->id]).'" class="btn btn-xs btn-outline-info ml-1" title="Download PO">
-                                    <i class="fa fa-download"></i>
-                                </a>';
+                        return '<span class="badge badge-info">PO: ' . $entity . '</span>
+                                ';
                     }
                     return '<span class="badge badge-success">Fully Assigned</span>';
                 }
@@ -246,20 +248,20 @@ class ProductOrderDataTable  {
                 $btns = '
                     <button 
                         class="btn btn-sm btn-primary assign-btn"
-                        data-id="'.$queue->id.'"
-                        data-design="'.$queue->design_number.'"
-                        data-set-size="'.$set_size?->set_size.'"
-                        data-set-size-group="'.$set_size?->size_group.'"
-                        data-color="'.$color.'"
-                        data-total="'.$queue->total_quantity.'"
-                        data-remain="'.$queue->remain_total_quantity.'">
+                        data-id="' . $queue->id . '"
+                        data-design="' . $queue->design_number . '"
+                        data-set-size="' . $set_size?->set_size . '"
+                        data-set-size-group="' . $set_size?->size_group . '"
+                        data-color="' . $color . '"
+                        data-total="' . $queue->total_quantity . '"
+                        data-remain="' . $queue->remain_total_quantity . '">
                         Assign
                     </button>';
-                
+
                 if ($queue->remain_total_quantity == $queue->total_quantity) {
                     // Removed individual PO link as per user request
                 }
-                
+
                 return $btns;
             })
 
@@ -276,27 +278,27 @@ class ProductOrderDataTable  {
             ->addColumn('total_qty', function ($queue) {
                 return $queue->total_quantity;
             })
-            
+
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
-                
+
                 // Show View/Download if at least some quantity has been assigned
                 if ($queue->remain_total_quantity < $queue->total_quantity || $queue->status == 2) {
                     $view = '<a href="' . route('admin.product_order.viewCuttingSlip', ['id' => $parameter]) . '" class="mr-2" data-toggle="tooltip" title="View Assignments"><i class="fas fa-eye text-primary" style="font-size: 16px;"></i></a>';
-                    
+
                     // Add Delete Assignment button if no lots exist
                     $lotExists = \App\Models\OrderLot::where('order_products_set_id', $parameter)->exists();
                     if (!$lotExists) {
-                        $view .= '<a href="javascript:void(0)" class="delete-assign-btn" data-id="'.$parameter.'" data-toggle="tooltip" title="Delete Assignment"><i class="fas fa-trash text-danger" style="font-size: 16px;"></i></a>';
+                        $view .= '<a href="javascript:void(0)" class="delete-assign-btn" data-id="' . $parameter . '" data-toggle="tooltip" title="Delete Assignment"><i class="fas fa-trash text-danger" style="font-size: 16px;"></i></a>';
                     }
                 } else {
                     $view = '';
                 }
-                
+
                 return $view;
             })
-            
-            ->rawColumns(['select','action','design_number', 'size_set','size_group','assign_to', 'total_qty', 'status'])
+
+            ->rawColumns(['select', 'action', 'design_number', 'size_set', 'size_group', 'assign_to', 'total_qty', 'status'])
             ->make(true);
     }
 
@@ -322,8 +324,8 @@ class ProductOrderDataTable  {
             ->sum('pi.quantity');
 
         return [
-            'total'     => (int) $total,
-            'packed'    => (int) $packed,
+            'total' => (int) $total,
+            'packed' => (int) $packed,
             'remaining' => max(0, $total - $packed),
         ];
     }

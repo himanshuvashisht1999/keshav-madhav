@@ -299,6 +299,10 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="form-group mb-3">
+                            <label class="font-weight-bold text-muted small text-uppercase">Remark</label>
+                            <textarea name="remark" class="form-control" rows="2" placeholder="Enter dispatch remark (optional)" form="dispatchForm"></textarea>
+                        </div>
                         <hr class="my-4">
                         <div class="bg-light p-3 rounded-lg text-center shadow-sm border">
                             <h6 class="text-muted text-uppercase mb-1 small font-weight-bold">Final Grand Total</h6>

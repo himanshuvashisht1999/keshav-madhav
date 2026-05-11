@@ -253,6 +253,10 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="form-group mb-3">
+                            <label class="font-weight-bold text-muted small text-uppercase">Remark</label>
+                            <textarea name="remark" class="form-control" rows="2" placeholder="Enter dispatch remark (optional)"></textarea>
+                        </div>
                         <hr class="my-4">
                         <div class="bg-light p-3 rounded-lg text-center shadow-sm border">
                             <h6 class="text-muted text-uppercase mb-1 small font-weight-bold">Final Grand Total</h6>
@@ -325,7 +329,7 @@
 
             // Refocus if focus is lost on click
             $(document).on('click', function (e) {
-                if (!$(e.target).closest('.input-group, .undo-btn, button, a').length) {
+                if (!$(e.target).closest('.input-group, .undo-btn, button, a, textarea, input, select').length) {
                     barcodeInput.focus();
                 }
             });

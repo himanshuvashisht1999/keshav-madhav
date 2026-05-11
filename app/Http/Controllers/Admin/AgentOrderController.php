@@ -486,6 +486,7 @@ class AgentOrderController extends Controller
                     'gst_amount' => $gst_amount,
                     'gst_percentage' => $gst_percentage,
                     'grand_total' => $grand_total,
+                    'remark' => $request->remark,
                 ]);
 
                 \App\Models\AgentOrderDispatchItem::create([
@@ -1519,6 +1520,7 @@ class AgentOrderController extends Controller
                 'gst_amount' => $dispatchGst,
                 'gst_percentage' => $gstPercentage,
                 'grand_total' => $dispatchTotal,
+                'remark' => request()->remark,
             ]);
 
             // 4. Mark items as dispatched and link to this dispatch session
@@ -1832,6 +1834,7 @@ class AgentOrderController extends Controller
                 'status' => 'dispatched',
                 'created_by' => Auth::id(),
                 'dispatch_date' => now(),
+                'remark' => $request->remark,
             ]);
 
             $subtotal = 0;
@@ -2009,6 +2012,7 @@ class AgentOrderController extends Controller
                 'status' => 'dispatched',
                 'created_by' => Auth::id(),
                 'dispatch_date' => $request->dispatch_date ? date('Y-m-d H:i:s', strtotime($request->dispatch_date)) : now(),
+                'remark' => $request->remark,
             ]);
 
             $calculatedSubtotal = 0;
@@ -2262,6 +2266,7 @@ class AgentOrderController extends Controller
                 'gst_amount' => $gst_amount,
                 'other_charges' => $other_charges,
                 'grand_total' => $grandTotal,
+                'remark' => $request->remark,
             ]);
 
             // Adjust Party Balance (Increase model)

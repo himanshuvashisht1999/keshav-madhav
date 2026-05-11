@@ -24,6 +24,7 @@ class AgentOrderDispatch extends Model
         'other_charges',
         'grand_total',
         'status',
+        'remark',
         'created_by'
     ];
 
