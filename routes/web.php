@@ -753,6 +753,17 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::post('/transfer', [\App\Http\Controllers\Admin\Inventory\StockTransferController::class, 'transfer'])->name('transfer');
             });
 
+            // Fabric Transfer Routes
+            Route::prefix('/fabric-transfer')->name('fabric_transfer.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\Inventory\FabricTransferController::class, 'index'])->name('index');
+                Route::get('/get-fabrics', [\App\Http\Controllers\Admin\Inventory\FabricTransferController::class, 'getFabrics'])->name('get-fabrics');
+                Route::get('/get-rolls', [\App\Http\Controllers\Admin\Inventory\FabricTransferController::class, 'getRolls'])->name('get-rolls');
+                Route::post('/store', [\App\Http\Controllers\Admin\Inventory\FabricTransferController::class, 'store'])->name('store');
+                Route::get('/history', [\App\Http\Controllers\Admin\Inventory\FabricTransferController::class, 'history'])->name('history');
+                Route::get('/history-list', [\App\Http\Controllers\Admin\Inventory\FabricTransferController::class, 'historyList'])->name('history-list');
+                Route::get('/show/{id}', [\App\Http\Controllers\Admin\Inventory\FabricTransferController::class, 'show'])->name('show');
+            });
+
             Route::post('/store', [AdminInventoryController::class, 'store'])->name('store');
             Route::get('/get-size-set-info/{id}', [AdminInventoryController::class, 'getSizeSetInfo'])->name('get_size_set_info');
             Route::get('/get-product-full-details', [AdminInventoryController::class, 'getProductFullDetails'])->name('get_product_full_details');

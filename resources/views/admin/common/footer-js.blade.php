@@ -52,7 +52,7 @@
     $(document).ready(function(){
 
       
-        var Toast = Swal.mixin({
+        Toast = Swal.mixin({
           toast: true,
           position: 'top-end',
           showConfirmButton: false,
