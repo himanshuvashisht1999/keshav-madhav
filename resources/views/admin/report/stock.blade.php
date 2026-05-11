@@ -60,6 +60,9 @@
                             @if(request('type'))
                                 <input type="hidden" name="type" value="{{ request('type') }}">
                             @endif
+                            @if($level !== 'fabrics' && request('warehouse_id'))
+                                <input type="hidden" name="warehouse_id" value="{{ request('warehouse_id') }}">
+                            @endif
 
                             <div class="row align-items-end g-2">
                                 @if($level === 'fabrics')
@@ -95,7 +98,7 @@
                                     <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
                                         <i class="fas fa-search"></i> Apply Filter
                                     </button>
-                                    <a href="{{ route('admin.report.stock', request()->only(['fabric_id', 'type'])) }}" class="btn btn-sm btn-outline-secondary" title="Reset">
+                                    <a href="{{ route('admin.report.stock', request()->only(['fabric_id', 'type', 'warehouse_id'])) }}" class="btn btn-sm btn-outline-secondary" title="Reset">
                                         <i class="fas fa-undo"></i>
                                     </a>
                                 </div>
