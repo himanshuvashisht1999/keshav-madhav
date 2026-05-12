@@ -10,12 +10,14 @@
             <th style="background-color: #f2f2f2; font-weight: bold;">Unit Person</th>
             @if($productionStatus)
                 <th style="background-color: #f2f2f2; font-weight: bold;">Lot No</th>
+                <th style="background-color: #f2f2f2; font-weight: bold;">Design No</th>
                 <th style="background-color: #f2f2f2; font-weight: bold;">Order No</th>
                 <th style="background-color: #f2f2f2; font-weight: bold;">Total Quantity</th>
                 <th style="background-color: #f2f2f2; font-weight: bold;">Lot Date</th>
             @else
                 <th style="background-color: #f2f2f2; font-weight: bold;">Stage</th>
                 <th style="background-color: #f2f2f2; font-weight: bold;">Lot No</th>
+                <th style="background-color: #f2f2f2; font-weight: bold;">Design No</th>
                 <th style="background-color: #f2f2f2; font-weight: bold;">Order No</th>
                 <th style="background-color: #f2f2f2; font-weight: bold;">Assigned Qty</th>
                 <th style="background-color: #f2f2f2; font-weight: bold;">Pending Qty</th>
@@ -48,6 +50,7 @@
                 </td>
                 @endif
                 <td>{{ $type === 'cutting' || $item->transaction_type === 'cutting_lot' ? ($item->design_number ?? '-') : ($item->lot_no ?? '-') }}</td>
+                <td>{{ $item->design_number ?? '-' }}</td>
                 <td>
                     @if($type === 'cutting' || $item->transaction_type === 'cutting_lot')
                         {{ $item->orderMain->sku ?? '-' }}

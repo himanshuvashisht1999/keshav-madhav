@@ -62,12 +62,14 @@
                 <th>Unit Person</th>
                 @if($productionStatus)
                     <th>Lot No</th>
+                    <th>Design No</th>
                     <th>Order No</th>
                     <th>Total Quantity</th>
                     <th>Lot Date</th>
                 @else
                     <th>Stage</th>
                     <th>Lot No</th>
+                    <th>Design No</th>
                     <th>Order No</th>
                     <th>Assigned Qty</th>
                     <th>Pending Qty</th>
@@ -107,6 +109,7 @@
                     </td>
                     @endif
                     <td>{{ $type === 'cutting' || $item->transaction_type === 'cutting_lot' ? ($item->design_number ?? '-') : ($item->lot_no ?? '-') }}</td>
+                    <td>{{ $item->design_number ?? '-' }}</td>
                     <td>
                         @if($type === 'cutting' || $item->transaction_type === 'cutting_lot')
                             {{ $item->orderMain->sku ?? '-' }}
@@ -130,7 +133,7 @@
         </tbody>
         <tfoot>
             <tr class="footer-total">
-                <td colspan="{{ $productionStatus ? 3 : 4 }}" style="text-align: right;">Grand Total:</td>
+                <td colspan="{{ $productionStatus ? 4 : 5 }}" style="text-align: right;">Grand Total:</td>
                 <td>{{ number_format($totalAssigned) }}</td>
                 @if(!$productionStatus)
                     <td>{{ number_format($totalPending) }}</td>

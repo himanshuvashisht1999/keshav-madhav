@@ -485,6 +485,7 @@ class AgentOrderController extends Controller
                     'discount_amount' => $discount_amount,
                     'gst_amount' => $gst_amount,
                     'gst_percentage' => $gst_percentage,
+                    'other_charges' => $other_charges,
                     'grand_total' => $grand_total,
                     'remark' => $request->remark,
                 ]);
@@ -498,6 +499,11 @@ class AgentOrderController extends Controller
             if ($sale_type === 'fabric') {
                 foreach ($fabric_items_to_create as $f_item) {
                     $f_item['agent_order_id'] = $order->id;
+                    if ($dispatch) {
+                        $f_item['agent_order_dispatch_id'] = $dispatch->id;
+                        $f_item['status'] = 'dispatched';
+                        $f_item['dispatched_at'] = now();
+                    }
                     AgentOrderFabricItem::create($f_item);
 
                     // ALWAYS Deduct from fabric_receipt_details for fabric orders

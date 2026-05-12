@@ -1907,7 +1907,8 @@ class ReportService
             'selectedStage' => $stageId,
             'selectedUnit' => $unitId,
             'lotNo' => $lotNo,
-            'orderNo' => $orderNo
+            'orderNo' => $orderNo,
+            'productionStatus' => $productionStatus
         ];
     }
 
