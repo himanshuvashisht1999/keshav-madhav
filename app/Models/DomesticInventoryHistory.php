@@ -34,7 +34,8 @@ class DomesticInventoryHistory extends Model
         'pieces_per_box',
         'purchase_rate',
         'purchase_id',
-        'type'
+        'type',
+        'remarks'
     ];
 
     public function user()

@@ -11,6 +11,7 @@ use App\Models\FabricReceiptDetail;
 use App\Models\Fabric;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class FabricTransferController extends Controller
 {
@@ -111,9 +112,6 @@ class FabricTransferController extends Controller
             ->addColumn('to_warehouse', function($row) {
                 return $row->toWarehouse->cutting_master_name ?? 'N/A';
             })
-            ->addColumn('transferred_by', function($row) {
-                return $row->user->name ?? 'N/A';
-            })
             ->addColumn('action', function($row) {
                 return '<a href="' . route('admin.inventory.fabric_transfer.show', $row->id) . '" class="btn btn-xs btn-primary"><i class="fas fa-eye"></i> View</a>';
             })
@@ -125,5 +123,12 @@ class FabricTransferController extends Controller
     {
         $transfer = FabricTransfer::with(['fromWarehouse', 'toWarehouse', 'user', 'items.fabricReceiptDetail', 'items.fabric'])->findOrFail($id);
         return view('admin.inventory.fabric_transfer.show', compact('transfer'));
+    }
+
+    public function downloadPdf($id)
+    {
+        $transfer = FabricTransfer::with(['fromWarehouse', 'toWarehouse', 'user', 'items.fabricReceiptDetail', 'items.fabric'])->findOrFail($id);
+        $pdf = Pdf::loadView('admin.inventory.fabric_transfer.pdf', compact('transfer'));
+        return $pdf->download('Fabric_Transfer_' . $transfer->transfer_no . '.pdf');
     }
 }

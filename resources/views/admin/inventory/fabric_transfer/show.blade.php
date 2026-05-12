@@ -10,7 +10,10 @@
                     <h1>Transfer Details: {{ $transfer->transfer_no }}</h1>
                 </div>
                 <div class="col-sm-6 text-right">
-                    <a href="{{ route('admin.inventory.fabric_transfer.history') }}" class="btn btn-secondary">
+                    <a href="{{ route('admin.inventory.fabric_transfer.download-pdf', $transfer->id) }}" class="btn btn-danger">
+                        <i class="fas fa-file-pdf"></i> Download PDF
+                    </a>
+                    <a href="{{ route('admin.inventory.fabric_transfer.history') }}" class="btn btn-secondary ml-2">
                         <i class="fas fa-arrow-left"></i> Back to History
                     </a>
                 </div>
@@ -39,10 +42,6 @@
                                 <tr>
                                     <th>To:</th>
                                     <td>{{ $transfer->toWarehouse->cutting_master_name }}</td>
-                                </tr>
-                                <tr>
-                                    <th>User:</th>
-                                    <td>{{ $transfer->user->name }}</td>
                                 </tr>
                                 <tr>
                                     <th>Total Items:</th>

@@ -31,7 +31,6 @@
                                     <th>Date</th>
                                     <th>From Warehouse</th>
                                     <th>To Warehouse</th>
-                                    <th>Transferred By</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -57,7 +56,6 @@ $(function() {
             {data: 'transfer_date', name: 'transfer_date'},
             {data: 'from_warehouse', name: 'from_warehouse'},
             {data: 'to_warehouse', name: 'to_warehouse'},
-            {data: 'transferred_by', name: 'transferred_by'},
             {data: 'action', name: 'action', orderable: false, searchable: false},
         ],
         order: [[2, 'desc']]

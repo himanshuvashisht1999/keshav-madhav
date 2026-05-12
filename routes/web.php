@@ -762,6 +762,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/history', [\App\Http\Controllers\Admin\Inventory\FabricTransferController::class, 'history'])->name('history');
                 Route::get('/history-list', [\App\Http\Controllers\Admin\Inventory\FabricTransferController::class, 'historyList'])->name('history-list');
                 Route::get('/show/{id}', [\App\Http\Controllers\Admin\Inventory\FabricTransferController::class, 'show'])->name('show');
+                Route::get('/download-pdf/{id}', [\App\Http\Controllers\Admin\Inventory\FabricTransferController::class, 'downloadPdf'])->name('download-pdf');
             });
 
             Route::post('/store', [AdminInventoryController::class, 'store'])->name('store');
@@ -825,6 +826,24 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/{id}/download-prn', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generatePurchasePrn'])->name('download-prn');
                 Route::post('/{id}/update', [AdminInventoryController::class, 'purchaseHistoryUpdate'])->name('update');
                 Route::delete('/{id}/delete', [AdminInventoryController::class, 'purchaseHistoryDestroy'])->name('destroy');
+            });
+
+            // Stock Disposal Routes
+            Route::prefix('/stock-disposal')->name('stock_disposal.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\StockDisposalController::class, 'index'])->name('index');
+                Route::get('/list', [\App\Http\Controllers\Admin\StockDisposalController::class, 'historyList'])->name('list');
+                Route::get('/create', [\App\Http\Controllers\Admin\StockDisposalController::class, 'create'])->name('create');
+                Route::get('/search', [\App\Http\Controllers\Admin\StockDisposalController::class, 'search'])->name('search');
+                Route::get('/get-fabrics', [\App\Http\Controllers\Admin\StockDisposalController::class, 'getFabrics'])->name('get-fabrics');
+                Route::get('/get-rolls', [\App\Http\Controllers\Admin\StockDisposalController::class, 'getRolls'])->name('get-rolls');
+                Route::get('/get-domestic-stock', [\App\Http\Controllers\Admin\StockDisposalController::class, 'getDomesticStock'])->name('get-domestic-stock');
+                Route::get('/get-product-details', [\App\Http\Controllers\Admin\StockDisposalController::class, 'getProductDetails'])->name('get-product-details');
+                Route::get('/get-size-colors', [\App\Http\Controllers\Admin\StockDisposalController::class, 'getSizeColors'])->name('get-size-colors');
+                Route::get('/show/{id}', [\App\Http\Controllers\Admin\StockDisposalController::class, 'show'])->name('show');
+                Route::get('/edit/{id}', [\App\Http\Controllers\Admin\StockDisposalController::class, 'edit'])->name('edit');
+                Route::post('/update/{id}', [\App\Http\Controllers\Admin\StockDisposalController::class, 'update'])->name('update');
+                Route::delete('/delete/{id}', [\App\Http\Controllers\Admin\StockDisposalController::class, 'destroy'])->name('delete');
+                Route::post('/store', [\App\Http\Controllers\Admin\StockDisposalController::class, 'store'])->name('store');
             });
         });
 
