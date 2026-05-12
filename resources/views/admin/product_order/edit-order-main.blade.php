@@ -784,6 +784,23 @@
                             $('#size_set_hidden').val(response.new_size_set_id);
                             $('#no_of_pcs_hidden').val(response.no_of_pcs);
                         }
+
+                        // Update globalMasterData so row population works
+                        if (globalMasterData && globalMasterData.sizes) {
+                            let exists = globalMasterData.sizes.find(s => s.id == response.new_size_set_id);
+                            if (!exists) {
+                                globalMasterData.sizes.push({
+                                    id: response.new_size_set_id,
+                                    name: response.new_size_name,
+                                    size_group: response.new_size_group,
+                                    no_of_pcs: response.new_size_pcs || response.no_of_pcs,
+                                    status: 2
+                                });
+                            } else {
+                                exists.no_of_pcs = response.new_size_pcs || response.no_of_pcs;
+                                exists.size_group = response.new_size_group;
+                            }
+                        }
                     }
                 },
                 error: function (xhr) {
