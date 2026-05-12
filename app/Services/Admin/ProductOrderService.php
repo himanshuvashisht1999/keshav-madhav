@@ -45,8 +45,7 @@ class ProductOrderService
     public function __construct(
         DataTable $datatable,
         Order $order
-        )
-    {
+    ) {
         $this->datatable = $datatable;
         $this->order = $order;
     }
@@ -156,8 +155,7 @@ class ProductOrderService
             $return_data['status_code'] = 1;
             return $return_data;
 
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             //  Rollback everything on any error
             DB::rollBack();
             $return_data['message'] = $e->getMessage();
@@ -223,7 +221,7 @@ class ProductOrderService
             }
 
             $setIds = OrderProductSet::where('order_main_id', $id)->pluck('id');
-            
+
             // Delete related records
             OrderProductSetDetail::whereIn('order_products_set_id', $setIds)->delete();
             OrderProductSet::where('order_main_id', $id)->delete();
@@ -237,8 +235,7 @@ class ProductOrderService
                 'status_code' => 1,
                 'message' => 'The sales order has been successfully deleted.'
             ];
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
             return [
                 'status_code' => 0,
@@ -277,8 +274,7 @@ class ProductOrderService
             // if($from_stage_id == 0 || $from_stage_id == 1 || $from_stage_id == 2){
             if ($from_stage_id == 1 || $from_stage_id == 2) {
                 $nextStage = '';
-            }
-            else {
+            } else {
                 $nextStage = getNextStage($order_product_id, $currentStage->sequence);
             }
 
@@ -371,8 +367,7 @@ class ProductOrderService
                                     $row->save();
                                     $useItems -= $currentQty;
 
-                                }
-                                else {
+                                } else {
                                     // Reduce only required amount
                                     $row->quantity = $currentQty - $useItems;
                                     $row->save();
@@ -384,12 +379,10 @@ class ProductOrderService
                     }
                 }
 
-            }
-            else if ($from_stage_id == 1 || $from_stage_id == 2) {
+            } else if ($from_stage_id == 1 || $from_stage_id == 2) {
 
 
-            }
-            else {
+            } else {
                 $orderProduct = OrderProduct::where('id', $order_product_id)->first();
                 if ($currentStage->completed_qty == $orderProduct->quantity) {
                     $orderProduct->status = 3;
@@ -480,8 +473,7 @@ class ProductOrderService
             DB::commit();
             return true;
 
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
         }
@@ -608,8 +600,7 @@ class ProductOrderService
             $data['order_id'] = $orderProduct->order_id;
             return $data;
 
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
             $data['status'] = 0;
             $data['message'] = 'Error issuing fabric: ' . $e->getMessage();
@@ -651,6 +642,11 @@ class ProductOrderService
     function product_sizes()
     {
         $data = MasterSizeMeasurement::whereIn('status', [1, 2])->orderBy('id', 'asc')->get();
+        return $data;
+    }
+    function product_size_active()
+    {
+        $data = MasterSizeMeasurement::where('status', 1)->orderBy('id', 'asc')->get();
         return $data;
     }
 
@@ -738,8 +734,8 @@ class ProductOrderService
             $existing_sets = OrderProductSet::where('order_main_id', $id)->get();
             foreach ($existing_sets as $set) {
                 if (OrderCuttingStage::where('set_product_id', $set->id)->exists()) {
-                // If assigned, we should probably keep it or update it?
-                // This is complex. Let's assume user only edits before assignment for now.
+                    // If assigned, we should probably keep it or update it?
+                    // This is complex. Let's assume user only edits before assignment for now.
                 }
             }
 
@@ -799,8 +795,7 @@ class ProductOrderService
 
             DB::commit();
             return ['status_code' => 1, 'message' => 'Order updated successfully.'];
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
             return ['status_code' => 0, 'message' => $e->getMessage()];
         }
@@ -814,8 +809,7 @@ class ProductOrderService
             $ids = [];
             if ($request->filled('order_product_set_ids')) {
                 $ids = array_filter(explode(',', $request->order_product_set_ids));
-            }
-            elseif ($request->order_product_set_id) {
+            } elseif ($request->order_product_set_id) {
                 $ids = [$request->order_product_set_id];
             }
 
@@ -824,7 +818,7 @@ class ProductOrderService
                 if ($data) {
 
                     // Quantity to assign
-                    $assignQty = $request->assign_quantity ? (int)$request->assign_quantity : $data->remain_total_quantity;
+                    $assignQty = $request->assign_quantity ? (int) $request->assign_quantity : $data->remain_total_quantity;
 
                     if ($assignQty > $data->remain_total_quantity) {
                         throw new \Exception("Assigned quantity ($assignQty) exceeds remaining quantity ({$data->remain_total_quantity}) for Design: {$data->design_number}");
@@ -852,7 +846,7 @@ class ProductOrderService
                     $cuttingStage->processed_by = auth()->id();
                     $cuttingStage->lot_no = $data->design_number; // Set initial lot_no
                     $cuttingStage->status = 1; // Pending at cutting
-                    
+
                     // Set Timing Details
                     $cuttingStage->start_date = now();
                     $unit = StageMasterUnit::find($request->master_cutting_id);
@@ -860,7 +854,7 @@ class ProductOrderService
                     if ($days > 0) {
                         $cuttingStage->end_date = now()->addDays($days);
                     }
-                    
+
                     $cuttingStage->save();
 
                     // ✅ Removed: Populate Unified Timing table (only for printing/stitching)
@@ -882,8 +876,7 @@ class ProductOrderService
                     if ($data->no_of_pcs > 0) {
                         $setsMoved = $assignQty / $data->no_of_pcs;
                         $data->remain_set_quantity = max(0, $data->remain_set_quantity - $setsMoved);
-                    }
-                    else {
+                    } else {
                         $data->remain_set_quantity = 0;
                     }
 
@@ -895,8 +888,7 @@ class ProductOrderService
                         $data->master_product_fitting_id = $request->master_fitting_id;
                         $data->master_design_pattern_id = $request->master_pattern_id;
                         $data->remark = $request->remark ?? null;
-                    }
-                    else {
+                    } else {
                         $data->status = 1; // Still partially pending
                     }
 
@@ -911,8 +903,7 @@ class ProductOrderService
                 'message' => "Quantity assigned to Cutting Master successfully"
             ];
 
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
 
             return [
@@ -1040,7 +1031,7 @@ class ProductOrderService
 
             $poMain = new \App\Models\ProductionPO();
             $poMain->po_number = "PO-" . date('Ymd') . "-" . rand(1000, 9999);
-            
+
             // Get order_main_id from the first item
             if (isset($request->items[0]['order_product_set_id'])) {
                 $firstSet = OrderProductSet::find($request->items[0]['order_product_set_id']);
@@ -1062,14 +1053,15 @@ class ProductOrderService
 
             foreach ($request->items as $item) {
                 $data = OrderProductSet::find($item['order_product_set_id']);
-                if (!$data) continue;
+                if (!$data)
+                    continue;
 
                 $po = new OrderCuttingStage();
                 $po->sku = $data->sku; // Keep original SKU for reference
                 $po->order_main_id = $data->order_main_id;
                 $po->set_product_id = $data->id;
                 $po->to_assign_id = 0;
-                
+
                 $po->vendor_id = $poMain->vendor_id;
                 $po->customer_id = $poMain->customer_id;
 
@@ -1078,14 +1070,14 @@ class ProductOrderService
                 $po->rate = $item['rate'] ?? 0;
                 $po->quantity = $item['quantity'] ?? $data->remain_total_quantity;
                 $po->remaining_quantity = $item['quantity'] ?? $data->remain_total_quantity;
-                
+
                 if (!empty($item['fabric_ids'])) {
                     $po->fabric_id = is_array($item['fabric_ids']) ? implode(',', $item['fabric_ids']) : $item['fabric_ids'];
                 }
                 $po->master_fitting_id = $item['fitting_id'] ?? null;
                 $po->master_pattern_id = $item['pattern_id'] ?? null;
                 $po->belt = $item['belt'] ?? null;
-                
+
                 $po->remarks = $item['remark'] ?? $request->remark ?? null;
                 $po->till_allowed_time = $request->delivery_date;
                 $po->processed_by = auth()->id();
@@ -1152,8 +1144,7 @@ class ProductOrderService
             $save_data->status = 2;
             $save_data->save();
             $new_size_set_id = $save_data->id;
-        }
-        else {
+        } else {
             $size_data = MasterSizeMeasurement::where('set_size', $set_size)
                 ->where('status', 2)->first();
             $size_data->design_number = $design_number_str;
@@ -1174,20 +1165,22 @@ class ProductOrderService
 
     public function cutting_units()
     {
-        $data = MasterFabricWarehouse::with(['cuttingUnits' => function ($q) {
-            $q->where('master_stage_id', 3)
-                ->where('status', 1);
-        }])
+        $data = MasterFabricWarehouse::with([
+            'cuttingUnits' => function ($q) {
+                $q->where('master_stage_id', 3)
+                    ->where('status', 1);
+            }
+        ])
             ->where('status', 1)
             ->get()->toArray();
 
         $result = [];
         foreach ($data as $warehouse) {
             $cutting_units = [];
-            
+
             // Check both snake_case (default toArray) and camelCase
             $raw_units = $warehouse['cutting_units'] ?? $warehouse['cuttingUnits'] ?? [];
-            
+
             foreach ($raw_units as $unit) {
                 $cutting_units[] = [
                     'id' => $unit['id'],
@@ -1328,7 +1321,7 @@ class ProductOrderService
                 $cuttingStage->remarks = $request->remark ?? null;
                 $cuttingStage->processed_by = auth()->id();
                 $cuttingStage->status = 1;
-                
+
                 // Set Timing Details
                 $cuttingStage->start_date = now();
                 $unit = StageMasterUnit::find($request->master_cutting_id);
@@ -1336,9 +1329,9 @@ class ProductOrderService
                 if ($days > 0) {
                     $cuttingStage->end_date = now()->addDays($days);
                 }
-                
+
                 $cuttingStage->save();
-                
+
                 // ✅ Removed: Populate Unified Timing table for Domestic Order
                 // \App\Models\OrderLotStageTiming::updateOrCreate(
                 //     ['lot_no' => $save_orderProductSet->design_number, 'master_stage_id' => 3],
@@ -1365,8 +1358,7 @@ class ProductOrderService
 
             DB::commit();
             return ['status_code' => 1, 'message' => 'The domestic order and assignment have been successfully created.'];
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
             return ['status_code' => 0, 'message' => $e->getMessage()];
         }

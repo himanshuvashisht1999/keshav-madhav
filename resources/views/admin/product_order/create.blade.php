@@ -87,15 +87,15 @@
                             </div>
 
                             <!-- <div class="col-md-4">
-                                            <label>Expected Delivery Date</label>
+                                                <label>Expected Delivery Date</label>
 
-                                            <input type="text" id="ex_delivery_date" class="form-control" placeholder="Select Expected Delivery Date">
+                                                <input type="text" id="ex_delivery_date" class="form-control" placeholder="Select Expected Delivery Date">
 
-                                            <input type="hidden"
-                                                name="expected_delivery_date"
-                                                id="ex_d_date_hidden"
-                                                value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
-                                        </div> -->
+                                                <input type="hidden"
+                                                    name="expected_delivery_date"
+                                                    id="ex_d_date_hidden"
+                                                    value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
+                                            </div> -->
 
                             <div class="col-md-4">
                                 <label>Expected Delivery Date</label>
@@ -421,34 +421,34 @@
                 }
 
                 $("#productList tbody").append(`
-                            <tr>
-                                <td>${bar_code}
-                                    <input type="hidden" name="bar_codeList[]" value="${bar_code}">
-                                </td>
-                                <td>${design.text()}
-                                    <input type="hidden" name="designList[]" value="${design.val()}">
-                                </td>
-                                <td>${size.text()}
-                                    <input type="hidden" name="sizeList[]" value="${size_set_id}">
-                                </td>
-                                <td>${colour.text()}
-                                    <input type="hidden" name="colourList[]" value="${colour.val()}">
-                                </td>
-                                <td>${qty}
-                                    <input type="hidden" name="product_quantity[]" value="${qty}">
-                                </td>
-                                <td>${pcsPerSet} 
-                                    <input type="hidden" name="pcs[]" value="${pcsPerSet}">
-                                </td>
-                                <td>${total_qty}
-                                    <input type="hidden" name="total_quantity[]" value="${total_qty}">
-                                </td>
+                                <tr>
+                                    <td>${bar_code}
+                                        <input type="hidden" name="bar_codeList[]" value="${bar_code}">
+                                    </td>
+                                    <td>${design.text()}
+                                        <input type="hidden" name="designList[]" value="${design.val()}">
+                                    </td>
+                                    <td>${size.text()}
+                                        <input type="hidden" name="sizeList[]" value="${size_set_id}">
+                                    </td>
+                                    <td>${colour.text()}
+                                        <input type="hidden" name="colourList[]" value="${colour.val()}">
+                                    </td>
+                                    <td>${qty}
+                                        <input type="hidden" name="product_quantity[]" value="${qty}">
+                                    </td>
+                                    <td>${pcsPerSet} 
+                                        <input type="hidden" name="pcs[]" value="${pcsPerSet}">
+                                    </td>
+                                    <td>${total_qty}
+                                        <input type="hidden" name="total_quantity[]" value="${total_qty}">
+                                    </td>
 
-                                <td>
-                                    <button class="btn btn-danger btn-sm remove-row">X</button>
-                                </td>
-                            </tr>
-                        `);
+                                    <td>
+                                        <button class="btn btn-danger btn-sm remove-row">X</button>
+                                    </td>
+                                </tr>
+                            `);
 
                 row.find("select").val("").trigger("change");
                 row.find(".qty-input").val("");
@@ -583,15 +583,15 @@
                     }
 
                     list.innerHTML += `
-                                <div class="size-row">
-                                    <strong>${size}</strong>
-                                    <div class="counter">
-                                        <button type="button" onclick="changeCount('${size}', -1)">−</button>
-                                        <span>${count}</span>
-                                        <button type="button" onclick="changeCount('${size}', 1)">+</button>
+                                    <div class="size-row">
+                                        <strong>${size}</strong>
+                                        <div class="counter">
+                                            <button type="button" onclick="changeCount('${size}', -1)">−</button>
+                                            <span>${count}</span>
+                                            <button type="button" onclick="changeCount('${size}', 1)">+</button>
+                                        </div>
                                     </div>
-                                </div>
-                            `;
+                                `;
                 });
 
             document.getElementById('groupText').innerText = group.join(',');
@@ -667,18 +667,18 @@
 
                             // create hidden input if not exists
                             $('#custom_size_set_show').after(`
-                                        <input type="hidden" 
-                                            id="size_set_hidden" 
-                                            name="size_set_hidden" 
-                                            value="${response.new_size_set_id}">
-                                    `);
+                                            <input type="hidden" 
+                                                id="size_set_hidden" 
+                                                name="size_set_hidden" 
+                                                value="${response.new_size_set_id}">
+                                        `);
 
                             $('#custom_size_set_show').after(`
-                                        <input type="hidden" 
-                                            id="no_of_pcs_hidden" 
-                                            name="no_of_pcs_hidden" 
-                                            value="${response.no_of_pcs}">
-                                    `);
+                                            <input type="hidden" 
+                                                id="no_of_pcs_hidden" 
+                                                name="no_of_pcs_hidden" 
+                                                value="${response.no_of_pcs}">
+                                        `);
 
 
                         } else {
@@ -765,11 +765,14 @@
                     sizeSelect.empty().append('<option value="">Select Set Size</option>');
 
                     res.sizes.forEach(item => {
-                        sizeSelect.append(
-                            `<option value="${item.id}" data-set-group="${item.size_group}" data-pcs="${item.no_of_pcs}">
-                                        ${item.name}
-                                    </option>`
-                        );
+                        if (item.status == 1) {
+                            sizeSelect.append(
+                                `<option value="${item.id}" data-set-group="${item.size_group}" data-pcs="${item.no_of_pcs}">
+                                            ${item.name}
+                                        </option>`
+                            );
+                        }
+
                     });
 
                     /* ------------------------

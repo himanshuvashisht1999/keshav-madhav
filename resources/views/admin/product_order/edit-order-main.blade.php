@@ -480,42 +480,42 @@
                 }
 
                 $("#productList tbody").append(`
-                                    <tr class="product-row-item">
-                                        <td>${bar_code}
-                                            <input type="hidden" name="bar_codeList[]" value="${bar_code}">
-                                        </td>
-                                        <td>
-                                            <select name="designList[]" class="form-control form-control-sm row-design-select select2" required>
-                                                <option value="${design.val()}" selected>${design.text()}</option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <select name="sizeList[]" class="form-control form-control-sm row-size-select select2" required>
-                                                <option value="${size_set_id}" data-pcs="${pcsPerSet}" selected>${size.text()}</option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <select name="colourList[]" class="form-control form-control-sm row-colour-select select2" required>
-                                                <option value="${colour.val()}" selected>${colour.text()}</option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <input type="number" name="product_quantity[]" class="form-control form-control-sm row-qty-input" value="${qty}" min="1">
-                                        </td>
-                                        <td>
-                                            <span class="row-pcs-per-set">${pcsPerSet}</span>
-                                            <input type="hidden" name="pcs[]" value="${pcsPerSet}">
-                                        </td>
-                                        <td>
-                                            <span class="row-total-qty">${total_qty}</span>
-                                            <input type="hidden" name="total_quantity[]" class="row-total-qty-input" value="${total_qty}">
-                                        </td>
+                                        <tr class="product-row-item">
+                                            <td>${bar_code}
+                                                <input type="hidden" name="bar_codeList[]" value="${bar_code}">
+                                            </td>
+                                            <td>
+                                                <select name="designList[]" class="form-control form-control-sm row-design-select select2" required>
+                                                    <option value="${design.val()}" selected>${design.text()}</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select name="sizeList[]" class="form-control form-control-sm row-size-select select2" required>
+                                                    <option value="${size_set_id}" data-pcs="${pcsPerSet}" selected>${size.text()}</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select name="colourList[]" class="form-control form-control-sm row-colour-select select2" required>
+                                                    <option value="${colour.val()}" selected>${colour.text()}</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input type="number" name="product_quantity[]" class="form-control form-control-sm row-qty-input" value="${qty}" min="1">
+                                            </td>
+                                            <td>
+                                                <span class="row-pcs-per-set">${pcsPerSet}</span>
+                                                <input type="hidden" name="pcs[]" value="${pcsPerSet}">
+                                            </td>
+                                            <td>
+                                                <span class="row-total-qty">${total_qty}</span>
+                                                <input type="hidden" name="total_quantity[]" class="row-total-qty-input" value="${total_qty}">
+                                            </td>
 
-                                        <td>
-                                            <button type="button" class="btn btn-danger btn-sm remove-row">X</button>
-                                        </td>
-                                    </tr>
-                                `);
+                                            <td>
+                                                <button type="button" class="btn btn-danger btn-sm remove-row">X</button>
+                                            </td>
+                                        </tr>
+                                    `);
 
                 // Populate and initialize select2
                 let lastRow = $("#productList tbody tr:last");
@@ -681,15 +681,15 @@
                     }
 
                     list.innerHTML += `
-                                        <div class="size-row">
-                                            <strong>${size}</strong>
-                                            <div class="counter">
-                                                <button type="button" onclick="changeCount('${size}', -1)">−</button>
-                                                <span>${count}</span>
-                                                <button type="button" onclick="changeCount('${size}', 1)">+</button>
+                                            <div class="size-row">
+                                                <strong>${size}</strong>
+                                                <div class="counter">
+                                                    <button type="button" onclick="changeCount('${size}', -1)">−</button>
+                                                    <span>${count}</span>
+                                                    <button type="button" onclick="changeCount('${size}', 1)">+</button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    `;
+                                        `;
                 });
 
             document.getElementById('groupText').innerText = group.join(',');
@@ -765,18 +765,18 @@
 
                             // create hidden input if not exists
                             $('#custom_size_set_show').after(`
-                                                <input type="hidden" 
-                                                    id="size_set_hidden" 
-                                                    name="size_set_hidden" 
-                                                    value="${response.new_size_set_id}">
-                                            `);
+                                                    <input type="hidden" 
+                                                        id="size_set_hidden" 
+                                                        name="size_set_hidden" 
+                                                        value="${response.new_size_set_id}">
+                                                `);
 
                             $('#custom_size_set_show').after(`
-                                                <input type="hidden" 
-                                                    id="no_of_pcs_hidden" 
-                                                    name="no_of_pcs_hidden" 
-                                                    value="${response.no_of_pcs}">
-                                            `);
+                                                    <input type="hidden" 
+                                                        id="no_of_pcs_hidden" 
+                                                        name="no_of_pcs_hidden" 
+                                                        value="${response.no_of_pcs}">
+                                                `);
 
 
                         } else {
@@ -868,8 +868,8 @@
                     res.sizes.forEach(item => {
                         sizeSelect.append(
                             `<option value="${item.id}" data-set-group="${item.size_group}" data-pcs="${item.no_of_pcs}">
-                                                ${item.name}
-                                            </option>`
+                                                    ${item.name}
+                                                </option>`
                         );
                     });
 

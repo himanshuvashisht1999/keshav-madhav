@@ -81,40 +81,16 @@ class ProductOrderDataTable
     {
         $queue = OrderMain::query()->where('order_main.status', '!=', 0);
 
+        // Capture filtered query to calculate total sum across all filtered records
+        $summary_query = clone $queue;
+        $this->applyOrderFilters($summary_query, $request);
+        $total_pieces_sum = \DB::table('order_products_sets')
+            ->whereIn('order_main_id', $summary_query->select('order_main.id'))
+            ->sum('total_quantity');
+
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
-                $query->orderBy('order_main.id', 'desc');
-
-                $searchValue = $request->get('search')['value'];
-                if ($searchValue) {
-                    $query->where(function ($q) use ($searchValue) {
-                        $q->where('sku', 'like', "%{$searchValue}%")
-                            ->orWhere('po_number', 'like', "%{$searchValue}%");
-                    });
-                }
-
-                if ($request->has('sku') && !empty($request->sku)) {
-                    $query->where('sku', 'like', "%{$request->get('sku')}%");
-                }
-                if ($request->has('po_number') && !empty($request->po_number)) {
-                    $query->where('po_number', 'like', "%{$request->get('po_number')}%");
-                }
-                if ($request->has('master_customer_id') && !empty($request->master_customer_id)) {
-                    $query->where('master_customer_id', $request->get('master_customer_id'));
-                }
-                if ($request->has('order_type') && !empty($request->order_type)) {
-                    $query->where('order_type', $request->get('order_type'));
-                }
-                if ($request->has('created_at') && !empty($request->created_at)) {
-                    $query->whereDate('created_at', $request->get('created_at'));
-                }
-                if ($request->has('expected_delivery_date') && !empty($request->expected_delivery_date)) {
-                    $query->whereDate('expected_delivery_date', $request->get('expected_delivery_date'));
-                }
-                if ($request->has('status') && !empty($request->status)) {
-                    $query->where('status', $request->get('status'));
-                }
-
+                $this->applyOrderFilters($query, $request);
             })
 
             ->addColumn('status', function ($queue) {
@@ -176,7 +152,55 @@ class ProductOrderDataTable
             })
 
             ->rawColumns(['action', 'master_customer_id', 'total_pcs', 'dispatch_pcs', 'created_at', 'status'])
+            ->with('total_pieces_sum', number_format($total_pieces_sum))
             ->make(true);
+    }
+
+    private function applyOrderFilters($query, $request)
+    {
+        $query->orderBy('order_main.id', 'desc');
+
+        $searchValue = $request->get('search')['value'] ?? null;
+        if ($searchValue) {
+            $query->where(function ($q) use ($searchValue) {
+                $q->where('sku', 'like', "%{$searchValue}%")
+                    ->orWhere('po_number', 'like', "%{$searchValue}%");
+            });
+        }
+
+        if ($request->has('sku') && !empty($request->sku)) {
+            $query->where('sku', 'like', "%{$request->get('sku')}%");
+        }
+        if ($request->has('po_number') && !empty($request->po_number)) {
+            $query->where('po_number', 'like', "%{$request->get('po_number')}%");
+        }
+        if ($request->has('master_customer_id') && !empty($request->master_customer_id)) {
+            $query->where('master_customer_id', $request->get('master_customer_id'));
+        }
+        if ($request->has('order_type') && !empty($request->order_type)) {
+            $query->where('order_type', $request->get('order_type'));
+        }
+        if ($request->has('created_at') && !empty($request->created_at)) {
+            $query->whereDate('created_at', $request->get('created_at'));
+        }
+        if ($request->filled('created_month')) {
+            $query->whereMonth('created_at', $request->created_month);
+        }
+        if ($request->filled('created_year')) {
+            $query->whereYear('created_at', $request->created_year);
+        }
+        if ($request->has('expected_delivery_date') && !empty($request->expected_delivery_date)) {
+            $query->whereDate('expected_delivery_date', $request->get('expected_delivery_date'));
+        }
+        if ($request->filled('expected_delivery_month')) {
+            $query->whereMonth('expected_delivery_date', $request->expected_delivery_month);
+        }
+        if ($request->filled('expected_delivery_year')) {
+            $query->whereYear('expected_delivery_date', $request->expected_delivery_year);
+        }
+        if ($request->has('status') && !empty($request->status)) {
+            $query->where('status', $request->get('status'));
+        }
     }
 
     public function indexListOrderSet($request)

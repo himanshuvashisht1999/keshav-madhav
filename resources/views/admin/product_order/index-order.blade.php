@@ -6,7 +6,7 @@
             <div class="container-fluid">
                 <div class="row mb-2">
                     <div class="col-sm-12">
-                        <h1 class="text-center">List of Sales Orders</h1>
+                        <h1 class="text-center">List of Sales Orders <span id="total_pcs_count" class="badge badge-info ml-2" style="font-size: 18px; vertical-align: middle;"></span></h1>
                     </div>
                     {{-- <div class="col-sm-6">
                         <ol class="breadcrumb float-sm-right">
@@ -52,13 +52,49 @@
                                     </td>
 
                                     <td>
-                                        <input type="date" class="form-control" name="created_at" id="created_at"
+                                        <input type="date" class="form-control mb-1" name="created_at" id="created_at"
                                             autocomplete="off">
+                                        <div class="row no-gutters">
+                                            <div class="col-6 pr-1">
+                                                <select id="created_month" class="form-control form-control-sm">
+                                                    <option value="">Month</option>
+                                                    @for($m=1; $m<=12; $m++)
+                                                        <option value="{{$m}}">{{date('M', mktime(0,0,0,$m,1))}}</option>
+                                                    @endfor
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <select id="created_year" class="form-control form-control-sm">
+                                                    <option value="">Year</option>
+                                                    @for($y=date('Y')-2; $y<=date('Y')+2; $y++)
+                                                        <option value="{{$y}}">{{$y}}</option>
+                                                    @endfor
+                                                </select>
+                                            </div>
+                                        </div>
                                     </td>
-                                    {{-- <td>
-                                        <input type="date" class="form-control" name="expected_delivery_date"
+                                    <td>
+                                        <input type="date" class="form-control mb-1" name="expected_delivery_date"
                                             id="expected_delivery_date" autocomplete="off">
-                                    </td> --}}
+                                        <div class="row no-gutters">
+                                            <div class="col-6 pr-1">
+                                                <select id="expected_delivery_month" class="form-control form-control-sm">
+                                                    <option value="">Month</option>
+                                                    @for($m=1; $m<=12; $m++)
+                                                        <option value="{{$m}}">{{date('M', mktime(0,0,0,$m,1))}}</option>
+                                                    @endfor
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <select id="expected_delivery_year" class="form-control form-control-sm">
+                                                    <option value="">Year</option>
+                                                    @for($y=date('Y')-2; $y<=date('Y')+2; $y++)
+                                                        <option value="{{$y}}">{{$y}}</option>
+                                                    @endfor
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </td>
                                     <td></td>
                                     <td></td>
                                     <td>
@@ -79,7 +115,7 @@
                                     <th>Customer</th>
                                     <th>Order Type</th>
                                     <th>Order Date</th>
-                                    {{-- <th>Expected Delivery Date</th> --}}
+                                    <th>Expected Delivery Date</th>
                                     <th>Total Pcs</th>
                                     <th>Dispatch Pcs</th>
                                     <th>Status</th>
@@ -124,7 +160,11 @@
                         d.master_customer_id = $('#master_customer_id').val();
                         d.order_type = $('#order_type').val();
                         d.created_at = $('#created_at').val();
-                        // d.expected_delivery_date = $('#expected_delivery_date').val();
+                        d.created_month = $('#created_month').val();
+                        d.created_year = $('#created_year').val();
+                        d.expected_delivery_date = $('#expected_delivery_date').val();
+                        d.expected_delivery_month = $('#expected_delivery_month').val();
+                        d.expected_delivery_year = $('#expected_delivery_year').val();
                         d.status = $('#status').val();
 
                     },
@@ -137,13 +177,20 @@
                     { data: 'master_customer_id', name: 'master_customer_id' },
                     { data: 'order_type', name: 'order_type' },
                     { data: 'created_at', name: 'created_at' },
-                    // {data: 'expected_delivery_date', name: 'expected_delivery_date'},     
+                    { data: 'expected_delivery_date', name: 'expected_delivery_date' },
                     { data: 'total_pcs', name: 'total_pcs' },
                     { data: 'dispatch_pcs', name: 'dispatch_pcs' },
                     { data: 'status', name: 'status' },
                     { data: 'action', name: 'action', searchable: false }
                 ],
                 dom: 'lBfrtip',
+                drawCallback: function (settings) {
+                    var api = this.api();
+                    var json = api.ajax.json();
+                    if (json && json.total_pieces_sum !== undefined) {
+                        $('#total_pcs_count').text(' (Total: ' + json.total_pieces_sum + ' Pcs)');
+                    }
+                },
                 buttons: [
                     {
                         text: 'Create Corporate Order',
@@ -188,11 +235,11 @@
                 oTable.draw();
                 e.preventDefault();
             });
-            $('#expected_delivery_date').on('change', function (e) {
+            $('#expected_delivery_date, #expected_delivery_month, #expected_delivery_year').on('change', function (e) {
                 oTable.draw();
                 e.preventDefault();
             });
-            $('#created_at').on('change', function (e) {
+            $('#created_at, #created_month, #created_year').on('change', function (e) {
                 oTable.draw();
                 e.preventDefault();
             });
