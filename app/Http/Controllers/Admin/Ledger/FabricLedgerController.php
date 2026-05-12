@@ -77,6 +77,7 @@ class FabricLedgerController extends Controller
         // A. Sales (Agent Orders)
         $salesOutwards = AgentOrderFabricItem::with(['order.party', 'roll'])
             ->whereIn('fabric_receipt_detail_id', $receivedRollIds)
+            ->where('status', 'dispatched')
             ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
             ->when($customerId, function($q) use ($customerId) {

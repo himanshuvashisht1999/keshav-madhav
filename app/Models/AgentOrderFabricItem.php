@@ -15,7 +15,9 @@ class AgentOrderFabricItem extends Model
         'fabric_receipt_detail_id',
         'meter',
         'selling_price',
-        'agent_order_dispatch_id'
+        'agent_order_dispatch_id',
+        'status',
+        'dispatched_at'
     ];
 
     public function order()
