@@ -1,0 +1,249 @@
+<?php
+
+namespace App\Http\Controllers\Admin\Ledger;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Vendor;
+use App\Models\MasterCustomer;
+use App\Models\AgentOrderDispatch;
+use App\Models\AgentOrderReturn;
+use App\Models\FabricReceipt;
+use App\Models\FabricReturn;
+use App\Models\Payment;
+use DB;
+
+class PartyLedgerController extends Controller
+{
+    public function index(Request $request)
+    {
+        $search = $request->query('search');
+        $type = $request->query('type'); // 'vendor' or 'customer'
+
+        $parties = collect();
+
+        if (!$type || $type === 'vendor') {
+            $vendors = Vendor::where('status', 1)
+                ->when($search, function($q) use ($search) {
+                    $q->where('name', 'LIKE', "%$search%");
+                })
+                ->get()
+                ->map(function($v) {
+                    $v->party_type = 'vendor';
+                    return $v;
+                });
+            $parties = $parties->concat($vendors);
+        }
+
+        if (!$type || $type === 'customer') {
+            $customers = MasterCustomer::where('status', 1)
+                ->when($search, function($q) use ($search) {
+                    $q->where('name', 'LIKE', "%$search%");
+                })
+                ->get()
+                ->map(function($c) {
+                    $c->party_type = 'customer';
+                    return $c;
+                });
+            $parties = $parties->concat($customers);
+        }
+
+        // Sort by name
+        $parties = $parties->sortBy('name');
+
+        return view('admin.ledger.party.index', compact('parties'));
+    }
+
+    public function show(Request $request, $type, $id)
+    {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        if ($type === 'vendor') {
+            $party = Vendor::findOrFail($id);
+        } else {
+            $party = MasterCustomer::findOrFail($id);
+        }
+
+        $transactions = collect();
+
+        if ($type === 'customer') {
+            $partyModel = 'App\Models\MasterCustomer';
+            $partyIdField = 'master_customer_id';
+            $directIdField = 'customer_id';
+        } else {
+            $partyModel = 'App\Models\Vendor';
+            $partyIdField = 'master_vendor_id';
+            $directIdField = 'vendor_id';
+        }
+
+        // 1. Sales (Dispatches) - DEBIT
+        $dispatches = AgentOrderDispatch::where($partyIdField, $id)
+            ->where('party_type', $type)
+            ->where('status', 'dispatched')
+            ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
+            ->get();
+
+        foreach ($dispatches as $d) {
+            $transactions->push((object)[
+                'date' => $d->dispatch_date,
+                'type' => 'Sale',
+                'ref' => 'Dispatch #' . $d->id,
+                'debit' => (float)$d->grand_total,
+                'credit' => 0,
+                'description' => 'Sales Dispatch: ' . ($d->remark ?? '-')
+            ]);
+        }
+
+        // 2. Standard Order Dispatches - DEBIT
+        if ($type === 'customer') {
+            $orderDispatches = \App\Models\OrderDispatch::where($directIdField, $id)
+                ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
+                ->get();
+
+            foreach ($orderDispatches as $od) {
+                $transactions->push((object)[
+                    'date' => $od->dispatch_date,
+                    'type' => 'Order Dispatch',
+                    'ref' => 'OD #' . ($od->sku ?? $od->id),
+                    'debit' => (float)$od->total_amount,
+                    'credit' => 0,
+                    'description' => 'Regular Order Dispatch'
+                ]);
+            }
+        }
+
+        // 3. Sales Returns - CREDIT
+        $salesReturns = AgentOrderReturn::whereHas('dispatch', function($q) use ($id, $partyIdField, $type) {
+                $q->where($partyIdField, $id)->where('party_type', $type);
+            })
+            ->when($startDate, fn($q) => $q->whereDate('return_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('return_date', '<=', $endDate))
+            ->get();
+
+        foreach ($salesReturns as $r) {
+            $transactions->push((object)[
+                'date' => $r->return_date,
+                'type' => 'Sale Return',
+                'ref' => 'Return #' . $r->id,
+                'debit' => 0,
+                'credit' => (float)$r->grand_total,
+                'description' => 'Sales Return'
+            ]);
+        }
+
+        // 3. Payments - Dynamic based on party_type and amount sign or separate logic
+        // For simplicity, we'll fetch all payments for this party
+        $payments = Payment::where('party_id', $id)
+            ->where('party_type', $partyModel)
+            ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
+            ->get();
+
+        foreach ($payments as $p) {
+            // Mapping: 
+            // 'received' -> Credit (Money coming to us, decreases what they owe or increases what we owe)
+            // 'paid' -> Debit (Money going out, increases what they owe or decreases what we owe)
+            
+            if ($p->payment_type === 'received') {
+                $debit = 0;
+                $credit = (float)$p->amount;
+                $desc = 'Payment Received (' . $p->payment_mode . ')';
+            } else {
+                $debit = (float)$p->amount;
+                $credit = 0;
+                $desc = 'Payment Paid (' . $p->payment_mode . ')';
+            }
+
+            $transactions->push((object)[
+                'date' => $p->payment_date,
+                'type' => 'Payment',
+                'ref' => 'Pay #' . $p->id,
+                'debit' => $debit,
+                'credit' => $credit,
+                'description' => $desc . ($p->remarks ? ': ' . $p->remarks : '')
+            ]);
+        }
+
+        // 4. Finished Goods Purchases (Inventory Purchase) - CREDIT
+        $inventoryPurchases = \App\Models\DomesticInventoryPurchase::where($directIdField, $id)
+            ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
+            ->get();
+
+        foreach ($inventoryPurchases as $ip) {
+            $transactions->push((object)[
+                'date' => $ip->created_at,
+                'type' => 'Inventory Purchase',
+                'ref' => 'InvPur #' . $ip->id,
+                'debit' => 0,
+                'credit' => (float)$ip->total_amount,
+                'description' => 'Inventory Purchase: ' . ($ip->remarks ?? '-')
+            ]);
+        }
+
+        // 5. Vendor Specific: Fabric Purchases (Inwards) - CREDIT
+        if ($type === 'vendor') {
+            $receipts = FabricReceipt::where('vendor_id', $id)
+                ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
+                ->get();
+
+            foreach ($receipts as $r) {
+                $transactions->push((object)[
+                    'date' => $r->created_at,
+                    'type' => 'Fabric Purchase',
+                    'ref' => 'Receipt #' . $r->sku,
+                    'debit' => 0,
+                    'credit' => (float)$r->total_amount,
+                    'description' => 'Fabric Inward (Shipment: ' . ($r->shipment_id ?? '-') . ')'
+                ]);
+            }
+
+            // 6. Vendor Specific: Returns to Vendor (Purchase Returns) - DEBIT
+            $pReturns = FabricReturn::whereHas('receipt', function($q) use ($id) {
+                    $q->where('vendor_id', $id);
+                })
+                ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
+                ->get();
+
+            foreach ($pReturns as $pr) {
+                $transactions->push((object)[
+                    'date' => $pr->date,
+                    'type' => 'Fabric Return',
+                    'ref' => 'Return #' . ($pr->return_number ?? $pr->id),
+                    'debit' => (float)$pr->total_amount,
+                    'credit' => 0,
+                    'description' => 'Fabric Return to Vendor'
+                ]);
+            }
+        }
+
+        // 7. Opening Balance
+        $openingBalance = \App\Models\MasterOpeningBalance::where('master_type', $type)
+            ->where('master_id', $id)
+            ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
+            ->first();
+
+        $openingBalAmount = 0;
+        if ($openingBalance) {
+            $isDebit = (strtolower($openingBalance->balance_type) === 'debit');
+            $openingBalAmount = (float)$openingBalance->amount;
+            if (!$isDebit) $openingBalAmount = -$openingBalAmount; // Credit is negative in my logic
+        }
+
+        // Sort and Calculate Balance
+        $transactions = $transactions->sortBy('date')->values();
+        
+        $balance = $openingBalAmount;
+        foreach ($transactions as $tx) {
+            $balance += ($tx->debit - $tx->credit);
+            $tx->running_balance = $balance;
+        }
+
+        return view('admin.ledger.party.show', compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount'));
+    }
+}
