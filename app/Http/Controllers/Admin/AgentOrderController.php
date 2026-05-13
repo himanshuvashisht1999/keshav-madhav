@@ -555,7 +555,13 @@ class AgentOrderController extends Controller
             }
 
             if ($order_type === 'direct') {
-                $customer->decrement('balance', $grand_total);
+                if ($order->party_type === 'vendor') {
+                    $vendor = \App\Models\Vendor::find($order->master_vendor_id);
+                    if ($vendor) $vendor->increment('balance', $grand_total);
+                } else {
+                    $customer = \App\Models\MasterCustomer::find($order->master_customer_id);
+                    if ($customer) $customer->increment('balance', $grand_total);
+                }
             }
 
             DB::commit();
@@ -1540,13 +1546,13 @@ class AgentOrderController extends Controller
             if ($order->party_type === 'vendor') {
                 $vendor = \App\Models\Vendor::find($order->master_vendor_id);
                 if ($vendor) {
-                    $vendor->balance -= $dispatchTotal;
+                    $vendor->balance += $dispatchTotal;
                     $vendor->save();
                 }
             } else {
                 $customer = \App\Models\MasterCustomer::find($order->master_customer_id);
                 if ($customer) {
-                    $customer->balance -= $dispatchTotal;
+                    $customer->balance += $dispatchTotal;
                     $customer->save();
                 }
             }
@@ -2556,8 +2562,8 @@ class AgentOrderController extends Controller
             // Adjust Party Balance
             $party = $dispatch->party();
             if ($party) {
-                // Return increases balance (reduces debt)
-                $party->increment('balance', $grand_total);
+                // Return reduces debt (Credit)
+                $party->decrement('balance', $grand_total);
             }
 
             DB::commit();
@@ -2659,7 +2665,8 @@ class AgentOrderController extends Controller
 
             $party = $dispatch->party;
             if ($party) {
-                $party->decrement('balance', $return->grand_total);
+                // Reverse old return (increases debt back)
+                $party->increment('balance', $return->grand_total);
             }
 
             // 2. Delete old return items
@@ -2770,7 +2777,8 @@ class AgentOrderController extends Controller
 
             // 5. Re-apply new Party Balance
             if ($party) {
-                $party->increment('balance', $grand_total);
+                // Apply new return (reduces debt)
+                $party->decrement('balance', $grand_total);
             }
 
             DB::commit();
@@ -2810,9 +2818,9 @@ class AgentOrderController extends Controller
             }
 
             // Reverse Party Balance
-            $party = $dispatch->party;
             if ($party) {
-                $party->decrement('balance', $return->grand_total);
+                // Reverse return (increases debt back)
+                $party->increment('balance', $return->grand_total);
             }
 
             $return->delete();
