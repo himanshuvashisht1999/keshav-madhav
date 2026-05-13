@@ -61,19 +61,24 @@ class PaymentAdjustment extends Model
             return $this->ref_id ?? 'N/A';
         }
         
-        $name = '';
-        if (str_contains($this->ref_id, 'OD:')) {
-            $name = 'DIS-#' . ($entity->sku ?? substr($this->ref_id, 3));
-        } elseif (str_contains($this->ref_id, 'AOD:')) {
-            $name = 'A-DIS-#' . ($entity->sku ?? substr($this->ref_id, 4));
-        } elseif (str_contains($this->ref_id, 'OR:')) {
-            $name = 'ORD-#' . ($entity->sku ?? substr($this->ref_id, 3));
+        $displayName = '';
+
+        if (str_starts_with($this->ref_id, 'OD:') || str_starts_with($this->ref_id, 'AOD:') || str_starts_with($this->ref_id, 'OR:')) {
+            // For dispatches/orders, show the party name
+            if (str_starts_with($this->ref_id, 'AOD:')) {
+                $displayName = ($entity->party->name ?? $entity->shop->name ?? $entity->vendor->name ?? 'N/A');
+            } else {
+                $displayName = $entity->customer->name ?? $entity->shop->name ?? 'N/A';
+            }
+        } elseif ($this->master->model_name == 'App\Models\FabricReceipt') {
+            // For shipments, show the vendor name
+            $displayName = $entity->vendor->name ?? 'N/A';
         } else {
-            $name = $entity->shipment_id ?? $entity->name ?? $entity->sku ?? ('#' . ($entity->id ?? 'N/A'));
+            // For direct masters (Customer, Vendor, Employee, etc.), use their name
+            $displayName = $entity->name ?? $entity->shipment_id ?? $entity->sku ?? ('#' . ($entity->id ?? 'N/A'));
         }
 
-        $balance = $entity->balance_amount ?? $entity->balance ?? 0;
-        return $name . ' (₹' . number_format($balance, 0) . ')';
+        return $displayName;
     }
 
     public function getParentItemAttribute()

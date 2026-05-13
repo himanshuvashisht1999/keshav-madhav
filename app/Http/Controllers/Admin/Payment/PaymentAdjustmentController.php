@@ -135,7 +135,7 @@ class PaymentAdjustmentController extends Controller
                             'payment_account_id' => $accountId,
                             'amount' => $currentAmount,
                             'date' => $request->date,
-                            'remarks' => '[Dist] ' . $remarks
+                            'remarks' => $remarks
                         ]);
 
                         // Financial Logic: Only apply if amount distributed is > 0

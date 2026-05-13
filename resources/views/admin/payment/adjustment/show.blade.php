@@ -67,7 +67,7 @@
                                 <td>{{ $adj->master->name ?? 'N/A' }}</td>
                                 <td>{{ $adj->entity_name }}</td>
                                 <td>{{ number_format($adj->amount, 2) }}</td>
-                                <td>{{ $adj->remarks }}</td>
+                                <td>{{ str_replace('[Dist] ', '', $adj->remarks) }}</td>
                             </tr>
                             @endforeach
                         </tbody>
