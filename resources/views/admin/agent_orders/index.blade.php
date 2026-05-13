@@ -39,11 +39,11 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="small text-muted font-weight-bold">Filter by Party</label>
-                                <select name="shop_id" id="shop_id" class="form-control select2">
+                                <select name="party_id" id="party_id" class="form-control select2">
                                     <option value="">All Parties</option>
-                                    @foreach($shops as $shop)
-                                        <option value="{{ $shop->id }}" {{ request('shop_id') == $shop->id ? 'selected' : '' }}>
-                                            {{ $shop->name }}
+                                    @foreach($parties as $party)
+                                        <option value="{{ $party->combined_id }}" {{ request('party_id') == $party->combined_id ? 'selected' : '' }}>
+                                            {{ $party->name }} ({{ ucfirst($party->type) }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -332,13 +332,15 @@ $(document).ready(function() {
             type: "GET",
             data: { agent_id: agent_id },
             success: function(data) {
-                var shopSelect = $('#shop_id');
-                shopSelect.empty();
-                shopSelect.append('<option value="">All Shops</option>');
-                $.each(data, function(index, shop) {
-                    shopSelect.append('<option value="' + shop.id + '">' + shop.name + '</option>');
+                var partySelect = $('#party_id');
+                partySelect.empty();
+                partySelect.append('<option value="">All Parties</option>');
+                $.each(data, function(index, party) {
+                    var combinedId = party.type + '_' + party.id;
+                    var typeLabel = party.type.charAt(0).toUpperCase() + party.type.slice(1);
+                    partySelect.append('<option value="' + combinedId + '">' + party.name + ' (' + typeLabel + ')</option>');
                 });
-                shopSelect.trigger('change');
+                partySelect.trigger('change');
             }
         });
     });

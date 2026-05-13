@@ -576,18 +576,37 @@ class AgentOrderController extends Controller
         $agent_id = $request->get('agent_id');
         $is_direct = $request->get('is_direct');
 
-        $query = DB::table('master_customers')
+        $customersQuery = DB::table('master_customers')
             ->select('id', 'name')
             ->where('status', 1);
 
         if ($is_direct == 1 || $agent_id === 'direct') {
-            $query->where('subtype', 'direct');
+            $customersQuery->where('subtype', 'direct');
         } elseif (!empty($agent_id)) {
-            $query->where('sales_agent_id', $agent_id);
+            $customersQuery->where('sales_agent_id', $agent_id);
         }
 
-        $shops = $query->get();
-        return response()->json($shops);
+        $customers = $customersQuery->get()->map(function ($c) {
+            $c->type = 'customer';
+            return $c;
+        });
+
+        $res = $customers;
+
+        // Vendors are usually direct, so only show if not filtering by a specific non-direct agent
+        if (empty($agent_id) || $agent_id === 'direct' || $is_direct == 1) {
+            $vendors = DB::table('vendors')
+                ->select('id', 'name')
+                ->where('status', 1)
+                ->get()
+                ->map(function ($v) {
+                    $v->type = 'vendor';
+                    return $v;
+                });
+            $res = $res->concat($vendors);
+        }
+
+        return response()->json($res);
     }
 
     public function index(Request $request)
@@ -617,6 +636,18 @@ class AgentOrderController extends Controller
                 $query->where('agent_orders.sales_agent_id', $request->agent_id);
             }
         }
+        if ($request->filled('party_id')) {
+            $parts = explode('_', $request->party_id);
+            if (count($parts) == 2) {
+                $type = $parts[0];
+                $pId = $parts[1];
+                if ($type == 'vendor') {
+                    $query->where('agent_orders.master_vendor_id', $pId);
+                } else {
+                    $query->where('agent_orders.master_customer_id', $pId);
+                }
+            }
+        }
         if ($request->filled('shop_id')) {
             $query->where('agent_orders.master_customer_id', $request->shop_id);
         }
@@ -643,10 +674,20 @@ class AgentOrderController extends Controller
             ->appends($request->query());
 
         $agents = DB::table('sales_agents')->select('id', 'name')->get();
-        $shops = DB::table('master_customers')->select('id', 'name')->get();
-        $vendors = DB::table('vendors')->select('id', 'name')->get();
+        
+        $customers = DB::table('master_customers')->select('id', 'name')->where('status', 1)->get()->map(function($item) {
+            $item->combined_id = 'customer_' . $item->id;
+            $item->type = 'customer';
+            return $item;
+        });
+        $vendors_list = DB::table('vendors')->select('id', 'name')->where('status', 1)->get()->map(function($item) {
+            $item->combined_id = 'vendor_' . $item->id;
+            $item->type = 'vendor';
+            return $item;
+        });
+        $parties = $customers->concat($vendors_list)->sortBy('name');
 
-        return view('admin.agent_orders.index', compact('orders', 'agents', 'shops', 'vendors'));
+        return view('admin.agent_orders.index', compact('orders', 'agents', 'parties'));
     }
 
     public function show($id)
