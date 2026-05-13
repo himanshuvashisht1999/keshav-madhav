@@ -4,20 +4,33 @@
     <meta charset="utf-8">
     <title>Production Purchase Order - {{ $po->po_number }}</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 13px; color: #333; margin: 0; padding: 0; }
-        .invoice-box { padding: 30px; }
-        .invoice-header { border-bottom: 2px solid #007bff; padding-bottom: 15px; margin-bottom: 20px; }
-        .company-details h2 { margin: 0; font-weight: bold; color: #007bff; font-size: 24px; }
-        .vendor-box, .po-box { background: #f9f9f9; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; }
-        .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .table th { background: #007bff; color: #fff; padding: 10px; border: 1px solid #ddd; }
-        .table td { padding: 8px; border: 1px solid #ddd; text-align: center; }
-        .grand-total { font-weight: bold; background: #f1f1f1; }
+        @page { margin: 8mm; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #333; margin: 0; padding: 0; line-height: 1.2; }
+        .invoice-box { padding: 5px; }
+        .invoice-header { border-bottom: 1.5px solid #007bff; padding-bottom: 5px; margin-bottom: 10px; }
+        .company-details h2 { margin: 0; font-weight: bold; color: #007bff; font-size: 18px; }
+        .company-details p { margin: 2px 0; font-size: 10px; }
+        
+        .table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        .table th { background: #007bff; color: #fff; padding: 6px 4px; border: 1px solid #ddd; text-align: center; font-size: 10px; }
+        .table td { padding: 6px 5px; border: 1px solid #ddd; vertical-align: middle; font-size: 10px; }
+        
+        .vendor-box, .po-box { background: #f9f9f9; padding: 8px; border-radius: 4px; border: 1px solid #dee2e6; }
+        .vendor-box p, .po-box p { margin: 2px 0; }
+        .box-title { color: #007bff; font-size: 10px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #ddd; margin-bottom: 5px; padding-bottom: 2px; }
+        
         .text-right { text-align: right; }
         .text-left { text-align: left; }
+        .text-center { text-align: center; }
         .text-primary { color: #007bff; }
         .mb-0 { margin-bottom: 0; }
-        .mt-4 { margin-top: 20px; }
+        .mt-2 { margin-top: 10px; }
+        
+        .grand-total { background: #f1f1f1; font-weight: bold; }
+        .footer-table { width: 100%; margin-top: 20px; font-size: 10px; }
+        
+        .design-no { font-weight: bold; color: #007bff; }
+        .item-details { color: #555; }
     </style>
 </head>
 <body>
@@ -25,73 +38,52 @@
         {{-- Header --}}
         <table style="width: 100%;" class="invoice-header">
             <tr>
-                <td class="company-details">
+                <td class="company-details" style="vertical-align: top;">
                     <h2>{{ $general_setting->website_name ?? 'SNAPKID' }}</h2>
-                    <p class="mb-0">{{ $general_setting->address ?? '' }}</p>
-                    <p class="mb-0">{{ $general_setting->email ?? '' }}</p>
-                    <p class="mb-0"><b>Phone:</b> {{ $general_setting->phone ?? '' }}</p>
+                    <p>{{ $general_setting->address ?? '' }}</p>
+                    <p>{{ $general_setting->email ?? '' }} | <b>Phone:</b> {{ $general_setting->phone ?? '' }}</p>
                 </td>
-                <td class="text-right">
+                <td class="text-right" style="vertical-align: top;">
                     @if($general_setting && $general_setting->logo)
-                        {{-- In PDF we often need absolute path or base64. Using path for now --}}
-                        <img src="{{ public_path(str_replace(url('/'), '', $general_setting->logo)) }}" height="80" alt="Logo">
+                        <img src="{{ public_path(str_replace(url('/'), '', $general_setting->logo)) }}" height="50" alt="Logo">
                     @endif
                 </td>
             </tr>
         </table>
 
         {{-- Vendor & PO Info --}}
-        <table style="width: 100%; margin-top: 20px;">
+        <table style="width: 100%; margin-bottom: 10px;">
             <tr>
-                <td style="width: 50%; padding-right: 10px;">
+                <td style="width: 50%; padding-right: 5px; vertical-align: top;">
                     <div class="vendor-box">
-                        <h5 class="text-primary" style="margin-top:0; border-bottom: 1px solid #ddd; padding-bottom: 5px;"><b>VENDOR DETAILS</b></h5>
-                        <p class="mb-0"><b>Name:</b> 
-                            @if($po->vendor)
-                                {{ $po->vendor->name }}
-                            @elseif($po->customer)
-                                {{ $po->customer->name }}
-                            @endif
-                        </p>
-                        <p class="mb-0"><b>Mobile:</b> 
-                            @if($po->vendor)
-                                {{ $po->vendor->mobile ?? 'N/A' }}
-                            @elseif($po->customer)
-                                {{ $po->customer->mobile ?? 'N/A' }}
-                            @endif
-                        </p>
-                        <p class="mb-0"><b>Address:</b> 
-                            @if($po->vendor)
-                                {{ $po->vendor->address ?? 'N/A' }}
-                            @elseif($po->customer)
-                                {{ $po->customer->address ?? 'N/A' }}
-                            @endif
-                        </p>
+                        <div class="box-title">Vendor Details</div>
+                        <p><b>Name:</b> {{ $po->vendor->name ?? ($po->customer->name ?? 'N/A') }}</p>
+                        <p><b>Mobile:</b> {{ $po->vendor->mobile ?? ($po->customer->mobile ?? 'N/A') }}</p>
+                        <p><b>Address:</b> {{ Str::limit($po->vendor->address ?? ($po->customer->address ?? 'N/A'), 60) }}</p>
                     </div>
                 </td>
-                <td style="width: 50%; padding-left: 10px;">
+                <td style="width: 50%; padding-left: 5px; vertical-align: top;">
                     <div class="po-box">
-                        <h5 class="text-primary text-right" style="margin-top:0; border-bottom: 1px solid #ddd; padding-bottom: 5px;"><b>PO INFO</b></h5>
-                        <p class="mb-0 text-right"><b>PO Number:</b> {{ $po->po_number }}</p>
-                        <p class="mb-0 text-right"><b>Order No:</b> {{ $po->orderMain->sku ?? 'N/A' }}</p>
-                        <p class="mb-0 text-right"><b>Date:</b> {{ $po->created_at->format('j M Y') }}</p>
-                        <p class="mb-0 text-right"><b>Delivery Date:</b> {{ $po->delivery_date ? \Carbon\Carbon::parse($po->delivery_date)->format('j M Y') : 'N/A' }}</p>
+                        <div class="box-title text-right">PO Info</div>
+                        <p class="text-right"><b>PO Number:</b> {{ $po->po_number }}</p>
+                        <p class="text-right"><b>Order No:</b> {{ $po->orderMain->sku ?? 'N/A' }}</p>
+                        <p class="text-right"><b>Date:</b> {{ $po->created_at->format('j M Y') }}</p>
+                        <p class="text-right"><b>Delivery Date:</b> {{ $po->delivery_date ? \Carbon\Carbon::parse($po->delivery_date)->format('j M Y') : 'N/A' }}</p>
                     </div>
                 </td>
             </tr>
         </table>
 
-        {{-- Items --}}
-        <h5 class="mt-4 mb-3 text-primary">Order Items</h5>
+        {{-- Items Table --}}
         <table class="table">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Design</th>
-                    <th>Product Details</th>
-                    <th>Qty</th>
-                    <th>Rate</th>
-                    <th>Total</th>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 15%;">Design</th>
+                    <th style="width: 45%;">Product Details</th>
+                    <th style="width: 10%;">Qty</th>
+                    <th style="width: 10%;">Rate</th>
+                    <th style="width: 15%;">Total</th>
                 </tr>
             </thead>
             <tbody>
@@ -103,49 +95,51 @@
                         $totalAmount += $subtotal;
                     @endphp
                     <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td><strong>{{ $item->productSet->design_number ?? 'N/A' }}</strong></td>
+                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td class="text-center"><span class="design-no">{{ $item->productSet->design_number ?? 'N/A' }}</span></td>
                         <td class="text-left">
-                            <small>
+                            <span class="item-details">
                                 <b>Color:</b> {{ $item->productSet->colors->name ?? 'N/A' }} | <b>Size:</b> {{ $item->productSet->size_set_name ?? 'N/A' }}<br>
-                                <b>Fabric:</b> {{ $item->fabric_names }}<br>
-                                <b>Pattern:</b> {{ $item->pattern->name ?? '-' }} | <b>Fitting:</b> {{ $item->master_fitting->name ?? '-' }}<br>
-                                <b>Belt:</b> {{ $item->belt ?? '-' }}
-                            </small>
+                                <b>Fabric:</b> {{ $item->fabric_names }} | <b>Pattern:</b> {{ $item->pattern->name ?? '-' }}<br>
+                                <b>Fitting:</b> {{ $item->master_fitting->name ?? '-' }} | <b>Belt:</b> {{ $item->belt ?? '-' }}
+                                @if($item->remarks)
+                                    <br><b>Remark:</b> {{ $item->remarks }}
+                                @endif
+                            </span>
                         </td>
-                        <td>{{ $item->quantity }}</td>
-                        <td>{{ number_format($item->rate, 2) }}</td>
-                        <td>{{ number_format($subtotal, 2) }}</td>
+                        <td class="text-center" style="font-weight: bold;">{{ $item->quantity }}</td>
+                        <td class="text-right">{{ number_format($item->rate, 2) }}</td>
+                        <td class="text-right" style="font-weight: bold;">{{ number_format($subtotal, 2) }}</td>
                     </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr class="grand-total">
-                    <td colspan="3" class="text-right">Total</td>
-                    <td>{{ $totalQty }}</td>
+                    <td colspan="3" class="text-right">Grand Total</td>
+                    <td class="text-center">{{ $totalQty }}</td>
                     <td></td>
-                    <td>{{ number_format($totalAmount, 2) }}</td>
+                    <td class="text-right">{{ number_format($totalAmount, 2) }}</td>
                 </tr>
             </tfoot>
         </table>
 
-        <div class="mt-4">
-            <h5 class="text-primary"><b>Remark</b></h5>
-            <div style="background:#f1f1f1; padding:10px; border-radius:6px;">
-                {{ $po->remark ?? 'N/A' }}
-            </div>
+        @if($po->remark)
+        <div class="mt-2">
+            <p class="mb-0"><b>PO Remark:</b> {{ $po->remark }}</p>
         </div>
+        @endif
 
         {{-- Footer --}}
-        <table style="width: 100%; margin-top: 50px;">
+        <table class="footer-table">
             <tr>
-                <td>
+                <td style="width: 50%;">
                     <p><b>Authorized Signature</b></p>
                     <br><br>
                     <p>____________________</p>
                 </td>
-                <td class="text-right">
-                    <p class="text-primary"><b>Thank you for your business!</b></p>
+                <td class="text-right" style="width: 50%;">
+                    <p class="text-primary" style="font-size: 11px;"><b>Thank you for your business!</b></p>
+                    <p style="color: #999;">Generated on: {{ date('j M Y, h:i A') }}</p>
                 </td>
             </tr>
         </table>
