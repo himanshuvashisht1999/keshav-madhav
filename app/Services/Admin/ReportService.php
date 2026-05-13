@@ -481,7 +481,8 @@ class ReportService
                 ->get();
 
             $agentUsagesQuery = \App\Models\AgentOrderFabricItem::with(['order.party', 'roll'])
-                ->where('fabric_id', $fabricId);
+                ->where('fabric_id', $fabricId)
+                ->whereNotNull('agent_order_dispatch_id');
 
             if ($warehouseId) {
                 $agentUsagesQuery->whereHas('roll', function ($q) use ($warehouseId) {
@@ -710,7 +711,8 @@ class ReportService
         }
 
         $agentUsagesQuery = \App\Models\AgentOrderFabricItem::with(['order.party', 'roll'])
-            ->where('fabric_id', $fabricId);
+            ->where('fabric_id', $fabricId)
+            ->whereNotNull('agent_order_dispatch_id');
 
         if (!empty($warehouseId)) {
             $agentUsagesQuery->whereHas('roll', function ($q) use ($warehouseId) {

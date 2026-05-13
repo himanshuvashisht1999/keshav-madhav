@@ -114,6 +114,7 @@ class ReportController extends Controller
         $agentUsages = \App\Models\AgentOrderFabricItem::whereHas('roll', function($q) use ($rollNo) {
             $q->where('roll_number', $rollNo);
         })->where('fabric_id', $fabricId)
+          ->whereNotNull('agent_order_dispatch_id')
           ->with(['order.party', 'roll'])
           ->orderBy('created_at', 'desc')
           ->get();

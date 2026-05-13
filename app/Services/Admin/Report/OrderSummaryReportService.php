@@ -21,6 +21,14 @@ class OrderSummaryReportService
                 if ($request->filled('order_no')) {
                     $q->where('sku', 'like', '%' . $request->order_no . '%');
                 }
+                if ($request->filled('po_number')) {
+                    $q->where('po_number', 'like', '%' . $request->po_number . '%');
+                }
+                if ($request->filled('design_number')) {
+                    $q->whereHas('OrderProductSets', function($sq) use ($request) {
+                        $sq->where('design_number', 'like', '%' . $request->design_number . '%');
+                    });
+                }
                 if ($request->filled('customer_id')) {
                     $q->where('master_customer_id', $request->customer_id);
                 }

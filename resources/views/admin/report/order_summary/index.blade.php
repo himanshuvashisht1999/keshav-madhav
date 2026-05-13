@@ -80,9 +80,19 @@
                     <div class="card-body">
                         <div class="row g-2">
 
-                            <div class="col-md-4">
+                            <div class="col-md-2">
                                 <label>Order No</label>
-                                <input type="text" id="order_no" class="form-control" placeholder="Enter Order No">
+                                <input type="text" id="order_no" class="form-control" placeholder="Order No">
+                            </div>
+
+                            <div class="col-md-2">
+                                <label>PO Number</label>
+                                <input type="text" id="po_number" class="form-control" placeholder="PO Number">
+                            </div>
+
+                            <div class="col-md-2">
+                                <label>Design No</label>
+                                <input type="text" id="design_number" class="form-control" placeholder="Design No">
                             </div>
 
                             <div class="col-md-4">
@@ -105,7 +115,7 @@
 
                             <div class="col-md-2 d-flex align-items-end">
                                 <button class="btn btn-secondary w-100"
-                                    onclick="$('#order_no,#customer_id').val('').trigger('change')">
+                                    onclick="$('#order_no,#po_number,#design_number,#customer_id').val('').trigger('change')">
                                     <i class="fas fa-sync"></i> Reset
                                 </button>
                             </div>
@@ -124,6 +134,7 @@
                                     <tr>
                                         <th width="5%" class="text-center">#</th>
                                         <th>Order No</th>
+                                        <th>PO Number</th>
                                         <th>Customer</th>
                                         <th>Order Date</th>
                                         <th class="text-center">Status</th>
@@ -156,6 +167,8 @@
                     url: '{!! route('admin.report.order-summary.indexList') !!}',
                     data: function (d) {
                         d.order_no = $('#order_no').val();
+                        d.po_number = $('#po_number').val();
+                        d.design_number = $('#design_number').val();
                         d.customer_id = $('#customer_id').val();
                     }
                 },
@@ -169,6 +182,10 @@
                         data: 'sku',
                         name: 'sku',
                         className: 'fw-bold'
+                    },
+                    {
+                        data: 'po_number',
+                        name: 'po_number'
                     },
                     {
                         data: 'customer_name',
@@ -195,7 +212,7 @@
                 table.draw();
             });
 
-            $('#order_no, #customer_id').on('keyup change', function () {
+            $('#order_no, #po_number, #design_number, #customer_id').on('keyup change', function () {
                 table.draw();
             });
 

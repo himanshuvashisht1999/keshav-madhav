@@ -2,40 +2,40 @@
 
 @section('content')
 <style>
-.report-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
 
-.report-header h3 {
-    font-weight: 600;
-    margin: 0;
-}
+    .report-header h3 {
+        font-weight: 600;
+        margin: 0;
+    }
 
-.report-card {
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
-}
+    .report-card {
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+    }
 
-.table-report thead th {
-    background: #343a40;
-    color: #fff;
-    font-weight: 600;
-    white-space: nowrap;
-    vertical-align: middle;
-}
+    .table-report thead th {
+        background: #343a40;
+        color: #fff;
+        font-weight: 600;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
 
-.fabric-cell {
-    background: #f8f9fa;
-    font-weight: 600;
-    vertical-align: middle;
-}
+    .fabric-cell {
+        background: #f8f9fa;
+        font-weight: 600;
+        vertical-align: middle;
+    }
 
-.expand-btn {
-    font-size: 13px;
-}
+    .expand-btn {
+        font-size: 13px;
+    }
 </style>
 
 <div class="content-wrapper">
@@ -49,7 +49,7 @@
                     <div class="report-meta">Report No : RJ 4</div>
                 </div>
                 <div>
-                    <h3>Fabric Stock Report</h3>
+                    <h3>Lot Wise Report</h3>
                 </div>
                 <div class="report-meta">
                     Date : {{ now()->format('d M Y h:i A') }}
@@ -68,11 +68,11 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <label class="fw-bold">Order No</label>
-                                <select name="order_id" id="order_no" class="form-control select2" onchange="changeOrderId(this.value)">
+                                <select name="order_id" id="order_no" class="form-control select2"
+                                    onchange="changeOrderId(this.value)">
                                     <option value="">All</option>
                                     @foreach(collect($lotNos)->unique('order_id') as $row)
-                                        <option value="{{ $row['order_id'] }}"
-                                            {{ request('order_id') == $row['order_id'] ? 'selected' : '' }}>
+                                        <option value="{{ $row['order_id'] }}" {{ request('order_id') == $row['order_id'] ? 'selected' : '' }}>
                                             {{ $row['order_no'] }}
                                         </option>
                                     @endforeach
@@ -84,20 +84,17 @@
                                 <select name="lot_no" id="lot_no" class="form-control select2">
                                     <option value="">All</option>
                                     @forelse($lotNos as $index => $row)
-                                        <option value="{{ $row['lot_no'] }}" {{ request('lot_no') == $row['lot_no'] ? 'selected' : '' }}>
-                                            {{ $row['lot_no'] }}
-                                        </option>
+                                    <option value="{{ $row['lot_no'] }}" {{ request('lot_no') == $row['lot_no'] ? 'selected' : '' }}>
+                                        {{ $row['lot_no'] }}
+                                    </option>
                                     @endforeach
                                 </select>
                             </div>
 
                             {{--<div class="col-md-4">
                                 <label class="fw-bold">Order No</label>
-                                <input type="text"
-                                    name="order_no"
-                                    value="{{ request('order_no') }}"
-                                    class="form-control"
-                                    placeholder="Search Order No">
+                                <input type="text" name="order_no" value="{{ request('order_no') }}"
+                                    class="form-control" placeholder="Search Order No">
                             </div> --}}
 
                             <div class="col-md-4 d-flex align-items-end gap-2">
@@ -135,7 +132,7 @@
                             <tbody>
                                 @forelse($data as $index => $row)
                                     @isset($row['lot_no'])
-                                    
+
                                         <tr>
                                             <td>{{ $data->firstItem() + $index }}</td>
                                             <td>{{ $row['lot_no'] }}</td>
@@ -145,13 +142,14 @@
                                                 {{ $row['lot_quantity'] ?? '0' }}
                                             </td>
                                             <td class="text-center">
-                            
-                                                <a href="{{ route('admin.report.lots.lot-details', ['lot_no' => $row['lot_no']]) }}" class="btn btn-sm btn-outline-primary">
-                                                View
+
+                                                <a href="{{ route('admin.report.lots.lot-details', ['lot_no' => $row['lot_no']]) }}"
+                                                    class="btn btn-sm btn-outline-primary">
+                                                    View
                                                 </a>
                                             </td>
                                         </tr>
-                                    
+
                                     @endisset
                                 @empty
                                     <tr>
@@ -179,42 +177,42 @@
 {{-- ================= SCRIPT ================= --}}
 
 <script>
-    
-        const lotData = @json($lotNos);
 
-        const orderSelect = $('#order_no');
-        const lotSelect   = $('#lot_no');
+    const lotData = @json($lotNos);
 
-        // helper: unique values
-        function unique(arr) {
-            return [...new Set(arr)];
+    const orderSelect = $('#order_no');
+    const lotSelect = $('#lot_no');
+
+    // helper: unique values
+    function unique(arr) {
+        return [...new Set(arr)];
+    }
+
+    // helper: refill lot dropdown
+    function fillLotDropdown(lots) {
+        lotSelect.empty().append(`<option value="">All</option>`);
+        lots.forEach(lot => {
+            lotSelect.append(`<option value="${lot}">${lot}</option>`);
+        });
+        lotSelect.trigger('change');
+    }
+
+    // On ORDER change
+    function changeOrderId(selectedOrderId) {
+        // If All selected → show ALL lots
+        if (!selectedOrderId) {
+            const allLots = unique(lotData.map(i => i.lot_no));
+            fillLotDropdown(allLots);
+            return;
         }
 
-        // helper: refill lot dropdown
-        function fillLotDropdown(lots) {
-            lotSelect.empty().append(`<option value="">All</option>`);
-            lots.forEach(lot => {
-                lotSelect.append(`<option value="${lot}">${lot}</option>`);
-            });
-            lotSelect.trigger('change');
-        }
+        //  FILTER USING order_id (NOT order_no)
+        const filteredLots = lotData
+            .filter(i => String(i.order_id) === String(selectedOrderId))
+            .map(i => i.lot_no);
 
-        // On ORDER change
-        function changeOrderId(selectedOrderId) {
-            // If All selected → show ALL lots
-            if (!selectedOrderId) {
-                const allLots = unique(lotData.map(i => i.lot_no));
-                fillLotDropdown(allLots);
-                return;
-            }
-
-            //  FILTER USING order_id (NOT order_no)
-            const filteredLots = lotData
-                .filter(i => String(i.order_id) === String(selectedOrderId))
-                .map(i => i.lot_no);
-
-            fillLotDropdown(unique(filteredLots));
-        };
+        fillLotDropdown(unique(filteredLots));
+    };
 </script>
 
 @endsection

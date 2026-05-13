@@ -79,10 +79,9 @@
             <thead>
                 <tr>
                     <th width="5%" class="text-center">S.N.</th>
-                    <th width="20%">Roll Number</th>
-                    <th>Fabric Description</th>
-                    <th class="text-center" width="15%">Batch No</th>
-                    <th class="text-center" width="15%">Meters</th>
+                    <th width="25%">Roll Number</th>
+                    <th>Fabric Name</th>
+                    <th class="text-center" width="20%">Meters</th>
                 </tr>
             </thead>
             <tbody>
@@ -92,18 +91,17 @@
                         <td class="text-center">{{ $index + 1 }}.</td>
                         <td><strong>{{ $item->roll_number }}</strong></td>
                         <td style="text-transform: uppercase;">{{ $item->fabric_name }}</td>
-                        <td class="text-center">{{ $item->batch_no }}</td>
                         <td class="text-right font-weight-bold">{{ number_format($item->meter, 2) }} m</td>
                     </tr>
                     @php $tMeters += $item->meter; @endphp
                 @endforeach
 
                 @for ($i = count($fabricItems); $i < 12; $i++)
-                    <tr><td style="height: 25px;">&nbsp;</td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td style="height: 25px;">&nbsp;</td><td></td><td></td><td></td></tr>
                 @endfor
 
                 <tr class="total-row">
-                    <td class="text-center" colspan="4" style="font-size: 12px;">TOTAL SHIPMENT METERS</td>
+                    <td class="text-center" colspan="3" style="font-size: 12px;">TOTAL SHIPMENT METERS</td>
                     <td class="text-right" style="font-size: 13px;">{{ number_format($tMeters, 2) }} m</td>
                 </tr>
             </tbody>

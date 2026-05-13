@@ -91,12 +91,11 @@
             <thead>
                 <tr>
                     <th width="5%" class="text-center">S.N.</th>
-                    <th>Roll Number</th>
-                    <th>Fabric Description</th>
-                    <th class="text-center">Batch No</th>
-                    <th class="text-center">Meters</th>
-                    <th class="text-right">Price/m</th>
-                    <th class="text-right">Total Amount</th>
+                    <th width="20%">Roll Number</th>
+                    <th width="35%">Fabric Name</th>
+                    <th width="15%" class="text-center">Meters</th>
+                    <th width="12%" class="text-right">Price/m</th>
+                    <th width="13%" class="text-right">Total Amount</th>
                 </tr>
             </thead>
             <tbody>
@@ -106,7 +105,6 @@
                         <td class="text-center">{{ $index + 1 }}.</td>
                         <td><strong>{{ $item->roll_number }}</strong></td>
                         <td style="text-transform: uppercase;">{{ $item->fabric_name }}</td>
-                        <td class="text-center">{{ $item->batch_no }}</td>
                         <td class="text-right font-weight-bold">{{ number_format($item->meter, 2) }} m</td>
                         <td class="text-right">{{ number_format($item->selling_price, 2) }}</td>
                         <td class="text-right font-weight-bold">Rs. {{ number_format($item->meter * $item->selling_price, 2) }}</td>
@@ -115,12 +113,12 @@
                 @endforeach
 
                 @for ($i = count($fabricItems); $i < 12; $i++)
-                    <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
                 @endfor
 
                 <tr class="total-row">
                     <td></td>
-                    <td colspan="3" class="text-right">TOTAL</td>
+                    <td colspan="2" class="text-right">TOTAL</td>
                     <td class="text-right">{{ number_format($tMeters, 2) }} m</td>
                     <td></td>
                     <td class="text-right">Rs. {{ number_format($subtotal, 2) }}</td>
@@ -128,26 +126,26 @@
 
                 @if($discountAmt > 0)
                 <tr class="summary-row">
-                    <td colspan="6" class="text-right">Extra Discount</td>
+                    <td colspan="5" class="text-right">Extra Discount</td>
                     <td class="text-right">- Rs. {{ number_format($discountAmt, 2) }}</td>
                 </tr>
                 @endif
 
                 <tr class="summary-row">
-                    <td colspan="5" class="text-right">GST</td>
+                    <td colspan="4" class="text-right">GST</td>
                     <td class="text-right"></td>
                     <td class="text-right">Rs. {{ number_format($gstAmount, 2) }}</td>
                 </tr>
 
                 @if($dispatch->other_charges > 0 && !$brandId)
                 <tr class="summary-row">
-                    <td colspan="6" class="text-right">Other Charges</td>
+                    <td colspan="5" class="text-right">Other Charges</td>
                     <td class="text-right">Rs. {{ number_format($dispatch->other_charges, 2) }}</td>
                 </tr>
                 @endif
 
                 <tr class="summary-row" style="background-color: #f8f9fa; border-top: 2px solid #000;">
-                    <td colspan="6" class="text-right" style="font-size: 13px;">Grand Total :</td>
+                    <td colspan="5" class="text-right" style="font-size: 13px;">Grand Total :</td>
                     <td class="text-right" style="font-size: 13px; color: #d32f2f;">Rs. {{ number_format($grandTotal, 2) }}</td>
                 </tr>
             </tbody>

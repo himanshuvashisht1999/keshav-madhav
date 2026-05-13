@@ -8,6 +8,9 @@
                 <div class="row mb-2">
                     <div class="col-sm-8">
                         <h1 class="m-0 font-weight-bold">Order Summary: <span class="text-primary">{{ $order->sku }}</span>
+                            @if($order->po_number)
+                                <span class="text-muted ml-2">(PO: {{ $order->po_number }})</span>
+                            @endif
                             {!! $status !!}</h1>
                     </div>
                     <div class="col-sm-4 text-right">
@@ -41,9 +44,13 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <strong class="d-block text-muted text-uppercase text-xs">Customer</strong>
                                         <span class="h5 text-dark">{{ $order->customer->name ?? 'N/A' }}</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <strong class="d-block text-muted text-uppercase text-xs">PO Number</strong>
+                                        <span class="h5 text-dark">{{ $order->po_number ?? '-' }}</span>
                                     </div>
                                     <div class="col-md-3">
                                         <strong class="d-block text-muted text-uppercase text-xs">Order Date</strong>
@@ -148,9 +155,13 @@
                                 </div>
 
                                 <div class="row mt-2">
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <strong class="d-block text-muted text-uppercase text-xs">Customer</strong>
                                         <span class="h5 text-dark">{{ $order->customer->name ?? 'N/A' }}</span>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <strong class="d-block text-muted text-uppercase text-xs">PO Number</strong>
+                                        <span class="h5 text-dark">{{ $order->po_number ?? '-' }}</span>
                                     </div>
                                     <div class="col-md-3">
                                         <strong class="d-block text-muted text-uppercase text-xs">Order Date</strong>

@@ -45,7 +45,12 @@
 <body>
 
     <h2>Order Summary</h2>
-    <p><strong>Order SKU:</strong> {{ $order->sku }}</p>
+    <p>
+        <strong>Order SKU:</strong> {{ $order->sku }} 
+        @if($order->po_number)
+            | <strong>PO Number:</strong> {{ $order->po_number }}
+        @endif
+    </p>
 
     <hr>
 

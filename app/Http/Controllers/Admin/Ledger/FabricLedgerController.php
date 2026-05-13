@@ -21,7 +21,7 @@ class FabricLedgerController extends Controller
 
         $fabrics = Fabric::with(['fabric_vendor'])
             ->where('status', 1)
-            ->when($search, function($q) use ($search) {
+            ->when($search, function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%$search%");
             })
             ->paginate(15)
@@ -32,12 +32,12 @@ class FabricLedgerController extends Controller
             $fabric->total_inward = FabricReceiptDetail::where('fabric_id', $fabric->id)
                 ->where('status', '>', 0)
                 ->sum('meter');
-            
+
             // Current Balance (Sum of remaining for all active/partially used rolls)
             $fabric->current_balance = FabricReceiptDetail::where('fabric_id', $fabric->id)
                 ->where('status', '>', 0)
                 ->sum('remaining_quantity');
-                
+
             // Total Outward is the difference (Sales + Production + Returns + Adjustments for these specific rolls)
             $fabric->total_outward = $fabric->total_inward - $fabric->current_balance;
         }
@@ -59,7 +59,7 @@ class FabricLedgerController extends Controller
         // 1. Fetch relevant Inward rolls (Status > 0)
         $receivedRollsQuery = FabricReceiptDetail::where('fabric_id', $id)
             ->where('status', '>', 0);
-        
+
         $receivedRollIds = (clone $receivedRollsQuery)->pluck('id');
         $receivedRollNumbers = (clone $receivedRollsQuery)->pluck('roll_number');
 
@@ -67,20 +67,20 @@ class FabricLedgerController extends Controller
             ->whereIn('id', $receivedRollIds)
             ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
-            ->when($vendorId, function($q) use ($vendorId) {
+            ->when($vendorId, function ($q) use ($vendorId) {
                 $q->whereHas('fabric_receipt', fn($sq) => $sq->where('vendor_id', $vendorId));
             })
             ->get();
 
         // 2. Fetch recorded Outwards (Only for the received rolls)
-        
+
         // A. Sales (Agent Orders)
         $salesOutwards = AgentOrderFabricItem::with(['order.party', 'roll'])
             ->whereIn('fabric_receipt_detail_id', $receivedRollIds)
             ->where('status', 'dispatched')
             ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
-            ->when($customerId, function($q) use ($customerId) {
+            ->when($customerId, function ($q) use ($customerId) {
                 $q->whereHas('order', fn($sq) => $sq->where('party_id', $customerId));
             })
             ->get();
@@ -90,7 +90,7 @@ class FabricLedgerController extends Controller
             ->whereIn('fabric_receipt_detail_id', $receivedRollIds)
             ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
-            ->when($vendorId, function($q) use ($vendorId) {
+            ->when($vendorId, function ($q) use ($vendorId) {
                 $q->whereHas('return.receipt', fn($sq) => $sq->where('vendor_id', $vendorId));
             })
             ->get();
@@ -102,10 +102,10 @@ class FabricLedgerController extends Controller
             ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
             ->get();
 
-        // 3. Unify Transactions
+        // 3. Unify Transactions with Physical Attribution Logic
         $transactions = collect();
 
-        // Add Grouped Inwards (Shipments)
+        // A. Add Grouped Inwards (Shipments)
         $groupedInwards = $inwards->groupBy('fabric_receipt_id');
         foreach ($groupedInwards as $receiptId => $rolls) {
             $first = $rolls->first();
@@ -120,95 +120,135 @@ class FabricLedgerController extends Controller
             ]);
         }
 
-        // Add reconciliation adjustments for each roll (if any)
-        $allInwardRollsForCalc = FabricReceiptDetail::whereIn('id', $receivedRollIds)->get();
-        foreach ($allInwardRollsForCalc as $roll) {
-            $totalUsed = (float)$roll->meter - (float)$roll->remaining_quantity;
-            if ($totalUsed > 0.001) {
-                $recordedOutflow = 0;
-                $recordedOutflow += (float)$salesOutwards->where('fabric_receipt_detail_id', $roll->id)->sum('meter');
-                $recordedOutflow += (float)$returnsOutwards->where('fabric_receipt_detail_id', $roll->id)->sum('return_meter');
-                $recordedOutflow += (float)$productionOutwards->where('roll_no', $roll->roll_number)->sum('meter');
+        // B. Prepare Attribution Pool for Physical Usage
+        // We use the difference between meter and remaining_quantity as the "True" outward meter
+        $allInwardRolls = FabricReceiptDetail::where('fabric_id', $id)
+            ->where('status', '>', 0)
+            ->orderBy('created_at', 'asc')
+            ->get();
 
-                $unaccounted = $totalUsed - $recordedOutflow;
-                if ($unaccounted > 0.01) {
-                    $showAdj = true;
-                    if ($startDate && $roll->updated_at->format('Y-m-d') < $startDate) $showAdj = false;
-                    if ($endDate && $roll->updated_at->format('Y-m-d') > $endDate) $showAdj = false;
-                    if ($vendorId || $customerId) $showAdj = false;
-
-                    if ($showAdj) {
-                        $transactions->push((object)[
-                            'date' => $roll->updated_at,
-                            'type' => 'Outward',
-                            'party' => 'Internal Production',
-                            'particulars' => 'Internal Usage (Roll ' . $roll->roll_number . ')',
-                            'inward' => 0,
-                            'outward' => $unaccounted,
-                            'rolls' => [['number' => $roll->roll_number, 'meter' => $unaccounted]]
-                        ]);
-                    }
-                }
-            }
+        $attributionPool = [];
+        foreach ($allInwardRolls as $roll) {
+            $attributionPool[$roll->roll_number][] = (object)[
+                'id' => $roll->id,
+                'available_to_attribute' => (float)$roll->meter - (float)$roll->remaining_quantity
+            ];
         }
 
-        // Add Grouped Sales
+        // Helper to attribute meter from the physical pool
+        $attributeFromPool = function($rollNo, $requestedMeter) use (&$attributionPool) {
+            if (!isset($attributionPool[$rollNo])) return 0;
+            $attributed = 0;
+            foreach ($attributionPool[$rollNo] as $poolItem) {
+                if ($poolItem->available_to_attribute > 0.001) {
+                    $take = min($requestedMeter - $attributed, $poolItem->available_to_attribute);
+                    $attributed += $take;
+                    $poolItem->available_to_attribute -= $take;
+                    if ($attributed >= $requestedMeter) break;
+                }
+            }
+            return $attributed;
+        };
+
+        // C. Add Grouped Sales (Attribute from physical usage)
         $groupedSales = $salesOutwards->groupBy('agent_order_id');
         foreach ($groupedSales as $orderId => $items) {
             $first = $items->first();
+            $actualOutward = 0;
+            foreach($items as $item) {
+                $actualOutward += $attributeFromPool($item->roll?->roll_number, $item->meter);
+            }
+
             $transactions->push((object)[
                 'date' => $first->created_at,
                 'type' => 'Outward',
                 'party' => $first->order?->party?->name ?? 'Customer',
                 'particulars' => 'Sale: Order ' . ($first->order?->sku ?? '-'),
                 'inward' => 0,
-                'outward' => (float)$items->sum('meter'),
+                'outward' => $actualOutward,
                 'rolls' => $items->map(fn($s) => ['number' => $s->roll?->roll_number ?? '-', 'meter' => $s->meter])->values()
             ]);
         }
 
-        // Add Grouped Returns
+        // D. Add Grouped Returns
         $groupedReturns = $returnsOutwards->groupBy('fabric_return_id');
         foreach ($groupedReturns as $returnId => $details) {
             $first = $details->first();
+            $actualOutward = 0;
+            foreach($details as $d) {
+                $actualOutward += $attributeFromPool($d->receipt_detail?->roll_number, $d->return_meter);
+            }
+
             $transactions->push((object)[
                 'date' => $first->created_at,
                 'type' => 'Outward',
                 'party' => $first->fabric_return?->receipt?->vendor?->name ?? 'Vendor',
                 'particulars' => 'Return: ' . ($first->fabric_return?->return_number ?? '-'),
                 'inward' => 0,
-                'outward' => (float)$details->sum('return_meter'),
+                'outward' => $actualOutward,
                 'rolls' => $details->map(fn($r) => ['number' => $r->receipt_detail?->roll_number ?? '-', 'meter' => $r->return_meter])->values()
             ]);
         }
 
-        // Add Grouped Production
+        // E. Add Grouped Production
         $groupedProduction = $productionOutwards->groupBy(function($item) {
             return $item->order_no . '|' . $item->lot_no;
         });
         foreach ($groupedProduction as $key => $items) {
             $first = $items->first();
+            $actualOutward = 0;
+            foreach($items as $p) {
+                $actualOutward += $attributeFromPool($p->roll_no, $p->meter);
+            }
+
             $transactions->push((object)[
                 'date' => $first->created_at,
                 'type' => 'Outward',
                 'party' => $first->stageMasterUnit?->name ?? 'Internal Unit',
                 'particulars' => 'Production: Lot ' . ($first->lot_no ?? '-') . ' (Ord: ' . ($first->order_no ?? '-') . ')',
                 'inward' => 0,
-                'outward' => (float)$items->sum('meter'),
+                'outward' => $actualOutward,
                 'rolls' => $items->map(fn($p) => ['number' => $p->roll_no ?? '-', 'meter' => $p->meter])->values()
             ]);
         }
 
+        // F. Add reconciliation for remaining physical usage NOT captured in records
+        foreach ($attributionPool as $rollNo => $poolItems) {
+            foreach ($poolItems as $item) {
+                if ($item->available_to_attribute > 0.01) {
+                    $roll = FabricReceiptDetail::find($item->id);
+                    $transactions->push((object)[
+                        'date' => $roll->updated_at,
+                        'type' => 'Outward',
+                        'party' => 'Internal Usage',
+                        'particulars' => 'Unrecorded Physical Usage (Roll ' . $rollNo . ')',
+                        'inward' => 0,
+                        'outward' => $item->available_to_attribute,
+                        'rolls' => [['number' => $rollNo, 'meter' => $item->available_to_attribute]]
+                    ]);
+                }
+            }
+        }
 
-        // 4. Final Sort and Balance Calculation
+        // 4. Calculate Opening Balance (Brought Forward)
+        $openingBalanceAmount = 0;
+        if ($startDate) {
+            $inwardBefore = FabricReceiptDetail::where('fabric_id', $id)->where('status', '>', 0)->whereDate('created_at', '<', $startDate)->sum('meter');
+            $salesBefore = AgentOrderFabricItem::whereHas('roll', fn($q) => $q->where('fabric_id', $id))->where('status', 'dispatched')->whereDate('created_at', '<', $startDate)->sum('meter');
+            $returnsBefore = FabricReturnDetail::whereHas('receipt_detail', fn($q) => $q->where('fabric_id', $id))->whereDate('created_at', '<', $startDate)->sum('return_meter');
+            $productionBefore = FabricRollAssigning::whereIn('roll_no', $receivedRollNumbers->isEmpty() ? ['-'] : $receivedRollNumbers)->whereHas('orderProductSet', fn($q) => $q->whereRaw("FIND_IN_SET(?, fabric_id)", [$id]))->whereDate('created_at', '<', $startDate)->sum('meter');
+            $openingBalanceAmount = (float)$inwardBefore - (float)$salesBefore - (float)$returnsBefore - (float)$productionBefore;
+        }
+
+        // 5. Final Sort and Balance Calculation
         $transactions = $transactions->sortBy('date')->values();
         
-        $balance = 0;
+        $balance = $openingBalanceAmount;
         foreach ($transactions as $tx) {
             $balance += ($tx->inward - $tx->outward);
             $tx->running_balance = $balance;
         }
 
-        return view('admin.ledger.fabric.show', compact('fabric', 'transactions', 'startDate', 'endDate', 'vendors', 'customers', 'vendorId', 'customerId'));
+        return view('admin.ledger.fabric.show', compact('fabric', 'transactions', 'startDate', 'endDate', 'vendors', 'customers', 'vendorId', 'customerId', 'openingBalanceAmount'));
     }
 }
