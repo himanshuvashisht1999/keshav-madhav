@@ -305,9 +305,13 @@ class ProductOrderController extends Controller
 
         if ($request->ids && is_array($request->ids)) {
             $query->whereIn('id', $request->ids);
-        } elseif ($request->order_id) {
+        }
+
+        if ($request->order_id) {
             $query->where('order_main_id', $request->order_id);
-        } elseif ($request->search) {
+        }
+
+        if ($request->search) {
             $query->where(function ($q) use ($request) {
                 $q->where('design_number', 'LIKE', "%{$request->search}%")
                     ->orWhere('sku', 'LIKE', "%{$request->search}%");

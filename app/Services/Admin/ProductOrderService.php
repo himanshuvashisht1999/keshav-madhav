@@ -1208,7 +1208,6 @@ class ProductOrderService
     {
         $data = Fabric::where('status', 1)
             ->withSum('receiptDetails', 'remaining_quantity')
-            ->having('receipt_details_sum_remaining_quantity', '>', 0)
             ->get(['id', 'name']);
         return $data;
     }

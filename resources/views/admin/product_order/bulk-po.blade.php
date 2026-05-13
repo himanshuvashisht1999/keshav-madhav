@@ -189,6 +189,13 @@ $(document).ready(function() {
     $('.select2').select2({ width: '100%' });
     loadSets();
 
+    // Add enter key listener for search
+    $('#setSearch').on('keyup', function(e) {
+        if (e.keyCode === 13) {
+            loadSets();
+        }
+    });
+
     // Check for query parameters to auto-add items
     const urlParams = new URLSearchParams(window.location.search);
     const setIds = urlParams.get('set_ids');
@@ -279,7 +286,8 @@ function loadSetsByOrder(orderId) {
     const list = $('#availableSetsList');
     list.html('<div class="text-center p-3"><i class="fa fa-spinner fa-spin"></i> Loading Sets...</div>');
 
-    $.get("{{ route('admin.product_order.getUnassignedSets') }}", { order_id: orderId }, function(data) {
+    const search = $('#setSearch').val();
+    $.get("{{ route('admin.product_order.getUnassignedSets') }}", { order_id: orderId, search: search }, function(data) {
         list.empty();
         if (data.length === 0) {
             list.html('<div class="text-center text-muted p-3">No unassigned sets found for this order.</div>');
