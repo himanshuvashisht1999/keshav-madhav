@@ -390,6 +390,24 @@ class ProductOrderController extends Controller
         return $pdf->download($po->po_number . '.pdf');
     }
 
+    public function editBulkPO($id)
+    {
+        $po = ProductionPO::with(['vendor', 'customer', 'orderMain', 'items.productSet', 'items.pattern', 'items.master_fitting'])->findOrFail($id);
+        $response['po'] = $po;
+        $response['vendors'] = \App\Models\Vendor::where('status', 1)->get();
+        $response['customers'] = \App\Models\MasterCustomer::where('status', 1)->get();
+        $response['fabrics'] = $this->service->fabrics();
+        $response['fittings'] = $this->service->fittings();
+        $response['patterns'] = $this->service->getPatterns();
+        return view('admin.product_order.bulk-po-edit', $response);
+    }
+
+    public function updateBulkPO(Request $request, $id)
+    {
+        $response = $this->service->updateBulkPO($request, $id);
+        return response()->json($response);
+    }
+
     public function indexOrderSetDownload(Request $request)
     {
         // $data = OrderProductSet::with([

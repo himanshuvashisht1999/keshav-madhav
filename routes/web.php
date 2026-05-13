@@ -372,6 +372,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/po-list', [AdminProductOrderController::class, 'poList'])->name('poList');
             Route::get('/po/{id}/view', [AdminProductOrderController::class, 'viewBulkPO'])->name('viewBulkPO');
             Route::get('/po/{id}/download', [AdminProductOrderController::class, 'downloadBulkPO'])->name('downloadBulkPO');
+            Route::get('/po/{id}/edit', [AdminProductOrderController::class, 'editBulkPO'])->name('editBulkPO');
+            Route::post('/po/{id}/update', [AdminProductOrderController::class, 'updateBulkPO'])->name('updateBulkPO');
             Route::delete('/po/{id}/delete', [AdminProductOrderController::class, 'deletePO'])->name('deletePO');
 
             // Route::get('/fabric_combined_receipt',[AdminProductOrderController::class,'fabric_combined_receipt'])->name('fabric_combined_receipt');

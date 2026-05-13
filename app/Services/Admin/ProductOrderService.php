@@ -1032,11 +1032,19 @@ class ProductOrderService
             $poMain = new \App\Models\ProductionPO();
             $poMain->po_number = "PO-" . date('Ymd') . "-" . rand(1000, 9999);
 
-            // Get order_main_id from the first item
-            if (isset($request->items[0]['order_product_set_id'])) {
-                $firstSet = OrderProductSet::find($request->items[0]['order_product_set_id']);
-                if ($firstSet) {
-                    $poMain->order_main_id = $firstSet->order_main_id;
+            // Get order_main_id (Prioritize order_id from request/URL)
+            if ($request->order_id) {
+                $poMain->order_main_id = $request->order_id;
+            } else {
+                $items = $request->items;
+                if ($items && is_array($items)) {
+                    $firstItem = reset($items);
+                    if (isset($firstItem['order_product_set_id'])) {
+                        $firstSet = OrderProductSet::find($firstItem['order_product_set_id']);
+                        if ($firstSet) {
+                            $poMain->order_main_id = $firstSet->order_main_id;
+                        }
+                    }
                 }
             }
 
@@ -1096,6 +1104,141 @@ class ProductOrderService
             return [
                 'status' => true,
                 'message' => 'Bulk Production PO created successfully. PO No: ' . $poMain->po_number
+            ];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return [
+                'status' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    public function updateBulkPO(Request $request, $id)
+    {
+        DB::beginTransaction();
+        try {
+            $poMain = \App\Models\ProductionPO::findOrFail($id);
+
+            if ($request->po_type == 'vendor') {
+                $poMain->vendor_id = $request->vendor_id;
+                $poMain->customer_id = null;
+            } else {
+                $poMain->customer_id = $request->customer_id;
+                $poMain->vendor_id = null;
+            }
+
+            $poMain->delivery_date = $request->delivery_date;
+            $poMain->remark = $request->remark;
+            $poMain->save();
+
+            $requestedItemIds = [];
+            if ($request->items && is_array($request->items)) {
+                foreach ($request->items as $itemData) {
+                    if (!empty($itemData['id'])) {
+                        // EXISTING ITEM
+                        $item = OrderCuttingStage::find($itemData['id']);
+                        if (!$item)
+                            continue;
+
+                        $requestedItemIds[] = $item->id;
+
+                        // Handle quantity change
+                        $oldQty = $item->quantity;
+                        $newQty = $itemData['quantity'];
+                        $diff = $newQty - $oldQty;
+
+                        $set = OrderProductSet::find($item->set_product_id);
+                        if ($set && $diff != 0) {
+                            if ($set->remain_total_quantity < $diff) {
+                                throw new \Exception("Insufficient quantity in set for item: " . $set->sku);
+                            }
+                            $set->remain_total_quantity -= $diff;
+                            if ($set->remain_total_quantity <= 0) {
+                                $set->status = 2;
+                            } else {
+                                $set->status = 1;
+                            }
+                            $set->save();
+                        }
+
+                        $item->quantity = $newQty;
+                        $item->remaining_quantity = $newQty;
+                        $item->rate = $itemData['rate'] ?? 0;
+
+                        if (!empty($itemData['fabric_ids'])) {
+                            $item->fabric_id = is_array($itemData['fabric_ids']) ? implode(',', $itemData['fabric_ids']) : $itemData['fabric_ids'];
+                        }
+                        $item->master_fitting_id = $itemData['fitting_id'] ?? null;
+                        $item->master_pattern_id = $itemData['pattern_id'] ?? null;
+                        $item->belt = $itemData['belt'] ?? null;
+                        $item->remarks = $itemData['remark'] ?? $request->remark ?? null;
+                        $item->vendor_id = $poMain->vendor_id;
+                        $item->customer_id = $poMain->customer_id;
+                        $item->save();
+                    } else {
+                        // NEW ITEM
+                        $data = OrderProductSet::find($itemData['order_product_set_id']);
+                        if (!$data)
+                            continue;
+
+                        $po = new OrderCuttingStage();
+                        $po->sku = $data->sku;
+                        $po->order_main_id = $data->order_main_id;
+                        $po->set_product_id = $data->id;
+                        $po->to_assign_id = 0;
+                        $po->vendor_id = $poMain->vendor_id;
+                        $po->customer_id = $poMain->customer_id;
+                        $po->is_po = 1;
+                        $po->production_po_id = $poMain->id;
+                        $po->rate = $itemData['rate'] ?? 0;
+                        $po->quantity = $itemData['quantity'] ?? $data->remain_total_quantity;
+                        $po->remaining_quantity = $itemData['quantity'] ?? $data->remain_total_quantity;
+
+                        if (!empty($itemData['fabric_ids'])) {
+                            $po->fabric_id = is_array($itemData['fabric_ids']) ? implode(',', $itemData['fabric_ids']) : $itemData['fabric_ids'];
+                        }
+                        $po->master_fitting_id = $itemData['fitting_id'] ?? null;
+                        $po->master_pattern_id = $itemData['pattern_id'] ?? null;
+                        $po->belt = $itemData['belt'] ?? null;
+                        $po->remarks = $itemData['remark'] ?? $request->remark ?? null;
+                        $po->till_allowed_time = $request->delivery_date;
+                        $po->processed_by = auth()->id();
+                        $po->status = 1;
+                        $po->save();
+
+                        $requestedItemIds[] = $po->id;
+
+                        // Deduct quantity
+                        $data->remain_total_quantity -= $po->quantity;
+                        if ($data->remain_total_quantity <= 0) {
+                            $data->status = 2;
+                        }
+                        $data->save();
+                    }
+                }
+            }
+
+            // REMOVE ITEMS NOT IN REQUEST
+            $itemsToDelete = OrderCuttingStage::where('production_po_id', $id)
+                ->whereNotIn('id', $requestedItemIds)
+                ->get();
+
+            foreach ($itemsToDelete as $delItem) {
+                // Restore quantity to set
+                $set = OrderProductSet::find($delItem->set_product_id);
+                if ($set) {
+                    $set->remain_total_quantity += $delItem->quantity;
+                    $set->status = 1;
+                    $set->save();
+                }
+                $delItem->delete();
+            }
+
+            DB::commit();
+            return [
+                'status' => true,
+                'message' => 'Bulk PO updated successfully.'
             ];
         } catch (\Exception $e) {
             DB::rollBack();

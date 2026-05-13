@@ -46,6 +46,9 @@
                                     <td>{{ $po->items->sum('quantity') }}</td>
                                     <td>{{ $po->delivery_date ? \Carbon\Carbon::parse($po->delivery_date)->format('j M Y') : '-' }}</td>
                                     <td>
+                                        <a href="{{ route('admin.product_order.editBulkPO', $po->id) }}" class="btn btn-sm btn-success" title="Edit PO">
+                                            <i class="fa fa-edit"></i>
+                                        </a>
                                         <a href="{{ route('admin.product_order.viewBulkPO', $po->id) }}" class="btn btn-sm btn-primary" title="View Details">
                                             <i class="fa fa-eye"></i>
                                         </a>

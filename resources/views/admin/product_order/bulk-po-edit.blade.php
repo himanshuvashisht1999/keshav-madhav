@@ -4,17 +4,16 @@
 <div class="content-wrapper">
     <section class="content-header">
         <div class="container-fluid">
-            <h1 class="text-center">Bulk Production Purchase Order</h1>
+            <h1 class="text-center">Edit Bulk Production PO: {{ $po->po_number }}</h1>
         </div>
     </section>
 
     <section class="content">
         <div class="container-fluid">
-            <form id="bulkPoForm">
+            <form id="editPoForm">
                 @csrf
-                <input type="hidden" name="order_id" id="form_order_id">
                 <div class="row">
-                    <!-- LEFT COLUMN: AVAILABLE SETS -->
+                    <!-- LEFT COLUMN: AVAILABLE SETS (Same as Create) -->
                     <div class="col-md-4">
                         <div class="card card-outline card-primary h-100">
                             <div class="card-header">
@@ -40,7 +39,10 @@
                     <div class="col-md-8">
                         <div class="card card-outline card-success h-100">
                             <div class="card-header">
-                                <h3 class="card-title">PO Header & Selected Items</h3>
+                                <h3 class="card-title">PO Header & Items</h3>
+                                <div class="card-tools">
+                                    <span class="badge badge-info">Order: {{ $po->orderMain->sku ?? 'N/A' }}</span>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <!-- HEADER INFO -->
@@ -49,29 +51,29 @@
                                         <div class="form-group">
                                             <label>PO To</label>
                                             <select name="po_type" id="po_type" class="form-control" onchange="togglePoTo(this.value)">
-                                                <option value="vendor">Vendor</option>
-                                                <option value="customer">Customer</option>
+                                                <option value="vendor" {{ $po->vendor_id ? 'selected' : '' }}>Vendor</option>
+                                                <option value="customer" {{ $po->customer_id ? 'selected' : '' }}>Customer</option>
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-4" id="vendor_group">
+                                    <div class="col-md-4" id="vendor_group" style="{{ $po->vendor_id ? '' : 'display:none;' }}">
                                         <div class="form-group">
                                             <label>Vendor</label>
                                             <select name="vendor_id" class="form-control select2">
                                                 <option value="">Select Vendor</option>
                                                 @foreach($vendors as $v)
-                                                    <option value="{{ $v->id }}">{{ $v->name }}</option>
+                                                    <option value="{{ $v->id }}" {{ $po->vendor_id == $v->id ? 'selected' : '' }}>{{ $v->name }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-4" id="customer_group" style="display:none;">
+                                    <div class="col-md-4" id="customer_group" style="{{ $po->customer_id ? '' : 'display:none;' }}">
                                         <div class="form-group">
                                             <label>Customer</label>
                                             <select name="customer_id" class="form-control select2">
                                                 <option value="">Select Customer</option>
                                                 @foreach($customers as $c)
-                                                    <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                                    <option value="{{ $c->id }}" {{ $po->customer_id == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -79,18 +81,18 @@
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label>Delivery Date</label>
-                                            <input type="date" name="delivery_date" class="form-control" required>
+                                            <input type="date" name="delivery_date" class="form-control" value="{{ $po->delivery_date }}" required>
                                         </div>
                                     </div>
                                     <div class="col-md-12">
                                         <div class="form-group">
                                             <label>Global Remark</label>
-                                            <textarea name="remark" class="form-control" rows="1" placeholder="Common remark for all POs..."></textarea>
+                                            <textarea name="remark" class="form-control" rows="1" placeholder="Common remark for all POs...">{{ $po->remark }}</textarea>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- SELECTED ITEMS TABLE -->
+                                <!-- ITEMS TABLE -->
                                 <div class="table-responsive">
                                     <table class="table table-sm table-bordered" id="selectedItemsTable">
                                         <thead>
@@ -103,7 +105,68 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr id="emptyPlaceholder">
+                                            @php $itemCount = 0; $selectedSetIds = []; @endphp
+                                            @foreach($po->items as $item)
+                                            @php 
+                                                $itemCount++; 
+                                                $selectedSetIds[] = $item->set_product_id;
+                                                $selectedFabrics = explode(',', $item->fabric_id);
+                                                $maxQty = ($item->productSet->remain_total_quantity ?? 0) + $item->quantity;
+                                            @endphp
+                                            <tr class="item-row" data-id="{{ $item->id }}" data-set-id="{{ $item->set_product_id }}">
+                                                <td>
+                                                    <input type="hidden" name="items[{{ $itemCount }}][id]" value="{{ $item->id }}">
+                                                    <input type="hidden" name="items[{{ $itemCount }}][order_product_set_id]" value="{{ $item->set_product_id }}">
+                                                    <strong>{{ $item->productSet->design_number ?? 'N/A' }}</strong><br>
+                                                    <small class="text-muted">{{ $item->productSet->sku ?? 'N/A' }}</small><br>
+                                                    <span class="badge badge-info">{{ $item->productSet->colors->name ?? 'N/A' }}</span> | 
+                                                    <span class="badge badge-secondary">{{ $item->productSet->set_size ?? 'N/A' }}</span>
+                                                </td>
+                                                <td>
+                                                    <input type="number" name="items[{{ $itemCount }}][quantity]" class="form-control form-control-sm" value="{{ $item->quantity }}" max="{{ $maxQty }}" min="1">
+                                                    <small class="text-muted">Max: {{ $maxQty }}</small>
+                                                </td>
+                                                <td>
+                                                    <input type="number" step="0.01" name="items[{{ $itemCount }}][rate]" class="form-control form-control-sm" value="{{ $item->rate }}" placeholder="Rate">
+                                                </td>
+                                                <td>
+                                                    <div class="row">
+                                                        <div class="col-12 mb-1">
+                                                            <select name="items[{{ $itemCount }}][fabric_ids][]" class="form-control form-control-sm select2" multiple data-placeholder="Fabric">
+                                                                @foreach($fabrics as $f)
+                                                                    <option value="{{ $f->id }}" {{ in_array($f->id, $selectedFabrics) ? 'selected' : '' }}>{{ $f->name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <select name="items[{{ $itemCount }}][pattern_id]" class="form-control form-control-sm select2">
+                                                                <option value="">Pattern</option>
+                                                                @foreach($patterns as $p)
+                                                                    <option value="{{ $p->id }}" {{ $item->master_pattern_id == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <select name="items[{{ $itemCount }}][fitting_id]" class="form-control form-control-sm select2">
+                                                                <option value="">Fitting</option>
+                                                                @foreach($fittings as $fit)
+                                                                    <option value="{{ $fit->id }}" {{ $item->master_fitting_id == $fit->id ? 'selected' : '' }}>{{ $fit->name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-12 mt-1">
+                                                            <input type="text" name="items[{{ $itemCount }}][belt]" class="form-control form-control-sm" value="{{ $item->belt }}" placeholder="Belt details">
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn btn-sm btn-danger remove-item">
+                                                        <i class="fa fa-times"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                            <tr id="emptyPlaceholder" style="{{ count($po->items) > 0 ? 'display:none;' : '' }}">
                                                 <td colspan="5" class="text-center p-4 text-muted">
                                                     No sets selected yet. Click on an item from the left to add.
                                                 </td>
@@ -113,8 +176,9 @@
                                 </div>
                             </div>
                             <div class="card-footer text-right">
-                                <button type="submit" id="submitBtn" class="btn btn-lg btn-success" disabled>
-                                    Create Bulk Purchase Order
+                                <a href="{{ route('admin.product_order.poList') }}" class="btn btn-default">Cancel</a>
+                                <button type="submit" id="submitBtn" class="btn btn-lg btn-success">
+                                    Update Purchase Order
                                 </button>
                             </div>
                         </div>
@@ -127,7 +191,7 @@
 
 <!-- ITEM ROW TEMPLATE -->
 <script type="text/template" id="itemRowTemplate">
-    <tr class="item-row" data-id="{id}">
+    <tr class="item-row" data-id="" data-set-id="{id}">
         <td>
             <input type="hidden" name="items[{idx}][order_product_set_id]" value="{id}">
             <strong>{design_number}</strong><br>
@@ -178,13 +242,12 @@
         </td>
     </tr>
 </script>
-
 @endsection
 
 @section('scripts')
 <script>
-let itemCount = 0;
-let selectedIds = [];
+let itemCount = {{ $itemCount + 1 }};
+let selectedSetIds = @json($selectedSetIds);
 
 $(document).ready(function() {
     $('.select2').select2({ width: '100%' });
@@ -197,64 +260,54 @@ $(document).ready(function() {
         }
     });
 
-    // Check for query parameters to auto-add items
-    const urlParams = new URLSearchParams(window.location.search);
-    const setIds = urlParams.get('set_ids');
-    const singleSetId = urlParams.get('set_id');
-    const orderId = urlParams.get('order_id');
-
-    if (orderId) {
-        $('#form_order_id').val(orderId);
-        // If coming from a specific order, load its sets directly on the left
-        loadSetsByOrder(orderId);
-    } else if (setIds || singleSetId) {
-        const idsToFetch = setIds ? setIds.split(',') : [singleSetId];
-        fetchAndAddSets(idsToFetch);
-    }
-
-    $('#bulkPoForm').on('submit', function(e) {
+    $('#editPoForm').on('submit', function(e) {
         e.preventDefault();
         const btn = $('#submitBtn');
-        btn.prop('disabled', true).text('Processing...');
+        btn.prop('disabled', true).text('Updating...');
 
         $.ajax({
-            url: "{{ route('admin.product_order.storeBulkPO') }}",
+            url: "{{ route('admin.product_order.updateBulkPO', $po->id) }}",
             type: "POST",
             data: $(this).serialize(),
             success: function(res) {
                 if (res.status) {
                     toastr.success(res.message);
-                    window.location.reload();
+                    window.location.href = "{{ route('admin.product_order.poList') }}";
                 } else {
                     toastr.error(res.message);
-                    btn.prop('disabled', false).text('Create Bulk Purchase Order');
+                    btn.prop('disabled', false).text('Update Purchase Order');
                 }
             },
             error: function() {
                 toastr.error('Something went wrong');
-                btn.prop('disabled', false).text('Create Bulk Purchase Order');
+                btn.prop('disabled', false).text('Update Purchase Order');
             }
         });
     });
 
-    $(document).on('click', '.add-to-po', function() {
-        const data = $(this).data();
-        addItemToPo(data);
-    });
-
     $(document).on('click', '.remove-item', function() {
         const row = $(this).closest('tr');
-        const id = row.data('id');
-        selectedIds = selectedIds.filter(sid => sid != id);
+        const setId = row.data('set-id');
+        selectedSetIds = selectedSetIds.filter(sid => sid != setId);
         
-        // Uncheck the box on the left if it exists
-        $(`#check-${id}`).prop('checked', false);
-        $(`#available-card-${id}`).removeClass('bg-light');
+        $(`#check-${setId}`).prop('checked', false);
+        $(`#available-card-${setId}`).removeClass('bg-light');
 
         row.remove();
         updateSubmitButton();
         if ($('.item-row').length === 0) {
             $('#emptyPlaceholder').show();
+        }
+    });
+
+    $(document).on('change', '.set-checkbox', function() {
+        const data = $(this).data();
+        if ($(this).is(':checked')) {
+            addItemToPo(data);
+            $(`#available-card-${data.id}`).addClass('bg-light');
+        } else {
+            $(`tr[data-set-id="${data.id}"]`).find('.remove-item').click();
+            $(`#available-card-${data.id}`).removeClass('bg-light');
         }
     });
 });
@@ -269,26 +322,13 @@ function togglePoTo(val) {
     }
 }
 
-function fetchAndAddSets(ids) {
-    $.get("{{ route('admin.product_order.getUnassignedSets') }}", { ids: ids }, function(data) {
-        data.forEach(set => {
-            addItemToPo({
-                id: set.id,
-                design: set.design_number,
-                sku: set.sku,
-                color: set.colors ? set.colors.name : 'N/A',
-                size: set.set_size,
-                remain: set.remain_total_quantity
-            });
-        });
-    });
-}
-
-function loadSetsByOrder(orderId) {
+function loadSets() {
     const list = $('#availableSetsList');
-    list.html('<div class="text-center p-3"><i class="fa fa-spinner fa-spin"></i> Loading Sets...</div>');
+    list.html('<div class="text-center p-3"><i class="fa fa-spinner fa-spin"></i> Loading...</div>');
 
     const search = $('#setSearch').val();
+    const orderId = "{{ $po->order_main_id }}";
+    
     $.get("{{ route('admin.product_order.getUnassignedSets') }}", { order_id: orderId, search: search }, function(data) {
         list.empty();
         if (data.length === 0) {
@@ -297,7 +337,7 @@ function loadSetsByOrder(orderId) {
         }
 
         data.forEach(set => {
-            const isSelected = selectedIds.includes(set.id);
+            const isSelected = selectedSetIds.includes(set.id);
             list.append(`
                 <div class="card card-widget mb-2 border ${isSelected ? 'bg-light' : ''}" id="available-card-${set.id}">
                     <div class="card-body p-2">
@@ -324,110 +364,12 @@ function loadSetsByOrder(orderId) {
     });
 }
 
-function loadOrders() {
-    const search = $('#setSearch').val();
-    const list = $('#availableSetsList');
-    list.html('<div class="text-center p-3"><i class="fa fa-spinner fa-spin"></i> Loading Orders...</div>');
-
-    $.get("{{ route('admin.product_order.getUnassignedOrders') }}", { search: search }, function(data) {
-        list.empty();
-        if (data.length === 0) {
-            list.html('<div class="text-center text-muted p-3">No unassigned orders found.</div>');
-            return;
-        }
-
-        data.forEach(order => {
-            list.append(`
-                <div class="card card-widget mb-2 border order-card" data-order-id="${order.id}">
-                    <div class="card-header bg-light p-2 cursor-pointer toggle-order" style="cursor:pointer">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <strong>${order.sku}</strong>
-                            <i class="fa fa-chevron-down"></i>
-                        </div>
-                    </div>
-                    <div class="card-body p-2 order-sets-container" id="order-sets-${order.id}" style="display:none;">
-                        <div class="text-center"><i class="fa fa-spinner fa-spin"></i></div>
-                    </div>
-                </div>
-            `);
-        });
-    });
-}
-
-$(document).on('change', '.set-checkbox', function() {
-    const data = $(this).data();
-    if ($(this).is(':checked')) {
-        addItemToPo(data);
-        $(`#available-card-${data.id}`).addClass('bg-light');
-    } else {
-        $(`tr[data-id="${data.id}"]`).find('.remove-item').click();
-        $(`#available-card-${data.id}`).removeClass('bg-light');
-    }
-});
-
-$(document).on('click', '.toggle-order', function() {
-    const card = $(this).closest('.order-card');
-    const orderId = card.data('order-id');
-    const container = $(`#order-sets-${orderId}`);
-    const icon = $(this).find('i');
-
-    if (container.is(':visible')) {
-        container.slideUp();
-        icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
-    } else {
-        // Load sets for this order if not loaded or refresh
-        container.html('<div class="text-center"><i class="fa fa-spinner fa-spin"></i></div>').slideDown();
-        icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
-
-        $.get("{{ route('admin.product_order.getUnassignedSets') }}", { order_id: orderId }, function(data) {
-            container.empty();
-            if (data.length === 0) {
-                container.html('<small class="text-muted">No unassigned sets</small>');
-                return;
-            }
-
-            data.forEach(set => {
-                const isSelected = selectedIds.includes(set.id);
-                container.append(`
-                    <div class="border rounded p-2 mb-1 ${isSelected ? 'bg-light' : ''}" id="available-card-${set.id}">
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input set-checkbox" id="check-${set.id}" 
-                                   ${isSelected ? 'checked' : ''}
-                                   data-id="${set.id}"
-                                   data-design="${set.design_number}"
-                                   data-sku="${set.sku}"
-                                   data-color="${set.colors ? set.colors.name : 'N/A'}"
-                                   data-size="${set.set_size}"
-                                   data-remain="${set.remain_total_quantity}">
-                            <label class="custom-control-label d-block cursor-pointer" for="check-${set.id}">
-                                <strong>${set.design_number}</strong> (${set.colors ? set.colors.name : 'N/A'})<br>
-                                <small>Rem: ${set.remain_total_quantity} Pcs</small>
-                            </label>
-                        </div>
-                    </div>
-                `);
-            });
-        });
-    }
-});
-
-function loadSets() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const orderId = urlParams.get('order_id');
-    if (orderId) {
-        loadSetsByOrder(orderId);
-    } else {
-        loadOrders();
-    }
-}
-
 function addItemToPo(data) {
-    if (selectedIds.includes(data.id)) {
-        toastr.warning('Already added');
+    if (selectedSetIds.includes(data.id)) {
         return;
     }
 
-    selectedIds.push(data.id);
+    selectedSetIds.push(data.id);
     $('#emptyPlaceholder').hide();
     
     let template = $('#itemRowTemplate').html();
@@ -440,13 +382,10 @@ function addItemToPo(data) {
                        .replace(/{remain_qty}/g, data.remain);
 
     $('#selectedItemsTable tbody').append(template);
-    
-    // Initialize Select2 for NEW elements
-    $(`tr[data-id="${data.id}"] .select2`).select2({ width: '100%' });
+    $(`tr[data-set-id="${data.id}"] .select2`).select2({ width: '100%' });
     
     itemCount++;
     updateSubmitButton();
-    loadSets(); // Refresh available list
 }
 
 function updateSubmitButton() {
