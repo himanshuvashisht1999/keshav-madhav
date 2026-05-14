@@ -66,7 +66,7 @@ class BalanceService
                 ->get();
 
             foreach ($payments as $payment) {
-                $action = ($payment->payment_type === 'received') ? 'add' : 'deduct';
+                $action = in_array($payment->payment_type, ['received', 'credit']) ? 'add' : 'deduct';
                 $this->updateBalance($payment->payment_method_type, $payment->payment_method_id, $payment->amount, $action);
             }
 

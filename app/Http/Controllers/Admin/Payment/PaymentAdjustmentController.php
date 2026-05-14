@@ -17,7 +17,7 @@ class PaymentAdjustmentController extends Controller
     {
         $adjustments = PaymentAdjustment::with('master')->latest()->get();
         // Group by batch_id, if null use unique key
-        $grouped = $adjustments->groupBy(function($item) {
+        $grouped = $adjustments->groupBy(function ($item) {
             return $item->batch_id ?? 'unique_' . $item->id;
         });
         return view('admin.payment.adjustment.index', compact('grouped'));
@@ -45,7 +45,7 @@ class PaymentAdjustmentController extends Controller
         $domesticMaster = AdjustmentMaster::where('name', 'Customer')->where('status', 1)->first();
         $vendorMaster = AdjustmentMaster::where('name', 'Vendor')->where('status', 1)->first();
         $shipmentMaster = $vendorMaster;
-        
+
         return view('admin.payment.adjustment.create', compact('masters', 'vendorMaster', 'shipmentMaster', 'domesticMaster'));
     }
 
@@ -142,7 +142,7 @@ class PaymentAdjustmentController extends Controller
                             if ($model == 'App\Models\Vendor') {
                                 \App\Models\Payment::create([
                                     'payment_category' => 'fabric_shipment',
-                                    'payment_type' => ($type == 'debit' ? 'paid' : 'adjustment'),
+                                    'payment_type' => $type,
                                     'party_type' => \App\Models\Vendor::class,
                                     'party_id' => $item->id,
                                     'paymentable_type' => \App\Models\Vendor::class,
@@ -163,7 +163,7 @@ class PaymentAdjustmentController extends Controller
                             } elseif ($model == 'App\Models\Employee') {
                                 \App\Models\Payment::create([
                                     'payment_category' => 'employee_salary',
-                                    'payment_type' => 'paid',
+                                    'payment_type' => $type,
                                     'party_type' => \App\Models\Employee::class,
                                     'party_id' => $item->id,
                                     'paymentable_type' => \App\Models\Employee::class,
@@ -178,7 +178,7 @@ class PaymentAdjustmentController extends Controller
                             } elseif ($model == 'App\Models\MasterCustomer') {
                                 \App\Models\Payment::create([
                                     'payment_category' => 'domestic_order',
-                                    'payment_type' => 'received',
+                                    'payment_type' => $type,
                                     'party_type' => \App\Models\MasterCustomer::class,
                                     'party_id' => $item->id,
                                     'paymentable_type' => \App\Models\MasterCustomer::class,
@@ -216,6 +216,27 @@ class PaymentAdjustmentController extends Controller
                                     }
                                     $item->save();
                                 }
+
+                                // Handle linked models (FabricReceipt -> Vendor, AgentOrder -> Customer)
+                                if ($model == 'App\Models\FabricReceipt' && isset($item->vendor_id)) {
+                                    $vendor = \App\Models\Vendor::find($item->vendor_id);
+                                    if ($vendor) {
+                                        if ($type == 'credit') $vendor->balance += $currentAmount;
+                                        else $vendor->balance -= $currentAmount;
+                                        $vendor->save();
+                                    }
+                                } elseif (($model == 'App\Models\AgentOrder' || $actualModel == 'App\Models\OrderDispatch' || $actualModel == 'App\Models\OrderMain' || $actualModel == 'App\Models\AgentOrderDispatch')) {
+                                    $partyId = ($actualModel == 'App\Models\AgentOrder' || $actualModel == 'App\Models\AgentOrderDispatch') 
+                                        ? ($item->master_customer_id ?? $item->customer_id) 
+                                        : ($actualModel == 'App\Models\OrderDispatch' ? $item->customer_id : $item->master_customer_id);
+
+                                    $customer = \App\Models\MasterCustomer::find($partyId);
+                                    if ($customer) {
+                                        if ($type == 'credit') $customer->balance += $currentAmount;
+                                        else $customer->balance -= $currentAmount;
+                                        $customer->save();
+                                    }
+                                }
                             }
                         }
                     }
@@ -245,7 +266,7 @@ class PaymentAdjustmentController extends Controller
     {
         $masterId = $request->master_id;
         $master = AdjustmentMaster::find($masterId);
-        
+
         if (!$master) {
             return response()->json([]);
         }
@@ -279,8 +300,8 @@ class PaymentAdjustmentController extends Controller
                         $name = $item->bank_name . ' (' . $item->account_number . ')';
                     }
                     return [
-                        'id' => $item->id, 
-                        'name' => $name . ' [' . $master->name . ']', 
+                        'id' => $item->id,
+                        'name' => $name . ' [' . $master->name . ']',
                         'master_id' => $master->id,
                         'balance' => $item->balance ?? $item->amount ?? 0
                     ];
@@ -295,10 +316,10 @@ class PaymentAdjustmentController extends Controller
     public function getAccounts(Request $request)
     {
         $mode = $request->mode;
-        
+
         if ($mode == 'bank') {
             $data = BankAccount::where('status', 1)->get();
-            $formatted = $data->map(function($item) {
+            $formatted = $data->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'name' => $item->bank_name . ' (' . $item->account_number . ') - Bal: ' . number_format($item->balance, 2),
@@ -307,7 +328,7 @@ class PaymentAdjustmentController extends Controller
             });
             return response()->json($formatted);
         } else {
-            $data = CashPayment::where('status', 1)->get()->map(function($item) {
+            $data = CashPayment::where('status', 1)->get()->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'name' => $item->name . ' - Bal: ' . number_format($item->balance, 2),
@@ -324,11 +345,13 @@ class PaymentAdjustmentController extends Controller
         $masterId = $request->master_id;
         $master = AdjustmentMaster::find($masterId);
 
-        if (!$master) return response()->json([]);
+        if (!$master)
+            return response()->json([]);
 
         if ($master->model_name == 'App\Models\AgentOrder') {
             $customer = \App\Models\MasterCustomer::find($id);
-            if (!$customer) return response()->json([]);
+            if (!$customer)
+                return response()->json([]);
 
             if ($customer->type == 'domestic') {
                 $dispatches = \App\Models\AgentOrderDispatch::where('master_customer_id', $id)
@@ -336,7 +359,7 @@ class PaymentAdjustmentController extends Controller
                     ->filter(function ($d) {
                         return $d->balance_amount > 0;
                     })
-                    ->map(function($d) {
+                    ->map(function ($d) {
                         return [
                             'id' => 'AOD:' . $d->id,
                             'shipment_no' => 'DIS-#' . $d->id,
@@ -358,14 +381,15 @@ class PaymentAdjustmentController extends Controller
                         $q->where('order_type', 'corporate');
                     })
                     ->get()
-                    ->filter(function ($d) use ($batchRefIds) { 
-                        return $d->balance_amount > 0 || in_array('OD:'.$d->id, $batchRefIds); 
+                    ->filter(function ($d) use ($batchRefIds) {
+                        return $d->balance_amount > 0 || in_array('OD:' . $d->id, $batchRefIds);
                     })
                     ->map(function ($d) use ($batchRefIds) {
                         $bal = $d->balance_amount;
-                        if (in_array('OD:'.$d->id, $batchRefIds)) {
-                            $adj = \App\Models\PaymentAdjustment::where('batch_id', request()->batch_id)->where('ref_id', 'OD:'.$d->id)->first();
-                            if ($adj) $bal += $adj->amount;
+                        if (in_array('OD:' . $d->id, $batchRefIds)) {
+                            $adj = \App\Models\PaymentAdjustment::where('batch_id', request()->batch_id)->where('ref_id', 'OD:' . $d->id)->first();
+                            if ($adj)
+                                $bal += $adj->amount;
                         }
                         return [
                             'id' => 'OD:' . $d->id,
@@ -378,14 +402,15 @@ class PaymentAdjustmentController extends Controller
                 $orders = \App\Models\OrderMain::where('master_customer_id', $id)
                     ->where('is_paid', 0)
                     ->get()
-                    ->filter(function($o) use ($batchRefIds) {
-                        return ($o->total_amount - $o->paid_amount) > 0 || in_array('OR:'.$o->id, $batchRefIds);
+                    ->filter(function ($o) use ($batchRefIds) {
+                        return ($o->total_amount - $o->paid_amount) > 0 || in_array('OR:' . $o->id, $batchRefIds);
                     })
-                    ->map(function($o) use ($batchRefIds) {
+                    ->map(function ($o) use ($batchRefIds) {
                         $bal = $o->total_amount - $o->paid_amount;
-                        if (in_array('OR:'.$o->id, $batchRefIds)) {
-                            $adj = \App\Models\PaymentAdjustment::where('batch_id', request()->batch_id)->where('ref_id', 'OR:'.$o->id)->first();
-                            if ($adj) $bal += $adj->amount;
+                        if (in_array('OR:' . $o->id, $batchRefIds)) {
+                            $adj = \App\Models\PaymentAdjustment::where('batch_id', request()->batch_id)->where('ref_id', 'OR:' . $o->id)->first();
+                            if ($adj)
+                                $bal += $adj->amount;
                         }
                         return [
                             'id' => 'OR:' . $o->id,
@@ -393,18 +418,19 @@ class PaymentAdjustmentController extends Controller
                             'balance' => $bal
                         ];
                     });
-                
+
                 // Fetch Agent Order Dispatches
                 $agentDispatches = \App\Models\AgentOrderDispatch::where('master_customer_id', $id)
                     ->get()
-                    ->filter(function($ad) use ($batchRefIds) {
-                        return $ad->balance_amount > 0 || in_array('AOD:'.$ad->id, $batchRefIds);
+                    ->filter(function ($ad) use ($batchRefIds) {
+                        return $ad->balance_amount > 0 || in_array('AOD:' . $ad->id, $batchRefIds);
                     })
-                    ->map(function($ad) use ($batchRefIds) {
+                    ->map(function ($ad) use ($batchRefIds) {
                         $bal = $ad->balance_amount;
-                        if (in_array('AOD:'.$ad->id, $batchRefIds)) {
-                             $adj = \App\Models\PaymentAdjustment::where('batch_id', request()->batch_id)->where('ref_id', 'AOD:'.$ad->id)->first();
-                             if ($adj) $bal += $adj->amount;
+                        if (in_array('AOD:' . $ad->id, $batchRefIds)) {
+                            $adj = \App\Models\PaymentAdjustment::where('batch_id', request()->batch_id)->where('ref_id', 'AOD:' . $ad->id)->first();
+                            if ($adj)
+                                $bal += $adj->amount;
                         }
                         return [
                             'id' => 'AOD:' . $ad->id,
@@ -412,12 +438,12 @@ class PaymentAdjustmentController extends Controller
                             'balance' => $bal
                         ];
                     });
-                
+
                 $combined = collect([])
                     ->concat($dispatches)
                     ->concat($orders)
                     ->concat($agentDispatches);
-                    
+
                 return response()->json($combined->values());
             }
         }
@@ -433,12 +459,13 @@ class PaymentAdjustmentController extends Controller
             ->filter(function ($receipt) use ($batchShipmentIds) {
                 return $receipt->balance_amount > 0 || in_array($receipt->id, $batchShipmentIds);
             })
-            ->map(function($receipt) use ($batchShipmentIds) {
+            ->map(function ($receipt) use ($batchShipmentIds) {
                 $bal = $receipt->balance_amount;
                 // If it's in this batch, add back the amount for preview
                 if ($batchShipmentIds && in_array($receipt->id, $batchShipmentIds)) {
-                     $adj = \App\Models\PaymentAdjustment::where('ref_id', $receipt->id)->where('batch_id', request()->batch_id)->first();
-                     if ($adj) $bal += $adj->amount;
+                    $adj = \App\Models\PaymentAdjustment::where('ref_id', $receipt->id)->where('batch_id', request()->batch_id)->first();
+                    if ($adj)
+                        $bal += $adj->amount;
                 }
                 return [
                     'id' => $receipt->id,
@@ -447,7 +474,7 @@ class PaymentAdjustmentController extends Controller
                 ];
             })
             ->values();
-        
+
         return response()->json($shipments);
     }
 
@@ -471,7 +498,7 @@ class PaymentAdjustmentController extends Controller
                 'ref_id' => $group->pluck('ref_id')->implode(','),
                 'amount' => $group->sum('amount'),
                 'remarks' => $first->remarks, // Usually same for a batch but we take first
-                'items' => $group->map(function($g) {
+                'items' => $group->map(function ($g) {
                     $entity = $g->entity;
                     $balance = ($entity->balance_amount ?? $entity->balance ?? 0) + $g->amount;
                     return (object) [
@@ -488,7 +515,7 @@ class PaymentAdjustmentController extends Controller
         $domesticMaster = AdjustmentMaster::where('name', 'Customer')->where('status', 1)->first();
         $vendorMaster = AdjustmentMaster::where('name', 'Vendor')->where('status', 1)->first();
         $shipmentMaster = $vendorMaster;
-        
+
         $first = $allAdjustments->first();
         return view('admin.payment.adjustment.edit', compact('groupedAdjustments', 'batchId', 'masters', 'vendorMaster', 'shipmentMaster', 'domesticMaster', 'first'));
     }
@@ -529,7 +556,8 @@ class PaymentAdjustmentController extends Controller
             $adjustments = PaymentAdjustment::where('batch_id', $batchId)->get();
         }
 
-        if ($adjustments->isEmpty()) return false;
+        if ($adjustments->isEmpty())
+            return false;
 
         $first = $adjustments->first();
         $type = $first->type;
@@ -543,10 +571,10 @@ class PaymentAdjustmentController extends Controller
                 $model = $master->model_name;
                 $refId = $adj->ref_id;
                 $amount = $adj->amount;
-                
+
                 $actualModel = $model;
                 $actualId = $refId;
-                
+
                 if ($model == 'App\Models\AgentOrder' || $model == 'App\Models\MasterCustomer') {
                     if (str_starts_with($refId, 'OD:')) {
                         $actualModel = 'App\Models\OrderDispatch';
@@ -565,28 +593,36 @@ class PaymentAdjustmentController extends Controller
                     if ($model == 'App\Models\FabricReceipt') {
                         $vendor = \App\Models\Vendor::find($item->vendor_id);
                         if ($vendor) {
-                            if ($type == 'debit') $vendor->balance += $amount;
-                            else $vendor->balance -= $amount;
+                            if ($type == 'debit')
+                                $vendor->balance += $amount;
+                            else
+                                $vendor->balance -= $amount;
                             $vendor->save();
                         }
                     } elseif ($model == 'App\Models\Vendor') {
-                         if ($type == 'debit') $item->balance += $amount;
-                         else $item->balance -= $amount;
-                         $item->save();
+                        if ($type == 'debit')
+                            $item->balance += $amount;
+                        else
+                            $item->balance -= $amount;
+                        $item->save();
                     } elseif ($model == 'App\Models\AgentOrder' || $actualModel == 'App\Models\OrderDispatch' || $actualModel == 'App\Models\OrderMain' || $actualModel == 'App\Models\AgentOrderDispatch') {
-                        $partyId = ($actualModel == 'App\Models\AgentOrder' || $actualModel == 'App\Models\AgentOrderDispatch') 
-                            ? ($item->master_customer_id ?? $item->customer_id) 
+                        $partyId = ($actualModel == 'App\Models\AgentOrder' || $actualModel == 'App\Models\AgentOrderDispatch')
+                            ? ($item->master_customer_id ?? $item->customer_id)
                             : ($actualModel == 'App\Models\OrderDispatch' ? $item->customer_id : $item->master_customer_id);
 
                         $customer = \App\Models\MasterCustomer::find($partyId);
                         if ($customer) {
-                            if ($type == 'credit') $customer->balance -= $amount;
-                            else $customer->balance += $amount;
+                            if ($type == 'credit')
+                                $customer->balance -= $amount;
+                            else
+                                $customer->balance += $amount;
                             $customer->save();
                         }
                     } elseif ($model == 'App\Models\MasterCustomer') {
-                        if ($type == 'credit') $item->balance -= $amount;
-                        else $item->balance += $amount;
+                        if ($type == 'credit')
+                            $item->balance -= $amount;
+                        else
+                            $item->balance += $amount;
                         $item->save();
                     } else {
                         if (isset($item->balance) || isset($item->amount)) {
@@ -621,8 +657,10 @@ class PaymentAdjustmentController extends Controller
         }
 
         if ($account) {
-            if ($type == 'credit') $account->balance -= $totalBatchAmount;
-            else $account->balance += $totalBatchAmount;
+            if ($type == 'credit')
+                $account->balance -= $totalBatchAmount;
+            else
+                $account->balance += $totalBatchAmount;
             $account->save();
         }
 

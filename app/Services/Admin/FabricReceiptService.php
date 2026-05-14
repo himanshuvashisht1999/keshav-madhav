@@ -481,6 +481,7 @@ class FabricReceiptService
         $update_data->gst_amount = $request->gst_amount ?? 0.00;
         $update_data->gst_percentage = $request->gst_percentage ?? 1;
         $update_data->other_charges = $request->other_charges ?? 0.00;
+        $update_data->total_amount = $request->total_amount ?? 0.00;
         $update_data->total_meter = $request->total_meter ?? 0.00;
         $update_data->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
         $update_data->save();

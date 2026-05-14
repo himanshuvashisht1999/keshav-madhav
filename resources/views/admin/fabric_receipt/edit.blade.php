@@ -762,11 +762,19 @@ $(document).ready(function() {
         return new File([blob], 'challan.jpg', { type: blob.type });
     }
 
+    function calculateGST() {
+        let amount = parseFloat($('#amount').val()) || 0;
+        let gstPercent = parseFloat($('#gst_percentage').val()) || 0;
+        let gstAmt = (amount * gstPercent) / 100;
+        $('#gst_amount').val(gstAmt.toFixed(2));
+        calculateTotal();
+    }
+
     // Calculate totals on load
     calculateRollAmounts();
     calculateTotalMeters();
     calculateTotalRolls();
-    calculateGST();
+    calculateTotal();
 });
 
 let challanZoom = 1;

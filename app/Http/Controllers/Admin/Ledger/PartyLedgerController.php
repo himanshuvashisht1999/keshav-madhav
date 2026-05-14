@@ -159,14 +159,23 @@ class PartyLedgerController extends Controller
             ->get();
 
         foreach ($payments as $p) {
-            if ($p->payment_type === 'received') {
+            $isCredit = in_array($p->payment_type, ['received', 'credit']);
+            $isDebit = in_array($p->payment_type, ['paid', 'debit']);
+
+            if ($isCredit) {
                 $debit = 0;
                 $credit = (float) $p->amount;
                 $desc = 'Payment Received (' . $p->payment_mode . ')';
-            } else {
+            } elseif ($isDebit) {
                 $debit = (float) $p->amount;
                 $credit = 0;
                 $desc = 'Payment Paid (' . $p->payment_mode . ')';
+            } else {
+                // For 'adjustment' or other types, we need a fallback or smarter logic
+                // For now, if it's not received/credit, assume it's a debit unless we improve the storage
+                $debit = (float) $p->amount;
+                $credit = 0;
+                $desc = 'Adjustment (' . $p->payment_mode . ')';
             }
 
             $transactions->push((object) [
@@ -246,21 +255,24 @@ class PartyLedgerController extends Controller
 
         $openingBalAmount = 0;
         if ($openingBalance) {
-            $isDebit = (strtolower($openingBalance->balance_type) === 'debit');
+            $balanceType = strtolower(trim($openingBalance->balance_type));
             $openingBalAmount = (float) $openingBalance->amount;
-            if (!$isDebit)
+            
+            // Debit = Negative, Credit = Positive
+            if ($balanceType === 'debit') {
                 $openingBalAmount = -$openingBalAmount;
+            }
         }
 
         // Sort and Calculate Balance
-        $transactions = $transactions->sort(function($a, $b) {
+        $transactions = $transactions->sort(function ($a, $b) {
             $dateA = \Carbon\Carbon::parse($a->date)->format('Y-m-d');
             $dateB = \Carbon\Carbon::parse($b->date)->format('Y-m-d');
-            
+
             if ($dateA != $dateB) {
                 return $dateA <=> $dateB;
             }
-            
+
             // Same day, use created_at as tie-breaker
             return ($a->created_at ?? 0) <=> ($b->created_at ?? 0);
         })->values();

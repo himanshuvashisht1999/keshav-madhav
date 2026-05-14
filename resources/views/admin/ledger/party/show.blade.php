@@ -85,8 +85,8 @@
                                     <h4 class="mb-0 font-weight-bold">
                                         ₹ {{ number_format(abs($openingBalAmount), 2) }}
                                         <span
-                                            class="badge {{ $openingBalAmount >= 0 ? 'badge-info' : 'badge-warning' }} ml-1"
-                                            style="font-size: 11px;">{{ $openingBalAmount >= 0 ? 'DR' : 'CR' }}</span>
+                                            class="badge {{ $openingBalAmount >= 0 ? 'badge-success' : 'badge-danger' }} ml-1"
+                                            style="font-size: 11px;">{{ $openingBalAmount >= 0 ? 'CR' : 'DR' }}</span>
                                     </h4>
                                 </div>
                                 <div class="bg-white text-dark p-3 px-4 rounded shadow-sm text-center border-left border-primary"
