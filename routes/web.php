@@ -1158,6 +1158,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::prefix('/party')->name('party.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'index'])->name('index');
                 Route::get('/show/{type}/{id}', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'show'])->name('show');
+                Route::get('/download/{type}/{id}', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'download'])->name('download');
             });
         });
 

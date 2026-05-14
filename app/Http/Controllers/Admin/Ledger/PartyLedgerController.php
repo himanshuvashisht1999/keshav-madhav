@@ -56,6 +56,20 @@ class PartyLedgerController extends Controller
 
     public function show(Request $request, $type, $id)
     {
+        $data = $this->getLedgerData($request, $type, $id);
+        return view('admin.ledger.party.show', $data);
+    }
+
+    public function download(Request $request, $type, $id)
+    {
+        $data = $this->getLedgerData($request, $type, $id);
+        $pdf = \PDF::loadView('admin.ledger.party.download', $data);
+        $name = str_replace(' ', '_', $data['party']->name) . '_Ledger_' . date('Y-m-d') . '.pdf';
+        return $pdf->download($name);
+    }
+
+    private function getLedgerData(Request $request, $type, $id)
+    {
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
@@ -134,8 +148,7 @@ class PartyLedgerController extends Controller
             ]);
         }
 
-        // 3. Payments - Dynamic based on party_type and amount sign or separate logic
-        // For simplicity, we'll fetch all payments for this party
+        // 4. Payments
         $payments = Payment::where('party_id', $id)
             ->where('party_type', $partyModel)
             ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
@@ -143,10 +156,6 @@ class PartyLedgerController extends Controller
             ->get();
 
         foreach ($payments as $p) {
-            // Mapping: 
-            // 'received' -> Credit (Money coming to us, decreases what they owe or increases what we owe)
-            // 'paid' -> Debit (Money going out, increases what they owe or decreases what we owe)
-            
             if ($p->payment_type === 'received') {
                 $debit = 0;
                 $credit = (float)$p->amount;
@@ -167,7 +176,7 @@ class PartyLedgerController extends Controller
             ]);
         }
 
-        // 4. Finished Goods Purchases (Inventory Purchase) - CREDIT
+        // 5. Finished Goods Purchases (Inventory Purchase) - CREDIT
         $inventoryPurchases = \App\Models\DomesticInventoryPurchase::where($directIdField, $id)
             ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
@@ -184,7 +193,7 @@ class PartyLedgerController extends Controller
             ]);
         }
 
-        // 5. Vendor Specific: Fabric Purchases (Inwards) - CREDIT
+        // 6. Vendor Specific: Fabric Purchases (Inwards) - CREDIT
         if ($type === 'vendor') {
             $receipts = FabricReceipt::where('vendor_id', $id)
                 ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
@@ -202,7 +211,7 @@ class PartyLedgerController extends Controller
                 ]);
             }
 
-            // 6. Vendor Specific: Returns to Vendor (Purchase Returns) - DEBIT
+            // 7. Vendor Specific: Returns to Vendor (Purchase Returns) - DEBIT
             $pReturns = FabricReturn::whereHas('receipt', function($q) use ($id) {
                     $q->where('vendor_id', $id);
                 })
@@ -222,7 +231,7 @@ class PartyLedgerController extends Controller
             }
         }
 
-        // 7. Opening Balance
+        // 8. Opening Balance
         $openingBalance = \App\Models\MasterOpeningBalance::where('master_type', $type)
             ->where('master_id', $id)
             ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
@@ -232,7 +241,7 @@ class PartyLedgerController extends Controller
         if ($openingBalance) {
             $isDebit = (strtolower($openingBalance->balance_type) === 'debit');
             $openingBalAmount = (float)$openingBalance->amount;
-            if (!$isDebit) $openingBalAmount = -$openingBalAmount; // Credit is negative in my logic
+            if (!$isDebit) $openingBalAmount = -$openingBalAmount;
         }
 
         // Sort and Calculate Balance
@@ -244,6 +253,6 @@ class PartyLedgerController extends Controller
             $tx->running_balance = $balance;
         }
 
-        return view('admin.ledger.party.show', compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount'));
+        return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount');
     }
 }

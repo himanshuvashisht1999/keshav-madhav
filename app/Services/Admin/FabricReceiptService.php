@@ -143,8 +143,10 @@ class FabricReceiptService
                 'shipment_id' => $shipment_id
             ]);
 
+
             if ($save_data->vendor_id) {
                 $vendor = Vendor::find($save_data->vendor_id);
+
                 if ($vendor) {
                     $vendor->balance += $save_data->total_amount;
                     $vendor->save();
