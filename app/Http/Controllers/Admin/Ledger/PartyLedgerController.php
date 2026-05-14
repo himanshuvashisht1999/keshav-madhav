@@ -18,40 +18,64 @@ class PartyLedgerController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search');
-        $type = $request->query('type'); // 'vendor' or 'customer'
+        $typeId = $request->query('type_id'); // Adjustment Master ID
 
+        $masters = \App\Models\AdjustmentMaster::where('status', 1)->get();
         $parties = collect();
 
-        if (!$type || $type === 'vendor') {
-            $vendors = Vendor::where('status', 1)
-                ->when($search, function ($q) use ($search) {
-                    $q->where('name', 'LIKE', "%$search%");
-                })
-                ->get()
-                ->map(function ($v) {
-                    $v->party_type = 'vendor';
-                    return $v;
-                });
-            $parties = $parties->concat($vendors);
-        }
-
-        if (!$type || $type === 'customer') {
-            $customers = MasterCustomer::where('status', 1)
-                ->when($search, function ($q) use ($search) {
-                    $q->where('name', 'LIKE', "%$search%");
-                })
-                ->get()
-                ->map(function ($c) {
-                    $c->party_type = 'customer';
-                    return $c;
-                });
-            $parties = $parties->concat($customers);
+        if ($typeId) {
+            $master = \App\Models\AdjustmentMaster::find($typeId);
+            if ($master) {
+                $modelName = $master->model_name;
+                if (class_exists($modelName)) {
+                    $items = $modelName::where('status', 1)
+                        ->when($search, function ($q) use ($search, $modelName) {
+                            if ($modelName == 'App\Models\BankAccount') {
+                                $q->where('bank_name', 'LIKE', "%$search%");
+                            } else {
+                                $q->where('name', 'LIKE', "%$search%");
+                            }
+                        })
+                        ->get()
+                        ->map(function ($v) use ($master) {
+                            $v->party_type = strtolower($master->name);
+                            $v->master_id_val = $master->id;
+                            if (!isset($v->name) && isset($v->bank_name)) $v->name = $v->bank_name;
+                            return $v;
+                        });
+                    $parties = $parties->concat($items);
+                }
+            }
+        } else {
+            // Default to ALL masters items (might be too many, but let's see)
+            foreach ($masters as $master) {
+                $modelName = $master->model_name;
+                if (class_exists($modelName)) {
+                    $items = $modelName::where('status', 1)
+                        ->when($search, function ($q) use ($search, $modelName) {
+                            if ($modelName == 'App\Models\BankAccount') {
+                                $q->where('bank_name', 'LIKE', "%$search%");
+                            } else {
+                                $q->where('name', 'LIKE', "%$search%");
+                            }
+                        })
+                        ->limit(100) // Safety limit for "All" view
+                        ->get()
+                        ->map(function ($v) use ($master) {
+                            $v->party_type = strtolower($master->name);
+                            $v->master_id_val = $master->id;
+                            if (!isset($v->name) && isset($v->bank_name)) $v->name = $v->bank_name;
+                            return $v;
+                        });
+                    $parties = $parties->concat($items);
+                }
+            }
         }
 
         // Sort by name
         $parties = $parties->sortBy('name');
 
-        return view('admin.ledger.party.index', compact('parties'));
+        return view('admin.ledger.party.index', compact('parties', 'masters'));
     }
 
     public function show(Request $request, $type, $id)
@@ -73,23 +97,29 @@ class PartyLedgerController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        if ($type === 'vendor') {
-            $party = Vendor::findOrFail($id);
-        } else {
-            $party = MasterCustomer::findOrFail($id);
+        // Resolve Master
+        $master = \App\Models\AdjustmentMaster::where('name', 'LIKE', $type)->first();
+        if (!$master) {
+            // Fallback for direct names
+            if ($type === 'vendor') $master = \App\Models\AdjustmentMaster::where('name', 'Vendor')->first();
+            elseif ($type === 'customer') $master = \App\Models\AdjustmentMaster::where('name', 'Customer')->first();
         }
+
+        if (!$master) abort(404, "Invalid Ledger Type");
+
+        $modelName = $master->model_name;
+        $party = $modelName::findOrFail($id);
 
         $transactions = collect();
 
-        if ($type === 'customer') {
-            $partyModel = 'App\Models\MasterCustomer';
-            $partyIdField = 'master_customer_id';
-            $directIdField = 'customer_id';
-        } else {
-            $partyModel = 'App\Models\Vendor';
-            $partyIdField = 'master_vendor_id';
-            $directIdField = 'vendor_id';
-        }
+        // Special Detailed Logic for Customers, Vendors, Banks and Cash
+        $isBankOrCash = in_array(strtolower($master->name), ['bank account', 'cash master']);
+        if (strtolower($master->name) === 'customer' || strtolower($master->name) === 'vendor' || $isBankOrCash) {
+            $isCustomer = strtolower($master->name) === 'customer';
+            $isVendor = strtolower($master->name) === 'vendor';
+            
+            $partyIdField = $isCustomer ? 'master_customer_id' : 'master_vendor_id';
+            $directIdField = $isCustomer ? 'customer_id' : 'vendor_id';
 
         // 1. Sales (Dispatches) - DEBIT
         $dispatches = AgentOrderDispatch::where($partyIdField, $id)
@@ -152,8 +182,16 @@ class PartyLedgerController extends Controller
         }
 
         // 4. Payments
-        $payments = Payment::where('party_id', $id)
-            ->where('party_type', $partyModel)
+        $paymentsQuery = Payment::query();
+        if ($isBankOrCash) {
+            $paymentsQuery->where('payment_method_id', $id)
+                ->where('payment_method_type', $modelName);
+        } else {
+            $paymentsQuery->where('party_id', $id)
+                ->where('party_type', $modelName);
+        }
+
+        $payments = $paymentsQuery
             ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
             ->get();
@@ -247,8 +285,84 @@ class PartyLedgerController extends Controller
             }
         }
 
+        // 7b. Adjustments (for Bank/Cash or others)
+        if ($isBankOrCash) {
+            $mode = strtolower($master->name) === 'bank account' ? 'bank' : 'cash';
+            $adjustments = \App\Models\PaymentAdjustment::where('payment_mode', $mode)
+                ->where('payment_account_id', $id)
+                ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
+                ->get();
+
+            foreach ($adjustments as $adj) {
+                // For the bank/cash account, the type is reverse of the party's adjustment type
+                $isCredit = $adj->type === 'debit'; 
+                
+                $transactions->push((object) [
+                    'date' => $adj->date,
+                    'created_at' => $adj->created_at,
+                    'type' => 'Adjustment',
+                    'ref' => $adj->batch_id ?? ('Adj #' . $adj->id),
+                    'debit' => $isCredit ? 0 : (float) $adj->amount,
+                    'credit' => $isCredit ? (float) $adj->amount : 0,
+                    'description' => '[Dist] ' . ($adj->remarks ?: $adj->entity_name)
+                ]);
+            }
+        }
+    } else {
+        // Generic Logic for other masters: Just fetch PaymentAdjustments
+            $adjustments = \App\Models\PaymentAdjustment::where('adjustment_master_id', $master->id)
+                ->where('ref_id', $id)
+                ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
+                ->get();
+
+            foreach ($adjustments as $adj) {
+                $isCredit = $adj->type === 'credit';
+                $transactions->push((object) [
+                    'date' => $adj->date,
+                    'created_at' => $adj->created_at,
+                    'type' => 'Adjustment',
+                    'ref' => $adj->batch_id ?? ('Adj #' . $adj->id),
+                    'debit' => $isCredit ? 0 : (float) $adj->amount,
+                    'credit' => $isCredit ? (float) $adj->amount : 0,
+                    'description' => $adj->remarks ?: ($isCredit ? 'Credit Adjustment' : 'Debit Adjustment')
+                ]);
+            }
+        }
+
+        // Fetch Journal Vouchers - Applicable to all masters
+        $vouchers = \App\Models\JournalVoucherItem::with('voucher')
+            ->where('master_type', $master->id)
+            ->where('master_id', $id)
+            ->whereHas('voucher', function($q) use ($startDate, $endDate) {
+                $q->when($startDate, fn($q2) => $q2->whereDate('date', '>=', $startDate))
+                  ->when($endDate, fn($q2) => $q2->whereDate('date', '<=', $endDate));
+            })
+            ->get();
+
+        foreach ($vouchers as $v) {
+            $isCredit = strtolower($v->type) === 'credit';
+            $transactions->push((object) [
+                'date' => $v->voucher->date,
+                'created_at' => $v->created_at,
+                'type' => 'Journal Voucher',
+                'ref' => $v->voucher->voucher_no,
+                'debit' => $isCredit ? 0 : (float) $v->amount,
+                'credit' => $isCredit ? (float) $v->amount : 0,
+                'description' => $v->narration ?: $v->voucher->narration ?: 'Journal Entry'
+            ]);
+        }
+
         // 8. Opening Balance
-        $openingBalance = \App\Models\MasterOpeningBalance::where('master_type', $type)
+        $lookupType = str_replace(' ', '_', strtolower($type));
+        // Specific mapping overrides
+        if ($lookupType === 'machinery_account') $lookupType = 'machinery';
+        if ($lookupType === 'loan_account') $lookupType = 'loan';
+        if ($lookupType === 'hulayati_master') $lookupType = 'hulayati';
+        if ($lookupType === 'factory_head_master') $lookupType = 'factory_head';
+
+        $openingBalance = \App\Models\MasterOpeningBalance::whereIn('master_type', [$type, $lookupType, str_replace('_', ' ', $lookupType)])
             ->where('master_id', $id)
             ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
             ->first();

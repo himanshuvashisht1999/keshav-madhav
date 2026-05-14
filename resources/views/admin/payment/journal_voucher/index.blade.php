@@ -52,6 +52,9 @@
                                 <td title="{{ $voucher->narration }}">{{ \Str::limit($voucher->narration, 30) }}</td>
                                 <td>{{ $voucher->created_at->format('d M Y h:i A') }}</td>
                                 <td>
+                                    <a href="{{ route('admin.payment.journal-voucher.show', $voucher->id) }}" class="btn btn-primary btn-xs">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
                                     <a href="{{ route('admin.payment.journal-voucher.edit', $voucher->id) }}" class="btn btn-info btn-xs">
                                         <i class="fas fa-edit"></i> Edit
                                     </a>

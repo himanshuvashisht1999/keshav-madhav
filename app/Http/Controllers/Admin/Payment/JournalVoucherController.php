@@ -18,6 +18,39 @@ class JournalVoucherController extends Controller
         return view('admin.payment.journal_voucher.index', compact('vouchers'));
     }
 
+    public function show($id)
+    {
+        $voucher = $this->getVoucherData($id);
+        return view('admin.payment.journal_voucher.show', compact('voucher'));
+    }
+
+    public function download($id)
+    {
+        $voucher = $this->getVoucherData($id);
+        $pdf = \PDF::loadView('admin.payment.journal_voucher.download', compact('voucher'));
+        return $pdf->download($voucher->voucher_no . '.pdf');
+    }
+
+    private function getVoucherData($id)
+    {
+        $voucher = JournalVoucher::with(['items.voucher'])->findOrFail($id);
+        
+        foreach ($voucher->items as $item) {
+            $master = AdjustmentMaster::find($item->master_type);
+            $item->master_name = $master ? $master->name : 'Unknown';
+            
+            if ($master && class_exists($master->model_name)) {
+                $model = $master->model_name;
+                if ($model == 'App\Models\AgentOrder') $model = 'App\Models\MasterCustomer';
+                $party = $model::find($item->master_id);
+                $item->party_name = $party ? ($party->name ?? $party->bank_name ?? 'N/A') : 'N/A';
+            } else {
+                $item->party_name = 'N/A';
+            }
+        }
+        return $voucher;
+    }
+
     public function create()
     {
         $masters = AdjustmentMaster::where('status', 1)->get();

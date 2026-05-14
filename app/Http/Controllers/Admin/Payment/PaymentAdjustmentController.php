@@ -203,15 +203,15 @@ class PaymentAdjustmentController extends Controller
 
                                     if (isset($item->balance)) {
                                         if ($type == 'debit') {
-                                            $isSpecial ? $item->balance += $currentAmount : $item->balance -= $currentAmount;
+                                            $item->balance -= $currentAmount;
                                         } else {
-                                            $isSpecial ? $item->balance -= $currentAmount : $item->balance += $currentAmount;
+                                            $item->balance += $currentAmount;
                                         }
                                     } elseif (isset($item->amount)) {
                                         if ($type == 'debit') {
-                                            $isSpecial ? $item->amount += $currentAmount : $item->amount -= $currentAmount;
+                                            $item->amount -= $currentAmount;
                                         } else {
-                                            $isSpecial ? $item->amount -= $currentAmount : $item->amount += $currentAmount;
+                                            $item->amount += $currentAmount;
                                         }
                                     }
                                     $item->save();
@@ -256,10 +256,11 @@ class PaymentAdjustmentController extends Controller
         }
 
         if ($account) {
+            // For To Account, the type is reverse of the Party type
             if ($type == 'credit')
-                $account->balance += $totalActual;
-            else
                 $account->balance -= $totalActual;
+            else
+                $account->balance += $totalActual;
             $account->save();
         }
 
@@ -634,15 +635,15 @@ class PaymentAdjustmentController extends Controller
 
                             if (isset($item->balance)) {
                                 if ($type == 'debit') {
-                                    $isSpecial ? $item->balance -= $amount : $item->balance += $amount;
+                                    $item->balance += $amount; // Reverse of subtract
                                 } else {
-                                    $isSpecial ? $item->balance += $amount : $item->balance -= $amount;
+                                    $item->balance -= $amount; // Reverse of add
                                 }
                             } elseif (isset($item->amount)) {
                                 if ($type == 'debit') {
-                                    $isSpecial ? $item->amount -= $amount : $item->amount += $amount;
+                                    $item->amount += $amount;
                                 } else {
-                                    $isSpecial ? $item->amount += $amount : $item->amount -= $amount;
+                                    $item->amount -= $amount;
                                 }
                             }
                             $item->save();
@@ -661,10 +662,11 @@ class PaymentAdjustmentController extends Controller
         }
 
         if ($account) {
+            // Reversing the reverse: if type was credit, we added it (reverse of subtract)
             if ($type == 'credit')
-                $account->balance -= $totalBatchAmount;
-            else
                 $account->balance += $totalBatchAmount;
+            else
+                $account->balance -= $totalBatchAmount;
             $account->save();
         }
 

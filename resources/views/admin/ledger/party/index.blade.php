@@ -62,11 +62,12 @@
                                 <input type="text" name="search" value="{{ request('search') }}" class="form-control search-box" placeholder="Search by name...">
                             </div>
                             <div class="col-md-3">
-                                <label class="small font-weight-bold text-muted">Filter by Type</label>
-                                <select name="type" class="form-control" style="border-radius: 20px;">
-                                    <option value="">All Parties</option>
-                                    <option value="customer" {{ request('type') == 'customer' ? 'selected' : '' }}>Customers</option>
-                                    <option value="vendor" {{ request('type') == 'vendor' ? 'selected' : '' }}>Vendors</option>
+                                <label class="small font-weight-bold text-muted">Filter by Master Type</label>
+                                <select name="type_id" class="form-control" style="border-radius: 20px;">
+                                    <option value="">All Master Types</option>
+                                    @foreach($masters as $m)
+                                        <option value="{{ $m->id }}" {{ request('type_id') == $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -112,7 +113,7 @@
                                             <span class="{{ $bal >= 0 ? 'balance-positive' : 'balance-negative' }}">
                                                 ₹ {{ number_format(abs($bal), 2) }}
                                                 <small class="text-muted ml-1">
-                                                    {{ $party->party_type == 'customer' ? ($bal >= 0 ? 'DR' : 'CR') : ($bal >= 0 ? 'CR' : 'DR') }}
+                                                    {{ $bal >= 0 ? 'CR' : 'DR' }}
                                                 </small>
                                             </span>
                                         </td>

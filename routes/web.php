@@ -1555,6 +1555,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/create', [AdminJournalVoucherController::class, 'create'])->name('create');
                 Route::post('/store', [AdminJournalVoucherController::class, 'store'])->name('store');
                 Route::get('/edit/{id}', [AdminJournalVoucherController::class, 'edit'])->name('edit');
+                Route::get('/show/{id}', [AdminJournalVoucherController::class, 'show'])->name('show');
+                Route::get('/download/{id}', [AdminJournalVoucherController::class, 'download'])->name('download');
                 Route::post('/update/{id}', [AdminJournalVoucherController::class, 'update'])->name('update');
                 Route::get('/delete/{id}', [AdminJournalVoucherController::class, 'destroy'])->name('delete');
             });
