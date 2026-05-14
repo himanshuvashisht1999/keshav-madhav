@@ -78,21 +78,20 @@ class PaymentAdjustmentController extends Controller
             $rawRefIds = $request->ref_id[$key];
             $amountToDistribute = floatval($request->amount[$key]);
             $remarks = $request->remarks[$key] ?? '';
-            
+
             $master = AdjustmentMaster::find($masterId);
             if ($master && class_exists($master->model_name)) {
                 $model = $master->model_name;
                 $refIds = explode(',', $rawRefIds);
-                
+
                 foreach ($refIds as $refId) {
                     $refId = trim($refId);
-                    if (!$refId) continue;
-                    // We removed the break to ensure all selected items are recorded in the batch,
-                    // even if they receive 0.00 distribution. This preserves the selection in the Edit view.
+                    if (!$refId)
+                        continue;
 
                     $actualModel = $model;
                     $actualId = $refId;
-                    
+
                     // Handle Prefixed IDs for Corporate/Domestic Dispatches
                     if ($model == 'App\Models\AgentOrder' || $model == 'App\Models\MasterCustomer') {
                         if (str_starts_with($refId, 'OD:')) {
@@ -110,11 +109,11 @@ class PaymentAdjustmentController extends Controller
                     $item = $actualModel::find($actualId);
                     if ($item) {
                         $currentAmount = $amountToDistribute;
-                        
+
                         // Handle Distribution (Waterfall) - only if multiple selected
                         if (($model == 'App\Models\FabricReceipt' || $model == 'App\Models\AgentOrder' || $actualModel == 'App\Models\OrderDispatch' || $actualModel == 'App\Models\AgentOrderDispatch') && count($refIds) > 1) {
                             $balance = floatval($item->balance_amount ?? 0);
-                            
+
                             // If we have remaining money, give it to this item based on its balance
                             if ($amountToDistribute > 0 && $balance > 0) {
                                 $currentAmount = min($amountToDistribute, $balance);
@@ -122,14 +121,14 @@ class PaymentAdjustmentController extends Controller
                                 $currentAmount = 0;
                             }
                         }
-                        
+
                         $amountToDistribute -= $currentAmount;
 
                         // Create Adjustment Record (Always created, even if amount is 0)
                         PaymentAdjustment::create([
                             'batch_id' => $batchId,
                             'adjustment_master_id' => $masterId,
-                            'ref_id' => $refId, 
+                            'ref_id' => $refId,
                             'type' => $type,
                             'payment_mode' => $mode,
                             'payment_account_id' => $accountId,
@@ -140,108 +139,89 @@ class PaymentAdjustmentController extends Controller
 
                         // Financial Logic: Only apply if amount distributed is > 0
                         if ($currentAmount > 0) {
-                            if ($model == 'App\Models\FabricReceipt') {
+                            if ($model == 'App\Models\Vendor') {
                                 \App\Models\Payment::create([
                                     'payment_category' => 'fabric_shipment',
                                     'payment_type' => ($type == 'debit' ? 'paid' : 'adjustment'),
                                     'party_type' => \App\Models\Vendor::class,
-                                    'party_id' => $item->vendor_id,
-                                    'paymentable_type' => \App\Models\FabricReceipt::class,
+                                    'party_id' => $item->id,
+                                    'paymentable_type' => \App\Models\Vendor::class,
                                     'paymentable_id' => $item->id,
                                     'amount' => $currentAmount,
                                     'payment_date' => $request->date,
                                     'payment_mode' => 'Adjustment',
                                     'reference_id' => $batchId,
-                                    'remarks' => '[Dist-Adj] ' . $remarks,
+                                    'remarks' => '[Vendor-Adj] ' . $remarks,
                                     'created_by' => \Auth::id(),
                                 ]);
-    
-                                // Update Vendor Balance
-                                $vendor = \App\Models\Vendor::find($item->vendor_id);
-                                if ($vendor) {
-                                    if ($type == 'debit') $vendor->balance -= $currentAmount;
-                                    else $vendor->balance += $currentAmount;
-                                    $vendor->save();
-                                }
-                            } elseif ($model == 'App\Models\Vendor') {
-                             if ($type == 'debit') $item->balance -= $currentAmount;
-                             else $item->balance += $currentAmount;
-                             $item->save();
-                        } elseif ($model == 'App\Models\Employee') {
-                            \App\Models\Payment::create([
-                                'payment_category' => 'employee_salary',
-                                'payment_type' => 'paid',
-                                'party_type' => \App\Models\Employee::class,
-                                'party_id' => $item->id,
-                                'paymentable_type' => \App\Models\Employee::class,
-                                'paymentable_id' => $item->id,
-                                'amount' => $currentAmount,
-                                'payment_date' => $request->date,
-                                'payment_mode' => 'Adjustment',
-                                'reference_id' => $batchId,
-                                'remarks' => '[Salary-Adj] ' . $remarks,
-                                'created_by' => Auth::id(),
-                            ]);
-                        } elseif ($model == 'App\Models\AgentOrder' || $actualModel == 'App\Models\OrderDispatch' || $actualModel == 'App\Models\OrderMain' || $actualModel == 'App\Models\AgentOrderDispatch') {
-                            $category = ($actualModel == 'App\Models\AgentOrder' || $actualModel == 'App\Models\AgentOrderDispatch') ? 'domestic_order' : 'corporate_order';
-                            $prefix = ($actualModel == 'App\Models\AgentOrder' || $actualModel == 'App\Models\AgentOrderDispatch') ? 'Customer' : 'Corp';
-                            
-                            $party_id = ($actualModel == 'App\Models\AgentOrder' || $actualModel == 'App\Models\AgentOrderDispatch') 
-                                ? ($item->master_customer_id ?? $item->customer_id) 
-                                : ($actualModel == 'App\Models\OrderDispatch' ? $item->customer_id : $item->master_customer_id);
 
-                            \App\Models\Payment::create([
-                                'payment_category' => $category,
-                                'payment_type' => 'paid',
-                                'party_type' => \App\Models\MasterCustomer::class,
-                                'party_id' => $party_id,
-                                'paymentable_type' => $actualModel,
-                                'paymentable_id' => $actualId,
-                                'amount' => $currentAmount,
-                                'payment_date' => $request->date,
-                                'payment_mode' => 'Adjustment',
-                                'reference_id' => $batchId,
-                                'remarks' => '[' . $prefix . '-Adj] ' . $remarks,
-                                'created_by' => Auth::id(),
-                            ]);
-
-                            // Update MasterCustomer Balance
-                            $customer = \App\Models\MasterCustomer::find($party_id);
-                            if ($customer) {
-                                if ($type == 'credit') $customer->balance += $currentAmount;
-                                else $customer->balance -= $currentAmount;
-                                $customer->save();
-                            }
-                        } elseif ($model == 'App\Models\MasterCustomer') {
-                            if ($type == 'credit') $item->balance += $currentAmount;
-                            else $item->balance -= $currentAmount;
-                            $item->save();
-                        } else {
-                            // Update Master Item Balance (regular flow)
-                            if (isset($item->balance) || isset($item->amount)) {
-                                $isSpecial = in_array($masterId, [1, 12, 19, 26, 27, 28, 29, 30]); // Committee, Bank, Hulayati, Machinery, Loan, Factory Head, Discount, Salary
-                                
-                                if (isset($item->balance)) {
-                                    if ($type == 'debit') {
-                                        $isSpecial ? $item->balance += $currentAmount : $item->balance -= $currentAmount;
-                                    } else {
-                                        $isSpecial ? $item->balance -= $currentAmount : $item->balance += $currentAmount;
-                                    }
-                                } elseif (isset($item->amount)) {
-                                    if ($type == 'debit') {
-                                        $isSpecial ? $item->amount += $currentAmount : $item->amount -= $currentAmount;
-                                    } else {
-                                        $isSpecial ? $item->amount -= $currentAmount : $item->amount += $currentAmount;
-                                    }
-                                }
+                                if ($type == 'debit')
+                                    $item->balance -= $currentAmount;
+                                else
+                                    $item->balance += $currentAmount;
                                 $item->save();
+                            } elseif ($model == 'App\Models\Employee') {
+                                \App\Models\Payment::create([
+                                    'payment_category' => 'employee_salary',
+                                    'payment_type' => 'paid',
+                                    'party_type' => \App\Models\Employee::class,
+                                    'party_id' => $item->id,
+                                    'paymentable_type' => \App\Models\Employee::class,
+                                    'paymentable_id' => $item->id,
+                                    'amount' => $currentAmount,
+                                    'payment_date' => $request->date,
+                                    'payment_mode' => 'Adjustment',
+                                    'reference_id' => $batchId,
+                                    'remarks' => '[Salary-Adj] ' . $remarks,
+                                    'created_by' => Auth::id(),
+                                ]);
+                            } elseif ($model == 'App\Models\MasterCustomer') {
+                                \App\Models\Payment::create([
+                                    'payment_category' => 'domestic_order',
+                                    'payment_type' => 'received',
+                                    'party_type' => \App\Models\MasterCustomer::class,
+                                    'party_id' => $item->id,
+                                    'paymentable_type' => \App\Models\MasterCustomer::class,
+                                    'paymentable_id' => $item->id,
+                                    'amount' => $currentAmount,
+                                    'payment_date' => $request->date,
+                                    'payment_mode' => 'Adjustment',
+                                    'reference_id' => $batchId,
+                                    'remarks' => '[Customer-Adj] ' . $remarks,
+                                    'created_by' => Auth::id(),
+                                ]);
+
+                                if ($type == 'credit')
+                                    $item->balance += $currentAmount;
+                                else
+                                    $item->balance -= $currentAmount;
+                                $item->save();
+                            } else {
+                                // Update Master Item Balance (regular flow)
+                                if (isset($item->balance) || isset($item->amount)) {
+                                    $isSpecial = in_array($masterId, [1, 12, 19, 26, 27, 28, 29, 30]); // Committee, Bank, Hulayati, Machinery, Loan, Factory Head, Discount, Salary
+
+                                    if (isset($item->balance)) {
+                                        if ($type == 'debit') {
+                                            $isSpecial ? $item->balance += $currentAmount : $item->balance -= $currentAmount;
+                                        } else {
+                                            $isSpecial ? $item->balance -= $currentAmount : $item->balance += $currentAmount;
+                                        }
+                                    } elseif (isset($item->amount)) {
+                                        if ($type == 'debit') {
+                                            $isSpecial ? $item->amount += $currentAmount : $item->amount -= $currentAmount;
+                                        } else {
+                                            $isSpecial ? $item->amount -= $currentAmount : $item->amount += $currentAmount;
+                                        }
+                                    }
+                                    $item->save();
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
 
         // Update Global Account Balance (Single aggregate update)
         if ($mode == 'bank' && $accountId) {
@@ -251,8 +231,10 @@ class PaymentAdjustmentController extends Controller
         }
 
         if ($account) {
-            if ($type == 'credit') $account->balance += $totalActual;
-            else $account->balance -= $totalActual;
+            if ($type == 'credit')
+                $account->balance += $totalActual;
+            else
+                $account->balance -= $totalActual;
             $account->save();
         }
 
@@ -270,25 +252,6 @@ class PaymentAdjustmentController extends Controller
 
         $modelName = $master->model_name;
         if (class_exists($modelName)) {
-            if ($modelName == 'App\Models\FabricReceipt') {
-                $vendors = \App\Models\Vendor::where('status', 1)->get()->map(function ($v) {
-                    return ['id' => $v->id, 'name' => $v->name, 'balance' => 0];
-                });
-                return response()->json($vendors);
-            }
-
-            if ($modelName == 'App\Models\AgentOrder') {
-                $customers = \App\Models\MasterCustomer::with('agent')
-                    ->whereIn('type', ['domestic', 'corporate'])
-                    ->get()
-                    ->map(function ($c) {
-                        $agentName = $c->agent ? $c->agent->name : 'Direct';
-                        $prefix = ($c->type == 'corporate') ? '[Corp] ' : '';
-                        return ['id' => $c->id, 'name' => $prefix . $c->name . ' (Agent: ' . $agentName . ')', 'balance' => 0];
-                    });
-                return response()->json($customers);
-            }
-
             $data = $modelName::where('status', 1)->get()->map(function ($item) use ($modelName) {
                 $name = $item->name;
                 if ($modelName == 'App\Models\BankAccount') {
@@ -310,44 +273,18 @@ class PaymentAdjustmentController extends Controller
         foreach ($masters as $master) {
             $modelName = $master->model_name;
             if (class_exists($modelName)) {
-                $items = [];
-                if ($modelName == 'App\Models\FabricReceipt') {
-                    $items = \App\Models\Vendor::where('status', 1)->get()->map(function ($v) use ($master) {
-                        return [
-                            'id' => $v->id, 
-                            'name' => $v->name . ' [Vendor]', 
-                            'master_id' => $master->id,
-                            'balance' => 0
-                        ];
-                    })->toArray();
-                } elseif ($modelName == 'App\Models\AgentOrder') {
-                    $items = \App\Models\MasterCustomer::with('agent')
-                        ->whereIn('type', ['domestic', 'corporate'])
-                        ->get()
-                        ->map(function ($c) use ($master) {
-                            $agentName = $c->agent ? $c->agent->name : 'Direct';
-                            $prefix = ($c->type == 'corporate') ? '[Corp] ' : '';
-                            return [
-                                'id' => $c->id, 
-                                'name' => $prefix . $c->name . ' (Agent: ' . $agentName . ') [Customer]', 
-                                'master_id' => $master->id,
-                                'balance' => 0
-                            ];
-                        })->toArray();
-                } else {
-                    $items = $modelName::where('status', 1)->get()->map(function ($item) use ($modelName, $master) {
-                        $name = $item->name;
-                        if ($modelName == 'App\Models\BankAccount') {
-                            $name = $item->bank_name . ' (' . $item->account_number . ')';
-                        }
-                        return [
-                            'id' => $item->id, 
-                            'name' => $name . ' [' . $master->name . ']', 
-                            'master_id' => $master->id,
-                            'balance' => $item->balance ?? $item->amount ?? 0
-                        ];
-                    })->toArray();
-                }
+                $items = $modelName::where('status', 1)->get()->map(function ($item) use ($modelName, $master) {
+                    $name = $item->name;
+                    if ($modelName == 'App\Models\BankAccount') {
+                        $name = $item->bank_name . ' (' . $item->account_number . ')';
+                    }
+                    return [
+                        'id' => $item->id, 
+                        'name' => $name . ' [' . $master->name . ']', 
+                        'master_id' => $master->id,
+                        'balance' => $item->balance ?? $item->amount ?? 0
+                    ];
+                })->toArray();
                 $allData = array_merge($allData, $items);
             }
         }

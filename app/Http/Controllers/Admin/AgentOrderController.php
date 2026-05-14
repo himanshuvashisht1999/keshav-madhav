@@ -422,7 +422,7 @@ class AgentOrderController extends Controller
         }
 
         $other_charges = $request->other_charges ?? 0;
-        
+
         if ($request->filled('discount_amount')) {
             $discount_amount = (float) $request->discount_amount;
             $discount_percentage = ($total_amount > 0) ? ($discount_amount / $total_amount * 100) : 0;
@@ -557,10 +557,12 @@ class AgentOrderController extends Controller
             if ($order_type === 'direct') {
                 if ($order->party_type === 'vendor') {
                     $vendor = \App\Models\Vendor::find($order->master_vendor_id);
-                    if ($vendor) $vendor->increment('balance', $grand_total);
+                    if ($vendor)
+                        $vendor->decrement('balance', $grand_total);
                 } else {
                     $customer = \App\Models\MasterCustomer::find($order->master_customer_id);
-                    if ($customer) $customer->increment('balance', $grand_total);
+                    if ($customer)
+                        $customer->decrement('balance', $grand_total);
                 }
             }
 
@@ -680,13 +682,13 @@ class AgentOrderController extends Controller
             ->appends($request->query());
 
         $agents = DB::table('sales_agents')->select('id', 'name')->get();
-        
-        $customers = DB::table('master_customers')->select('id', 'name')->where('status', 1)->get()->map(function($item) {
+
+        $customers = DB::table('master_customers')->select('id', 'name')->where('status', 1)->get()->map(function ($item) {
             $item->combined_id = 'customer_' . $item->id;
             $item->type = 'customer';
             return $item;
         });
-        $vendors_list = DB::table('vendors')->select('id', 'name')->where('status', 1)->get()->map(function($item) {
+        $vendors_list = DB::table('vendors')->select('id', 'name')->where('status', 1)->get()->map(function ($item) {
             $item->combined_id = 'vendor_' . $item->id;
             $item->type = 'vendor';
             return $item;
@@ -786,7 +788,7 @@ class AgentOrderController extends Controller
 
         // Check if any items are dispatched or scanned
         $hasScanned = $order->items()->where('scanned_box_qty', '>', 0)->exists();
-        $hasDispatch = $order->dispatches()->exists() || 
+        $hasDispatch = $order->dispatches()->exists() ||
             $order->items()->whereNotNull('dispatched_at')->exists() ||
             $order->fabricItems()->whereNotNull('agent_order_dispatch_id')->exists() ||
             $order->status === 'dispatched';
@@ -1542,17 +1544,17 @@ class AgentOrderController extends Controller
             $dispatchGst = $dispatchSubtotal * ($gstPercentage / 100);
             $dispatchTotal = $dispatchSubtotal + $dispatchGst;
 
-            // 2. Update Party Balance (Increase because they now owe this amount)
+            // 2. Update Party Balance (Decrease because they now owe this amount)
             if ($order->party_type === 'vendor') {
                 $vendor = \App\Models\Vendor::find($order->master_vendor_id);
                 if ($vendor) {
-                    $vendor->balance += $dispatchTotal;
+                    $vendor->balance -= $dispatchTotal;
                     $vendor->save();
                 }
             } else {
                 $customer = \App\Models\MasterCustomer::find($order->master_customer_id);
                 if ($customer) {
-                    $customer->balance += $dispatchTotal;
+                    $customer->balance -= $dispatchTotal;
                     $customer->save();
                 }
             }
@@ -1912,17 +1914,17 @@ class AgentOrderController extends Controller
             $dispatch->grand_total = $subtotal + $gst;
             $dispatch->save();
 
-            // Update Party Balance (Increase on dispatch)
+            // Update Party Balance (Decrease on dispatch)
             if ($order->party_type === 'vendor') {
                 $vendor = \App\Models\Vendor::find($order->master_vendor_id);
                 if ($vendor) {
-                    $vendor->balance += $dispatch->grand_total;
+                    $vendor->balance -= $dispatch->grand_total;
                     $vendor->save();
                 }
             } else {
                 $customer = \App\Models\MasterCustomer::find($order->master_customer_id);
                 if ($customer) {
-                    $customer->balance += $dispatch->grand_total;
+                    $customer->balance -= $dispatch->grand_total;
                     $customer->save();
                 }
             }
@@ -2167,17 +2169,17 @@ class AgentOrderController extends Controller
                 'grand_total' => $grand_total,
             ]);
 
-            // Finally: Update Party Balance (Increase model)
+            // Finally: Update Party Balance (Decrease model)
             if ($dispatch->party_type === 'vendor') {
                 $vendor = \App\Models\Vendor::find($dispatch->master_vendor_id);
                 if ($vendor) {
-                    $vendor->balance += $dispatch->grand_total;
+                    $vendor->balance -= $dispatch->grand_total;
                     $vendor->save();
                 }
             } else {
                 $customer = \App\Models\MasterCustomer::find($dispatch->master_customer_id);
                 if ($customer) {
-                    $customer->balance += $dispatch->grand_total;
+                    $customer->balance -= $dispatch->grand_total;
                     $customer->save();
                 }
             }
@@ -2322,19 +2324,19 @@ class AgentOrderController extends Controller
                 'remark' => $request->remark,
             ]);
 
-            // Adjust Party Balance (Increase model)
+            // Adjust Party Balance (Decrease model)
             if ($dispatch->party_type === 'vendor') {
                 $vendor = \App\Models\Vendor::find($dispatch->master_vendor_id);
                 if ($vendor) {
-                    // Subtract old and add new to adjust the increase
-                    $vendor->balance = $vendor->balance - $oldGrandTotal + $grandTotal;
+                    // Add old and subtract new to adjust the decrease
+                    $vendor->balance = $vendor->balance + $oldGrandTotal - $grandTotal;
                     $vendor->save();
                 }
             } else {
                 $customer = \App\Models\MasterCustomer::find($dispatch->master_customer_id);
                 if ($customer) {
-                    // Subtract old and add new to adjust the increase
-                    $customer->balance = $customer->balance - $oldGrandTotal + $grandTotal;
+                    // Add old and subtract new to adjust the decrease
+                    $customer->balance = $customer->balance + $oldGrandTotal - $grandTotal;
                     $customer->save();
                 }
             }
@@ -2453,7 +2455,8 @@ class AgentOrderController extends Controller
 
             foreach ($returns_data as $data) {
                 $qty = (float) $data['quantity'];
-                if ($qty <= 0) continue;
+                if ($qty <= 0)
+                    continue;
 
                 if ($data['item_type'] === 'standard') {
                     $item = AgentOrderItem::findOrFail($data['item_id']);
@@ -2476,7 +2479,7 @@ class AgentOrderController extends Controller
                 }
 
                 $price = (float) ($data['price'] ?? $item->selling_price);
-                
+
                 // For standard items, we need to calculate PCS if quantity is boxes
                 $row_pcs = $qty;
                 if ($data['item_type'] === 'standard') {
@@ -2562,8 +2565,8 @@ class AgentOrderController extends Controller
             // Adjust Party Balance
             $party = $dispatch->party();
             if ($party) {
-                // Return reduces debt (Credit)
-                $party->decrement('balance', $grand_total);
+                // Return increases balance (Credit)
+                $party->increment('balance', $grand_total);
             }
 
             DB::commit();
@@ -2577,7 +2580,7 @@ class AgentOrderController extends Controller
     public function returnShow($id)
     {
         $return = AgentOrderReturn::with(['dispatch.party', 'dispatch.agent', 'items', 'creator'])->findOrFail($id);
-        
+
         foreach ($return->items as $item) {
             if ($item->item_type === 'standard') {
                 $original = AgentOrderItem::find($item->item_id);
@@ -2663,10 +2666,10 @@ class AgentOrderController extends Controller
                 }
             }
 
-            $party = $dispatch->party;
+            $party = $dispatch->party();
             if ($party) {
-                // Reverse old return (increases debt back)
-                $party->increment('balance', $return->grand_total);
+                // Reverse old return (decreases balance back)
+                $party->decrement('balance', $return->grand_total);
             }
 
             // 2. Delete old return items
@@ -2678,7 +2681,8 @@ class AgentOrderController extends Controller
 
             foreach ($returns_data as $data) {
                 $qty = (float) $data['quantity'];
-                if ($qty <= 0) continue;
+                if ($qty <= 0)
+                    continue;
 
                 if ($data['item_type'] === 'standard') {
                     $item = AgentOrderItem::findOrFail($data['item_id']);
@@ -2777,8 +2781,8 @@ class AgentOrderController extends Controller
 
             // 5. Re-apply new Party Balance
             if ($party) {
-                // Apply new return (reduces debt)
-                $party->decrement('balance', $grand_total);
+                // Apply new return (increases balance)
+                $party->increment('balance', $grand_total);
             }
 
             DB::commit();
@@ -2818,9 +2822,10 @@ class AgentOrderController extends Controller
             }
 
             // Reverse Party Balance
+            $party = $dispatch->party();
             if ($party) {
-                // Reverse return (increases debt back)
-                $party->increment('balance', $return->grand_total);
+                // Reverse return (decreases balance back)
+                $party->decrement('balance', $return->grand_total);
             }
 
             $return->delete();
@@ -2885,7 +2890,7 @@ class AgentOrderController extends Controller
                 ]);
             }
 
-            // 3. Reverse Party Balance
+            // 3. Reverse Party Balance (Decrease model)
             if ($dispatch->party_type === 'vendor') {
                 $party = \App\Models\Vendor::find($dispatch->master_vendor_id);
             } else {
@@ -2893,14 +2898,14 @@ class AgentOrderController extends Controller
             }
 
             if ($party) {
-                $party->decrement('balance', $dispatch->grand_total);
+                $party->increment('balance', $dispatch->grand_total);
             }
 
             // 4. Update Order Statuses
             foreach ($dispatch->orders as $order) {
                 $totalItems = DB::table('agent_order_items')->where('agent_order_id', $order->id)->count();
                 $dispatchedItems = DB::table('agent_order_items')->where('agent_order_id', $order->id)->whereNotNull('dispatched_at')->count();
-                
+
                 $totalFabric = DB::table('agent_order_fabric_items')->where('agent_order_id', $order->id)->count();
                 $dispatchedFabric = DB::table('agent_order_fabric_items')->where('agent_order_id', $order->id)->whereNotNull('dispatched_at')->count();
 

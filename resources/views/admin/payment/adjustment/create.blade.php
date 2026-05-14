@@ -97,22 +97,6 @@
                                             <select name="ref_id[]" class="form-control select2 master-item mt-2" required disabled>
                                                 <option value="">-- Select Item --</option>
                                             </select>
-                                            <!-- Hidden field for multi-shipment IDs -->
-                                            <input type="hidden" name="ref_id_multi[]" class="ref-id-multi">
-                                            
-                                            <!-- In-line Shipment Picker -->
-                                            <div class="shipment-selection-area mt-2" style="display:none; max-height: 200px; overflow-y: auto; background: #fff; border: 1px solid #ced4da; padding: 10px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                                    <p class="mb-0 small font-weight-bold text-muted shipment-context-label">Select Items for Adjustment:</p>
-                                                    <span class="badge badge-info selection-stats">0 selected</span>
-                                                </div>
-                                                <div class="shipment-list">
-                                                    <!-- Clickable shipment badges populate here -->
-                                                </div>
-                                                <div class="mt-2 pt-2 border-top total-selected-balance" style="display:none;">
-                                                    <small class="text-primary font-weight-bold">Total Balance: ₹<span class="selected-balance-val">0.00</span></small>
-                                                </div>
-                                            </div>
                                         </td>
                                         <td>
                                             <input type="number" step="0.01" name="amount[]" class="form-control row-amount" placeholder="Amount" required style="height: 40px; font-size: 1.2rem;">
@@ -145,41 +129,6 @@
     </section>
 </div>
 
-<!-- Shipment Selection Modal -->
-<div class="modal fade" id="shipmentModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title">Select Items</h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered">
-                        <thead>
-                            <tr>
-                                <th><input type="checkbox" id="select_all_shipments"></th>
-                                <th>Date</th>
-                                <th>Ref No</th>
-                                <th>Total Amount</th>
-                                <th>Balance Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody id="shipments_modal_body">
-                            <!-- Populated via AJAX -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="add_selected_shipments">Add Selected Adjustments</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Template Row (Hidden) -->
 <table style="display:none;">
@@ -194,22 +143,6 @@
             <select name="ref_id[]" class="form-control master-item mt-2" required disabled>
                 <option value="">-- Select Item --</option>
             </select>
-            <!-- Hidden field for multi-shipment IDs -->
-            <input type="hidden" name="ref_id_multi[]" class="ref-id-multi">
-            
-            <!-- In-line Shipment Picker -->
-            <div class="shipment-selection-area mt-2" style="display:none; max-height: 200px; overflow-y: auto; background: #fff; border: 1px solid #ced4da; padding: 10px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <p class="mb-0 small font-weight-bold text-muted shipment-context-label">Select Items for Adjustment:</p>
-                    <span class="badge badge-info selection-stats">0 selected</span>
-                </div>
-                <div class="shipment-list">
-                    <!-- Clickable shipment badges populate here -->
-                </div>
-                <div class="mt-2 pt-2 border-top total-selected-balance" style="display:none;">
-                    <small class="text-primary font-weight-bold">Total Balance: ₹<span class="selected-balance-val">0.00</span></small>
-                </div>
-            </div>
         </td>
         <td>
             <input type="number" step="0.01" name="amount[]" class="form-control row-amount" placeholder="Amount" required style="height: 40px; font-size: 1.2rem;">
@@ -318,11 +251,11 @@
             }
         });
 
-        // Show balance for bulk account
         $('#bulk_account_id').on('change', function() {
-            var balance = $(this).find(':selected').data('balance');
-            if (balance !== undefined) {
-                $('#bulk_account_balance').text('Available Balance: ' + balance);
+            var balance = parseFloat($(this).find(':selected').data('balance'));
+            if (!isNaN(balance)) {
+                var typeStr = (balance < 0) ? ' (Dr)' : ' (Cr)';
+                $('#bulk_account_balance').text('Available Balance: ' + Math.abs(balance).toFixed(2) + typeStr);
             } else {
                 $('#bulk_account_balance').text('');
             }
@@ -377,7 +310,12 @@
 
                 $itemSelect.empty().append('<option value="">-- Select Item --</option>');
                 $.each(filteredItems, function(key, value) {
-                    var balanceText = (value.balance !== undefined) ? ' (Bal: ' + value.balance + ')' : '';
+                    var bal = parseFloat(value.balance);
+                    var balanceText = '';
+                    if (!isNaN(bal)) {
+                        var typeStr = (bal < 0) ? ' (Dr)' : ' (Cr)';
+                        balanceText = ' (Bal: ' + Math.abs(bal).toFixed(2) + typeStr + ')';
+                    }
                     $itemSelect.append('<option value="' + value.id + '" data-master-id="' + value.master_id + '" data-balance="' + value.balance + '">' + value.name + balanceText + '</option>');
                 });
                 $itemSelect.prop('disabled', false).trigger('change.select2');
@@ -414,126 +352,14 @@
             }
 
             if (balance !== undefined && !$(this).val().includes(',')) {
-                $balanceDisplay.text('Current Balance: ' + balance);
+                var bal = parseFloat(balance);
+                var typeStr = (bal < 0) ? ' (Dr)' : ' (Cr)';
+                $balanceDisplay.text('Current Balance: ' + Math.abs(bal).toFixed(2) + typeStr);
             } else {
                 $balanceDisplay.text('');
             }
         });
 
-        // Handle Master Item Change (Vendor Specific - In-line Picker)
-        var vendorMasterId = "{{ $vendorMaster->id ?? '' }}";
-        var domesticMasterId = "{{ $domesticMaster->id ?? '' }}";
-        var shipmentMasterId = "{{ $shipmentMaster->id ?? '' }}";
-
-        $(document).on('change', '.master-item', function() {
-            var $row = $(this).closest('tr');
-            var masterId = $row.find('.master-type').val();
-            var refId = $(this).val();
-
-            // Show picker if we selected a vendor (ID 16) or Domestic (ID 18)
-            if ((masterId == vendorMasterId || masterId == domesticMasterId) && refId && !refId.includes(',')) {
-                $.ajax({
-                    url: "{{ route('admin.payment.adjustment.getVendorShipments') }}",
-                    type: "GET",
-                    data: { 
-                        vendor_id: refId,
-                        master_id: masterId
-                    },
-                    success: function(data) {
-                        var $list = $row.find('.shipment-list');
-                        $list.empty();
-                        if (data.length > 0) {
-                            $.each(data, function(i, ship) {
-                                $list.append(`
-                                    <button type="button" class="btn btn-xs btn-outline-primary m-1 quick-add-ship" 
-                                        data-id="${ship.id}" data-no="${ship.shipment_no}" data-balance="${ship.balance}">
-                                        ${ship.shipment_no} (₹${parseFloat(ship.balance).toFixed(0)})
-                                    </button>
-                                `);
-                            });
-                            $row.find('.shipment-selection-area').slideDown();
-                        } else {
-                            $row.find('.shipment-selection-area').hide();
-                        }
-                    }
-                });
-            } else if (!refId || !refId.includes(',')) {
-                $row.find('.shipment-selection-area').hide();
-            }
-        });
-
-        // Toggle Shipment Selection
-        $(document).on('click', '.quick-add-ship', function() {
-            var $btn = $(this);
-            var $row = $btn.closest('tr');
-            
-            $btn.toggleClass('btn-outline-primary btn-primary selected');
-            updateRowSelection($row);
-        });
-
-        function updateRowSelection($row) {
-            var selectedIds = [];
-            var totalBalance = 0;
-            var textParts = [];
-            
-            $row.find('.quick-add-ship.selected').each(function() {
-                var id = $(this).data('id');
-                selectedIds.push(id);
-                totalBalance += parseFloat($(this).data('balance')) || 0;
-                textParts.push($(this).data('no'));
-            });
-            
-            // Update hidden values and stats
-            $row.find('.selection-stats').text(selectedIds.length + ' selected');
-            $row.find('.selected-balance-val').text(totalBalance.toFixed(2));
-            
-            if (selectedIds.length > 0) {
-                $row.find('.total-selected-balance').show();
-                // Inject collective text into the Select2 display if possible
-                var collectiveText = selectedIds.length + " Shipments: " + textParts.join(', ');
-                var collectiveVal = selectedIds.join(',');
-                
-                // Update the real ref_id input with the comma-separated list
-                var $itemSelect = $row.find('.master-item');
-                if ($itemSelect.find(`option[value="${collectiveVal}"]`).length == 0) {
-                    $itemSelect.append(new Option(collectiveText, collectiveVal, true, true));
-                }
-                $itemSelect.val(collectiveVal).trigger('change.select2');
-            } else {
-                $row.find('.total-selected-balance').hide();
-            }
-
-            previewDistribution($row);
-        }
-
-        function previewDistribution($row) {
-            var amount = parseFloat($row.find('.row-amount').val()) || 0;
-            var $badges = $row.find('.quick-add-ship.selected');
-            
-            $badges.each(function() {
-                var $b = $(this);
-                var bal = parseFloat($b.data('balance'));
-                $b.find('.rem-text').remove();
-
-                if (amount <= 0) {
-                    $b.removeClass('btn-success btn-info').addClass('btn-primary');
-                    return;
-                }
-
-                if (amount >= bal) {
-                    $b.removeClass('btn-primary btn-info').addClass('btn-success');
-                    amount -= bal;
-                } else {
-                    $b.removeClass('btn-primary btn-success').addClass('btn-info');
-                    $b.append(`<span class="ml-1 small rem-text">(Rem: ₹${(bal - amount).toFixed(0)})</span>`);
-                    amount = 0;
-                }
-            });
-        }
-
-        $(document).on('input', '.row-amount', function() {
-            previewDistribution($(this).closest('tr'));
-        });
     });
 </script>
 @endpush

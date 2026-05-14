@@ -24,11 +24,11 @@ class PartyLedgerController extends Controller
 
         if (!$type || $type === 'vendor') {
             $vendors = Vendor::where('status', 1)
-                ->when($search, function($q) use ($search) {
+                ->when($search, function ($q) use ($search) {
                     $q->where('name', 'LIKE', "%$search%");
                 })
                 ->get()
-                ->map(function($v) {
+                ->map(function ($v) {
                     $v->party_type = 'vendor';
                     return $v;
                 });
@@ -37,11 +37,11 @@ class PartyLedgerController extends Controller
 
         if (!$type || $type === 'customer') {
             $customers = MasterCustomer::where('status', 1)
-                ->when($search, function($q) use ($search) {
+                ->when($search, function ($q) use ($search) {
                     $q->where('name', 'LIKE', "%$search%");
                 })
                 ->get()
-                ->map(function($c) {
+                ->map(function ($c) {
                     $c->party_type = 'customer';
                     return $c;
                 });
@@ -100,11 +100,11 @@ class PartyLedgerController extends Controller
             ->get();
 
         foreach ($dispatches as $d) {
-            $transactions->push((object)[
+            $transactions->push((object) [
                 'date' => $d->dispatch_date,
                 'type' => 'Sale',
                 'ref' => 'Dispatch #' . $d->id,
-                'debit' => (float)$d->grand_total,
+                'debit' => (float) $d->grand_total,
                 'credit' => 0,
                 'description' => 'Sales Dispatch: ' . ($d->remark ?? '-')
             ]);
@@ -118,11 +118,11 @@ class PartyLedgerController extends Controller
                 ->get();
 
             foreach ($orderDispatches as $od) {
-                $transactions->push((object)[
+                $transactions->push((object) [
                     'date' => $od->dispatch_date,
                     'type' => 'Order Dispatch',
                     'ref' => 'OD #' . ($od->sku ?? $od->id),
-                    'debit' => (float)$od->total_amount,
+                    'debit' => (float) $od->total_amount,
                     'credit' => 0,
                     'description' => 'Regular Order Dispatch'
                 ]);
@@ -130,20 +130,20 @@ class PartyLedgerController extends Controller
         }
 
         // 3. Sales Returns - CREDIT
-        $salesReturns = AgentOrderReturn::whereHas('dispatch', function($q) use ($id, $partyIdField, $type) {
-                $q->where($partyIdField, $id)->where('party_type', $type);
-            })
+        $salesReturns = AgentOrderReturn::whereHas('dispatch', function ($q) use ($id, $partyIdField, $type) {
+            $q->where($partyIdField, $id)->where('party_type', $type);
+        })
             ->when($startDate, fn($q) => $q->whereDate('return_date', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('return_date', '<=', $endDate))
             ->get();
 
         foreach ($salesReturns as $r) {
-            $transactions->push((object)[
+            $transactions->push((object) [
                 'date' => $r->return_date,
                 'type' => 'Sale Return',
                 'ref' => 'Return #' . $r->id,
                 'debit' => 0,
-                'credit' => (float)$r->grand_total,
+                'credit' => (float) $r->grand_total,
                 'description' => 'Sales Return'
             ]);
         }
@@ -158,15 +158,15 @@ class PartyLedgerController extends Controller
         foreach ($payments as $p) {
             if ($p->payment_type === 'received') {
                 $debit = 0;
-                $credit = (float)$p->amount;
+                $credit = (float) $p->amount;
                 $desc = 'Payment Received (' . $p->payment_mode . ')';
             } else {
-                $debit = (float)$p->amount;
+                $debit = (float) $p->amount;
                 $credit = 0;
                 $desc = 'Payment Paid (' . $p->payment_mode . ')';
             }
 
-            $transactions->push((object)[
+            $transactions->push((object) [
                 'date' => $p->payment_date,
                 'type' => 'Payment',
                 'ref' => 'Pay #' . $p->id,
@@ -183,12 +183,12 @@ class PartyLedgerController extends Controller
             ->get();
 
         foreach ($inventoryPurchases as $ip) {
-            $transactions->push((object)[
+            $transactions->push((object) [
                 'date' => $ip->created_at,
                 'type' => 'Inventory Purchase',
                 'ref' => 'InvPur #' . $ip->id,
                 'debit' => 0,
-                'credit' => (float)$ip->total_amount,
+                'credit' => (float) $ip->total_amount,
                 'description' => 'Inventory Purchase: ' . ($ip->remarks ?? '-')
             ]);
         }
@@ -201,30 +201,30 @@ class PartyLedgerController extends Controller
                 ->get();
 
             foreach ($receipts as $r) {
-                $transactions->push((object)[
+                $transactions->push((object) [
                     'date' => $r->created_at,
                     'type' => 'Fabric Purchase',
                     'ref' => 'Receipt #' . $r->sku,
                     'debit' => 0,
-                    'credit' => (float)$r->total_amount,
+                    'credit' => (float) $r->total_amount,
                     'description' => 'Fabric Inward (Shipment: ' . ($r->shipment_id ?? '-') . ')'
                 ]);
             }
 
             // 7. Vendor Specific: Returns to Vendor (Purchase Returns) - DEBIT
-            $pReturns = FabricReturn::whereHas('receipt', function($q) use ($id) {
-                    $q->where('vendor_id', $id);
-                })
+            $pReturns = FabricReturn::whereHas('receipt', function ($q) use ($id) {
+                $q->where('vendor_id', $id);
+            })
                 ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
                 ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
                 ->get();
 
             foreach ($pReturns as $pr) {
-                $transactions->push((object)[
+                $transactions->push((object) [
                     'date' => $pr->date,
                     'type' => 'Fabric Return',
                     'ref' => 'Return #' . ($pr->return_number ?? $pr->id),
-                    'debit' => (float)$pr->total_amount,
+                    'debit' => (float) $pr->total_amount,
                     'credit' => 0,
                     'description' => 'Fabric Return to Vendor'
                 ]);
@@ -240,13 +240,14 @@ class PartyLedgerController extends Controller
         $openingBalAmount = 0;
         if ($openingBalance) {
             $isDebit = (strtolower($openingBalance->balance_type) === 'debit');
-            $openingBalAmount = (float)$openingBalance->amount;
-            if (!$isDebit) $openingBalAmount = -$openingBalAmount;
+            $openingBalAmount = (float) $openingBalance->amount;
+            if (!$isDebit)
+                $openingBalAmount = -$openingBalAmount;
         }
 
         // Sort and Calculate Balance
         $transactions = $transactions->sortBy('date')->values();
-        
+
         $balance = $openingBalAmount;
         foreach ($transactions as $tx) {
             $balance += ($tx->debit - $tx->credit);
