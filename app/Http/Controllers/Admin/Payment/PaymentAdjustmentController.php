@@ -15,7 +15,7 @@ class PaymentAdjustmentController extends Controller
 {
     public function index()
     {
-        $adjustments = PaymentAdjustment::with('master')->latest()->get();
+        $adjustments = PaymentAdjustment::with('master')->orderBy('id', 'desc')->get();
         // Group by batch_id, if null use unique key
         $grouped = $adjustments->groupBy(function ($item) {
             return $item->batch_id ?? 'unique_' . $item->id;
@@ -221,19 +221,23 @@ class PaymentAdjustmentController extends Controller
                                 if ($model == 'App\Models\FabricReceipt' && isset($item->vendor_id)) {
                                     $vendor = \App\Models\Vendor::find($item->vendor_id);
                                     if ($vendor) {
-                                        if ($type == 'credit') $vendor->balance += $currentAmount;
-                                        else $vendor->balance -= $currentAmount;
+                                        if ($type == 'credit')
+                                            $vendor->balance += $currentAmount;
+                                        else
+                                            $vendor->balance -= $currentAmount;
                                         $vendor->save();
                                     }
                                 } elseif (($model == 'App\Models\AgentOrder' || $actualModel == 'App\Models\OrderDispatch' || $actualModel == 'App\Models\OrderMain' || $actualModel == 'App\Models\AgentOrderDispatch')) {
-                                    $partyId = ($actualModel == 'App\Models\AgentOrder' || $actualModel == 'App\Models\AgentOrderDispatch') 
-                                        ? ($item->master_customer_id ?? $item->customer_id) 
+                                    $partyId = ($actualModel == 'App\Models\AgentOrder' || $actualModel == 'App\Models\AgentOrderDispatch')
+                                        ? ($item->master_customer_id ?? $item->customer_id)
                                         : ($actualModel == 'App\Models\OrderDispatch' ? $item->customer_id : $item->master_customer_id);
 
                                     $customer = \App\Models\MasterCustomer::find($partyId);
                                     if ($customer) {
-                                        if ($type == 'credit') $customer->balance += $currentAmount;
-                                        else $customer->balance -= $currentAmount;
+                                        if ($type == 'credit')
+                                            $customer->balance += $currentAmount;
+                                        else
+                                            $customer->balance -= $currentAmount;
                                         $customer->save();
                                     }
                                 }
