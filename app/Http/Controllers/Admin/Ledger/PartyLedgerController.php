@@ -102,6 +102,7 @@ class PartyLedgerController extends Controller
         foreach ($dispatches as $d) {
             $transactions->push((object) [
                 'date' => $d->dispatch_date,
+                'created_at' => $d->created_at,
                 'type' => 'Sale',
                 'ref' => 'Dispatch #' . $d->id,
                 'debit' => (float) $d->grand_total,
@@ -120,6 +121,7 @@ class PartyLedgerController extends Controller
             foreach ($orderDispatches as $od) {
                 $transactions->push((object) [
                     'date' => $od->dispatch_date,
+                    'created_at' => $od->created_at,
                     'type' => 'Order Dispatch',
                     'ref' => 'OD #' . ($od->sku ?? $od->id),
                     'debit' => (float) $od->total_amount,
@@ -140,6 +142,7 @@ class PartyLedgerController extends Controller
         foreach ($salesReturns as $r) {
             $transactions->push((object) [
                 'date' => $r->return_date,
+                'created_at' => $r->created_at,
                 'type' => 'Sale Return',
                 'ref' => 'Return #' . $r->id,
                 'debit' => 0,
@@ -168,8 +171,9 @@ class PartyLedgerController extends Controller
 
             $transactions->push((object) [
                 'date' => $p->payment_date,
+                'created_at' => $p->created_at,
                 'type' => 'Payment',
-                'ref' => 'Pay #' . $p->id,
+                'ref' => $p->reference_id ?? ('Pay #' . $p->id),
                 'debit' => $debit,
                 'credit' => $credit,
                 'description' => $desc . ($p->remarks ? ': ' . $p->remarks : '')
@@ -185,6 +189,7 @@ class PartyLedgerController extends Controller
         foreach ($inventoryPurchases as $ip) {
             $transactions->push((object) [
                 'date' => $ip->created_at,
+                'created_at' => $ip->created_at,
                 'type' => 'Inventory Purchase',
                 'ref' => 'InvPur #' . $ip->id,
                 'debit' => 0,
@@ -203,6 +208,7 @@ class PartyLedgerController extends Controller
             foreach ($receipts as $r) {
                 $transactions->push((object) [
                     'date' => $r->created_at,
+                    'created_at' => $r->created_at,
                     'type' => 'Fabric Purchase',
                     'ref' => 'Receipt #' . $r->sku,
                     'debit' => 0,
@@ -222,6 +228,7 @@ class PartyLedgerController extends Controller
             foreach ($pReturns as $pr) {
                 $transactions->push((object) [
                     'date' => $pr->date,
+                    'created_at' => $pr->created_at,
                     'type' => 'Fabric Return',
                     'ref' => 'Return #' . ($pr->return_number ?? $pr->id),
                     'debit' => (float) $pr->total_amount,
@@ -246,7 +253,17 @@ class PartyLedgerController extends Controller
         }
 
         // Sort and Calculate Balance
-        $transactions = $transactions->sortBy('date')->values();
+        $transactions = $transactions->sort(function($a, $b) {
+            $dateA = \Carbon\Carbon::parse($a->date)->format('Y-m-d');
+            $dateB = \Carbon\Carbon::parse($b->date)->format('Y-m-d');
+            
+            if ($dateA != $dateB) {
+                return $dateA <=> $dateB;
+            }
+            
+            // Same day, use created_at as tie-breaker
+            return ($a->created_at ?? 0) <=> ($b->created_at ?? 0);
+        })->values();
 
         $balance = $openingBalAmount;
         foreach ($transactions as $tx) {
