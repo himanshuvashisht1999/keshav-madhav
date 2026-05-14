@@ -279,7 +279,7 @@ class PartyLedgerController extends Controller
 
         $balance = $openingBalAmount;
         foreach ($transactions as $tx) {
-            $balance += ($tx->debit - $tx->credit);
+            $balance += ($tx->credit - $tx->debit);
             $tx->running_balance = $balance;
         }
 

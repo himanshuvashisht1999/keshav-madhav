@@ -95,13 +95,9 @@
                                     <h4 class="mb-0 font-weight-bold text-primary">
                                         ₹ {{ number_format(abs($party->balance), 2) }}
                                         <span
-                                            class="badge {{ (($type === 'customer' && $party->balance <= 0) || ($type === 'vendor' && $party->balance >= 0)) ? 'badge-success' : 'badge-danger' }} ml-1"
+                                            class="badge {{ $party->balance >= 0 ? 'badge-success' : 'badge-danger' }} ml-1"
                                             style="font-size: 11px;">
-                                            @if($type === 'customer')
-                                                {{ $party->balance <= 0 ? 'DR' : 'CR' }}
-                                            @else
-                                                {{ $party->balance >= 0 ? 'CR' : 'DR' }}
-                                            @endif
+                                            {{ $party->balance >= 0 ? 'CR' : 'DR' }}
                                         </span>
                                     </h4>
                                 </div>
@@ -190,7 +186,7 @@
                                             </td>
                                             <td class="align-middle text-right pr-4 text-balance">
                                                 ₹ {{ number_format(abs($currentBalance), 2) }}
-                                                <small class="text-muted ml-1">{{ $currentBalance >= 0 ? 'DR' : 'CR' }}</small>
+                                                <small class="text-muted ml-1">{{ $currentBalance >= 0 ? 'CR' : 'DR' }}</small>
                                             </td>
                                         </tr>
                                     @empty
@@ -211,7 +207,7 @@
                                                 {{ number_format($transactions->sum('credit'), 2) }}</td>
                                             <td class="text-right py-3 pr-4 text-primary">
                                                 ₹ {{ number_format(abs($currentBalance), 2) }}
-                                                <small>{{ $currentBalance >= 0 ? 'DR' : 'CR' }}</small>
+                                                <small>{{ $currentBalance >= 0 ? 'CR' : 'DR' }}</small>
                                             </td>
                                         </tr>
                                     </tfoot>
