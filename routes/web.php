@@ -363,12 +363,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/create-po', [AdminProductOrderController::class, 'createPO'])->name('createPO');
             Route::get('/download-po', [AdminProductOrderController::class, 'downloadPO'])->name('downloadPO');
             Route::get('/download-cutting-slip', [AdminProductOrderController::class, 'downloadCuttingSlip'])->name('downloadCuttingSlip');
-            
+
             Route::get('/bulk-po', [AdminProductOrderController::class, 'bulkPO'])->name('bulkPO');
             Route::post('/store-bulk-po', [AdminProductOrderController::class, 'storeBulkPO'])->name('storeBulkPO');
             Route::get('/get-unassigned-sets', [AdminProductOrderController::class, 'getUnassignedSets'])->name('getUnassignedSets');
             Route::get('/get-unassigned-orders', [AdminProductOrderController::class, 'getUnassignedOrders'])->name('getUnassignedOrders');
-            
+
             Route::get('/po-list', [AdminProductOrderController::class, 'poList'])->name('poList');
             Route::get('/po/{id}/view', [AdminProductOrderController::class, 'viewBulkPO'])->name('viewBulkPO');
             Route::get('/po/{id}/download', [AdminProductOrderController::class, 'downloadBulkPO'])->name('downloadBulkPO');
