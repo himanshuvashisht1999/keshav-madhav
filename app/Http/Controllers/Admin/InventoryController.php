@@ -401,6 +401,16 @@ class InventoryController extends Controller
                     $currentCartonNo++;
                 }
             }
+
+            // Update Party Balance
+            if ($purchase) {
+                if ($purchase->vendor_id) {
+                    \App\Models\Vendor::find($purchase->vendor_id)->increment('balance', $purchase->total_amount);
+                } elseif ($purchase->customer_id) {
+                    \App\Models\MasterCustomer::find($purchase->customer_id)->increment('balance', $purchase->total_amount);
+                }
+            }
+
             DB::commit();
 
             if ($request->ajax()) {
@@ -989,6 +999,13 @@ class InventoryController extends Controller
                 'products' => 'required|array|min:1',
             ]);
 
+            // Adjust Balance (Reverse Old)
+            if ($purchase->vendor_id) {
+                \App\Models\Vendor::find($purchase->vendor_id)->decrement('balance', $purchase->total_amount);
+            } elseif ($purchase->customer_id) {
+                \App\Models\MasterCustomer::find($purchase->customer_id)->decrement('balance', $purchase->total_amount);
+            }
+
             // 1. Revert Old Stock
             $oldItems = \App\Models\DomesticInventoryHistory::where('purchase_id', $id)->get();
             foreach ($oldItems as $oldItem) {
@@ -1066,6 +1083,13 @@ class InventoryController extends Controller
                 'total_amount' => $request->total_amount,
             ]);
 
+            // Adjust Balance (Apply New)
+            if ($purchase->vendor_id) {
+                \App\Models\Vendor::find($purchase->vendor_id)->increment('balance', $purchase->total_amount);
+            } elseif ($purchase->customer_id) {
+                \App\Models\MasterCustomer::find($purchase->customer_id)->increment('balance', $purchase->total_amount);
+            }
+
             DB::commit();
             return redirect()->route('admin.inventory.purchase_history.index')->with('success', 'Purchase updated and inventory reconciled successfully.');
         } catch (\Exception $e) {
@@ -1099,6 +1123,13 @@ class InventoryController extends Controller
                     }
                 }
                 $item->delete();
+            }
+            
+            // Adjust Party Balance (Reverse)
+            if ($purchase->vendor_id) {
+                \App\Models\Vendor::find($purchase->vendor_id)->decrement('balance', $purchase->total_amount);
+            } elseif ($purchase->customer_id) {
+                \App\Models\MasterCustomer::find($purchase->customer_id)->decrement('balance', $purchase->total_amount);
             }
 
             $purchase->delete();
