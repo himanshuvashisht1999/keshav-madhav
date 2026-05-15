@@ -95,7 +95,13 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td></td>
+                                    <td>
+                                        <select id="assignment_status" class="form-control form-control-sm">
+                                            <option value="">All</option>
+                                            <option value="assigned">Assigned</option>
+                                            <option value="not_assigned">Not Assigned</option>
+                                        </select>
+                                    </td>
                                     <td></td>
                                     <td>
                                         <select id="status" class="form-control form-control-sm">
@@ -166,6 +172,7 @@
                         d.expected_delivery_month = $('#expected_delivery_month').val();
                         d.expected_delivery_year = $('#expected_delivery_year').val();
                         d.status = $('#status').val();
+                        d.assignment_status = $('#assignment_status').val();
 
                     },
                     orderable: false
@@ -244,6 +251,10 @@
                 e.preventDefault();
             });
             $('#status').on('change', function (e) {
+                oTable.draw();
+                e.preventDefault();
+            });
+            $('#assignment_status').on('change', function (e) {
                 oTable.draw();
                 e.preventDefault();
             });

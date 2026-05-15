@@ -201,6 +201,18 @@ class ProductOrderDataTable
         if ($request->has('status') && !empty($request->status)) {
             $query->where('status', $request->get('status'));
         }
+
+        if ($request->has('assignment_status') && !empty($request->assignment_status)) {
+            if ($request->assignment_status == 'assigned') {
+                $query->whereHas('OrderProductSets')->whereDoesntHave('OrderProductSets', function ($q) {
+                    $q->where('remain_total_quantity', '>', 0);
+                });
+            } elseif ($request->assignment_status == 'not_assigned') {
+                $query->whereHas('OrderProductSets', function ($q) {
+                    $q->where('remain_total_quantity', '>', 0);
+                });
+            }
+        }
     }
 
     public function indexListOrderSet($request)
