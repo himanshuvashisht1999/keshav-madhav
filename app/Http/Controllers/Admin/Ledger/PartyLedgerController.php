@@ -191,6 +191,12 @@ class PartyLedgerController extends Controller
                 ->where('party_type', $modelName);
         }
 
+        // Exclude Journal Voucher payments to avoid double counting with JournalVoucherItem query
+        $paymentsQuery->where(function($q) {
+            $q->where('paymentable_type', '!=', \App\Models\JournalVoucher::class)
+              ->orWhereNull('paymentable_type');
+        });
+
         $payments = $paymentsQuery
             ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
@@ -332,8 +338,9 @@ class PartyLedgerController extends Controller
         }
 
         // Fetch Journal Vouchers - Applicable to all masters
+        $masterIds = \App\Models\AdjustmentMaster::where('model_name', $modelName)->pluck('id');
         $vouchers = \App\Models\JournalVoucherItem::with('voucher')
-            ->where('master_type', $master->id)
+            ->whereIn('master_type', $masterIds)
             ->where('master_id', $id)
             ->whereHas('voucher', function($q) use ($startDate, $endDate) {
                 $q->when($startDate, fn($q2) => $q2->whereDate('date', '>=', $startDate))
