@@ -857,18 +857,6 @@ class ProductOrderService
 
                     $cuttingStage->save();
 
-                    // ✅ Removed: Populate Unified Timing table (only for printing/stitching)
-                    // \App\Models\OrderLotStageTiming::updateOrCreate(
-                    //     ['lot_no' => $data->design_number, 'master_stage_id' => 3],
-                    //     [
-                    //         'unit_id' => $request->master_cutting_id,
-                    //         'start_date' => $cuttingStage->start_date,
-                    //         'end_date' => $cuttingStage->end_date,
-                    //         'days_allocated' => $days,
-                    //         'status' => 1 // Progress
-                    //     ]
-                    // );
-
                     // Update Order Product Set
                     $data->remain_total_quantity -= $assignQty;
 
@@ -879,6 +867,10 @@ class ProductOrderService
                     } else {
                         $data->remain_set_quantity = 0;
                     }
+
+                    // Save Printing Preference
+                    $data->is_printing = ($request->is_printing == 'yes' || $request->is_printing == 1) ? 1 : 0;
+                    $data->printing_unit_id = ($data->is_printing == 1) ? $request->printing_unit_id : null;
 
                     // If NO remaining quantity, mark as fully assigned (status 2)
                     if ($data->remain_total_quantity <= 0) {
@@ -1319,25 +1311,50 @@ class ProductOrderService
 
         $result = [];
         foreach ($data as $warehouse) {
-            $cutting_units = [];
-
-            // Check both snake_case (default toArray) and camelCase
+            $units = [];
             $raw_units = $warehouse['cutting_units'] ?? $warehouse['cuttingUnits'] ?? [];
-
             foreach ($raw_units as $unit) {
-                $cutting_units[] = [
+                $units[] = [
                     'id' => $unit['id'],
                     'name' => $unit['name'],
                 ];
             }
-
-            $result[$warehouse['id']] = [
+            $result[] = [
                 'id' => $warehouse['id'],
                 'warehouse_name' => $warehouse['cutting_master_name'],
-                'cutting_units' => $cutting_units,
+                'cutting_units' => $units
             ];
         }
+        return $result;
+    }
 
+    public function printing_units()
+    {
+        $data = MasterFabricWarehouse::with([
+            'printingUnits' => function ($q) {
+                $q->where('master_stage_id', 1) // Printing & Embroidery
+                    ->where('status', 1);
+            }
+        ])
+            ->where('status', 1)
+            ->get()->toArray();
+
+        $result = [];
+        foreach ($data as $warehouse) {
+            $units = [];
+            $raw_units = $warehouse['printing_units'] ?? $warehouse['printingUnits'] ?? [];
+            foreach ($raw_units as $unit) {
+                $units[] = [
+                    'id' => $unit['id'],
+                    'name' => $unit['name'],
+                ];
+            }
+            $result[] = [
+                'id' => $warehouse['id'],
+                'warehouse_name' => $warehouse['cutting_master_name'],
+                'printing_units' => $units
+            ];
+        }
         return $result;
     }
 

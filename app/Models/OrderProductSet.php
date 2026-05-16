@@ -37,6 +37,8 @@ class OrderProductSet extends Model
         'master_product_fitting_id',
         'master_design_pattern_id',
         'remark',
+        'is_printing',
+        'printing_unit_id',
         'status',
         'start_date',
         'end_date',

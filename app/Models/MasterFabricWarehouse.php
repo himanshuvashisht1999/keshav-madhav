@@ -34,4 +34,8 @@ class MasterFabricWarehouse extends Model
         return $this->hasMany('App\Models\StageMasterUnit', 'master_fabric_warehouse_id', 'id');
     }
 
+    public function printingUnits()
+    {
+        return $this->hasMany('App\Models\StageMasterUnit', 'master_fabric_warehouse_id', 'id');
+    }
 }

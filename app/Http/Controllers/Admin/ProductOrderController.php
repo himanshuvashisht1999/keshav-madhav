@@ -53,6 +53,7 @@ class ProductOrderController extends Controller
         $response['order_main'] = $this->service->orderMainDetails($request);
         $response['check_assign'] = $this->service->checkAssign($request);
         $response['cutting_units'] = $this->service->cutting_units();
+        $response['printing_units'] = $this->service->printing_units();
         $response['patterns'] = $this->service->getPatterns();
         // dd($response['patterns']);
         $response['fabrics'] = $this->service->fabrics();

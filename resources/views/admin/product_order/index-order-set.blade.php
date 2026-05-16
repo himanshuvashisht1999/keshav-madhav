@@ -204,6 +204,23 @@
                         <textarea name="remark" class="form-control"></textarea>
                     </div>
 
+                    <hr>
+                    <h6 class="font-weight-bold">Printing Preferences</h6>
+                    <div class="form-group">
+                        <label>Printing Required?</label>
+                        <select name="is_printing" id="is_printing" class="form-control" onchange="togglePrinting(this.value)">
+                            <option value="no">No</option>
+                            <option value="yes">Yes</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="printing_unit_group" style="display:none;">
+                        <label>Printing & Embroidery Unit</label>
+                        <select name="printing_unit_id" id="printing_unit_id" class="form-control select2">
+                            <option value="">Select Printing Unit</option>
+                        </select>
+                    </div>
+
                 </div>
 
                 <div class="modal-footer">
@@ -302,6 +319,7 @@
 <!-- PHP DATA TO JS -->
 <script>
     const warehouses = Object.values(@json($cutting_units));
+    const printing_warehouses = Object.values(@json($printing_units));
 </script>
 
 <!-- SCRIPTS -->
@@ -332,6 +350,7 @@ $(document).ready(function () {
 
     // Load default warehouse cutting masters
     warehouseChange($('#warehouse_id').val());
+    printingWarehouseChange($('#warehouse_id').val());
 
 
     $(document).on('click', '.po-btn', function() {
@@ -524,6 +543,37 @@ function warehouseChange(warehouse_id) {
     }
 
     cuttingSelect.trigger('change.select2');
+
+    // Also update printing units for the same warehouse
+    printingWarehouseChange(warehouse_id);
+}
+
+function printingWarehouseChange(warehouse_id) {
+    let printingSelect = $('#printing_unit_id');
+    printingSelect.empty();
+    printingSelect.append('<option value="">Select Printing Unit</option>');
+
+    let warehouse = printing_warehouses.find(w => w.id == warehouse_id);
+
+    if (warehouse && warehouse.printing_units) {
+        warehouse.printing_units.forEach(unit => {
+            printingSelect.append(
+                `<option value="${unit.id}">${unit.name}</option>`
+            );
+        });
+    }
+
+    printingSelect.trigger('change.select2');
+}
+
+function togglePrinting(val) {
+    if (val === 'yes') {
+        $('#printing_unit_group').show();
+        $('#printing_unit_id').prop('required', true);
+    } else {
+        $('#printing_unit_group').hide();
+        $('#printing_unit_id').prop('required', false).val('').trigger('change');
+    }
 }
 
 $('#assignForm').on('submit', function (e) {

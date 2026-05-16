@@ -214,6 +214,44 @@ class OrderDigitalizationService
                 }
             }
 
+            // ✅ NEW: Auto-assign to Printing if pre-selected in OrderProductSet
+            if ($order_product_set->is_printing == 1 && $order_product_set->printing_unit_id) {
+                foreach ($lotNos as $lotNo) {
+                    // Update OrderLot
+                    OrderLot::where('lot_no', $lotNo)->where('production_slip_digitization_id', $slip->id)->update([
+                        'is_printing' => 1
+                    ]);
+
+                    // Get first roll assign for transaction source
+                    $firstRoll = FabricRollAssigning::where('lot_no', $lotNo)->where('production_slip_digitization_id', $slip->id)->first();
+                    
+                    if ($firstRoll) {
+                        // Mark as sent to printing
+                        FabricRollAssigning::where('lot_no', $lotNo)->where('production_slip_digitization_id', $slip->id)->update([
+                            'status' => 3, // Sent to printing
+                            'to_stage_id' => 1 // Printing stage
+                        ]);
+
+                        // Get sizes for the transaction
+                        $sizes = \App\Models\FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id', $firstRoll->id)->pluck('quantity', 'size')->toArray();
+
+                        // Create transaction (Cutting -> Printing)
+                        $this->createTransactionWithDetails(
+                            $lotNo,
+                            3, // From Cutting
+                            1, // To Printing
+                            $slip->id,
+                            $order_product_set->id,
+                            $slip->stage_master_unit_id,
+                            $order_product_set->printing_unit_id,
+                            $firstRoll->id,
+                            $request->production_datetime,
+                            $sizes
+                        );
+                    }
+                }
+            }
+
             $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
 
             $slipUpdate = [
@@ -1603,7 +1641,7 @@ class OrderDigitalizationService
         }
     }
 
-    private function createTransactionWithDetails($lot_no, $from_stage_id, $to_stage_id, $slip_id = null, $order_products_set_id, $sub_stage_id, $sub_stage_id_to, $production_fabric_roll_assigning_id, $production_datetime, $newSizes = null)
+    protected function createTransactionWithDetails($lot_no, $from_stage_id, $to_stage_id, $slip_id = null, $order_products_set_id, $sub_stage_id, $sub_stage_id_to, $production_fabric_roll_assigning_id, $production_datetime, $newSizes = null)
     {
         $production_fabric_roll_assigning = FabricRollAssigning::where('id', $production_fabric_roll_assigning_id)->first();
 
