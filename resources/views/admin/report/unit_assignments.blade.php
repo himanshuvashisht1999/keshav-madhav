@@ -94,6 +94,7 @@
                                     <select name="view" class="form-control select2" onchange="this.form.submit()">
                                         <option value="open" {{ request('view', 'open') == 'open' ? 'selected' : '' }}>Pending Tasks</option>
                                         <option value="closed" {{ request('view', 'open') == 'closed' ? 'selected' : '' }}>Done Tasks</option>
+                                        <option value="delayed" {{ request('view', 'open') == 'delayed' ? 'selected' : '' }}>Delayed Tasks</option>
                                     </select>
                                 </div>
 
@@ -175,9 +176,7 @@
                                                 <th>Completed Date</th>
                                                 <th>Estimated Date</th>
                                                 <th>Status</th>
-                                                @if($canCloseTasks)
-                                                    <th class="text-center">Action</th>
-                                                @endif
+                                                <th class="text-center">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -214,11 +213,14 @@
                                                             {{ $item->status_text ?? 'Unknown' }}
                                                         </span>
                                                     </td>
-                                                    @if($canCloseTasks)
-                                                        <td class="text-center">
+                                                    <td class="text-center">
+                                                        <a href="{{ route('admin.report.lots.lot-details', $item->lot_no) }}" class="btn btn-sm btn-info" title="View Lot">
+                                                            <i class="fas fa-eye"></i> View
+                                                        </a>
+                                                        @if($canCloseTasks)
                                                             <form method="POST"
                                                                 action="{{ $item->is_closed_for_unit == 1 ? route('admin.reports.unit-assignments.reopen', ['type' => 'cutting', 'id' => $item->id] + request()->query()) : route('admin.reports.unit-assignments.close', ['type' => 'cutting', 'id' => $item->id] + request()->query()) }}"
-                                                                class="d-inline">
+                                                                class="d-inline ml-1">
                                                                 @csrf
                                                                 <button type="submit"
                                                                     class="btn btn-sm {{ $item->is_closed_for_unit == 1 ? 'btn-secondary' : 'btn-outline-danger' }}"
@@ -228,8 +230,8 @@
                                                                     {{ $item->is_closed_for_unit == 1 ? 'Re-open' : 'Close' }}
                                                                 </button>
                                                             </form>
-                                                        </td>
-                                                    @endif
+                                                        @endif
+                                                    </td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
@@ -270,9 +272,7 @@
                                                     <th>Estimated Date</th>
                                                 @endif
                                                 <th>Status</th>
-                                                @if($canCloseTasks)
-                                                    <th class="text-center">Action</th>
-                                                @endif
+                                                <th class="text-center">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -322,11 +322,14 @@
                                                             {{ $item->status_text ?? 'Unknown' }}
                                                         </span>
                                                     </td>
-                                                    @if($canCloseTasks)
-                                                        <td class="text-center">
+                                                    <td class="text-center">
+                                                        <a href="{{ route('admin.report.lots.lot-details', $item->lot_no) }}" class="btn btn-sm btn-info" title="View Lot">
+                                                            <i class="fas fa-eye"></i> View
+                                                        </a>
+                                                        @if($canCloseTasks)
                                                             <form method="POST"
                                                                  action="{{ $item->is_closed_for_unit == 1 ? route('admin.reports.unit-assignments.reopen', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id] + request()->query()) : route('admin.reports.unit-assignments.close', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id] + request()->query()) }}"
-                                                                 class="d-inline">
+                                                                 class="d-inline ml-1">
                                                                  @csrf
                                                                  <button type="submit"
                                                                      class="btn btn-sm {{ $item->is_closed_for_unit == 1 ? 'btn-secondary' : 'btn-outline-danger' }}"
@@ -336,8 +339,8 @@
                                                                      {{ $item->is_closed_for_unit == 1 ? 'Re-open' : 'Close' }}
                                                                  </button>
                                                             </form>
-                                                        </td>
-                                                    @endif
+                                                        @endif
+                                                    </td>
                                                 </tr>
                                             @endforeach
                                         </tbody>

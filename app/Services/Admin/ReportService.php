@@ -1676,7 +1676,10 @@ class ReportService
 
         $unitId = $request->get('unit_id');
         $stageId = $request->get('stage_id');
-        $view = $request->get('view', 'open') === 'closed' ? 'closed' : 'open';
+        $view = $request->get('view', 'open');
+        if (!in_array($view, ['open', 'closed', 'delayed'])) {
+            $view = 'open';
+        }
 
         $lotNo = $request->get('lot_no');
         $orderNo = $request->get('order_no');
@@ -1757,6 +1760,9 @@ class ReportService
                     continue;
                 }
                 if ($view === 'open' && ($item->status_text === 'Done' || $item->status_text === 'Delayed Done')) {
+                    continue;
+                }
+                if ($view === 'delayed' && $item->status_text !== 'Delayed') {
                     continue;
                 }
 
@@ -1876,6 +1882,9 @@ class ReportService
                     continue;
                 }
                 if ($view === 'open' && ($item->status_text === 'Done' || $item->status_text === 'Delayed Done')) {
+                    continue;
+                }
+                if ($view === 'delayed' && $item->status_text !== 'Delayed') {
                     continue;
                 }
 
