@@ -355,7 +355,8 @@ class FabricReceiptService
             // 1. Revert OLD return impact
             foreach ($return->details as $old_detail) {
                 if ($old_detail->receipt_detail) {
-                    $old_detail->receipt_detail->remaining_quantity += $old_detail->return_meter;
+                    $new_qty = min($old_detail->receipt_detail->meter, $old_detail->receipt_detail->remaining_quantity + $old_detail->return_meter);
+                    $old_detail->receipt_detail->remaining_quantity = $new_qty;
                     if ($old_detail->receipt_detail->status == 2) {
                         $old_detail->receipt_detail->status = 1;
                     }

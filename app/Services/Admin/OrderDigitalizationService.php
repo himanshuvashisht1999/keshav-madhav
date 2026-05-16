@@ -685,7 +685,7 @@ class OrderDigitalizationService
     {
         DB::beginTransaction();
         try {
-            $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
+            $slip = ProductionSlipDigitization::lockForUpdate()->find($request->production_slip_digitization_id);
             if (!$slip) throw new \Exception('Slip not found');
 
             // --- 1. REVERSION LOGIC BY SLIP TYPE ---
@@ -695,9 +695,13 @@ class OrderDigitalizationService
                 $fras = \App\Models\FabricRollAssigning::where('production_slip_digitization_id', $slip->id)->get();
                 foreach ($fras as $fra) {
                     // Restore Roll Meter in Fabric Receipt
-                    $roll = \App\Models\FabricReceiptDetail::where('roll_number', $fra->roll_no)->first();
+                    $fabricIds = explode(',', $fra->order_product_set?->fabric_id ?? '');
+                    $roll = \App\Models\FabricReceiptDetail::where('roll_number', $fra->roll_no)
+                        ->whereIn('fabric_id', array_filter($fabricIds))
+                        ->first();
                     if ($roll) {
-                        $roll->increment('remaining_quantity', $fra->meter);
+                        $new_qty = min($roll->meter, $roll->remaining_quantity + $fra->meter);
+                        $roll->update(['remaining_quantity' => $new_qty]);
                     }
 
                     // Restore Sizes and Cutting Stage Remaining Quantities
