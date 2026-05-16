@@ -120,6 +120,7 @@
                                         <option value="not_printing" {{ request('production_status') == 'not_printing' ? 'selected' : '' }}>Not sent to Printing</option>
                                         <option value="not_stitching" {{ request('production_status') == 'not_stitching' ? 'selected' : '' }}>Not sent to Stitching</option>
                                         <option value="not_both" {{ request('production_status') == 'not_both' ? 'selected' : '' }}>Both not sent</option>
+                                        <option value="printing_sent_stitching_pending" {{ request('production_status') == 'printing_sent_stitching_pending' ? 'selected' : '' }}>Printing Sent But Stiching Pending</option>
                                     </select>
                                 </div>
 

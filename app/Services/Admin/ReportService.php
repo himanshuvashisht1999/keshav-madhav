@@ -1614,6 +1614,8 @@ class ReportService
                 $query->where('is_stitching', 0);
             } elseif ($productionStatus === 'not_both') {
                 $query->where('is_printing', 0)->where('is_stitching', 0);
+            } elseif ($productionStatus === 'printing_sent_stitching_pending') {
+                $query->where('is_printing', 1)->where('is_stitching', 0);
             }
 
             if ($request->filled('lot_no')) {
