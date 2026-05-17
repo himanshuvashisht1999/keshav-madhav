@@ -50,7 +50,8 @@
                                     <th width="15%">Phone</th>
                                     <th width="15%">Employee ID</th>
                                     <th width="15%">Password</th>
-                                    <th width="15%">Time (Days)</th>
+                                    <th width="10%">Time (Days)</th>
+                                    <th width="10%">Action</th>
                                 </tr>
                             </thead>
 
@@ -96,7 +97,135 @@
         </div>
     </div>
 
+    {{-- Upload Slip Modal --}}
+    <div class="modal fade" id="uploadSlipModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="uploadSlipForm" action="{{ route('submitProductionSlip') }}" method="POST">
+                    @csrf
+                    <div class="modal-header py-2">
+                        <h6 class="modal-title">Upload Production Slip - <span id="modalUnitName"></span></h6>
+                        <button type="button" class="close" data-dismiss="modal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="stage_master_unit_id" id="upload_encrypted_id">
+                        <input type="hidden" name="photo_data" id="upload_photo_data">
+                        <input type="hidden" name="type" value="2">
+
+                        <div class="text-center mb-3">
+                            <div id="camera-container" style="display:none;">
+                                <video id="admin-video" autoplay playsinline style="width:100%; border-radius:8px;"></video>
+                                <button type="button" class="btn btn-info btn-sm mt-2" id="admin-capture-btn">Capture Photo</button>
+                            </div>
+                            <div id="preview-container" style="display:none;">
+                                <img id="admin-preview" style="width:100%; border-radius:8px; border:1px solid #ddd;">
+                                <button type="button" class="btn btn-warning btn-sm mt-2" id="admin-retake-btn">Retake</button>
+                            </div>
+                            <canvas id="admin-canvas" style="display:none;"></canvas>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Select File or Use Camera</label>
+                            <div class="d-flex justify-content-between">
+                                <input type="file" id="admin-file-input" accept="image/*" class="form-control-file w-auto">
+                                <button type="button" class="btn btn-primary btn-sm" id="admin-open-camera-btn">
+                                    <i class="fa fa-camera"></i> Camera
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer py-2">
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success btn-sm" id="admin-submit-btn" disabled>Submit Slip</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let adminStream = null;
+
+        function openUploadModal(encryptedId, unitName) {
+            $('#upload_encrypted_id').val(encryptedId);
+            $('#modalUnitName').text(unitName);
+            $('#uploadSlipModal').modal('show');
+            resetUploadModal();
+        }
+
+        function resetUploadModal() {
+            stopCamera();
+            $('#camera-container').hide();
+            $('#preview-container').hide();
+            $('#upload_photo_data').val('');
+            $('#admin-file-input').val('');
+            $('#admin-submit-btn').prop('disabled', true);
+        }
+
+        function stopCamera() {
+            if (adminStream) {
+                adminStream.getTracks().forEach(track => track.stop());
+                adminStream = null;
+            }
+        }
+
+        $('#admin-open-camera-btn').on('click', function() {
+            $('#preview-container').hide();
+            $('#admin-file-input').val('');
+            
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (s) {
+                    adminStream = s;
+                    $('#admin-video')[0].srcObject = adminStream;
+                    $('#camera-container').show();
+                })
+                .catch(() => alert('Camera permission denied'));
+        });
+
+        $('#admin-capture-btn').on('click', function() {
+            const video = $('#admin-video')[0];
+            const canvas = $('#admin-canvas')[0];
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            $('#upload_photo_data').val(dataUrl);
+            $('#admin-preview').attr('src', dataUrl);
+            
+            $('#camera-container').hide();
+            $('#preview-container').show();
+            $('#admin-submit-btn').prop('disabled', false);
+            stopCamera();
+        });
+
+        $('#admin-retake-btn').on('click', function() {
+            $('#admin-open-camera-btn').trigger('click');
+        });
+
+        $('#admin-file-input').on('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            stopCamera();
+            $('#camera-container').hide();
+            
+            const reader = new FileReader();
+            reader.onload = function (ev) {
+                $('#upload_photo_data').val(ev.target.result);
+                $('#admin-preview').attr('src', ev.target.result);
+                $('#preview-container').show();
+                $('#admin-submit-btn').prop('disabled', false);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        $('#uploadSlipModal').on('hidden.bs.modal', function () {
+            stopCamera();
+        });
+
         $(document).ready(function () {
 
             let first = $('#warehouseSelect').val();
@@ -112,7 +241,7 @@
 
             if (!master_fabric_warehouse_id) {
                 $('#stageUnitContainer').html(`
-                                    <tr><td colspan="6" class="text-center text-muted">Select warehouse</td></tr>
+                                    <tr><td colspan="7" class="text-center text-muted">Select warehouse</td></tr>
                                 `);
                 return;
             }
@@ -143,7 +272,7 @@
                         // header
                         html += `
                                 <tr class="table-primary">
-                                    <td colspan="5"><strong>${stage.stage_name}</strong></td>
+                                    <td colspan="6"><strong>${stage.stage_name}</strong></td>
                                     <td class="text-right">
                                         <button type="button"
                                                 class="btn btn-success btn-sm add-unit-btn"
@@ -178,6 +307,7 @@
                                                 <td>
                                                     <input type="number" name="rows[${rowIndex}][lot_time_in_days]" class="form-control form-control-sm" value="1">
                                                 </td>
+                                                <td>-</td>
                                             </tr>`;
                             rowIndex++;
                         }
@@ -211,6 +341,11 @@
                                                 <td>
                                                     <input type="number" name="rows[${rowIndex}][lot_time_in_days]" class="form-control form-control-sm"
                                                            value="${row.lot_time_in_days ?? 1}">
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn btn-info btn-xs" onclick="openUploadModal('${row.encrypted_id}', '${row.name}')">
+                                                        <i class="fa fa-upload"></i> Upload
+                                                    </button>
                                                 </td>
                                             </tr>`;
 
@@ -255,6 +390,7 @@
                                     <td>
                                         <input type="number" name="rows[${index}][lot_time_in_days]" class="form-control form-control-sm" value="1">
                                     </td>
+                                    <td>-</td>
                                 </tr>
                             `);
         });
