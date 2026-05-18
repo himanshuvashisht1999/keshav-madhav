@@ -214,11 +214,15 @@
                                                         </span>
                                                     </td>
                                                     <td class="text-center">
-                                                        <a href="{{ route('admin.report.lots.lot-details', $item->lot_no) }}" class="btn btn-sm btn-info" title="View Lot">
-                                                            <i class="fas fa-eye"></i> View
-                                                        </a>
+                                                        @if(request('stage_id') == 3 && empty(request('production_status')))
+                                                            {{-- <a href="#" class="btn btn-sm btn-info" title="View Lot"><i class="fas fa-eye"></i> View</a> --}}
+                                                        @elseif(!empty($item->lot_no))
+                                                            <a href="{{ route('admin.report.lots.lot-details', $item->lot_no) }}" class="btn btn-sm btn-info" title="View Lot">
+                                                                <i class="fas fa-eye"></i> View
+                                                            </a>
+                                                        @endif
                                                         @if($canCloseTasks)
-                                                            <form method="POST"
+                                                            <!-- <form method="POST"
                                                                 action="{{ $item->is_closed_for_unit == 1 ? route('admin.reports.unit-assignments.reopen', ['type' => 'cutting', 'id' => $item->id] + request()->query()) : route('admin.reports.unit-assignments.close', ['type' => 'cutting', 'id' => $item->id] + request()->query()) }}"
                                                                 class="d-inline ml-1">
                                                                 @csrf
@@ -229,7 +233,7 @@
                                                                         class="fas {{ $item->is_closed_for_unit == 1 ? 'fa-undo' : 'fa-times' }}"></i>
                                                                     {{ $item->is_closed_for_unit == 1 ? 'Re-open' : 'Close' }}
                                                                 </button>
-                                                            </form>
+                                                            </form> -->
                                                         @endif
                                                     </td>
                                                 </tr>
@@ -323,9 +327,13 @@
                                                         </span>
                                                     </td>
                                                     <td class="text-center">
-                                                        <a href="{{ route('admin.report.lots.lot-details', $item->lot_no) }}" class="btn btn-sm btn-info" title="View Lot">
-                                                            <i class="fas fa-eye"></i> View
-                                                        </a>
+                                                        @if(request('stage_id') == 3 && empty(request('production_status')))
+                                                            {{-- <a href="#" class="btn btn-sm btn-info" title="View Lot"><i class="fas fa-eye"></i> View</a> --}}
+                                                        @elseif(!empty($item->lot_no))
+                                                            <a href="{{ route('admin.report.lots.lot-details', $item->lot_no) }}" class="btn btn-sm btn-info" title="View Lot">
+                                                                <i class="fas fa-eye"></i> View
+                                                            </a>
+                                                        @endif
                                                         @if($canCloseTasks)
                                                             <form method="POST"
                                                                  action="{{ $item->is_closed_for_unit == 1 ? route('admin.reports.unit-assignments.reopen', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id] + request()->query()) : route('admin.reports.unit-assignments.close', ['type' => $item->transaction_type ?? 'production', 'id' => $item->id] + request()->query()) }}"
