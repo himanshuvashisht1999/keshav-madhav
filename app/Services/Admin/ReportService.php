@@ -1640,22 +1640,22 @@ class ReportService
                 $item->transaction_type = 'cutting_lot';
                 $item->design_number = $item->orderProductSet->design_number ?? '-';
                 $item->stage_master_unit = $item->orderProductSet->order_cutting_stage->cutting_master ?? null;
-                
+
                 $rolls = \App\Models\FabricRollAssigning::where('order_lot_id', $item->id)->with('fabricRollAssigningsDetail')->get();
                 $totalPieces = 0;
                 foreach ($rolls as $roll) {
                     $totalPieces += $roll->fabricRollAssigningsDetail->sum('quantity');
                 }
-                
+
                 $item->assigned_qty = $totalPieces;
                 $item->pending_qty = $totalPieces;
-                $item->to_stage = (object)['name' => 'Cutting'];
-                $item->from_stage = (object)['name' => 'Admin'];
+                $item->to_stage = (object) ['name' => 'Cutting'];
+                $item->from_stage = (object) ['name' => 'Admin'];
                 $item->status_text = ($item->is_printing && $item->is_stitching) ? 'Done' : 'Pending';
                 $item->status_class = ($item->is_printing && $item->is_stitching) ? 'success' : 'warning';
                 $item->production_date = $item->production_datetime ? \Carbon\Carbon::parse($item->production_datetime)->format('j M Y') : \Carbon\Carbon::parse($item->created_at)->format('j M Y');
                 $item->created_at = \Carbon\Carbon::parse($item->created_at);
-                
+
                 $assignments[] = $item;
             }
 
@@ -1783,7 +1783,11 @@ class ReportService
         } elseif ($stageId) {
             $type = 'other';
 
-            $ass1Query = \App\Models\OrderStageTransaction::with(['from_stage', 'to_stage', 'getFromUnitMaster', 'getToUnitMaster']);
+            if ($stageId == 13) {
+                $ass1Query = \App\Models\OrderGodamStageTransaction::with(['from_stage', 'to_stage', 'getFromUnitMaster', 'getToUnitMaster']);
+            } else {
+                $ass1Query = \App\Models\OrderStageTransaction::with(['from_stage', 'to_stage', 'getFromUnitMaster', 'getToUnitMaster']);
+            }
             $ass2Query = \App\Models\OrderPrintingStageTransaction::with(['from_stage', 'to_stage', 'getFromUnitMaster', 'getToUnitMaster']);
             $ass3Query = \App\Models\OrderPrintingToStichingTransaction::with(['from_stage', 'to_stage', 'getFromUnitMaster', 'getToUnitMaster']);
 
@@ -1847,6 +1851,11 @@ class ReportService
 
             foreach ($allTransactions as $item) {
                 $t_stage_id = $item->to_stage_id;
+
+                $orderLot = \App\Models\OrderLot::with('orderProductSet.orderMain')->where('lot_no', $item->lot_no)->first();
+                $item->design_number = $orderLot?->orderProductSet?->design_number ?? '-';
+                $item->sku = $orderLot?->orderProductSet?->orderMain?->sku ?? '-';
+
 
                 // Fetch Unified Timing
                 $timing = \App\Models\OrderLotStageTiming::where('lot_no', $item->lot_no)
