@@ -1895,7 +1895,12 @@ class OrderDigitalizationService
             // Existing logic to determine to_stage_id
             $to_stage_id = 0;
             if ($current_stage_id == 1) {
-                $to_stage_id = 4;
+                $is_stitching = \App\Models\OrderLot::where('lot_no', $lot_no)->value('is_stitching');
+                if (!$is_stitching) {
+                    $to_stage_id = 13; // Godam
+                } else {
+                    $to_stage_id = 4;
+                }
             } elseif ($current_stage_id == 3) {
                 $to_stage_id = 4;
             } elseif ($current_stage_id == 4) {
@@ -1986,9 +1991,14 @@ class OrderDigitalizationService
                             'master_stage_name' => $u->masterStage->name
                         ];
                     });
-                $available_units = array_merge($available_units->toArray(), $godam_units->toArray());
+                
+                $availArray = is_array($available_units) ? $available_units : $available_units->toArray();
+                $available_units = array_merge($availArray, $godam_units->toArray());
             }
         }
+
+        // Remove any duplicates (like Godam being added twice)
+        $available_units = collect($available_units)->unique('id')->values()->toArray();
 
         return [
             'lot_no' => $lot_no,
