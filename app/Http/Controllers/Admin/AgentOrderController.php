@@ -480,7 +480,7 @@ class AgentOrderController extends Controller
                     'sales_agent_id' => $agent_id_to_save,
                     'status' => 'dispatched',
                     'created_by' => Auth::id(),
-                    'dispatch_date' => now(),
+                    'dispatch_date' => $request->order_date ?? date('Y-m-d'),
                     'total_amount' => $total_amount,
                     'discount_amount' => $discount_amount,
                     'gst_amount' => $gst_amount,

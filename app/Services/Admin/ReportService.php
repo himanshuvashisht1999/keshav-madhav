@@ -885,6 +885,20 @@ class ReportService
             ->when($request->filled('end_date'), function ($q) use ($request) {
                 $q->whereDate('date', '<=', $request->end_date);
             })
+            ->when($request->filled('status'), function ($q) use ($request) {
+                $status = $request->status;
+                $orderedSql = '(SELECT COALESCE(SUM(meter), 0) FROM purchase_order_items WHERE purchase_order_id = purchase_orders.id)';
+                $receivedSql = '(SELECT COALESCE(SUM(fabric_receipt_details.meter), 0) FROM fabric_receipt_details INNER JOIN purchase_order_items ON purchase_order_items.id = fabric_receipt_details.purchase_order_item_id WHERE purchase_order_items.purchase_order_id = purchase_orders.id)';
+                
+                if ($status === 'delayed') {
+                    $q->whereDate('delivery_date', '<', now()->format('Y-m-d'))
+                      ->whereRaw("{$orderedSql} > {$receivedSql}");
+                } elseif ($status === 'open') {
+                    $q->whereRaw("{$orderedSql} > {$receivedSql}");
+                } elseif ($status === 'closed') {
+                    $q->whereRaw("{$orderedSql} <= {$receivedSql}");
+                }
+            })
             ->orderBy('date', 'desc');
 
         if ($request->has('is_export')) {
@@ -1606,7 +1620,7 @@ class ReportService
         if ($productionStatus) {
             $type = 'other';
             $query = \App\Models\OrderLot::with(['orderMain.customer', 'orderProductSet.colors', 'orderProductSet.master_design_pattern', 'orderProductSet.order_cutting_stage.cutting_master'])
-                ->orderBy('created_at', 'desc');
+                ->orderBy('id', 'asc');
 
             if ($productionStatus === 'not_printing') {
                 $query->where('is_printing', 0);
@@ -1660,7 +1674,7 @@ class ReportService
             }
 
             return [
-                'assignments' => collect($assignments),
+                'assignments' => collect($assignments)->sortBy('id')->values(),
                 'type' => $type,
                 'view' => 'open',
                 'canCloseTasks' => false,
@@ -1706,7 +1720,7 @@ class ReportService
             $query = \App\Models\OrderCuttingStage::with(['orderMain.customer', 'productSet.fabric', 'productSet.colors', 'productSet.master_design_pattern', 'cutting_master'])
                 ->where('is_po', 0)
                 ->where('to_assign_id', '>', 0)
-                ->orderBy('created_at', 'asc');
+                ->orderBy('id', 'asc');
 
             if ($request->filled('start_date')) {
                 $query->whereDate('created_at', '>=', $request->start_date);
@@ -1834,15 +1848,15 @@ class ReportService
                 $ass3Query->whereDate('created_at', '<=', $request->end_date);
             }
 
-            $results1 = $ass1Query->orderBy('created_at', 'asc')->get()->map(function ($item) {
+            $results1 = $ass1Query->orderBy('id', 'asc')->get()->map(function ($item) {
                 $item->transaction_type = 'stage';
                 return $item;
             });
-            $results2 = $ass2Query->orderBy('created_at', 'asc')->get()->map(function ($item) {
+            $results2 = $ass2Query->orderBy('id', 'asc')->get()->map(function ($item) {
                 $item->transaction_type = 'printing';
                 return $item;
             });
-            $results3 = $ass3Query->get()->map(function ($item) {
+            $results3 = $ass3Query->orderBy('id', 'asc')->get()->map(function ($item) {
                 $item->transaction_type = 'printing_to_stitching';
                 return $item;
             });
@@ -1906,7 +1920,7 @@ class ReportService
                 $item->pending_qty = $pendingQty;
                 $assignments[] = $item;
             }
-            $assignments = collect($assignments)->sortByDesc('created_at');
+            $assignments = collect($assignments)->sortBy('id')->values();
         } else {
             $type = 'none';
         }
@@ -1920,7 +1934,7 @@ class ReportService
         $units = $unitsQuery->get()->unique('name');
 
         return [
-            'assignments' => collect($assignments),
+            'assignments' => collect($assignments)->sortBy('id')->values(),
             'type' => $type,
             'view' => $view,
             'canCloseTasks' => $canCloseTasks,

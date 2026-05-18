@@ -179,8 +179,8 @@ class OrderDigitalizationController extends Controller
 
             // NEW: Fetch Units
             $warehouse_id = $production_slip_digitization->getUnitMaster->master_fabric_warehouse_id ?? 0;
-            $response['stitching_units'] = $this->service->getStageUnits($warehouse_id, 4); // 4 = Stitching
-            $response['printing_units'] = $this->service->getStageUnits($warehouse_id, 1);  // 1 = Printing
+            $response['stitching_units'] = $this->service->getStageUnits(null, 4); // 4 = Stitching
+            $response['printing_units'] = $this->service->getStageUnits(null, 1);  // 1 = Printing
 
             $cutting_unit = $production_slip_digitization->stage_master_unit_id;
             $response['assignments'] = $this->service->getAssignments($cutting_unit);

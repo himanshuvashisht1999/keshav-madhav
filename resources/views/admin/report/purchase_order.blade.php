@@ -77,7 +77,7 @@
                                         value="{{ $filters['sku'] ?? '' }}">
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label class="form-label">Supplier</label>
                                     <select name="vendor_id" class="form-control">
                                         <option value="">All Suppliers</option>
@@ -86,6 +86,16 @@
                                                 {{ $v->name }}
                                             </option>
                                         @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <label class="form-label">Status</label>
+                                    <select name="status" class="form-control">
+                                        <option value="">All</option>
+                                        <option value="open" {{ ($filters['status'] ?? '') == 'open' ? 'selected' : '' }}>Open</option>
+                                        <option value="closed" {{ ($filters['status'] ?? '') == 'closed' ? 'selected' : '' }}>Closed</option>
+                                        <option value="delayed" {{ ($filters['status'] ?? '') == 'delayed' ? 'selected' : '' }}>Delayed</option>
                                     </select>
                                 </div>
 
@@ -101,7 +111,7 @@
                                         value="{{ $filters['end_date'] ?? '' }}">
                                 </div>
 
-                                <div class="col-md-3 d-flex gap-1">
+                                <div class="col-md-2 d-flex gap-1">
                                     <button class="btn btn-primary flex-fill">
                                         <i class="fas fa-filter"></i> Apply
                                     </button>

@@ -350,7 +350,7 @@ $(document).ready(function () {
 
     // Load default warehouse cutting masters
     warehouseChange($('#warehouse_id').val());
-    printingWarehouseChange($('#warehouse_id').val());
+    printingWarehouseChange();
 
 
     $(document).on('click', '.po-btn', function() {
@@ -544,24 +544,24 @@ function warehouseChange(warehouse_id) {
 
     cuttingSelect.trigger('change.select2');
 
-    // Also update printing units for the same warehouse
-    printingWarehouseChange(warehouse_id);
+    // Make sure all printing units are loaded (not warehouse specific)
+    printingWarehouseChange();
 }
 
-function printingWarehouseChange(warehouse_id) {
+function printingWarehouseChange() {
     let printingSelect = $('#printing_unit_id');
     printingSelect.empty();
     printingSelect.append('<option value="">Select Printing Unit</option>');
 
-    let warehouse = printing_warehouses.find(w => w.id == warehouse_id);
-
-    if (warehouse && warehouse.printing_units) {
-        warehouse.printing_units.forEach(unit => {
-            printingSelect.append(
-                `<option value="${unit.id}">${unit.name}</option>`
-            );
-        });
-    }
+    printing_warehouses.forEach(warehouse => {
+        if (warehouse.printing_units) {
+            warehouse.printing_units.forEach(unit => {
+                printingSelect.append(
+                    `<option value="${unit.id}">${unit.name} (${warehouse.warehouse_name})</option>`
+                );
+            });
+        }
+    });
 
     printingSelect.trigger('change.select2');
 }

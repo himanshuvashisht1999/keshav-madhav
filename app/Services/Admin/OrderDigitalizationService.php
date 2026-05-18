@@ -1517,34 +1517,34 @@ class OrderDigitalizationService
                 ->where('stage_master_unit_id', $slip->stage_master_unit_id)
                 ->first();
 
-            $this->createTransactionWithDetails($request->lot_no, 3, 4, $slip->id, $fab_roll_assigning->order_products_set_id, $slip->stage_master_unit_id, $request->to_stage_unit_id, $fab_roll_assigning->id, $request->production_datetime);
+            // Check if it is in Godam
+            $godamTx = OrderGodamStageTransaction::where('lot_no', $request->lot_no)->where('remaining_quantity', '>', 0)->orderBy('id', 'desc')->first();
+
+            $from_stage_id = 3;
+            $sub_stage_id_from = $slip->stage_master_unit_id;
+
+            if ($godamTx) {
+                $from_stage_id = 13; // Godam
+                $sub_stage_id_from = $godamTx->sub_stage_id_to;
+
+                $godamIds = OrderGodamStageTransaction::where('lot_no', $request->lot_no)->where('remaining_quantity', '>', 0)->pluck('id');
+                
+                OrderGodamStageTransaction::whereIn('id', $godamIds)->update([
+                    'remaining_quantity' => 0,
+                    'status' => 2
+                ]);
+
+                OrderGodamStageTransactionDetail::whereIn('order_godam_stage_transaction_id', $godamIds)->update([
+                    'remaining_quantity' => 0
+                ]);
+            }
+
+            $this->createTransactionWithDetails($request->lot_no, $from_stage_id, 4, $slip->id, $fab_roll_assigning->order_products_set_id, $sub_stage_id_from, $request->to_stage_unit_id, $fab_roll_assigning->id, $request->production_datetime);
 
             if ($request->is_final == 1) {
                 // Close ANY incoming assignments for this lot and this unit to hide from Unit assignments list
                 $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file, $request->production_datetime);
             }
-
-            /////new code
-
-            $godamIds = OrderGodamStageTransaction::where('lot_no', $request->lot_no)->pluck('id');
-
-            if ($godamIds->isNotEmpty()) {
-                // 2️⃣ Main table bulk update (single query)
-                OrderGodamStageTransaction::whereIn('id', $godamIds)
-                    ->update([
-                        'quantity' => 0
-                    ]);
-
-                // 3️⃣ Detail table bulk update (single query)
-                OrderGodamStageTransactionDetail::whereIn(
-                    'order_godam_stage_transaction_id',
-                    $godamIds
-                )->update([
-                            'remaining_quantity' => 0
-                        ]);
-            }
-
-            /////////// end code
 
             DB::commit();
             return [
@@ -1726,14 +1726,18 @@ class OrderDigitalizationService
         return $transaction;
     }
 
-    public function getStageUnits($warehouse_id, $master_stage_id)
+    public function getStageUnits($warehouse_id = null, $master_stage_id)
     {
-        return \App\Models\StageMasterUnit::with('masterStage')
+        $query = \App\Models\StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
             ->join('master_product_stages as master_stages', 'master_stages.id', '=', 'stage_master_units.master_stage_id')
             ->where('stage_master_units.status', 1)
-            ->where('stage_master_units.master_fabric_warehouse_id', $warehouse_id)
-            ->where('stage_master_units.master_stage_id', $master_stage_id)
-            ->orderBy('stage_master_units.name', 'asc')
+            ->where('stage_master_units.master_stage_id', $master_stage_id);
+
+        if ($warehouse_id) {
+            $query->where('stage_master_units.master_fabric_warehouse_id', $warehouse_id);
+        }
+
+        return $query->orderBy('stage_master_units.name', 'asc')
             ->select('stage_master_units.*')
             ->get();
     }
