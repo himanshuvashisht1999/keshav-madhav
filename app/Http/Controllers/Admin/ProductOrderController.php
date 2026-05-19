@@ -345,10 +345,42 @@ class ProductOrderController extends Controller
         return response()->json($response);
     }
 
-    public function poList()
+    public function poList(Request $request)
     {
-        $pos = ProductionPO::with(['vendor', 'customer', 'orderMain', 'items'])->orderBy('created_at', 'desc')->paginate(20);
-        return view('admin.product_order.po-list', compact('pos'));
+        $query = ProductionPO::with(['vendor', 'customer', 'orderMain', 'items']);
+
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('po_number', 'like', "%{$search}%")
+                  ->orWhereHas('orderMain', function($o) use ($search) {
+                      $o->where('sku', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('vendor_id')) {
+            $query->where('vendor_id', $request->get('vendor_id'));
+        }
+
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->get('customer_id'));
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->get('start_date'));
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->get('end_date'));
+        }
+
+        $pos = $query->orderBy('created_at', 'desc')->paginate(20);
+        
+        $vendors = \App\Models\Vendor::where('status', 1)->orderBy('name')->get();
+        $customers = \App\Models\MasterCustomer::where('status', 1)->orderBy('name')->get();
+
+        return view('admin.product_order.po-list', compact('pos', 'vendors', 'customers'));
     }
 
     public function viewBulkPO($id)

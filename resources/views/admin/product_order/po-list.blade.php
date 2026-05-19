@@ -14,6 +14,68 @@
 
     <section class="content">
         <div class="container-fluid">
+            <!-- Filter Card -->
+            <div class="card card-default">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fa fa-filter"></i> Filters</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ route('admin.product_order.poList') }}">
+                        <div class="row">
+                            <div class="col-md-3 col-sm-6">
+                                <div class="form-group">
+                                    <label for="search" class="small">Search (PO No / Order SKU)</label>
+                                    <input type="text" class="form-control form-control-sm" name="search" id="search" value="{{ request('search') }}" placeholder="Enter PO No or SKU">
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="form-group">
+                                    <label for="vendor_id" class="small">Vendor</label>
+                                    <select class="form-control form-control-sm select2" name="vendor_id" id="vendor_id" style="width: 100%;">
+                                        <option value="">All Vendors</option>
+                                        @foreach($vendors as $vendor)
+                                            <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>{{ $vendor->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="form-group">
+                                    <label for="customer_id" class="small">Customer</label>
+                                    <select class="form-control form-control-sm select2" name="customer_id" id="customer_id" style="width: 100%;">
+                                        <option value="">All Customers</option>
+                                        @foreach($customers as $customer)
+                                            <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="form-group">
+                                    <label class="small">Created Date Range</label>
+                                    <div class="d-flex">
+                                        <input type="date" class="form-control form-control-sm mr-2" name="start_date" id="start_date" value="{{ request('start_date') }}">
+                                        <input type="date" class="form-control form-control-sm" name="end_date" id="end_date" value="{{ request('end_date') }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 text-right">
+                                <button type="submit" class="btn btn-sm btn-primary mr-2"><i class="fa fa-filter"></i> Filter</button>
+                                <a href="{{ route('admin.product_order.poList') }}" class="btn btn-sm btn-secondary"><i class="fa fa-undo"></i> Reset</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Table Card -->
             <div class="card">
                 <div class="card-body table-responsive p-0">
                     <table class="table table-hover text-nowrap">
@@ -70,7 +132,7 @@
                 </div>
                 @if($pos->hasPages())
                     <div class="card-footer clearfix">
-                        {{ $pos->links() }}
+                        {{ $pos->appends(request()->query())->links() }}
                     </div>
                 @endif
             </div>
@@ -81,13 +143,21 @@
 
 @section('scripts')
 <script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            allowClear: true,
+            placeholder: "Select option"
+        });
+    });
+
     $(document).on('click', '.delete-po', function() {
         if (!confirm('Are you sure you want to delete this PO? This will restore the quantities to the original order sets.')) return;
         
         const id = $(this).data('id');
         const btn = $(this);
         btn.prop('disabled', true);
-
+ 
         $.ajax({
             url: `/admin/production-order/po/${id}/delete`,
             type: 'DELETE',
