@@ -79,7 +79,10 @@
     <table class="info-table">
         <tr>
             <td width="50%">
-                <strong>Total Records:</strong> {{ count($customers) }}
+                <strong>Total Records:</strong> {{ count($customers) }}<br/>
+                @if ($hasDateFilter)
+                    <strong>Period:</strong> {{ $startDate ? \Carbon\Carbon::parse($startDate)->format('d-M-Y') : 'Beginning' }} to {{ $endDate ? \Carbon\Carbon::parse($endDate)->format('d-M-Y') : 'Today' }}
+                @endif
             </td>
             <td width="50%" class="text-right">
                 <strong>Generated On:</strong> {{ date('d-M-Y H:i') }}
@@ -102,6 +105,10 @@
         </thead>
         <tbody>
             @forelse($customers as $key => $customer)
+                @php
+                    $opBal = ($hasDateFilter && isset($calculatedBalances[$customer->id])) ? $calculatedBalances[$customer->id]['opening_balance'] : null;
+                    $clBal = ($hasDateFilter && isset($calculatedBalances[$customer->id])) ? $calculatedBalances[$customer->id]['closing_balance'] : $customer->balance;
+                @endphp
                 <tr>
                     <td>{{ $key + 1 }}</td>
                     <td>{{ $customer->name }}</td>
@@ -109,7 +116,9 @@
                     <td>{{ $customer->agent ? $customer->agent->name : '-' }}</td>
                     <td>{{ ucfirst($customer->type) }}</td>
                     <td class="text-right">
-                        @if ($customer->currentOpeningBalance)
+                        @if ($opBal !== null)
+                            {{ number_format(abs($opBal), 2) }} ({{ $opBal >= 0 ? 'Cr' : 'Dr' }})
+                        @elseif ($customer->currentOpeningBalance)
                             @php
                                 $type = $customer->currentOpeningBalance->balance_type;
                             @endphp
@@ -118,8 +127,8 @@
                             0.00
                         @endif
                     </td>
-                    <td class="text-right text-bold" style="color: {{ $customer->balance >= 0 ? '#28a745' : '#dc3545' }}">
-                        {{ number_format(abs($customer->balance), 2) }} ({{ $customer->balance >= 0 ? 'Cr' : 'Dr' }})
+                    <td class="text-right text-bold" style="color: {{ $clBal >= 0 ? '#28a745' : '#dc3545' }}">
+                        {{ number_format(abs($clBal), 2) }} ({{ $clBal >= 0 ? 'Cr' : 'Dr' }})
                     </td>
                     <td class="text-right">
                         @if($customer->status == 1)

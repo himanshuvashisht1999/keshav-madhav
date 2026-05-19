@@ -31,6 +31,185 @@ class CustomerService
         return $this->datatable->indexList($request);
     }
 
+    public function calculateCustomerBalances($customerIds, $startDate = null, $endDate = null)
+    {
+        $balances = [];
+
+        // Determine the financial year based on startDate (or endDate if startDate is empty)
+        $refDate = $startDate ?: $endDate;
+        $financialYear = \App\Models\MasterOpeningBalance::getFinancialYearForDate($refDate);
+        
+        $startYear = explode('-', $financialYear)[0];
+        $fyStartDate = $startYear . '-04-01';
+
+        // 1. Get initial opening balances of the selected financial year
+        $openingBalances = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
+            ->whereIn('master_id', $customerIds)
+            ->where('financial_year', $financialYear)
+            ->get()
+            ->keyBy('master_id');
+
+        // Initialize balances
+        foreach ($customerIds as $id) {
+            $initial = 0;
+            $type = 'Credit';
+            if (isset($openingBalances[$id])) {
+                $initial = (float) $openingBalances[$id]->amount;
+                $type = $openingBalances[$id]->balance_type;
+                if (strtolower(trim($type)) === 'debit') {
+                    $initial = -$initial;
+                }
+            }
+            $balances[$id] = [
+                'initial' => $initial,
+                'closing_debit' => 0,
+                'closing_credit' => 0,
+            ];
+        }
+
+        // Get customer master ID for journal vouchers
+        $jvMasterIds = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\MasterCustomer')->pluck('id');
+
+        // A. AgentOrderDispatch (Debit)
+        $dispatches = \App\Models\AgentOrderDispatch::whereIn('master_customer_id', $customerIds)
+            ->where('party_type', 'customer')
+            ->where('status', 'dispatched')
+            ->whereDate('dispatch_date', '>=', $fyStartDate)
+            ->get();
+        foreach ($dispatches as $d) {
+            $date = $d->dispatch_date;
+            $amount = (float) $d->grand_total;
+            $id = $d->master_customer_id;
+            
+            $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
+            if (!$endDate || $txDate <= $endDate) {
+                $balances[$id]['closing_debit'] += $amount;
+            }
+        }
+
+        // B. OrderDispatch (Debit)
+        $orderDispatches = \App\Models\OrderDispatch::whereIn('customer_id', $customerIds)
+            ->whereDate('dispatch_date', '>=', $fyStartDate)
+            ->get();
+        foreach ($orderDispatches as $od) {
+            $date = $od->dispatch_date;
+            $amount = (float) $od->total_amount;
+            $id = $od->customer_id;
+            
+            $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
+            if (!$endDate || $txDate <= $endDate) {
+                $balances[$id]['closing_debit'] += $amount;
+            }
+        }
+
+        // C. AgentOrderReturn (Credit)
+        $returns = \App\Models\AgentOrderReturn::whereHas('dispatch', function($q) use ($customerIds) {
+            $q->whereIn('master_customer_id', $customerIds)->where('party_type', 'customer');
+        })->with('dispatch')
+          ->whereDate('return_date', '>=', $fyStartDate)
+          ->get();
+        foreach ($returns as $r) {
+            if (!$r->dispatch) continue;
+            $date = $r->return_date;
+            $amount = (float) $r->grand_total;
+            $id = $r->dispatch->master_customer_id;
+            
+            $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
+            if (!$endDate || $txDate <= $endDate) {
+                $balances[$id]['closing_credit'] += $amount;
+            }
+        }
+
+        // D. Payments (Credit / Debit)
+        $payments = \App\Models\Payment::whereIn('party_id', $customerIds)
+            ->where('party_type', 'App\Models\MasterCustomer')
+            ->where(function($q) {
+                $q->where('paymentable_type', '!=', \App\Models\JournalVoucher::class)
+                  ->orWhereNull('paymentable_type');
+            })
+            ->whereDate('payment_date', '>=', $fyStartDate)
+            ->get();
+        foreach ($payments as $p) {
+            $date = $p->payment_date;
+            $amount = (float) $p->amount;
+            $id = $p->party_id;
+            
+            $isCredit = in_array($p->payment_type, ['received', 'credit']);
+            
+            $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
+            if ($isCredit) {
+                if (!$endDate || $txDate <= $endDate) {
+                    $balances[$id]['closing_credit'] += $amount;
+                }
+            } else {
+                if (!$endDate || $txDate <= $endDate) {
+                    $balances[$id]['closing_debit'] += $amount;
+                }
+            }
+        }
+
+        // E. DomesticInventoryPurchase (Credit)
+        $purchases = \App\Models\DomesticInventoryPurchase::whereIn('customer_id', $customerIds)
+            ->whereDate('created_at', '>=', $fyStartDate)
+            ->get();
+        foreach ($purchases as $ip) {
+            $date = $ip->created_at;
+            $amount = (float) $ip->total_amount;
+            $id = $ip->customer_id;
+            
+            $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
+            if (!$endDate || $txDate <= $endDate) {
+                $balances[$id]['closing_credit'] += $amount;
+            }
+        }
+
+        // F. JournalVouchers (Credit / Debit)
+        if ($jvMasterIds->isNotEmpty()) {
+            $vouchers = \App\Models\JournalVoucherItem::with('voucher')
+                ->whereIn('master_type', $jvMasterIds)
+                ->whereIn('master_id', $customerIds)
+                ->whereHas('voucher', function($q) use ($fyStartDate) {
+                    $q->whereDate('date', '>=', $fyStartDate);
+                })
+                ->get();
+            foreach ($vouchers as $v) {
+                if (!$v->voucher) continue;
+                $date = $v->voucher->date;
+                $amount = (float) $v->amount;
+                $id = $v->master_id;
+                
+                $isCredit = strtolower($v->type) === 'credit';
+                
+                $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
+                if ($isCredit) {
+                    if (!$endDate || $txDate <= $endDate) {
+                        $balances[$id]['closing_credit'] += $amount;
+                    }
+                } else {
+                    if (!$endDate || $txDate <= $endDate) {
+                        $balances[$id]['closing_debit'] += $amount;
+                    }
+                }
+            }
+        }
+
+        // Calculate final opening and closing balances
+        $results = [];
+        foreach ($customerIds as $id) {
+            $initial = $balances[$id]['initial'];
+            
+            $opBal = $initial;
+            $clBal = $initial + ($balances[$id]['closing_credit'] - $balances[$id]['closing_debit']);
+            
+            $results[$id] = [
+                'opening_balance' => $opBal,
+                'closing_balance' => $clBal,
+            ];
+        }
+
+        return $results;
+    }
+
     public function downloadPdf(Request $request)
     {
         $query = MasterCustomer::with(['currentOpeningBalance', 'agent'])->where('status', '!=', 3);
@@ -54,8 +233,18 @@ class CustomerService
         }
 
         $customers = $query->orderBy('id', 'asc')->get();
+        
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $hasDateFilter = !empty($startDate) || !empty($endDate);
+        
+        $calculatedBalances = [];
+        if ($hasDateFilter) {
+            $customerIds = $customers->pluck('id')->toArray();
+            $calculatedBalances = $this->calculateCustomerBalances($customerIds, $startDate, $endDate);
+        }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.master.customer.pdf', compact('customers'));
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.master.customer.pdf', compact('customers', 'startDate', 'endDate', 'hasDateFilter', 'calculatedBalances'));
         return $pdf->download('customers.pdf');
     }
 

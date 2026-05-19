@@ -70,7 +70,12 @@
                                 <option value="domestic">Domestic</option>
                             </select>
                         </td>
-                        <td></td>
+                        <td>
+                            <input type="date" class="form-control" name="start_date" id="start_date" autocomplete="off">
+                        </td>
+                        <td>
+                            <input type="date" class="form-control" name="end_date" id="end_date" autocomplete="off">
+                        </td>
                         <td>
                             <select class="form-control" name="status" id="status" autocomplete="off">
                                 <option value="">ALL</option>
@@ -79,9 +84,6 @@
                             </select>
                         </td>
                         <td></td>
-                        <td>
-                       
-                       </td>
                     </tr>
                    <tr>
                     <th>ID</th>
@@ -132,6 +134,8 @@
                     d.agent_name = $('#agent_name').val();
                     d.type = $('#type').val();
 					d.status = $('#status').val();
+                    d.start_date = $('#start_date').val();
+                    d.end_date = $('#end_date').val();
                 },
                 orderable: false
             },
@@ -164,13 +168,17 @@
                         var agent_name = $('#agent_name').val() || '';
                         var type = $('#type').val() || '';
                         var status = $('#status').val() || '';
+                        var start_date = $('#start_date').val() || '';
+                        var end_date = $('#end_date').val() || '';
                         
                         var url = "{{ route('admin.master.customer.downloadPdf') }}?" + 
                             "name=" + encodeURIComponent(name) + 
                             "&phone=" + encodeURIComponent(phone) + 
                             "&agent_name=" + encodeURIComponent(agent_name) + 
                             "&type=" + encodeURIComponent(type) + 
-                            "&status=" + encodeURIComponent(status);
+                            "&status=" + encodeURIComponent(status) +
+                            "&start_date=" + encodeURIComponent(start_date) +
+                            "&end_date=" + encodeURIComponent(end_date);
                             
                         window.location.href = url;
                     }
@@ -209,6 +217,16 @@
         });
 
         $('#type').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+
+        $('#start_date').on('change', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+
+        $('#end_date').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });

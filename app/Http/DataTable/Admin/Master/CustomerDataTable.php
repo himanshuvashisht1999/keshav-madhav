@@ -16,27 +16,35 @@ class CustomerDataTable  {
     public function indexList($request){
         $queue = MasterCustomer::with(['currentOpeningBalance', 'agent'])->where('status', '!=', 3);
 
+        if ($request->has('name') && !empty($request->name)) {
+            $queue->where('name', 'like', "%{$request->get('name')}%");
+        }
+        if ($request->has('phone') && !empty($request->phone)) {
+            $queue->where('phone', 'like', "%{$request->get('phone')}%");
+        }
+        if ($request->has('agent_name') && !empty($request->agent_name)) {
+            $queue->whereHas('agent', function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->get('agent_name')}%");
+            });
+        }
+        if ($request->has('status') && $request->filled('status')) {
+            $queue->where('status', $request->get('status'));
+        }
+        if ($request->has('type') && $request->filled('type')) {
+            $queue->where('type', $request->get('type'));
+        }
+
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $hasDateFilter = !empty($startDate) || !empty($endDate);
+        
+        $calculatedBalances = [];
+        if ($hasDateFilter) {
+            $customerIds = (clone $queue)->pluck('id')->toArray();
+            $calculatedBalances = app(\App\Services\Admin\Master\CustomerService::class)->calculateCustomerBalances($customerIds, $startDate, $endDate);
+        }
+
         return DataTables::of($queue)->addIndexColumn()
-            ->filter(function ($query) use ($request) {
-                if ($request->has('name') && !empty($request->name)) {
-                    $query->where('name', 'like', "%{$request->get('name')}%");
-                }
-                if ($request->has('phone') && !empty($request->phone)) {
-                    $query->where('phone', 'like', "%{$request->get('phone')}%");
-                }
-                if ($request->has('agent_name') && !empty($request->agent_name)) {
-                    $query->whereHas('agent', function ($q) use ($request) {
-                        $q->where('name', 'like', "%{$request->get('agent_name')}%");
-                    });
-                }
-                
-                if ($request->has('status') && $request->filled('status')) {
-                    $query->where('status', $request->get('status'));
-                }
-                if ($request->has('type') && $request->filled('type')) {
-                    $query->where('type', $request->get('type'));
-                }
-            }) 
             ->order(function ($query) {
                 $query->orderBy('id', 'asc');
             })
@@ -52,13 +60,23 @@ class CustomerDataTable  {
                 ';
             })
             
-            ->editColumn('balance', function ($queue) {
-                $balance = $queue->balance;
+            ->editColumn('balance', function ($queue) use ($hasDateFilter, $calculatedBalances) {
+                if ($hasDateFilter && isset($calculatedBalances[$queue->id])) {
+                    $balance = $calculatedBalances[$queue->id]['closing_balance'];
+                } else {
+                    $balance = $queue->balance;
+                }
                 $color = ($balance >= 0) ? 'green' : 'red';
                 $type = ($balance >= 0) ? 'Credit' : 'Debit';
                 return '<span style="color:' . $color . '; font-weight:bold;">' . number_format(abs($balance), 2) . ' (' . $type . ')</span>';
             })
-            ->addColumn('opening_balance', function ($queue) {
+            ->addColumn('opening_balance', function ($queue) use ($hasDateFilter, $calculatedBalances) {
+                if ($hasDateFilter && isset($calculatedBalances[$queue->id])) {
+                    $opBal = $calculatedBalances[$queue->id]['opening_balance'];
+                    $color = ($opBal >= 0) ? 'green' : 'red';
+                    $label = ($opBal >= 0) ? 'Credit' : 'Debit';
+                    return '<span style="color:' . $color . '; font-weight:bold;">' . number_format(abs($opBal), 2) . ' (' . $label . ')</span>';
+                }
                 if ($queue->currentOpeningBalance) {
                     $type = $queue->currentOpeningBalance->balance_type == 'Credit' ? 'green' : 'red';
                     $label = $queue->currentOpeningBalance->balance_type;

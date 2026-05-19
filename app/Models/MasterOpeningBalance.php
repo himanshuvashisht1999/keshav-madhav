@@ -31,6 +31,22 @@ class MasterOpeningBalance extends Model
         return $fy;
     }
 
+    public static function getFinancialYearForDate($date)
+    {
+        if (empty($date)) {
+            return self::getCurrentFinancialYear();
+        }
+        $time = strtotime($date);
+        $month = (int)date('m', $time);
+        $year = (int)date('Y', $time);
+        if ($month >= 4) {
+            $fy = $year . '-' . ($year + 1);
+        } else {
+            $fy = ($year - 1) . '-' . $year;
+        }
+        return $fy;
+    }
+
     public static function getTotalOpeningBalance($masterType, $financialYear = null)
     {
         if (!$financialYear) {
