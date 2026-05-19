@@ -17,6 +17,7 @@ class CustomerController extends Controller {
     }
     public function index(){
         $response['items'] = $this->service->items();
+        $response['agents'] = \App\Models\SalesAgent::where('status', 1)->orderBy('name', 'asc')->get();
         $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('customer');
         $response['total_current_balance'] = MasterCustomer::where('status', '!=', 3)->sum('balance');
         return view('admin.master.customer.index',$response);

@@ -22,7 +22,13 @@ class CustomerDataTable  {
         if ($request->has('phone') && !empty($request->phone)) {
             $queue->where('phone', 'like', "%{$request->get('phone')}%");
         }
-        if ($request->has('agent_name') && !empty($request->agent_name)) {
+        if ($request->has('agent_ids') && !empty($request->agent_ids)) {
+            $agentIds = is_array($request->agent_ids) ? $request->agent_ids : explode(',', $request->agent_ids);
+            $agentIds = array_filter($agentIds);
+            if (!empty($agentIds)) {
+                $queue->whereIn('sales_agent_id', $agentIds);
+            }
+        } elseif ($request->has('agent_name') && !empty($request->agent_name)) {
             $queue->whereHas('agent', function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->get('agent_name')}%");
             });

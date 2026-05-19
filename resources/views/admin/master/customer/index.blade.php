@@ -59,7 +59,11 @@
                             <input type="text" class="form-control" name="phone" id="phone" autocomplete="off">
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="agent_name" id="agent_name" autocomplete="off">
+                            <select class="form-control select2bs4" name="agent_ids[]" id="agent_ids" multiple="multiple" data-placeholder="Select Agents" style="width: 100%;">
+                                @foreach($agents as $agent)
+                                    <option value="{{ $agent->id }}">{{ $agent->name }}</option>
+                                @endforeach
+                            </select>
                         </td>
                        
                         
@@ -131,7 +135,7 @@
                     d.id = $('#id').val();
                     d.name = $('#name').val();
                     d.phone = $('#phone').val();
-                    d.agent_name = $('#agent_name').val();
+                    d.agent_ids = $('#agent_ids').val();
                     d.type = $('#type').val();
 					d.status = $('#status').val();
                     d.start_date = $('#start_date').val();
@@ -165,16 +169,17 @@
                     action: function (e, dt, node, config) {
                         var name = $('#name').val() || '';
                         var phone = $('#phone').val() || '';
-                        var agent_name = $('#agent_name').val() || '';
+                        var agent_ids = $('#agent_ids').val() || [];
                         var type = $('#type').val() || '';
                         var status = $('#status').val() || '';
                         var start_date = $('#start_date').val() || '';
                         var end_date = $('#end_date').val() || '';
                         
+                        var agentIdsParams = agent_ids.map(id => 'agent_ids[]=' + encodeURIComponent(id)).join('&');
                         var url = "{{ route('admin.master.customer.downloadPdf') }}?" + 
                             "name=" + encodeURIComponent(name) + 
                             "&phone=" + encodeURIComponent(phone) + 
-                            "&agent_name=" + encodeURIComponent(agent_name) + 
+                            (agentIdsParams ? "&" + agentIdsParams : "") +
                             "&type=" + encodeURIComponent(type) + 
                             "&status=" + encodeURIComponent(status) +
                             "&start_date=" + encodeURIComponent(start_date) +
@@ -205,7 +210,7 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#agent_name').on('keyup', function (e) {
+        $('#agent_ids').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });
