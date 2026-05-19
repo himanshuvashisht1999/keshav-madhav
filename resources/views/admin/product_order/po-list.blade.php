@@ -8,6 +8,17 @@
                 <div class="col-sm-6">
                     <h1>Production Purchase Orders</h1>
                 </div>
+                <div class="col-sm-6">
+                    <div class="d-flex justify-content-end">
+                        <div class="info-box bg-light border-0 shadow-none m-0" style="min-height: 50px; padding: 5px;">
+                            <span class="info-box-icon bg-info" style="width: 40px; font-size: 1rem;"><i class="fas fa-boxes"></i></span>
+                            <div class="info-box-content" style="padding: 0 10px;">
+                                <span class="info-box-text text-muted small">Total Quantity</span>
+                                <span class="info-box-number" style="font-size: 0.9rem;">{{ number_format($total_quantity) }} Pcs</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>

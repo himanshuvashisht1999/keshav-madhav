@@ -375,12 +375,16 @@ class ProductOrderController extends Controller
             $query->whereDate('created_at', '<=', $request->get('end_date'));
         }
 
+        $total_quantity = (clone $query)->get()->sum(function($po) {
+            return $po->items->sum('quantity');
+        });
+
         $pos = $query->orderBy('created_at', 'desc')->paginate(20);
         
         $vendors = \App\Models\Vendor::where('status', 1)->orderBy('name')->get();
         $customers = \App\Models\MasterCustomer::where('status', 1)->orderBy('name')->get();
 
-        return view('admin.product_order.po-list', compact('pos', 'vendors', 'customers'));
+        return view('admin.product_order.po-list', compact('pos', 'vendors', 'customers', 'total_quantity'));
     }
 
     public function viewBulkPO($id)
