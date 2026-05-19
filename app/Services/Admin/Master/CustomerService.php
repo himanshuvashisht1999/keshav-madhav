@@ -42,33 +42,52 @@ class CustomerService
             $endDate = $temp;
         }
 
-        // Determine the financial year based on startDate (or endDate if startDate is empty)
-        $refDate = $startDate ?: $endDate;
-        $financialYear = \App\Models\MasterOpeningBalance::getFinancialYearForDate($refDate);
-        
-        $startYear = explode('-', $financialYear)[0];
-        $fyStartDate = $startYear . '-04-01';
+        // Determine financial year for opening balance (from startDate, fallback to endDate, fallback to current year)
+        $opRefDate = $startDate ?: $endDate;
+        $opFinancialYear = \App\Models\MasterOpeningBalance::getFinancialYearForDate($opRefDate);
 
-        // 1. Get initial opening balances of the selected financial year
-        $openingBalances = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
+        // Determine financial year for closing balance (from endDate, fallback to startDate, fallback to current year)
+        $clRefDate = $endDate ?: $startDate;
+        $clFinancialYear = \App\Models\MasterOpeningBalance::getFinancialYearForDate($clRefDate);
+        
+        $clStartYear = explode('-', $clFinancialYear)[0];
+        $clFyStartDate = $clStartYear . '-04-01';
+
+        // 1. Get initial opening balances of the opening financial year
+        $opOpeningBalances = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
             ->whereIn('master_id', $customerIds)
-            ->where('financial_year', $financialYear)
+            ->where('financial_year', $opFinancialYear)
+            ->get()
+            ->keyBy('master_id');
+
+        // 2. Get initial opening balances of the closing financial year
+        $clOpeningBalances = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
+            ->whereIn('master_id', $customerIds)
+            ->where('financial_year', $clFinancialYear)
             ->get()
             ->keyBy('master_id');
 
         // Initialize balances
         foreach ($customerIds as $id) {
-            $initial = 0;
-            $type = 'Credit';
-            if (isset($openingBalances[$id])) {
-                $initial = (float) $openingBalances[$id]->amount;
-                $type = $openingBalances[$id]->balance_type;
-                if (strtolower(trim($type)) === 'debit') {
-                    $initial = -$initial;
+            $opInitial = 0;
+            if (isset($opOpeningBalances[$id])) {
+                $opInitial = (float) $opOpeningBalances[$id]->amount;
+                if (strtolower(trim($opOpeningBalances[$id]->balance_type)) === 'debit') {
+                    $opInitial = -$opInitial;
                 }
             }
+
+            $clInitial = 0;
+            if (isset($clOpeningBalances[$id])) {
+                $clInitial = (float) $clOpeningBalances[$id]->amount;
+                if (strtolower(trim($clOpeningBalances[$id]->balance_type)) === 'debit') {
+                    $clInitial = -$clInitial;
+                }
+            }
+
             $balances[$id] = [
-                'initial' => $initial,
+                'op_initial' => $opInitial,
+                'cl_initial' => $clInitial,
                 'closing_debit' => 0,
                 'closing_credit' => 0,
             ];
@@ -81,7 +100,7 @@ class CustomerService
         $dispatches = \App\Models\AgentOrderDispatch::whereIn('master_customer_id', $customerIds)
             ->where('party_type', 'customer')
             ->where('status', 'dispatched')
-            ->whereDate('dispatch_date', '>=', $fyStartDate)
+            ->whereDate('dispatch_date', '>=', $clFyStartDate)
             ->get();
         foreach ($dispatches as $d) {
             $date = $d->dispatch_date;
@@ -96,7 +115,7 @@ class CustomerService
 
         // B. OrderDispatch (Debit)
         $orderDispatches = \App\Models\OrderDispatch::whereIn('customer_id', $customerIds)
-            ->whereDate('dispatch_date', '>=', $fyStartDate)
+            ->whereDate('dispatch_date', '>=', $clFyStartDate)
             ->get();
         foreach ($orderDispatches as $od) {
             $date = $od->dispatch_date;
@@ -113,7 +132,7 @@ class CustomerService
         $returns = \App\Models\AgentOrderReturn::whereHas('dispatch', function($q) use ($customerIds) {
             $q->whereIn('master_customer_id', $customerIds)->where('party_type', 'customer');
         })->with('dispatch')
-          ->whereDate('return_date', '>=', $fyStartDate)
+          ->whereDate('return_date', '>=', $clFyStartDate)
           ->get();
         foreach ($returns as $r) {
             if (!$r->dispatch) continue;
@@ -134,7 +153,7 @@ class CustomerService
                 $q->where('paymentable_type', '!=', \App\Models\JournalVoucher::class)
                   ->orWhereNull('paymentable_type');
             })
-            ->whereDate('payment_date', '>=', $fyStartDate)
+            ->whereDate('payment_date', '>=', $clFyStartDate)
             ->get();
         foreach ($payments as $p) {
             $date = $p->payment_date;
@@ -157,7 +176,7 @@ class CustomerService
 
         // E. DomesticInventoryPurchase (Credit)
         $purchases = \App\Models\DomesticInventoryPurchase::whereIn('customer_id', $customerIds)
-            ->whereDate('created_at', '>=', $fyStartDate)
+            ->whereDate('created_at', '>=', $clFyStartDate)
             ->get();
         foreach ($purchases as $ip) {
             $date = $ip->created_at;
@@ -175,8 +194,8 @@ class CustomerService
             $vouchers = \App\Models\JournalVoucherItem::with('voucher')
                 ->whereIn('master_type', $jvMasterIds)
                 ->whereIn('master_id', $customerIds)
-                ->whereHas('voucher', function($q) use ($fyStartDate) {
-                    $q->whereDate('date', '>=', $fyStartDate);
+                ->whereHas('voucher', function($q) use ($clFyStartDate) {
+                    $q->whereDate('date', '>=', $clFyStartDate);
                 })
                 ->get();
             foreach ($vouchers as $v) {
@@ -203,10 +222,8 @@ class CustomerService
         // Calculate final opening and closing balances
         $results = [];
         foreach ($customerIds as $id) {
-            $initial = $balances[$id]['initial'];
-            
-            $opBal = $initial;
-            $clBal = $initial + ($balances[$id]['closing_credit'] - $balances[$id]['closing_debit']);
+            $opBal = $balances[$id]['op_initial'];
+            $clBal = $balances[$id]['cl_initial'] + ($balances[$id]['closing_credit'] - $balances[$id]['closing_debit']);
             
             $results[$id] = [
                 'opening_balance' => $opBal,
