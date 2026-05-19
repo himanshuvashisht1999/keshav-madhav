@@ -35,6 +35,13 @@ class CustomerService
     {
         $balances = [];
 
+        // Swap dates if startDate is greater than endDate
+        if ($startDate && $endDate && $startDate > $endDate) {
+            $temp = $startDate;
+            $startDate = $endDate;
+            $endDate = $temp;
+        }
+
         // Determine the financial year based on startDate (or endDate if startDate is empty)
         $refDate = $startDate ?: $endDate;
         $financialYear = \App\Models\MasterOpeningBalance::getFinancialYearForDate($refDate);
