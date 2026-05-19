@@ -596,6 +596,7 @@ class ProductOrderController extends Controller
             'size_measurement',
             'master_product_fitting',
             'orderCuttingStages.cutting_master',
+            'printing_unit',
         ])->findOrFail($id);
 
         $assignments = $data->orderCuttingStages;
@@ -622,6 +623,7 @@ class ProductOrderController extends Controller
             'size_set' => $data->size_measurement?->name ?? '-',
             'pcs_in_set' => $data->no_of_pcs ?? 0,
             'total_pcs' => $data->total_quantity ?? 0,
+            'printing_unit_name' => $data->printing_unit ? $data->printing_unit->name : '-',
         ];
 
         // ================= SIZE DATA =================

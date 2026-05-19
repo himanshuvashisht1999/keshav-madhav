@@ -106,6 +106,9 @@
                 <tr>
                     <td class="meta-label">Pattern:</td>
                     <td>{{ $header['pattern'] }}</td>
+
+                    <td class="meta-label">Printing Unit:</td>
+                    <td>{{ $header['printing_unit_name'] }}</td>
                 </tr>
 
                 <tr>

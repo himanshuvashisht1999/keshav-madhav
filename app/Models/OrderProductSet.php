@@ -95,6 +95,10 @@ class OrderProductSet extends Model
     {
         return $this->belongsTo(StageMasterUnit::class, 'stage_master_unit_id');
     }
+    public function printing_unit()
+    {
+        return $this->belongsTo(StageMasterUnit::class, 'printing_unit_id');
+    }
     public function fabric()
     {
         return $this->belongsTo(Fabric::class, 'fabric_id');
