@@ -635,17 +635,19 @@ class OrderDigitalizationService
         $data = [];
         if ($results) {
 
-            $results_units = StageMasterUnit::with('masterStage')
+            $results_units = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
                 ->join('master_product_stages as master_stages', 'master_stages.id', '=', 'stage_master_units.master_stage_id')
                 ->where('stage_master_units.status', 1)
-                ->where(
-                    'stage_master_units.master_fabric_warehouse_id',
-                    $results->getUnitMaster->master_fabric_warehouse_id
-                )
                 ->orderBy('master_stages.sequence', 'asc')
                 ->select('stage_master_units.*', 'master_stages.sequence')
                 ->get()
                 ->toArray();
+
+            foreach ($results_units as &$unit_data) {
+                $whName = $unit_data['master_fabric_warehouse']['name'] ?? $unit_data['master_fabric_warehouse']['cutting_master_name'] ?? 'No Warehouse';
+                $unit_data['name'] = $unit_data['name'] . ' (' . $whName . ')';
+            }
+            unset($unit_data);
             //dd($results_units);
             $unit_master_data = [];
             $from_stage = [];
@@ -1883,14 +1885,14 @@ class OrderDigitalizationService
 
         if ($movement_type == 2) {
             // Damage Movement (Backward) - Allow any stage
-            $available_units = StageMasterUnit::with('masterStage')
-                ->where('master_fabric_warehouse_id', $warehouse_id)
+            $available_units = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
                 ->where('status', 1)
                 ->get()
                 ->map(function ($u) {
+                    $whName = $u->masterFabricWarehouse->name ?? $u->masterFabricWarehouse->cutting_master_name ?? 'No Warehouse';
                     return [
                         'id' => $u->id,
-                        'name' => $u->name,
+                        'name' => $u->name . ' (' . $whName . ')',
                         'master_stage_name' => $u->masterStage->name
                     ];
                 });
@@ -1926,52 +1928,34 @@ class OrderDigitalizationService
             }
 
             if ($to_stage_id > 0) {
-                // $available_units = StageMasterUnit::with('masterStage')
-                //     ->where('master_stage_id', $to_stage_id)
-                //     ->where('master_fabric_warehouse_id', $warehouse_id)
-                //     ->where('status', 1)
-                //     ->get()
-                //     ->map(function($u) {
-                //         return [
-                //             'id' => $u->id,
-                //             'name' => $u->name,
-                //             'master_stage_name' => $u->masterStage->name
-                //         ];
-                //     });
-
-                $filtered = StageMasterUnit::with('masterStage')
+                $filtered = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
                     ->where('master_stage_id', $to_stage_id)
-                    ->where('master_fabric_warehouse_id', $warehouse_id)
                     ->where('status', 1)
                     ->get();
 
                 // Second: without that stage (exclude already fetched)
                 if ($to_stage_id == 11) {
-                    $others = StageMasterUnit::with('masterStage')
+                    $others = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
                         ->where('master_stage_id', '!=', $to_stage_id)
-                        ->where('master_fabric_warehouse_id', $warehouse_id)
                         ->where('status', 1)
                         ->get();
                 } else {
-                    $others = StageMasterUnit::with('masterStage')
+                    $others = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
                         ->where('master_stage_id', '!=', $to_stage_id)
-                        ->where('master_fabric_warehouse_id', $warehouse_id)
                         ->where('status', 1)
                         ->whereNotIn('master_stage_id', [11, 12, 13])
                         ->get();
                 }
 
-
                 // Merge both (filtered first)
                 $available_units = $filtered->concat($others)->map(function ($u) {
+                    $whName = $u->masterFabricWarehouse->name ?? $u->masterFabricWarehouse->cutting_master_name ?? 'No Warehouse';
                     return [
                         'id' => $u->id,
-                        'name' => $u->name,
+                        'name' => $u->name . ' (' . $whName . ')',
                         'master_stage_name' => $u->masterStage->name ?? null
                     ];
                 });
-
-
             }
 
             // Also check for Godam if applicable
@@ -1984,14 +1968,14 @@ class OrderDigitalizationService
             }
 
             if (!$stage_check) {
-                $godam_units = StageMasterUnit::with('masterStage')
+                $godam_units = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
                     ->where('master_stage_id', 13)
-                    ->where('master_fabric_warehouse_id', $warehouse_id)
                     ->get()
                     ->map(function ($u) {
+                        $whName = $u->masterFabricWarehouse->name ?? $u->masterFabricWarehouse->cutting_master_name ?? 'No Warehouse';
                         return [
                             'id' => $u->id,
-                            'name' => $u->name,
+                            'name' => $u->name . ' (' . $whName . ')',
                             'master_stage_name' => $u->masterStage->name
                         ];
                     });

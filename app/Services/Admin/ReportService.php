@@ -1805,6 +1805,18 @@ class ReportService
             $ass2Query = \App\Models\OrderPrintingStageTransaction::with(['from_stage', 'to_stage', 'getFromUnitMaster', 'getToUnitMaster']);
             $ass3Query = \App\Models\OrderPrintingToStichingTransaction::with(['from_stage', 'to_stage', 'getFromUnitMaster', 'getToUnitMaster']);
 
+            if ($stageId == 4) {
+                $ass1Query->where(function ($q) {
+                    $q->where('from_stage_id', '!=', 1)->orWhereNull('from_stage_id');
+                });
+                $ass2Query->where(function ($q) {
+                    $q->where('from_stage_id', '!=', 1)->orWhereNull('from_stage_id');
+                });
+                $ass3Query->where(function ($q) {
+                    $q->where('from_stage_id', '!=', 1)->orWhereNull('from_stage_id');
+                });
+            }
+
             $stageFilter = function ($q) use ($stageId) {
                 $q->where('to_stage_id', $stageId);
             };

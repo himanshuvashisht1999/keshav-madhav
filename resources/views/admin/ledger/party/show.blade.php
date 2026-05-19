@@ -149,12 +149,13 @@
                                 <thead>
                                     <tr>
                                         <th width="12%" class="pl-4">Date</th>
-                                        <th width="12%">Type</th>
-                                        <th width="15%">Reference</th>
+                                        <th width="10%">Type</th>
+                                        <th width="12%">Reference</th>
                                         <th>Particulars</th>
                                         <th width="12%" class="text-right">Debit (DR)</th>
                                         <th width="12%" class="text-right">Credit (CR)</th>
-                                        <th width="15%" class="text-right pr-4">Balance</th>
+                                        <th width="12%" class="text-right">Balance</th>
+                                        <th width="8%" class="text-center pr-4">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -184,14 +185,23 @@
                                             <td class="align-middle text-right text-credit">
                                                 {{ $tx->credit > 0 ? '₹ ' . number_format($tx->credit, 2) : '-' }}
                                             </td>
-                                            <td class="align-middle text-right pr-4 text-balance">
+                                            <td class="align-middle text-right text-balance">
                                                 ₹ {{ number_format(abs($currentBalance), 2) }}
                                                 <small class="text-muted ml-1">{{ $currentBalance >= 0 ? 'CR' : 'DR' }}</small>
+                                            </td>
+                                            <td class="align-middle text-center pr-4">
+                                                @if(isset($tx->view_url) && $tx->view_url !== '#')
+                                                    <a href="{{ $tx->view_url }}" class="btn btn-xs btn-outline-primary" title="View Transaction Details" target="_blank">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
                                             </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="text-center py-5 text-muted">
+                                            <td colspan="8" class="text-center py-5 text-muted">
                                                 No transactions recorded for the selected period.
                                             </td>
                                         </tr>
@@ -205,10 +215,11 @@
                                                 {{ number_format($transactions->sum('debit'), 2) }}</td>
                                             <td class="text-right py-3 text-credit">₹
                                                 {{ number_format($transactions->sum('credit'), 2) }}</td>
-                                            <td class="text-right py-3 pr-4 text-primary">
+                                            <td class="text-right py-3 text-primary">
                                                 ₹ {{ number_format(abs($currentBalance), 2) }}
                                                 <small>{{ $currentBalance >= 0 ? 'CR' : 'DR' }}</small>
                                             </td>
+                                            <td class="bg-light"></td>
                                         </tr>
                                     </tfoot>
                                 @endif

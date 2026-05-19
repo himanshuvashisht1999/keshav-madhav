@@ -137,7 +137,8 @@ class PartyLedgerController extends Controller
                 'ref' => 'Dispatch #' . $d->id,
                 'debit' => (float) $d->grand_total,
                 'credit' => 0,
-                'description' => 'Sales Dispatch: ' . ($d->remark ?? '-')
+                'description' => 'Sales Dispatch: ' . ($d->remark ?? '-'),
+                'view_url' => route('admin.agent-orders.dispatches.show', $d->id)
             ]);
         }
 
@@ -156,7 +157,8 @@ class PartyLedgerController extends Controller
                     'ref' => 'OD #' . ($od->sku ?? $od->id),
                     'debit' => (float) $od->total_amount,
                     'credit' => 0,
-                    'description' => 'Regular Order Dispatch'
+                    'description' => 'Regular Order Dispatch',
+                    'view_url' => route('admin.order-dispatch.view', ['id' => $od->id])
                 ]);
             }
         }
@@ -177,7 +179,8 @@ class PartyLedgerController extends Controller
                 'ref' => 'Return #' . $r->id,
                 'debit' => 0,
                 'credit' => (float) $r->grand_total,
-                'description' => 'Sales Return'
+                'description' => 'Sales Return',
+                'view_url' => route('admin.agent-orders.returns.show', $r->id)
             ]);
         }
 
@@ -229,7 +232,8 @@ class PartyLedgerController extends Controller
                 'ref' => $p->reference_id ?? ('Pay #' . $p->id),
                 'debit' => $debit,
                 'credit' => $credit,
-                'description' => $desc . ($p->remarks ? ': ' . $p->remarks : '')
+                'description' => $desc . ($p->remarks ? ': ' . $p->remarks : ''),
+                'view_url' => route('admin.payment.history.show', $p->id)
             ]);
         }
 
@@ -247,7 +251,8 @@ class PartyLedgerController extends Controller
                 'ref' => 'InvPur #' . $ip->id,
                 'debit' => 0,
                 'credit' => (float) $ip->total_amount,
-                'description' => 'Inventory Purchase: ' . ($ip->remarks ?? '-')
+                'description' => 'Inventory Purchase: ' . ($ip->remarks ?? '-'),
+                'view_url' => route('admin.inventory.purchase_history.show', ['id' => $ip->id])
             ]);
         }
 
@@ -266,7 +271,8 @@ class PartyLedgerController extends Controller
                     'ref' => 'Receipt #' . $r->sku,
                     'debit' => 0,
                     'credit' => (float) $r->total_amount,
-                    'description' => 'Fabric Inward (Shipment: ' . ($r->shipment_id ?? '-') . ')'
+                    'description' => 'Fabric Inward (Shipment: ' . ($r->shipment_id ?? '-') . ')',
+                    'view_url' => route('admin.fabric_receipt.view', ['id' => $r->id])
                 ]);
             }
 
@@ -286,7 +292,8 @@ class PartyLedgerController extends Controller
                     'ref' => 'Return #' . ($pr->return_number ?? $pr->id),
                     'debit' => (float) $pr->total_amount,
                     'credit' => 0,
-                    'description' => 'Fabric Return to Vendor'
+                    'description' => 'Fabric Return to Vendor',
+                    'view_url' => route('admin.report.fabric_return_view', $pr->id)
                 ]);
             }
         }
@@ -311,7 +318,8 @@ class PartyLedgerController extends Controller
                     'ref' => $adj->batch_id ?? ('Adj #' . $adj->id),
                     'debit' => $isCredit ? 0 : (float) $adj->amount,
                     'credit' => $isCredit ? (float) $adj->amount : 0,
-                    'description' => '[Dist] ' . ($adj->remarks ?: $adj->entity_name)
+                    'description' => '[Dist] ' . ($adj->remarks ?: $adj->entity_name),
+                    'view_url' => $adj->batch_id ? route('admin.payment.adjustment.show', $adj->batch_id) : '#'
                 ]);
             }
         }
@@ -332,7 +340,8 @@ class PartyLedgerController extends Controller
                     'ref' => $adj->batch_id ?? ('Adj #' . $adj->id),
                     'debit' => $isCredit ? 0 : (float) $adj->amount,
                     'credit' => $isCredit ? (float) $adj->amount : 0,
-                    'description' => $adj->remarks ?: ($isCredit ? 'Credit Adjustment' : 'Debit Adjustment')
+                    'description' => $adj->remarks ?: ($isCredit ? 'Credit Adjustment' : 'Debit Adjustment'),
+                    'view_url' => $adj->batch_id ? route('admin.payment.adjustment.show', $adj->batch_id) : '#'
                 ]);
             }
         }
@@ -357,7 +366,8 @@ class PartyLedgerController extends Controller
                 'ref' => $v->voucher->voucher_no,
                 'debit' => $isCredit ? 0 : (float) $v->amount,
                 'credit' => $isCredit ? (float) $v->amount : 0,
-                'description' => $v->narration ?: $v->voucher->narration ?: 'Journal Entry'
+                'description' => $v->narration ?: $v->voucher->narration ?: 'Journal Entry',
+                'view_url' => route('admin.payment.journal-voucher.show', $v->voucher->id)
             ]);
         }
 
