@@ -37,7 +37,12 @@ class CustomerDataTable  {
             $queue->where('status', $request->get('status'));
         }
         if ($request->has('type') && $request->filled('type')) {
-            $queue->where('type', $request->get('type'));
+            $type = $request->get('type');
+            if ($type == 'direct') {
+                $queue->where('subtype', 'direct');
+            } else {
+                $queue->where('type', $type);
+            }
         }
 
         $startDate = $request->get('start_date');

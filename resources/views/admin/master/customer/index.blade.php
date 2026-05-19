@@ -72,6 +72,7 @@
                                 <option value="">ALL</option>
                                 <option value="corporate">Corporate</option>
                                 <option value="domestic">Domestic</option>
+                                <option value="direct">Direct</option>
                             </select>
                         </td>
                         <td>

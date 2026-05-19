@@ -259,7 +259,12 @@ class CustomerService
             $query->where('status', $request->get('status'));
         }
         if ($request->has('type') && $request->filled('type')) {
-            $query->where('type', $request->get('type'));
+            $type = $request->get('type');
+            if ($type == 'direct') {
+                $query->where('subtype', 'direct');
+            } else {
+                $query->where('type', $type);
+            }
         }
 
         $customers = $query->orderBy('id', 'asc')->get();
