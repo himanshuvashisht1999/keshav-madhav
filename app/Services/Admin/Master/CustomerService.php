@@ -50,8 +50,13 @@ class CustomerService
         $clRefDate = $endDate ?: $startDate;
         $clFinancialYear = \App\Models\MasterOpeningBalance::getFinancialYearForDate($clRefDate);
         
+        $opStartYear = explode('-', $opFinancialYear)[0];
+        $opFyStartDate = $opStartYear . '-04-01';
+
         $clStartYear = explode('-', $clFinancialYear)[0];
         $clFyStartDate = $clStartYear . '-04-01';
+
+        $queryStartDate = min($opFyStartDate, $clFyStartDate);
 
         // 1. Get initial opening balances of the opening financial year
         $opOpeningBalances = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
@@ -88,6 +93,8 @@ class CustomerService
             $balances[$id] = [
                 'op_initial' => $opInitial,
                 'cl_initial' => $clInitial,
+                'opening_debit' => 0,
+                'opening_credit' => 0,
                 'closing_debit' => 0,
                 'closing_credit' => 0,
             ];
@@ -100,7 +107,7 @@ class CustomerService
         $dispatches = \App\Models\AgentOrderDispatch::whereIn('master_customer_id', $customerIds)
             ->where('party_type', 'customer')
             ->where('status', 'dispatched')
-            ->whereDate('dispatch_date', '>=', $clFyStartDate)
+            ->whereDate('dispatch_date', '>=', $queryStartDate)
             ->get();
         foreach ($dispatches as $d) {
             $date = $d->dispatch_date;
@@ -108,14 +115,17 @@ class CustomerService
             $id = $d->master_customer_id;
             
             $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
-            if (!$endDate || $txDate <= $endDate) {
+            if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+                $balances[$id]['opening_debit'] += $amount;
+            }
+            if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
                 $balances[$id]['closing_debit'] += $amount;
             }
         }
 
         // B. OrderDispatch (Debit)
         $orderDispatches = \App\Models\OrderDispatch::whereIn('customer_id', $customerIds)
-            ->whereDate('dispatch_date', '>=', $clFyStartDate)
+            ->whereDate('dispatch_date', '>=', $queryStartDate)
             ->get();
         foreach ($orderDispatches as $od) {
             $date = $od->dispatch_date;
@@ -123,7 +133,10 @@ class CustomerService
             $id = $od->customer_id;
             
             $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
-            if (!$endDate || $txDate <= $endDate) {
+            if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+                $balances[$id]['opening_debit'] += $amount;
+            }
+            if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
                 $balances[$id]['closing_debit'] += $amount;
             }
         }
@@ -132,7 +145,7 @@ class CustomerService
         $returns = \App\Models\AgentOrderReturn::whereHas('dispatch', function($q) use ($customerIds) {
             $q->whereIn('master_customer_id', $customerIds)->where('party_type', 'customer');
         })->with('dispatch')
-          ->whereDate('return_date', '>=', $clFyStartDate)
+          ->whereDate('return_date', '>=', $queryStartDate)
           ->get();
         foreach ($returns as $r) {
             if (!$r->dispatch) continue;
@@ -141,7 +154,10 @@ class CustomerService
             $id = $r->dispatch->master_customer_id;
             
             $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
-            if (!$endDate || $txDate <= $endDate) {
+            if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+                $balances[$id]['opening_credit'] += $amount;
+            }
+            if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
                 $balances[$id]['closing_credit'] += $amount;
             }
         }
@@ -153,7 +169,7 @@ class CustomerService
                 $q->where('paymentable_type', '!=', \App\Models\JournalVoucher::class)
                   ->orWhereNull('paymentable_type');
             })
-            ->whereDate('payment_date', '>=', $clFyStartDate)
+            ->whereDate('payment_date', '>=', $queryStartDate)
             ->get();
         foreach ($payments as $p) {
             $date = $p->payment_date;
@@ -161,14 +177,19 @@ class CustomerService
             $id = $p->party_id;
             
             $isCredit = in_array($p->payment_type, ['received', 'credit']);
-            
             $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
             if ($isCredit) {
-                if (!$endDate || $txDate <= $endDate) {
+                if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+                    $balances[$id]['opening_credit'] += $amount;
+                }
+                if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
                     $balances[$id]['closing_credit'] += $amount;
                 }
             } else {
-                if (!$endDate || $txDate <= $endDate) {
+                if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+                    $balances[$id]['opening_debit'] += $amount;
+                }
+                if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
                     $balances[$id]['closing_debit'] += $amount;
                 }
             }
@@ -176,7 +197,7 @@ class CustomerService
 
         // E. DomesticInventoryPurchase (Credit)
         $purchases = \App\Models\DomesticInventoryPurchase::whereIn('customer_id', $customerIds)
-            ->whereDate('created_at', '>=', $clFyStartDate)
+            ->whereDate('created_at', '>=', $queryStartDate)
             ->get();
         foreach ($purchases as $ip) {
             $date = $ip->created_at;
@@ -184,7 +205,10 @@ class CustomerService
             $id = $ip->customer_id;
             
             $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
-            if (!$endDate || $txDate <= $endDate) {
+            if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+                $balances[$id]['opening_credit'] += $amount;
+            }
+            if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
                 $balances[$id]['closing_credit'] += $amount;
             }
         }
@@ -194,8 +218,8 @@ class CustomerService
             $vouchers = \App\Models\JournalVoucherItem::with('voucher')
                 ->whereIn('master_type', $jvMasterIds)
                 ->whereIn('master_id', $customerIds)
-                ->whereHas('voucher', function($q) use ($clFyStartDate) {
-                    $q->whereDate('date', '>=', $clFyStartDate);
+                ->whereHas('voucher', function($q) use ($queryStartDate) {
+                    $q->whereDate('date', '>=', $queryStartDate);
                 })
                 ->get();
             foreach ($vouchers as $v) {
@@ -205,14 +229,19 @@ class CustomerService
                 $id = $v->master_id;
                 
                 $isCredit = strtolower($v->type) === 'credit';
-                
                 $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
                 if ($isCredit) {
-                    if (!$endDate || $txDate <= $endDate) {
+                    if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+                        $balances[$id]['opening_credit'] += $amount;
+                    }
+                    if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
                         $balances[$id]['closing_credit'] += $amount;
                     }
                 } else {
-                    if (!$endDate || $txDate <= $endDate) {
+                    if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+                        $balances[$id]['opening_debit'] += $amount;
+                    }
+                    if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
                         $balances[$id]['closing_debit'] += $amount;
                     }
                 }
@@ -222,7 +251,7 @@ class CustomerService
         // Calculate final opening and closing balances
         $results = [];
         foreach ($customerIds as $id) {
-            $opBal = $balances[$id]['op_initial'];
+            $opBal = $balances[$id]['op_initial'] + ($balances[$id]['opening_credit'] - $balances[$id]['opening_debit']);
             $clBal = $balances[$id]['cl_initial'] + ($balances[$id]['closing_credit'] - $balances[$id]['closing_debit']);
             
             $results[$id] = [
