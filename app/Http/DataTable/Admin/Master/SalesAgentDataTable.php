@@ -11,7 +11,7 @@ class SalesAgentDataTable
 
     public function indexList($request)
     {
-        $queue = SalesAgent::where('status', '!=', 3)->withSum('shops as total_balance', 'balance')->with('currentOpeningBalance');
+        $queue = SalesAgent::where('status', '!=', 3)->withSum('shops as total_balance', 'balance')->with('currentOpeningBalance')->withCount('shops');
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -20,15 +20,11 @@ class SalesAgentDataTable
                     $searchValue = $request->get('search')['value'];
                     $query->where(function ($q) use ($searchValue) {
                         $q->where('name', 'like', "%{$searchValue}%")
-                            ->orWhere('email', 'like', "%{$searchValue}%")
                             ->orWhere('phone', 'like', "%{$searchValue}%");
                     });
                 }
                 if ($request->has('name') && !empty($request->name)) {
                     $query->where('name', 'like', "%{$request->get('name')}%");
-                }
-                if ($request->has('email') && !empty($request->email)) {
-                    $query->where('email', 'like', "%{$request->get('email')}%");
                 }
             })
 
@@ -50,11 +46,15 @@ class SalesAgentDataTable
                 }
                 return '0.00';
             })
+            ->addColumn('shops_count', function ($queue) {
+                return $queue->shops_count ?? 0;
+            })
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
                 return '
-                <a href="' . route('admin.master.sales-agent.edit', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                <a href="' . route('admin.master.sales-agent.delete', ['id' => $parameter]) . '" class="ml-2" onclick="return confirm(\'Are you sure?\')" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete"><i class="fas fa-trash text-danger"></i></a>
+                <a href="' . route('admin.master.sales-agent.view', ['id' => $parameter]) . '" class="mr-2" data-toggle="tooltip" data-placement="top" title="View"><i class="fas fa-eye text-primary"></i></a>
+                <a href="' . route('admin.master.sales-agent.edit', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                <a href="' . route('admin.master.sales-agent.delete', ['id' => $parameter]) . '" class="ml-2" onclick="return confirm(\'Are you sure?\')" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash text-danger"></i></a>
                 ';
             })
 

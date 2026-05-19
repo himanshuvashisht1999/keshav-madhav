@@ -24,6 +24,9 @@ class CustomerController extends Controller {
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
+    public function downloadPdf(Request $request){
+        return $this->service->downloadPdf($request);
+    }
     public function create(){
         $response['items'] = $this->service->items();
         return view('admin.master.customer.create',$response);

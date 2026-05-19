@@ -30,6 +30,10 @@ class SalesAgentController extends Controller
     {
         return $this->service->indexList($request);
     }
+    public function downloadPdf(Request $request)
+    {
+        return $this->service->downloadPdf($request);
+    }
     public function create()
     {
         $response['brands'] = Brand::where('status', 1)->get();
@@ -50,6 +54,11 @@ class SalesAgentController extends Controller
         $response['data'] = $this->service->edit($request);
         $response['brands'] = Brand::where('status', 1)->get();
         return view('admin.master.sales_agent.edit', $response);
+    }
+    public function view(Request $request)
+    {
+        $response['data'] = $this->service->viewDetails($request);
+        return view('admin.master.sales_agent.view', $response);
     }
     public function update(SalesAgentUpdateRequest $request)
     {

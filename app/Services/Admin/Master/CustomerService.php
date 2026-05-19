@@ -31,6 +31,34 @@ class CustomerService
         return $this->datatable->indexList($request);
     }
 
+    public function downloadPdf(Request $request)
+    {
+        $query = MasterCustomer::with(['currentOpeningBalance', 'agent'])->where('status', '!=', 3);
+
+        if ($request->has('name') && !empty($request->name)) {
+            $query->where('name', 'like', "%{$request->get('name')}%");
+        }
+        if ($request->has('phone') && !empty($request->phone)) {
+            $query->where('phone', 'like', "%{$request->get('phone')}%");
+        }
+        if ($request->has('agent_name') && !empty($request->agent_name)) {
+            $query->whereHas('agent', function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->get('agent_name')}%");
+            });
+        }
+        if ($request->has('status') && $request->filled('status')) {
+            $query->where('status', $request->get('status'));
+        }
+        if ($request->has('type') && $request->filled('type')) {
+            $query->where('type', $request->get('type'));
+        }
+
+        $customers = $query->orderBy('id', 'asc')->get();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.master.customer.pdf', compact('customers'));
+        return $pdf->download('customers.pdf');
+    }
+
     public function store(Request $request)
     {
         $type = $request->type ?? 'corporate';

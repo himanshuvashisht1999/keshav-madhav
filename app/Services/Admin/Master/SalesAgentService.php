@@ -26,6 +26,20 @@ class SalesAgentService
         return $this->datatable->indexList($request);
     }
 
+    public function downloadPdf(Request $request)
+    {
+        $query = SalesAgent::where('status', '!=', 3)->withSum('shops as total_balance', 'balance')->with('currentOpeningBalance')->withCount('shops');
+
+        if ($request->has('name') && !empty($request->name)) {
+            $query->where('name', 'like', "%{$request->get('name')}%");
+        }
+
+        $agents = $query->orderBy('id', 'asc')->get();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.master.sales_agent.pdf', compact('agents'));
+        return $pdf->download('sales-agents.pdf');
+    }
+
     public function store(Request $request)
     {
         $save_data = new SalesAgent;
@@ -68,6 +82,12 @@ class SalesAgentService
     public function edit(Request $request)
     {
         $data = SalesAgent::with(['brandDiscounts', 'currentOpeningBalance'])->where('id', $request->id)->first();
+        return $data;
+    }
+
+    public function viewDetails(Request $request)
+    {
+        $data = SalesAgent::with(['brandDiscounts.brand', 'currentOpeningBalance', 'shops'])->where('id', $request->id)->firstOrFail();
         return $data;
     }
 

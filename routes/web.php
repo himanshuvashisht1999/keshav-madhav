@@ -981,9 +981,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('master/sales-agent')->name('master.sales-agent.')->group(function () {
             Route::get('/index', [AdminSalesAgentController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminSalesAgentController::class, 'indexList'])->name('indexList');
+            Route::get('/downloadPdf', [AdminSalesAgentController::class, 'downloadPdf'])->name('downloadPdf');
             Route::get('/create', [AdminSalesAgentController::class, 'create'])->name('create');
             Route::post('/store', [AdminSalesAgentController::class, 'store'])->name('store');
             Route::get('/edit', [AdminSalesAgentController::class, 'edit'])->name('edit');
+            Route::get('/view', [AdminSalesAgentController::class, 'view'])->name('view');
             Route::post('/update', [AdminSalesAgentController::class, 'update'])->name('update');
             Route::get('/delete', [AdminSalesAgentController::class, 'delete'])->name('delete');
         });
@@ -1060,6 +1062,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('master/customers')->name('master.customer.')->group(function () {
             Route::get('/index', [AdminCustomerController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminCustomerController::class, 'indexList'])->name('indexList');
+            Route::get('/downloadPdf', [AdminCustomerController::class, 'downloadPdf'])->name('downloadPdf');
             Route::get('/create', [AdminCustomerController::class, 'create'])->name('create');
             Route::post('/store', [AdminCustomerController::class, 'store'])->name('store');
             Route::get('/edit', [AdminCustomerController::class, 'edit'])->name('edit');

@@ -59,7 +59,7 @@
                             <input type="text" class="form-control" name="phone" id="phone" autocomplete="off">
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="email" id="email" autocomplete="off">
+                            <input type="text" class="form-control" name="agent_name" id="agent_name" autocomplete="off">
                         </td>
                        
                         
@@ -87,7 +87,7 @@
                     <th>ID</th>
                     <th>Name</th>
                     <th>Phone</th>
-                    <th>Email</th>
+                    <th>Agent Name</th>
                     <th>Type</th>
                     <th>Opening Balance</th>
                     <th>Balance</th>
@@ -129,7 +129,7 @@
                     d.id = $('#id').val();
                     d.name = $('#name').val();
                     d.phone = $('#phone').val();
-                    d.email = $('#email').val();
+                    d.agent_name = $('#agent_name').val();
                     d.type = $('#type').val();
 					d.status = $('#status').val();
                 },
@@ -139,7 +139,7 @@
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'name', name: 'name'},
                 {data: 'phone', name: 'phone'},
-                {data: 'email', name: 'email'},
+                {data: 'agent_name', name: 'agent_name'},
                 {data: 'type', name: 'type'},
                 {data: 'opening_balance', name: 'opening_balance'},
                 {data: 'balance', name: 'balance'},
@@ -153,6 +153,26 @@
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {
                         window.location.href = "{{ route('admin.master.customer.create') }}";
+                    }
+                },
+                {
+                    text: 'Download PDF',
+                    className: 'btn-datatable bg-danger',
+                    action: function (e, dt, node, config) {
+                        var name = $('#name').val() || '';
+                        var phone = $('#phone').val() || '';
+                        var agent_name = $('#agent_name').val() || '';
+                        var type = $('#type').val() || '';
+                        var status = $('#status').val() || '';
+                        
+                        var url = "{{ route('admin.master.customer.downloadPdf') }}?" + 
+                            "name=" + encodeURIComponent(name) + 
+                            "&phone=" + encodeURIComponent(phone) + 
+                            "&agent_name=" + encodeURIComponent(agent_name) + 
+                            "&type=" + encodeURIComponent(type) + 
+                            "&status=" + encodeURIComponent(status);
+                            
+                        window.location.href = url;
                     }
                 }
             ]
@@ -177,7 +197,7 @@
             oTable.draw();
             e.preventDefault();
         });
-        $('#email').on('keyup', function (e) {
+        $('#agent_name').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });

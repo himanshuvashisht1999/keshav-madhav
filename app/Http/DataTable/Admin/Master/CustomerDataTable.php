@@ -14,7 +14,7 @@ class CustomerDataTable  {
     }
 
     public function indexList($request){
-        $queue = MasterCustomer::with('currentOpeningBalance')->where('status', '!=', 3);
+        $queue = MasterCustomer::with(['currentOpeningBalance', 'agent'])->where('status', '!=', 3);
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -24,8 +24,10 @@ class CustomerDataTable  {
                 if ($request->has('phone') && !empty($request->phone)) {
                     $query->where('phone', 'like', "%{$request->get('phone')}%");
                 }
-                if ($request->has('email') && !empty($request->email)) {
-                    $query->where('email', 'like', "%{$request->get('email')}%");
+                if ($request->has('agent_name') && !empty($request->agent_name)) {
+                    $query->whereHas('agent', function ($q) use ($request) {
+                        $q->where('name', 'like', "%{$request->get('agent_name')}%");
+                    });
                 }
                 
                 if ($request->has('status') && $request->filled('status')) {
@@ -63,6 +65,9 @@ class CustomerDataTable  {
                     return '<span style="color:' . $type . '; font-weight:bold;">' . number_format($queue->currentOpeningBalance->amount, 2) . ' (' . $label . ')</span>';
                 }
                 return '0.00';
+            })
+            ->addColumn('agent_name', function ($queue) {
+                return $queue->agent ? $queue->agent->name : '';
             })
             ->rawColumns(['action', 'status', 'balance', 'opening_balance'])
             ->make(true);

@@ -38,6 +38,9 @@
                             <a href="{{ route('admin.master.sales-agent.create') }}" class="btn btn-primary btn-sm">
                                 <i class="fas fa-plus"></i> Add Sales Agent
                             </a>
+                            <a href="#" id="download-pdf" class="btn btn-danger btn-sm ml-2">
+                                <i class="fas fa-file-pdf"></i> Download PDF
+                            </a>
                         </div>
                     </div>
                     <div class="card-body table-responsive">
@@ -47,8 +50,7 @@
                                     <td></td>
                                     <td><input type="text" class="form-control form-control-sm" name="name" id="name"
                                             placeholder="Search Name..." autocomplete="off"></td>
-                                    <td><input type="text" class="form-control form-control-sm" name="email" id="email"
-                                            placeholder="Search Email..." autocomplete="off"></td>
+                                    <td></td>
                                     <td></td>
                                     <td></td>
                                     <td></td>
@@ -58,7 +60,7 @@
                                 <tr>
                                     <th width="60">ID</th>
                                     <th>Name</th>
-                                    <th>Email</th>
+                                    <th>Total Shops</th>
                                     <th>Phone</th>
                                     <th>Opening Balance</th>
                                     <th>Total Balance</th>
@@ -88,13 +90,12 @@
                     url: '{!! route('admin.master.sales-agent.indexList') !!}',
                     data: function (d) {
                         d.name = $('#name').val();
-                        d.email = $('#email').val();
                     }
                 },
                 columns: [
                     { data: 'DT_RowIndex', name: 'id' },
                     { data: 'name', name: 'name' },
-                    { data: 'email', name: 'email' },
+                    { data: 'shops_count', name: 'shops_count' },
                     { data: 'phone', name: 'phone' },
                     { data: 'opening_balance', name: 'opening_balance' },
                     { data: 'total_balance', name: 'total_balance' },
@@ -104,9 +105,16 @@
                 dom: 'lrtip',
             });
 
-            $('#name, #email').on('keyup', function (e) {
+            $('#name').on('keyup', function (e) {
                 oTable.draw();
                 e.preventDefault();
+            });
+
+            $('#download-pdf').on('click', function (e) {
+                e.preventDefault();
+                var name = $('#name').val() || '';
+                var url = "{{ route('admin.master.sales-agent.downloadPdf') }}?name=" + encodeURIComponent(name);
+                window.location.href = url;
             });
         });
     </script>
