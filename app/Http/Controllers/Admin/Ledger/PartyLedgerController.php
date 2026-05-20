@@ -18,32 +18,47 @@ class PartyLedgerController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search');
-        $typeId = $request->query('type_id'); // Adjustment Master ID
+        $typeId = $request->query('type_id'); // Adjustment Master ID or 'sales_agent'
 
         $masters = \App\Models\AdjustmentMaster::where('status', 1)->get();
         $parties = collect();
 
         if ($typeId) {
-            $master = \App\Models\AdjustmentMaster::find($typeId);
-            if ($master) {
-                $modelName = $master->model_name;
-                if (class_exists($modelName)) {
-                    $items = $modelName::where('status', 1)
-                        ->when($search, function ($q) use ($search, $modelName) {
-                            if ($modelName == 'App\Models\BankAccount') {
-                                $q->where('bank_name', 'LIKE', "%$search%");
-                            } else {
-                                $q->where('name', 'LIKE', "%$search%");
-                            }
-                        })
-                        ->get()
-                        ->map(function ($v) use ($master) {
-                            $v->party_type = strtolower($master->name);
-                            $v->master_id_val = $master->id;
-                            if (!isset($v->name) && isset($v->bank_name)) $v->name = $v->bank_name;
-                            return $v;
-                        });
-                    $parties = $parties->concat($items);
+            if ($typeId === 'sales_agent') {
+                $items = \App\Models\SalesAgent::where('status', 1)
+                    ->when($search, function ($q) use ($search) {
+                        $q->where('name', 'LIKE', "%$search%");
+                    })
+                    ->get()
+                    ->map(function ($v) {
+                        $v->party_type = 'sales_agent';
+                        $v->master_id_val = 'sales_agent';
+                        $v->balance = $v->shops()->sum('balance');
+                        return $v;
+                    });
+                $parties = $parties->concat($items);
+            } else {
+                $master = \App\Models\AdjustmentMaster::find($typeId);
+                if ($master) {
+                    $modelName = $master->model_name;
+                    if (class_exists($modelName)) {
+                        $items = $modelName::where('status', 1)
+                            ->when($search, function ($q) use ($search, $modelName) {
+                                if ($modelName == 'App\Models\BankAccount') {
+                                    $q->where('bank_name', 'LIKE', "%$search%");
+                                } else {
+                                    $q->where('name', 'LIKE', "%$search%");
+                                }
+                            })
+                            ->get()
+                            ->map(function ($v) use ($master) {
+                                $v->party_type = strtolower($master->name);
+                                $v->master_id_val = $master->id;
+                                if (!isset($v->name) && isset($v->bank_name)) $v->name = $v->bank_name;
+                                return $v;
+                            });
+                        $parties = $parties->concat($items);
+                    }
                 }
             }
         } else {
@@ -70,6 +85,21 @@ class PartyLedgerController extends Controller
                     $parties = $parties->concat($items);
                 }
             }
+
+            // Also load Sales Agents in ALL view
+            $agentItems = \App\Models\SalesAgent::where('status', 1)
+                ->when($search, function ($q) use ($search) {
+                    $q->where('name', 'LIKE', "%$search%");
+                })
+                ->limit(100)
+                ->get()
+                ->map(function ($v) {
+                    $v->party_type = 'sales_agent';
+                    $v->master_id_val = 'sales_agent';
+                    $v->balance = $v->shops()->sum('balance');
+                    return $v;
+                });
+            $parties = $parties->concat($agentItems);
         }
 
         // Sort by name
@@ -96,6 +126,203 @@ class PartyLedgerController extends Controller
     {
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
+
+        if ($type === 'sales_agent') {
+            $party = \App\Models\SalesAgent::findOrFail($id);
+            $party->balance = $party->shops()->sum('balance');
+            $customerIds = \App\Models\MasterCustomer::where('sales_agent_id', $id)->pluck('id')->toArray();
+            
+            $transactions = collect();
+            
+            // 1. Sales (Dispatches) - DEBIT
+            $dispatches = AgentOrderDispatch::whereIn('master_customer_id', $customerIds)
+                ->where('party_type', 'customer')
+                ->where('status', 'dispatched')
+                ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
+                ->get();
+
+            foreach ($dispatches as $d) {
+                $transactions->push((object) [
+                    'date' => $d->dispatch_date,
+                    'created_at' => $d->created_at,
+                    'type' => 'Sale',
+                    'ref' => 'Dispatch #' . $d->id,
+                    'debit' => (float) $d->grand_total,
+                    'credit' => 0,
+                    'description' => ($d->shop->name ?? 'Shop') . ' - Sales Dispatch: ' . ($d->remark ?? '-'),
+                    'view_url' => route('admin.agent-orders.dispatches.show', $d->id)
+                ]);
+            }
+
+            // 2. Standard Order Dispatches - DEBIT
+            $orderDispatches = \App\Models\OrderDispatch::whereIn('customer_id', $customerIds)
+                ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
+                ->get();
+
+            foreach ($orderDispatches as $od) {
+                $transactions->push((object) [
+                    'date' => $od->dispatch_date,
+                    'created_at' => $od->created_at,
+                    'type' => 'Order Dispatch',
+                    'ref' => 'OD #' . ($od->sku ?? $od->id),
+                    'debit' => (float) $od->total_amount,
+                    'credit' => 0,
+                    'description' => ($od->customer->name ?? 'Customer') . ' - Regular Order Dispatch',
+                    'view_url' => route('admin.order-dispatch.view', ['id' => $od->id])
+                ]);
+            }
+
+            // 3. Sales Returns - CREDIT
+            $salesReturns = AgentOrderReturn::whereHas('dispatch', function ($q) use ($customerIds) {
+                $q->whereIn('master_customer_id', $customerIds)->where('party_type', 'customer');
+            })
+                ->when($startDate, fn($q) => $q->whereDate('return_date', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('return_date', '<=', $endDate))
+                ->get();
+
+            foreach ($salesReturns as $r) {
+                $transactions->push((object) [
+                    'date' => $r->return_date,
+                    'created_at' => $r->created_at,
+                    'type' => 'Sale Return',
+                    'ref' => 'Return #' . $r->id,
+                    'debit' => 0,
+                    'credit' => (float) $r->grand_total,
+                    'description' => ($r->dispatch->shop->name ?? 'Shop') . ' - Sales Return',
+                    'view_url' => route('admin.agent-orders.returns.show', $r->id)
+                ]);
+            }
+
+            // 4. Payments
+            $payments = Payment::whereIn('party_id', $customerIds)
+                ->where('party_type', \App\Models\MasterCustomer::class)
+                ->where(function($q) {
+                    $q->where('paymentable_type', '!=', \App\Models\JournalVoucher::class)
+                      ->orWhereNull('paymentable_type');
+                })
+                ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
+                ->get();
+
+            foreach ($payments as $p) {
+                $isCredit = in_array($p->payment_type, ['received', 'credit']);
+                $isDebit = in_array($p->payment_type, ['paid', 'debit']);
+
+                if ($isCredit) {
+                    $debit = 0;
+                    $credit = (float) $p->amount;
+                    $desc = ($p->party->name ?? 'Customer') . ' - Payment Received (' . $p->payment_mode . ')';
+                } elseif ($isDebit) {
+                    $debit = (float) $p->amount;
+                    $credit = 0;
+                    $desc = ($p->party->name ?? 'Customer') . ' - Payment Paid (' . $p->payment_mode . ')';
+                } else {
+                    $debit = (float) $p->amount;
+                    $credit = 0;
+                    $desc = ($p->party->name ?? 'Customer') . ' - Adjustment (' . $p->payment_mode . ')';
+                }
+
+                $transactions->push((object) [
+                    'date' => $p->payment_date,
+                    'created_at' => $p->created_at,
+                    'type' => 'Payment',
+                    'ref' => $p->reference_id ?? ('Pay #' . $p->id),
+                    'debit' => $debit,
+                    'credit' => $credit,
+                    'description' => $desc . ($p->remarks ? ': ' . $p->remarks : ''),
+                    'view_url' => route('admin.payment.history.show', $p->id)
+                ]);
+            }
+
+            // 5. Finished Goods Purchases (Inventory Purchase) - CREDIT
+            $inventoryPurchases = \App\Models\DomesticInventoryPurchase::whereIn('customer_id', $customerIds)
+                ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
+                ->get();
+
+            foreach ($inventoryPurchases as $ip) {
+                $transactions->push((object) [
+                    'date' => $ip->created_at,
+                    'created_at' => $ip->created_at,
+                    'type' => 'Inventory Purchase',
+                    'ref' => 'InvPur #' . $ip->id,
+                    'debit' => 0,
+                    'credit' => (float) $ip->total_amount,
+                    'description' => ($ip->customer->name ?? 'Customer') . ' - Inventory Purchase: ' . ($ip->remarks ?? '-'),
+                    'view_url' => route('admin.inventory.purchase_history.show', ['id' => $ip->id])
+                ]);
+            }
+
+            // 6. Journal Vouchers
+            $customerMaster = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\MasterCustomer')->first();
+            $customerMasterId = $customerMaster ? $customerMaster->id : 18;
+
+            $vouchers = \App\Models\JournalVoucherItem::with('voucher')
+                ->where('master_type', $customerMasterId)
+                ->whereIn('master_id', $customerIds)
+                ->whereHas('voucher', function($q) use ($startDate, $endDate) {
+                    $q->when($startDate, fn($q2) => $q2->whereDate('date', '>=', $startDate))
+                      ->when($endDate, fn($q2) => $q2->whereDate('date', '<=', $endDate));
+                })
+                ->get();
+
+            foreach ($vouchers as $v) {
+                $isCredit = strtolower($v->type) === 'credit';
+                
+                // Fetch the master customer name
+                $cName = \App\Models\MasterCustomer::find($v->master_id)->name ?? 'Customer';
+
+                $transactions->push((object) [
+                    'date' => $v->voucher->date,
+                    'created_at' => $v->created_at,
+                    'type' => 'Journal Voucher',
+                    'ref' => $v->voucher->voucher_no,
+                    'debit' => $isCredit ? 0 : (float) $v->amount,
+                    'credit' => $isCredit ? (float) $v->amount : 0,
+                    'description' => $cName . ' - ' . ($v->narration ?: $v->voucher->narration ?: 'Journal Entry'),
+                    'view_url' => route('admin.payment.journal-voucher.show', $v->voucher->id)
+                ]);
+            }
+
+            // 7. Opening Balance
+            $openingBalAmount = 0;
+            $openingBalances = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
+                ->whereIn('master_id', $customerIds)
+                ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
+                ->get();
+
+            foreach ($openingBalances as $ob) {
+                $balanceType = strtolower(trim($ob->balance_type));
+                $obAmount = (float) $ob->amount;
+                if ($balanceType === 'debit') {
+                    $openingBalAmount -= $obAmount;
+                } else {
+                    $openingBalAmount += $obAmount;
+                }
+            }
+
+            // Sort and Calculate Balance
+            $transactions = $transactions->sort(function ($a, $b) {
+                $dateA = \Carbon\Carbon::parse($a->date)->format('Y-m-d');
+                $dateB = \Carbon\Carbon::parse($b->date)->format('Y-m-d');
+
+                if ($dateA != $dateB) {
+                    return $dateA <=> $dateB;
+                }
+
+                return ($a->created_at ?? 0) <=> ($b->created_at ?? 0);
+            })->values();
+
+            $balance = $openingBalAmount;
+            foreach ($transactions as $tx) {
+                $balance += ($tx->credit - $tx->debit);
+                $tx->running_balance = $balance;
+            }
+
+            return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount');
+        }
 
         // Resolve Master
         $master = \App\Models\AdjustmentMaster::where('name', 'LIKE', $type)->first();

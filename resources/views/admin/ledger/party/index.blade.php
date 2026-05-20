@@ -26,6 +26,10 @@
         background: #fff3e0;
         color: #f57c00;
     }
+    .party-type-sales_agent {
+        background: #f3e5f5;
+        color: #8e24aa;
+    }
     .search-box {
         border-radius: 25px;
         padding-left: 20px;
@@ -65,6 +69,7 @@
                                 <label class="small font-weight-bold text-muted">Filter by Master Type</label>
                                 <select name="type_id" class="form-control" style="border-radius: 20px;">
                                     <option value="">All Master Types</option>
+                                    <option value="sales_agent" {{ request('type_id') === 'sales_agent' ? 'selected' : '' }}>Sales Agent</option>
                                     @foreach($masters as $m)
                                         <option value="{{ $m->id }}" {{ request('type_id') == $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
                                     @endforeach
