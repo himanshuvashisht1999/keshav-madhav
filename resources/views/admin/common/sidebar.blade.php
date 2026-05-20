@@ -800,13 +800,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                     </a>
                                 </li>
 
-                                <li class="nav-item">
+                                {{-- <li class="nav-item">
                                     <a href="{{ route('admin.report.agent-ledger.index') }}"
                                         class="{{ str_contains(strtolower($page_url), 'admin/report/agent-ledger') ? 'nav-link active' : 'nav-link' }}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Agent Ledger Report</p>
                                     </a>
-                                </li>
+                                </li> --}}
                             </ul>
                         </li>
                     @endcan
