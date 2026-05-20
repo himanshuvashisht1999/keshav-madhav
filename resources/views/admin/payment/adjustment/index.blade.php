@@ -20,6 +20,32 @@
 
     <section class="content">
         <div class="container-fluid">
+            <!-- FILTER CARD -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-3">
+                    <form action="{{ route('admin.payment.adjustment.index') }}" method="GET" class="row align-items-end">
+                        <div class="col-md-3">
+                            <label class="small text-muted font-weight-bold">From Date</label>
+                            <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="small text-muted font-weight-bold">To Date</label>
+                            <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
+                        </div>
+                        <div class="col-md-2 col-sm-6 mt-2 mt-md-0">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-filter mr-1"></i> APPLY
+                            </button>
+                        </div>
+                        <div class="col-md-2 col-sm-6 mt-2 mt-md-0">
+                            <a href="{{ route('admin.payment.adjustment.index') }}" class="btn btn-outline-secondary btn-block">
+                                <i class="fas fa-undo mr-1"></i> RESET
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Adjustment History ({{ $grouped->count() }} Batches)</h3>

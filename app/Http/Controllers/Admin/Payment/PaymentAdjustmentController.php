@@ -13,9 +13,19 @@ use Illuminate\Support\Facades\DB;
 
 class PaymentAdjustmentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $adjustments = PaymentAdjustment::with('master')->orderBy('id', 'desc')->get();
+        $query = PaymentAdjustment::with('master');
+
+        if ($request->filled('from_date')) {
+            $query->whereDate('date', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate('date', '<=', $request->to_date);
+        }
+
+        $adjustments = $query->orderBy('id', 'desc')->get();
         // Group by batch_id, if null use unique key
         $grouped = $adjustments->groupBy(function ($item) {
             return $item->batch_id ?? 'unique_' . $item->id;
