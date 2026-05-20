@@ -22,7 +22,7 @@
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body p-3">
                         <form action="{{ route('admin.agent-orders.dispatches.index') }}" method="GET" class="row align-items-end">
-                            <div class="col-md-3">
+                            <div class="col-md-2 mb-2">
                                 <label class="small text-muted font-weight-bold">Filter by Party</label>
                                 <select name="shop_id" class="form-control select2">
                                     <option value="">All Parties</option>
@@ -33,7 +33,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2 mb-2">
                                 <label class="small text-muted font-weight-bold">Filter by Vendor</label>
                                 <select name="vendor_id" class="form-control select2">
                                     <option value="">All Vendors</option>
@@ -44,15 +44,23 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 mb-2">
+                                <label class="small text-muted font-weight-bold">Dispatch Type</label>
+                                <select name="dispatch_type" class="form-control">
+                                    <option value="">All Types</option>
+                                    <option value="item" {{ request('dispatch_type') === 'item' ? 'selected' : '' }}>Item</option>
+                                    <option value="fabric" {{ request('dispatch_type') === 'fabric' ? 'selected' : '' }}>Fabric</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-2">
                                 <label class="small text-muted font-weight-bold">From Date</label>
                                 <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}">
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 mb-2">
                                 <label class="small text-muted font-weight-bold">To Date</label>
                                 <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 mb-2">
                                 <button type="submit" class="btn btn-primary btn-block">
                                     <i class="fas fa-filter mr-1"></i> APPLY
                                 </button>

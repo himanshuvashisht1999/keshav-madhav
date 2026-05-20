@@ -1973,6 +1973,16 @@ class AgentOrderController extends Controller
             $query->whereDate('dispatch_date', '<=', $request->to_date);
         }
 
+        if ($request->filled('dispatch_type')) {
+            $dispatchType = $request->dispatch_type;
+            $query->whereHas('orders', function ($q) use ($dispatchType) {
+                $q->where(function ($sub) use ($dispatchType) {
+                    $sub->where('sale_type', $dispatchType)
+                        ->orWhere('order_type', $dispatchType);
+                });
+            });
+        }
+
         $dispatches = $query->paginate(20);
         $shops = DB::table('master_customers')->select('id', 'name')->get();
         $vendors = DB::table('vendors')->select('id', 'name')->get();
