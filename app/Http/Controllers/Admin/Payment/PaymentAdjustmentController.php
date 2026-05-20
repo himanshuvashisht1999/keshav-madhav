@@ -26,11 +26,15 @@ class PaymentAdjustmentController extends Controller
         }
 
         $adjustments = $query->orderBy('id', 'desc')->get();
+        
+        $totalDebit = $adjustments->where('type', 'debit')->sum('amount');
+        $totalCredit = $adjustments->where('type', 'credit')->sum('amount');
+
         // Group by batch_id, if null use unique key
         $grouped = $adjustments->groupBy(function ($item) {
             return $item->batch_id ?? 'unique_' . $item->id;
         });
-        return view('admin.payment.adjustment.index', compact('grouped'));
+        return view('admin.payment.adjustment.index', compact('grouped', 'totalDebit', 'totalCredit'));
     }
 
     public function show($batchId)

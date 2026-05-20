@@ -4,11 +4,19 @@
 <div class="content-wrapper">
     <section class="content-header">
         <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Payment Adjust List</h1>
+            <div class="row mb-2 align-items-center">
+                <div class="col-sm-8 d-flex align-items-center flex-wrap">
+                    <h1 class="mr-3">Payment Adjust List</h1>
+                    <div class="my-1">
+                        <span class="badge badge-danger px-3 py-2 text-md shadow-sm mr-2" style="font-size: 14px; font-weight: 600;">
+                            <i class="fas fa-arrow-up mr-1"></i> Total DR: ₹{{ number_format($totalDebit, 2) }}
+                        </span>
+                        <span class="badge badge-success px-3 py-2 text-md shadow-sm" style="font-size: 14px; font-weight: 600;">
+                            <i class="fas fa-arrow-down mr-1"></i> Total CR: ₹{{ number_format($totalCredit, 2) }}
+                        </span>
+                    </div>
                 </div>
-                <div class="col-sm-6">
+                <div class="col-sm-4">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
                         <li class="breadcrumb-item active">Payment Adjust List</li>
