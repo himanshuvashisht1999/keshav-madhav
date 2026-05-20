@@ -126,11 +126,23 @@ class PartyLedgerController extends Controller
     {
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
+        $viewMode = $request->query('view_mode', 'mix');
+        $groupedLedgers = [];
 
         if ($type === 'sales_agent') {
             $party = \App\Models\SalesAgent::findOrFail($id);
-            $party->balance = $party->shops()->sum('balance');
-            $customerIds = \App\Models\MasterCustomer::where('sales_agent_id', $id)->pluck('id')->toArray();
+            $shops = \App\Models\MasterCustomer::where('sales_agent_id', $id)->get();
+            $customerIds = $shops->pluck('id')->toArray();
+
+            $selectedCustomerId = $request->query('customer_id');
+            if ($selectedCustomerId && in_array($selectedCustomerId, $customerIds)) {
+                $customerIds = [$selectedCustomerId];
+                $selectedCustomer = $shops->firstWhere('id', $selectedCustomerId);
+                $party->balance = $selectedCustomer ? $selectedCustomer->balance : 0;
+                $viewMode = 'mix';
+            } else {
+                $party->balance = $shops->sum('balance');
+            }
             
             $transactions = collect();
             
@@ -144,6 +156,7 @@ class PartyLedgerController extends Controller
 
             foreach ($dispatches as $d) {
                 $transactions->push((object) [
+                    'customer_id' => $d->master_customer_id,
                     'date' => $d->dispatch_date,
                     'created_at' => $d->created_at,
                     'type' => 'Sale',
@@ -163,6 +176,7 @@ class PartyLedgerController extends Controller
 
             foreach ($orderDispatches as $od) {
                 $transactions->push((object) [
+                    'customer_id' => $od->customer_id,
                     'date' => $od->dispatch_date,
                     'created_at' => $od->created_at,
                     'type' => 'Order Dispatch',
@@ -184,6 +198,7 @@ class PartyLedgerController extends Controller
 
             foreach ($salesReturns as $r) {
                 $transactions->push((object) [
+                    'customer_id' => $r->dispatch->master_customer_id ?? null,
                     'date' => $r->return_date,
                     'created_at' => $r->created_at,
                     'type' => 'Sale Return',
@@ -225,6 +240,7 @@ class PartyLedgerController extends Controller
                 }
 
                 $transactions->push((object) [
+                    'customer_id' => $p->party_id,
                     'date' => $p->payment_date,
                     'created_at' => $p->created_at,
                     'type' => 'Payment',
@@ -244,6 +260,7 @@ class PartyLedgerController extends Controller
 
             foreach ($inventoryPurchases as $ip) {
                 $transactions->push((object) [
+                    'customer_id' => $ip->customer_id,
                     'date' => $ip->created_at,
                     'created_at' => $ip->created_at,
                     'type' => 'Inventory Purchase',
@@ -275,6 +292,7 @@ class PartyLedgerController extends Controller
                 $cName = \App\Models\MasterCustomer::find($v->master_id)->name ?? 'Customer';
 
                 $transactions->push((object) [
+                    'customer_id' => $v->master_id,
                     'date' => $v->voucher->date,
                     'created_at' => $v->created_at,
                     'type' => 'Journal Voucher',
@@ -321,7 +339,7 @@ class PartyLedgerController extends Controller
                 $tx->running_balance = $balance;
             }
 
-            return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount');
+            return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'shops');
         }
 
         // Resolve Master
@@ -641,6 +659,6 @@ class PartyLedgerController extends Controller
             $tx->running_balance = $balance;
         }
 
-        return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount');
+        return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'viewMode', 'groupedLedgers');
     }
 }
