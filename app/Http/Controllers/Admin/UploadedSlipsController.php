@@ -179,7 +179,7 @@ class UploadedSlipsController extends Controller
             ])->get();
 
         /* =====================================================
-         * 🟠 TYPE 3 → OTHER (STITCHING / HAND SLIP / TRANSFERS)
+         * 🟠 TYPE 3 → OTHER (STITCHING / HAND SLIP / TRANSFERS / GODAM)
          * ===================================================== */
         $stage_tx = OrderStageTransaction::where('production_slip_digitization_id', $slip->id)
             ->with([
@@ -207,7 +207,25 @@ class UploadedSlipsController extends Controller
                 'details'
             ])->get();
 
-        $data['stage_transactions'] = $stage_tx->concat($printing_to_stitching_tx);
+        $godam_tx = \App\Models\OrderGodamStageTransaction::where('production_slip_digitization_id', $slip->id)
+            ->with([
+                'from_stage',
+                'to_stage',
+                'getToUnitMaster',
+                'orderProduct.orderProductSet.fabric',
+                'orderProduct.orderProductSet.colors',
+                'orderProduct.orderProductSet.master_design_pattern',
+                'orderProduct.orderProductSet.master_product_fitting',
+                'orderProduct.orderProductSet.orderMain.customer',
+                'godamDetails'
+            ])->get();
+
+        // Normalize godamDetails to details for the view
+        $godam_tx->each(function($tx) {
+            $tx->details = $tx->godamDetails;
+        });
+
+        $data['stage_transactions'] = $stage_tx->concat($printing_to_stitching_tx)->concat($godam_tx);
 
         // Fetch packing details and outflows if applicable
         if ($slip->from_stage_id == 11) {
@@ -647,11 +665,12 @@ class UploadedSlipsController extends Controller
                 }
                 $slip_id = $id;
 
-            } elseif ($type == 'printing' || $type == 'transfer' || $type == 'printing_stitching') {
+            } elseif ($type == 'printing' || $type == 'transfer' || $type == 'printing_stitching' || $type == 'godam') {
                 $modelMap = [
                     'printing' => OrderPrintingStageTransaction::class,
                     'transfer' => OrderStageTransaction::class,
-                    'printing_stitching' => OrderPrintingToStichingTransaction::class
+                    'printing_stitching' => OrderPrintingToStichingTransaction::class,
+                    'godam' => OrderGodamStageTransaction::class
                 ];
                 $model = $modelMap[$type];
                 $session = $model::findOrFail($id);
@@ -682,15 +701,45 @@ class UploadedSlipsController extends Controller
                         $source->save();
                     }
                     OrderPrintingToStichingTransactionDetail::where('order_printing_to_stiching_transaction_id', $id)->delete();
+                    
+                } elseif ($type == 'godam') {
+                    // Source was Printing or Stitching etc.
+                    $source = OrderStageTransaction::where('lot_no', $session->lot_no)
+                        ->where('to_stage_id', $session->from_stage_id)
+                        ->where('sub_stage_id_to', $session->sub_stage_id)
+                        ->first();
+                    if(!$source) {
+                        $source = OrderPrintingStageTransaction::where('lot_no', $session->lot_no)
+                            ->where('to_stage_id', $session->from_stage_id)
+                            ->where('sub_stage_id_to', $session->sub_stage_id)
+                            ->first();
+                    }
+                    if ($source) {
+                        $source->remaining_quantity += $session->quantity;
+                        $source->save();
+                    }
+                    OrderGodamStageTransactionDetail::where('order_godam_stage_transaction_id', $id)->delete();
 
                 } elseif ($type == 'transfer') {
                     // General transfer restore
-                    if ($session->from_stage_id == 3) {
-                        // From Cutting
+                    if ($session->from_stage_id == 3 || $session->from_stage_id == 13) {
+                        // From Cutting or Godam (Initial Stitching Session)
                         OrderLot::where('lot_no', $session->lot_no)->update(['is_stitching' => 0]);
                         FabricRollAssigning::where('lot_no', $session->lot_no)
                             ->where('to_stage_id', $session->to_stage_id)
                             ->update(['status' => 1, 'to_stage_id' => null]);
+
+                        // If it came from Godam, we must restore the Godam transactions
+                        if ($session->from_stage_id == 13) {
+                            $godamTxs = \App\Models\OrderGodamStageTransaction::where('lot_no', $session->lot_no)->get();
+                            foreach ($godamTxs as $gTx) {
+                                $gTx->remaining_quantity = $gTx->quantity;
+                                $gTx->status = 1;
+                                $gTx->save();
+                                \App\Models\OrderGodamStageTransactionDetail::where('order_godam_stage_transaction_id', $gTx->id)
+                                    ->update(['remaining_quantity' => \Illuminate\Support\Facades\DB::raw('quantity')]);
+                            }
+                        }
                     } else {
                         // From another stage transaction
                         $source = OrderStageTransaction::where('lot_no', $session->lot_no)
@@ -728,8 +777,17 @@ class UploadedSlipsController extends Controller
 
             // Clean up orphaned parts and timings for the deleted session
             if (isset($session) && isset($session->lot_no)) {
-                \App\Models\ProductionSlipDigitizationParts::where('lot_no', $session->lot_no)->delete();
-                \App\Models\OrderLotStageTiming::where('lot_no', $session->lot_no)->delete();
+                if ($type == 'lot') {
+                    \App\Models\ProductionSlipDigitizationParts::where('lot_no', $session->lot_no)->delete();
+                    \App\Models\OrderLotStageTiming::where('lot_no', $session->lot_no)->delete();
+                } else {
+                    if ($slip_id) {
+                        \App\Models\ProductionSlipDigitizationParts::where('production_slip_digitization_id', $slip_id)->delete();
+                    }
+                    if (isset($session->to_stage_id)) {
+                        \App\Models\OrderLotStageTiming::where('lot_no', $session->lot_no)->where('master_stage_id', $session->to_stage_id)->delete();
+                    }
+                }
             }
 
             \Illuminate\Support\Facades\DB::commit();

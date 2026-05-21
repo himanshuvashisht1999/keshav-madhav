@@ -306,7 +306,13 @@
                                 <h4 class="fw-bold text-dark mb-0">Digitization Session #{{ $index + 1 }}</h4>
                                 <div>
                                     @php 
-                                        $type = ($transaction instanceof \App\Models\OrderPrintingToStichingTransaction) ? 'printing_stitching' : 'transfer';
+                                        if ($transaction instanceof \App\Models\OrderPrintingToStichingTransaction) {
+                                            $type = 'printing_stitching';
+                                        } elseif ($transaction instanceof \App\Models\OrderGodamStageTransaction) {
+                                            $type = 'godam';
+                                        } else {
+                                            $type = 'transfer';
+                                        }
                                     @endphp
                                     @if(is_transaction_deletable($transaction))
                                         <a href="{{ route('admin.uploaded-slips.delete-session', ['type' => $type, 'id' => $transaction->id]) }}" 
@@ -363,7 +369,18 @@
                                     <div class="row mb-4">
                                         <div class="col-md-3"><strong>Lot No:</strong> <span class="text-dark">#{{ $transaction->lot_no }}</span></div>
                                         <div class="col-md-3"><strong>Date:</strong> {{ getformatDateTime($transaction->production_datetime) }}</div>
-                                        <div class="col-md-3"><strong>Transfer:</strong> <span class="text-muted small">{{ $transaction->from_stage?->name }}</span> <i class="fas fa-arrow-right mx-1 small"></i> <span class="text-warning fw-bold">{{ $transaction->to_stage?->name }}</span> <span class="text-muted small">({{ $transaction->getToUnitMaster?->name }})</span></div>
+                                        <div class="col-md-3"><strong>Transfer:</strong> 
+                                            <span class="text-muted small">
+                                                @php
+                                                    $fromStageName = $transaction->from_stage?->name;
+                                                    if ($slip->from_stage_id == 3 && $transaction->from_stage_id == 13) {
+                                                        $fromStageName = 'Cutting & Godam';
+                                                    }
+                                                @endphp
+                                                {{ $fromStageName }}
+                                            </span> 
+                                            <i class="fas fa-arrow-right mx-1 small"></i> <span class="text-warning fw-bold">{{ $transaction->to_stage?->name }}</span> <span class="text-muted small">({{ $transaction->getToUnitMaster?->name }})</span>
+                                        </div>
                                         <div class="col-md-3 text-end"><strong>Total Pieces:</strong> <span class="badge bg-warning text-dark px-3 fs-6">{{ $transaction->quantity }}</span></div>
                                     </div>
 

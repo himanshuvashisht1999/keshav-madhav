@@ -482,6 +482,9 @@ class UnitAuthController extends Controller
                 'orderPrintingToStichingTransaction.orderProduct.orderProductSet.size_measurement',
                 'orderPrintingToStichingTransaction.orderProduct.orderProductSet.orderMain',
                 'orderPrintingToStichingTransaction.details',
+                'orderGodamStageTransaction.orderProduct.orderProductSet.size_measurement',
+                'orderGodamStageTransaction.orderProduct.orderProductSet.orderMain',
+                'orderGodamStageTransaction.godamDetails',
                 'fabricRollAssignings.fabricRollAssigningsDetail',
                 'parts',
                 'orderProductSet.orderMain'
@@ -597,6 +600,18 @@ class UnitAuthController extends Controller
                     'size_sets' => $ost->orderProduct?->orderProductSet?->size_set_name ?? '-',
                     'design_no' => $ost->orderProduct?->orderProductSet?->design_number ?? '-',
                     'customer' => $ost->orderProduct?->orderProductSet?->orderMain?->customer?->name ?? '-',
+                ]);
+            }
+
+            // 4.5 Godam Sessions
+            foreach ($slip->orderGodamStageTransaction as $ogst) {
+                $sessions->push([
+                    'type' => 'Godam Transfer',
+                    'lot_no' => $ogst->lot_no,
+                    'pieces' => $ogst->godamDetails->sum('quantity'),
+                    'size_sets' => $ogst->orderProduct?->orderProductSet?->size_set_name ?? '-',
+                    'design_no' => $ogst->orderProduct?->orderProductSet?->design_number ?? '-',
+                    'customer' => $ogst->orderProduct?->orderProductSet?->orderMain?->customer?->name ?? '-',
                 ]);
             }
 
@@ -788,6 +803,24 @@ class UnitAuthController extends Controller
                     'details'
                 ])->get();
         }
+
+        $godam_tx = \App\Models\OrderGodamStageTransaction::where('production_slip_digitization_id', $slip->id)
+            ->with([
+                'from_stage',
+                'to_stage',
+                'orderProduct.orderProductSet.fabric',
+                'orderProduct.orderProductSet.colors',
+                'orderProduct.orderProductSet.master_design_pattern',
+                'orderProduct.orderProductSet.master_product_fitting',
+                'orderProduct.orderProductSet.orderMain.customer',
+                'godamDetails'
+            ])->get();
+            
+        $godam_tx->each(function($tx) {
+            $tx->details = $tx->godamDetails;
+        });
+        
+        $stage_transactions = $stage_transactions->concat($godam_tx);
 
         $packing_details = null;
         if ($slip->from_stage_id == 11) {

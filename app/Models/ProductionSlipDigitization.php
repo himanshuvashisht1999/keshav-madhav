@@ -78,6 +78,11 @@ class ProductionSlipDigitization extends Model
         return $this->hasMany(\App\Models\OrderPrintingToStichingTransaction::class, 'production_slip_digitization_id', 'id');
     }
 
+    public function orderGodamStageTransaction()
+    {
+        return $this->hasMany(\App\Models\OrderGodamStageTransaction::class, 'production_slip_digitization_id', 'id');
+    }
+
     public function fabricRollAssignings()
     {
         return $this->hasMany(\App\Models\FabricRollAssigning::class, 'production_slip_digitization_id', 'id');

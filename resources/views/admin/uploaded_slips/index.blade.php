@@ -117,6 +117,7 @@
                                             if($slip->orderPrintingStageTransaction->isNotEmpty()) $allLots = $allLots->merge($slip->orderPrintingStageTransaction->pluck('lot_no'));
                                             if($slip->orderStageTransaction->isNotEmpty()) $allLots = $allLots->merge($slip->orderStageTransaction->pluck('lot_no'));
                                             if($slip->orderPrintingToStichingTransaction->isNotEmpty()) $allLots = $allLots->merge($slip->orderPrintingToStichingTransaction->pluck('lot_no'));
+                                            if($slip->orderGodamStageTransaction->isNotEmpty()) $allLots = $allLots->merge($slip->orderGodamStageTransaction->pluck('lot_no'));
                                             
                                             $distinctLots = $allLots->unique()->filter();
                                         @endphp
@@ -137,14 +138,16 @@
                                                 // Get the first available next stage/unit from any transaction session
                                                 $firstTx = $slip->orderStageTransaction->first() ?? 
                                                            $slip->orderPrintingStageTransaction->first() ?? 
-                                                           $slip->orderPrintingToStichingTransaction->first();
+                                                           $slip->orderPrintingToStichingTransaction->first() ??
+                                                           $slip->orderGodamStageTransaction->first();
                                                 
                                                 $nextStage = $firstTx->to_stage ?? null;
                                                 $nextUnit = $firstTx->getToUnitMaster ?? null;
                                                 
                                                 $sessionCount = ($slip->orderStageTransaction->count() + 
                                                                 $slip->orderPrintingStageTransaction->count() + 
-                                                                $slip->orderPrintingToStichingTransaction->count());
+                                                                $slip->orderPrintingToStichingTransaction->count() +
+                                                                $slip->orderGodamStageTransaction->count());
                                             @endphp
                                             @if($nextStage)
                                                 {{ $nextStage->name }}
@@ -209,6 +212,7 @@
                                                             $slip->orderStageTransaction->count() + 
                                                             $slip->orderPrintingStageTransaction->count() + 
                                                             $slip->orderPrintingToStichingTransaction->count() +
+                                                            $slip->orderGodamStageTransaction->count() +
                                                             $slip->fabricRollAssignings->count() +
                                                             ($slip->packingMain ? 1 : 0);
                                         @endphp
