@@ -621,6 +621,18 @@ class UploadedSlipsController extends Controller
                             $setDetail->remaining_lot_allocated += $detail->quantity;
                             $setDetail->save();
                         }
+                        
+                        // NEW: Restore OrderCuttingStage remaining_quantity
+                        $cs = \App\Models\OrderCuttingStage::where('set_product_id', $session->order_products_set_id)
+                            ->where('to_assign_id', $roll->stage_master_unit_id)
+                            ->where('status', '!=', 0)
+                            ->orderBy('updated_at', 'desc')
+                            ->first();
+                        if ($cs) {
+                            $cs->increment('remaining_quantity', $detail->quantity);
+                            $cs->update(['status' => 1]); // Back to partial/assigned status
+                        }
+
                         $detail->delete();
                     }
                     $roll->delete();
@@ -706,7 +718,18 @@ class UploadedSlipsController extends Controller
 
             // Reset Digitized Status of Slip
             if ($slip_id) {
-                ProductionSlipDigitization::where('id', $slip_id)->update(['status' => 0]);
+                ProductionSlipDigitization::where('id', $slip_id)->update([
+                    'status' => 0,
+                    'save_type' => 1, // Restore save type
+                    'lot_no' => null,
+                    'to_stage_id' => null
+                ]);
+            }
+
+            // Clean up orphaned parts and timings for the deleted session
+            if (isset($session) && isset($session->lot_no)) {
+                \App\Models\ProductionSlipDigitizationParts::where('lot_no', $session->lot_no)->delete();
+                \App\Models\OrderLotStageTiming::where('lot_no', $session->lot_no)->delete();
             }
 
             \Illuminate\Support\Facades\DB::commit();
