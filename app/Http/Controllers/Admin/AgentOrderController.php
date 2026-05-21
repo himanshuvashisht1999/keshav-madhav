@@ -797,33 +797,33 @@ class AgentOrderController extends Controller
             return redirect()->back()->with('error', 'Cannot delete order as some items have already been scanned or dispatched.');
         }
 
-        if ($order->paid_amount > 0) {
-            return redirect()->back()->with('error', 'Cannot delete order as payments have already been recorded.');
-        }
+        // if ($order->paid_amount > 0) {
+        //     return redirect()->back()->with('error', 'Cannot delete order as payments have already been recorded.');
+        // }
 
         DB::beginTransaction();
         try {
             if ($order->sale_type === 'fabric') {
-                foreach ($order->fabricItems as $item) {
-                    FabricReceiptDetail::where('id', $item->fabric_receipt_detail_id)
-                        ->increment('remaining_quantity', $item->meter);
-                }
+                // foreach ($order->fabricItems as $item) {
+                //     FabricReceiptDetail::where('id', $item->fabric_receipt_detail_id)
+                //         ->increment('remaining_quantity', $item->meter);
+                // }
                 $order->fabricItems()->delete();
             } else {
-                foreach ($order->items as $item) {
-                    if ($item->scanned_box_qty > 0) {
-                        // Restore inventory for scanned items
-                        $inventory = DB::table('domestic_inventories')
-                            ->where('barcode', $item->barcode)
-                            ->first();
+                // foreach ($order->items as $item) {
+                //     if ($item->scanned_box_qty > 0) {
+                //         // Restore inventory for scanned items
+                //         $inventory = DB::table('domestic_inventories')
+                //             ->where('barcode', $item->barcode)
+                //             ->first();
 
-                        if ($inventory) {
-                            DB::table('domestic_inventories')
-                                ->where('id', $inventory->id)
-                                ->increment('total_boxes', $item->scanned_box_qty);
-                        }
-                    }
-                }
+                //         if ($inventory) {
+                //             DB::table('domestic_inventories')
+                //                 ->where('id', $inventory->id)
+                //                 ->increment('total_boxes', $item->scanned_box_qty);
+                //         }
+                //     }
+                // }
                 $order->items()->delete();
             }
 
