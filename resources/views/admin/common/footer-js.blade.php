@@ -80,8 +80,8 @@
       
       //Initialize Select2 Elements
       function initSelect2($el, extraOptions) {
-        // If inside a modal, render dropdown inside modal (fix z-index/position)
-        var $dropdownParent = $el.closest('.modal');
+        // If inside a modal, render dropdown inside modal-content (fix z-index/position & CSS transform bugs)
+        var $dropdownParent = $el.closest('.modal-content');
         if ($dropdownParent.length === 0) {
           // Otherwise keep dropdown within the immediate form-group/column to avoid body positioning issues
           $dropdownParent = $el.parent();

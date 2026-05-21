@@ -169,45 +169,46 @@
                                             @endif
                                         </td> -->
                                         <td class="text-nowrap">
-                                            <div class="text-dark">{{ date('d M Y', strtotime($order->order_date)) }}</div>
-                                            <small class="text-muted">{{ date('h:i A', strtotime($order->order_date)) }}</small>
+                                            <div class="text-dark font-weight-bold">{{ date('d M Y', strtotime($order->order_date)) }}</div>
                                         </td>
                                         <td class="text-right text-nowrap">
-                                            <div class="btn-group">
-                                                <button type="button" class="btn btn-success btn-sm px-2 shadow-sm rounded-pill mr-1 dropdown-toggle" 
-                                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Download Order Sheet">
-                                                    <i class="fas fa-file-pdf"></i>
-                                                </button>
-                                                <div class="dropdown-menu dropdown-menu-right shadow border-0">
-                                                    <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=1">
-                                                        <i class="fas fa-tag text-success mr-2"></i> With Price
-                                                    </a>
-                                                    <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=0">
-                                                        <i class="fas fa-barcode text-muted mr-2"></i> Without Price
-                                                    </a>
+                                            <div class="d-flex justify-content-end align-items-center" style="gap: 5px;">
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-success btn-sm px-2 shadow-sm rounded-pill dropdown-toggle" 
+                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Download Order Sheet">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                    </button>
+                                                    <div class="dropdown-menu dropdown-menu-right shadow border-0">
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=1">
+                                                            <i class="fas fa-tag text-success mr-2"></i> With Price
+                                                        </a>
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=0">
+                                                            <i class="fas fa-barcode text-muted mr-2"></i> Without Price
+                                                        </a>
+                                                    </div>
                                                 </div>
+                                                <a href="{{ route('admin.agent-orders.show', $order->id) }}"
+                                                    class="btn btn-primary btn-sm px-2 shadow-sm rounded-pill" title="View Order">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                @if($order->status == 'pending' && $order->scanned_count == 0)
+                                                <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
+                                                    class="btn btn-info btn-sm px-2 shadow-sm rounded-pill" title="Edit Order">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{{ route('admin.agent-orders.destroy', $order->id) }}"
+                                                    class="btn btn-danger btn-sm px-2 shadow-sm rounded-pill" 
+                                                    onclick="return confirm('Are you sure you want to delete this order? This will revert any reserved stock.');"
+                                                    title="Delete Order">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                                @elseif($order->status == 'pending')
+                                                <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
+                                                    class="btn btn-info btn-sm px-2 shadow-sm rounded-pill" title="Edit Order">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                @endif
                                             </div>
-                                            <a href="{{ route('admin.agent-orders.show', $order->id) }}"
-                                                class="btn btn-primary btn-sm px-2 shadow-sm rounded-pill mr-1" title="View Order">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            @if($order->status == 'pending' && $order->scanned_count == 0)
-                                            <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
-                                                class="btn btn-info btn-sm px-2 shadow-sm rounded-pill mr-1" title="Edit Order">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="{{ route('admin.agent-orders.destroy', $order->id) }}"
-                                                class="btn btn-danger btn-sm px-2 shadow-sm rounded-pill" 
-                                                onclick="return confirm('Are you sure you want to delete this order? This will revert any reserved stock.');"
-                                                title="Delete Order">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                            @elseif($order->status == 'pending')
-                                            <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
-                                                class="btn btn-info btn-sm px-2 shadow-sm rounded-pill" title="Edit Order">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            @endif
                                         </td>
                                     </tr>
                                 @empty

@@ -80,8 +80,8 @@
             <!-- ================= HEADER DETAILS ================= -->
             <table class="meta-table">
                 <tr>
-                    <td class="meta-label">CMPO No:</td>
-                    <td>CMPO-{{ $header['cmpo_id'] }}</td>
+                    <td class="meta-label">ID:</td>
+                    <td>ID-{{ $header['cmpo_id'] }}</td>
 
                     <td class="meta-label">Date:</td>
                     <td>{{ $header['date'] }}</td>
@@ -178,7 +178,7 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>SKU</th>
+                            <th>CMPO</th>
                             <th>Cutting Master</th>
                             <th>Assigned QTY</th>
                             <th>Assigned Date</th>
@@ -188,7 +188,7 @@
                         @foreach ($assignments as $assignment)
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
-                                <td>{{ $assignment->sku }}</td>
+                                <td>{{ $assignment->id }}</td>
                                 <td>{{ $assignment->cutting_master->name ?? '-' }} ({{ $assignment->cutting_master->masterFabricWarehouse->cutting_master_name ?? '-' }})</td>
                                 <td>{{ $assignment->quantity }}</td>
                                 <td>{{ $assignment->created_at->format('d-m-Y') }}</td>

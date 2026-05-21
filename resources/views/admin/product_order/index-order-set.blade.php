@@ -338,15 +338,12 @@ function togglePoTo(val) {
         
         // Re-initialize or adjust Select2 if width issue exists
         $('#customer_group select').select2({
-            width: '100%',
-            dropdownParent: $('#poModal')
+            width: '100%'
         });
     }
 }
 
 $(document).ready(function () {
-
-    $('.select2').select2({ width: '100%' });
 
     // Load default warehouse cutting masters
     warehouseChange($('#warehouse_id').val());

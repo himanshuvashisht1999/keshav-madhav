@@ -107,6 +107,50 @@
                     </div>
                 </div>
 
+                @if(isset($totals))
+                    <div class="row mb-3">
+                        @if(isset($totals->sum_received))
+                        <div class="col-lg-4 col-md-6 col-12">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3>{{ number_format($totals->sum_received ?? 0, 2) }}</h3>
+                                    <p class="font-weight-bold text-uppercase mb-1">Total Received</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-boxes"></i>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                        @if(isset($totals->sum_issued))
+                        <div class="col-lg-4 col-md-6 col-12">
+                            <div class="small-box bg-warning">
+                                <div class="inner">
+                                    <h3>{{ number_format($totals->sum_issued ?? 0, 2) }}</h3>
+                                    <p class="font-weight-bold text-uppercase mb-1">Total Issued</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-dolly-flatbed"></i>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                        @if(isset($totals->sum_remaining))
+                        <div class="col-lg-4 col-md-6 col-12">
+                            <div class="small-box bg-success">
+                                <div class="inner">
+                                    <h3>{{ number_format($totals->sum_remaining ?? 0, 2) }}</h3>
+                                    <p class="font-weight-bold text-uppercase mb-1">Remaining Qty</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-cubes"></i>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                @endif
+
                 @if($level === 'fabrics')
                     @include('admin.report.partials.stock_level_fabrics')
                 @elseif($level === 'warehouses')

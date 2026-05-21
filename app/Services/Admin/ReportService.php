@@ -398,10 +398,21 @@ class ReportService
                 })
                 ->orderBy('fabrics.name');
 
+            $totalsQuery = clone $query;
+            $totals = \DB::query()->fromSub($totalsQuery, 'sub')->selectRaw('
+                SUM(total_received) as sum_received,
+                SUM(total_issued) as sum_issued,
+                SUM(total_remaining) as sum_remaining
+            ')->first();
+
             if ($request->has('is_export')) {
-                return ['level' => 'fabrics', 'data' => $query->get()];
+                return ['level' => 'fabrics', 'data' => $query->get(), 'totals' => $totals];
             }
-            return ['level' => 'fabrics', 'data' => $query->paginate(20)->withQueryString()];
+            return [
+                'level' => 'fabrics', 
+                'data' => $query->paginate(20)->withQueryString(),
+                'totals' => $totals
+            ];
         }
 
         if ($level === 'warehouses') {
@@ -426,10 +437,18 @@ class ReportService
                     $q->having('total_remaining', '<=', $request->qty_to);
                 });
 
+            $data = $query->get();
+            $totals = (object) [
+                'sum_received' => $data->sum('total_received'),
+                'sum_issued' => $data->sum('total_issued'),
+                'sum_remaining' => $data->sum('total_remaining'),
+            ];
+
             return [
                 'level' => 'warehouses',
                 'fabric' => $fabric,
-                'data' => $query->get() // Usaually few warehouses, no need to paginate
+                'data' => $data,
+                'totals' => $totals
             ];
         }
 
@@ -450,17 +469,26 @@ class ReportService
                 })
                 ->orderBy('created_at', 'desc');
 
+            $totalsQuery = clone $query;
+            $totals = (object) [
+                'sum_received' => $totalsQuery->sum('meter'),
+                'sum_remaining' => $totalsQuery->sum('remaining_quantity'),
+                'sum_issued' => $totalsQuery->sum(\DB::raw('meter - remaining_quantity'))
+            ];
+
             if ($request->has('is_export')) {
                 return [
                     'level' => 'receipts',
                     'fabric' => Fabric::find($fabricId),
-                    'data' => $query->get()
+                    'data' => $query->get(),
+                    'totals' => $totals
                 ];
             }
             return [
                 'level' => 'receipts',
                 'fabric' => Fabric::find($fabricId),
-                'data' => $query->paginate(20)->withQueryString()
+                'data' => $query->paginate(20)->withQueryString(),
+                'totals' => $totals
             ];
         }
 
@@ -527,11 +555,16 @@ class ReportService
             // Sort by created_at desc
             $unifiedUsages = $unifiedUsages->sortByDesc('created_at')->values();
 
+            $totals = (object) [
+                'sum_issued' => $unifiedUsages->sum('meter')
+            ];
+
             if ($request->has('is_export')) {
                 return [
                     'level' => 'usages',
                     'fabric' => Fabric::find($fabricId),
-                    'data' => $unifiedUsages
+                    'data' => $unifiedUsages,
+                    'totals' => $totals
                 ];
             }
 
@@ -550,7 +583,8 @@ class ReportService
             return [
                 'level' => 'usages',
                 'fabric' => Fabric::find($fabricId),
-                'data' => $paginatedData->withQueryString()
+                'data' => $paginatedData->withQueryString(),
+                'totals' => $totals
             ];
         }
 

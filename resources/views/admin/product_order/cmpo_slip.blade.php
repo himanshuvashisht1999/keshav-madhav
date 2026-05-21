@@ -79,8 +79,8 @@
     <!-- ===================== HEADER DETAILS ===================== -->
     <table class="meta-table">
         <tr>
-            <td class="meta-label">CMPO No:</td>
-            <td>CMPO-{{ $header['cmpo_id'] }}</td>
+            <td class="meta-label">ID:</td>
+            <td>ID-{{ $header['cmpo_id'] }}</td>
 
             <td class="meta-label">Date:</td>
             <td>{{ $header['date'] }}</td>

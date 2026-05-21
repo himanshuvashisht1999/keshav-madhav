@@ -66,7 +66,7 @@
                     <div class="po-box">
                         <div class="box-title text-right">PO Info</div>
                         <p class="text-right"><b>PO Number:</b> {{ $po->po_number }}</p>
-                        <p class="text-right"><b>Order No:</b> {{ $po->orderMain->sku ?? 'N/A' }}</p>
+                        <!-- <p class="text-right"><b>Order No:</b> {{ $po->orderMain->sku ?? 'N/A' }}</p> -->
                         <p class="text-right"><b>Date:</b> {{ $po->created_at->format('j M Y') }}</p>
                         <p class="text-right"><b>Delivery Date:</b> {{ $po->delivery_date ? \Carbon\Carbon::parse($po->delivery_date)->format('j M Y') : 'N/A' }}</p>
                     </div>
