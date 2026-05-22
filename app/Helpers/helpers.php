@@ -216,7 +216,7 @@ function getLotDetails($lot_id, $master_stage)
         $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
         $totalQuantity = $records->sum('quantity');
         $remainingQuantity = $records->sum('remaining_quantity');
-    } elseif ($master_stage == 12) {
+    } elseif ($master_stage == 13) {
         $records = \App\Models\OrderGodamStageTransaction::with('getToUnitMaster')
             ->where('lot_no', $lot_id)
             ->where('to_stage_id', $master_stage)

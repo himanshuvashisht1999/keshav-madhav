@@ -1533,7 +1533,8 @@ class OrderDigitalizationService
                 
                 OrderGodamStageTransaction::whereIn('id', $godamIds)->update([
                     'remaining_quantity' => 0,
-                    'status' => 2
+                    'status' => 2,
+                    'complete_date' => $request->production_datetime
                 ]);
 
                 OrderGodamStageTransactionDetail::whereIn('order_godam_stage_transaction_id', $godamIds)->update([
