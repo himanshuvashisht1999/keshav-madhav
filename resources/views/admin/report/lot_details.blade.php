@@ -381,7 +381,7 @@
                                     <div class="metric">Start<strong>{{ $d['start_date'] ? Carbon::parse($d['start_date'])->format('d M H:i') : '-' }}</strong></div>
                                     <div class="metric">ETA<strong>{{ $eta->format('d M Y') }}</strong></div>
                                     <div class="metric">
-                                        Completed<strong>{{ $completed ? $completed->format('d M Y') : '-' }}</strong></div>
+                                        Completed<strong>{{ ($remaining == 0 && $completed) ? $completed->format('d M Y') : '-' }}</strong></div>
                                 </div>
                             </div>
                         @endforeach

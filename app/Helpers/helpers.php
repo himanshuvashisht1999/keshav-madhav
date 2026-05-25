@@ -200,38 +200,62 @@ function getLotDetails($lot_id, $master_stage)
             ->where('to_stage_id', $master_stage)
             ->get();
         $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
-        $totalQuantity = $records->sum('quantity');
-        $remainingQuantity = $records->sum('remaining_quantity');
-    } elseif ($master_stage == 4) {
-        $records = \App\Models\OrderPrintingToStichingTransaction::with('getToUnitMaster')
-            ->where('lot_no', $lot_id)
-            ->where('to_stage_id', $master_stage)
-            ->get();
-        if ($records->isEmpty()) {
-            $records = \App\Models\OrderStageTransaction::with('getToUnitMaster')
-                ->where('lot_no', $lot_id)
-                ->where('to_stage_id', $master_stage)
-                ->get();
-        }
-        $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
-        $totalQuantity = $records->sum('quantity');
-        $remainingQuantity = $records->sum('remaining_quantity');
+        
+        $incomingType1 = $records->filter(function($item) { return $item->type != 2; })->sum('quantity');
+        $incomingAll = $records->sum('quantity');
+        
+        $out1 = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
+        $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
+        $out3 = \App\Models\OrderPrintingStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
+        
+        $outflowType2 = $out1->filter(function($item) { return $item->type == 2; })->sum('quantity') + 
+                        $out2->filter(function($item) { return $item->type == 2; })->sum('quantity') + 
+                        $out3->filter(function($item) { return $item->type == 2; })->sum('quantity');
+                        
+        $outflowAll = $out1->sum('quantity') + $out2->sum('quantity') + $out3->sum('quantity');
+        
+        $totalQuantity = max(0, $incomingType1 - $outflowType2);
+        $remainingQuantity = max(0, $incomingAll - $outflowAll);
     } elseif ($master_stage == 13) {
         $records = \App\Models\OrderGodamStageTransaction::with('getToUnitMaster')
             ->where('lot_no', $lot_id)
             ->where('to_stage_id', $master_stage)
             ->get();
         $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
-        $totalQuantity = $records->sum('quantity');
-        $remainingQuantity = $records->sum('remaining_quantity');
+        
+        $incomingType1 = $records->filter(function($item) { return $item->type != 2; })->sum('quantity');
+        $incomingAll = $records->sum('quantity');
+        
+        $out1 = \App\Models\OrderStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
+        $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
+        
+        $outflowType2 = $out1->filter(function($item) { return $item->type == 2; })->sum('quantity') + 
+                        $out2->filter(function($item) { return $item->type == 2; })->sum('quantity');
+                        
+        $outflowAll = $out1->sum('quantity') + $out2->sum('quantity');
+        
+        $totalQuantity = max(0, $incomingType1 - $outflowType2);
+        $remainingQuantity = max(0, $incomingAll - $outflowAll);
     } else {
         $records = \App\Models\OrderStageTransaction::with('getToUnitMaster')
             ->where('lot_no', $lot_id)
             ->where('to_stage_id', $master_stage)
             ->get();
         $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
-        $totalQuantity = $records->sum('quantity');
-        $remainingQuantity = $records->sum('remaining_quantity');
+        
+        $incomingType1 = $records->filter(function($item) { return $item->type != 2; })->sum('quantity');
+        $incomingAll = $records->sum('quantity');
+        
+        $out1 = \App\Models\OrderStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
+        $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
+        
+        $outflowType2 = $out1->filter(function($item) { return $item->type == 2; })->sum('quantity') + 
+                        $out2->filter(function($item) { return $item->type == 2; })->sum('quantity');
+                        
+        $outflowAll = $out1->sum('quantity') + $out2->sum('quantity');
+        
+        $totalQuantity = max(0, $incomingType1 - $outflowType2);
+        $remainingQuantity = max(0, $incomingAll - $outflowAll);
     }
 
     $timeAllocation = $timing->end_date ?? null;
