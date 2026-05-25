@@ -60,31 +60,46 @@
                 @endphp
 
                 {{-- ================= SLIP SUMMARY ================= --}}
-                <div class="card shadow-sm mb-4 border-0" style="border-radius: 12px; border-left: 5px solid #6366f1;">
-                    <div class="card-body py-4">
-                        <div class="row g-4">
-                            <div class="col-md-2 border-end">
-                                <div class="text-muted small text-uppercase fw-bold mb-1">Slip ID</div>
-                                <div class="h4 mb-0 fw-bold text-indigo">#{{ $slip->id }}</div>
+                <div class="card shadow-sm mb-4 border-0" style="border-radius: 16px; overflow: hidden; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0;">
+                    <div class="card-body p-0">
+                        <div class="d-flex flex-wrap align-items-stretch">
+                            
+                            <!-- Slip ID Block -->
+                            <div class="p-4 d-flex align-items-center border-end" style="flex: 1; min-width: 220px; background: rgba(99, 102, 241, 0.05);">
+                                <div class="text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm me-3" style="width: 54px; height: 54px; background: linear-gradient(135deg, #6366f1, #4f46e5);">
+                                    <i class="fas fa-hashtag fs-4"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 0.5px;">Slip ID</div>
+                                    <div class="h3 mb-0 fw-bolder" style="color: #4f46e5;">#{{ $slip->id }}</div>
+                                </div>
                             </div>
-                            <div class="col-md-3 border-end">
-                                <div class="text-muted small text-uppercase fw-bold mb-1">From Stage</div>
-                                <div class="h5 mb-0 fw-bold">{{ $slip->fromStage?->name ?? '-' }}</div>
-                                <div class="text-muted small mt-1">{{ getformatDateTime($slip->created_at) }}</div>
+
+                            <!-- From Stage Block -->
+                            <div class="p-4 d-flex align-items-center border-end" style="flex: 1.5; min-width: 250px;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center me-3 shadow-xs" style="width: 54px; height: 54px; background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe;">
+                                    <i class="fas fa-layer-group fs-4"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 0.5px;">From Stage</div>
+                                    <div class="h5 mb-0 fw-bold text-dark">{{ $slip->fromStage?->name ?? '-' }}</div>
+                                </div>
                             </div>
-                            <div class="col-md-3 border-end">
-                                <div class="text-muted small text-uppercase fw-bold mb-1">Unit / Warehouse</div>
-                                <div class="h6 mb-0 fw-bold text-dark">{{ $slip->getUnitMaster?->name }}</div>
-                                <div class="text-muted small">{{ $slip->getUnitMaster?->masterFabricWarehouse?->cutting_master_name }}</div>
+
+                            <!-- Unit / Warehouse Block -->
+                            <div class="p-4 d-flex align-items-center" style="flex: 2; min-width: 300px;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center me-3 shadow-xs" style="width: 54px; height: 54px; background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0;">
+                                    <i class="fas fa-industry fs-4"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 0.5px;">Unit / Warehouse</div>
+                                    <div class="h5 mb-0 fw-bold text-dark">{{ $slip->getUnitMaster?->name }}</div>
+                                    @if($slip->getUnitMaster?->masterFabricWarehouse?->cutting_master_name)
+                                        <div class="text-muted mt-1" style="font-size: 0.85rem;"><i class="fas fa-user-tie me-1 text-secondary"></i> {{ $slip->getUnitMaster?->masterFabricWarehouse?->cutting_master_name }}</div>
+                                    @endif
+                                </div>
                             </div>
-                            <div class="col-md-2 border-end text-center">
-                                <div class="text-muted small text-uppercase fw-bold mb-1">Slip Range</div>
-                                <div class="h4 mb-0 fw-bold text-primary">{{ $actual_range }}</div>
-                            </div>
-                            <div class="col-md-2 text-center">
-                                <div class="text-muted small text-uppercase fw-bold mb-1">Total Pieces</div>
-                                <div class="h4 mb-0 fw-bold text-dark">{{ $pcs_in_set }}</div>
-                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -187,12 +202,7 @@
                                                     </div>
                                                 </div>
                                             @endforeach
-                                            <div class="col">
-                                                <div class="text-center p-3 bg-info text-white rounded shadow-sm border-info h-100">
-                                                    <div class="text-white small uppercase fw-black mb-1" style="font-size: 11px; letter-spacing: 0.5px;">TOTAL</div>
-                                                    <div class="fw-black fs-2 text-white">{{ array_sum($consolidated) }}</div>
-                                                </div>
-                                            </div>
+
                                         </div>
                                     </div>
                                 </div>
@@ -261,10 +271,15 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="row mb-4">
-                                        <div class="col-md-3"><strong>Lot No:</strong> <span class="text-dark">#{{ $printing->lot_no }}</span></div>
-                                        <div class="col-md-3"><strong>Date:</strong> {{ getformatDateTime($printing->production_datetime) }}</div>
-                                        <div class="col-md-3"><strong>Route:</strong> <span class="text-muted small">{{ $printing->from_stage?->name }}</span> <i class="fas fa-arrow-right mx-1 small"></i> <span class="text-primary fw-bold">{{ $printing->to_stage?->name }}</span> <span class="text-muted small">({{ $printing->getToUnitMaster?->name }})</span></div>
-                                        <div class="col-md-3 text-end"><strong>Total Pieces:</strong> <span class="badge bg-primary px-3 fs-6">{{ $printing->quantity }}</span></div>
+                                        <div class="col-md-2"><strong>Lot No:</strong> <span class="text-dark">#{{ $printing->lot_no }}</span></div>
+                                        <div class="col-md-3"><strong>Date:</strong> <span class="small">{{ \Carbon\Carbon::parse($printing->production_datetime)->format('d M Y') }}</span></div>
+                                        <div class="col-md-5"><strong>Transfer:</strong> 
+                                            <span class="text-primary fw-bold">{{ $printing->to_stage?->name }}</span> 
+                                            @if($printing->getToUnitMaster)
+                                                <span class="text-muted small">({{ $printing->getToUnitMaster->name }})</span>
+                                            @endif
+                                        </div>
+                                        <div class="col-md-2 text-end"><strong>Total Pieces:</strong> <span class="badge bg-primary px-3 fs-6">{{ $printing->quantity }}</span></div>
                                     </div>
 
                                     @php
@@ -284,12 +299,7 @@
                                                     </div>
                                                 </div>
                                             @endforeach
-                                            <div class="col">
-                                                <div class="text-center p-3 bg-primary text-white rounded border-primary h-100 shadow-sm">
-                                                    <div class="text-white small uppercase fw-black mb-1" style="font-size: 11px;">TOTAL</div>
-                                                    <div class="fw-black fs-3">{{ array_sum($consolidated) }}</div>
-                                                </div>
-                                            </div>
+
                                         </div>
                                     @endif
                                 </div>
@@ -367,21 +377,15 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="row mb-4">
-                                        <div class="col-md-3"><strong>Lot No:</strong> <span class="text-dark">#{{ $transaction->lot_no }}</span></div>
-                                        <div class="col-md-3"><strong>Date:</strong> {{ getformatDateTime($transaction->production_datetime) }}</div>
-                                        <div class="col-md-3"><strong>Transfer:</strong> 
-                                            <span class="text-muted small">
-                                                @php
-                                                    $fromStageName = $transaction->from_stage?->name;
-                                                    if ($slip->from_stage_id == 3 && $transaction->from_stage_id == 13) {
-                                                        $fromStageName = 'Cutting & Godam';
-                                                    }
-                                                @endphp
-                                                {{ $fromStageName }}
-                                            </span> 
-                                            <i class="fas fa-arrow-right mx-1 small"></i> <span class="text-warning fw-bold">{{ $transaction->to_stage?->name }}</span> <span class="text-muted small">({{ $transaction->getToUnitMaster?->name }})</span>
+                                        <div class="col-md-2"><strong>Lot No:</strong> <span class="text-dark">#{{ $transaction->lot_no }}</span></div>
+                                        <div class="col-md-3"><strong>Date:</strong> <span class="small">{{ \Carbon\Carbon::parse($transaction->production_datetime)->format('d M Y') }}</span></div>
+                                        <div class="col-md-5"><strong>Transfer:</strong> 
+                                            <span class="text-warning fw-bold">{{ $transaction->to_stage?->name }}</span> 
+                                            @if($transaction->getToUnitMaster)
+                                                <span class="text-muted small">({{ $transaction->getToUnitMaster->name }})</span>
+                                            @endif
                                         </div>
-                                        <div class="col-md-3 text-end"><strong>Total Pieces:</strong> <span class="badge bg-warning text-dark px-3 fs-6">{{ $transaction->quantity }}</span></div>
+                                        <div class="col-md-2 text-end"><strong>Total Pieces:</strong> <span class="badge bg-warning text-dark px-3 fs-6">{{ $transaction->quantity }}</span></div>
                                     </div>
 
                                     @php
@@ -401,12 +405,7 @@
                                                     </div>
                                                 </div>
                                             @endforeach
-                                            <div class="col">
-                                                <div class="text-center p-3 bg-warning text-dark rounded border-warning h-100 shadow-sm">
-                                                    <div class="text-black small uppercase fw-black mb-1" style="font-size: 11px;">TOTAL</div>
-                                                    <div class="fw-black fs-3">{{ array_sum($consolidated) }}</div>
-                                                </div>
-                                            </div>
+
                                         </div>
                                     @endif
                                 </div>

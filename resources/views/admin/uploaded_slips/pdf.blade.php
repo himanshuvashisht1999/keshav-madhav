@@ -282,25 +282,17 @@
         {{-- ================= SLIP SUMMARY ================= --}}
         <table class="info-grid" style="background:#f9f9f9; border: 1px solid #ddd; margin-bottom: 20px;">
             <tr>
-                <td width="20%" style="padding:10px; border-right: 1px solid #eee;">
+                <td width="33%" style="padding:10px; border-right: 1px solid #eee;">
                     <span class="label">Slip ID</span>
                     <span class="value" style="font-size: 14px; color: #6366f1;">#{{ $slip->id }}</span>
                 </td>
-                <td width="20%" style="padding:10px; border-right: 1px solid #eee;">
+                <td width="33%" style="padding:10px; border-right: 1px solid #eee;">
                     <span class="label">From Stage</span>
                     <span class="value">{{ $slip->fromStage?->name ?? '-' }}</span>
                 </td>
-                <td width="20%" style="padding:10px; border-right: 1px solid #eee;">
+                <td width="34%" style="padding:10px;">
                     <span class="label">Unit</span>
                     <span class="value">{{ $slip->getUnitMaster?->name ?? '-' }}</span>
-                </td>
-                <td width="20%" style="padding:10px; border-right: 1px solid #eee; text-align: center;">
-                    <span class="label">Slip Range</span>
-                    <span class="value" style="color: #3b82f6; font-size: 14px;">{{ $actual_range }}</span>
-                </td>
-                <td width="20%" style="padding:10px; text-align: center;">
-                    <span class="label">Total Pieces</span>
-                    <span class="value" style="font-size: 14px;">{{ $pcs_in_set }}</span>
                 </td>
             </tr>
         </table>
@@ -432,10 +424,7 @@
                                             <div style="font-size: 11px; font-weight: bold;">{{ $qty }}</div>
                                         </td>
                                     @endforeach
-                                    <td style="border: 1.5px solid #000; padding: 5px; text-align: center; background: #eee;">
-                                        <div style="font-size: 8px; font-weight: bold;">TOTAL</div>
-                                        <div style="font-size: 12px; font-weight: 900;">{{ array_sum($consolidated) }}</div>
-                                    </td>
+
                                 </tr>
                             </table>
                         </div>
@@ -482,21 +471,22 @@
 
                     <table class="info-grid">
                         <tr>
-                            <td width="25%">
+                            <td width="33%">
                                 <span class="label">Lot No</span>
                                 <span class="value">#{{ $printing->lot_no }}</span>
                             </td>
-                            <td width="25%">
+                            <td width="33%">
                                 <span class="label">Total Quantity</span>
                                 <span class="value">{{ $printing->quantity }} Pcs</span>
                             </td>
-                            <td width="25%">
-                                <span class="label">From Stage</span>
-                                <span class="value">{{ $printing->from_stage?->name ?? '-' }}</span>
-                            </td>
-                            <td width="25%">
+                            <td width="34%">
                                 <span class="label">To Stage</span>
-                                <span class="value">{{ $printing->to_stage?->name ?? '-' }}</span>
+                                <span class="value">
+                                    {{ $printing->to_stage?->name ?? '-' }}
+                                    @if($printing->getToUnitMaster)
+                                        <br><span style="color: #666; font-size: 9px; font-weight: normal;">({{ $printing->getToUnitMaster->name }})</span>
+                                    @endif
+                                </span>
                             </td>
                         </tr>
                     </table>
@@ -518,10 +508,7 @@
                                             <div style="font-size: 11px; font-weight: bold;">{{ $qty }}</div>
                                         </td>
                                     @endforeach
-                                    <td style="border: 1.5px solid #000; padding: 5px; text-align: center; background: #eee;">
-                                        <div style="font-size: 8px; font-weight: bold;">TOTAL</div>
-                                        <div style="font-size: 12px; font-weight: 900;">{{ array_sum($consolidated) }}</div>
-                                    </td>
+
                                 </tr>
                             </table>
                         </div>
@@ -567,21 +554,22 @@
 
                     <table class="info-grid">
                         <tr>
-                            <td width="25%">
+                            <td width="33%">
                                 <span class="label">Lot No</span>
                                 <span class="value">#{{ $transaction->lot_no }}</span>
                             </td>
-                            <td width="25%">
+                            <td width="33%">
                                 <span class="label">Quantity</span>
                                 <span class="value">{{ $transaction->quantity }}</span>
                             </td>
-                            <td width="25%">
-                                <span class="label">From Stage</span>
-                                <span class="value">{{ $transaction->from_stage?->name ?? '-' }}</span>
-                            </td>
-                            <td width="25%">
+                            <td width="34%">
                                 <span class="label">To Stage</span>
-                                <span class="value">{{ $transaction->to_stage?->name ?? '-' }}</span>
+                                <span class="value">
+                                    {{ $transaction->to_stage?->name ?? '-' }}
+                                    @if($transaction->getToUnitMaster)
+                                        <br><span style="color: #666; font-size: 9px; font-weight: normal;">({{ $transaction->getToUnitMaster->name }})</span>
+                                    @endif
+                                </span>
                             </td>
                         </tr>
                     </table>
@@ -603,10 +591,7 @@
                                             <div style="font-size: 11px; font-weight: bold;">{{ $qty }}</div>
                                         </td>
                                     @endforeach
-                                    <td style="border: 1.5px solid #000; padding: 5px; text-align: center; background: #eee;">
-                                        <div style="font-size: 8px; font-weight: bold;">TOTAL</div>
-                                        <div style="font-size: 12px; font-weight: 900;">{{ array_sum($consolidated) }}</div>
-                                    </td>
+
                                 </tr>
                             </table>
                         </div>

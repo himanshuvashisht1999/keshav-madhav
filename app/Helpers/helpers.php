@@ -187,6 +187,18 @@ function getLotDetails($lot_id, $master_stage)
     $totalQuantity = 0;
     $remainingQuantity = 0;
 
+    $isReverse = function($item) {
+        if ($item->type == 2) return true;
+        if ($item->from_stage_id && $item->to_stage_id) {
+            if ($item->from_stage_id >= 4 && $item->from_stage_id <= 12 && 
+                $item->to_stage_id >= 4 && $item->to_stage_id <= 12 && 
+                $item->from_stage_id > $item->to_stage_id) {
+                return true;
+            }
+        }
+        return false;
+    };
+
     if ($master_stage == 3) {
         $records = \App\Models\OrderProductSet::with('stage_master_unit')
             ->where('design_number', $lot_id)
@@ -201,16 +213,16 @@ function getLotDetails($lot_id, $master_stage)
             ->get();
         $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
         
-        $incomingType1 = $records->filter(function($item) { return $item->type != 2; })->sum('quantity');
+        $incomingType1 = $records->filter(function($item) use ($isReverse) { return !$isReverse($item); })->sum('quantity');
         $incomingAll = $records->sum('quantity');
         
         $out1 = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
         $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
         $out3 = \App\Models\OrderPrintingStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
         
-        $outflowType2 = $out1->filter(function($item) { return $item->type == 2; })->sum('quantity') + 
-                        $out2->filter(function($item) { return $item->type == 2; })->sum('quantity') + 
-                        $out3->filter(function($item) { return $item->type == 2; })->sum('quantity');
+        $outflowType2 = $out1->filter($isReverse)->sum('quantity') + 
+                        $out2->filter($isReverse)->sum('quantity') + 
+                        $out3->filter($isReverse)->sum('quantity');
                         
         $outflowAll = $out1->sum('quantity') + $out2->sum('quantity') + $out3->sum('quantity');
         
@@ -223,14 +235,14 @@ function getLotDetails($lot_id, $master_stage)
             ->get();
         $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
         
-        $incomingType1 = $records->filter(function($item) { return $item->type != 2; })->sum('quantity');
+        $incomingType1 = $records->filter(function($item) use ($isReverse) { return !$isReverse($item); })->sum('quantity');
         $incomingAll = $records->sum('quantity');
         
         $out1 = \App\Models\OrderStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
         $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
         
-        $outflowType2 = $out1->filter(function($item) { return $item->type == 2; })->sum('quantity') + 
-                        $out2->filter(function($item) { return $item->type == 2; })->sum('quantity');
+        $outflowType2 = $out1->filter($isReverse)->sum('quantity') + 
+                        $out2->filter($isReverse)->sum('quantity');
                         
         $outflowAll = $out1->sum('quantity') + $out2->sum('quantity');
         
@@ -243,14 +255,14 @@ function getLotDetails($lot_id, $master_stage)
             ->get();
         $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
         
-        $incomingType1 = $records->filter(function($item) { return $item->type != 2; })->sum('quantity');
+        $incomingType1 = $records->filter(function($item) use ($isReverse) { return !$isReverse($item); })->sum('quantity');
         $incomingAll = $records->sum('quantity');
         
         $out1 = \App\Models\OrderStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
         $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
         
-        $outflowType2 = $out1->filter(function($item) { return $item->type == 2; })->sum('quantity') + 
-                        $out2->filter(function($item) { return $item->type == 2; })->sum('quantity');
+        $outflowType2 = $out1->filter($isReverse)->sum('quantity') + 
+                        $out2->filter($isReverse)->sum('quantity');
                         
         $outflowAll = $out1->sum('quantity') + $out2->sum('quantity');
         
