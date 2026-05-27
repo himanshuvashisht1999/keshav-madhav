@@ -62,7 +62,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        box-shadow: var-card-shadow;
+        box-shadow: var(--card-shadow);
         border: 1px solid rgba(0,0,0,0.05);
     }
 
@@ -115,7 +115,7 @@
 
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 12px;
     }
 
@@ -222,7 +222,7 @@
 @endsection
 
 @section('content')
-<div class="mobile-only">
+<div class="responsive-app-view">
     <div class="app-header">
         <div class="breadcrumb-custom">
             <a href="{{ route('owner.dashboard') }}">Home</a>
@@ -276,10 +276,6 @@
                             <span class="stat-value">{{ number_format($row->total_received, 1) }}</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-label">Issued</span>
-                            <span class="stat-value">{{ number_format($row->total_issued, 1) }}</span>
-                        </div>
-                        <div class="stat-item">
                             <span class="stat-label">Stock</span>
                             <span class="stat-value remaining">{{ number_format($row->total_remaining, 1) }}</span>
                         </div>
@@ -314,10 +310,6 @@
                         <div class="stat-item">
                             <span class="stat-label">Received</span>
                             <span class="stat-value">{{ number_format($row->total_received, 1) }}</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Issued</span>
-                            <span class="stat-value">{{ number_format($row->total_issued, 1) }}</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Stock</span>
@@ -427,9 +419,5 @@
     </div>
 </div>
 
-<div class="desktop-only p-5 text-center">
-    <h3>Please use a mobile device or responsive view to see the app interface.</h3>
-    <p>This module is optimized for mobile app experience.</p>
-    <a href="{{ route('admin.report.stock') }}" class="btn btn-primary mt-3">Go to Admin Version</a>
-</div>
+
 @endsection

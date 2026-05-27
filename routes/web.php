@@ -138,7 +138,10 @@ Route::prefix('owner')->name('owner.')->group(function () {
         // Report specific routes
         Route::get('/orders', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'orders'])->name('orders');
         Route::get('/lots', [\App\Http\Controllers\Owner\ReportController::class, 'lots'])->name('lots');
-        Route::get('/lot-details', [\App\Http\Controllers\Owner\ReportController::class, 'lotDetails'])->name('lot-details');
+        Route::get('/lots/lot-details/{lot_no}', [\App\Http\Controllers\Owner\ReportController::class, 'lotDetails'])->name('lot-details');
+        Route::get('/unit-assignments', [\App\Http\Controllers\Owner\ReportController::class, 'unitAssignments'])->name('reports.unit-assignments');
+        Route::get('/selling-items', [\App\Http\Controllers\Owner\ReportController::class, 'sellingItems'])->name('reports.selling-items');
+        Route::get('/delayed-payments', [\App\Http\Controllers\Owner\ReportController::class, 'delayedPayments'])->name('reports.delayed-payments');
         Route::get('/lot-details/pdf', [\App\Http\Controllers\Owner\ReportController::class, 'lotDetailsPdf'])->name('lot-details.pdf');
 
         // Stock Reports
@@ -156,9 +159,10 @@ Route::prefix('owner')->name('owner.')->group(function () {
             Route::get('/pdf', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'orderSummaryPdf'])->name('pdf');
         });
 
-        Route::prefix('payment-adjustment')->name('payment-adjustment.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Owner\PaymentAdjustmentController::class, 'index'])->name('index');
-            Route::get('/show/{batchId}', [\App\Http\Controllers\Owner\PaymentAdjustmentController::class, 'show'])->name('show');
+        Route::prefix('party-ledger')->name('party-ledger.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Owner\Ledger\PartyLedgerController::class, 'index'])->name('index');
+            Route::get('/show/{type}/{id}', [\App\Http\Controllers\Owner\Ledger\PartyLedgerController::class, 'show'])->name('show');
+            Route::get('/download/{type}/{id}', [\App\Http\Controllers\Owner\Ledger\PartyLedgerController::class, 'download'])->name('download');
         });
 
         Route::get('/pending-payments', [\App\Http\Controllers\Admin\Payment\PendingPaymentController::class, 'index'])->name('payment.pending.index');

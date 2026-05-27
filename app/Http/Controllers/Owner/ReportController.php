@@ -159,4 +159,148 @@ class ReportController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('owner.reports.lot_details_pdf', $response)->setPaper('A4', 'portrait');
         return $pdf->download('lot-details-' . $request->lot_no . '.pdf');
     }
+
+    public function unitAssignments(Request $request)
+    {
+        $response = $this->service->unitAssignments($request);
+        return view('owner.reports.unit_assignments', $response);
+    }
+
+    public function sellingItems(Request $request)
+    {
+        $salesQuery = \DB::table('order_products')
+            ->select('design_number', \DB::raw('SUM(quantity) as sales_qty'))
+            ->whereNotNull('design_number')
+            ->groupBy('design_number');
+
+        $agentQuery = \DB::table('agent_order_items')
+            ->select('design_number', \DB::raw('SUM(quantity) as agent_qty'))
+            ->whereNotNull('design_number')
+            ->groupBy('design_number');
+
+        if ($request->filled('start_date')) {
+            $salesQuery->whereDate('created_at', '>=', $request->start_date);
+            $agentQuery->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $salesQuery->whereDate('created_at', '<=', $request->end_date);
+            $agentQuery->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        $salesOrders = $salesQuery->pluck('sales_qty', 'design_number')->toArray();
+        $agentOrders = $agentQuery->pluck('agent_qty', 'design_number')->toArray();
+
+        $allDesigns = array_unique(array_merge(array_keys($salesOrders), array_keys($agentOrders)));
+
+        $sellingItems = [];
+        foreach ($allDesigns as $design) {
+            if (empty($design)) continue;
+            
+            $sQty = $salesOrders[$design] ?? 0;
+            $aQty = $agentOrders[$design] ?? 0;
+            
+            $sellingItems[] = (object)[
+                'design_number' => $design,
+                'sales_qty' => $sQty,
+                'agent_qty' => $aQty,
+                'total_qty' => $sQty + $aQty
+            ];
+        }
+
+        $orderBy = $request->get('order_by', 'desc');
+
+        usort($sellingItems, function($a, $b) use ($orderBy) {
+            if ($orderBy === 'asc') {
+                return $a->total_qty <=> $b->total_qty;
+            }
+            return $b->total_qty <=> $a->total_qty;
+        });
+
+        // Add rank for display so pagination doesn't reset it
+        foreach ($sellingItems as $index => $item) {
+            $item->rank = $index + 1;
+        }
+
+        $perPage = 15;
+        $page = $request->get('page', 1);
+        $offset = ($page - 1) * $perPage;
+        $totalItems = count($sellingItems);
+        
+        $pagedItems = array_slice($sellingItems, $offset, $perPage);
+        $hasMore = ($offset + $perPage) < $totalItems;
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('owner.reports.partials.selling_items_list', ['items' => $pagedItems])->render(),
+                'hasMore' => $hasMore
+            ]);
+        }
+
+        // Calculate grand totals for the summary (using all items, not just paged)
+        $grandSales = array_sum(array_column($sellingItems, 'sales_qty'));
+        $grandAgent = array_sum(array_column($sellingItems, 'agent_qty'));
+        $grandTotal = array_sum(array_column($sellingItems, 'total_qty'));
+
+        return view('owner.reports.selling_items', [
+            'items' => collect($pagedItems),
+            'filters' => $request->all(),
+            'hasMore' => $hasMore,
+            'grandSales' => $grandSales,
+            'grandAgent' => $grandAgent,
+            'grandTotal' => $grandTotal,
+            'totalItemsCount' => $totalItems
+        ]);
+    }
+
+    public function delayedPayments(Request $request)
+    {
+        $thresholdDate = now()->subDays(120)->format('Y-m-d');
+        
+        $customerIds1 = \App\Models\OrderDispatch::whereDate('dispatch_date', '<', $thresholdDate)
+            ->pluck('customer_id')->toArray();
+        $customerIds2 = \App\Models\AgentOrderDispatch::where('party_type', 'customer')
+            ->whereDate('dispatch_date', '<', $thresholdDate)
+            ->pluck('master_customer_id')->toArray();
+            
+        $customerIds = array_unique(array_merge($customerIds1, $customerIds2));
+        
+        $parties = collect();
+        
+        if (!empty($customerIds)) {
+            $masterCustomer = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\MasterCustomer')->first();
+            $customers = \App\Models\MasterCustomer::whereIn('id', $customerIds)->get();
+            foreach ($customers as $v) {
+                // Check if they owe money (debit)
+                if ($v->balance > 0) {
+                    $v->party_type = strtolower($masterCustomer->name ?? 'customer');
+                    $v->master_id_val = $masterCustomer->id ?? 18;
+                    $parties->push($v);
+                }
+            }
+        }
+        
+        $vendorIds = \App\Models\AgentOrderDispatch::where('party_type', 'vendor')
+            ->whereDate('dispatch_date', '<', $thresholdDate)
+            ->pluck('master_vendor_id')->toArray();
+            
+        if (!empty($vendorIds)) {
+            $masterVendor = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\Vendor')->first();
+            $vendors = \App\Models\Vendor::whereIn('id', $vendorIds)->get();
+            foreach ($vendors as $v) {
+                if ($v->balance > 0) {
+                    $v->party_type = strtolower($masterVendor->name ?? 'vendor');
+                    $v->master_id_val = $masterVendor->id ?? 19;
+                    $parties->push($v);
+                }
+            }
+        }
+        
+        $masters = \App\Models\AdjustmentMaster::where('status', 1)->get();
+        $parties = $parties->sortBy('name');
+        
+        $pageTitle = 'Delayed Payments (>120 Days)';
+        $pageSubtitle = 'Parties with debit balance and old dispatches';
+        
+        return view('owner.party-ledger.index', compact('parties', 'masters', 'pageTitle', 'pageSubtitle'));
+    }
 }

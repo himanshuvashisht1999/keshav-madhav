@@ -325,7 +325,7 @@
 
 @section('content')
     <!-- ================= MOBILE APP CONTENT ================= -->
-    <div class="mobile-only">
+    <div class="dashboard-mobile-view">
         <div class="app-hero">
             <span class="app-hero-label">Owner Portal Dashboard</span>
             <h1 class="app-hero-title">Welcome Back</h1>
@@ -333,29 +333,20 @@
         </div>
 
 
+
         <div class="app-menu-section">
             <div class="section-header">
                 <h2 class="section-title">Business Modules</h2>
             </div>
 
-            <a href="{{ route('owner.order-summary.index') }}" class="app-nav-card">
-                <div class="app-nav-icon" style="background: rgba(111, 66, 193, 0.1); color: var(--KM-purple);">
-                    <i class="fas fa-file-invoice"></i>
-                </div>
-                <div class="app-nav-content">
-                    <span class="app-nav-title">Order Summary</span>
-                    <span class="app-nav-desc">Track manifests & production</span>
-                </div>
-                <i class="fas fa-chevron-right app-nav-arrow"></i>
-            </a>
 
-            <a href="{{ route('owner.stock') }}" class="app-nav-card">
-                <div class="app-nav-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
-                    <i class="fas fa-warehouse"></i>
+            <a href="{{ route('owner.reports.selling-items') }}" class="app-nav-card">
+                <div class="app-nav-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899;">
+                    <i class="fas fa-list-ol"></i>
                 </div>
                 <div class="app-nav-content">
-                    <span class="app-nav-title">Fabric Stock</span>
-                    <span class="app-nav-desc">Manage rolls & quantities</span>
+                    <span class="app-nav-title">Selling Item List</span>
+                    <span class="app-nav-desc">View items and order counts</span>
                 </div>
                 <i class="fas fa-chevron-right app-nav-arrow"></i>
             </a>
@@ -371,16 +362,7 @@
                 <i class="fas fa-chevron-right app-nav-arrow"></i>
             </a>
 
-            <a href="{{ route('owner.lots') }}" class="app-nav-card">
-                <div class="app-nav-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
-                    <i class="fas fa-layer-group"></i>
-                </div>
-                <div class="app-nav-content">
-                    <span class="app-nav-title">Production Lots</span>
-                    <span class="app-nav-desc">Batch and lot tracking</span>
-                </div>
-                <i class="fas fa-chevron-right app-nav-arrow"></i>
-            </a>
+
             <a href="{{ route('owner.ready-stock.index') }}" class="app-nav-card">
                 <div class="app-nav-icon" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">
                     <i class="fas fa-boxes"></i>
@@ -392,16 +374,29 @@
                 <i class="fas fa-chevron-right app-nav-arrow"></i>
             </a>
 
-            <a href="{{ route('owner.payment-adjustment.index') }}" class="app-nav-card">
-                <div class="app-nav-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
-                    <i class="fas fa-balance-scale"></i>
+            <a href="{{ route('owner.reports.unit-assignments', ['stage_id' => 3, 'view' => 'delayed']) }}" class="app-nav-card">
+                <div class="app-nav-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                    <i class="fas fa-tasks"></i>
                 </div>
                 <div class="app-nav-content">
-                    <span class="app-nav-title">Payment Adjustments</span>
-                    <span class="app-nav-desc">Record & view adjustments</span>
+                    <span class="app-nav-title">Unit Assignment Report</span>
+                    <span class="app-nav-desc">Track unit tasks & delays</span>
                 </div>
                 <i class="fas fa-chevron-right app-nav-arrow"></i>
             </a>
+
+            <a href="{{ route('owner.reports.delayed-payments') }}" class="app-nav-card">
+                <div class="app-nav-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="app-nav-content">
+                    <span class="app-nav-title">Delayed Payments</span>
+                    <span class="app-nav-desc">Unpaid bills over 120 days</span>
+                </div>
+                <i class="fas fa-chevron-right app-nav-arrow"></i>
+            </a>
+
+
         </div>
     </div>
 
@@ -417,6 +412,7 @@
         </div>
 
 
+
         <div class="quick-actions-card">
             <div class="card-header-new">
                 <h3>Business Quick Links</h3>
@@ -424,30 +420,30 @@
             </div>
             <div class="card-body-new">
                 <div class="action-grid">
-                    <a href="{{ route('owner.order-summary.index') }}" class="action-btn-modern">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                        <span>Order Summary</span>
-                    </a>
-                    <a href="{{ route('owner.stock') }}" class="action-btn-modern">
-                        <i class="fas fa-warehouse"></i>
-                        <span>Fabric Stock</span>
+
+                    <a href="{{ route('owner.reports.selling-items') }}" class="action-btn-modern">
+                        <i class="fas fa-list-ol text-pink"></i>
+                        <span>Selling Item List</span>
                     </a>
                     <a href="{{ route('owner.report.stock.rolls') }}" class="action-btn-modern">
                         <i class="fas fa-barcode text-primary"></i>
                         <span>Stock by Roll</span>
                     </a>
-                    <a href="{{ route('owner.lots') }}" class="action-btn-modern">
-                        <i class="fas fa-industry"></i>
-                        <span>Production Lots</span>
-                    </a>
+
                     <a href="{{ route('owner.ready-stock.index') }}" class="action-btn-modern">
                         <i class="fas fa-boxes text-info"></i>
                         <span>Ready Stock</span>
                     </a>
-                    <a href="{{ route('owner.payment-adjustment.index') }}" class="action-btn-modern">
-                        <i class="fas fa-balance-scale text-danger"></i>
-                        <span>Adjustments</span>
+                    <a href="{{ route('owner.reports.unit-assignments', ['stage_id' => 3, 'view' => 'delayed']) }}" class="action-btn-modern">
+                        <i class="fas fa-tasks text-success"></i>
+                        <span>Unit Assignments</span>
                     </a>
+
+                    <a href="{{ route('owner.reports.delayed-payments') }}" class="action-btn-modern">
+                        <i class="fas fa-exclamation-circle text-danger"></i>
+                        <span>Delayed Payments</span>
+                    </a>
+
                 </div>
             </div>
         </div>

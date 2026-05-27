@@ -29,7 +29,7 @@
             margin: 0 !important;
         }
 
-        /* Responsive Visibility */
+        /* Universal App Layout for Owner (Mobile + Desktop) */
         .mobile-only {
             display: none !important;
         }
@@ -37,14 +37,35 @@
         .desktop-only {
             display: block !important;
         }
+        
+        .dashboard-mobile-view {
+            display: none !important;
+        }
+
+        /* Classes for mobile app views that we WANT to show on desktop */
+        .responsive-app-view {
+            display: block !important;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            min-height: 100vh;
+            background: transparent;
+        }
 
         @media (max-width: 991.98px) {
             .mobile-only {
                 display: block !important;
             }
-
             .desktop-only {
                 display: none !important;
+            }
+            .dashboard-mobile-view {
+                display: block !important;
+            }
+            .responsive-app-view {
+                padding: 0;
+                max-width: 100%;
+                background: #f8fafc;
             }
         }
 
@@ -195,10 +216,10 @@
                 <i class="fas fa-layer-group"></i>
                 <span>Lots</span>
             </a>
-            <a href="{{ route('owner.payment-adjustment.index') }}"
-                class="nav-link-mobile {{ request()->routeIs('owner.payment-adjustment.*') ? 'active' : '' }}">
-                <i class="fas fa-balance-scale"></i>
-                <span>Adjust</span>
+            <a href="{{ route('owner.party-ledger.index') }}"
+                class="nav-link-mobile {{ request()->routeIs('owner.party-ledger.*') ? 'active' : '' }}">
+                <i class="fas fa-book-open"></i>
+                <span>Payment</span>
             </a>
         </nav>
 

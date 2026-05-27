@@ -138,7 +138,7 @@
 @endsection
 
 @section('content')
-<div class="mobile-only">
+<div class="responsive-app-view">
     <div class="app-header">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <a href="{{ route('owner.dashboard') }}" class="text-white opacity-75"><i class="fas fa-home"></i></a>
@@ -227,10 +227,7 @@
     </div>
 </div>
 
-<div class="desktop-only p-5 text-center">
-    <h3>Switch to Mobile View</h3>
-    <p>This report is optimized for the owner app experience.</p>
-</div>
+
 
 <script>
     const lotData = @json($lotNos);

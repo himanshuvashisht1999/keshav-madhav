@@ -24,8 +24,7 @@
             color: var(--slate-800);
         }
 
-        /* MOBILE APP STYLES */
-        @media (max-width: 991.98px) {
+        /* APP STYLES */
             .app-header {
                 padding: 24px 20px;
                 background: white;
@@ -94,8 +93,6 @@
                 text-align: center;
                 border: 1px solid var(--slate-100);
             }
-        }
-
         @media (min-width: 992px) {
             .desktop-p {
                 padding: 40px;

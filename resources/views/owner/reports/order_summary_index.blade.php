@@ -2,9 +2,8 @@
 
 @section('content')
     <style>
-        /* MOBILE APP LIST STYLES */
-        @media (max-width: 991.98px) {
-            .app-container {
+        /* APP LIST STYLES */
+        .app-container {
                 padding: 15px;
             }
 
@@ -114,8 +113,6 @@
                 text-decoration: none !important;
                 box-shadow: 0 4px 10px rgba(111, 66, 193, 0.2);
             }
-        }
-
         /* DESKTOP STYLES */
         @media (min-width: 992px) {
             .desktop-p {
@@ -184,16 +181,8 @@
                             <div class="value">{{ \Illuminate\Support\Str::limit($row['customer'], 20) }}</div>
                         </div>
                         <div class="info-item">
-                            <label>Type</label>
-                            <div class="value">{{ ucfirst($row['order_type']) }}</div>
-                        </div>
-                        <div class="info-item">
                             <label>Quantity</label>
                             <div class="value">{{ $row['total_pcs'] }} Pcs</div>
-                        </div>
-                        <div class="info-item">
-                            <label>Scanned</label>
-                            <div class="value progress-value">{{ $row['scanned_pcs'] }}</div>
                         </div>
                     </div>
 
@@ -258,10 +247,7 @@
                                 <th>Date</th>
                                 <th>Order No</th>
                                 <th>Customer</th>
-                                <th>Order Type</th>
                                 <th>Total Pcs</th>
-                                <th>Scanned</th>
-                                <th>Balance</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>
@@ -272,10 +258,7 @@
                                     <td>{{ date('d-m-Y', strtotime($row['created_at'])) }}</td>
                                     <td><b>{{ $row['order_no'] }}</b></td>
                                     <td>{{ $row['customer'] }}</td>
-                                    <td><span class="badge badge-light">{{ ucfirst($row['order_type']) }}</span></td>
                                     <td>{{ $row['total_pcs'] }}</td>
-                                    <td class="text-success"><b>{{ $row['scanned_pcs'] }}</b></td>
-                                    <td class="text-danger"><b>{{ $row['total_pcs'] - $row['scanned_pcs'] }}</b></td>
                                     <td>
                                         @php
                                             $remaining = $row['total_pcs'] - $row['scanned_pcs'];

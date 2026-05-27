@@ -76,6 +76,8 @@ class OwnerAuthController extends Controller
         $data['total_received'] = \App\Models\Payment::where('payment_type', 'received')->sum('amount');
         $data['total_paid'] = \App\Models\Payment::where('payment_type', 'paid')->sum('amount');
 
+
+
         return view('owner.dashboard', $data);
     }
 

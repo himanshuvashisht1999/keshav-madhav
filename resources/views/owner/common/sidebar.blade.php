@@ -20,10 +20,10 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ route('owner.payment-adjustment.index') }}"
-                        class="nav-link {{ request()->routeIs('owner.payment-adjustment.*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-balance-scale"></i>
-                        <p>Payment Adjustments</p>
+                    <a href="{{ route('owner.party-ledger.index') }}"
+                        class="nav-link {{ request()->routeIs('owner.party-ledger.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-book-open"></i>
+                        <p>Party Ledger</p>
                     </a>
                 </li>
                 <li class="nav-header">REPORTS</li>
