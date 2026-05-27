@@ -10,7 +10,7 @@ class WashingVoucherDataTable
 {
     public function indexList($request)
     {
-        $query = WashingVoucher::with(['washingMaster', 'orderLot']);
+        $query = WashingVoucher::with(['washingMaster', 'items.orderLot']);
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -30,7 +30,8 @@ class WashingVoucherDataTable
                 return '₹ ' . number_format($row->total_amount, 2);
             })
             ->addColumn('lot_number', function ($row) {
-                return $row->orderLot ? $row->orderLot->lot_no : 'N/A';
+                $lots = $row->items->filter(function($item) { return $item->orderLot; })->map(function($item) { return $item->orderLot->lot_no; })->unique();
+                return $lots->count() > 0 ? $lots->implode(', ') : 'N/A';
             })
             ->addColumn('document', function ($row) {
                 if ($row->document) {

@@ -589,6 +589,107 @@ class PartyLedgerController extends Controller
                     'view_url' => $adj->batch_id ? route('admin.payment.adjustment.show', $adj->batch_id) : '#'
                 ]);
             }
+
+            // Generic Payments for this model
+            $paymentsQuery = Payment::query();
+            $paymentsQuery->where('party_id', $id)
+                ->where('party_type', $modelName)
+                ->where(function($q) {
+                    $q->where('paymentable_type', '!=', \App\Models\JournalVoucher::class)
+                      ->orWhereNull('paymentable_type');
+                });
+
+            $payments = $paymentsQuery
+                ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
+                ->get();
+
+            foreach ($payments as $p) {
+                $isCredit = in_array($p->payment_type, ['received', 'credit']);
+                $isDebit = in_array($p->payment_type, ['paid', 'debit']);
+
+                if ($isCredit) {
+                    $debit = 0;
+                    $credit = (float) $p->amount;
+                    $desc = 'Payment Received (' . $p->payment_mode . ')';
+                } elseif ($isDebit) {
+                    $debit = (float) $p->amount;
+                    $credit = 0;
+                    $desc = 'Payment Paid (' . $p->payment_mode . ')';
+                } else {
+                    $debit = (float) $p->amount;
+                    $credit = 0;
+                    $desc = 'Adjustment (' . $p->payment_mode . ')';
+                }
+
+                $transactions->push((object) [
+                    'date' => $p->payment_date,
+                    'created_at' => $p->created_at,
+                    'type' => 'Payment',
+                    'ref' => $p->reference_id ?? ('Pay #' . $p->id),
+                    'debit' => $debit,
+                    'credit' => $credit,
+                    'description' => $desc . ($p->remarks ? ': ' . $p->remarks : ''),
+                    'view_url' => route('admin.payment.history.show', $p->id)
+                ]);
+            }
+
+            // Voucher Specific Logic
+            if (strtolower($master->name) === 'contractor') {
+                $contractorVouchers = \App\Models\ContractorVoucher::where('contractor_id', $id)
+                    ->when($startDate, fn($q) => $q->whereDate('voucher_date', '>=', $startDate))
+                    ->when($endDate, fn($q) => $q->whereDate('voucher_date', '<=', $endDate))
+                    ->get();
+
+                foreach ($contractorVouchers as $cv) {
+                    $transactions->push((object) [
+                        'date' => $cv->voucher_date,
+                        'created_at' => $cv->created_at,
+                        'type' => 'Contractor Voucher',
+                        'ref' => 'Voucher #' . $cv->voucher_number,
+                        'debit' => 0,
+                        'credit' => (float) $cv->total_amount,
+                        'description' => 'Contractor Voucher: ' . ($cv->remarks ?? '-'),
+                        'view_url' => '#'
+                    ]);
+                }
+            } elseif (strtolower($master->name) === 'washing master') {
+                $washingVouchers = \App\Models\WashingVoucher::where('washing_master_id', $id)
+                    ->when($startDate, fn($q) => $q->whereDate('voucher_date', '>=', $startDate))
+                    ->when($endDate, fn($q) => $q->whereDate('voucher_date', '<=', $endDate))
+                    ->get();
+
+                foreach ($washingVouchers as $wv) {
+                    $transactions->push((object) [
+                        'date' => $wv->voucher_date,
+                        'created_at' => $wv->created_at,
+                        'type' => 'Washing Voucher',
+                        'ref' => 'Voucher #' . $wv->voucher_number,
+                        'debit' => 0,
+                        'credit' => (float) $wv->total_amount,
+                        'description' => 'Washing Voucher: ' . ($wv->remarks ?? '-'),
+                        'view_url' => '#'
+                    ]);
+                }
+            } elseif (strtolower($master->name) === 'consumable good') {
+                $consumableVouchers = \App\Models\ConsumableVoucher::where('consumable_good_id', $id)
+                    ->when($startDate, fn($q) => $q->whereDate('voucher_date', '>=', $startDate))
+                    ->when($endDate, fn($q) => $q->whereDate('voucher_date', '<=', $endDate))
+                    ->get();
+
+                foreach ($consumableVouchers as $cv) {
+                    $transactions->push((object) [
+                        'date' => $cv->voucher_date,
+                        'created_at' => $cv->created_at,
+                        'type' => 'Consumable Voucher',
+                        'ref' => 'Voucher #' . $cv->voucher_number,
+                        'debit' => 0,
+                        'credit' => (float) $cv->total_amount,
+                        'description' => 'Consumable Voucher: ' . ($cv->remarks ?? '-'),
+                        'view_url' => '#'
+                    ]);
+                }
+            }
         }
 
         // Fetch Journal Vouchers - Applicable to all masters

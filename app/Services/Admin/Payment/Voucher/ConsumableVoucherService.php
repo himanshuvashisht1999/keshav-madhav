@@ -61,6 +61,13 @@ class ConsumableVoucherService
                 }
             }
 
+            // Update balance
+            $consumableGood = ConsumableGood::find($request->consumable_good_id);
+            if ($consumableGood) {
+                $consumableGood->balance += $request->total_amount;
+                $consumableGood->save();
+            }
+
             return $voucher;
         });
     }
@@ -86,6 +93,9 @@ class ConsumableVoucherService
                 $documentName = 'uploads/vouchers/consumable/' . $documentName;
             }
 
+            $oldConsumableGoodId = $voucher->consumable_good_id;
+            $oldAmount = $voucher->total_amount;
+
             $voucher->update([
                 'consumable_good_id' => $request->consumable_good_id,
                 'voucher_date' => $request->voucher_date,
@@ -98,6 +108,28 @@ class ConsumableVoucherService
                 'document' => $documentName,
                 'remarks' => $request->remarks,
             ]);
+
+            // Update balances
+            if ($oldConsumableGoodId == $request->consumable_good_id) {
+                $consumableGood = ConsumableGood::find($request->consumable_good_id);
+                if ($consumableGood) {
+                    $consumableGood->balance = $consumableGood->balance - $oldAmount + $request->total_amount;
+                    $consumableGood->save();
+                }
+            } else {
+                $oldConsumableGood = ConsumableGood::find($oldConsumableGoodId);
+                if ($oldConsumableGood) {
+                    $oldConsumableGood->balance -= $oldAmount;
+                    $oldConsumableGood->save();
+                }
+
+                $newConsumableGood = ConsumableGood::find($request->consumable_good_id);
+                if ($newConsumableGood) {
+                    $newConsumableGood->balance += $request->total_amount;
+                    $newConsumableGood->save();
+                }
+            }
+
 
             ConsumableVoucherItem::where('consumable_voucher_id', $voucher->id)->delete();
             foreach ($request->items as $item) {
@@ -123,6 +155,14 @@ class ConsumableVoucherService
             if ($voucher->document && file_exists(public_path($voucher->document))) {
                 unlink(public_path($voucher->document));
             }
+            
+            // Update balance
+            $consumableGood = ConsumableGood::find($voucher->consumable_good_id);
+            if ($consumableGood) {
+                $consumableGood->balance -= $voucher->total_amount;
+                $consumableGood->save();
+            }
+
             return $voucher->delete();
         });
     }

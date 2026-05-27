@@ -11,7 +11,6 @@ class WashingVoucher extends Model
 
     protected $fillable = [
         'washing_master_id',
-        'order_lot_id',
         'voucher_date',
         'voucher_number',
         'sub_total',
@@ -34,8 +33,4 @@ class WashingVoucher extends Model
         return $this->hasMany(WashingVoucherItem::class);
     }
 
-    public function orderLot()
-    {
-        return $this->belongsTo(FabricRollAssigning::class, 'order_lot_id');
-    }
 }

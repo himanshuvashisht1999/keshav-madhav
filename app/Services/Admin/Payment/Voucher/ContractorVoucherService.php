@@ -63,6 +63,13 @@ class ContractorVoucherService
                 }
             }
 
+            // Update balance
+            $contractor = Contractor::find($request->contractor_id);
+            if ($contractor) {
+                $contractor->balance += $request->total_amount;
+                $contractor->save();
+            }
+
             return $voucher;
         });
     }
@@ -88,6 +95,9 @@ class ContractorVoucherService
                 $documentName = 'uploads/vouchers/contractor/' . $documentName;
             }
 
+            $oldContractorId = $voucher->contractor_id;
+            $oldAmount = $voucher->total_amount;
+
             $voucher->update([
                 'contractor_id' => $request->contractor_id,
                 'order_lot_id' => $request->order_lot_id,
@@ -101,6 +111,28 @@ class ContractorVoucherService
                 'document' => $documentName,
                 'remarks' => $request->remarks,
             ]);
+
+            // Update balances
+            if ($oldContractorId == $request->contractor_id) {
+                $contractor = Contractor::find($request->contractor_id);
+                if ($contractor) {
+                    $contractor->balance = $contractor->balance - $oldAmount + $request->total_amount;
+                    $contractor->save();
+                }
+            } else {
+                $oldContractor = Contractor::find($oldContractorId);
+                if ($oldContractor) {
+                    $oldContractor->balance -= $oldAmount;
+                    $oldContractor->save();
+                }
+
+                $newContractor = Contractor::find($request->contractor_id);
+                if ($newContractor) {
+                    $newContractor->balance += $request->total_amount;
+                    $newContractor->save();
+                }
+            }
+
 
             ContractorVoucherItem::where('contractor_voucher_id', $voucher->id)->delete();
             foreach ($request->items as $item) {
@@ -126,6 +158,14 @@ class ContractorVoucherService
             if ($voucher->document && file_exists(public_path($voucher->document))) {
                 unlink(public_path($voucher->document));
             }
+            
+            // Update balance
+            $contractor = Contractor::find($voucher->contractor_id);
+            if ($contractor) {
+                $contractor->balance -= $voucher->total_amount;
+                $contractor->save();
+            }
+
             return $voucher->delete();
         });
     }

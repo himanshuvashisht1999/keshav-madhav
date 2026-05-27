@@ -38,7 +38,6 @@ class WashingVoucherService
 
             $voucher = WashingVoucher::create([
                 'washing_master_id' => $request->washing_master_id,
-                'order_lot_id' => $request->order_lot_id,
                 'voucher_date' => $request->voucher_date,
                 'voucher_number' => $request->voucher_number,
                 'sub_total' => $request->sub_total,
@@ -55,12 +54,20 @@ class WashingVoucherService
                 if (!empty($item['item_name'])) {
                     WashingVoucherItem::create([
                         'washing_voucher_id' => $voucher->id,
+                        'order_lot_id' => $item['order_lot_id'] ?? null,
                         'item_name' => $item['item_name'],
                         'quantity' => $item['quantity'],
                         'rate' => $item['rate'],
                         'amount' => $item['amount'],
                     ]);
                 }
+            }
+
+            // Update balance
+            $washingMaster = WashingMaster::find($request->washing_master_id);
+            if ($washingMaster) {
+                $washingMaster->balance += $request->total_amount;
+                $washingMaster->save();
             }
 
             return $voucher;
@@ -88,9 +95,11 @@ class WashingVoucherService
                 $documentName = 'uploads/vouchers/washing/' . $documentName;
             }
 
+            $oldWashingMasterId = $voucher->washing_master_id;
+            $oldAmount = $voucher->total_amount;
+
             $voucher->update([
                 'washing_master_id' => $request->washing_master_id,
-                'order_lot_id' => $request->order_lot_id,
                 'voucher_date' => $request->voucher_date,
                 'voucher_number' => $request->voucher_number,
                 'sub_total' => $request->sub_total,
@@ -102,11 +111,34 @@ class WashingVoucherService
                 'remarks' => $request->remarks,
             ]);
 
+            // Update balances
+            if ($oldWashingMasterId == $request->washing_master_id) {
+                $washingMaster = WashingMaster::find($request->washing_master_id);
+                if ($washingMaster) {
+                    $washingMaster->balance = $washingMaster->balance - $oldAmount + $request->total_amount;
+                    $washingMaster->save();
+                }
+            } else {
+                $oldWashingMaster = WashingMaster::find($oldWashingMasterId);
+                if ($oldWashingMaster) {
+                    $oldWashingMaster->balance -= $oldAmount;
+                    $oldWashingMaster->save();
+                }
+
+                $newWashingMaster = WashingMaster::find($request->washing_master_id);
+                if ($newWashingMaster) {
+                    $newWashingMaster->balance += $request->total_amount;
+                    $newWashingMaster->save();
+                }
+            }
+
+
             WashingVoucherItem::where('washing_voucher_id', $voucher->id)->delete();
             foreach ($request->items as $item) {
                 if (!empty($item['item_name'])) {
                     WashingVoucherItem::create([
                         'washing_voucher_id' => $voucher->id,
+                        'order_lot_id' => $item['order_lot_id'] ?? null,
                         'item_name' => $item['item_name'],
                         'quantity' => $item['quantity'],
                         'rate' => $item['rate'],
@@ -126,6 +158,14 @@ class WashingVoucherService
             if ($voucher->document && file_exists(public_path($voucher->document))) {
                 unlink(public_path($voucher->document));
             }
+            
+            // Update balance
+            $washingMaster = WashingMaster::find($voucher->washing_master_id);
+            if ($washingMaster) {
+                $washingMaster->balance -= $voucher->total_amount;
+                $washingMaster->save();
+            }
+
             return $voucher->delete();
         });
     }

@@ -42,17 +42,6 @@
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label><i class="fas fa-layer-group mr-1 text-warning"></i> Select Lot No</label>
-                                        <select name="order_lot_id" class="form-control select2">
-                                            <option value="">Select Lot</option>
-                                            @foreach($lots as $lot)
-                                                <option value="{{ $lot->id }}">{{ $lot->lot_no }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
                                         <label><i class="fas fa-calendar-alt mr-1 text-info"></i> Voucher Date <span class="text-danger">*</span></label>
                                         <input type="date" name="voucher_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                                     </div>
@@ -82,16 +71,25 @@
                             <table class="table table-bordered" id="itemTable">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th style="width: 40%">Item Name</th>
-                                        <th style="width: 15%">Quantity</th>
-                                        <th style="width: 15%">Rate</th>
-                                        <th style="width: 20%">Amount</th>
+                                        <th style="width: 30%">Item Name</th>
+                                        <th style="width: 25%">Lot No</th>
+                                        <th style="width: 10%">Quantity</th>
+                                        <th style="width: 10%">Rate</th>
+                                        <th style="width: 15%">Amount</th>
                                         <th style="width: 10%">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
                                         <td><input type="text" name="items[0][item_name]" class="form-control" required></td>
+                                        <td>
+                                            <select name="items[0][order_lot_id]" class="form-control select2">
+                                                <option value="">Select Lot</option>
+                                                @foreach($lots as $lot)
+                                                    <option value="{{ $lot->id }}">{{ $lot->lot_no }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
                                         <td><input type="number" step="0.01" name="items[0][quantity]" class="form-control qty" required></td>
                                         <td><input type="number" step="0.01" name="items[0][rate]" class="form-control rate" required></td>
                                         <td><input type="number" step="0.01" name="items[0][amount]" class="form-control amount" readonly></td>
@@ -102,27 +100,27 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <th colspan="3" class="text-right">Sub Total</th>
+                                        <th colspan="4" class="text-right">Sub Total</th>
                                         <td><input type="number" step="0.01" name="sub_total" id="sub_total" class="form-control" readonly></td>
                                         <td></td>
                                     </tr>
                                     <tr>
-                                        <th colspan="3" class="text-right">GST</th>
+                                        <th colspan="4" class="text-right">GST</th>
                                         <td><input type="number" step="0.01" name="gst" id="gst" class="form-control total-calc" value="0"></td>
                                         <td></td>
                                     </tr>
                                     <tr>
-                                        <th colspan="3" class="text-right">Other Charges</th>
+                                        <th colspan="4" class="text-right">Other Charges</th>
                                         <td><input type="number" step="0.01" name="other_charges" id="other_charges" class="form-control total-calc" value="0"></td>
                                         <td></td>
                                     </tr>
                                     <tr>
-                                        <th colspan="3" class="text-right">Round off</th>
+                                        <th colspan="4" class="text-right">Round off</th>
                                         <td><input type="number" step="0.01" name="round_off" id="round_off" class="form-control total-calc" value="0"></td>
                                         <td></td>
                                     </tr>
                                     <tr class="bg-light">
-                                        <th colspan="3" class="text-right text-lg">Total Amount</th>
+                                        <th colspan="4" class="text-right text-lg">Total Amount</th>
                                         <td><input type="number" step="0.01" name="total_amount" id="total_amount" class="form-control font-weight-bold" readonly></td>
                                         <td></td>
                                     </tr>
@@ -164,6 +162,14 @@
                 let newRow = `
                     <tr>
                         <td><input type="text" name="items[${rowCount}][item_name]" class="form-control" required></td>
+                        <td>
+                            <select name="items[${rowCount}][order_lot_id]" class="form-control select2">
+                                <option value="">Select Lot</option>
+                                @foreach($lots as $lot)
+                                    <option value="{{ $lot->id }}">{{ $lot->lot_no }}</option>
+                                @endforeach
+                            </select>
+                        </td>
                         <td><input type="number" step="0.01" name="items[${rowCount}][quantity]" class="form-control qty" required></td>
                         <td><input type="number" step="0.01" name="items[${rowCount}][rate]" class="form-control rate" required></td>
                         <td><input type="number" step="0.01" name="items[${rowCount}][amount]" class="form-control amount" readonly></td>
@@ -173,6 +179,7 @@
                     </tr>
                 `;
                 $('#itemTable tbody').append(newRow);
+                $('.select2').select2();
                 rowCount++;
             });
 
