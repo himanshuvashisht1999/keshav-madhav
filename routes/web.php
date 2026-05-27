@@ -1158,6 +1158,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\FabricLedgerController::class, 'index'])->name('index');
                 Route::get('/show/{id}', [App\Http\Controllers\Admin\Ledger\FabricLedgerController::class, 'show'])->name('show');
             });
+            Route::prefix('/production-goods')->name('production-goods.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Admin\Ledger\ProductionGoodsLedgerController::class, 'index'])->name('index');
+                Route::get('/show/{id}', [App\Http\Controllers\Admin\Ledger\ProductionGoodsLedgerController::class, 'show'])->name('show');
+            });
             Route::prefix('/party')->name('party.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'index'])->name('index');
                 Route::get('/show/{type}/{id}', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'show'])->name('show');
