@@ -837,6 +837,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                     </a>
                                 </li>
                                 <li class="nav-item">
+                                    <a href="{{ route('admin.ledger.lot.index') }}"
+                                        class="{{ str_contains(strtolower($page_url), 'admin/ledger/lot') ? 'nav-link active' : 'nav-link' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Lot Ledger</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
                                     <a href="{{ route('admin.ledger.party.index') }}"
                                         class="{{ str_contains(strtolower($page_url), 'admin/ledger/party') ? 'nav-link active' : 'nav-link' }}">
                                         <i class="far fa-circle nav-icon"></i>
