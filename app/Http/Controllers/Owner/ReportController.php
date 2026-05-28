@@ -26,6 +26,28 @@ class ReportController extends Controller
         $response['fabrics'] = $this->service->fabrics();
         $response['filters'] = $request->all();
 
+        if ($request->ajax()) {
+            $view = '';
+            $nextPage = null;
+
+            if ($response['level'] === 'fabrics') {
+                $view = 'owner.reports.partials.stock_fabrics_list';
+            } elseif ($response['level'] === 'receipts') {
+                $view = 'owner.reports.partials.stock_receipts_list';
+            } elseif ($response['level'] === 'usages') {
+                $view = 'owner.reports.partials.stock_usages_list';
+            }
+
+            if ($view && isset($response['data']) && method_exists($response['data'], 'hasMorePages')) {
+                $nextPage = $response['data']->hasMorePages() ? $response['data']->currentPage() + 1 : null;
+                return response()->json([
+                    'html' => view($view, ['data' => $response['data']])->render(),
+                    'next_page' => $nextPage
+                ]);
+            }
+            return response()->json(['html' => '', 'next_page' => null]);
+        }
+
         return view('owner.reports.stock', $response);
     }
 
@@ -48,6 +70,14 @@ class ReportController extends Controller
         }
 
         $rolls = $query->paginate(20)->withQueryString();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('owner.reports.partials.stock_rolls_list', compact('rolls'))->render(),
+                'next_page' => $rolls->hasMorePages() ? $rolls->currentPage() + 1 : null
+            ]);
+        }
+
         $warehouses = $this->service->warehouses();
         $fabrics = $this->service->fabrics();
 
@@ -137,6 +167,14 @@ class ReportController extends Controller
     {
         $response['data'] = $this->service->orderLotsDetailed($request);
         $response['lotNos'] = $this->service->lot_numbers();
+        
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('owner.reports.partials.lots_list', $response)->render(),
+                'next_page' => $response['data']->hasMorePages() ? $response['data']->currentPage() + 1 : null
+            ]);
+        }
+        
         return view('owner.reports.lots', $response);
     }
 

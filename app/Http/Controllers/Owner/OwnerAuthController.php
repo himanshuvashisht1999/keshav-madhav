@@ -143,6 +143,14 @@ class OwnerAuthController extends Controller
             ];
         });
 
+        if ($request->ajax()) {
+            return response()->json([
+                'html_mobile' => view('owner.reports.partials.order_summary_mobile', compact('salesOrders'))->render(),
+                'html_desktop' => view('owner.reports.partials.order_summary_desktop', compact('salesOrders'))->render(),
+                'next_page' => $salesOrders->hasMorePages() ? $salesOrders->currentPage() + 1 : null
+            ]);
+        }
+
         $customers = Customer::where('status', 1)->get();
         return view('owner.reports.order_summary_index', compact('customers', 'salesOrders'));
     }

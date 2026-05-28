@@ -5,7 +5,6 @@
 @section('styles')
 <style>
     :root {
-        --primary-gradient: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
         --glass-bg: rgba(255, 255, 255, 0.95);
         --glass-border: rgba(255, 255, 255, 0.2);
         --card-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
@@ -62,7 +61,7 @@
         top: 0;
         right: 0;
         background: #fdf2f8;
-        color: #ec4899;
+        color: var(--text-main);
         font-weight: 800;
         font-size: 11px;
         padding: 6px 16px;
@@ -81,7 +80,7 @@
         height: 48px;
         border-radius: 14px;
         background: #fdf2f8;
-        color: #ec4899;
+        color: var(--text-main);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -91,13 +90,13 @@
     .design-title {
         font-size: 18px;
         font-weight: 900;
-        color: #0f172a;
+        color: var(--text-main);
         margin: 0;
     }
 
     .design-subtitle {
         font-size: 12px;
-        color: #64748b;
+        color: var(--text-muted);
         font-weight: 600;
         margin: 0;
     }
@@ -117,7 +116,7 @@
 
     .stat-label {
         font-size: 11px;
-        color: #64748b;
+        color: var(--text-muted);
         font-weight: 700;
         text-transform: uppercase;
         margin-bottom: 4px;
@@ -129,7 +128,7 @@
     .stat-val {
         font-size: 20px;
         font-weight: 900;
-        color: #0f172a;
+        color: var(--text-main);
     }
 
     .total-banner {
@@ -144,14 +143,14 @@
 
     .total-banner .label {
         font-weight: 800;
-        color: #ec4899;
+        color: var(--text-main);
         font-size: 13px;
         text-transform: uppercase;
     }
 
     .total-banner .value {
         font-weight: 900;
-        color: #be185d;
+        color: var(--text-main);
         font-size: 22px;
     }
 </style>
@@ -176,22 +175,22 @@
                 <div class="card-body p-3">
                     <div class="row">
                         <div class="col-6 mb-2">
-                            <label class="font-weight-bold" style="font-size: 11px; color: #64748b; text-transform: uppercase;">Start Date</label>
-                            <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request('start_date') }}" style="border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: #334155;">
+                            <label class="font-weight-bold" style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Start Date</label>
+                            <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request('start_date') }}" style="border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: var(--text-main);">
                         </div>
                         <div class="col-6 mb-2">
-                            <label class="font-weight-bold" style="font-size: 11px; color: #64748b; text-transform: uppercase;">End Date</label>
-                            <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request('end_date') }}" style="border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: #334155;">
+                            <label class="font-weight-bold" style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">End Date</label>
+                            <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request('end_date') }}" style="border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: var(--text-main);">
                         </div>
                         <div class="col-12 mb-3">
-                            <label class="font-weight-bold" style="font-size: 11px; color: #64748b; text-transform: uppercase;">Sort by Total</label>
-                            <select name="order_by" class="form-control form-control-sm" style="border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: #334155;">
+                            <label class="font-weight-bold" style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Sort by Total</label>
+                            <select name="order_by" class="form-control form-control-sm" style="border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: var(--text-main);">
                                 <option value="desc" {{ request('order_by') == 'desc' ? 'selected' : '' }}>Highest to Lowest (Desc)</option>
                                 <option value="asc" {{ request('order_by') == 'asc' ? 'selected' : '' }}>Lowest to Highest (Asc)</option>
                             </select>
                         </div>
                         <div class="col-12 d-flex justify-content-end align-items-center">
-                            <a href="{{ route('owner.reports.selling-items') }}" class="btn btn-sm btn-light font-weight-bold px-3 mr-2" style="border-radius: 8px; color: #64748b; background: #f1f5f9;">Clear</a>
+                            <a href="{{ route('owner.reports.selling-items') }}" class="btn btn-sm btn-light font-weight-bold px-3 mr-2" style="border-radius: 8px; color: var(--text-muted); background: #f1f5f9;">Clear</a>
                             <button type="submit" class="btn btn-sm text-white font-weight-bold px-4" style="background: var(--primary-gradient); border-radius: 8px; border: none; box-shadow: 0 4px 10px rgba(236, 72, 153, 0.3);">
                                 <i class="fas fa-filter mr-1"></i> Apply
                             </button>
@@ -218,7 +217,7 @@
 
         @if($hasMore)
             <div id="loading-indicator" class="text-center py-4">
-                <div class="spinner-border text-pink" role="status" style="color: #ec4899; width: 2rem; height: 2rem;">
+                <div class="spinner-border text-pink" role="status" style="color: var(--text-main); width: 2rem; height: 2rem;">
                     <span class="sr-only">Loading...</span>
                 </div>
             </div>

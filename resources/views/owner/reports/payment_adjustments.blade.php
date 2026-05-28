@@ -5,7 +5,6 @@
 @section('styles')
 <style>
     :root {
-        --primary-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
         --card-shadow: 0 10px 25px rgba(0,0,0,0.05);
     }
 
@@ -48,7 +47,7 @@
     .card-date {
         font-size: 11px;
         font-weight: 800;
-        color: #94a3b8;
+        color: var(--text-muted);
         text-transform: uppercase;
         margin-bottom: 8px;
         display: block;
@@ -58,7 +57,7 @@
         font-family: 'Courier New', Courier, monospace;
         font-size: 14px;
         font-weight: 700;
-        color: #1e293b;
+        color: var(--text-main);
         background: #f1f5f9;
         padding: 2px 8px;
         border-radius: 6px;
@@ -86,7 +85,7 @@
     .account-info {
         font-size: 12px;
         font-weight: 700;
-        color: #64748b;
+        color: var(--text-muted);
         display: flex;
         align-items: center;
         gap: 6px;
@@ -96,7 +95,7 @@
         font-size: 10px;
         font-weight: 800;
         background: #eff6ff;
-        color: #3b82f6;
+        color: var(--text-main);
         padding: 4px 10px;
         border-radius: 10px;
     }

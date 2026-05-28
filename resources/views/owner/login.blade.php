@@ -21,7 +21,7 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
 
     <style>
         body {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            background: var(--primary-gradient);
             font-family: 'Source Sans Pro', sans-serif;
             height: 100vh;
             display: flex;
@@ -54,7 +54,7 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
         .login-box-msg {
             font-size: 22px;
             font-weight: 700;
-            color: #1e3a8a;
+            color: var(--text-main);
             padding-bottom: 25px;
         }
 
@@ -70,11 +70,11 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
             background: #f8fafc;
             border: 1px solid #e5e7eb;
             border-left: none;
-            color: #64748b;
+            color: var(--text-muted);
         }
 
         .btn-primary {
-            background: #1e3a8a;
+            background: var(--primary);
             border: none;
             height: 50px;
             border-radius: 12px;

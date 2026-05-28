@@ -6,16 +6,16 @@
             --slate-50: #f8fafc;
             --slate-100: #f1f5f9;
             --slate-200: #e2e8f0;
-            --slate-300: #cbd5e1;
-            --slate-400: #94a3b8;
-            --slate-500: #64748b;
-            --slate-600: #475569;
-            --slate-700: #334155;
-            --slate-800: #1e293b;
-            --slate-900: #0f172a;
-            --KM-purple: #6f42c1;
+            --slate-300: var(--text-muted);
+            --slate-400: var(--text-muted);
+            --slate-500: var(--text-muted);
+            --slate-600: var(--text-main);
+            --slate-700: var(--text-main);
+            --slate-800: var(--text-main);
+            --slate-900: var(--text-main);
+            --KM-purple: var(--text-main);
             --KM-purple-dark: #5a32a3;
-            --KM-purple-light: #8b5cf6;
+            --KM-purple-light: var(--text-main);
         }
 
         /* =========================================

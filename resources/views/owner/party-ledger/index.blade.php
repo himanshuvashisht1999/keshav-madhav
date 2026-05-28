@@ -5,7 +5,6 @@
 @section('styles')
 <style>
     :root {
-        --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
         --glass-bg: rgba(255, 255, 255, 0.95);
         --glass-border: rgba(255, 255, 255, 0.2);
         --card-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
@@ -223,54 +222,67 @@
     @endif
 
     <div class="container-fluid mt-4 pb-5">
-        @forelse($parties as $party)
-            <a href="{{ route('owner.party-ledger.show', ['type' => $party->party_type, 'id' => $party->id]) }}" class="ledger-card">
-                <div class="party-header">
-                    <div>
-                        <div class="party-name">{{ $party->name }}</div>
-                        <div class="party-phone">
-                            <i class="fas fa-phone-alt"></i> {{ $party->phone ?: 'No Phone' }}
-                        </div>
-                    </div>
-                    @php
-                        $typeClass = in_array($party->party_type, ['customer', 'vendor', 'sales_agent']) ? $party->party_type : 'default';
-                    @endphp
-                    <span class="type-badge party-type-{{ $typeClass }}">
-                        {{ str_replace('_', ' ', $party->party_type) }}
-                    </span>
-                </div>
-
-                <div class="balance-box">
-                    <div>
-                        <div class="balance-label">Current Balance</div>
-                        @php 
-                            $bal = (float)$party->balance;
-                            $isCr = $bal >= 0;
-                        @endphp
-                        <div class="balance-amount {{ $isCr ? 'balance-cr' : 'balance-dr' }}">
-                            ₹ {{ number_format(abs($bal), 2) }}
-                            <span class="cr-dr-badge {{ $isCr ? 'badge-cr' : 'badge-dr' }}">
-                                {{ $isCr ? 'CR' : 'DR' }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <i class="fas fa-chevron-right text-muted opacity-50"></i>
-                    </div>
-                </div>
-            </a>
-        @empty
-            <div class="empty-state">
-                <i class="fas fa-wallet"></i>
-                <h5 class="font-weight-bold text-dark">No Parties Found</h5>
-                <p>Try adjusting your search or filters</p>
-                @if(request('search') || request('type_id'))
-                    <a href="{{ route('owner.party-ledger.index') }}" class="btn btn-sm btn-outline-primary mt-2" style="border-radius: 12px; font-weight: 700;">Clear Filters</a>
-                @endif
-            </div>
-        @endforelse
+        <div id="ledger-container">
+            @include('owner.party-ledger.partials.ledger_list', ['parties' => $parties])
+        </div>
+        
+        <div id="loading-spinner" style="display: none; text-align: center; padding: 20px;">
+            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+        </div>
+        <div id="load-more-trigger" style="height: 10px;"></div>
     </div>
 </div>
 
 
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let currentPage = {{ $parties->currentPage() }};
+        let nextPage = {{ $parties->hasMorePages() ? $parties->currentPage() + 1 : 'null' }};
+        let isLoading = false;
+        
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && nextPage !== null && !isLoading) {
+                loadMoreData();
+            }
+        });
+        
+        const trigger = document.getElementById('load-more-trigger');
+        if (trigger) {
+            observer.observe(trigger);
+        }
+
+        function loadMoreData() {
+            isLoading = true;
+            document.getElementById('loading-spinner').style.display = 'block';
+            
+            let currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('page', nextPage);
+
+            fetch(currentUrl.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('ledger-container');
+                container.insertAdjacentHTML('beforeend', data.html);
+                
+                nextPage = data.next_page;
+                isLoading = false;
+                document.getElementById('loading-spinner').style.display = 'none';
+                
+                if (nextPage === null) {
+                    observer.unobserve(trigger);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading more items:', error);
+                isLoading = false;
+                document.getElementById('loading-spinner').style.display = 'none';
+            });
+        }
+    });
+</script>
 @endsection

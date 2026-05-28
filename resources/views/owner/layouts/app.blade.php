@@ -16,20 +16,96 @@
         rel="stylesheet">
     <style>
         :root {
-            --primary: #6f42c1;
-            --secondary: #8e67d5;
+            --primary: #3eb651;
+            --secondary: #ffe820;
+            --primary-gradient: linear-gradient(135deg, #3eb651 0%, #2da340 100%);
+            --accent-gradient: linear-gradient(135deg, #ffe820 0%, #e5d010 100%);
             --bg-app: #f4f6f9;
-            --text-main: #2d3436;
-            --text-muted: #636e72;
+            --text-main: #0a4d1f;
+            --text-muted: rgba(10, 77, 31, 0.7);
+            --card-shadow: 0 8px 32px rgba(10, 77, 31, 0.07);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(62, 182, 81, 0.2);
         }
 
         body {
             font-family: 'Outfit', sans-serif !important;
             background-color: var(--bg-app) !important;
+            color: var(--text-main) !important;
             margin: 0 !important;
         }
 
-        /* Universal App Layout for Owner (Mobile + Desktop) */
+        .text-muted { color: var(--text-muted) !important; }
+        .text-dark { color: var(--text-main) !important; }
+        .text-primary { color: var(--primary) !important; }
+        .text-secondary { color: var(--secondary) !important; }
+
+        .btn-primary { 
+            background: var(--primary-gradient) !important; 
+            border: none !important; 
+            color: white !important; 
+        }
+        .btn-primary:hover { 
+            background: var(--primary) !important; 
+            box-shadow: 0 4px 12px rgba(62, 182, 81, 0.3) !important;
+        }
+        .bg-primary, .badge-primary { 
+            background: var(--primary-gradient) !important; 
+            color: white !important; 
+            border: none !important;
+        }
+
+        /* Minimalistic App Header - replacing the large green block */
+        .app-header {
+            background: transparent !important;
+            padding: 20px 20px 10px !important;
+            border-radius: 0 !important;
+            margin-bottom: 0 !important;
+        }
+
+        .app-header h1 {
+            color: var(--text-main) !important;
+            text-shadow: none !important;
+            font-size: 24px !important;
+            margin-bottom: 0 !important;
+            line-height: 1.2 !important;
+            font-weight: 800 !important;
+        }
+
+        .app-header p {
+            font-size: 13px !important;
+            color: var(--text-muted) !important;
+            margin-bottom: 0 !important;
+            margin-top: 4px !important;
+        }
+
+        .app-header .mb-3, .app-header .mb-4 {
+            margin-bottom: 10px !important;
+        }
+
+        .app-header a.text-white {
+            color: var(--text-main) !important;
+        }
+
+        /* Fix breadcrumbs inside app-header */
+        .breadcrumb-custom {
+            margin-bottom: 8px !important;
+        }
+        .breadcrumb-custom a, .breadcrumb-custom span, .breadcrumb-custom i {
+            color: var(--text-muted) !important;
+        }
+
+        /* Reset overlapping elements that used negative margin */
+        .search-panel, .search-container, .summary-card-container, .roll-info-floating {
+            margin-top: 5px !important;
+        }
+
+        .fab, .fab-add {
+            background: var(--accent-gradient) !important;
+            color: var(--text-main) !important;
+            box-shadow: 0 8px 24px rgba(255, 232, 32, 0.3) !important;
+        }
+
         .mobile-only {
             display: none !important;
         }
@@ -47,7 +123,7 @@
             display: block !important;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: 0;
             min-height: 100vh;
             background: transparent;
         }
@@ -68,7 +144,6 @@
                 background: #f8fafc;
             }
         }
-
         /* Universal UI Layout (Laptop + Mobile) - NO SIDEBAR */
         body.sidebar-mini.sidebar-collapse .content-wrapper,
         body.sidebar-mini .content-wrapper,
@@ -115,7 +190,9 @@
             align-items: center !important;
             gap: 12px !important;
             font-size: 19px !important;
-            font-weight: 700 !important;
+            font-weight: 800 !important;
+            color: var(--secondary) !important;
+            letter-spacing: -0.5px !important;
         }
 
         /* Bottom Nav - FORCE ROW */
@@ -144,7 +221,7 @@
             align-items: center !important;
             justify-content: center !important;
             text-decoration: none !important;
-            color: #94a3b8 !important;
+            color: var(--text-muted) !important;
             flex: 1 !important;
             height: 100% !important;
             margin: 0 !important;
@@ -162,7 +239,15 @@
         }
 
         .nav-link-mobile.active {
-            color: var(--primary) !important;
+            color: var(--secondary) !important;
+            background: var(--text-main) !important;
+            border-radius: 16px !important;
+            margin: 8px 4px !important;
+            box-shadow: 0 4px 12px rgba(10, 77, 31, 0.2) !important;
+        }
+
+        .nav-link-mobile.active i {
+            margin-bottom: 2px !important;
         }
 
         /* Content spacing */
@@ -183,7 +268,7 @@
                 <span>Owner Portal</span>
             </div>
             <div class="d-flex align-items-center">
-                <a href="{{ route('owner.logout') }}" style="color: white; font-size: 20px;">
+                <a href="{{ route('owner.logout') }}" style="color: var(--secondary); font-size: 20px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">
                     <i class="fas fa-sign-out-alt"></i>
                 </a>
             </div>

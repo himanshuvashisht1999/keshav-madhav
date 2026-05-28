@@ -5,7 +5,6 @@
 @section('styles')
 <style>
     :root {
-        --primary-gradient: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
     }
 
     body {
@@ -45,7 +44,7 @@
         font-size: 11px;
         font-weight: 800;
         text-transform: uppercase;
-        color: #94a3b8;
+        color: var(--text-muted);
         margin-bottom: 8px;
         display: block;
     }
@@ -90,7 +89,7 @@
     .product-name {
         font-size: 16px;
         font-weight: 800;
-        color: #0f172a;
+        color: var(--text-main);
         margin-bottom: 4px;
     }
 
@@ -98,7 +97,7 @@
         font-size: 11px;
         font-weight: 700;
         background: #f1f5f9;
-        color: #475569;
+        color: var(--text-main);
         padding: 4px 10px;
         border-radius: 8px;
         margin-bottom: 12px;
@@ -116,7 +115,7 @@
 
     .meta-item label {
         font-size: 10px;
-        color: #94a3b8;
+        color: var(--text-muted);
         font-weight: 800;
         text-transform: uppercase;
         display: block;
@@ -126,7 +125,7 @@
     .meta-item span {
         font-size: 13px;
         font-weight: 700;
-        color: #1e293b;
+        color: var(--text-main);
     }
 
     .stock-badge {
@@ -139,14 +138,14 @@
     .boxes-val {
         font-size: 20px;
         font-weight: 900;
-        color: #0ea5e9;
+        color: var(--text-main);
         display: block;
     }
 
     .boxes-label {
         font-size: 10px;
         font-weight: 800;
-        color: #94a3b8;
+        color: var(--text-muted);
         text-transform: uppercase;
     }
 
@@ -164,7 +163,7 @@
 @endsection
 
 @section('content')
-<div class="mobile-only">
+<div class="responsive-app-view">
     <div class="app-header">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <a href="{{ route('owner.dashboard') }}" class="text-white opacity-75"><i class="fas fa-home"></i></a>
@@ -215,11 +214,6 @@
             <p class="h5 font-weight-bold">Search to see stock</p>
         </div>
     </div>
-</div>
-
-<div class="desktop-only p-5 text-center">
-    <h3>Switch to Mobile View</h3>
-    <p>This report is optimized for the owner app interface.</p>
 </div>
 @endsection
 

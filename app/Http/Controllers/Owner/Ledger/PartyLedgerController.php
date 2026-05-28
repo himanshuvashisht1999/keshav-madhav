@@ -74,7 +74,7 @@ class PartyLedgerController extends Controller
                                 $q->where('name', 'LIKE', "%$search%");
                             }
                         })
-                        ->limit(100) // Safety limit for "All" view
+                        // ->limit(100)
                         ->get()
                         ->map(function ($v) use ($master) {
                             $v->party_type = strtolower($master->name);
@@ -91,7 +91,7 @@ class PartyLedgerController extends Controller
                 ->when($search, function ($q) use ($search) {
                     $q->where('name', 'LIKE', "%$search%");
                 })
-                ->limit(100)
+                // ->limit(100)
                 ->get()
                 ->map(function ($v) {
                     $v->party_type = 'sales_agent';
@@ -105,7 +105,24 @@ class PartyLedgerController extends Controller
         // Sort by name
         $parties = $parties->sortBy('name');
 
-        return view('owner.party-ledger.index', compact('parties', 'masters'));
+        $page = $request->input('page', 1);
+        $perPage = 15;
+        $paginatedParties = new \Illuminate\Pagination\LengthAwarePaginator(
+            $parties->forPage($page, $perPage)->values(),
+            $parties->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('owner.party-ledger.partials.ledger_list', ['parties' => $paginatedParties])->render(),
+                'next_page' => $paginatedParties->hasMorePages() ? $paginatedParties->currentPage() + 1 : null
+            ]);
+        }
+
+        return view('owner.party-ledger.index', ['parties' => $paginatedParties, 'masters' => $masters]);
     }
 
     public function show(Request $request, $type, $id)

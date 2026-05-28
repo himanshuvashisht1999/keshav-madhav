@@ -5,9 +5,8 @@
 @section('styles')
 <style>
     :root {
-        --primary-gradient: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-        --success-gradient: linear-gradient(135deg, #059669 0%, #10b981 100%);
-        --danger-gradient: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        --success-gradient: var(--primary-gradient);
+        --danger-gradient: var(--primary-gradient);
         --glass-bg: rgba(255, 255, 255, 0.95);
         --glass-border: rgba(255, 255, 255, 0.2);
         --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
@@ -78,14 +77,14 @@
         font-size: 10px;
         text-transform: uppercase;
         font-weight: 800;
-        color: #64748b;
+        color: var(--text-muted);
         margin-bottom: 4px;
     }
 
     .bal-value {
         font-size: 18px;
         font-weight: 900;
-        color: #0f172a;
+        color: var(--text-main);
     }
 
     .filters-section {
@@ -105,7 +104,7 @@
         width: 100%;
         margin-bottom: 10px;
         font-weight: 600;
-        color: #475569;
+        color: var(--text-main);
     }
 
     .transaction-list {
@@ -136,25 +135,25 @@
 
     .icon-cr { background: #dcfce7; color: #16a34a; }
     .icon-dr { background: #fee2e2; color: #dc2626; }
-    .icon-neutral { background: #f1f5f9; color: #64748b; }
+    .icon-neutral { background: #f1f5f9; color: var(--text-muted); }
 
     .tx-left { display: flex; align-items: center; flex: 1; min-width: 0; }
     
     .tx-details { flex: 1; min-width: 0; }
-    .tx-title { font-size: 14px; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
-    .tx-date { font-size: 11px; color: #94a3b8; font-weight: 600; }
-    .tx-ref { font-size: 10px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #64748b; font-weight: 700; margin-left: 6px; }
+    .tx-title { font-size: 14px; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+    .tx-date { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+    .tx-ref { font-size: 10px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: var(--text-muted); font-weight: 700; margin-left: 6px; }
 
     .tx-right { text-align: right; min-width: 90px; }
     .tx-amount { font-size: 15px; font-weight: 800; }
     .text-cr { color: #16a34a; }
     .text-dr { color: #dc2626; }
-    .tx-bal { font-size: 10px; color: #64748b; font-weight: 700; margin-top: 2px; }
+    .tx-bal { font-size: 10px; color: var(--text-muted); font-weight: 700; margin-top: 2px; }
 
     .section-title {
         font-size: 16px;
         font-weight: 800;
-        color: #0f172a;
+        color: var(--text-main);
         margin: 20px 20px 15px;
     }
 </style>
@@ -196,16 +195,16 @@
         <form action="{{ route('owner.party-ledger.show', ['type' => $type, 'id' => $party->id]) }}" method="GET" id="filterForm">
             <div class="row" style="margin: 0 -5px;">
                 <div class="col-6" style="padding: 0 5px;">
-                    <div style="font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 4px;">Start Date</div>
+                    <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">Start Date</div>
                     <input type="date" name="start_date" value="{{ request('start_date') }}" class="filter-input" onchange="document.getElementById('filterForm').submit()">
                 </div>
                 <div class="col-6" style="padding: 0 5px;">
-                    <div style="font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 4px;">End Date</div>
+                    <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">End Date</div>
                     <input type="date" name="end_date" value="{{ request('end_date') }}" class="filter-input" onchange="document.getElementById('filterForm').submit()">
                 </div>
             </div>
             @if($type === 'sales_agent')
-                <div style="font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 4px;">Customer Filter</div>
+                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">Customer Filter</div>
                 <select name="customer_id" class="filter-input" onchange="document.getElementById('filterForm').submit()">
                     <option value="">All Customers</option>
                     @foreach($shops as $shop)
@@ -213,7 +212,7 @@
                     @endforeach
                 </select>
                 @if(!request('customer_id'))
-                    <div style="font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 4px;">View Mode</div>
+                    <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">View Mode</div>
                     <select name="view_mode" class="filter-input" onchange="document.getElementById('filterForm').submit()">
                         <option value="mix" {{ request('view_mode', 'mix') === 'mix' ? 'selected' : '' }}>Consolidated</option>
                         <option value="party_wise" {{ request('view_mode') === 'party_wise' ? 'selected' : '' }}>Party-wise</option>
@@ -222,7 +221,7 @@
             @endif
             
             <div class="d-flex justify-content-between mt-2">
-                <a href="{{ route('owner.party-ledger.show', ['type' => $type, 'id' => $party->id]) }}" class="btn btn-sm" style="background: #f1f5f9; color: #64748b; font-weight: 700; border-radius: 10px;">Clear</a>
+                <a href="{{ route('owner.party-ledger.show', ['type' => $type, 'id' => $party->id]) }}" class="btn btn-sm" style="background: #f1f5f9; color: var(--text-muted); font-weight: 700; border-radius: 10px;">Clear</a>
                 <a href="{{ route('owner.party-ledger.download', ['type' => $type, 'id' => $party->id] + request()->all()) }}" class="btn btn-sm text-white" style="background: #ef4444; font-weight: 700; border-radius: 10px;"><i class="fas fa-file-pdf mr-1"></i> PDF</a>
             </div>
         </form>
@@ -233,7 +232,7 @@
         @if(isset($viewMode) && $viewMode === 'party_wise' && isset($groupedLedgers))
             {{-- Loop for party-wise view --}}
             @forelse($groupedLedgers as $ledger)
-                <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 20px 0 10px;">
+                <div style="font-size: 14px; font-weight: 800; color: var(--text-main); margin: 20px 0 10px;">
                     <i class="fas fa-store mr-2 text-primary"></i>{{ $ledger->shop->name }}
                 </div>
                 @php $currentBalance = $ledger->opening_balance; @endphp
@@ -250,7 +249,7 @@
                             </div>
                             <div class="tx-details">
                                 <div class="tx-title">{{ $tx->type }} <span class="tx-ref">{{ $tx->ref }}</span></div>
-                                <div class="tx-date">{{ date('d M Y', strtotime($tx->date)) }} • <span style="color: #64748b;">{{ Str::limit($tx->description, 20) }}</span></div>
+                                <div class="tx-date">{{ date('d M Y', strtotime($tx->date)) }} • <span style="color: var(--text-muted);">{{ Str::limit($tx->description, 20) }}</span></div>
                             </div>
                         </div>
                         <div class="tx-right">
@@ -286,7 +285,7 @@
                         </div>
                         <div class="tx-details">
                             <div class="tx-title">{{ $tx->type }} <span class="tx-ref">{{ $tx->ref }}</span></div>
-                            <div class="tx-date">{{ date('d M Y', strtotime($tx->date)) }} • <span style="color: #64748b;">{{ Str::limit($tx->description, 20) }}</span></div>
+                            <div class="tx-date">{{ date('d M Y', strtotime($tx->date)) }} • <span style="color: var(--text-muted);">{{ Str::limit($tx->description, 20) }}</span></div>
                         </div>
                     </div>
                     <div class="tx-right">

@@ -5,8 +5,7 @@
 @section('styles')
 <style>
     :root {
-        --primary-gradient: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        --accent-color: #6366f1;
+        --accent-color: var(--text-main);
     }
 
     body {
@@ -35,13 +34,13 @@
     .roll-id-big {
         font-size: 32px;
         font-weight: 900;
-        color: #1e293b;
+        color: var(--text-main);
         letter-spacing: -1px;
     }
 
     .fabric-name-sub {
         font-size: 14px;
-        color: #64748b;
+        color: var(--text-muted);
         font-weight: 700;
         text-transform: uppercase;
         margin-bottom: 15px;
@@ -102,7 +101,7 @@
     .item-date {
         font-size: 10px;
         font-weight: 800;
-        color: #94a3b8;
+        color: var(--text-muted);
         text-transform: uppercase;
         margin-bottom: 8px;
         display: block;
@@ -111,7 +110,7 @@
     .item-title {
         font-size: 15px;
         font-weight: 800;
-        color: #1e293b;
+        color: var(--text-main);
         margin-bottom: 6px;
         display: flex;
         justify-content: space-between;
@@ -127,7 +126,7 @@
 
     .item-details {
         font-size: 12px;
-        color: #64748b;
+        color: var(--text-muted);
         line-height: 1.6;
         padding: 10px;
         background: #f8fafc;
@@ -152,7 +151,7 @@
 @endsection
 
 @section('content')
-<div class="mobile-only">
+<div class="responsive-app-view">
     <div class="app-header">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <a href="{{ route('owner.report.stock.rolls') }}" class="text-white"><i class="fas fa-arrow-left"></i></a>
@@ -172,12 +171,12 @@
             <div class="d-flex justify-content-around mt-4">
                 <div>
                     <div class="stat-value" style="font-size: 18px; font-weight: 900;">{{ number_format($data->where('qty', '>', 0)->sum('qty'), 1) }}m</div>
-                    <div class="stat-label" style="font-size: 10px; color: #94a3b8; font-weight: 800;">TOTAL IN</div>
+                    <div class="stat-label" style="font-size: 10px; color: var(--text-muted); font-weight: 800;">TOTAL IN</div>
                 </div>
                 <div style="width: 1px; background: #f1f5f9;"></div>
                 <div>
                     <div class="stat-value" style="font-size: 18px; font-weight: 900;">{{ number_format(abs($data->where('qty', '<', 0)->sum('qty')), 1) }}m</div>
-                    <div class="stat-label" style="font-size: 10px; color: #94a3b8; font-weight: 800;">TOTAL OUT</div>
+                    <div class="stat-label" style="font-size: 10px; color: var(--text-muted); font-weight: 800;">TOTAL OUT</div>
                 </div>
             </div>
         </div>
@@ -214,10 +213,5 @@
             @endforeach
         </div>
     </div>
-</div>
-
-<div class="desktop-only p-5 text-center">
-    <h3>Switch to Mobile View</h3>
-    <p>Roll tracking is designed for the mobile app interface.</p>
 </div>
 @endsection

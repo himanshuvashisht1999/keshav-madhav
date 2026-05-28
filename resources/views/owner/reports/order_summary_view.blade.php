@@ -7,16 +7,16 @@
             --slate-50: #f8fafc;
             --slate-100: #f1f5f9;
             --slate-200: #e2e8f0;
-            --slate-300: #cbd5e1;
-            --slate-600: #475569;
-            --slate-700: #334155;
-            --slate-800: #1e293b;
-            --slate-900: #0f172a;
-            --navy-500: #1e3a8a;
+            --slate-300: var(--text-muted);
+            --slate-600: var(--text-main);
+            --slate-700: var(--text-main);
+            --slate-800: var(--text-main);
+            --slate-900: var(--text-main);
+            --navy-500: var(--text-main);
             --navy-600: #1e40af;
             --navy-700: #1d4ed8;
-            --local-navy: #1e293b;
-            --KM-purple: #6f42c1;
+            --local-navy: var(--text-main);
+            --KM-purple: var(--text-main);
         }
 
         body {
@@ -315,7 +315,7 @@
                         <li class="breadcrumb-item active small font-weight-bold text-dark" aria-current="page">ORDER SUMMARY</li>
                     </ol>
                 </nav>
-                <h3 class="font-weight-bold text-dark mb-0" style="letter-spacing: -1px; color: #007bff !important;">Order Summary: {{ $data['order']->sku }}</h3>
+                <h3 class="font-weight-bold text-dark mb-0" style="letter-spacing: -1px;">Order Summary: {{ $data['order']->sku }}</h3>
             </div>
             <a href="{{ route('owner.order-summary.pdf', ['id' => $data['order']->id]) }}" class="btn btn-secondary px-4 py-2 shadow-sm font-weight-bold" style="border-radius: 6px; background: #6c757d;">
                 <i class="fas fa-arrow-left mr-2"></i> Back to Report

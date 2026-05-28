@@ -5,7 +5,6 @@
 @section('styles')
 <style>
     :root {
-        --primary-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
         --glass-bg: rgba(255, 255, 255, 0.95);
         --glass-border: rgba(255, 255, 255, 0.2);
         --card-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
@@ -70,7 +69,7 @@
         width: 100%;
         margin-bottom: 10px;
         font-weight: 600;
-        color: #475569;
+        color: var(--text-main);
     }
 
     .assignment-card {
@@ -94,7 +93,7 @@
     .unit-name {
         font-size: 16px;
         font-weight: 800;
-        color: #0f172a;
+        color: var(--text-main);
         margin-bottom: 4px;
         display: flex;
         align-items: center;
@@ -103,7 +102,7 @@
 
     .design-no {
         font-size: 12px;
-        color: #64748b;
+        color: var(--text-muted);
         font-weight: 700;
         background: #f1f5f9;
         padding: 4px 8px;
@@ -134,7 +133,7 @@
 
     .detail-label {
         font-size: 10px;
-        color: #94a3b8;
+        color: var(--text-muted);
         font-weight: 700;
         text-transform: uppercase;
         margin-bottom: 2px;
@@ -142,7 +141,7 @@
 
     .detail-val {
         font-size: 13px;
-        color: #1e293b;
+        color: var(--text-main);
         font-weight: 800;
     }
 
@@ -164,12 +163,12 @@
     .qty-val {
         font-size: 16px;
         font-weight: 900;
-        color: #0f172a;
+        color: var(--text-main);
     }
 
     .qty-label {
         font-size: 10px;
-        color: #64748b;
+        color: var(--text-muted);
         font-weight: 700;
         text-transform: uppercase;
     }
@@ -191,7 +190,7 @@
     <div class="search-container">
         <form action="{{ route('owner.reports.unit-assignments') }}" method="GET" id="filterForm">
             <div class="search-box">
-                <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; color: #475569;">Filters</div>
+                <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; color: var(--text-main);">Filters</div>
                 
                 <div class="row" style="margin: 0 -5px;">
                     <div class="col-6" style="padding: 0 5px;">

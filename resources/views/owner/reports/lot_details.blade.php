@@ -36,7 +36,7 @@
             border-radius: 8px;
             padding: 14px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
-            border-left: 5px solid #2563eb;
+            border-left: 5px solid var(--text-main);
         }
 
         .info-card label {
@@ -169,7 +169,7 @@
         /* STATUS */
         .card-progress {
             background: #fef3c7;
-            border-color: #f59e0b;
+            border-color: var(--text-main);
         }
 
         .card-completed {
@@ -199,7 +199,7 @@
         }
 
         .badge-progress {
-            background: #f59e0b;
+            background: var(--text-main);
         }
 
         .badge-completed {
@@ -223,7 +223,7 @@
 
                 {{-- ================= INFO HEADER ================= --}}
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="mb-0 font-weight-bold" style="color: #1e293b;">Lot Details</h4>
+                    <h4 class="mb-0 font-weight-bold" style="color: var(--text-main);">Lot Details</h4>
                     <a href="{{ route('owner.lot-details.pdf', ['lot_no' => $data['lot_no']]) }}"
                         class="btn btn-primary px-4 shadow-sm" style="border-radius: 8px;">
                         <i class="fas fa-file-pdf mr-2"></i> Download PDF

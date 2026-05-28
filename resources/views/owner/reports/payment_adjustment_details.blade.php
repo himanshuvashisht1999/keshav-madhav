@@ -5,7 +5,6 @@
 @section('styles')
 <style>
     :root {
-        --primary-gradient: linear-gradient(135deg, #1e293b 0%, #334155 100%);
     }
 
     body {
@@ -34,7 +33,7 @@
         font-size: 10px;
         font-weight: 800;
         background: #f1f5f9;
-        color: #64748b;
+        color: var(--text-muted);
         padding: 4px 12px;
         border-radius: 8px;
         text-transform: uppercase;
@@ -45,7 +44,7 @@
     .total-amount {
         font-size: 32px;
         font-weight: 900;
-        color: #0f172a;
+        color: var(--text-main);
         margin-bottom: 5px;
     }
 
@@ -59,7 +58,7 @@
 
     .meta-item label {
         font-size: 10px;
-        color: #94a3b8;
+        color: var(--text-muted);
         font-weight: 800;
         text-transform: uppercase;
         display: block;
@@ -68,7 +67,7 @@
     .meta-item span {
         font-size: 14px;
         font-weight: 700;
-        color: #1e293b;
+        color: var(--text-main);
     }
 
     .entries-container {
@@ -94,12 +93,12 @@
     .entry-title {
         font-size: 14px;
         font-weight: 800;
-        color: #1e293b;
+        color: var(--text-main);
     }
 
     .entry-subtitle {
         font-size: 11px;
-        color: #64748b;
+        color: var(--text-muted);
         font-weight: 600;
         margin-top: 2px;
     }
@@ -107,13 +106,13 @@
     .entry-amount {
         font-size: 16px;
         font-weight: 900;
-        color: #0f172a;
+        color: var(--text-main);
     }
 
     .section-title {
         font-size: 13px;
         font-weight: 800;
-        color: #94a3b8;
+        color: var(--text-muted);
         text-transform: uppercase;
         margin-bottom: 15px;
         padding-left: 5px;

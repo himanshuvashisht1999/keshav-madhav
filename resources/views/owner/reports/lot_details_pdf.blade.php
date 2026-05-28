@@ -7,7 +7,7 @@
         body {
             font-family: DejaVu Sans, sans-serif;
             font-size: 11px;
-            color: #1e293b;
+            color: var(--text-main);
             margin: 0;
             padding: 0;
         }
@@ -47,7 +47,7 @@
             display: block;
             font-size: 9px;
             text-transform: uppercase;
-            color: #64748b;
+            color: var(--text-muted);
             font-weight: bold;
             margin-bottom: 4px;
         }
@@ -67,7 +67,7 @@
         }
         table th {
             background: #f1f5f9;
-            color: #64748b;
+            color: var(--text-muted);
             font-size: 10px;
             font-weight: bold;
             text-transform: uppercase;
@@ -77,16 +77,16 @@
         }
         .stage-card {
             border: 1px solid #edf2f7;
-            border-left: 5px solid #94a3b8;
+            border-left: 5px solid var(--text-muted);
             padding: 10px;
             margin-bottom: 12px;
             background: #fff;
             page-break-inside: avoid;
         }
-        .st-progress { border-left-color: #2563eb; background: #eff6ff; }
+        .st-progress { border-left-color: var(--text-main); background: #eff6ff; }
         .st-completed { border-left-color: #16a34a; background: #f0fdf4; }
         .st-delayed { border-left-color: #dc2626; background: #fef2f2; }
-        .st-waiting { border-left-color: #94a3b8; background: #f8fafc; }
+        .st-waiting { border-left-color: var(--text-muted); background: #f8fafc; }
 
         .status-pill {
             float: right;
@@ -97,13 +97,13 @@
             text-transform: uppercase;
             font-weight: bold;
         }
-        .sp-progress { background: #2563eb; }
+        .sp-progress { background: var(--text-main); }
         .sp-completed { background: #16a34a; }
         .sp-delayed { background: #dc2626; }
-        .sp-waiting { background: #94a3b8; }
+        .sp-waiting { background: var(--text-muted); }
 
         .stage-title { font-weight: bold; font-size: 12px; margin-bottom: 5px; }
-        .stage-unit { font-size: 9px; color: #475569; margin-bottom: 8px; }
+        .stage-unit { font-size: 9px; color: var(--text-main); margin-bottom: 8px; }
         
         .metric-table {
             width: 100%;
@@ -119,7 +119,7 @@
         }
         .metric-label {
             font-size: 8px;
-            color: #64748b;
+            color: var(--text-muted);
             display: block;
             margin-bottom: 2px;
             text-transform: uppercase;

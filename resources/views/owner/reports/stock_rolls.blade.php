@@ -5,7 +5,6 @@
 @section('styles')
 <style>
     :root {
-        --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
         --card-shadow: 0 10px 25px rgba(0,0,0,0.05);
     }
 
@@ -69,7 +68,7 @@
 
     .fabric-name {
         font-weight: 700;
-        color: #1e293b;
+        color: var(--text-main);
         font-size: 14px;
         white-space: nowrap;
         overflow: hidden;
@@ -84,13 +83,13 @@
     .qty-value {
         font-size: 16px;
         font-weight: 900;
-        color: #0f172a;
+        color: var(--text-main);
         display: block;
     }
 
     .qty-label {
         font-size: 9px;
-        color: #64748b;
+        color: var(--text-muted);
         text-transform: uppercase;
         font-weight: 700;
     }
@@ -100,7 +99,7 @@
         grid-template-columns: 1fr 1fr;
         gap: 8px;
         font-size: 11px;
-        color: #64748b;
+        color: var(--text-muted);
         margin-top: 10px;
         padding-top: 10px;
         border-top: 1px dashed #e2e8f0;
@@ -115,7 +114,7 @@
     .form-group label {
         font-size: 11px;
         font-weight: 800;
-        color: #64748b;
+        color: var(--text-muted);
         text-transform: uppercase;
         margin-bottom: 6px;
     }
@@ -143,7 +142,7 @@
 @endsection
 
 @section('content')
-<div class="mobile-only">
+<div class="responsive-app-view">
     <div class="app-header">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <a href="{{ route('owner.stock') }}" class="text-white"><i class="fas fa-arrow-left"></i></a>
@@ -198,49 +197,9 @@
             <a href="{{ route('owner.report.stock.rolls') }}" class="text-primary font-weight-bold" style="font-size: 12px;">Clear</a>
         </div>
 
-        @foreach($rolls as $r)
-        <a href="{{ route('owner.report.stock.rolls.tracking', ['fabric_id' => $r->fabric_id, 'roll_no' => $r->roll_number]) }}" class="roll-card">
-            <div class="roll-header">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="roll-no">#{{ $r->roll_number }}</span>
-                    <span class="fabric-name">{{ $r->fabric->name ?? 'N/A' }}</span>
-                </div>
-                <div class="qty-badge">
-                    <span class="qty-value {{ $r->remaining_quantity > 0 ? 'text-success' : 'text-muted' }}">
-                        {{ number_format($r->remaining_quantity, 1) }}m
-                    </span>
-                    <span class="qty-label">Available</span>
-                </div>
-            </div>
-            
-            <div class="roll-meta">
-                <div class="meta-item">
-                    <i class="fas fa-warehouse opacity-50"></i>
-                    <span>{{ \Illuminate\Support\Str::limit($r->master_fabric_warehouse?->cutting_master_name ?? 'N/A', 15) }}</span>
-                </div>
-                <div class="meta-item justify-content-end">
-                    <i class="fas fa-truck opacity-50"></i>
-                    <span>{{ \Illuminate\Support\Str::limit($r->fabric_receipt->vendor->name ?? '-', 15) }}</span>
-                </div>
-                <div class="meta-item">
-                    <i class="fas fa-file-invoice opacity-50"></i>
-                    <span>PO: {{ $r->purchase_order?->sku ?? '-' }}</span>
-                </div>
-                <div class="meta-item justify-content-end">
-                    <i class="fas fa-ship opacity-50"></i>
-                    <span>Ship: {{ $r->shipment_number ?? '-' }}</span>
-                </div>
-                <div class="meta-item">
-                    <i class="fas fa-arrow-down text-muted"></i>
-                    <span>Recv: {{ number_format($r->meter, 1) }}m</span>
-                </div>
-                <div class="meta-item justify-content-end">
-                    <i class="fas fa-history text-primary"></i>
-                    <span class="text-primary font-weight-bold">View History</span>
-                </div>
-            </div>
-        </a>
-        @endforeach
+        <div id="rolls-container" data-has-more="{{ $rolls->hasMorePages() ? 'true' : 'false' }}" data-current-page="{{ $rolls->currentPage() }}">
+            @include('owner.reports.partials.stock_rolls_list', ['rolls' => $rolls])
+        </div>
 
         @if($rolls->isEmpty())
             <div class="text-center py-5 opacity-50">
@@ -249,14 +208,68 @@
             </div>
         @endif
 
-        <div class="mt-4">
-            {{ $rolls->links('pagination::simple-bootstrap-4') }}
+        <div id="loading-spinner" style="display: none; text-align: center; padding: 20px;">
+            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
         </div>
+        <div id="load-more-trigger" style="height: 10px;"></div>
     </div>
 </div>
+@endsection
 
-<div class="desktop-only p-5 text-center">
-    <h3>Switch to Mobile View</h3>
-    <p>This page is optimized for the owner app experience.</p>
-</div>
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.getElementById('rolls-container');
+        if (!container) return;
+        
+        let hasMore = container.dataset.hasMore === 'true';
+        let currentPage = parseInt(container.dataset.currentPage);
+        let nextPage = hasMore ? currentPage + 1 : null;
+        let isLoading = false;
+        
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && nextPage !== null && !isLoading) {
+                loadMoreData();
+            }
+        });
+        
+        const trigger = document.getElementById('load-more-trigger');
+        if (trigger) {
+            observer.observe(trigger);
+        }
+
+        function loadMoreData() {
+            isLoading = true;
+            document.getElementById('loading-spinner').style.display = 'block';
+            
+            let currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('page', nextPage);
+
+            fetch(currentUrl.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.html) {
+                    container.insertAdjacentHTML('beforeend', data.html);
+                }
+                
+                nextPage = data.next_page;
+                isLoading = false;
+                document.getElementById('loading-spinner').style.display = 'none';
+                
+                if (nextPage === null) {
+                    observer.unobserve(trigger);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading more items:', error);
+                isLoading = false;
+                document.getElementById('loading-spinner').style.display = 'none';
+            });
+        }
+    });
+</script>
 @endsection

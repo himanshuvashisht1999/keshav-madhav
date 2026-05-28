@@ -5,7 +5,6 @@
 @section('styles')
 <style>
     :root {
-        --primary-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
         --accent-glow: 0 10px 30px rgba(245, 158, 11, 0.15);
     }
 
@@ -71,7 +70,7 @@
     .lot-id {
         font-size: 18px;
         font-weight: 900;
-        color: #1e293b;
+        color: var(--text-main);
         margin-bottom: 5px;
         display: flex;
         justify-content: space-between;
@@ -89,7 +88,7 @@
 
     .order-info {
         font-size: 13px;
-        color: #64748b;
+        color: var(--text-muted);
         font-weight: 600;
         margin-bottom: 15px;
         display: flex;
@@ -100,7 +99,7 @@
     .customer-name {
         font-size: 14px;
         font-weight: 700;
-        color: #334155;
+        color: var(--text-main);
         padding: 10px;
         background: #f8fafc;
         border-radius: 12px;
@@ -112,7 +111,7 @@
         text-align: right;
         font-weight: 800;
         font-size: 13px;
-        color: #d97706;
+        color: var(--text-main);
         display: flex;
         align-items: center;
         justify-content: flex-end;
@@ -123,7 +122,7 @@
         font-size: 11px;
         font-weight: 800;
         text-transform: uppercase;
-        color: #94a3b8;
+        color: var(--text-muted);
         margin-bottom: 8px;
         display: block;
     }
@@ -192,27 +191,9 @@
             <span class="text-muted font-weight-bold" style="font-size: 13px;">{{ $data->total() }} ACTIVE LOTS</span>
         </div>
 
-        @foreach($data as $row)
-            @isset($row['lot_no'])
-            <a href="{{ route('owner.lot-details', ['lot_no' => $row['lot_no']]) }}" class="lot-card">
-                <div class="lot-id">
-                    Lot #{{ $row['lot_no'] }}
-                    <span class="qty-tag">{{ $row['lot_quantity'] ?? '0' }} Pcs</span>
-                </div>
-                <div class="order-info">
-                    <i class="fas fa-hashtag"></i> {{ $row['order_no'] }}
-                    <span class="mx-2 opacity-25">|</span>
-                    <i class="far fa-calendar-alt"></i> {{ now()->format('d M') }}
-                </div>
-                <span class="customer-name">
-                    <i class="far fa-user mr-2 text-warning"></i> {{ $row['customer_name'] }}
-                </span>
-                <div class="action-link">
-                    View Progress <i class="fas fa-arrow-right"></i>
-                </div>
-            </a>
-            @endisset
-        @endforeach
+        <div id="lots-container">
+            @include('owner.reports.partials.lots_list', ['data' => $data])
+        </div>
 
         @if($data->isEmpty())
             <div class="text-center py-5 opacity-25">
@@ -221,9 +202,10 @@
             </div>
         @endif
 
-        <div class="mt-4 px-2">
-            {{ $data->links('pagination::simple-bootstrap-4') }}
+        <div id="loading-spinner" style="display: none; text-align: center; padding: 20px;">
+            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
         </div>
+        <div id="load-more-trigger" style="height: 10px;"></div>
     </div>
 </div>
 
@@ -249,10 +231,56 @@
             fillLotDropdown(allLots);
             return;
         }
-        const filteredLots = lotData
-            .filter(i => String(i.order_id) === String(selectedOrderId))
-            .map(i => i.lot_no);
-        fillLotDropdown(unique(filteredLots));
+        const filteredLots = unique(lotData.filter(i => i.order_id == selectedOrderId).map(i => i.lot_no));
+        fillLotDropdown(filteredLots);
     }
+
+    $(document).ready(function() {
+        if ($.fn.select2) {
+            $('.select2').select2();
+        }
+
+        let currentPage = {{ $data->currentPage() }};
+        let nextPage = {{ $data->hasMorePages() ? $data->currentPage() + 1 : 'null' }};
+        let isLoading = false;
+        
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && nextPage !== null && !isLoading) {
+                loadMoreData();
+            }
+        });
+        
+        const trigger = document.getElementById('load-more-trigger');
+        if (trigger) {
+            observer.observe(trigger);
+        }
+
+        function loadMoreData() {
+            isLoading = true;
+            $('#loading-spinner').show();
+            
+            let currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('page', nextPage);
+
+            $.ajax({
+                url: currentUrl.toString(),
+                type: 'GET',
+                success: function(response) {
+                    $('#lots-container').append(response.html);
+                    nextPage = response.next_page;
+                    isLoading = false;
+                    $('#loading-spinner').hide();
+                    
+                    if (nextPage === null) {
+                        observer.unobserve(trigger);
+                    }
+                },
+                error: function() {
+                    isLoading = false;
+                    $('#loading-spinner').hide();
+                }
+            });
+        }
+    });
 </script>
 @endsection

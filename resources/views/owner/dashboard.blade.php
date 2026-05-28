@@ -5,17 +5,17 @@
         :root {
             --slate-50: #f8fafc;
             --slate-100: #f1f5f9;
-            --slate-200: #e2e8f0;
-            --slate-300: #cbd5e1;
-            --slate-400: #94a3b8;
-            --slate-500: #64748b;
-            --slate-600: #475569;
-            --slate-700: #334155;
-            --slate-800: #1e293b;
-            --slate-900: #0f172a;
-            --KM-purple: #6f42c1;
-            --KM-purple-dark: #5a32a3;
-            --KM-purple-light: #8b5cf6;
+            --slate-200: rgba(62, 182, 81, 0.2);
+            --slate-300: rgba(62, 182, 81, 0.4);
+            --slate-400: var(--text-muted);
+            --slate-500: var(--text-muted);
+            --slate-600: var(--text-main);
+            --slate-700: var(--text-main);
+            --slate-800: var(--text-main);
+            --slate-900: var(--text-main);
+            --KM-purple: var(--primary);
+            --KM-purple-dark: var(--text-main);
+            --KM-purple-light: var(--secondary);
         }
 
         body {
@@ -28,7 +28,7 @@
                             ========================================= */
         @media (max-width: 991.98px) {
             .app-hero {
-                background: var(--KM-purple);
+                background: var(--primary-gradient);
                 padding: 40px 24px 80px;
                 color: white;
                 position: relative;
@@ -341,7 +341,7 @@
 
 
             <a href="{{ route('owner.reports.selling-items') }}" class="app-nav-card">
-                <div class="app-nav-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899;">
+                <div class="app-nav-icon" style="background: rgba(62, 182, 81, 0.1); color: var(--primary);">
                     <i class="fas fa-list-ol"></i>
                 </div>
                 <div class="app-nav-content">
@@ -352,7 +352,7 @@
             </a>
 
             <a href="{{ route('owner.report.stock.rolls') }}" class="app-nav-card">
-                <div class="app-nav-icon" style="background: rgba(79, 70, 229, 0.1); color: #4f46e5;">
+                <div class="app-nav-icon" style="background: rgba(255, 232, 32, 0.2); color: #c4af07;">
                     <i class="fas fa-barcode"></i>
                 </div>
                 <div class="app-nav-content">
@@ -364,7 +364,7 @@
 
 
             <a href="{{ route('owner.ready-stock.index') }}" class="app-nav-card">
-                <div class="app-nav-icon" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">
+                <div class="app-nav-icon" style="background: rgba(62, 182, 81, 0.1); color: var(--primary);">
                     <i class="fas fa-boxes"></i>
                 </div>
                 <div class="app-nav-content">
@@ -375,7 +375,7 @@
             </a>
 
             <a href="{{ route('owner.reports.unit-assignments', ['stage_id' => 3, 'view' => 'delayed']) }}" class="app-nav-card">
-                <div class="app-nav-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                <div class="app-nav-icon" style="background: rgba(255, 232, 32, 0.2); color: #c4af07;">
                     <i class="fas fa-tasks"></i>
                 </div>
                 <div class="app-nav-content">
@@ -422,20 +422,20 @@
                 <div class="action-grid">
 
                     <a href="{{ route('owner.reports.selling-items') }}" class="action-btn-modern">
-                        <i class="fas fa-list-ol text-pink"></i>
+                        <i class="fas fa-list-ol text-primary"></i>
                         <span>Selling Item List</span>
                     </a>
                     <a href="{{ route('owner.report.stock.rolls') }}" class="action-btn-modern">
-                        <i class="fas fa-barcode text-primary"></i>
+                        <i class="fas fa-barcode" style="color: #c4af07;"></i>
                         <span>Stock by Roll</span>
                     </a>
 
                     <a href="{{ route('owner.ready-stock.index') }}" class="action-btn-modern">
-                        <i class="fas fa-boxes text-info"></i>
+                        <i class="fas fa-boxes text-primary"></i>
                         <span>Ready Stock</span>
                     </a>
                     <a href="{{ route('owner.reports.unit-assignments', ['stage_id' => 3, 'view' => 'delayed']) }}" class="action-btn-modern">
-                        <i class="fas fa-tasks text-success"></i>
+                        <i class="fas fa-tasks" style="color: #c4af07;"></i>
                         <span>Unit Assignments</span>
                     </a>
 

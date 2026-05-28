@@ -5,7 +5,6 @@
 @section('styles')
 <style>
     :root {
-        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
         --glass-bg: rgba(255, 255, 255, 0.9);
         --glass-border: rgba(255, 255, 255, 0.2);
         --card-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
@@ -72,7 +71,7 @@
         width: 100%;
         font-size: 15px;
         font-weight: 500;
-        color: #1e293b;
+        color: var(--text-main);
     }
 
     .stock-card {
@@ -96,7 +95,7 @@
     .fabric-title {
         font-size: 18px;
         font-weight: 800;
-        color: #0f172a;
+        color: var(--text-main);
         margin-bottom: 12px;
         display: flex;
         justify-content: space-between;
@@ -106,7 +105,7 @@
     .vendor-badge {
         font-size: 10px;
         background: rgba(99, 102, 241, 0.1);
-        color: #6366f1;
+        color: var(--text-main);
         padding: 4px 10px;
         border-radius: 10px;
         font-weight: 700;
@@ -125,7 +124,7 @@
 
     .stat-label {
         font-size: 9px;
-        color: #64748b;
+        color: var(--text-muted);
         text-transform: uppercase;
         font-weight: 800;
         letter-spacing: 0.5px;
@@ -136,16 +135,16 @@
     .stat-value {
         font-size: 14px;
         font-weight: 900;
-        color: #1e293b;
+        color: var(--text-main);
     }
 
     .stat-value.remaining {
-        color: #a855f7;
+        color: var(--text-main);
     }
 
     .wh-badge {
         background: #f1f5f9;
-        color: #475569;
+        color: var(--text-main);
         padding: 6px 12px;
         border-radius: 12px;
         font-size: 12px;
@@ -183,13 +182,13 @@
 
     .btn-usages {
         background: #fff7ed;
-        color: #d97706;
+        color: var(--text-main);
     }
 
     .empty-state {
         padding: 60px 20px;
         text-align: center;
-        color: #64748b;
+        color: var(--text-muted);
     }
 
     .empty-state i {
@@ -264,27 +263,9 @@
 
     <div class="container-fluid mt-4 pb-5">
         @if($level === 'fabrics')
-            @foreach($data as $row)
-                <a href="{{ route('owner.stock', ['fabric_id' => $row->id, 'warehouse_id' => request('warehouse_id')]) }}" class="stock-card">
-                    <div class="fabric-title">
-                        {{ $row->name }}
-                        <span class="vendor-badge">{{ $row->vendor_name ?: 'Global' }}</span>
-                    </div>
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <span class="stat-label">Received</span>
-                            <span class="stat-value">{{ number_format($row->total_received, 1) }}</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Stock</span>
-                            <span class="stat-value remaining">{{ number_format($row->total_remaining, 1) }}</span>
-                        </div>
-                    </div>
-                    <div class="mt-3 text-right">
-                        <i class="fas fa-chevron-right text-muted opacity-50"></i>
-                    </div>
-                </a>
-            @endforeach
+            <div id="stock-container" data-has-more="{{ method_exists($data, 'hasMorePages') && $data->hasMorePages() ? 'true' : 'false' }}" data-current-page="{{ method_exists($data, 'currentPage') ? $data->currentPage() : 1 }}">
+                @include('owner.reports.partials.stock_fabrics_list', ['data' => $data])
+            </div>
             
             @if($data->isEmpty())
                 <div class="empty-state">
@@ -292,10 +273,6 @@
                     <p>No fabrics found in stock</p>
                 </div>
             @endif
-
-            <div class="px-2">
-                {{ $data->links('pagination::simple-bootstrap-4') }}
-            </div>
 
         @elseif($level === 'warehouses')
             <div class="wh-badge">
@@ -331,85 +308,23 @@
             <div class="wh-badge">
                 <i class="fas fa-ship"></i> Shipment History
             </div>
-            @foreach($data as $row)
-                <div class="stock-card">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <div class="font-weight-bold" style="font-size: 16px;">{{ $row->fabric_receipt?->sku ?: 'Shipment #' . $row->id }}</div>
-                            <div class="text-muted" style="font-size: 11px;">{{ $row->created_at->format('d M Y, h:i A') }}</div>
-                        </div>
-                        <span class="vendor-badge">{{ $row->fabric_receipt?->vendor?->name ?: 'Direct' }}</span>
-                    </div>
-                    
-                    <div class="p-3 rounded-xl bg-light mb-3 d-flex justify-content-around">
-                        <div class="text-center">
-                            <span class="stat-label">Roll No</span>
-                            <span class="font-weight-black">{{ $row->roll_number }}</span>
-                        </div>
-                        <div class="text-center">
-                            <span class="stat-label">Received</span>
-                            <span class="font-weight-black">{{ number_format($row->meter, 1) }}m</span>
-                        </div>
-                        <div class="text-center">
-                            <span class="stat-label">In Stock</span>
-                            <span class="font-weight-black text-success">{{ number_format($row->remaining_quantity, 1) }}m</span>
-                        </div>
-                    </div>
-
-                    <div style="font-size: 12px; color: #64748b;">
-                        <i class="fas fa-warehouse mr-1"></i> {{ $row->master_fabric_warehouse?->cutting_master_name ?: '-' }}
-                        <span class="mx-2">|</span>
-                        <i class="fas fa-barcode mr-1"></i> {{ $row->qrcode_number ?: '-' }}
-                    </div>
-                </div>
-            @endforeach
-            <div class="px-2">
-                {{ $data->links('pagination::simple-bootstrap-4') }}
+            <div id="stock-container" data-has-more="{{ method_exists($data, 'hasMorePages') && $data->hasMorePages() ? 'true' : 'false' }}" data-current-page="{{ method_exists($data, 'currentPage') ? $data->currentPage() : 1 }}">
+                @include('owner.reports.partials.stock_receipts_list', ['data' => $data])
             </div>
 
         @elseif($level === 'usages')
             <div class="wh-badge">
                 <i class="fas fa-history"></i> Usage Records
             </div>
-            @foreach($data as $row)
-                <div class="stock-card">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <div class="font-weight-bold" style="font-size: 15px;">{{ $row->order_no }}</div>
-                            <div class="text-muted" style="font-size: 11px;">{{ \Carbon\Carbon::parse($row->created_at)->format('d M Y, h:i A') }}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-weight-black text-danger" style="font-size: 16px;">-{{ number_format($row->meter, 1) }}m</div>
-                            <div class="stat-label">Consumed</div>
-                        </div>
-                    </div>
-
-                    <div class="p-3 rounded-xl bg-light" style="font-size: 12px;">
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <span class="text-muted">Lot No:</span> <strong>{{ $row->lot_no }}</strong>
-                            </div>
-                            <div class="col-6">
-                                <span class="text-muted">Roll No:</span> <strong>{{ $row->roll_no }}</strong>
-                            </div>
-                            <div class="col-6 mt-2">
-                                <span class="text-muted">Stage:</span> <strong>{{ $row->stageMasterUnit?->name ?: '-' }}</strong>
-                            </div>
-                            <div class="col-12 mt-2 border-top pt-2">
-                                <span class="text-muted">Details:</span> 
-                                <span class="font-weight-bold">
-                                    {{ $row->orderProductSet?->design_number ?: '' }} 
-                                    ({{ $row->orderProductSet?->colors?->name ?: '' }})
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-            <div class="px-2">
-                {{ $data->links('pagination::simple-bootstrap-4') }}
+            <div id="stock-container" data-has-more="{{ method_exists($data, 'hasMorePages') && $data->hasMorePages() ? 'true' : 'false' }}" data-current-page="{{ method_exists($data, 'currentPage') ? $data->currentPage() : 1 }}">
+                @include('owner.reports.partials.stock_usages_list', ['data' => $data])
             </div>
         @endif
+        
+        <div id="loading-spinner" style="display: none; text-align: center; padding: 20px;">
+            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+        </div>
+        <div id="load-more-trigger" style="height: 10px;"></div>
     </div>
 
     <div class="fab-container">
@@ -420,4 +335,62 @@
 </div>
 
 
+@endsection
+
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.getElementById('stock-container');
+        if (!container) return; // For warehouse level where there is no pagination
+        
+        let hasMore = container.dataset.hasMore === 'true';
+        let currentPage = parseInt(container.dataset.currentPage);
+        let nextPage = hasMore ? currentPage + 1 : null;
+        let isLoading = false;
+        
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && nextPage !== null && !isLoading) {
+                loadMoreData();
+            }
+        });
+        
+        const trigger = document.getElementById('load-more-trigger');
+        if (trigger) {
+            observer.observe(trigger);
+        }
+
+        function loadMoreData() {
+            isLoading = true;
+            document.getElementById('loading-spinner').style.display = 'block';
+            
+            let currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('page', nextPage);
+
+            fetch(currentUrl.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.html) {
+                    container.insertAdjacentHTML('beforeend', data.html);
+                }
+                
+                nextPage = data.next_page;
+                isLoading = false;
+                document.getElementById('loading-spinner').style.display = 'none';
+                
+                if (nextPage === null) {
+                    observer.unobserve(trigger);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading more items:', error);
+                isLoading = false;
+                document.getElementById('loading-spinner').style.display = 'none';
+            });
+        }
+    });
+</script>
 @endsection

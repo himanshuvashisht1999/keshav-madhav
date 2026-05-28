@@ -16,7 +16,7 @@
         .report-header h3 {
             font-weight: 700;
             margin: 0;
-            color: #1e3a8a;
+            color: var(--text-main);
         }
 
         .report-card {
@@ -27,7 +27,7 @@
         }
 
         .table-report thead th {
-            background: #1e3a8a;
+            background: var(--text-main);
             color: #fff !important;
             font-weight: 600;
             white-space: nowrap;
@@ -43,13 +43,13 @@
         .order-row-group {
             background: #f1f5f9;
             font-weight: 800;
-            color: #1e3a8a;
+            color: var(--text-main);
         }
 
         /* MOBILE RESPONSIVE TWEAKS */
         @media (max-width: 991.98px) {
             .report-header {
-                background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+                background: var(--primary-gradient);
                 color: white;
                 border: none;
             }

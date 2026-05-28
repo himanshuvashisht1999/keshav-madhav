@@ -32,7 +32,7 @@
             .sku-label {
                 font-size: 15px;
                 font-weight: 800;
-                color: #1e293b;
+                color: var(--text-main);
             }
 
             .status-pill {
@@ -50,7 +50,7 @@
 
             .sp-closed {
                 background: #f1f5f9;
-                color: #64748b;
+                color: var(--text-muted);
             }
 
             .sp-partial {
@@ -70,7 +70,7 @@
             .info-item label {
                 display: block;
                 font-size: 10px;
-                color: #94a3b8;
+                color: var(--text-muted);
                 text-transform: uppercase;
                 font-weight: 700;
                 margin-bottom: 2px;
@@ -79,7 +79,7 @@
             .info-item .value {
                 font-size: 14px;
                 font-weight: 700;
-                color: #334155;
+                color: var(--text-main);
             }
 
             .progress-value {
@@ -96,7 +96,7 @@
 
             .date-text {
                 font-size: 11px;
-                color: #94a3b8;
+                color: var(--text-muted);
                 font-weight: 600;
             }
 
@@ -131,7 +131,7 @@
     <!-- MOBILE CONTENT -->
     <div class="mobile-only">
         <div class="app-container" style="padding-top: 20px;">
-            <h5 class="mb-4 font-weight-bold" style="color: #1e293b;">Order Summary</h5>
+            <h5 class="mb-4 font-weight-bold" style="color: var(--text-main);">Order Summary</h5>
 
             <!-- Mobile Filters -->
             <div class="card mb-3" style="border-radius: 12px; border: 1px solid #f1f5f9;">
@@ -161,44 +161,8 @@
                 </div>
             </div>
 
-            @foreach ($salesOrders as $row)
-                <div class="order-card">
-                    <div class="card-header-top">
-                        <div class="sku-label">#{{ $row['order_no'] }}</div>
-                        @php
-                            $remaining = $row['total_pcs'] - $row['scanned_pcs'];
-                        @endphp
-                        <div
-                            class="status-pill 
-                                            @if($remaining <= 0) sp-closed @elseif($row['scanned_pcs'] > 0) sp-partial @else sp-active @endif">
-                            @if($remaining <= 0) COMPLETED @elseif($row['scanned_pcs'] > 0) PARTIAL @else ACTIVE @endif
-                        </div>
-                    </div>
-
-                    <div class="card-grid">
-                        <div class="info-item">
-                            <label>Customer</label>
-                            <div class="value">{{ \Illuminate\Support\Str::limit($row['customer'], 20) }}</div>
-                        </div>
-                        <div class="info-item">
-                            <label>Quantity</label>
-                            <div class="value">{{ $row['total_pcs'] }} Pcs</div>
-                        </div>
-                    </div>
-
-                    <div class="card-action">
-                        <div class="date-text">
-                            <i class="far fa-calendar-alt"></i> {{ date('d M Y', strtotime($row['created_at'])) }}
-                        </div>
-                        <a href="{{ route('owner.order-summary.view', $row['id']) }}" class="btn-view-app">
-                            Details <i class="fas fa-arrow-right"></i>
-                        </a>
-                    </div>
-                </div>
-            @endforeach
-
-            <div class="pagination-wrapper mt-4">
-                {{ $salesOrders->links() }}
+            <div id="orders-container-mobile">
+                @include('owner.reports.partials.order_summary_mobile', ['salesOrders' => $salesOrders])
             </div>
         </div>
     </div>
@@ -252,42 +216,19 @@
                                 <th>Action</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @foreach($salesOrders as $row)
-                                <tr>
-                                    <td>{{ date('d-m-Y', strtotime($row['created_at'])) }}</td>
-                                    <td><b>{{ $row['order_no'] }}</b></td>
-                                    <td>{{ $row['customer'] }}</td>
-                                    <td>{{ $row['total_pcs'] }}</td>
-                                    <td>
-                                        @php
-                                            $remaining = $row['total_pcs'] - $row['scanned_pcs'];
-                                        @endphp
-                                        @if($remaining <= 0)
-                                            <span class="badge badge-success">Completed</span>
-                                        @elseif($row['scanned_pcs'] > 0)
-                                            <span class="badge badge-warning">Partial</span>
-                                        @else
-                                            <span class="badge badge-primary">In Progress</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <a href="{{ route('owner.order-summary.view', $row['id']) }}"
-                                            class="btn btn-sm btn-primary" style="border-radius: 6px;">
-                                            View Manifest
-                                        </a>
-                                    </td>
-                                </tr>
-                            @endforeach
+                        <tbody id="orders-container-desktop">
+                            @include('owner.reports.partials.order_summary_desktop', ['salesOrders' => $salesOrders])
                         </tbody>
                     </table>
-                </div>
-                <div class="mt-4">
-                    {{ $salesOrders->links() }}
                 </div>
             </div>
         </div>
     </div>
+    
+    <div id="loading-spinner" style="display: none; text-align: center; padding: 20px;">
+        <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+    </div>
+    <div id="load-more-trigger" style="height: 10px;"></div>
 @endsection
 @section('scripts')
     <script>
@@ -296,6 +237,49 @@
                 $('.select2').select2({
                     placeholder: "Select Customer",
                     allowClear: true
+                });
+            }
+
+            let currentPage = {{ $salesOrders->currentPage() }};
+            let nextPage = {{ $salesOrders->hasMorePages() ? $salesOrders->currentPage() + 1 : 'null' }};
+            let isLoading = false;
+            
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting && nextPage !== null && !isLoading) {
+                    loadMoreData();
+                }
+            });
+            
+            const trigger = document.getElementById('load-more-trigger');
+            if (trigger) {
+                observer.observe(trigger);
+            }
+
+            function loadMoreData() {
+                isLoading = true;
+                $('#loading-spinner').show();
+                
+                let currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('page', nextPage);
+
+                $.ajax({
+                    url: currentUrl.toString(),
+                    type: 'GET',
+                    success: function(response) {
+                        $('#orders-container-mobile').append(response.html_mobile);
+                        $('#orders-container-desktop').append(response.html_desktop);
+                        nextPage = response.next_page;
+                        isLoading = false;
+                        $('#loading-spinner').hide();
+                        
+                        if (nextPage === null) {
+                            observer.unobserve(trigger);
+                        }
+                    },
+                    error: function() {
+                        isLoading = false;
+                        $('#loading-spinner').hide();
+                    }
                 });
             }
         });
