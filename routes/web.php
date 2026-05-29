@@ -1175,6 +1175,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/show/{type}/{id}', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'show'])->name('show');
                 Route::get('/download/{type}/{id}', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'download'])->name('download');
             });
+            Route::prefix('/sales')->name('sales.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Admin\Ledger\SalesLedgerController::class, 'index'])->name('index');
+            });
+            Route::prefix('/purchase')->name('purchase.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Admin\Ledger\PurchaseLedgerController::class, 'index'])->name('index');
+            });
         });
 
         Route::prefix('/reports')->name('reports.')->group(function () {

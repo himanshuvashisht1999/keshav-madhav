@@ -41,8 +41,11 @@ class FabricReceiptDataTable
                 if ($request->has('received_by') && !empty($request->received_by)) {
                     $query->where('received_by', 'like', "%{$request->get('received_by')}%");
                 }
-                if ($request->has('time') && !empty($request->time)) {
-                    $query->where('time', 'like', "%{$request->get('time')}%");
+                if ($request->has('from_date') && !empty($request->from_date)) {
+                    $query->whereDate('time', '>=', $request->from_date);
+                }
+                if ($request->has('to_date') && !empty($request->to_date)) {
+                    $query->whereDate('time', '<=', $request->to_date);
                 }
                 if ($request->has('roll') && !empty($request->roll)) {
                     $query->where('roll', 'like', "%{$request->get('roll')}%");
@@ -51,25 +54,8 @@ class FabricReceiptDataTable
                     $query->where('total_amount', 'like', "%{$request->get('total_amount')}%");
                 }
 
-                if ($request->has('payment_status') && !empty($request->payment_status)) {
-                    if ($request->payment_status == 'paid') {
-                        $query->whereRaw('(SELECT SUM(amount) FROM payments WHERE paymentable_id = fabric_receipts.id AND paymentable_type = "App\\\\Models\\\\FabricReceipt") >= fabric_receipts.total_amount');
-                    } elseif ($request->payment_status == 'unpaid') {
-                        $query->whereRaw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE paymentable_id = fabric_receipts.id AND paymentable_type = "App\\\\Models\\\\FabricReceipt") < fabric_receipts.total_amount');
-                    }
-                }
 
                 $query->where('status', 1);
-            })
-            ->addColumn('payment_status', function ($queue) {
-                $paid = $queue->paid_amount;
-                $total = $queue->total_amount;
-                if ($paid >= $total && $total > 0) {
-                    $url = route('admin.payment.history.index', ['paymentable_type' => 'App\Models\FabricReceipt', 'paymentable_id' => $queue->id]);
-                    return '<a href="' . $url . '"><span class="badge badge-success">Paid</span></a>';
-                } else {
-                    return '<span class="badge badge-danger">Unpaid</span>';
-                }
             })
             ->editColumn('time', function ($queue) {
                 return getformatDate($queue->time);
@@ -112,7 +98,7 @@ class FabricReceiptDataTable
                 return $action;
             })
 
-            ->rawColumns(['action', 'status', 'vendor_id', 'payment_status'])
+            ->rawColumns(['action', 'status', 'vendor_id'])
             ->make(true);
     }
 }

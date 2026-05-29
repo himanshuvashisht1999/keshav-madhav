@@ -21,6 +21,6 @@
         {{ $row->total_boxes }}
     </td>
     <td class="text-center">
-        <input type="number" name="transfer_qty[{{ $row->id }}]" value="{{ $row->total_boxes }}" min="1" max="{{ $row->total_boxes }}" class="form-control form-control-sm qty-input" style="width: 80px; margin: 0 auto;">
+        <input type="number" name="transfer_qty[{{ $row->id }}]" value="{{ $row->total_boxes }}" min="0" max="{{ $row->total_boxes }}" class="form-control form-control-sm qty-input" style="width: 80px; margin: 0 auto;">
     </td>
 </tr>

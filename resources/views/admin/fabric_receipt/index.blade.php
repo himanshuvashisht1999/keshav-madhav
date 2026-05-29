@@ -81,7 +81,10 @@
                             </td> -->
 
                                     <td>
-                                        <input type="date" class="form-control" name="time" id="time" autocomplete="off">
+                                        <div class="d-flex" style="gap: 5px;">
+                                            <input type="date" class="form-control" name="from_date" id="from_date" autocomplete="off" title="From Date">
+                                            <input type="date" class="form-control" name="to_date" id="to_date" autocomplete="off" title="To Date">
+                                        </div>
                                     </td>
                                     <td>
                                         <input type="text" class="form-control" name="roll" id="roll" autocomplete="off">
@@ -92,13 +95,7 @@
                                     </td>
 
 
-                                    <td>
-                                        <select class="form-control" name="payment_status" id="payment_status">
-                                            <option value="">ALL</option>
-                                            <option value="paid">Paid</option>
-                                            <option value="unpaid">Unpaid</option>
-                                        </select>
-                                    </td>
+
 
                                     <td>
 
@@ -114,7 +111,7 @@
                                     <th>Date</th>
                                     <th>Rolls</th>
                                     <th>Total Amount</th>
-                                    <th>Payment Status</th>
+
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -154,11 +151,12 @@
                         d.bill_no = $('#bill_no').val();
                         d.vendor_id = $('#vendor_id').val();
                         // d.truck_number = $('#truck_number').val();
-                        d.time = $('#time').val();
+                        d.from_date = $('#from_date').val();
+                        d.to_date = $('#to_date').val();
                         d.master_fabric_warehouse_id = $('#master_fabric_warehouse_id').val();
                         d.roll = $('#roll').val();
                         d.total_amount = $('#total_amount').val();
-                        d.payment_status = $('#payment_status').val();
+
 
                     },
                     orderable: false
@@ -173,7 +171,7 @@
                     { data: 'time', name: 'time' },
                     { data: 'roll', name: 'roll' },
                     { data: 'total_amount', name: 'total_amount' },
-                    { data: 'payment_status', name: 'payment_status' },
+
                     { data: 'action', name: 'action', searchable: false }
                 ],
                 dom: 'lBfrtip',
@@ -228,15 +226,12 @@
                 oTable.draw();
                 e.preventDefault();
             });
-            $('#time').on('change', function (e) {
+            $('#from_date, #to_date').on('change', function (e) {
                 oTable.draw();
                 e.preventDefault();
             });
 
-            $('#payment_status').on('change', function (e) {
-                oTable.draw();
-                e.preventDefault();
-            });
+
 
 
 
