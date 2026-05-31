@@ -341,6 +341,21 @@ function getIndianCurrency($number)
     return $result . "." . $decimal_str;
 }
 
+function parseCompactBarcode($input)
+{
+    $input = trim($input);
+    // Compact barcode format: 10 + D(5) + S(2) + C(3) + P(2) + F(2) = 16 digits
+    if (strlen($input) == 16 && str_starts_with($input, '10') && is_numeric($input)) {
+        $d = (int) substr($input, 2, 5);
+        $s = (int) substr($input, 7, 2);
+        $c = (int) substr($input, 9, 3);
+        $p = (int) substr($input, 12, 2);
+        $f = (int) substr($input, 14, 2);
+        return "D{$d}S{$s}C{$c}P{$p}F{$f}";
+    }
+    return $input;
+}
+
 /**
  * Generates TSPL (TSC Label Printer) content for a list of barcodes.
  * Can find data from DomesticInventory or manually parse barcode structure.
@@ -368,6 +383,11 @@ function generateBulkTsplByBarcodes($barcodes)
         $code = trim($code);
         if (!$code)
             continue;
+            
+        $compactBarcode = $code;
+        if (preg_match('/D(\d+)S(\d+)C(\d+)P(\d+)F(\d+)/', $code, $matches)) {
+            $compactBarcode = sprintf("10%05d%02d%03d%02d%02d", $matches[1], $matches[2], $matches[3], $matches[4], $matches[5]);
+        }
 
         if (isset($items[$code])) {
             $item = $items[$code];
@@ -379,7 +399,8 @@ function generateBulkTsplByBarcodes($barcodes)
                 'no_of_pcs' => $item->quantity,
                 'color_name' => $item->color_name . ' (' . $item->color_id . ')',
                 'design_number' => $item->design_number,
-                'barcode' => $item->barcode
+                'barcode' => $compactBarcode,
+                'original_code' => $code
             ];
         } else {
             // 2. Fallback: Parse barcode structure D[id]S[id]C[id]P[id]F[id]
@@ -399,7 +420,8 @@ function generateBulkTsplByBarcodes($barcodes)
                         'no_of_pcs' => $sizeSet->no_of_pcs,
                         'color_name' => $color->name . ' (' . $color->id . ')',
                         'design_number' => $design->design_number,
-                        'barcode' => $code
+                        'barcode' => $compactBarcode,
+                        'original_code' => $code
                     ];
                 }
             }
@@ -428,24 +450,26 @@ CLS
 
         if ($left) {
             $tspl .= "TEXT 40,110,\"3\",0,2,2,\"{$left->product_name}\"\n";
-            $tspl .= "TEXT 40,180,\"3\",0,2,2,\"{$left->size_group}\"\n";
-            $tspl .= "TEXT 40,240,\"3\",0,2,2,\"{$left->no_of_pcs} PCS\"\n";
-            $tspl .= "TEXT 40,300,\"2\",0,2,2,\"{$left->color_name}\"\n";
+            $tspl .= "TEXT 40,190,\"3\",0,2,2,\"{$left->size_group}\"\n";
+            $tspl .= "TEXT 40,250,\"3\",0,2,2,\"{$left->no_of_pcs} PCS\"\n";
+            $tspl .= "TEXT 40,310,\"2\",0,2,2,\"{$left->color_name}\"\n";
             // $tspl .= "TEXT 40,340,\"2\",0,1,1,\"{$left->pattern_name}\"\n";
-            $tspl .= "TEXT 40,360,\"2\",0,2,2,\"{$left->fitting_name}\"\n";
-            $tspl .= "TEXT 40,420,\"2\",0,1,1,\"# {$left->design_number}\"\n";
-            $tspl .= "BARCODE 20,460,\"128\",140,0,0,1,2,\"{$left->barcode}\"\n";
+            $tspl .= "TEXT 40,370,\"2\",0,2,2,\"{$left->fitting_name}\"\n";
+            $tspl .= "TEXT 40,430,\"2\",0,1,1,\"# {$left->design_number}\"\n";
+            $tspl .= "BARCODE 20,470,\"128\",140,0,0,2,4,\"{$left->barcode}\"\n";
+            $tspl .= "TEXT 40,630,\"2\",0,1,1,\"{$left->original_code}\"\n";
         }
 
         if ($right) {
             $tspl .= "TEXT 440,110,\"3\",0,2,2,\"{$right->product_name}\"\n";
-            $tspl .= "TEXT 440,180,\"3\",0,2,2,\"{$right->size_group}\"\n";
-            $tspl .= "TEXT 440,240,\"3\",0,2,2,\"{$right->no_of_pcs} PCS\"\n";
-            $tspl .= "TEXT 440,300,\"2\",0,2,2,\"{$right->color_name}\"\n";
+            $tspl .= "TEXT 440,190,\"3\",0,2,2,\"{$right->size_group}\"\n";
+            $tspl .= "TEXT 440,250,\"3\",0,2,2,\"{$right->no_of_pcs} PCS\"\n";
+            $tspl .= "TEXT 440,310,\"2\",0,2,2,\"{$right->color_name}\"\n";
             // $tspl .= "TEXT 440,340,\"2\",0,1,1,\"{$right->pattern_name}\"\n";
-            $tspl .= "TEXT 440,360,\"2\",0,2,2,\"{$right->fitting_name}\"\n";
-            $tspl .= "TEXT 440,420,\"2\",0,1,1,\"# {$right->design_number}\"\n";
-            $tspl .= "BARCODE 420,460,\"128\",140,0,0,1,2,\"{$right->barcode}\"\n";
+            $tspl .= "TEXT 440,370,\"2\",0,2,2,\"{$right->fitting_name}\"\n";
+            $tspl .= "TEXT 440,430,\"2\",0,1,1,\"# {$right->design_number}\"\n";
+            $tspl .= "BARCODE 420,470,\"128\",140,0,0,2,4,\"{$right->barcode}\"\n";
+            $tspl .= "TEXT 440,630,\"2\",0,1,1,\"{$right->original_code}\"\n";
         }
 
         $tspl .= "PRINT 1\n";

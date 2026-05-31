@@ -156,7 +156,9 @@ class StockDisposalController extends Controller
     public function search(Request $request)
     {
         // Keeping this for backward compatibility if needed, but the main UI will use other methods
-        $barcode = $request->barcode;
+        $barcode = trim($request->barcode);
+        $barcode = preg_replace('/[\x00-\x1F\x7F]/', '', $barcode);
+        $barcode = parseCompactBarcode($barcode);
 
         // Search in Fabric
         $fabric = FabricReceiptDetail::with('fabric')

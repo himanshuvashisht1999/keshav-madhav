@@ -1714,6 +1714,7 @@ class AgentOrderController extends Controller
     {
         $input = trim($request->barcode);
         $input = preg_replace('/[\x00-\x1F\x7F]/', '', $input);
+        $input = parseCompactBarcode($input);
 
         if (empty($input)) {
             return response()->json(['success' => false, 'message' => 'No barcode received.']);
@@ -1807,7 +1808,9 @@ class AgentOrderController extends Controller
 
     public function removeScan(Request $request, $id)
     {
-        $barcode = $request->barcode;
+        $barcode = trim($request->barcode);
+        $barcode = preg_replace('/[\x00-\x1F\x7F]/', '', $barcode);
+        $barcode = parseCompactBarcode($barcode);
 
         // 1. Find the summary inventory record for this barcode
         $inventory = DB::table('domestic_inventories')
