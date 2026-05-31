@@ -495,7 +495,7 @@ function generateFairBulkTspl($samples)
             'pattern_name' => $sample->product->pattern->name ?? '',
             'size_group' => $sample->sizeSet->name,
             'no_of_pcs' => $sample->sizeSet->no_of_pcs ?? '',
-            'wsp' => 'Rs.' . number_format($final_price, 2),
+            'wsp' => 'Rs. ' . number_format($final_price, 2),
             'barcode' => $sample->barcode,
             'url' => route('fair-product.color-chart', ['barcode' => $sample->barcode])
         ];
@@ -522,28 +522,28 @@ CLS
 
         if ($left) {
             $tspl .= "TEXT 40,110,\"3\",0,2,2,\"{$left->product_name}\"\n";
-            $tspl .= "TEXT 40,170,\"3\",0,2,2,\"{$left->size_group}\"\n";
-            // $tspl .= "TEXT 80,230,\"3\",0,2,2,\"{$left->no_of_pcs} PCS\"\n";
-            // $tspl .= "TEXT 40,310,\"2\",0,1,1,\"{$left->pattern_name}\"\n";
-            $tspl .= "TEXT 40,230,\"3\",0,2,2,\"{$left->fitting_name}\"\n";
-            $tspl .= "TEXT 40,290,\"2\",0,2,2,\"WSP:{$left->wsp}\"\n";
-            // 1D Barcode (Replacing QR Code for 100% guaranteed scanning)
-            $tspl .= "BARCODE 40,350,\"128\",120,0,0,3,6,\"{$left->barcode}\"\n";
+            // More space after product name, smaller font
+            $tspl .= "TEXT 40,200,\"2\",0,2,2,\"{$left->size_group}\"\n";
+            $tspl .= "TEXT 40,260,\"2\",0,2,2,\"{$left->fitting_name}\"\n";
+            // Increase height of WSP line
+            $tspl .= "TEXT 40,320,\"2\",0,2,3,\"{$left->wsp}\"\n";
+            // Barcode more bottom
+            $tspl .= "BARCODE 40,420,\"128\",120,0,0,3,6,\"{$left->barcode}\"\n";
             // Barcode text under Barcode
-            $tspl .= "TEXT 40,490,\"2\",0,1,1,\"{$left->barcode}\"\n";
+            $tspl .= "TEXT 40,560,\"2\",0,1,1,\"{$left->barcode}\"\n";
         }
 
         if ($right) {
             $tspl .= "TEXT 440,110,\"3\",0,2,2,\"{$right->product_name}\"\n";
-            $tspl .= "TEXT 440,170,\"3\",0,2,2,\"{$right->size_group}\"\n";
-            // $tspl .= "TEXT 480,230,\"3\",0,2,2,\"{$right->no_of_pcs} PCS\"\n";
-            // $tspl .= "TEXT 440,310,\"2\",0,1,1,\"{$right->pattern_name}\"\n";
-            $tspl .= "TEXT 440,230,\"3\",0,2,2,\"{$right->fitting_name}\"\n";
-            $tspl .= "TEXT 440,290,\"2\",0,2,2,\"WSP:{$right->wsp}\"\n";
-            // 1D Barcode (Replacing QR Code for 100% guaranteed scanning)
-            $tspl .= "BARCODE 440,350,\"128\",120,0,0,3,6,\"{$right->barcode}\"\n";
+            // More space after product name, smaller font
+            $tspl .= "TEXT 440,200,\"2\",0,2,2,\"{$right->size_group}\"\n";
+            $tspl .= "TEXT 440,260,\"2\",0,2,2,\"{$right->fitting_name}\"\n";
+            // Increase height of WSP line
+            $tspl .= "TEXT 440,320,\"2\",0,2,3,\"{$right->wsp}\"\n";
+            // Barcode more bottom
+            $tspl .= "BARCODE 440,420,\"128\",120,0,0,3,6,\"{$right->barcode}\"\n";
             // Barcode text under Barcode
-            $tspl .= "TEXT 440,490,\"2\",0,1,1,\"{$right->barcode}\"\n";
+            $tspl .= "TEXT 440,560,\"2\",0,1,1,\"{$right->barcode}\"\n";
         }
 
         $tspl .= "PRINT 1\n";
