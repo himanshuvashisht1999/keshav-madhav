@@ -19,9 +19,9 @@
                     <button id="deleteReturnBtn" class="btn btn-danger rounded-pill ml-2">
                         <i class="fas fa-trash mr-1"></i> Delete
                     </button>
-                    <button onclick="window.print()" class="btn btn-primary rounded-pill ml-2">
-                        <i class="fas fa-print mr-1"></i> Print
-                    </button>
+                    <a href="{{ route('admin.agent-orders.returns.download-pdf', $return->id) }}" class="btn btn-primary rounded-pill ml-2">
+                        <i class="fas fa-file-pdf mr-1"></i> Download PDF
+                    </a>
                 </div>
             </div>
         </div>

@@ -428,26 +428,24 @@ CLS
 
         if ($left) {
             $tspl .= "TEXT 40,110,\"3\",0,2,2,\"{$left->product_name}\"\n";
-            $tspl .= "TEXT 80,170,\"3\",0,2,2,\"{$left->size_group}\"\n";
-            $tspl .= "TEXT 80,230,\"3\",0,2,2,\"{$left->no_of_pcs} PCS\"\n";
-            $tspl .= "TEXT 40,290,\"2\",0,1,2,\"{$left->color_name}\"\n";
-            $tspl .= "TEXT 40,340,\"2\",0,1,1,\"{$left->pattern_name}\"\n";
-            $tspl .= "TEXT 40,380,\"2\",0,1,1,\"{$left->fitting_name}\"\n";
+            $tspl .= "TEXT 40,180,\"3\",0,2,2,\"{$left->size_group}\"\n";
+            $tspl .= "TEXT 40,240,\"3\",0,2,2,\"{$left->no_of_pcs} PCS\"\n";
+            $tspl .= "TEXT 40,300,\"2\",0,2,2,\"{$left->color_name}\"\n";
+            // $tspl .= "TEXT 40,340,\"2\",0,1,1,\"{$left->pattern_name}\"\n";
+            $tspl .= "TEXT 40,360,\"2\",0,2,2,\"{$left->fitting_name}\"\n";
             $tspl .= "TEXT 40,420,\"2\",0,1,1,\"# {$left->design_number}\"\n";
-            // $tspl .= "BARCODE 20,480,\"128\",100,1,0,2,3,\"{$left->barcode}\"\n";
-            $tspl .= "BARCODE 20,480,\"128\",70,1,0,1,2,\"{$left->barcode}\"\n";
+            $tspl .= "BARCODE 20,460,\"128\",140,0,0,1,2,\"{$left->barcode}\"\n";
         }
 
         if ($right) {
             $tspl .= "TEXT 440,110,\"3\",0,2,2,\"{$right->product_name}\"\n";
-            $tspl .= "TEXT 480,170,\"3\",0,2,2,\"{$right->size_group}\"\n";
-            $tspl .= "TEXT 480,230,\"3\",0,2,2,\"{$right->no_of_pcs} PCS\"\n";
-            $tspl .= "TEXT 440,290,\"2\",0,1,2,\"{$right->color_name}\"\n";
-            $tspl .= "TEXT 440,340,\"2\",0,1,1,\"{$right->pattern_name}\"\n";
-            $tspl .= "TEXT 440,380,\"2\",0,1,1,\"{$right->fitting_name}\"\n";
+            $tspl .= "TEXT 440,180,\"3\",0,2,2,\"{$right->size_group}\"\n";
+            $tspl .= "TEXT 440,240,\"3\",0,2,2,\"{$right->no_of_pcs} PCS\"\n";
+            $tspl .= "TEXT 440,300,\"2\",0,2,2,\"{$right->color_name}\"\n";
+            // $tspl .= "TEXT 440,340,\"2\",0,1,1,\"{$right->pattern_name}\"\n";
+            $tspl .= "TEXT 440,360,\"2\",0,2,2,\"{$right->fitting_name}\"\n";
             $tspl .= "TEXT 440,420,\"2\",0,1,1,\"# {$right->design_number}\"\n";
-            // $tspl .= "BARCODE 450,480,\"128\",100,1,0,2,3,\"{$right->barcode}\"\n";
-            $tspl .= "BARCODE 450,480,\"128\",70,1,0,1,2,\"{$right->barcode}\"\n";
+            $tspl .= "BARCODE 420,460,\"128\",140,0,0,1,2,\"{$right->barcode}\"\n";
         }
 
         $tspl .= "PRINT 1\n";

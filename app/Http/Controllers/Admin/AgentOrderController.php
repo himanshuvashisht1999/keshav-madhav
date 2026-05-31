@@ -2428,7 +2428,7 @@ class AgentOrderController extends Controller
 
     public function indexReturns()
     {
-        $returns = AgentOrderReturn::with(['dispatch.party', 'dispatch.agent', 'creator'])->latest()->paginate(20);
+        $returns = AgentOrderReturn::with(['dispatch.vendor', 'dispatch.shop', 'dispatch.agent', 'creator'])->latest()->paginate(20);
         return view('admin.agent_orders.returns.index', compact('returns'));
     }
 
@@ -2591,7 +2591,7 @@ class AgentOrderController extends Controller
 
     public function returnShow($id)
     {
-        $return = AgentOrderReturn::with(['dispatch.party', 'dispatch.agent', 'items', 'creator'])->findOrFail($id);
+        $return = AgentOrderReturn::with(['dispatch.vendor', 'dispatch.shop', 'dispatch.agent', 'items', 'creator'])->findOrFail($id);
 
         foreach ($return->items as $item) {
             if ($item->item_type === 'standard') {
@@ -2617,7 +2617,7 @@ class AgentOrderController extends Controller
     public function returnEdit($id)
     {
         $return = AgentOrderReturn::with('items')->findOrFail($id);
-        $dispatch = \App\Models\AgentOrderDispatch::with(['party', 'orders.items', 'orders.fabricItems.fabric', 'orders.fabricItems.roll'])->findOrFail($return->agent_order_dispatch_id);
+        $dispatch = \App\Models\AgentOrderDispatch::with(['vendor', 'shop', 'orders.items', 'orders.fabricItems.fabric', 'orders.fabricItems.roll'])->findOrFail($return->agent_order_dispatch_id);
 
         $items = $dispatch->orders->flatMap->items->where('agent_order_dispatch_id', $dispatch->id);
         $fabricItems = $dispatch->orders->flatMap->fabricItems->where('agent_order_dispatch_id', $dispatch->id);
@@ -2643,6 +2643,33 @@ class AgentOrderController extends Controller
         ];
 
         return view('admin.agent_orders.returns.edit', compact('return', 'dispatch', 'items', 'fabricItems', 'returnedQuantities'));
+    }
+
+    public function downloadReturnPdf($id)
+    {
+        $return = AgentOrderReturn::with(['dispatch.vendor', 'dispatch.shop', 'dispatch.agent', 'items', 'creator'])->findOrFail($id);
+        $settings = DB::table('settings')->first();
+
+        foreach ($return->items as $item) {
+            if ($item->item_type === 'standard') {
+                $original = AgentOrderItem::find($item->item_id);
+                $item->product_name = $original->product_name ?? 'N/A';
+                $item->design_number = $original->design_number ?? 'N/A';
+                $item->color_name = $original->color_name ?? 'N/A';
+                $item->size_set_name = $original->size_set_name ?? 'N/A';
+                $item->unit = 'Boxes';
+            } else {
+                $original = AgentOrderFabricItem::with('fabric')->find($item->item_id);
+                $item->product_name = $original->fabric->name ?? 'Fabric';
+                $item->design_number = 'N/A';
+                $item->color_name = 'N/A';
+                $item->size_set_name = 'N/A';
+                $item->unit = 'm';
+            }
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.returns.return-pdf', compact('return', 'settings'));
+        return $pdf->download('Sales_Return_SR_' . $return->id . '.pdf');
     }
 
     public function returnUpdate(Request $request, $id)

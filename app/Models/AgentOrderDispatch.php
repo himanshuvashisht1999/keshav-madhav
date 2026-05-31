@@ -73,6 +73,14 @@ class AgentOrderDispatch extends Model
         return $this->shop();
     }
 
+    public function getPartyAttribute()
+    {
+        if ($this->party_type === 'vendor') {
+            return $this->vendor;
+        }
+        return $this->shop;
+    }
+
     public function agent()
     {
         return $this->belongsTo(SalesAgent::class, 'sales_agent_id');
