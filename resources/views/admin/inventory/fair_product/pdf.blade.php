@@ -265,7 +265,7 @@
                                             <td class="qr-box-wrapper">
                                                 <div class="qr-box">
                                                     @php
-                                                        $url = route('fair-product.color-chart', ['barcode' => $sample->barcode]);
+                                                        $url = $sample->barcode;
                                                     @endphp
                                                     <img src="data:image/svg+xml;base64, {!! base64_encode(QrCode::format('svg')->size(120)->generate($url)) !!} "
                                                         width="120" style="display: block; margin: 0 auto;">

@@ -509,7 +509,7 @@ GAP 2 mm,0
 DIRECTION 1
 REFERENCE 0,0
 SPEED 2
-DENSITY 15
+DENSITY 10
 CLS
 ";
 
@@ -527,10 +527,10 @@ CLS
             // $tspl .= "TEXT 40,310,\"2\",0,1,1,\"{$left->pattern_name}\"\n";
             $tspl .= "TEXT 40,230,\"3\",0,2,2,\"{$left->fitting_name}\"\n";
             $tspl .= "TEXT 40,290,\"2\",0,2,2,\"WSP:{$left->wsp}\"\n";
-            // QR Code
-            $tspl .= "QRCODE 40,350,M,4,A,0,\"{$left->url}\"\n";
-            // Barcode text under QR
-            // $tspl .= "TEXT 40,420,\"2\",0,1,1,\"{$left->barcode}\"\n";
+            // 1D Barcode (Replacing QR Code for 100% guaranteed scanning)
+            $tspl .= "BARCODE 40,350,\"128\",120,0,0,3,6,\"{$left->barcode}\"\n";
+            // Barcode text under Barcode
+            $tspl .= "TEXT 40,490,\"2\",0,1,1,\"{$left->barcode}\"\n";
         }
 
         if ($right) {
@@ -540,10 +540,10 @@ CLS
             // $tspl .= "TEXT 440,310,\"2\",0,1,1,\"{$right->pattern_name}\"\n";
             $tspl .= "TEXT 440,230,\"3\",0,2,2,\"{$right->fitting_name}\"\n";
             $tspl .= "TEXT 440,290,\"2\",0,2,2,\"WSP:{$right->wsp}\"\n";
-            // QR Code
-            $tspl .= "QRCODE 440,350,M,4,A,0,\"{$right->url}\"\n";
-            // Barcode text under QR
-            // $tspl .= "TEXT 440,580,\"2\",0,1,1,\"{$right->barcode}\"\n";
+            // 1D Barcode (Replacing QR Code for 100% guaranteed scanning)
+            $tspl .= "BARCODE 440,350,\"128\",120,0,0,3,6,\"{$right->barcode}\"\n";
+            // Barcode text under Barcode
+            $tspl .= "TEXT 440,490,\"2\",0,1,1,\"{$right->barcode}\"\n";
         }
 
         $tspl .= "PRINT 1\n";
