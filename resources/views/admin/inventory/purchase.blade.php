@@ -694,10 +694,10 @@
                     toastr.success('Product added to list');
 
                     // Reset only specific fields for faster entry
-                    $('#headerTotalBoxes').val('');
-                    $('#headerPurchaseRate').val('');
-                    $('#headerSizeSet').val('').trigger('change.select2');
-                    $('#headerColor').val('').trigger('change.select2');
+                    // $('#headerTotalBoxes').val('');
+                    // $('#headerPurchaseRate').val('');
+                    // $('#headerSizeSet').val('').trigger('change.select2');
+                    // $('#headerColor').val('').trigger('change.select2');
                 });
 
                 const originalDesignHtml = $('#headerDesign').html();

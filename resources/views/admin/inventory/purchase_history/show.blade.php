@@ -51,7 +51,7 @@
                 <div class="card card-premium">
                     <div class="card-body p-4">
                         <div class="row">
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <div class="detail-label">Source</div>
                                 <div class="detail-value">
                                     @if($purchase->vendor_id)
@@ -63,7 +63,7 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <div class="detail-label">Production PO</div>
                                 <div class="detail-value">
                                     @if($purchase->productionPO)
@@ -77,9 +77,17 @@
                                 <div class="detail-label">Date & Time</div>
                                 <div class="detail-value">{{ $purchase->created_at->format('d M Y, h:i A') }}</div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <div class="detail-label">Total Items</div>
                                 <div class="detail-value">{{ $purchase->items->count() }} Variants</div>
+                            </div>
+                            <div class="col-md-1">
+                                <div class="detail-label">Total Boxes</div>
+                                <div class="detail-value text-primary font-weight-bold">{{ $purchase->items->sum('box_quantity') }}</div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="detail-label">Total Pieces</div>
+                                <div class="detail-value text-success font-weight-bold">{{ $purchase->items->sum(function($item) { return $item->box_quantity * $item->pieces_per_box; }) }}</div>
                             </div>
                         </div>
                     </div>

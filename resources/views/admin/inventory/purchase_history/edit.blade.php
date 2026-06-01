@@ -716,10 +716,10 @@
                     toastr.success('Product added to list');
 
                     // Reset only specific fields
-                    $('#headerTotalBoxes').val('');
-                    $('#headerPurchaseRate').val('');
-                    $('#headerSizeSet').val('').trigger('change.select2');
-                    $('#headerColor').val('').trigger('change.select2');
+                    // $('#headerTotalBoxes').val('');
+                    // $('#headerPurchaseRate').val('');
+                    // $('#headerSizeSet').val('').trigger('change.select2');
+                    // $('#headerColor').val('').trigger('change.select2');
                 });
 
                 function addToTable(data) {
