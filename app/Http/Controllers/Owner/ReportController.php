@@ -336,9 +336,26 @@ class ReportController extends Controller
         $masters = \App\Models\AdjustmentMaster::where('status', 1)->get();
         $parties = $parties->sortBy('name');
         
+        $page = $request->get('page', 1);
+        $perPage = 20;
+        $offset = ($page - 1) * $perPage;
+        
+        $paginatedParties = new \Illuminate\Pagination\LengthAwarePaginator(
+            $parties->slice($offset, $perPage)->values(),
+            $parties->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+        
         $pageTitle = 'Delayed Payments (>120 Days)';
         $pageSubtitle = 'Parties with debit balance and old dispatches';
         
-        return view('owner.party-ledger.index', compact('parties', 'masters', 'pageTitle', 'pageSubtitle'));
+        return view('owner.party-ledger.index', [
+            'parties' => $paginatedParties, 
+            'masters' => $masters, 
+            'pageTitle' => $pageTitle, 
+            'pageSubtitle' => $pageSubtitle
+        ]);
     }
 }
