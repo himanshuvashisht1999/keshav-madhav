@@ -321,6 +321,10 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="col-md-3">
+                            <label class="label-premium">Purchase Store Date</label>
+                            <input type="date" name="purchase_date" class="form-control form-control-premium" value="{{ date('Y-m-d') }}">
+                        </div>
                     </div>
 
                     <div id="poReferenceContainer" class="card card-premium mb-3 animate-in" style="display: none; border-left: 4px solid #6366f1;">

@@ -103,6 +103,48 @@
 
         <section class="content">
             <div class="container-fluid">
+                <!-- FILTER CARD -->
+                <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+                    <div class="card-body bg-light rounded p-4">
+                        <div class="row align-items-end">
+                            <div class="col-md-2">
+                                <label class="small font-weight-bold text-muted mb-1">Start Date</label>
+                                <input type="date" id="start_date" class="form-control">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="small font-weight-bold text-muted mb-1">End Date</label>
+                                <input type="date" id="end_date" class="form-control">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="small font-weight-bold text-muted mb-1">Vendor</label>
+                                <select id="vendor_filter" class="form-control select2">
+                                    <option value="">All Vendors</option>
+                                    @foreach($vendors as $vendor)
+                                        <option value="{{ $vendor->id }}">{{ $vendor->company_name ?? $vendor->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="small font-weight-bold text-muted mb-1">Customer</label>
+                                <select id="customer_filter" class="form-control select2">
+                                    <option value="">All Customers</option>
+                                    @foreach($customers as $customer)
+                                        <option value="{{ $customer->id }}">{{ $customer->company_name ?? $customer->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="small font-weight-bold text-muted mb-1">Production PO Number</label>
+                                <input type="text" id="po_number_filter" class="form-control" placeholder="Search PO...">
+                            </div>
+                            <div class="col-md-1 mt-3 mt-md-0">
+                                <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="card card-premium animate-in">
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -110,7 +152,7 @@
                                 <thead>
                                     <tr>
                                         <th class="pl-4">#</th>
-                                        <th>Date</th>
+                                        <th>Purchase Date</th>
                                         <th>Source</th>
                                         <th>Production PO</th>
                                         <th>Total Boxes</th>
@@ -129,19 +171,34 @@
 @push('scripts')
 <script>
     $(function () {
+        // Initialize Select2
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+
         const table = $('#purchaseHistoryTable').DataTable({
             processing: true,
             serverSide: true,
-            ajax: "{{ route('admin.inventory.purchase_history.list') }}",
+            ajax: {
+                url: "{{ route('admin.inventory.purchase_history.list') }}",
+                data: function(d) {
+                    d.start_date = $('#start_date').val();
+                    d.end_date = $('#end_date').val();
+                    d.vendor_id = $('#vendor_filter').val();
+                    d.customer_id = $('#customer_filter').val();
+                    d.po_number = $('#po_number_filter').val();
+                }
+            },
             order: [[1, 'desc']],
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', className: 'pl-4', orderable: false, searchable: false },
                 { 
-                    data: 'created_at', 
-                    name: 'created_at', 
-                    render: function(data) {
-                        return `<div class="font-weight-bold">${moment(data).format('DD MMM YYYY')}</div>
-                                <div class="small text-muted">${moment(data).format('hh:mm A')}</div>`;
+                    data: 'purchase_date', 
+                    name: 'purchase_date', 
+                    render: function(data, type, row) {
+                        let dateStr = data ? data : row.created_at;
+                        return `<div class="font-weight-bold">${moment(dateStr).format('DD MMM YYYY')}</div>`;
                     }
                 },
                 { 
@@ -163,6 +220,7 @@
                 { 
                     data: 'total_boxes', 
                     name: 'total_boxes',
+                    searchable: false,
                     render: (d) => `<span class="badge badge-soft-success px-2 py-1 font-weight-bold">${d || 0} Boxes</span>`
                 },
                 { 
@@ -183,6 +241,22 @@
             drawCallback: function() {
                 $('.dataTables_paginate > .pagination').addClass('pagination-rounded');
             }
+        });
+
+        // Filter triggers
+        $('#start_date, #end_date, #po_number_filter').on('change keyup', function () {
+            table.draw();
+        });
+
+        $('#vendor_filter, #customer_filter').on('change', function () {
+            table.draw();
+        });
+
+        // Reset filter
+        $('#reset_filters').on('click', function () {
+            $('#start_date, #end_date, #po_number_filter').val('');
+            $('#vendor_filter, #customer_filter').val('').trigger('change');
+            table.draw();
         });
 
         // Delete functionality

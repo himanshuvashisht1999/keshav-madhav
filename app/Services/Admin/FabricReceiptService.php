@@ -143,6 +143,23 @@ class FabricReceiptService
                 'shipment_id' => $shipment_id
             ]);
 
+            if ($request->hasFile('other_images')) {
+                foreach ($request->file('other_images') as $image) {
+                    $extImage = $image->getClientOriginalExtension();
+                    $imgName3 = "other-image-" . rand() . "_" . time() . "." . $extImage;
+                    $destinationPath = public_path() . '/assets/receipts/other-images';
+                    if (!file_exists($destinationPath)) {
+                        mkdir($destinationPath, 0777, true);
+                    }
+                    $image->move($destinationPath, $imgName3);
+
+                    \App\Models\FabricReceiptOtherImage::create([
+                        'fabric_receipt_id' => $save_data->id,
+                        'image' => $imgName3
+                    ]);
+                }
+            }
+
 
             if ($save_data->vendor_id) {
                 $vendor = Vendor::find($save_data->vendor_id);
@@ -262,7 +279,8 @@ class FabricReceiptService
             'details.returns',
             'returns',
             'returns.details',
-            'returns.details.fabric'
+            'returns.details.fabric',
+            'other_images'
         ])->where('id', $request->id)->first();
         return $data;
     }
@@ -445,7 +463,7 @@ class FabricReceiptService
 
     public function edit(Request $request)
     {
-        return FabricReceipt::with('details.fabric')->find($request->id);
+        return FabricReceipt::with(['details.fabric', 'other_images'])->find($request->id);
     }
 
     public function update(Request $request)
@@ -468,6 +486,23 @@ class FabricReceiptService
             $destinationPath = public_path() . '/assets/receipts/challan-image';
             $image->move($destinationPath, $imgName);
             $update_data->challan_photo = $imgName;
+        }
+
+        if ($request->hasFile('other_images')) {
+            foreach ($request->file('other_images') as $image) {
+                $extImage = $image->getClientOriginalExtension();
+                $imgName3 = "other-image-" . rand() . "_" . time() . "." . $extImage;
+                $destinationPath = public_path() . '/assets/receipts/other-images';
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0777, true);
+                }
+                $image->move($destinationPath, $imgName3);
+
+                \App\Models\FabricReceiptOtherImage::create([
+                    'fabric_receipt_id' => $update_data->id,
+                    'image' => $imgName3
+                ]);
+            }
         }
 
         $old_total = $update_data->total_amount;

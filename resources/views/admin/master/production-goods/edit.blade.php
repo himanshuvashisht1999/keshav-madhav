@@ -152,6 +152,40 @@
                                     </div>
                                 </div>
 
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Product Nature</label>
+                                        <select name="product_nature_id" class="form-control select2"
+                                            style="width: 100%;" {{ $data->is_locked_in_inventory ? 'disabled' : '' }}>
+                                            <option value="">Select Product Nature</option>
+                                            @foreach($product_natures as $pn)
+                                                <option value="{{ $pn->id }}" {{ $data->product_nature_id == $pn->id ? 'selected' : '' }}>{{ $pn->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        @if($data->is_locked_in_inventory)
+                                            <input type="hidden" name="product_nature_id"
+                                                value="{{ $data->product_nature_id }}">
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Fabric Type</label>
+                                        <select name="fabric_type_id" class="form-control select2"
+                                            style="width: 100%;" {{ $data->is_locked_in_inventory ? 'disabled' : '' }}>
+                                            <option value="">Select Fabric Type</option>
+                                            @foreach($fabric_types as $ft)
+                                                <option value="{{ $ft->id }}" {{ $data->fabric_type_id == $ft->id ? 'selected' : '' }}>{{ $ft->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        @if($data->is_locked_in_inventory)
+                                            <input type="hidden" name="fabric_type_id"
+                                                value="{{ $data->fabric_type_id }}">
+                                        @endif
+                                    </div>
+                                </div>
+
                                 <div class="col-md-12 mt-3">
                                     <div class="card card-secondary">
                                         <div class="card-header">

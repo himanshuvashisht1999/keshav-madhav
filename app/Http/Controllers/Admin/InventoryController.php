@@ -233,6 +233,7 @@ class InventoryController extends Controller
             'source_type' => 'required|in:production,vendor,customer,consume',
             'vendor_id' => 'required_if:source_type,vendor',
             'customer_id' => 'required_if:source_type,customer',
+            'purchase_date' => 'nullable|date',
             'products.*.product_id' => 'required',
             'products.*.color_id' => 'required',
             'products.*.size_set_id' => 'required',
@@ -284,6 +285,7 @@ class InventoryController extends Controller
                     'customer_id' => $customer_id,
                     'production_po_id' => $request->production_po_id,
                     'user_id' => auth()->id(),
+                    'purchase_date' => $request->purchase_date ?? now()->toDateString(),
                     'sub_total' => $request->sub_total ?? 0,
                     'gst_type' => $request->gst_type ?? 'percentage',
                     'gst_value' => $request->gst_value ?? 0,
@@ -920,13 +922,33 @@ class InventoryController extends Controller
 
     public function purchaseHistory()
     {
-        return view('admin.inventory.purchase_history.index');
+        $vendors = \App\Models\Vendor::where('status', '1')->get();
+        $customers = \App\Models\MasterCustomer::where('status', '1')->get();
+        return view('admin.inventory.purchase_history.index', compact('vendors', 'customers'));
     }
 
     public function purchaseHistoryList(Request $request)
     {
         $query = \App\Models\DomesticInventoryPurchase::with(['user', 'vendor', 'customer', 'productionPO'])
             ->withSum('items as total_boxes', 'box_quantity');
+
+        if ($request->has('start_date') && $request->start_date) {
+            $query->whereDate('purchase_date', '>=', $request->start_date);
+        }
+        if ($request->has('end_date') && $request->end_date) {
+            $query->whereDate('purchase_date', '<=', $request->end_date);
+        }
+        if ($request->has('vendor_id') && $request->vendor_id) {
+            $query->where('vendor_id', $request->vendor_id);
+        }
+        if ($request->has('customer_id') && $request->customer_id) {
+            $query->where('customer_id', $request->customer_id);
+        }
+        if ($request->has('po_number') && $request->po_number) {
+            $query->whereHas('productionPO', function($q) use ($request) {
+                $q->where('po_number', 'like', "%{$request->po_number}%");
+            });
+        }
 
         return Datatables::of($query)
             ->addIndexColumn()
@@ -939,6 +961,22 @@ class InventoryController extends Controller
                 if ($row->customer_id)
                     return 'Customer: ' . ($row->customer->company_name ?? $row->customer->name ?? 'N/A');
                 return 'N/A';
+            })
+            ->filterColumn('production_po', function($query, $keyword) {
+                $query->whereHas('productionPO', function($q) use ($keyword) {
+                    $q->where('po_number', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('source', function($query, $keyword) {
+                $query->whereHas('vendor', function($q) use ($keyword) {
+                    $q->where('company_name', 'like', "%{$keyword}%")->orWhere('name', 'like', "%{$keyword}%");
+                })->orWhereHas('customer', function($q) use ($keyword) {
+                    $q->where('company_name', 'like', "%{$keyword}%")->orWhere('name', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('purchase_date', function($query, $keyword) {
+                $query->whereRaw("DATE_FORMAT(purchase_date, '%d %b %Y') like ?", ["%{$keyword}%"])
+                      ->orWhereRaw("DATE_FORMAT(created_at, '%d %b %Y') like ?", ["%{$keyword}%"]);
             })
             ->addColumn('action', function ($row) {
                 return '<div class="btn-group">
@@ -994,6 +1032,7 @@ class InventoryController extends Controller
             $purchase = \App\Models\DomesticInventoryPurchase::findOrFail($id);
 
             $request->validate([
+                'purchase_date' => 'nullable|date',
                 'sub_total' => 'required|numeric|min:0',
                 'total_amount' => 'required|numeric|min:0',
                 'products' => 'required|array|min:1',
@@ -1074,6 +1113,7 @@ class InventoryController extends Controller
                 'vendor_id' => $request->source_type == 'vendor' ? $request->vendor_id : null,
                 'customer_id' => $request->source_type == 'customer' ? $request->customer_id : null,
                 'production_po_id' => $request->production_po_id,
+                'purchase_date' => $request->purchase_date ?? now()->toDateString(),
                 'sub_total' => $request->sub_total,
                 'gst_type' => $request->gst_type ?? 'percentage',
                 'gst_value' => $request->gst_value ?? 0,

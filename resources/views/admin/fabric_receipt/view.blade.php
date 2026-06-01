@@ -247,8 +247,33 @@
                                         </div>
                                     </div>
                                 </div>
+                        </div>
+                        
+                        <div class="row pt-2 border-top mt-4">
+                            <div class="col-12 mb-2 d-flex align-items-center justify-content-between">
+                                <h6 class="font-weight-bold text-dark text-uppercase mb-0" style="font-size: 12px;"><i class="fas fa-images text-secondary mr-2"></i>Other Images</h6>
+                                <button type="button" class="btn btn-xs btn-outline-primary border-0" onclick="$('#uploadOtherImagesModal').modal('show')" title="Upload More Images">
+                                    <i class="fas fa-plus"></i> Add
+                                </button>
+                            </div>
+                            <div class="col-12">
+                                @if($data->other_images && $data->other_images->count() > 0)
+                                    <div class="d-flex flex-wrap" style="gap: 15px;">
+                                        @foreach($data->other_images as $otherImage)
+                                            <div class="position-relative" style="width: 120px; height: 120px; border: 1px solid #ddd; border-radius: 6px; overflow: hidden;">
+                                                <a href="#" onclick="openChallanModal('{{ asset('assets/receipts/other-images/' . $otherImage->image) }}', 'image'); return false;">
+                                                    <img src="{{ asset('assets/receipts/other-images/' . $otherImage->image) }}" alt="Other Image" style="width: 100%; height: 100%; object-fit: cover;" class="hover-brighten">
+                                                </a>
+                                                <a href="{{ route('admin.fabric_receipt.delete_other_image', $otherImage->id) }}" class="btn btn-sm btn-danger position-absolute" style="top: 2px; right: 2px; padding: 2px 5px; font-size: 10px;" onclick="return confirm('Are you sure you want to delete this image?')"><i class="fas fa-times"></i></a>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div class="text-muted italic" style="font-size: 13px;">No other images uploaded.</div>
+                                @endif
                             </div>
                         </div>
+
                     </div>
                 </div>
 
@@ -487,6 +512,34 @@
                         <div class="form-group">
                             <label class="font-weight-bold">Select File (Image or PDF)</label>
                             <input type="file" name="challan_photo" class="form-control" accept="image/*,.pdf" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Upload Now</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Other Images Modal -->
+    <div class="modal fade" id="uploadOtherImagesModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <form action="{{ route('admin.fabric_receipt.upload_other_images') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="receipt_id" value="{{ $data->id }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title font-weight-bold">Upload Other Images</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="font-weight-bold">Select File(s) (Images)</label>
+                            <input type="file" name="other_images[]" class="form-control" accept="image/*" multiple required>
                         </div>
                     </div>
                     <div class="modal-footer">

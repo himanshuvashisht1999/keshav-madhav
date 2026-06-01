@@ -39,6 +39,11 @@ class FabricReceipt extends Model
 
     protected $appends = ['paid_amount', 'balance_amount', 'can_delete'];
 
+    public function other_images()
+    {
+        return $this->hasMany(FabricReceiptOtherImage::class, 'fabric_receipt_id', 'id');
+    }
+
     public function getCanDeleteAttribute()
     {
         // 1. Check if rolls have been used

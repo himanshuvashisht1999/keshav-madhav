@@ -143,6 +143,30 @@
                                     </div>
                                 </div>
 
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Product Nature</label>
+                                        <select name="product_nature_id" class="form-control select2" style="width: 100%;">
+                                            <option value="">Select Product Nature</option>
+                                            @foreach($product_natures as $pn)
+                                                <option value="{{ $pn->id }}">{{ $pn->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Fabric Type</label>
+                                        <select name="fabric_type_id" class="form-control select2" style="width: 100%;">
+                                            <option value="">Select Fabric Type</option>
+                                            @foreach($fabric_types as $ft)
+                                                <option value="{{ $ft->id }}">{{ $ft->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="col-md-12 mt-3">
                                     <div class="card card-secondary">
                                         <div class="card-header">

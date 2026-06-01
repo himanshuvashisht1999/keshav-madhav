@@ -29,6 +29,8 @@ class ProductionGoods extends Model
         'brand_id',
         'master_product_fitting_id',
         'master_pattern_id',
+        'product_nature_id',
+        'fabric_type_id',
         'status',
         'created_by',
         'created_at',
@@ -57,6 +59,12 @@ class ProductionGoods extends Model
     }
     public function pattern(){
         return $this->belongsTo(\App\Models\MasterDesignPattern::class, 'master_pattern_id');
+    }
+    public function productNature(){
+        return $this->belongsTo(\App\Models\ProductNature::class, 'product_nature_id');
+    }
+    public function fabricType(){
+        return $this->belongsTo(\App\Models\FabricType::class, 'fabric_type_id');
     }
     public function variants(){
         return $this->hasMany(\App\Models\ProductionGoodVariant::class, 'production_goods_id');

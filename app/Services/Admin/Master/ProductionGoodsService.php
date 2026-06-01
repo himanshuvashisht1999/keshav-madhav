@@ -21,6 +21,8 @@ use App\Models\MasterPattern;
 use App\Models\MasterDesignPattern;
 use App\Models\MasterSeries;
 use App\Models\Brand;
+use App\Models\ProductNature;
+use App\Models\FabricType;
 
 class ProductionGoodsService
 {
@@ -64,6 +66,8 @@ class ProductionGoodsService
 
         $save_data->master_product_fitting_id = $request->master_product_fitting_id;
         $save_data->master_pattern_id = $request->master_pattern_id;
+        $save_data->product_nature_id = $request->product_nature_id;
+        $save_data->fabric_type_id = $request->fabric_type_id;
 
         $save_data->is_printing = $request->is_printing ?? 1;
         $save_data->is_embroidery = $request->is_embroidery ?? 1;
@@ -292,6 +296,8 @@ class ProductionGoodsService
 
         $update_data->master_product_fitting_id = $request->master_product_fitting_id;
         $update_data->master_pattern_id = $request->master_pattern_id;
+        $update_data->product_nature_id = $request->product_nature_id;
+        $update_data->fabric_type_id = $request->fabric_type_id;
 
         $update_data->is_printing = $request->is_printing ?? 0;
         $update_data->is_embroidery = $request->is_embroidery ?? 0;
@@ -691,6 +697,16 @@ class ProductionGoodsService
     public function brands()
     {
         $data = Brand::where('status', 'active')->orderBy('name', 'asc')->get();
+        return $data;
+    }
+    public function productNatures()
+    {
+        $data = ProductNature::where('status', 1)->orderBy('name', 'asc')->get();
+        return $data;
+    }
+    public function fabricTypes()
+    {
+        $data = FabricType::where('status', 1)->orderBy('name', 'asc')->get();
         return $data;
     }
     public function getNextProductName($master_series_id)

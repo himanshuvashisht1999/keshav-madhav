@@ -39,6 +39,8 @@ class ProductionGoodsController extends Controller {
         $response['series_names'] = $this->service->series();
         $response['brands'] = $this->service->brands();
         $response['fittings'] = $this->service->fittings();
+        $response['product_natures'] = $this->service->productNatures();
+        $response['fabric_types'] = $this->service->fabricTypes();
         return view('admin.master.production-goods.create',$response);
     }
     public function store(ProductionGoodsStoreRequest $request){
@@ -64,6 +66,8 @@ class ProductionGoodsController extends Controller {
         $response['series_names'] = $this->service->series();
         $response['brands'] = $this->service->brands();
         $response['fittings'] = $this->service->fittings();
+        $response['product_natures'] = $this->service->productNatures();
+        $response['fabric_types'] = $this->service->fabricTypes();
         return view('admin.master.production-goods.edit',$response);
     }
     public function view(Request $request){
@@ -77,6 +81,8 @@ class ProductionGoodsController extends Controller {
         $response['series_names'] = $this->service->series();
         $response['brands'] = $this->service->brands();
         $response['fittings'] = $this->service->fittings();
+        $response['product_natures'] = $this->service->productNatures();
+        $response['fabric_types'] = $this->service->fabricTypes();
         return view('admin.master.production-goods.view',$response);
     }
     public function update(ProductionGoodsUpdateRequest $request){

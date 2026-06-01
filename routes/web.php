@@ -42,6 +42,8 @@ use App\Http\Controllers\Admin\WarehouseController as AdminWarehouseController;
 use App\Http\Controllers\Admin\OrderStagesController as AdminOrderStagesController;
 
 ////new master
+use App\Http\Controllers\Admin\Master\ProductNatureController as AdminProductNatureController;
+use App\Http\Controllers\Admin\Master\FabricTypeController as AdminFabricTypeController;
 use App\Http\Controllers\Admin\Master\MasterColorController as AdminMasterColorController;
 use App\Http\Controllers\Admin\Master\MasterFittingController as AdminMasterFittingController;
 use App\Http\Controllers\Admin\Master\MasterDesignController as AdminMasterDesignController;
@@ -267,6 +269,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/delete', [AdminFabricReceiptController::class, 'delete'])->name('delete');
             Route::get('/view', [AdminFabricReceiptController::class, 'view'])->name('view');
             Route::post('/upload-challan', [AdminFabricReceiptController::class, 'uploadChallan'])->name('upload_challan');
+            Route::post('/upload-other-images', [AdminFabricReceiptController::class, 'uploadOtherImages'])->name('upload_other_images');
+            Route::get('/delete-other-image/{id}', [AdminFabricReceiptController::class, 'deleteOtherImage'])->name('delete_other_image');
             Route::get('/detail', [AdminFabricReceiptController::class, 'detail'])->name('detail');
             Route::post('/store-detail', [AdminFabricReceiptController::class, 'storeDetail'])->name('storeDetail');
             Route::get('/purchase-order-items/{id}', [AdminFabricReceiptController::class, 'getPurchaseOrderItems'])->name('items');
@@ -933,6 +937,26 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/edit', [AdminMasterColorController::class, 'edit'])->name('edit');
             Route::post('/update', [AdminMasterColorController::class, 'update'])->name('update');
             Route::get('/delete', [AdminMasterColorController::class, 'delete'])->name('delete');
+        });
+
+        Route::prefix('master/product-nature')->name('master.product-nature.')->group(function () {
+            Route::get('/index', [AdminProductNatureController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminProductNatureController::class, 'indexList'])->name('indexList');
+            Route::get('/create', [AdminProductNatureController::class, 'create'])->name('create');
+            Route::post('/store', [AdminProductNatureController::class, 'store'])->name('store');
+            Route::get('/edit', [AdminProductNatureController::class, 'edit'])->name('edit');
+            Route::post('/update', [AdminProductNatureController::class, 'update'])->name('update');
+            Route::get('/delete', [AdminProductNatureController::class, 'delete'])->name('delete');
+        });
+
+        Route::prefix('master/fabric-type')->name('master.fabric-type.')->group(function () {
+            Route::get('/index', [AdminFabricTypeController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminFabricTypeController::class, 'indexList'])->name('indexList');
+            Route::get('/create', [AdminFabricTypeController::class, 'create'])->name('create');
+            Route::post('/store', [AdminFabricTypeController::class, 'store'])->name('store');
+            Route::get('/edit', [AdminFabricTypeController::class, 'edit'])->name('edit');
+            Route::post('/update', [AdminFabricTypeController::class, 'update'])->name('update');
+            Route::get('/delete', [AdminFabricTypeController::class, 'delete'])->name('delete');
         });
         Route::prefix('master/series')->name('master.series.')->group(function () {
             Route::get('/index', [AdminMasterSeriesController::class, 'index'])->name('index');

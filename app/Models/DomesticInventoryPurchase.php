@@ -16,6 +16,7 @@ class DomesticInventoryPurchase extends Model
         'customer_id',
         'production_po_id',
         'user_id',
+        'purchase_date',
         'sub_total',
         'gst_type',
         'gst_value',

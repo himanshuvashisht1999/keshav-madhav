@@ -141,8 +141,39 @@ class FabricReceiptController extends Controller
     }
     public function uploadChallan(Request $request)
     {
-        $this->service->update($request);
+        $receipt = \App\Models\FabricReceipt::find($request->receipt_id);
+        if ($receipt && $request->hasFile('challan_photo')) {
+            $image = $request->file('challan_photo');
+            $extImage = $image->getClientOriginalExtension();
+            $imgName = "challan-image-" . rand() . "_" . time() . "." . $extImage;
+            $destinationPath = public_path() . '/assets/receipts/challan-image';
+            $image->move($destinationPath, $imgName);
+            $receipt->challan_photo = $imgName;
+            $receipt->save();
+        }
         return redirect()->back()->withSuccess('Challan photo has been successfully updated.');
+    }
+
+    public function uploadOtherImages(Request $request)
+    {
+        $receipt = \App\Models\FabricReceipt::find($request->receipt_id);
+        if ($receipt && $request->hasFile('other_images')) {
+            foreach ($request->file('other_images') as $image) {
+                $extImage = $image->getClientOriginalExtension();
+                $imgName = "other-image-" . rand() . "_" . time() . "." . $extImage;
+                $destinationPath = public_path() . '/assets/receipts/other-images';
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0777, true);
+                }
+                $image->move($destinationPath, $imgName);
+
+                \App\Models\FabricReceiptOtherImage::create([
+                    'fabric_receipt_id' => $receipt->id,
+                    'image' => $imgName
+                ]);
+            }
+        }
+        return redirect()->back()->withSuccess('Other images have been successfully uploaded.');
     }
 
     public function returnFabric(Request $request)
@@ -191,5 +222,19 @@ class FabricReceiptController extends Controller
     {
         $this->service->updateReturn($request);
         return redirect()->route('admin.fabric_receipt.view', ['id' => $request->fabric_receipt_id])->withSuccess('Fabric return has been successfully updated.');
+    }
+
+    public function deleteOtherImage($id)
+    {
+        $image = \App\Models\FabricReceiptOtherImage::find($id);
+        if ($image) {
+            $path = public_path('assets/receipts/other-images/' . $image->image);
+            if (file_exists($path) && $image->image) {
+                unlink($path);
+            }
+            $image->delete();
+            return redirect()->back()->withSuccess('Image deleted successfully.');
+        }
+        return redirect()->back()->withError('Image not found.');
     }
 }

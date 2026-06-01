@@ -156,6 +156,35 @@
                             </small>
                         </div>
 
+                        <div class="col-md-6 mt-2">
+                            <label>Other Images</label>
+                            <div class="input-group">
+                                <div class="custom-file">
+                                    <input type="file" name="other_images[]" accept="image/*" class="custom-file-input" multiple>
+                                    <label class="custom-file-label">Choose files</label>
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                You can select multiple images to upload.
+                            </small>
+
+                            @if(isset($data->other_images) && $data->other_images->count() > 0)
+                                <div class="mt-3">
+                                    <label>Existing Other Images</label>
+                                    <div class="d-flex flex-wrap" style="gap: 10px;">
+                                        @foreach($data->other_images as $otherImage)
+                                            <div class="position-relative" style="width: 100px; height: 100px; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
+                                                <a href="{{ asset('assets/receipts/other-images/' . $otherImage->image) }}" target="_blank">
+                                                    <img src="{{ asset('assets/receipts/other-images/' . $otherImage->image) }}" alt="Other Image" style="width: 100%; height: 100%; object-fit: cover;">
+                                                </a>
+                                                <a href="{{ route('admin.fabric_receipt.delete_other_image', $otherImage->id) }}" class="btn btn-sm btn-danger position-absolute" style="top: 2px; right: 2px; padding: 2px 5px; font-size: 10px;" onclick="return confirm('Are you sure you want to delete this image?')"><i class="fas fa-times"></i></a>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+
                     </div>
                     <div class="row mb-3">
                         

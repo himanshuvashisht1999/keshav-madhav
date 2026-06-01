@@ -181,6 +181,19 @@
                                 </small>
                             </div>
 
+                            <div class="col-md-6 mt-2">
+                                <label>Other Images</label>
+                                <div class="input-group">
+                                    <div class="custom-file">
+                                        <input type="file" name="other_images[]" accept="image/*" class="custom-file-input" multiple>
+                                        <label class="custom-file-label">Choose files</label>
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    You can select multiple images.
+                                </small>
+                            </div>
+
                         </div>
                         <div class="row mb-3">
 

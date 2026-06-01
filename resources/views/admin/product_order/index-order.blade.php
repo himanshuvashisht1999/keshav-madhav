@@ -6,7 +6,7 @@
             <div class="container-fluid">
                 <div class="row mb-2">
                     <div class="col-sm-12">
-                        <h1 class="text-center">List of Sales Orders <span id="total_pcs_count" class="badge badge-info ml-2" style="font-size: 18px; vertical-align: middle;"></span></h1>
+                        <h1 class="text-center">List of Corporate Orders <span id="total_pcs_count" class="badge badge-info ml-2" style="font-size: 18px; vertical-align: middle;"></span></h1>
                     </div>
                     {{-- <div class="col-sm-6">
                         <ol class="breadcrumb float-sm-right">
