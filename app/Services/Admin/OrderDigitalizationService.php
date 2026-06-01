@@ -677,14 +677,39 @@ class OrderDigitalizationService
                     }
                 }
             }
-            // dd($results_units);
+            $last_production_datetime = null;
+            $maxId = 0;
+
+            // 1. OrderStageTransaction
+            $tx1 = \App\Models\OrderStageTransaction::where('production_slip_digitization_id', $results->id)->orderBy('id', 'desc')->first();
+            if ($tx1 && $tx1->id > $maxId) {
+                $maxId = $tx1->id;
+                $last_production_datetime = $tx1->production_datetime;
+            }
+
+            // 2. OrderPrintingStageTransaction
+            $tx2 = \App\Models\OrderPrintingStageTransaction::where('production_slip_digitization_id', $results->id)->orderBy('id', 'desc')->first();
+            // Since IDs across tables aren't perfectly comparable, we can just take the most recent created_at or production_datetime
+            // Let's use created_at to find the truly most recent transaction
+            $latestTx = collect([
+                \App\Models\OrderStageTransaction::where('production_slip_digitization_id', $results->id)->orderBy('id', 'desc')->first(),
+                \App\Models\OrderPrintingStageTransaction::where('production_slip_digitization_id', $results->id)->orderBy('id', 'desc')->first(),
+                \App\Models\OrderPrintingToStichingTransaction::where('production_slip_digitization_id', $results->id)->orderBy('id', 'desc')->first(),
+                \App\Models\OrderGodamStageTransaction::where('production_slip_digitization_id', $results->id)->orderBy('id', 'desc')->first(),
+            ])->filter()->sortByDesc('created_at')->first();
+
+            if ($latestTx) {
+                $last_production_datetime = $latestTx->production_datetime;
+            }
+
             $data = [
                 'id' => $results->id,
                 'slip_file' => $results->slip_file,
                 'from_stage' => $from_stage,
                 'unit_master_data' => $unit_master_data,
                 'date_time' => $results->created_at,
-                'status' => $results->status
+                'status' => $results->status,
+                'last_production_datetime' => $last_production_datetime
             ];
         }
 

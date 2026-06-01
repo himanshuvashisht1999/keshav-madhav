@@ -27,8 +27,12 @@ class WarehouseInventoryController extends Controller
         $designs = \App\Models\ProductionGoods::select('design_number')->distinct()->orderBy('design_number')->get();
         $fittings = \App\Models\MasterProductFitting::all();
         $patterns = \App\Models\MasterDesignPattern::all();
+        $series = \App\Models\MasterSeries::all();
+        $brands = \App\Models\Brand::all();
+        $natures = \App\Models\ProductNature::all();
+        $fabric_types = \App\Models\FabricType::all();
 
-        return view('admin.inventory.warehouse_stock.index', compact('storerooms', 'size_sets', 'products', 'colors', 'designs', 'fittings', 'patterns'));
+        return view('admin.inventory.warehouse_stock.index', compact('storerooms', 'size_sets', 'products', 'colors', 'designs', 'fittings', 'patterns', 'series', 'brands', 'natures', 'fabric_types'));
     }
 
     public function indexList(Request $request)
@@ -61,6 +65,42 @@ class WarehouseInventoryController extends Controller
 
         if ($request->has('color_id') && !empty($request->color_id)) {
             $query->where('color_id', $request->color_id);
+        }
+
+        if ($request->has('series_id') && !empty($request->series_id)) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('master_series_id', $request->series_id);
+            });
+        }
+
+        if ($request->has('brand_id') && !empty($request->brand_id)) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('brand_id', $request->brand_id);
+            });
+        }
+
+        if ($request->has('fitting_id') && !empty($request->fitting_id)) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('master_product_fitting_id', $request->fitting_id);
+            });
+        }
+
+        if ($request->has('pattern_id') && !empty($request->pattern_id)) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('master_pattern_id', $request->pattern_id);
+            });
+        }
+
+        if ($request->has('nature_id') && !empty($request->nature_id)) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('product_nature_id', $request->nature_id);
+            });
+        }
+
+        if ($request->has('fabric_type_id') && !empty($request->fabric_type_id)) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('fabric_type_id', $request->fabric_type_id);
+            });
         }
         
         $query->latest();

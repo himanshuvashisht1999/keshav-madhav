@@ -95,6 +95,7 @@
                                             <label>Production Date & Time</label>
                                             <input type="text"
                                             name="production_datetime" class="form-control datetime-picker" placeholder="Select date & time"
+                                            value="{{ old('production_datetime', session('last_production_datetime', $slip_data['last_production_datetime'] ?? '')) }}"
                                             required>
                                         </div>
                                         <div class="col-md-12 mt-2 mb-2">

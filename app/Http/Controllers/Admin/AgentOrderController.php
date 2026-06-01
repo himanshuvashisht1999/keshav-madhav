@@ -31,7 +31,8 @@ class AgentOrderController extends Controller
             $agents = DB::table('sales_agents')->select('id', 'name')->where('status', 1)->get();
             $shops = DB::table('master_customers')->select('id', 'name')->where('status', 1)->get();
             $vendors = DB::table('vendors')->select('id', 'name')->where('status', 1)->get();
-            return view('admin.agent_orders.create', compact('agents', 'shops', 'vendors'));
+            $salesMen = \App\Models\SalesMan::where('status', 1)->get();
+            return view('admin.agent_orders.create', compact('agents', 'shops', 'vendors', 'salesMen'));
         }
 
         if ($agent_id === 'direct') {
@@ -286,6 +287,7 @@ class AgentOrderController extends Controller
                 'sales_agent_id' => $agent_id,
                 'master_customer_id' => $request->master_customer_id,
                 'master_vendor_id' => $request->master_vendor_id,
+                'sales_man_id' => $request->sales_man_id,
                 'order_date' => $request->order_date
             ]);
         }
@@ -449,6 +451,7 @@ class AgentOrderController extends Controller
         try {
             $order = AgentOrder::create([
                 'sales_agent_id' => $agent_id_to_save,
+                'sales_man_id' => $request->sales_man_id,
                 'party_type' => $request->party_type ?? 'customer',
                 'master_customer_id' => $request->party_type === 'vendor' ? null : $request->master_customer_id,
                 'master_vendor_id' => $request->party_type === 'vendor' ? $request->master_vendor_id : null,

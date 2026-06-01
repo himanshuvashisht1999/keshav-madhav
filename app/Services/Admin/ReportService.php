@@ -1651,6 +1651,13 @@ class ReportService
         $type = '';
         $productionStatus = $request->get('production_status');
 
+        $unitIdsReq = $request->get('unit_id', []);
+        if (!is_array($unitIdsReq) && $unitIdsReq) {
+            $unitIdsReq = [$unitIdsReq];
+        } elseif (!is_array($unitIdsReq)) {
+            $unitIdsReq = [];
+        }
+
         if ($productionStatus) {
             $type = 'other';
             $query = \App\Models\OrderLot::with(['orderMain.customer', 'orderProductSet.colors', 'orderProductSet.master_design_pattern', 'orderProductSet.order_cutting_stage.cutting_master'])
@@ -1676,9 +1683,9 @@ class ReportService
                 $query->whereDate('created_at', '<=', $request->end_date);
             }
 
-            if ($request->filled('unit_id')) {
-                $query->whereHas('orderProductSet.order_cutting_stage', function ($q) use ($request) {
-                    $q->where('to_assign_id', $request->unit_id);
+            if (!empty($unitIdsReq)) {
+                $query->whereHas('orderProductSet.order_cutting_stage', function ($q) use ($unitIdsReq) {
+                    $q->whereIn('to_assign_id', $unitIdsReq);
                 });
             }
 
@@ -1715,14 +1722,13 @@ class ReportService
                 'stages' => \App\Models\MasterProductStage::where('status', 1)->orderBy('sequence', 'asc')->get(),
                 'units' => \App\Models\StageMasterUnit::where('master_stage_id', 3)->where('status', 1)->get(),
                 'selectedStage' => '',
-                'selectedUnit' => $request->get('unit_id'),
+                'selectedUnit' => $unitIdsReq,
                 'lotNo' => $request->get('lot_no'),
                 'orderNo' => $request->get('order_no'),
                 'productionStatus' => $productionStatus
             ];
         }
 
-        $unitId = $request->get('unit_id');
         $stageId = $request->get('stage_id');
         $view = $request->get('view', 'open');
         if (!in_array($view, ['open', 'closed', 'delayed'])) {
@@ -1736,16 +1742,18 @@ class ReportService
         $isPacking = $stageId == 11;
         $canCloseTasks = $isCutting || $isPacking;
 
-
-        if ($unitId) {
-            $selectedUnit = \App\Models\StageMasterUnit::find($unitId);
-            $unitIds = [$unitId];
-            if ($selectedUnit) {
-                $unitIds = \App\Models\StageMasterUnit::where('name', $selectedUnit->name)
-                    ->where('master_stage_id', $selectedUnit->master_stage_id)
+        $unitIds = [];
+        if (!empty($unitIdsReq)) {
+            $selectedUnits = \App\Models\StageMasterUnit::whereIn('id', $unitIdsReq)->get();
+            $unitIds = $unitIdsReq;
+            foreach ($selectedUnits as $su) {
+                $matching = \App\Models\StageMasterUnit::where('name', $su->name)
+                    ->where('master_stage_id', $su->master_stage_id)
                     ->pluck('id')
                     ->toArray();
+                $unitIds = array_merge($unitIds, $matching);
             }
+            $unitIds = array_unique($unitIds);
         }
 
         if ($stageId == 3) {
@@ -1763,7 +1771,7 @@ class ReportService
                 $query->whereDate('created_at', '<=', $request->end_date);
             }
 
-            if ($unitId) {
+            if (!empty($unitIds)) {
                 $query->whereIn('to_assign_id', $unitIds);
             }
 
@@ -1855,7 +1863,7 @@ class ReportService
                 $q->where('to_stage_id', $stageId);
             };
 
-            if ($unitId) {
+            if (!empty($unitIds)) {
                 $ass1Query->whereIn('sub_stage_id_to', $unitIds);
                 $ass2Query->whereIn('sub_stage_id_to', $unitIds);
                 $ass3Query->whereIn('sub_stage_id_to', $unitIds);
@@ -1987,7 +1995,7 @@ class ReportService
             'stages' => $stages,
             'units' => $units,
             'selectedStage' => $stageId,
-            'selectedUnit' => $unitId,
+            'selectedUnit' => $unitIdsReq,
             'lotNo' => $lotNo,
             'orderNo' => $orderNo,
             'productionStatus' => $productionStatus

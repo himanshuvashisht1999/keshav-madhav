@@ -122,18 +122,26 @@
         $form.data('submitted', true);
         $form.find('button[type="submit"], input[type="submit"]').prop('disabled', true);
       });
+
+      // Global fix to auto-focus Select2 search field when opened
+      $(document).on('select2:open', function(e) {
+          let searchField = document.querySelector('.select2-search__field');
+          if (searchField) {
+              searchField.focus();
+          }
+      });
     })
     
   </script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    flatpickr(".datetime-picker", {
-        enableTime: true,
-        dateFormat: "Y-m-d H:i",
-        time_24hr: true,
-        defaultDate: new Date(),
-        // minTime: "09:00",
-        // maxTime: "17:00"
+    document.querySelectorAll('.datetime-picker').forEach(function(el) {
+        flatpickr(el, {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            time_24hr: true,
+            defaultDate: el.value ? el.value : new Date()
+        });
     });
 });
 </script>

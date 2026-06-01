@@ -94,7 +94,7 @@
     <div class="content-wrapper">
         <div class="container-fluid">
             <div class="premium-header py-3 mb-4 d-flex justify-content-between align-items-center">
-                <h1 class="h5 font-weight-bold text-dark mb-0">Create Fair Products</h1>
+                <h1 class="h5 font-weight-bold text-dark mb-0">Create Sample Set</h1>
                 <p class="text-muted small mb-0">Filter and select size sets to generate barcodes.</p>
             </div>
 
@@ -187,7 +187,7 @@
                     <div class="premium-sidebar">
                         <h5 class="h6 font-weight-bold mb-4 text-dark d-flex align-items-center">
                             <i class="fas fa-shopping-cart mr-2 text-primary"></i>
-                            {{ isset($batch) ? 'Edit Catalog' : 'Selected Fair Items' }}
+                            {{ isset($batch) ? 'Edit Sample Set' : 'Selected Sample Items' }}
                         </h5>
 
                         <form
@@ -195,10 +195,20 @@
                             method="POST" id="fairForm" class="mb-3">
                             @csrf
                             @if(isset($batch)) @method('PUT') @endif
+
+                            <div class="form-group mb-3">
+                                <label class="x-small font-weight-bold text-uppercase text-muted mb-1">Sales Agents</label>
+                                <select name="sales_agent_ids[]" class="form-control select2" multiple>
+                                    @foreach($salesAgents as $agent)
+                                        <option value="{{ $agent->id }}" {{ isset($batch) && is_array($batch->sales_agent_ids) && in_array($agent->id, $batch->sales_agent_ids) ? 'selected' : '' }}>{{ $agent->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
                             <div id="hidden-inputs"></div>
                             <button type="submit" class="btn btn-generate w-100 position-static py-2 mb-3" id="btn-submit"
                                 style="display: none;">
-                                <i class="fas fa-save mr-2"></i> {{ isset($batch) ? 'Update Catalog' : 'Generate Catalog' }}
+                                <i class="fas fa-save mr-2"></i> {{ isset($batch) ? 'Update Sample Set' : 'Generate Sample Set' }}
                             </button>
                         </form>
 

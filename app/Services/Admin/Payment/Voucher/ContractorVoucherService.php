@@ -38,7 +38,6 @@ class ContractorVoucherService
 
             $voucher = ContractorVoucher::create([
                 'contractor_id' => $request->contractor_id,
-                'order_lot_id' => $request->order_lot_id,
                 'voucher_date' => $request->voucher_date,
                 'voucher_number' => $request->voucher_number,
                 'sub_total' => $request->sub_total,
@@ -55,6 +54,7 @@ class ContractorVoucherService
                 if (!empty($item['item_name'])) {
                     ContractorVoucherItem::create([
                         'contractor_voucher_id' => $voucher->id,
+                        'order_lot_id' => $item['order_lot_id'] ?? null,
                         'item_name' => $item['item_name'],
                         'quantity' => $item['quantity'],
                         'rate' => $item['rate'],
@@ -100,7 +100,6 @@ class ContractorVoucherService
 
             $voucher->update([
                 'contractor_id' => $request->contractor_id,
-                'order_lot_id' => $request->order_lot_id,
                 'voucher_date' => $request->voucher_date,
                 'voucher_number' => $request->voucher_number,
                 'sub_total' => $request->sub_total,
@@ -139,6 +138,7 @@ class ContractorVoucherService
                 if (!empty($item['item_name'])) {
                     ContractorVoucherItem::create([
                         'contractor_voucher_id' => $voucher->id,
+                        'order_lot_id' => $item['order_lot_id'] ?? null,
                         'item_name' => $item['item_name'],
                         'quantity' => $item['quantity'],
                         'rate' => $item['rate'],

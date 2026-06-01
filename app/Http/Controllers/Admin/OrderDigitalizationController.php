@@ -296,7 +296,7 @@ class OrderDigitalizationController extends Controller
             if ($request->is_final == 1) {
                 return redirect()->route('admin.uploaded-slips.index')->withSuccess($result['message']);
             } else {
-                return redirect()->back()->withSuccess($result['message']);
+                return redirect()->back()->withSuccess($result['message'])->with('last_production_datetime', $request->production_datetime);
             }
         } else {
             return redirect()->back()->withError($result['message']);

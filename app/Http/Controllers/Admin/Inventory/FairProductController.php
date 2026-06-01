@@ -18,13 +18,36 @@ use Illuminate\Support\Facades\DB;
 
 class FairProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $batches = FairBatch::withCount('products')
-            ->orderBy('id', 'desc')
-            ->paginate(20);
+        $query = FairBatch::withCount('products');
+
+        if ($request->filled('batch_no')) {
+            $query->where('batch_no', 'like', '%' . $request->batch_no . '%');
+        }
+
+        if ($request->filled('sales_agent_ids')) {
+            $query->where(function($q) use ($request) {
+                foreach($request->sales_agent_ids as $agent_id) {
+                    $q->orWhereJsonContains('sales_agent_ids', $agent_id)
+                      ->orWhereJsonContains('sales_agent_ids', (string) $agent_id)
+                      ->orWhereJsonContains('sales_agent_ids', (int) $agent_id);
+                }
+            });
+        }
+
+        if ($request->filled('from_date')) {
+            $query->whereDate('created_at', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        $batches = $query->orderBy('id', 'desc')->paginate(20);
+        $salesAgents = \App\Models\SalesAgent::where('status', 1)->get();
             
-        return view('admin.inventory.fair_product.index', compact('batches'));
+        return view('admin.inventory.fair_product.index', compact('batches', 'salesAgents'));
     }
 
     public function create()
@@ -35,8 +58,9 @@ class FairProductController extends Controller
         $series = \App\Models\MasterSeries::where('status', 1)->get();
         $sizeSets = MasterSizeMeasurement::where('status', 1)->get();
         $designNumbers = ProductionGoods::select('design_number')->distinct()->pluck('design_number');
+        $salesAgents = \App\Models\SalesAgent::where('status', 1)->get();
         
-        return view('admin.inventory.fair_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets'));
+        return view('admin.inventory.fair_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'salesAgents'));
     }
 
     public function edit($id)
@@ -48,6 +72,7 @@ class FairProductController extends Controller
         $series = \App\Models\MasterSeries::where('status', 1)->get();
         $sizeSets = MasterSizeMeasurement::where('status', 1)->get();
         $designNumbers = ProductionGoods::select('design_number')->distinct()->pluck('design_number');
+        $salesAgents = \App\Models\SalesAgent::where('status', 1)->get();
 
         // Prepare existing items for JS
         $existingItems = $batch->products->map(function($p) {
@@ -70,7 +95,7 @@ class FairProductController extends Controller
             ];
         });
 
-        return view('admin.inventory.fair_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'batch', 'existingItems'));
+        return view('admin.inventory.fair_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'batch', 'existingItems', 'salesAgents'));
     }
 
     public function getProducts(Request $request)
@@ -171,7 +196,8 @@ class FairProductController extends Controller
         ]);
 
         $batch = FairBatch::create([
-            'batch_no' => 'FAIR-' . strtoupper(uniqid())
+            'batch_no' => 'FAIR-' . strtoupper(uniqid()),
+            'sales_agent_ids' => $request->sales_agent_ids ?? []
         ]);
 
         foreach ($request->items as $item) {
@@ -192,7 +218,7 @@ class FairProductController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.inventory.fair-product.index')->with('success', 'Fair batch generated successfully');
+        return redirect()->route('admin.inventory.fair-product.index')->with('success', 'Sample set generated successfully');
     }
 
     public function update(Request $request, $id)
@@ -203,6 +229,10 @@ class FairProductController extends Controller
 
         $batch = FairBatch::findOrFail($id);
         
+        $batch->update([
+            'sales_agent_ids' => $request->sales_agent_ids ?? []
+        ]);
+
         // Simple approach: delete existing products and recreate
         $batch->products()->delete();
 
@@ -224,7 +254,7 @@ class FairProductController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.inventory.fair-product.index')->with('success', 'Fair batch updated successfully');
+        return redirect()->route('admin.inventory.fair-product.index')->with('success', 'Sample set updated successfully');
     }
 
     public function generatePdfFromBatch(Request $request, $id)
@@ -281,7 +311,7 @@ class FairProductController extends Controller
     {
         $batch = FairBatch::findOrFail($id);
         $batch->delete(); // Cascades to products
-        return redirect()->back()->with('success', 'Fair batch deleted successfully');
+        return redirect()->back()->with('success', 'Sample set deleted successfully');
     }
 
     public function showColorChart($barcode)

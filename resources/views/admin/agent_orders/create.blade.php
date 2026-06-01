@@ -100,6 +100,18 @@
                                         </div>
                                     </div>
 
+                                    <div class="form-group mb-4">
+                                        <label class="text-muted small font-weight-bold text-uppercase">Select Sales Man</label>
+                                        <select name="sales_man_id" id="salesManSelect" class="form-control select2">
+                                            <option value="">-- Optional: Choose Sales Man --</option>
+                                            @foreach($salesMen as $man)
+                                                <option value="{{ $man->id }}" {{ old('sales_man_id', request('sales_man_id')) == $man->id ? 'selected' : '' }}>
+                                                    {{ $man->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
                                     <div class="form-group mb-4" id="agentSelectionWrapper" style="display:none;">
                                         <select name="sales_agent_id" id="agentSelect" class="form-control">
                                              <option value="direct">Direct</option>
@@ -133,6 +145,7 @@
                             <div class="card-body p-3">
                                 <form method="GET" action="{{ route('admin.agent-orders.create') }}" id="filterForm">
                                     <input type="hidden" name="sales_agent_id" value="{{ $agent->id }}">
+                                    <input type="hidden" name="sales_man_id" value="{{ request('sales_man_id') }}">
                                     <input type="hidden" name="party_type" value="{{ request('party_type', 'customer') }}">
                                     <input type="hidden" name="master_customer_id" value="{{ request('master_customer_id') }}">
                                     <input type="hidden" name="master_vendor_id" value="{{ request('master_vendor_id') }}">
@@ -187,7 +200,7 @@
                                             <button type="submit" class="btn btn-primary btn-sm px-4 mr-2">
                                                 <i class="fas fa-search mr-1"></i> Filter
                                             </button>
-                                            <a href="{{ route('admin.agent-orders.create', ['order_type' => request('order_type'), 'sales_agent_id' => $agent->id, 'master_customer_id' => $shop->id, 'order_date' => request('order_date')]) }}" 
+                                            <a href="{{ route('admin.agent-orders.create', ['order_type' => request('order_type'), 'sales_agent_id' => $agent->id, 'sales_man_id' => request('sales_man_id'), 'master_customer_id' => $shop->id, 'order_date' => request('order_date')]) }}" 
                                                class="btn btn-secondary btn-sm px-3">
                                                 <i class="fas fa-undo"></i>
                                             </a>
@@ -637,6 +650,7 @@
                             data: {
                                 _token: "{{ csrf_token() }}",
                                 sales_agent_id: "{{ $agent->id }}",
+                                sales_man_id: "{{ request('sales_man_id') }}",
                                 party_type: "{{ request('party_type', 'customer') }}",
                                 master_customer_id: "{{ request('master_customer_id') }}",
                                 master_vendor_id: "{{ request('master_vendor_id') }}",

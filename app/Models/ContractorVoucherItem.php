@@ -11,6 +11,7 @@ class ContractorVoucherItem extends Model
 
     protected $fillable = [
         'contractor_voucher_id',
+        'order_lot_id',
         'item_name',
         'quantity',
         'rate',

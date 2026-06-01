@@ -233,7 +233,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                         class="{{ str_contains($page_url, 'admin/inventory/fair-product') ? 'nav-link active' : 'nav-link' }}"
                                         style="position:static;">
                                         <i class="far fa-circle nav-icon"></i>
-                                        <p>Fair Product</p>
+                                        <p>Sample Set</p>
                                     </a>
                                 </li>
 
@@ -1182,6 +1182,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                                         class="{{ str_contains($page_url, 'admin/master/sales-agent') ? 'nav-link active' : 'nav-link' }}">
                                                         <i class="far fa-circle nav-icon"></i>
                                                         <p>Sales Agents</p>
+                                                    </a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a href="{{ route('admin.master.sales-man.index') }}"
+                                                        class="{{ str_contains($page_url, 'admin/master/sales-man') ? 'nav-link active' : 'nav-link' }}">
+                                                        <i class="far fa-circle nav-icon"></i>
+                                                        <p>Sales Men</p>
                                                     </a>
                                                 </li>
                                                 <li class="nav-item">

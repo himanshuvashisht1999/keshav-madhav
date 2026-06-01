@@ -196,7 +196,7 @@
         </p>
     </div>
 
-    <div class="catalog-title">FAIR PRODUCT CATALOG</div>
+    <div class="catalog-title">SAMPLE SET CATALOG</div>
 
     @foreach($samples as $sample)
         <div class="sample-item">

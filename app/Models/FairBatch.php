@@ -9,7 +9,11 @@ class FairBatch extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['batch_no'];
+    protected $fillable = ['batch_no', 'sales_agent_ids'];
+
+    protected $casts = [
+        'sales_agent_ids' => 'array',
+    ];
 
     public function products()
     {

@@ -75,7 +75,9 @@ class OrderSummaryReportService
             'orderProductSets.master_design_pattern',
             'orderProductSets.master_product_fitting',
             'orderProductSets.lots',
-            'orderProductSets.product_set_details'
+            'orderProductSets.product_set_details',
+            'orderProductSets.order_cutting_stage.vendor',
+            'orderProductSets.order_cutting_stage.customer'
         ])->find($id);
 
         if (!$order)

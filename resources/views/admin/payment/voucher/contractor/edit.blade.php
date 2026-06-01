@@ -30,7 +30,7 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label><i class="fas fa-user mr-1 text-primary"></i> Select Contractor <span class="text-danger">*</span></label>
                                         <select name="contractor_id" class="form-control select2" required>
@@ -41,24 +41,14 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label><i class="fas fa-layer-group mr-1 text-warning"></i> Select Lot No</label>
-                                        <select name="order_lot_id" class="form-control select2">
-                                            <option value="">Select Lot</option>
-                                            @foreach($lots as $lot)
-                                                <option value="{{ $lot->id }}" {{ $data->order_lot_id == $lot->id ? 'selected' : '' }}>{{ $lot->lot_no }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
+
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label><i class="fas fa-calendar-alt mr-1 text-info"></i> Voucher Date <span class="text-danger">*</span></label>
                                         <input type="date" name="voucher_date" class="form-control" value="{{ $data->voucher_date }}" required>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label><i class="fas fa-hashtag mr-1 text-secondary"></i> Voucher Number</label>
                                         <input type="text" name="voucher_number" class="form-control" value="{{ $data->voucher_number }}" placeholder="Enter Voucher Number">
@@ -86,16 +76,25 @@
                             <table class="table table-bordered" id="itemTable">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th style="width: 40%">Item Name</th>
+                                        <th style="width: 20%">Lot No</th>
+                                        <th style="width: 25%">Item Name</th>
                                         <th style="width: 15%">Quantity</th>
                                         <th style="width: 15%">Rate</th>
                                         <th style="width: 20%">Amount</th>
-                                        <th style="width: 10%">Action</th>
+                                        <th style="width: 5%">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($data->items as $index => $item)
                                     <tr>
+                                        <td>
+                                            <select name="items[{{ $index }}][order_lot_id]" class="form-control select2">
+                                                <option value="">Select Lot</option>
+                                                @foreach($lots as $lot)
+                                                    <option value="{{ $lot->id }}" {{ $item->order_lot_id == $lot->id ? 'selected' : '' }}>{{ $lot->lot_no }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
                                         <td><input type="text" name="items[{{ $index }}][item_name]" class="form-control" value="{{ $item->item_name }}" required></td>
                                         <td><input type="number" step="0.01" name="items[{{ $index }}][quantity]" class="form-control qty" value="{{ $item->quantity }}" required></td>
                                         <td><input type="number" step="0.01" name="items[{{ $index }}][rate]" class="form-control rate" value="{{ $item->rate }}" required></td>
@@ -173,6 +172,14 @@
             $(document).on('click', '.addRow', function() {
                 let newRow = `
                     <tr>
+                        <td>
+                            <select name="items[${rowCount}][order_lot_id]" class="form-control select2">
+                                <option value="">Select Lot</option>
+                                @foreach($lots as $lot)
+                                    <option value="{{ $lot->id }}">{{ $lot->lot_no }}</option>
+                                @endforeach
+                            </select>
+                        </td>
                         <td><input type="text" name="items[${rowCount}][item_name]" class="form-control" required></td>
                         <td><input type="number" step="0.01" name="items[${rowCount}][quantity]" class="form-control qty" required></td>
                         <td><input type="number" step="0.01" name="items[${rowCount}][rate]" class="form-control rate" required></td>
@@ -183,6 +190,11 @@
                     </tr>
                 `;
                 $('#itemTable tbody').append(newRow);
+                // Initialize select2 on the newly added row
+                $('#itemTable tbody tr:last-child .select2').select2({
+                    width: '100%',
+                    dropdownAutoWidth: true
+                });
                 rowCount++;
             });
 

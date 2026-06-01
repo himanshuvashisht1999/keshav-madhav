@@ -78,11 +78,13 @@
 
                                 <div class="col-md-2">
                                     <label class="fw-bold">Unit Person</label>
-                                    <select name="unit_id" id="unit_id" class="form-control select2"
-                                        onchange="this.form.submit()">
-                                        <option value="">All Units</option>
+                                    <select name="unit_id[]" id="unit_id" class="form-control select2" multiple>
+                                        @php 
+                                            $reqUnits = request('unit_id', []); 
+                                            if(!is_array($reqUnits)) $reqUnits = [$reqUnits]; 
+                                        @endphp
                                         @foreach($units as $unit)
-                                            <option value="{{ $unit->id }}" {{ request('unit_id') == $unit->id ? 'selected' : '' }}>
+                                            <option value="{{ $unit->id }}" {{ in_array($unit->id, $reqUnits) ? 'selected' : '' }}>
                                                 {{ $unit->name }}
                                             </option>
                                         @endforeach

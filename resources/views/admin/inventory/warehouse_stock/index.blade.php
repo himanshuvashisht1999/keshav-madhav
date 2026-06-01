@@ -25,7 +25,7 @@
                 <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
                     <div class="card-body bg-light rounded p-4">
                         <div class="row align-items-end">
-                            <div class="col-md-2">
+                            <div class="col-md-2 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Warehouse</label>
                                 <select id="storeroom_filter" class="form-control select2">
                                     <option value="">All Warehouses</option>
@@ -34,14 +34,32 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Rack</label>
                                 <select id="rack_filter" class="form-control select2">
                                     <option value="">All Racks</option>
                                     <!-- Populated via JS -->
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Series</label>
+                                <select id="series_filter" class="form-control select2">
+                                    <option value="">All Series</option>
+                                    @foreach($series as $s)
+                                        <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Brand</label>
+                                <select id="brand_filter" class="form-control select2">
+                                    <option value="">All Brands</option>
+                                    @foreach($brands as $b)
+                                        <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Design No.</label>
                                 <select id="design_filter" class="form-control select2">
                                     <option value="">All Design Nos.</option>
@@ -50,7 +68,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Product</label>
                                 <select id="product_filter" class="form-control select2">
                                     <option value="">All Products</option>
@@ -59,7 +77,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Color</label>
                                 <select id="color_filter" class="form-control select2">
                                     <option value="">All Colors</option>
@@ -68,7 +86,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Size Set</label>
                                 <select id="size_set_filter" class="form-control select2">
                                     <option value="">All Size Sets</option>
@@ -77,8 +95,44 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Fitting</label>
+                                <select id="fitting_filter" class="form-control select2">
+                                    <option value="">All Fittings</option>
+                                    @foreach($fittings as $f)
+                                        <option value="{{ $f->id }}">{{ $f->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Pattern</label>
+                                <select id="pattern_filter" class="form-control select2">
+                                    <option value="">All Patterns</option>
+                                    @foreach($patterns as $p)
+                                        <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Product Nature</label>
+                                <select id="nature_filter" class="form-control select2">
+                                    <option value="">All Natures</option>
+                                    @foreach($natures as $n)
+                                        <option value="{{ $n->id }}">{{ $n->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Fabric Type</label>
+                                <select id="fabric_type_filter" class="form-control select2">
+                                    <option value="">All Fabric Types</option>
+                                    @foreach($fabric_types as $ft)
+                                        <option value="{{ $ft->id }}">{{ $ft->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             
-                            <div class="col-md-1">
+                            <div class="col-md-1 mb-3">
                                 <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block">
                                     <i class="fas fa-undo"></i>
                                 </button>
@@ -376,7 +430,13 @@
                         size_set_id: $('#size_set_filter').val(),
                         design_filter: $('#design_filter').val(),
                         product_id: $('#product_filter').val(),
-                        color_id: $('#color_filter').val()
+                        color_id: $('#color_filter').val(),
+                        series_id: $('#series_filter').val(),
+                        brand_id: $('#brand_filter').val(),
+                        fitting_id: $('#fitting_filter').val(),
+                        pattern_id: $('#pattern_filter').val(),
+                        nature_id: $('#nature_filter').val(),
+                        fabric_type_id: $('#fabric_type_filter').val()
                     },
                     success: function(res) {
                         if (reset) {
@@ -423,13 +483,13 @@
             });
 
             // Filter events
-            $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #color_filter').on('change', function () {
+            $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #color_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter').on('change', function () {
                 loadMore(true);
             });
 
             // Reset filter
             $('#reset_filters').on('click', function () {
-                $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #color_filter').val('').trigger('change');
+                $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #color_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter').val('').trigger('change');
             });
 
             // Filter Dynamic Racks

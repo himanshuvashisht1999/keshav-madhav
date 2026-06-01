@@ -277,6 +277,7 @@
                             <label class="label-premium">Source Type</label>
                             <select name="source_type" id="sourceType" class="form-control select2">
                                 <option value="production">Self Production</option>
+                                <option value="sample">Sample Production</option>
                                 <option value="consume">Stock Consume</option>
                             </select>
                         </div>

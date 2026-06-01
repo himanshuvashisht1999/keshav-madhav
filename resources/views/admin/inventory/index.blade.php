@@ -20,11 +20,11 @@
                 <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
                     <div class="card-body bg-light rounded p-4">
                         <div class="row align-items-end">
-                            <div class="col-md-3">
+                            <div class="col-md-3 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Design Number</label>
                                 <input type="text" id="design_number" class="form-control" placeholder="Search Design...">
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Size Set</label>
                                 <select id="size_set_filter" class="form-control select2">
                                     <option value="">All Size Sets</option>
@@ -33,7 +33,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Product</label>
                                 <select id="product_filter" class="form-control select2">
                                     <option value="">All Products</option>
@@ -42,7 +42,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Color</label>
                                 <select id="color_filter" class="form-control select2">
                                     <option value="">All Colors</option>
@@ -51,11 +51,67 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Min MRP</label>
                                 <input type="number" id="mrp_filter" class="form-control" placeholder="Min MRP">
                             </div>
-                            <div class="col-md-1">
+                            
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Series</label>
+                                <select id="series_filter" class="form-control select2">
+                                    <option value="">All Series</option>
+                                    @foreach($master_series as $s)
+                                        <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Brand</label>
+                                <select id="brand_filter" class="form-control select2">
+                                    <option value="">All Brands</option>
+                                    @foreach($brands as $b)
+                                        <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Fitting</label>
+                                <select id="fitting_filter" class="form-control select2">
+                                    <option value="">All Fittings</option>
+                                    @foreach($master_fittings as $f)
+                                        <option value="{{ $f->id }}">{{ $f->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Pattern</label>
+                                <select id="pattern_filter" class="form-control select2">
+                                    <option value="">All Patterns</option>
+                                    @foreach($master_patterns as $p)
+                                        <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Product Nature</label>
+                                <select id="nature_filter" class="form-control select2">
+                                    <option value="">All Natures</option>
+                                    @foreach($natures as $n)
+                                        <option value="{{ $n->id }}">{{ $n->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Fabric Type</label>
+                                <select id="fabric_type_filter" class="form-control select2">
+                                    <option value="">All Fabric Types</option>
+                                    @foreach($fabric_types as $ft)
+                                        <option value="{{ $ft->id }}">{{ $ft->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-1 mb-3">
                                 <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block">
                                     <i class="fas fa-undo"></i>
                                 </button>
@@ -381,7 +437,13 @@
                         product_id: $('#product_filter').val(),
                         color_id: $('#color_filter').val(),
                         mrp: $('#mrp_filter').val(),
-                        design_number: $('#design_number').val()
+                        design_number: $('#design_number').val(),
+                        series_id: $('#series_filter').val(),
+                        brand_id: $('#brand_filter').val(),
+                        fitting_id: $('#fitting_filter').val(),
+                        pattern_id: $('#pattern_filter').val(),
+                        nature_id: $('#nature_filter').val(),
+                        fabric_type_id: $('#fabric_type_filter').val()
                     },
                     success: function(res) {
                         if (reset) {
@@ -428,14 +490,14 @@
             });
 
             // Filter events
-            $('#design_number, #size_set_filter, #product_filter, #color_filter, #mrp_filter').on('keyup change', function () {
+            $('#design_number, #size_set_filter, #product_filter, #color_filter, #mrp_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter').on('keyup change', function () {
                 loadMore(true);
             });
 
             // Reset filter
             $('#reset_filters').on('click', function () {
                 $('#design_number, #mrp_filter').val('');
-                $('#size_set_filter, #product_filter, #color_filter').val('').trigger('change');
+                $('#size_set_filter, #product_filter, #color_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter').val('').trigger('change');
             });
 
             // Initialize select2 for Modal

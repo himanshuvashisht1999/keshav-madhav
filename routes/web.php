@@ -1019,6 +1019,15 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/delete', [AdminSalesAgentController::class, 'delete'])->name('delete');
         });
 
+        Route::prefix('master/sales-man')->name('master.sales-man.')->group(function () {
+            Route::get('/index', [\App\Http\Controllers\Admin\Master\SalesManController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\Master\SalesManController::class, 'create'])->name('create');
+            Route::post('/store', [\App\Http\Controllers\Admin\Master\SalesManController::class, 'store'])->name('store');
+            Route::get('/edit/{salesMan}', [\App\Http\Controllers\Admin\Master\SalesManController::class, 'edit'])->name('edit');
+            Route::put('/update/{salesMan}', [\App\Http\Controllers\Admin\Master\SalesManController::class, 'update'])->name('update');
+            Route::delete('/destroy/{salesMan}', [\App\Http\Controllers\Admin\Master\SalesManController::class, 'destroy'])->name('destroy');
+        });
+
         Route::prefix('master/purchase-agent')->name('master.purchase-agent.')->group(function () {
             Route::get('/index', [AdminPurchaseAgentController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminPurchaseAgentController::class, 'indexList'])->name('indexList');

@@ -40,6 +40,9 @@ class InventoryController extends Controller
         $master_patterns = MasterDesignPattern::all();
         $master_series = MasterSeries::where('status', 1)->get();
         $storerooms = \App\Models\Storeroom::where('status', '1')->get();
+        $brands = \App\Models\Brand::all();
+        $natures = \App\Models\ProductNature::all();
+        $fabric_types = \App\Models\FabricType::all();
 
         return view('admin.inventory.index', compact(
             'size_sets',
@@ -51,7 +54,10 @@ class InventoryController extends Controller
             'master_fittings',
             'master_patterns',
             'master_series',
-            'storerooms'
+            'storerooms',
+            'brands',
+            'natures',
+            'fabric_types'
         ));
     }
 
@@ -108,6 +114,36 @@ class InventoryController extends Controller
         // Filter by MRP
         if ($request->has('mrp') && !empty($request->mrp)) {
             $query->where('variants.mrp', '>=', $request->mrp);
+        }
+
+        // Filter by Brand
+        if ($request->has('brand_id') && !empty($request->brand_id)) {
+            $query->where('products.brand_id', $request->brand_id);
+        }
+
+        // Filter by Series
+        if ($request->has('series_id') && !empty($request->series_id)) {
+            $query->where('products.master_series_id', $request->series_id);
+        }
+
+        // Filter by Fitting
+        if ($request->has('fitting_id') && !empty($request->fitting_id)) {
+            $query->where('domestic_inventories.fitting_id', $request->fitting_id);
+        }
+
+        // Filter by Pattern
+        if ($request->has('pattern_id') && !empty($request->pattern_id)) {
+            $query->where('domestic_inventories.pattern_id', $request->pattern_id);
+        }
+
+        // Filter by Product Nature
+        if ($request->has('nature_id') && !empty($request->nature_id)) {
+            $query->where('products.product_nature_id', $request->nature_id);
+        }
+
+        // Filter by Fabric Type
+        if ($request->has('fabric_type_id') && !empty($request->fabric_type_id)) {
+            $query->where('products.fabric_type_id', $request->fabric_type_id);
         }
 
         $query->groupBy(
@@ -230,7 +266,7 @@ class InventoryController extends Controller
     {
         // dd($request->all());
         $request->validate([
-            'source_type' => 'required|in:production,vendor,customer,consume',
+            'source_type' => 'required|in:production,sample,vendor,customer,consume',
             'vendor_id' => 'required_if:source_type,vendor',
             'customer_id' => 'required_if:source_type,customer',
             'purchase_date' => 'nullable|date',
@@ -279,7 +315,7 @@ class InventoryController extends Controller
 
             // Create Purchase Summary if Vendor/Customer
             $purchase = null;
-            if ($source_type !== 'production' && $source_type !== 'consume') {
+            if ($source_type !== 'production' && $source_type !== 'sample' && $source_type !== 'consume') {
                 $purchase = \App\Models\DomesticInventoryPurchase::create([
                     'vendor_id' => $vendor_id,
                     'customer_id' => $customer_id,
@@ -374,7 +410,7 @@ class InventoryController extends Controller
                     'pieces_per_box' => $item['pieces_per_box'],
                     'mrp' => $item['mrp'] ?? 0,
                     'purchase_rate' => $item['purchase_rate'] ?? 0,
-                    'type' => 'creation'
+                    'type' => ($source_type == 'sample' ? 'sample' : 'creation')
                 ]);
 
                 $inventoryIds[] = $inventory->id;

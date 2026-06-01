@@ -97,6 +97,7 @@
                                                 <th>Fitting</th>
                                                 <th>Pattern</th>
                                                 <!-- <th>Cutting Master</th> -->
+                                                <th>Assignment / PO</th>
                                                 <th>Start Date</th>
                                                 <th>Expected End Date</th>
                                                 <th>Completed Date</th>
@@ -116,12 +117,35 @@
                                                     <td>{{ $setData->fabric->name ?? " " }}</td>
                                                     <td>{{ $setData->master_product_fitting->name ?? " " }}</td>
                                                     <td>{{ $setData->master_design_pattern->name ?? " " }}</td>
-                                                    <!-- <td>
-                                                        {{ $setData->lots->map(function($lot) { 
-                                                            return $lot->stageMasterUnit->name ?? null; 
-                                                        })->unique()->filter()->implode(', ') ?: '-' }}
-                                                    </td> -->
-                                                    @php $cuttingStage = $setData->order_cutting_stage; @endphp
+                                                    
+                                                    @php 
+                                                        $cuttingStage = $setData->order_cutting_stage; 
+                                                        $poText = '-';
+                                                        if ($setData->remain_total_quantity <= 0) {
+                                                            if ($cuttingStage && $cuttingStage->is_po) {
+                                                                $entity = $cuttingStage->vendor_id ? ($cuttingStage->vendor->name ?? 'Vendor') : ($cuttingStage->customer->name ?? 'Customer');
+                                                                $poText = 'PO: ' . $entity;
+                                                            } else {
+                                                                $poText = 'Fully Assigned';
+                                                            }
+                                                        } elseif ($setData->remain_total_quantity < $setData->total_quantity) {
+                                                            $poText = 'Partial';
+                                                        } else {
+                                                            $poText = 'Not Assigned';
+                                                        }
+                                                    @endphp
+                                                    <td>
+                                                        @if(str_contains($poText, 'PO:'))
+                                                            <span class="badge badge-info">{{ $poText }}</span>
+                                                        @elseif($poText == 'Fully Assigned')
+                                                            <span class="badge badge-success">{{ $poText }}</span>
+                                                        @elseif($poText == 'Partial')
+                                                            <span class="badge badge-warning">{{ $poText }}</span>
+                                                        @else
+                                                            <span class="badge badge-primary">{{ $poText }}</span>
+                                                        @endif
+                                                    </td>
+
                                                     <td>{{ ($cuttingStage && $cuttingStage->start_date) ? date('d M, Y H:i', strtotime($cuttingStage->start_date)) : '-' }}</td>
                                                     <td>{{ ($cuttingStage && $cuttingStage->end_date) ? date('d M, Y H:i', strtotime($cuttingStage->end_date)) : '-' }}</td>
                                                     <td>{{ ($cuttingStage && $cuttingStage->complete_date) ? date('d M, Y H:i', strtotime($cuttingStage->complete_date)) : '-' }}</td>

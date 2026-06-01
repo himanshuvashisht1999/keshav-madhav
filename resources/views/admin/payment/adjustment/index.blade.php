@@ -122,7 +122,7 @@
                                     <td class="text-center">
                                         <span class="badge badge-info">{{ $items->count() }}</span>
                                     </td>
-                                    <td class="text-right font-weight-bold">
+                                    <td class="text-right font-weight-bold" data-search="{{ $items->sum('amount') }} {{ number_format($items->sum('amount'), 2) }}" data-order="{{ $items->sum('amount') }}">
                                         {{ number_format($items->sum('amount'), 2) }}
                                     </td>
                                     <td class="text-center">
