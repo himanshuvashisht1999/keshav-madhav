@@ -105,9 +105,14 @@
                     Tasks for {{ $groupLabel ?? 'Order' }} <span class="order-badge-simple">{{ $orderSku }}</span>
                 </h1>
             </div>
-            <a href="{{ route('unit.assignments') }}" class="btn-back-simple">
-                <i class="fas fa-arrow-left mr-2"></i> Back to {{ Str::plural($groupLabel ?? 'Order') }}
-            </a>
+            <div class="d-flex align-items-center" style="gap: 12px;">
+                <a href="{{ route('unit.order-summary', ['sku' => $orderSku]) }}" class="btn btn-primary shadow-sm" style="border-radius: 8px; font-weight: 600; padding: 8px 16px;">
+                    <i class="fas fa-file-invoice mr-1"></i> Order Summary
+                </a>
+                <a href="javascript:history.back()" class="btn-back-simple">
+                    <i class="fas fa-arrow-left mr-1"></i> Back
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -129,7 +134,7 @@
     @else
         <div class="row">
             @foreach($assignments as $assignment)
-                <div class="col-md-6 col-lg-4">
+                <div class="col-12 mb-3">
                     @include('unit.partials.assignment_card', [
                         'item' => $assignment,
                         'type' => $type,

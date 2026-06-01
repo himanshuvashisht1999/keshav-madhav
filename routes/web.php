@@ -112,7 +112,7 @@ Route::get('/fc/{barcode}', [\App\Http\Controllers\Admin\Inventory\FairProductCo
 Route::get('/scan', [AdminFabricReceiptController::class, 'scan'])->name('scan');
 
 // ================= UNIT AUTHENTICATION ROUTES (SEPARATE FROM ADMIN) =================
-Route::prefix('unit')->name('unit.')->group(function () {
+Route::prefix('unit')->name('unit.')->middleware(['unit.remember'])->group(function () {
     Route::get('/login', [\App\Http\Controllers\Unit\UnitAuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [\App\Http\Controllers\Unit\UnitAuthController::class, 'login'])->name('login.post');
     Route::get('/dashboard', [\App\Http\Controllers\Unit\UnitAuthController::class, 'dashboard'])->name('dashboard');
@@ -120,11 +120,13 @@ Route::prefix('unit')->name('unit.')->group(function () {
     Route::get('/history', [\App\Http\Controllers\Unit\UnitAuthController::class, 'history'])->name('history');
     Route::get('/view/{type}/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'viewSlip'])->name('view.slip');
     Route::get('/assignments', [\App\Http\Controllers\Unit\UnitAuthController::class, 'assignments'])->name('assignments');
+    Route::get('/order-summary/{sku}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'orderSummary'])->name('order-summary');
     Route::get('/assignment-details/{type}/{id}', [App\Http\Controllers\Unit\UnitAuthController::class, 'showAssignmentDetails'])->name('assignments.details');
     Route::post('/assignments/{type}/{id}/close', [\App\Http\Controllers\Unit\UnitAuthController::class, 'closeAssignment'])->name('assignments.close');
     Route::post('/assignments/{type}/{id}/reopen', [\App\Http\Controllers\Unit\UnitAuthController::class, 'reopenAssignment'])->name('assignments.reopen');
     Route::get('/download-slip/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'downloadSlip'])->name('download.slip');
     Route::get('/download-cmpo/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'downloadCmpo'])->name('download.cmpo');
+    Route::post('/delete-slip/{type}/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'deleteSlip'])->name('delete.slip');
     Route::get('/logout', [\App\Http\Controllers\Unit\UnitAuthController::class, 'logout'])->name('logout');
 });
 

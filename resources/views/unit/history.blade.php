@@ -502,176 +502,77 @@
     </form>
 
     @if($viewType === 'slips')
-        <div class="slip-grid">
-            @forelse($slips as $slip)
-                <a href="{{ route('unit.view.slip', ['type' => 'production', 'id' => $slip['id']]) }}" class="slip-card">
-                    <img src="/assets/production_slips/{{ $slip['slip_file'] }}" alt="Slip" class="slip-thumbnail"
-                        onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23f3f4f6%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%239ca3af%22 font-size=%2214%22%3E📷%3C/text%3E%3C/svg%3E'">
-                    <div class="slip-content">
-                        <div class="slip-header">
-                            <div>
-                                <div class="slip-date">
-                                    <i class="far fa-clock"></i> {{ $slip['created_at']->format('d M Y, h:i A') }}
-                                </div>
-                                <div class="slip-badges">
-                                    <span class="badge badge-type">
-                                        {{ $slip['type'] === 'fabric' ? '🧵 Fabric' : '📦 Production' }}
-                                    </span>
-                                    <span class="badge {{ $slip['status'] == 0 ? 'badge-pending' : 'badge-approved' }}">
-                                        {{ $slip['status'] == 0 ? '⏳ Pending' : '✅ Done' }}
-                                    </span>
-                                    @if($slip['pieces'] > 0)
-                                        <span class="badge" style="background: #ecfdf5; color: #065f46; border: 1px solid #d1fae5;">
-                                            <i class="fas fa-tshirt"></i> {{ $slip['pieces'] }} Pcs
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                            <i class="fas fa-chevron-right chevron"></i>
-                        </div>
-                        <div class="slip-meta" style="flex-wrap: wrap; row-gap: 8px; @if($slip['type'] === 'production' && isset($slip['sessions']) && $slip['sessions']->isNotEmpty()) display: none; @endif">
-                            @if($slip['type'] === 'fabric')
-                                <span><i class="fas fa-tag" style="color:#6366f1;"></i> <strong>Lots:</strong> {{ $slip['lot_no'] }}</span>
-                                <span><i class="fas fa-shopping-cart" style="color:#10b981;"></i> <strong>Order:</strong> {{ $slip['order_no'] }}</span>
-                                <span><i class="fas fa-drafting-compass" style="color:#f59e0b;"></i> <strong>Design:</strong> {{ $slip['design_no'] }}</span>
-                                <span><i class="fas fa-tshirt" style="color:#ec4899;"></i> <strong>Pieces:</strong> {{ $slip['pieces'] }}</span>
-                                <span><i class="fas fa-ruler-combined" style="color:#8b5cf6;"></i> <strong>Sizes:</strong> {{ $slip['size_sets'] }}</span>
-                            @else
-                                <span style="max-width: 100%;">
-                                    <i class="fas fa-tag" style="color:#6366f1;"></i> <strong>Lots:</strong> {{ $slip['lot_no'] }}
-                                </span>
-                                @if($slip['customer'] !== '-')
-                                    <span style="max-width: 100%;">
-                                        <i class="fas fa-user" style="color:#10b981;"></i> <strong>Customer:</strong> {{ $slip['customer'] }}
-                                    </span>
-                                @endif
-                                <span><i class="fas fa-drafting-compass" style="color:#f59e0b;"></i> <strong>Design:</strong> {{ $slip['design_no'] }}</span>
-                                <span><i class="fas fa-tshirt" style="color:#ec4899;"></i> <strong>Pieces:</strong> {{ $slip['pieces'] }}</span>
-                                <span><i class="fas fa-ruler-combined" style="color:#8b5cf6;"></i> <strong>Sizes:</strong> {{ $slip['size_sets'] }}</span>
-                                <span><i class="fas fa-layer-group" style="color:#3b82f6;"></i> <strong>Stage:</strong> {{ $slip['stage'] }}</span>
-                            @endif
-                        </div>
-
-                        {{-- Sessions Breakdown --}}
-                        @if(isset($slip['sessions']) && $slip['sessions']->isNotEmpty())
-                            <div class="sessions-breakdown" style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #e5e7eb;">
-                                <div style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                                    Digitized Sessions ({{ $slip['sessions']->count() }})
-                                </div>
-                                @foreach($slip['sessions'] as $session)
-                                    <div style="background: #f9fafb; border-radius: 8px; padding: 8px; margin-bottom: 6px; border-left: 3px solid #10b981;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <span style="font-size: 11px; font-weight: 700; color: #374151;">
-                                                <span style="color: #10b981;">{{ $session['type'] }}</span> - Lot #{{ $session['lot_no'] }}
-                                            </span>
-                                            <span style="font-size: 11px; font-weight: 700; color: #10b981;">{{ $session['pieces'] }} Pcs</span>
-                                        </div>
-                                        <div style="font-size: 10px; color: #6b7280; display: flex; gap: 8px;">
-                                            <span><i class="fas fa-ruler-combined"></i> {{ $session['size_sets'] }}</span>
-                                            @if($session['design_no'] !== '-')
-                                                <span><i class="fas fa-drafting-compass"></i> {{ $session['design_no'] }}</span>
-                                            @endif
-                                            @if($session['customer'] !== '-')
-                                                <span><i class="fas fa-user"></i> {{ $session['customer'] }}</span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
-                    </div>
-                </a>
-            @empty
+        <div class="slip-grid" id="slipsContainer">
+            @if($slips->isEmpty())
                 <div class="empty-state">
                     <div class="empty-icon">📭</div>
                     <div class="empty-text">No Slips Yet</div>
                     <div class="empty-subtext">Your uploaded slips will appear here</div>
                 </div>
-            @endforelse
+            @else
+                @include('unit.partials.history_slips_list', ['slips' => $slips])
+            @endif
         </div>
     @else
-        <div class="task-grid">
-            @forelse($tasks as $task)
-                @php 
-                    $isReceived = $task['event_type'] === 'received';
-                    $cardClass = $isReceived ? 'task-card-received' : 'task-card-sent';
-                    $badgeClass = $isReceived ? 'badge-received' : 'badge-sent';
-                    
-                    // IF RECEIVED: Go to assignment details (to upload slip)
-                    // IF SENT: Go to the slip view (because it's already done)
-                    $detailUrl = $isReceived 
-                        ? route('unit.assignments.details', ['type' => $task['type'], 'id' => $task['id']])
-                        : route('unit.view.slip', ['type' => ($task['type'] === 'fabric' ? 'fabric' : 'production'), 'id' => $task['slip_id'] ?? $task['id']]);
-                @endphp
-                <a href="{{ $detailUrl }}" class="task-card {{ $cardClass }}">
-                    
-                    <div class="task-status-line">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span class="badge {{ $badgeClass }}">
-                                <i class="fas {{ $isReceived ? 'fa-arrow-down' : 'fa-arrow-up' }}"></i> 
-                                {{ $isReceived ? 'Work Received' : 'Work Sent Out' }}
-                            </span>
-                            <span class="task-id">#{{ $task['id'] }}</span>
-                        </div>
-                    </div>
-
-                    <div class="task-main-info">
-                        <div class="info-item">
-                            <span class="info-label">Lot Number</span>
-                            <span class="info-value">{{ $task['lot_no'] }}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Quantity</span>
-                            <span class="info-value" style="color: {{ $isReceived ? '#4f46e5' : '#059669' }}; font-size: 18px;">
-                                {{ $task['quantity'] }} Pcs
-                            </span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Design Number</span>
-                            <span class="info-value">{{ $task['design_no'] }}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Customer</span>
-                            <span class="info-value">{{ $task['customer'] ?? '-' }}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Sizes</span>
-                            <span class="info-value">{{ $task['size_sets'] }}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">{{ $isReceived ? 'From Stage' : 'To Next Stage' }}</span>
-                            <span class="info-value">{{ $task['from_stage'] }}</span>
-                        </div>
-                    </div>
-
-                    <div class="task-footer" style="flex-direction: column; align-items: start; gap: 10px;">
-                        <div class="d-flex justify-content-between w-100 align-items-center">
-                            <div class="task-date">
-                                <i class="far fa-calendar-alt"></i> 
-                                <strong>{{ $isReceived ? 'Received:' : 'Sent:' }}</strong> 
-                                {{ $task['created_at']->format('d M, h:i A') }}
-                            </div>
-                            <i class="fas fa-chevron-right chevron"></i>
-                        </div>
-
-                        @if(isset($task['start_date']) || isset($task['end_date']))
-                            <div style="display: flex; gap: 15px; font-size: 11px; color: #6b7280; width: 100%; border-top: 1px dashed #f3f4f6; padding-top: 8px;">
-                                <span><strong>Start:</strong> {{ $task['start_date'] ? date('d M, H:i', strtotime($task['start_date'])) : '-' }}</span>
-                                <span><strong>ETA:</strong> {{ $task['end_date'] ? date('d M, H:i', strtotime($task['end_date'])) : '-' }}</span>
-                                @if($task['complete_date'])
-                                    <span class="text-success"><strong>Done:</strong> {{ date('d M, H:i', strtotime($task['complete_date'])) }}</span>
-                                @endif
-                            </div>
-                        @endif
-                    </div>
-                </a>
-            @empty
+        <div class="task-grid" id="tasksContainer">
+            @if($tasks->isEmpty())
                 <div class="empty-state">
                     <div class="empty-icon">📋</div>
                     <div class="empty-text">No Tasks Found</div>
                     <div class="empty-subtext">Assigned tasks will appear here</div>
                 </div>
-            @endforelse
+            @else
+                @include('unit.partials.history_tasks_list', ['tasks' => $tasks])
+            @endif
+        </div>
+    @endif
+    
+    @if($paginator->hasMorePages())
+        <div id="loadingMore" style="text-align: center; padding: 20px; color: #6b7280;">
+            <i class="fas fa-spinner fa-spin"></i> Loading more...
         </div>
     @endif
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let page = {{ $paginator->currentPage() }};
+        let hasMorePages = {{ $paginator->hasMorePages() ? 'true' : 'false' }};
+        let loading = false;
+        
+        window.addEventListener('scroll', function() {
+            if (loading || !hasMorePages) return;
+            
+            // Check if we are near the bottom of the page
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
+                loading = true;
+                page++;
+                
+                let url = new URL(window.location.href);
+                url.searchParams.set('page', page);
+                
+                fetch(url.toString(), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    if (html.trim() !== '') {
+                        let container = document.getElementById('slipsContainer') || document.getElementById('tasksContainer');
+                        container.insertAdjacentHTML('beforeend', html);
+                        loading = false;
+                    } else {
+                        hasMorePages = false;
+                        let loader = document.getElementById('loadingMore');
+                        if (loader) loader.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading more:', error);
+                    loading = false;
+                });
+            }
+        });
+    });
+</script>
+@endpush

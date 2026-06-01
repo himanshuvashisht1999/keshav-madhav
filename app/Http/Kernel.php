@@ -66,5 +66,6 @@ class Kernel extends HttpKernel
         'checkAdminLogin' => \App\Http\Middleware\AdminMiddleware::class,
         'checkUserLogin' => \App\Http\Middleware\UserMiddleware::class,
         'checkOwnerLogin' => \App\Http\Middleware\OwnerMiddleware::class,
+        'unit.remember' => \App\Http\Middleware\UnitRememberMe::class,
     ];
 }

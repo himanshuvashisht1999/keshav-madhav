@@ -226,6 +226,69 @@
                 </div>
                 @endif
             @endif
+
+            @php
+                $data = $item->productSet;
+                $sizes = [];
+                if (!empty($data->size_measurement?->size_group)) $sizes = array_map('trim', explode(',', $data->size_measurement->size_group));
+                elseif (!empty($data->set_size)) $sizes = [$data->set_size];
+                
+                $sizeSetRange = count($sizes) > 0 ? min($sizes) . '-' . max($sizes) : '-';
+                $totalPcsInSet = $data->size_measurement->no_of_pcs ?? count($sizes);
+                $totalInRatio = count($sizes);
+                $sizeCounts = array_count_values($sizes);
+                
+                $sizeData = [];
+                $totalPcs = $item->quantity ?? 0;
+                $calculatedTotal = 0;
+                foreach ($sizeCounts as $size => $count) { 
+                    $pcs = $totalInRatio > 0 ? ($count * $totalPcs) / $totalInRatio : 0;
+                    $calculatedTotal += $pcs;
+                    $sizeData[] = [ 
+                        'size' => $size, 
+                        'color' => $data->colors->name ?? '-', 
+                        'pcs' => $pcs 
+                    ]; 
+                }
+            @endphp
+
+            @if(count($sizeData) > 0)
+                <div class="mt-3 p-3 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">
+                        <span style="font-size: 13px; color: #1e293b; font-weight: 700;">Detailed Piece Breakdown</span>
+                        <div style="display: flex; gap: 8px;">
+                            <span style="font-size: 11px; background: #fdf2f8; color: #be185d; padding: 2px 8px; border-radius: 4px; font-weight: 600; border: 1px solid #fce7f3;">Set: {{ $sizeSetRange }}</span>
+                            <span style="font-size: 11px; background: #f0f9ff; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: 600; border: 1px solid #e0f2fe;">Pcs/Set: {{ $totalPcsInSet }}</span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-borderless mb-0" style="font-size: 12px;">
+                            <thead style="border-bottom: 1px solid #e2e8f0;">
+                                <tr>
+                                    <th class="text-secondary font-weight-bold py-2" style="padding-left:0;">Size</th>
+                                    <th class="text-secondary font-weight-bold py-2">Color</th>
+                                    <th class="text-secondary font-weight-bold py-2 text-right" style="padding-right:0;">Total Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($sizeData as $row)
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td class="align-middle py-2" style="padding-left:0;"><span class="badge" style="background: #e2e8f0; color: #334155; font-size:11px; border: 1px solid #cbd5e1;">{{ $row['size'] }}</span></td>
+                                        <td class="align-middle py-2 font-weight-bold" style="color: #475569;">{{ $row['color'] }}</td>
+                                        <td class="align-middle py-2 text-right font-weight-bold" style="color: #1e293b; padding-right:0;">{{ number_format($row['pcs'], 0) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2" class="font-weight-bold pt-3" style="color: #475569; font-size: 13px; padding-left:0;">GRAND TOTAL</td>
+                                    <td class="text-right font-weight-bold pt-3" style="color: #2563eb; font-size: 15px; padding-right:0;">{{ number_format($calculatedTotal, 0) }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            @endif
         </div>
         <div class="card-footer-simple">
             @if(!empty($canCloseTasks) && $canCloseTasks)

@@ -1,4 +1,4 @@
-@extends('admin.layouts.app')
+@extends(isset($is_unit) && $is_unit ? 'layouts.unit' : 'admin.layouts.app')
 
 @section('content')
     <div class="content-wrapper">
@@ -14,9 +14,15 @@
                             {!! $status !!}</h1>
                     </div>
                     <div class="col-sm-4 text-right">
-                        <a href="{{ route('admin.report.order-summary.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left mr-1"></i> Back to Report
-                        </a>
+                        @if(isset($is_unit) && $is_unit)
+                            <a href="{{ route('unit.assignments') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left mr-1"></i> Back to Assignments
+                            </a>
+                        @else
+                            <a href="{{ route('admin.report.order-summary.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left mr-1"></i> Back to Report
+                            </a>
+                        @endif
                     </div>
                 </div>
             </div>

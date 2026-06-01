@@ -3,7 +3,7 @@
 @section('title', 'Assignment Details')
 
 @section('header_icon')
-    <a href="{{ route('unit.assignments') }}" style="color: white; margin-right: 10px;">
+    <a href="javascript:history.back()" style="color: white; margin-right: 10px;">
         <i class="fas fa-arrow-left"></i>
     </a>
 @endsection
