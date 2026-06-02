@@ -67,35 +67,28 @@ class AgentOrderController extends Controller
             return view('admin.agent_orders.create_fabric', compact('agent', 'shop', 'fabrics', 'gst_percentage'));
         }
 
-        $designs = DomesticInventory::where('domestic_inventories.status', 1)
-            ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
-            // ->where(function ($q) {
-            //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            // })
-            ->distinct()->pluck('production_goods.design_number');
+        $designs = \App\Models\ProductionGoods::where('status', 1)
+            ->whereNotNull('design_number')
+            ->where('design_number', '!=', '')
+            ->distinct()->pluck('design_number');
 
-        $product_names = DomesticInventory::where('domestic_inventories.status', 1)
-            ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
+        $product_names = \App\Models\ProductionGoods::where('production_goods.status', 1)
             ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
-            // ->where(function ($q) {
-            //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            // })
+            ->whereNotNull('production_goods.name_of_garment')
+            ->where('production_goods.name_of_garment', '!=', '')
             ->select(DB::raw('DISTINCT(TRIM(CONCAT(COALESCE(master_series.name, " "), " ", production_goods.name_of_garment))) as full_name'))
             ->pluck('full_name');
 
-        $colors = DomesticInventory::where('domestic_inventories.status', 1)
-            ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
-            ->where(function ($q) {
-                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            })
-            ->distinct()->pluck('master_colors.name');
+        $colors = \App\Models\MasterColor::where('status', 1)
+            ->distinct()->pluck('name');
 
-        $size_sets = DomesticInventory::where('domestic_inventories.status', 1)
-            ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
-            ->where(function ($q) {
-                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            })
-            ->distinct()->pluck('master_size_measurements.name');
+        $size_sets = \App\Models\MasterSizeMeasurement::where('status', 1)
+            ->distinct()->pluck('name');
+
+        $patterns = \App\Models\MasterDesignPattern::where('status', 1)->pluck('name', 'id');
+        $fittings = \App\Models\MasterProductFitting::where('status', 1)->pluck('name', 'id');
+        $product_natures = \App\Models\ProductNature::pluck('name', 'id');
+        $fabric_types = \App\Models\FabricType::pluck('name', 'id');
 
         $prices = DB::table('production_goods_variants')
             ->select('production_goods_id as product_id', 'master_size_measurement_id as size_set_id', DB::raw('MAX(mrp) as mrp'))
@@ -128,6 +121,8 @@ class AgentOrderController extends Controller
                     ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
             });
 
+        $isSampleSet = $request->query('sample_set') == '1';
+
         // Add brand-based discount join
         if ($agent_id === 'direct') {
             $query->leftJoin('customer_brand_discounts', function ($join) use ($shop_id) {
@@ -140,7 +135,26 @@ class AgentOrderController extends Controller
                 $join->on('production_goods.brand_id', '=', 'sales_agent_brand_discounts.brand_id')
                     ->where('sales_agent_brand_discounts.sales_agent_id', '=', $agent_id);
             });
-            $discount_col = 'COALESCE(sales_agent_brand_discounts.discount_percentage, 0)';
+            
+            if ($isSampleSet) {
+                $agentBatches = DB::table('fair_batches')
+                    ->whereJsonContains('sales_agent_ids', (string)$agent_id)
+                    ->pluck('id')
+                    ->toArray();
+                    
+                $fpSubquery = DB::table('fair_products')
+                    ->select('product_id', 'size_set_id', DB::raw('MAX(discount_percent) as max_discount'))
+                    ->whereIn('fair_batch_id', empty($agentBatches) ? [-1] : $agentBatches)
+                    ->groupBy('product_id', 'size_set_id');
+                    
+                $query->leftJoinSub($fpSubquery, 'fp', function ($join) {
+                    $join->on('production_goods.id', '=', 'fp.product_id')
+                         ->on('domestic_inventories.size_set_id', '=', 'fp.size_set_id');
+                });
+                $discount_col = 'COALESCE(fp.max_discount, sales_agent_brand_discounts.discount_percentage, 0)';
+            } else {
+                $discount_col = 'COALESCE(sales_agent_brand_discounts.discount_percentage, 0)';
+            }
         }
 
         if ($request->filled('design_number')) {
@@ -154,6 +168,18 @@ class AgentOrderController extends Controller
         }
         if ($request->filled('size_set_name')) {
             $query->where('master_size_measurements.name', $request->size_set_name);
+        }
+        if ($request->filled('pattern_id')) {
+            $query->where('domestic_inventories.pattern_id', $request->pattern_id);
+        }
+        if ($request->filled('fitting_id')) {
+            $query->where('domestic_inventories.fitting_id', $request->fitting_id);
+        }
+        if ($request->filled('product_nature_id')) {
+            $query->where('production_goods.product_nature_id', $request->product_nature_id);
+        }
+        if ($request->filled('fabric_type_id')) {
+            $query->where('production_goods.fabric_type_id', $request->fabric_type_id);
         }
 
         $query->leftJoinSub($allocated, 'alloc', function ($join) {
@@ -243,7 +269,7 @@ class AgentOrderController extends Controller
             ]);
         }
 
-        return view('admin.agent_orders.create', compact('agent', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'boxes', 'boxImages', 'gst_percentage'));
+        return view('admin.agent_orders.create', compact('agent', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'patterns', 'fittings', 'product_natures', 'fabric_types', 'boxes', 'boxImages', 'gst_percentage'));
     }
 
     public function getFabricRolls($id)
@@ -467,6 +493,7 @@ class AgentOrderController extends Controller
                 'status' => $status,
                 'order_type' => $order_type,
                 'sale_type' => $sale_type,
+                'is_sample_set' => $request->input('is_sample_set', 0),
                 'order_date' => $request->order_date ?? date('Y-m-d'),
                 'created_by' => Auth::id(),
                 'remark' => $request->remark,
@@ -936,6 +963,12 @@ class AgentOrderController extends Controller
                     ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
             });
 
+        if ($request->has('product_name')) {
+            $isSampleSet = $request->input('sample_set') == '1';
+        } else {
+            $isSampleSet = $order->is_sample_set == 1;
+        }
+
         // Add brand-based discount join
         if ($order->sales_agent_id === 'direct' || empty($order->sales_agent_id)) {
             $query->leftJoin('customer_brand_discounts', function ($join) use ($shop) {
@@ -948,7 +981,26 @@ class AgentOrderController extends Controller
                 $join->on('production_goods.brand_id', '=', 'sales_agent_brand_discounts.brand_id')
                     ->where('sales_agent_brand_discounts.sales_agent_id', '=', $order->sales_agent_id);
             });
-            $discount_col = 'COALESCE(sales_agent_brand_discounts.discount_percentage, 0)';
+            
+            if ($isSampleSet) {
+                $agentBatches = DB::table('fair_batches')
+                    ->whereJsonContains('sales_agent_ids', (string)$order->sales_agent_id)
+                    ->pluck('id')
+                    ->toArray();
+                    
+                $fpSubquery = DB::table('fair_products')
+                    ->select('product_id', 'size_set_id', DB::raw('MAX(discount_percent) as max_discount'))
+                    ->whereIn('fair_batch_id', empty($agentBatches) ? [-1] : $agentBatches)
+                    ->groupBy('product_id', 'size_set_id');
+                    
+                $query->leftJoinSub($fpSubquery, 'fp', function ($join) {
+                    $join->on('production_goods.id', '=', 'fp.product_id')
+                         ->on('domestic_inventories.size_set_id', '=', 'fp.size_set_id');
+                });
+                $discount_col = 'COALESCE(fp.max_discount, sales_agent_brand_discounts.discount_percentage, 0)';
+            } else {
+                $discount_col = 'COALESCE(sales_agent_brand_discounts.discount_percentage, 0)';
+            }
         }
 
         if ($request->filled('design_number')) {
@@ -1032,19 +1084,12 @@ class AgentOrderController extends Controller
             $boxImages[$key] = $image;
         }
 
-        // Selected quantities for existing order
-        $selected_quantities = AgentOrderItem::where('agent_order_id', $order->id)
-            ->select(
-                'product_id',
-                'color_id',
-                'size_set_id',
-                DB::raw('SUM(box_qty) as box_count'),
-                DB::raw('MAX(quantity / NULLIF(box_qty, 0)) as pcs_per_box'),
-                DB::raw('MAX(selling_price) as unit_price')
-            )
-            ->groupBy('product_id', 'color_id', 'size_set_id')
-            ->get()
-            ->keyBy(function ($item) {
+        // Selected quantities for existing order with updated prices
+        $existing_items_with_prices = $query->clone()
+            ->havingRaw('MAX(current_items.box_qty) > 0')
+            ->get();
+
+        $selected_quantities = $existing_items_with_prices->keyBy(function ($item) {
                 return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id;
             })
             ->map(function ($item) {
@@ -1052,7 +1097,7 @@ class AgentOrderController extends Controller
                     'product_id' => $item->product_id,
                     'color_id' => $item->color_id,
                     'size_set_id' => $item->size_set_id,
-                    'qty' => $item->box_count,
+                    'qty' => $item->current_order_qty,
                     'pcs_per_box' => (float) $item->pcs_per_box,
                     'unit_price' => (float) $item->unit_price
                 ];
@@ -1238,6 +1283,7 @@ class AgentOrderController extends Controller
                 'other_charges' => $other_charges,
                 'grand_total' => $grand_total,
                 'expected_dispatch_date' => $expected_dispatch_date,
+                'is_sample_set' => $request->input('is_sample_set', 0),
                 'booking_station' => $request->booking_station,
                 'transport' => $request->transport,
                 'remark' => $request->remark,

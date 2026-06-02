@@ -119,6 +119,13 @@
                                     </div>
 
                                     <div class="form-group mb-4">
+                                        <div class="custom-control custom-switch border p-3 rounded bg-light" style="border-radius: 10px !important;">
+                                            <input type="checkbox" class="custom-control-input" id="sampleSetToggleStep1" name="is_sample_set" value="1">
+                                            <label class="custom-control-label font-weight-bold ml-2 pt-1 text-primary" for="sampleSetToggleStep1" style="cursor:pointer; user-select: none;">Use Sample Set Pricing for this Order</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group mb-4">
                                         <label class="text-muted small font-weight-bold text-uppercase">Order Date <span class="text-danger">*</span></label>
                                         <input type="date" name="order_date" class="form-control" value="{{ old('order_date', date('Y-m-d')) }}" required>
                                     </div>
@@ -151,8 +158,8 @@
                                     <input type="hidden" name="master_vendor_id" value="{{ request('master_vendor_id') }}">
                                     <input type="hidden" name="order_date" value="{{ request('order_date') }}">
                                     <input type="hidden" name="order_type" value="{{ request('order_type') }}">
-                                    <div class="row align-items-end">
-                                        <div class="col-md-2 col-6 mb-2">
+                                    <div class="row align-items-end mb-2">
+                                        <div class="col-md-3 col-6 mb-2">
                                             <label class="small font-weight-bold text-muted mb-1">Design No</label>
                                             <select name="design_number" class="form-control form-control-sm select2">
                                                 <option value="">All Designs</option>
@@ -174,7 +181,7 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-2 col-6 mb-2">
+                                        <div class="col-md-3 col-6 mb-2">
                                             <label class="small font-weight-bold text-muted mb-1">Color</label>
                                             <select name="color_name" class="form-control form-control-sm select2">
                                                 <option value="">All Colors</option>
@@ -185,7 +192,7 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-2 col-6 mb-2">
+                                        <div class="col-md-3 col-6 mb-2">
                                             <label class="small font-weight-bold text-muted mb-1">Size Set</label>
                                             <select name="size_set_name" class="form-control form-control-sm select2">
                                                 <option value="">All Sets</option>
@@ -196,7 +203,53 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-3 col-6 mb-2">
+                                    </div>
+                                    <div class="row align-items-end">
+                                        <div class="col-md-2 col-6 mb-2">
+                                            <label class="small font-weight-bold text-muted mb-1">Pattern</label>
+                                            <select name="pattern_id" class="form-control form-control-sm select2">
+                                                <option value="">All Patterns</option>
+                                                @foreach($patterns as $id => $name)
+                                                    <option value="{{ $id }}" {{ request('pattern_id') == $id ? 'selected' : '' }}>
+                                                        {{ $name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2 col-6 mb-2">
+                                            <label class="small font-weight-bold text-muted mb-1">Fitting</label>
+                                            <select name="fitting_id" class="form-control form-control-sm select2">
+                                                <option value="">All Fittings</option>
+                                                @foreach($fittings as $id => $name)
+                                                    <option value="{{ $id }}" {{ request('fitting_id') == $id ? 'selected' : '' }}>
+                                                        {{ $name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2 col-6 mb-2">
+                                            <label class="small font-weight-bold text-muted mb-1">Product Nature</label>
+                                            <select name="product_nature_id" class="form-control form-control-sm select2">
+                                                <option value="">All Natures</option>
+                                                @foreach($product_natures as $id => $name)
+                                                    <option value="{{ $id }}" {{ request('product_nature_id') == $id ? 'selected' : '' }}>
+                                                        {{ $name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2 col-6 mb-2">
+                                            <label class="small font-weight-bold text-muted mb-1">Fabric Type</label>
+                                            <select name="fabric_type_id" class="form-control form-control-sm select2">
+                                                <option value="">All Fabrics</option>
+                                                @foreach($fabric_types as $id => $name)
+                                                    <option value="{{ $id }}" {{ request('fabric_type_id') == $id ? 'selected' : '' }}>
+                                                        {{ $name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 col-12 mb-2 text-right">
                                             <button type="submit" class="btn btn-primary btn-sm px-4 mr-2">
                                                 <i class="fas fa-search mr-1"></i> Filter
                                             </button>
@@ -657,6 +710,7 @@
                                 order_date: "{{ request('order_date', date('Y-m-d')) }}",
                                 order_type: "{{ request('order_type', 'normal') }}",
                                 sale_type: "{{ request('sale_type', 'item') }}",
+                                is_sample_set: $('#sampleSetToggle').is(':checked') ? 1 : 0,
                                 variations: variations,
                                 expected_dispatch_date: $('#expectedDispatchDate').val(),
                                 discount_percentage: $('#discountPercentage').val(),

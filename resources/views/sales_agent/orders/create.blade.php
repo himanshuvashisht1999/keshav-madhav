@@ -27,10 +27,18 @@
                 </div>
             </div>
 
-            <!-- Collapsible Filters -->
-            <div id="filterContainer" style="display: none;"
-                class="bg-white border-top animate__animated animate__fadeInDown p-3 shadow-sm">
-                <form method="GET" action="{{ route('agent.orders.create') }}" id="filterForm">
+            <!-- Order-Level Settings and Filters -->
+            <form method="GET" action="{{ route('agent.orders.create', ['shop_id' => $shop->id]) }}" id="filterForm">
+                <div class="container-fluid pt-3 px-3">
+                    <div class="custom-control custom-switch border p-2 rounded bg-white shadow-sm" style="border-radius: 10px !important;">
+                        <input type="checkbox" class="custom-control-input" id="sampleSetToggle" name="sample_set" value="1" {{ request('sample_set') == '1' ? 'checked' : '' }} onchange="this.form.submit()">
+                        <label class="custom-control-label font-weight-bold ml-2 pt-1 text-primary" for="sampleSetToggle" style="cursor:pointer; user-select: none;">Use Sample Set Pricing for this Order</label>
+                    </div>
+                </div>
+
+                <!-- Collapsible Filters -->
+                <div id="filterContainer" style="display: none;"
+                    class="bg-white border-top animate__animated animate__fadeInDown p-3 shadow-sm mt-2">
                     <input type="hidden" name="shop_id" value="{{ $shop->id }}">
                     <div class="row">
 
@@ -64,16 +72,62 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <label class="small text-muted font-weight-bold uppercase mb-1">Brand</label>
+                            <select name="brand_id" class="form-control form-control-sm select2">
+                                <option value="">All Brands</option>
+                                @foreach($brands as $id => $name)
+                                    <option value="{{ $id }}" {{ request('brand_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <label class="small text-muted font-weight-bold uppercase mb-1">Fitting</label>
+                            <select name="fitting_id" class="form-control form-control-sm select2">
+                                <option value="">All Fittings</option>
+                                @foreach($fittings as $id => $name)
+                                    <option value="{{ $id }}" {{ request('fitting_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <label class="small text-muted font-weight-bold uppercase mb-1">Pattern</label>
+                            <select name="pattern_id" class="form-control form-control-sm select2">
+                                <option value="">All Patterns</option>
+                                @foreach($patterns as $id => $name)
+                                    <option value="{{ $id }}" {{ request('pattern_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <label class="small text-muted font-weight-bold uppercase mb-1">Product Nature</label>
+                            <select name="product_nature_id" class="form-control form-control-sm select2">
+                                <option value="">All Natures</option>
+                                @foreach($product_natures as $id => $name)
+                                    <option value="{{ $id }}" {{ request('product_nature_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <label class="small text-muted font-weight-bold uppercase mb-1">Fabric Type</label>
+                            <select name="fabric_type_id" class="form-control form-control-sm select2">
+                                <option value="">All Fabric Types</option>
+                                @foreach($fabric_types as $id => $name)
+                                    <option value="{{ $id }}" {{ request('fabric_type_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
-                    <div class="d-flex mt-2">
+
+                    <div class="d-flex">
                         <button type="submit"
                             class="btn btn-primary btn-sm flex-grow-1 mr-2 rounded-pill font-weight-bold">Apply
                             Filters</button>
                         <a href="{{ route('agent.orders.create', ['shop_id' => $shop->id]) }}"
                             class="btn btn-light btn-sm rounded-pill"><i class="fas fa-undo"></i></a>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
 
         <!-- Main Content Area -->
@@ -89,7 +143,7 @@
                         @include('sales_agent.orders.partials.variation_card', ['variation' => $variation, 'vKey' => $vKey, 'image' => $image])
                     </div>
                 @empty
-                    <div class="col-12 text-center py-5">
+                    <div class="col-12 text-center py-5" id="empty-state">
                         <div class="bg-white p-5 rounded-lg shadow-sm border" style="border-radius: 20px;">
                             <div class="mb-4">
                                 <div class="bg-primary-soft rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
@@ -128,19 +182,18 @@
                         <i class="fas fa-shopping-cart text-primary"></i>
                     </div>
                     <div>
+                        @if(Auth::guard('sales_agent')->user()->see_price)
                         <span class="h5 font-weight-bold mb-0 d-block text-dark">₹<span
                                 id="grandTotalAmount">0</span></span>
+                        @endif
                         <small class="text-muted"><span id="selectedCount">0</span> Boxes Selected</small>
                     </div>
                 </div>
-                <button class="btn btn-light btn-sm rounded-pill px-3 font-weight-bold text-primary" id="btnShowDetails">
-                    Details <i class="fas fa-chevron-up ml-1"></i>
-                </button>
             </div>
             <button type="button"
-                class="btn btn-primary btn-block btn-lg py-3 rounded-xl font-weight-bold shadow-lg place-order-btn"
+                class="btn btn-primary btn-block btn-lg py-3 rounded-xl font-weight-bold shadow-lg" id="btnNextSummary"
                 style="border-radius: 12px; font-size: 1.1rem;">
-                Confirm Order <i class="fas fa-arrow-right ml-2"></i>
+                Next <i class="fas fa-arrow-right ml-2"></i>
             </button>
         </div>
     </div>
@@ -157,6 +210,7 @@
                     </button>
                 </div>
                 <div class="modal-body bg-light">
+                    @if(Auth::guard('sales_agent')->user()->see_price)
                     <div class="card shadow-none border-0 mb-3" style="border-radius: 15px;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between mb-2">
@@ -184,26 +238,50 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
                     <div class="card shadow-none border-0 mb-3" style="border-radius: 15px;">
                         <div class="card-body">
                             <div class="form-group">
                                 <label class="small font-weight-bold text-muted uppercase">Dispatch & Shipping</label>
-                                <input type="date" id="expectedDispatchDate" class="form-control form-control-sm mb-2"
-                                    value="{{ date('Y-m-d', strtotime('+3 days')) }}">
-                                <input type="text" id="booking_station" class="form-control form-control-sm mb-2"
-                                    placeholder="Booking Station">
-                                <input type="text" id="transport" class="form-control form-control-sm mb-2"
-                                    placeholder="Transport Name">
-                                <textarea id="remark" class="form-control form-control-sm" rows="2"
-                                    placeholder="Any special instructions..."></textarea>
+                                <div class="form-group mb-2">
+                                    <label class="small text-muted font-weight-bold">Sales Man</label>
+                                    <select id="sales_man_id" class="form-control form-control-sm">
+                                        <option value="">Select Sales Man (Optional)</option>
+                                        @foreach($sales_men as $sm)
+                                            <option value="{{ $sm->id }}">{{ $sm->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-group mb-2">
+                                    <label class="small text-muted font-weight-bold">Expected Dispatch Date</label>
+                                    <input type="date" id="expectedDispatchDate" class="form-control form-control-sm"
+                                        value="{{ date('Y-m-d', strtotime('+3 days')) }}">
+                                </div>
+                                <div class="form-group mb-2">
+                                    <label class="small text-muted font-weight-bold">Booking Station</label>
+                                    <input type="text" id="booking_station" class="form-control form-control-sm"
+                                        placeholder="Booking Station">
+                                </div>
+                                <div class="form-group mb-2">
+                                    <label class="small text-muted font-weight-bold">Transport Name</label>
+                                    <input type="text" id="transport" class="form-control form-control-sm"
+                                        placeholder="Transport Name">
+                                </div>
+                                <div class="form-group mb-2">
+                                    <label class="small text-muted font-weight-bold">Remark</label>
+                                    <textarea id="remark" class="form-control form-control-sm" rows="2"
+                                        placeholder="Any special instructions..."></textarea>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light border-0">
-                    <button type="button" class="btn btn-dark btn-block btn-lg rounded-pill"
-                        data-dismiss="modal">Done</button>
+                <div class="modal-footer bg-light border-0 d-flex">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary flex-grow-1 rounded-pill font-weight-bold place-order-btn">
+                        Confirm Order <i class="fas fa-check ml-1"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -465,6 +543,25 @@
                 const list = $('#colorSelectionList');
                 list.empty();
 
+                const globalHtml = `
+                    <div class="card border-primary shadow-sm mb-3 rounded-lg" style="background-color: #f8faff;">
+                        <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="font-weight-bold text-primary mb-0"><i class="fas fa-layer-group mr-2"></i>Apply to All Colors</h6>
+                                <small class="text-muted">Set quantity for every color</small>
+                            </div>
+                            <div class="quantity-control-app d-flex align-items-center p-1 border-primary">
+                                <button class="btn-q btn-minus-global text-primary">-</button>
+                                <input type="number" class="box-qty-global-input text-primary font-weight-bold" 
+                                    min="0"
+                                    value="0">
+                                <button class="btn-q btn-plus-global text-primary">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                list.append(globalHtml);
+
                 data.colors.forEach(color => {
                     const vKey = data.product.id + '_' + color.id + '_' + data.product.size_set_id;
                     const item = cart.get(vKey);
@@ -535,24 +632,158 @@
                         pcs_per_box: parseFloat($(this).data('pcs')),
                         unit_price: parseFloat($(this).data('price'))
                     });
+
+                    // Append to DOM if not exists
+                    if ($('.variation-card[data-key="' + key + '"]').length === 0) {
+                        const productName = $('#scanProductName').text();
+                        const sizeSetName = $('#scanSizeSet').text();
+                        const colorName = $(this).closest('.card').find('h6.text-dark').text();
+                        
+                        const cardHtml = `
+                            <div class="col-md-4 col-lg-3 mb-3 variation-row-container has-qty-top">
+                                <div class="card variation-card shadow-sm h-100 has-qty"
+                                    data-key="${key}"
+                                    data-product-id="${$(this).data('product-id')}"
+                                    data-color-id="${$(this).data('color-id')}"
+                                    data-size-set-id="${$(this).data('size-set-id')}"
+                                    data-price="${$(this).data('price')}"
+                                    data-pcs="${$(this).data('pcs')}">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <div>
+                                                <h6 class="font-weight-bold text-dark mb-0">${productName}</h6>
+                                                <small class="text-muted"><i class="fas fa-palette mr-1"></i> ${colorName}</small>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="badge badge-light border mb-1"><i class="fas fa-ruler-horizontal mr-1"></i> ${sizeSetName}</span>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                                            <div class="font-weight-bold text-primary">
+                                                ₹${$(this).data('price')}
+                                            </div>
+                                            <div class="quantity-control-app d-flex align-items-center p-1">
+                                                <button type="button" class="btn-q btn-minus">-</button>
+                                                <input type="number" class="box-qty-input" value="${qty}" max="${$(this).attr('max')}">
+                                                <button type="button" class="btn-q btn-plus">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        $('#variation-container').prepend(cardHtml);
+                    }
                 } else {
                     cart.delete(key);
                 }
                 updateUI();
             });
 
+            $(document).on('click', '.btn-plus-global', function() {
+                const input = $(this).siblings('.box-qty-global-input');
+                let val = parseInt(input.val()) || 0;
+                val++;
+                input.val(val).trigger('change');
+            });
+
+            $(document).on('click', '.btn-minus-global', function() {
+                const input = $(this).siblings('.box-qty-global-input');
+                let val = parseInt(input.val()) || 0;
+                if (val > 0) {
+                    val--;
+                    input.val(val).trigger('change');
+                }
+            });
+
+            $(document).on('change', '.box-qty-global-input', function() {
+                let globalQty = parseInt($(this).val()) || 0;
+                if (globalQty < 0) {
+                    globalQty = 0;
+                    $(this).val(0);
+                }
+
+                $('#colorSelectionList .box-qty-scan-input').each(function() {
+                    const max = parseInt($(this).attr('max'));
+                    let targetQty = globalQty;
+                    if (targetQty > max) targetQty = max; // Cap at max available
+                    
+                    if (parseInt($(this).val()) !== targetQty) {
+                        $(this).val(targetQty).trigger('change');
+                    }
+                });
+            });
+
             // Load from session storage
             const saved = sessionStorage.getItem(storageKey);
+            let hasCartItems = false;
+            
             if (saved) {
                 const data = JSON.parse(saved);
-                Object.keys(data).forEach(key => cart.set(key, data[key]));
+                Object.keys(data).forEach(key => {
+                    cart.set(key, data[key]);
+                    if (data[key].qty > 0) hasCartItems = true;
+                });
+            }
+            
+            if (hasCartItems) {
+                const missingKeys = [];
+                cart.forEach((v, k) => {
+                    if (v.qty > 0) {
+                        // Check if this key exists in the DOM
+                        let exists = false;
+                        $('.variation-card').each(function() {
+                            if ($(this).data('key') == k) exists = true;
+                        });
+                        if (!exists) missingKeys.push(k);
+                    }
+                });
+
+                if (missingKeys.length > 0) {
+                    fetchCartItemsHtml(missingKeys);
+                } else {
+                    updateUI();
+                }
+            } else {
+                updateUI();
+            }
+
+            function fetchCartItemsHtml(keysToFetch = null) {
+                $('#empty-state').hide();
+                $('#variation-container').append('<div class="col-12 text-center py-5" id="loading-cart"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><p class="mt-2 text-muted font-weight-bold">Loading your selected products...</p></div>');
+                
+                const keys = keysToFetch || Array.from(cart.keys());
+                
+                $.ajax({
+                    url: window.location.pathname,
+                    method: 'GET',
+                    data: {
+                        shop_id: '{{ $shop->id }}',
+                        load_more: 1, 
+                        cart_keys: keys,
+                        sample_set: $('#sampleSetToggle').is(':checked') ? 1 : 0
+                    },
+                    success: function(res) {
+                        $('#loading-cart').remove();
+                        if (res.html) {
+                            $('#variation-container').append(res.html);
+                            updateUI(); 
+                        } else {
+                            $('#empty-state').show();
+                        }
+                    },
+                    error: function() {
+                        $('#loading-cart').remove();
+                        $('#empty-state').show();
+                    }
+                });
             }
 
             $('#toggleFilters').click(function () {
                 $('#filterContainer').slideToggle();
             });
 
-            $('#btnShowDetails').click(function () {
+            $('#btnShowDetails, #btnNextSummary').click(function () {
                 $('#detailsModal').modal('show');
             });
 
@@ -600,6 +831,14 @@
             }
 
             function updateUI() {
+                // Sync prices from DOM to cart (handles sample set toggle changes)
+                $('.variation-card').each(function () {
+                    const key = $(this).data('key');
+                    if (cart.has(key)) {
+                        cart.get(key).unit_price = parseFloat($(this).data('price'));
+                    }
+                });
+
                 let totalBoxes = 0;
                 let subTotal = 0;
                 const seePrice = {{ Auth::guard('sales_agent')->user()->see_price ? 'true' : 'false' }};
@@ -616,11 +855,6 @@
                 const taxableAmount = subTotal - discountAmount;
 
                 let gstAmount = parseFloat($('#gstAmountInput').val()) || 0;
-                const defaultGstPercent = {{ $gst_percentage }};
-                if (!$('#gstAmountInput').is(':focus') && (gstAmount === 0 || !$('#gstAmountInput').data('manual')) && taxableAmount > 0) {
-                    gstAmount = taxableAmount * (defaultGstPercent / 100);
-                    $('#gstAmountInput').val(gstAmount.toFixed(2));
-                }
 
                 const grandTotal = taxableAmount + gstAmount + otherCharges;
 
@@ -733,7 +967,9 @@
                                 order_date: "{{ date('Y-m-d') }}",
                                 order_type: 'normal',
                                 sale_type: 'item',
+                                is_sample_set: $('#sampleSetToggle').is(':checked') ? 1 : 0,
                                 variations: variations,
+                                sales_man_id: $('#sales_man_id').val(),
                                 expected_dispatch_date: $('#expectedDispatchDate').val(),
                                 discount_amount: $('#discountAmountInput').val(),
                                 gst_amount: $('#gstAmountInput').val(),

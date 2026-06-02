@@ -87,6 +87,13 @@ class ProductOrderController extends Controller
         $response['patterns'] = $this->service->getPatterns();
         return response()->json($response);
     }
+
+    public function allCustomers()
+    {
+        $customers = \App\Models\MasterCustomer::where('status', 1)->get(['id', 'name']);
+        return response()->json($customers);
+    }
+
     public function store(ProductOrderStoreRequest $request)
     {
 

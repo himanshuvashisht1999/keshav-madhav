@@ -26,6 +26,14 @@
                 <div class="card shadow-sm border-0 mb-4 bg-light">
                     <div class="card-body p-3">
                         <form method="GET" action="{{ route('admin.agent-orders.edit', $order->id) }}" id="filterForm">
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="custom-control custom-switch border p-2 rounded bg-white shadow-sm" style="border-radius: 10px !important;">
+                                        <input type="checkbox" class="custom-control-input" id="sampleSetToggle" name="sample_set" value="1" {{ (request()->has('product_name') ? request('sample_set') == '1' : $order->is_sample_set == 1) ? 'checked' : '' }} onchange="this.form.submit()">
+                                        <label class="custom-control-label font-weight-bold ml-2 pt-1 text-primary" for="sampleSetToggle" style="cursor:pointer; user-select: none;">Use Sample Set Pricing for this Order</label>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="row align-items-end">
                                 <div class="col-md-2 col-6 mb-2">
                                     <label class="small font-weight-bold text-muted mb-1">Design No</label>
@@ -71,7 +79,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-3 col-6 mb-2">
+                                <div class="col-md-3 col-12 mb-2 text-right">
                                     <button type="submit" class="btn btn-primary btn-sm px-4 mr-2">
                                         <i class="fas fa-search mr-1"></i> Filter
                                     </button>
@@ -340,6 +348,14 @@
 
 
             function updateUI() {
+                // Sync prices from DOM to cart (handles sample set toggle changes)
+                $('.variation-row').each(function () {
+                    const key = $(this).data('key');
+                    if (cart.has(key)) {
+                        cart.get(key).unit_price = parseFloat($(this).data('price'));
+                    }
+                });
+
                 let totalBoxes = 0;
                 let subTotal = 0;
 
@@ -510,6 +526,7 @@
                                 _method: 'PUT',
                                 _token: "{{ csrf_token() }}",
                                 variations: variations,
+                                is_sample_set: $('#sampleSetToggle').is(':checked') ? 1 : 0,
                                 discount_percentage: $('#discountPercentage').val(),
                                 discount_amount: $('#discountAmountInput').val(),
                                 gst_percentage: $('#gstPercentage').val(),

@@ -30,7 +30,9 @@ class AgentOrder extends Model
         'remark',
         'booking_station',
         'transport',
-        'other_charges'
+        'other_charges',
+        'is_sample_set',
+        'sales_man_id'
     ];
 
     protected $appends = ['paid_amount', 'balance_amount'];

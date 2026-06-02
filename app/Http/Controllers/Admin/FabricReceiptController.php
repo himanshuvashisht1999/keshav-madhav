@@ -237,4 +237,15 @@ class FabricReceiptController extends Controller
         }
         return redirect()->back()->withError('Image not found.');
     }
+
+    public function allWarehouses()
+    {
+        return response()->json($this->service->cutting_units());
+    }
+
+    public function allPendingPOs()
+    {
+        $data = \App\Models\PurchaseOrder::with('vendor')->where('status', 1)->orderBy('id', 'desc')->get();
+        return response()->json($data);
+    }
 }

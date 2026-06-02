@@ -97,7 +97,13 @@
 
                         <div class="row mb-3">
                             <div class="col-md-4">
-                                <label>Purchase Order (Optional)</label>
+                                <label class="d-flex justify-content-between align-items-center mb-1">
+                                    <span>Purchase Order (Optional)</span>
+                                    <span class="action-links">
+                                        <a href="{{ route('admin.purchase_order.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                        <a href="javascript:void(0)" class="text-info" id="refreshPoBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                    </span>
+                                </label>
                                 <select name="purchase_order_id" id="po-select" class="form-control select2"
                                     style="width: 100%;">
                                     <option value="">-- No PO (Create New) --</option>
@@ -110,8 +116,14 @@
                             </div>
 
                             <div class="col-md-4">
-                                <label>Warehouse</label>
-                                <select name="master_fabric_warehouse_id" class="form-control select2" style="width: 100%;"
+                                <label class="d-flex justify-content-between align-items-center mb-1">
+                                    <span>Warehouse</span>
+                                    <span class="action-links">
+                                        <a href="{{ route('admin.master.fabric_warehouse.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                        <a href="javascript:void(0)" class="text-info" id="refreshWarehouseBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                    </span>
+                                </label>
+                                <select name="master_fabric_warehouse_id" id="warehouse-select" class="form-control select2" style="width: 100%;"
                                     required>
                                     @foreach($cutting_units as $single_data)
                                         <option value="{{$single_data->id}}"
@@ -123,7 +135,13 @@
                             </div>
 
                             <div class="col-md-4">
-                                <label>Vendor</label>
+                                <label class="d-flex justify-content-between align-items-center mb-1">
+                                    <span>Vendor</span>
+                                    <span class="action-links">
+                                        <a href="{{ route('admin.master.vendor.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                        <a href="javascript:void(0)" class="text-info" id="refreshVendorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                    </span>
+                                </label>
                                 <select name="vendor_id" id="vendor-select" class="form-control select2"
                                     style="width: 100%;" required>
                                     <option value="">-- Select vendor --</option>
@@ -253,6 +271,10 @@
                             <!-- Header -->
                             <div class="mb-2 d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Select Fabrics</h5>
+                                <span class="action-links">
+                                    <a href="{{ route('admin.master.fabric.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                    <a href="javascript:void(0)" class="text-info refreshFabricBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                </span>
                             </div>
 
                             <!-- Table -->
@@ -731,6 +753,42 @@
 
             // ensure initial selects use server-provided fabrics
             updateAllFabricSelects();
+
+            // Refresh Vendor
+            $('#refreshVendorBtn').click(function () {
+                let btn = $(this);
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.purchase_order.all_vendors') }}", function (data) {
+                    let select = $('select[name="vendor_id"]');
+                    let currentVal = select.val();
+                    select.empty();
+                    select.append('<option value="">-- Select vendor --</option>');
+                    data.forEach(function (v) {
+                        select.append(`<option value="${v.id}">${v.name}</option>`);
+                    });
+                    if (currentVal) select.val(currentVal);
+                    select.trigger('change');
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() {
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                });
+            });
+
+            // Refresh Fabric
+            $(document).on('click', '.refreshFabricBtn', function () {
+                let btn = $(this);
+                let vendorId = $('select[name="vendor_id"]').val();
+                let url = vendorId ? "{{ route('admin.purchase_order.vendor_fabrics', 'VID') }}".replace('VID', vendorId) : "{{ route('admin.purchase_order.all_fabrics') }}";
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON(url, function (data) {
+                    fabricsList = data || [];
+                    fabricOptionsHtml = buildOptionsHtml(fabricsList);
+                    updateAllFabricSelects();
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() {
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                });
+            });
 
             // ---------------------------
             // Challan preview + OCR (Tesseract)
@@ -1312,6 +1370,49 @@
                 bill_no_error.hide();
                 submit_btn.attr('disabled', false);
             }
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            // Refresh POs
+            $('#refreshPoBtn').on('click', function() {
+                var $btn = $(this);
+                var $icon = $btn.find('i');
+                $icon.addClass('fa-spin');
+                $.getJSON("{{ route('admin.fabric_receipt.all_pending_pos') }}", function(data) {
+                    var $select = $('#po-select');
+                    var currentVal = $select.val();
+                    $select.select2('destroy').empty();
+                    $select.append('<option value="">-- No PO (Create New) --</option>');
+                    $.each(data, function(key, value) {
+                        var vendorName = value.vendor ? '(' + value.vendor.name + ')' : '';
+                        $select.append('<option value="' + value.id + '" data-vendor="' + value.vendor_id + '">' + value.sku + ' ' + vendorName + '</option>');
+                    });
+                    $select.val(currentVal).select2({ theme: 'bootstrap4' });
+                    $icon.removeClass('fa-spin');
+                }).fail(function() {
+                    $icon.removeClass('fa-spin');
+                });
+            });
+
+            // Refresh Warehouses
+            $('#refreshWarehouseBtn').on('click', function() {
+                var $btn = $(this);
+                var $icon = $btn.find('i');
+                $icon.addClass('fa-spin');
+                $.getJSON("{{ route('admin.fabric_receipt.all_warehouses') }}", function(data) {
+                    var $select = $('#warehouse-select');
+                    var currentVal = $select.val();
+                    $select.select2('destroy').empty();
+                    $.each(data, function(key, value) {
+                        $select.append('<option value="' + value.id + '">' + value.cutting_master_name + '</option>');
+                    });
+                    $select.val(currentVal).select2({ theme: 'bootstrap4' });
+                    $icon.removeClass('fa-spin');
+                }).fail(function() {
+                    $icon.removeClass('fa-spin');
+                });
+            });
         });
     </script>
 @endsection

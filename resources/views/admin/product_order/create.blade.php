@@ -76,7 +76,13 @@
                             </div>
 
                             <div class="col-md-4">
-                                <label>Select Customer</label>
+                                <label class="d-flex justify-content-between align-items-center mb-1">
+                                    <span>Select Customer</span>
+                                    <span class="action-links">
+                                        <a href="{{ route('admin.master.customer.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                        <a href="javascript:void(0)" class="text-info" id="refreshCustomerBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                    </span>
+                                </label>
                                 <select name="master_customer_id" id="master_customer_id" class="form-control select2"
                                     required>
                                     <option value="">Select Customer</option>
@@ -359,6 +365,28 @@
             $('.select2').select2();
             loadSalesOrderMasterData();
 
+            // Refresh Customer
+            $('#refreshCustomerBtn').on('click', function() {
+                var btn = $(this);
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.sales_order.all_customers') }}", function(data) {
+                    var select = $('#master_customer_id');
+                    var currentVal = select.val();
+                    if (select.hasClass('select2-hidden-accessible')) {
+                        select.select2('destroy');
+                    }
+                    select.empty();
+                    select.append('<option value="">Select Customer</option>');
+                    data.forEach(function(item) {
+                        select.append('<option value="' + item.id + '">' + item.name + '</option>');
+                    });
+                    if (currentVal) select.val(currentVal);
+                    select.select2();
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() {
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                });
+            });
 
             // File preview
             // File preview (Image or PDF)

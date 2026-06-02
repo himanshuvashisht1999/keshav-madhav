@@ -238,6 +238,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/resend', [AdminPurchaseOrderController::class, 'resend'])->name('resend');
 
             Route::get('/vendor_fabrics/{vendor}', [AdminPurchaseOrderController::class, 'vendorFabrics'])->name('vendor_fabrics');
+            Route::get('/all_vendors', [AdminPurchaseOrderController::class, 'allVendors'])->name('all_vendors');
+            Route::get('/all_fabrics', [AdminPurchaseOrderController::class, 'allFabrics'])->name('all_fabrics');
+            Route::get('/all_warehouses', [AdminPurchaseOrderController::class, 'allWarehouses'])->name('all_warehouses');
+            Route::get('/all_companies', [AdminPurchaseOrderController::class, 'allCompanies'])->name('all_companies');
 
             Route::get('/adjustment', [AdminPurchaseOrderController::class, 'adjustment'])->name('adjustment');
 
@@ -278,6 +282,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/purchase-order-items/{id}', [AdminFabricReceiptController::class, 'getPurchaseOrderItems'])->name('items');
 
             Route::get('/vendor_fabrics/{vendor}', [AdminFabricReceiptController::class, 'vendorFabrics'])->name('vendor_fabrics');
+            Route::get('/all_warehouses', [AdminFabricReceiptController::class, 'allWarehouses'])->name('all_warehouses');
+            Route::get('/all_pending_pos', [AdminFabricReceiptController::class, 'allPendingPOs'])->name('all_pending_pos');
             Route::post('/check-roll-no', [AdminFabricReceiptController::class, 'checkRollNo'])->name('check-roll-no');
             Route::post('/check-bill-no', [AdminFabricReceiptController::class, 'checkBillNo'])->name('check-bill-no');
             Route::get('/download-report', [AdminFabricReceiptController::class, 'downloadReport'])->name('download_report');
@@ -339,6 +345,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/getCustomerSizes', [AdminProductOrderController::class, 'getCustomerSizes'])->name('getCustomerSizes');
             Route::get('/getCustomerDesign', [AdminProductOrderController::class, 'getCustomerDesign'])->name('getCustomerDesign');
             Route::post('/saveCustomSetSize', [AdminProductOrderController::class, 'saveCustomSetSize'])->name('saveCustomSetSize');
+            Route::get('/all_customers', [AdminProductOrderController::class, 'allCustomers'])->name('all_customers');
         });
 
         Route::prefix('/production-order')->name('product_order.')->group(function () {
@@ -826,6 +833,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/get-products', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'getProducts'])->name('get-products');
                 Route::post('/store', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'store'])->name('store');
                 Route::get('/edit/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'edit'])->name('edit');
+                Route::get('/show/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'show'])->name('show');
                 Route::put('/update/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'update'])->name('update');
                 Route::get('/generate-pdf-batch/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'generatePdfFromBatch'])->name('generate-pdf-batch');
                 Route::get('/download-prn', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'downloadPrn'])->name('download-prn');

@@ -125,6 +125,9 @@
                                 <span class="badge badge-info px-3 py-2">{{ $batch->products_count }} Products</span>
                             </td>
                             <td class="align-middle text-right px-4">
+                                <a href="{{ route('admin.inventory.fair-product.show', $batch->id) }}" class="btn btn-sm btn-outline-info mr-1" title="View Sample Set">
+                                    <i class="fas fa-eye"></i>
+                                </a>
                                 <a href="{{ route('admin.inventory.fair-product.edit', $batch->id) }}" class="btn btn-sm btn-outline-warning mr-1" title="Edit Sample Set">
                                     <i class="fas fa-edit"></i>
                                 </a>

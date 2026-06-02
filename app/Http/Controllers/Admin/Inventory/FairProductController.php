@@ -98,6 +98,49 @@ class FairProductController extends Controller
         return view('admin.inventory.fair_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'batch', 'existingItems', 'salesAgents'));
     }
 
+    public function show($id)
+    {
+        $batch = FairBatch::with(['products.product.series', 'products.product.fitting', 'products.product.pattern', 'products.product.variants.items', 'products.product.mainImage', 'products.sizeSet'])->findOrFail($id);
+
+        foreach ($batch->products as $sample) {
+            // Find MRP from ProductionGoodVariant
+            $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $sample->product_id)
+                ->where('master_size_measurement_id', $sample->size_set_id)
+                ->first();
+            
+            $mrp = $variant->mrp ?? 0;
+            $sample->final_price = $mrp - ($mrp * ($sample->discount_percent / 100));
+
+            // Image selection priority: Variant -> Color -> Main Image
+            $displayImage = null;
+            foreach ($sample->product->variants as $v) {
+                if ($v->image) {
+                    $displayImage = $v->image;
+                    break;
+                }
+            }
+
+            if (!$displayImage) {
+                foreach ($sample->product->variants as $v) {
+                    foreach ($v->items as $item) {
+                        if ($item->image) {
+                            $displayImage = $item->image;
+                            break 2;
+                        }
+                    }
+                }
+            }
+
+            if (!$displayImage && $sample->product->mainImage) {
+                $displayImage = $sample->product->mainImage->image;
+            }
+
+            $sample->product->display_image = $displayImage;
+        }
+
+        return view('admin.inventory.fair_product.show', compact('batch'));
+    }
+
     public function getProducts(Request $request)
     {
         $query = ProductionGoods::with(['series', 'mainImage', 'variants.items']);

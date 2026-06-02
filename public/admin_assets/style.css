@@ -475,3 +475,21 @@ body.km-admin .report-meta {
 .km-sidebar .fa-angle-left {
     margin-right: 0 !important;
 }
+
+/* Action Links (Create New / Refresh) */
+.action-links {
+    font-size: 0.85rem;
+}
+.action-links a {
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+.action-links a:hover {
+    opacity: 0.7;
+}
+.action-links a.text-primary {
+    color: #2563eb !important;
+}
+.action-links a.text-info {
+    color: #17a2b8 !important;
+}

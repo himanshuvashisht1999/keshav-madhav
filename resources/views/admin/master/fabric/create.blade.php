@@ -161,7 +161,7 @@
                                     <div class="form-group">
                                         <label>Unit</label>
                                         <select name="fabric_unit_id" class="form-control select2" style="width: 100%;">
-                                            <option value="">Select Unit</option>
+                                            <!-- <option value="">Select Unit</option> -->
                                             @foreach ($fab_unit_data as $single_data)
                                                 <option value="{{ $single_data->id }}"
                                                     {{ old('fabric_unit_id') == $single_data->id ? 'selected' : '' }}>

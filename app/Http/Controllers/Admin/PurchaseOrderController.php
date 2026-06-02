@@ -114,6 +114,30 @@ class PurchaseOrderController extends Controller
         return response()->json($payload);
     }
 
+    public function allVendors()
+    {
+        $vendors = $this->service->vendors();
+        return response()->json($vendors);
+    }
+
+    public function allFabrics(Request $request)
+    {
+        $vendor_id = $request->vendor_id;
+        if ($vendor_id) {
+            $fabrics = $this->service->fabrics_per_vendor($vendor_id);
+        } else {
+            $fabrics = $this->service->fabrics();
+        }
+        $payload = $fabrics->map(function ($f) {
+            return [
+                'id' => $f->id,
+                'name' => $f->name,
+                'sku' => $f->sku ?? '',
+            ];
+        });
+        return response()->json($payload);
+    }
+
     public function store(PurchaseOrderStoreRequest $request)
     {
         $data = $this->service->store($request);
