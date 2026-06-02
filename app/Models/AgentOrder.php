@@ -35,7 +35,7 @@ class AgentOrder extends Model
         'sales_man_id'
     ];
 
-    protected $appends = ['paid_amount', 'balance_amount'];
+    protected $appends = ['paid_amount', 'balance_amount', 'shop_name'];
 
     public function items()
     {
@@ -63,6 +63,14 @@ class AgentOrder extends Model
             return $this->vendor();
         }
         return $this->shop();
+    }
+
+    public function getShopNameAttribute()
+    {
+        if ($this->party_type === 'vendor') {
+            return $this->vendor ? $this->vendor->name : 'N/A';
+        }
+        return $this->shop ? $this->shop->name : 'N/A';
     }
 
     public function agent()

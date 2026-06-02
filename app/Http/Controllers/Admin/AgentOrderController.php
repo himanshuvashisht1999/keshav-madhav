@@ -1410,6 +1410,7 @@ class AgentOrderController extends Controller
             ->leftJoin('sales_agents', 'agent_orders.sales_agent_id', '=', 'sales_agents.id')
             ->leftJoin('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
             ->leftJoin('vendors', 'agent_orders.master_vendor_id', '=', 'vendors.id')
+            ->leftJoin('sales_men', 'agent_orders.sales_man_id', '=', 'sales_men.id')
             ->where('agent_orders.id', $id)
             ->select(
                 'agent_orders.*',
@@ -1418,7 +1419,8 @@ class AgentOrderController extends Controller
                 DB::raw('COALESCE(master_customers.email, vendors.email) as shop_email'),
                 DB::raw('COALESCE(master_customers.phone, vendors.phone) as shop_phone'),
                 DB::raw('COALESCE(master_customers.address, vendors.address) as shop_address'),
-                DB::raw('COALESCE(master_customers.see_price, 1) as see_price')
+                DB::raw('COALESCE(master_customers.see_price, 1) as see_price'),
+                'sales_men.name as sales_man_name'
             )
             ->first();
 

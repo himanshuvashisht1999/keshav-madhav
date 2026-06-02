@@ -59,6 +59,15 @@
                                         @error('password')<span class="text-danger small">{{ $message }}</span>@enderror
                                     </div>
                                 </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mt-4">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="isMasterAgent" name="is_master_agent" value="1" {{ old('is_master_agent') ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="isMasterAgent">Is Master Sales Agent?</label>
+                                        </div>
+                                        <small class="form-text text-muted">Master agents can create orders for any customer or vendor globally.</small>
+                                    </div>
+                                </div>
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label>Address</label>

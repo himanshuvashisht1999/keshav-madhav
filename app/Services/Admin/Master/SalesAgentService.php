@@ -49,6 +49,7 @@ class SalesAgentService
         $save_data->password = $request->password;
         $save_data->address = $request->address;
         $save_data->status = 1;
+        $save_data->is_master_agent = $request->is_master_agent ? 1 : 0;
         $save_data->see_price = $request->see_price ? 1 : 0;
         $save_data->save();
 
@@ -102,6 +103,7 @@ class SalesAgentService
         }
         $update_data->address = $request->address;
         $update_data->status = $request->status ?? 1;
+        $update_data->is_master_agent = $request->is_master_agent ? 1 : 0;
         $update_data->see_price = $request->see_price ? 1 : 0;
         $update_data->save();
 

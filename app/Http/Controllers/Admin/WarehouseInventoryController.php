@@ -118,13 +118,23 @@ class WarehouseInventoryController extends Controller
                 ])->render();
             }
 
+            $totalBoxes = (clone $query)->sum('total_boxes');
+            $totalPcs = (clone $query)->sum(DB::raw('total_boxes * quantity'));
+
             return response()->json([
                 'html' => $html,
-                'next_page' => $results->nextPageUrl() ? $results->currentPage() + 1 : null
+                'next_page' => $results->nextPageUrl() ? $results->currentPage() + 1 : null,
+                'total_boxes' => $totalBoxes,
+                'total_pcs' => $totalPcs
             ]);
         }
+        
+        $totalBoxes = (clone $query)->sum('total_boxes');
+        $totalPcs = (clone $query)->sum(DB::raw('total_boxes * quantity'));
 
         return Datatables::of($query)
+            ->with('total_boxes', $totalBoxes)
+            ->with('total_pcs', $totalPcs)
             ->addIndexColumn()
             ->addColumn('product_name', function ($row) {
                 return $row->product_name;

@@ -28,11 +28,11 @@
             </div>
 
             <!-- Order-Level Settings and Filters -->
-            <form method="GET" action="{{ route('agent.orders.create', ['shop_id' => $shop->id]) }}" id="filterForm">
+            <form method="GET" action="{{ route('agent.orders.create', ['shop_id' => $shop->id, 'party_type' => $party_type]) }}" id="filterForm">
                 <div class="container-fluid pt-3 px-3">
                     <div class="custom-control custom-switch border p-2 rounded bg-white shadow-sm" style="border-radius: 10px !important;">
-                        <input type="checkbox" class="custom-control-input" id="sampleSetToggle" name="sample_set" value="1" {{ request('sample_set') == '1' ? 'checked' : '' }} onchange="this.form.submit()">
-                        <label class="custom-control-label font-weight-bold ml-2 pt-1 text-primary" for="sampleSetToggle" style="cursor:pointer; user-select: none;">Use Sample Set Pricing for this Order</label>
+                        <input type="checkbox" class="custom-control-input" id="sampleSetToggle" name="sample_set" value="1" {{ $isSampleSet ? 'checked' : '' }} onchange="this.form.submit()">
+                        <label class="custom-control-label font-weight-bold ml-2 pt-1 text-primary" for="sampleSetToggle" style="cursor:pointer; user-select: none;">Use Sample Set Pricing</label>
                     </div>
                 </div>
 
@@ -40,6 +40,7 @@
                 <div id="filterContainer" style="display: none;"
                     class="bg-white border-top animate__animated animate__fadeInDown p-3 shadow-sm mt-2">
                     <input type="hidden" name="shop_id" value="{{ $shop->id }}">
+                    <input type="hidden" name="party_type" value="{{ $party_type }}">
                     <div class="row">
 
                         <div class="col-6 col-md-3 mb-2">
@@ -123,7 +124,7 @@
                         <button type="submit"
                             class="btn btn-primary btn-sm flex-grow-1 mr-2 rounded-pill font-weight-bold">Apply
                             Filters</button>
-                        <a href="{{ route('agent.orders.create', ['shop_id' => $shop->id]) }}"
+                        <a href="{{ route('agent.orders.create', ['shop_id' => $shop->id, 'party_type' => $party_type]) }}"
                             class="btn btn-light btn-sm rounded-pill"><i class="fas fa-undo"></i></a>
                     </div>
                 </div>
@@ -350,6 +351,22 @@
         </div>
     </div>
 
+    <!-- Image Zoom Modal -->
+    <div class="modal fade" id="imageZoomModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content bg-transparent border-0">
+                <div class="modal-header border-0 pb-0 justify-content-end">
+                    <button type="button" class="close text-white bg-dark rounded-circle p-2" data-dismiss="modal" aria-label="Close" style="opacity: 0.8;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center pt-0 pb-4">
+                    <img src="" id="zoomedImage" class="img-fluid rounded" style="max-height: 80vh; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                </div>
+            </div>
+        </div>
+    </div>
+
     <style>
         .bg-primary-soft {
             background-color: rgba(0, 123, 255, 0.1);
@@ -447,6 +464,13 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
         $(document).ready(function () {
+
+            // Image Zoom functionality
+            $(document).on('click', '.zoom-image', function() {
+                var src = $(this).attr('src');
+                $('#zoomedImage').attr('src', src);
+                $('#imageZoomModal').modal('show');
+            });
             if ($.fn.select2) {
                 $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
             }
@@ -766,6 +790,7 @@
                     method: 'GET',
                     data: {
                         shop_id: '{{ $shop->id }}',
+                        party_type: '{{ $party_type }}',
                         load_more: 1, 
                         cart_keys: keys,
                         sample_set: $('#sampleSetToggle').is(':checked') ? 1 : 0
@@ -971,10 +996,11 @@
                             data: {
                                 _token: "{{ csrf_token() }}",
                                 shop_id: "{{ $shop->id }}",
+                                party_type: "{{ $party_type }}",
                                 order_date: "{{ date('Y-m-d') }}",
                                 order_type: 'normal',
                                 sale_type: 'item',
-                                is_sample_set: $('#sampleSetToggle').is(':checked') ? 1 : 0,
+                                is_sample_set: "{{ $isSampleSet ? '1' : '0' }}",
                                 variations: variations,
                                 sales_man_id: $('#sales_man_id').val(),
                                 expected_dispatch_date: $('#expectedDispatchDate').val(),

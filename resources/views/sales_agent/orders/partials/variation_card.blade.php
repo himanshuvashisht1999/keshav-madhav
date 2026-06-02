@@ -11,7 +11,7 @@
     
     <div class="position-relative">
         @if($image)
-            <img src="{{ asset('public/' . $image) }}" class="card-img-top" alt="Product" style="height: 180px; object-fit: cover; border-radius: 15px 15px 0 0;">
+            <img src="{{ asset('assets/products/' . $image) }}" class="card-img-top zoom-image" alt="Product" style="height: 180px; object-fit: cover; border-radius: 15px 15px 0 0; cursor: pointer;">
         @else
             <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px; border-radius: 15px 15px 0 0;">
                 <i class="fas fa-image fa-3x text-muted opacity-25"></i>

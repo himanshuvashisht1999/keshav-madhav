@@ -21,13 +21,31 @@ class OrderController extends Controller
     public function create(Request $request)
     {
         $shop_id = $request->query('shop_id');
+        $party_type = $request->query('party_type', 'customer');
+        $agent = Auth::guard('sales_agent')->user();
+        $is_master = $agent->is_master_agent;
+
         if (!$shop_id) {
+            if ($is_master) {
+                $shops = MasterCustomer::where('status', 1)->get();
+                $vendors = \DB::table('vendors')->where('status', 1)->get();
+                return view('sales_agent.orders.master_select', compact('shops', 'vendors', 'party_type'));
+            }
             return redirect()->route('agent.shops.index')->with('error', 'Please select a shop to create an order.');
         }
 
-        $shop = MasterCustomer::findOrFail($shop_id);
-        $agent_id = Auth::guard('sales_agent')->id();
-        $agent = Auth::guard('sales_agent')->user();
+        if ($party_type == 'vendor') {
+            $shop = \DB::table('vendors')->where('id', $shop_id)->first();
+            if (!$shop) abort(404);
+        } else {
+            if ($is_master) {
+                $shop = MasterCustomer::findOrFail($shop_id);
+            } else {
+                $shop = MasterCustomer::where('id', $shop_id)->where('sales_agent_id', $agent->id)->firstOrFail();
+            }
+        }
+
+        $agent_id = $agent->id;
 
         $sale_type = 'item';
 
@@ -262,7 +280,7 @@ class OrderController extends Controller
         // Fetch active sales men
         $sales_men = \App\Models\SalesMan::where('status', 1)->get();
 
-        return view('sales_agent.orders.create', compact('shop', 'agent', 'designs', 'product_names', 'colors', 'size_sets', 'boxes', 'boxImages', 'gst_percentage', 'series', 'brands', 'fittings', 'patterns', 'product_natures', 'fabric_types', 'sales_men'));
+        return view('sales_agent.orders.create', compact('shop', 'agent', 'designs', 'product_names', 'colors', 'size_sets', 'boxes', 'boxImages', 'gst_percentage', 'series', 'brands', 'fittings', 'patterns', 'product_natures', 'fabric_types', 'sales_men', 'party_type', 'isSampleSet'));
     }
 
     public function store(Request $request)
@@ -277,7 +295,20 @@ class OrderController extends Controller
 
         $agent = Auth::guard('sales_agent')->user();
         $agent_id = $agent->id;
-        $customer = \App\Models\MasterCustomer::findOrFail($request->shop_id);
+        
+        $party_type = $request->party_type ?? 'customer';
+        if ($party_type == 'vendor') {
+            $customer = \DB::table('vendors')->where('id', $request->shop_id)->first();
+            if (!$customer) abort(404);
+            $actual_agent_id = 0;
+        } else {
+            $customer = \App\Models\MasterCustomer::findOrFail($request->shop_id);
+            if ($agent->is_master_agent) {
+                $actual_agent_id = $customer->sales_agent_id ?: 0;
+            } else {
+                $actual_agent_id = $agent_id;
+            }
+        }
 
         $total_qty = 0;
         $total_amount = 0;
@@ -378,10 +409,11 @@ class OrderController extends Controller
         DB::beginTransaction();
         try {
             $order = AgentOrder::create([
-                'sales_agent_id' => $agent_id,
+                'sales_agent_id' => $actual_agent_id,
                 'sales_man_id' => $request->sales_man_id,
-                'party_type' => 'customer',
-                'master_customer_id' => $request->shop_id,
+                'party_type' => $party_type,
+                'master_customer_id' => $party_type == 'customer' ? $request->shop_id : null,
+                'master_vendor_id' => $party_type == 'vendor' ? $request->shop_id : null,
                 'total_qty' => $total_qty,
                 'total_amount' => $total_amount,
                 'discount_percentage' => $discount_percentage,
@@ -475,13 +507,17 @@ class OrderController extends Controller
 
     public function edit(Request $request, $id)
     {
-        $agent_id = Auth::guard('sales_agent')->id();
-        $order = AgentOrder::where('id', $id)
-            ->where('sales_agent_id', $agent_id)
-            ->where('status', 'pending')
-            ->firstOrFail();
+        $agent = Auth::guard('sales_agent')->user();
+        $agent_id = $agent->id;
+        $query = AgentOrder::where('id', $id)->where('status', 'pending');
+        
+        if (!$agent->is_master_agent) {
+            $query->where('sales_agent_id', $agent->id);
+        }
+        
+        $order = $query->firstOrFail();
 
-        $shop = $order->shop;
+        $shop = $order->party_type == 'vendor' ? $order->vendor : $order->shop;
 
         // Fetch Filter Options
         $designs = DomesticInventory::where('domestic_inventories.status', 1)
@@ -795,10 +831,13 @@ class OrderController extends Controller
         ]);
 
         $agent = Auth::guard('sales_agent')->user();
-        $order = AgentOrder::where('id', $id)
-            ->where('sales_agent_id', $agent->id)
-            ->where('status', 'pending')
-            ->firstOrFail();
+        $query = AgentOrder::where('id', $id)->where('status', 'pending');
+        
+        if (!$agent->is_master_agent) {
+            $query->where('sales_agent_id', $agent->id);
+        }
+        
+        $order = $query->firstOrFail();
 
         $total_qty = 0;
         $total_amount = 0;
@@ -939,19 +978,30 @@ class OrderController extends Controller
 
     public function myOrders()
     {
-        $orders = AgentOrder::where('sales_agent_id', Auth::guard('sales_agent')->id())
-            ->with('shop')
-            ->latest()
-            ->paginate(10);
+        $agent = Auth::guard('sales_agent')->user();
+        if ($agent->is_master_agent) {
+            $orders = AgentOrder::with(['shop', 'vendor'])
+                ->latest()
+                ->paginate(10);
+        } else {
+            $orders = AgentOrder::where('sales_agent_id', $agent->id)
+                ->with(['shop', 'vendor'])
+                ->latest()
+                ->paginate(10);
+        }
         return view('sales_agent.orders.index', compact('orders'));
     }
 
     public function orderDetails($id)
     {
-        $order = AgentOrder::where('id', $id)
-            ->where('sales_agent_id', Auth::guard('sales_agent')->id())
-            ->with(['shop', 'items', 'agent'])
-            ->firstOrFail();
+        $agent = Auth::guard('sales_agent')->user();
+        $query = AgentOrder::where('id', $id)->with(['shop', 'vendor', 'items', 'agent']);
+        
+        if (!$agent->is_master_agent) {
+            $query->where('sales_agent_id', $agent->id);
+        }
+        
+        $order = $query->firstOrFail();
 
         $items = $order->items;
         $groupedItems = $items->groupBy(function ($item) {
@@ -1039,6 +1089,7 @@ class OrderController extends Controller
             ->leftJoin('sales_agents', 'agent_orders.sales_agent_id', '=', 'sales_agents.id')
             ->leftJoin('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
             ->leftJoin('vendors', 'agent_orders.master_vendor_id', '=', 'vendors.id')
+            ->leftJoin('sales_men', 'agent_orders.sales_man_id', '=', 'sales_men.id')
             ->where('agent_orders.id', $id)
             ->select(
                 'agent_orders.*',
@@ -1047,7 +1098,8 @@ class OrderController extends Controller
                 DB::raw('COALESCE(master_customers.email, vendors.email) as shop_email'),
                 DB::raw('COALESCE(master_customers.phone, vendors.phone) as shop_phone'),
                 DB::raw('COALESCE(master_customers.address, vendors.address) as shop_address'),
-                DB::raw('COALESCE(master_customers.see_price, 1) as see_price')
+                DB::raw('COALESCE(master_customers.see_price, 1) as see_price'),
+                'sales_men.name as sales_man_name'
             )
             ->first();
 

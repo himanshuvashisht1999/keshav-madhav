@@ -166,12 +166,13 @@
                 <i class="fas fa-home"></i>
                 <span>Home</span>
             </a>
+            @if(!Auth::guard('sales_agent')->user()->is_master_agent)
             <a href="{{ route('agent.shops.index') }}"
                 class="nav-item {{ request()->routeIs('agent.shops.*') ? 'active' : '' }}">
                 <i class="fas fa-store"></i>
                 <span>Shops</span>
             </a>
-
+            @endif
 
             <a href="{{ route('agent.orders.index') }}"
                 class="nav-item {{ request()->routeIs('agent.orders.index') ? 'active' : '' }}">

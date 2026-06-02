@@ -39,13 +39,18 @@
         <h5 class="font-weight-bold mb-3">Quick Actions</h5>
         <div class="row mb-4">
             <div class="col-6">
+                @if(Auth::guard('sales_agent')->user()->is_master_agent)
+                <a href="{{ route('agent.orders.create') }}" class="text-decoration-none">
+                @else
                 <a href="{{ route('agent.shops.index') }}" class="text-decoration-none">
+                @endif
                     <div class="app-card mb-0 shadow-sm border text-center p-3" style="background: #eff6ff;">
                         <i class="fas fa-plus-circle fa-lg text-primary mb-2"></i>
                         <p class="small font-weight-bold text-dark mb-0">New Order</p>
                     </div>
                 </a>
             </div>
+            @if(!Auth::guard('sales_agent')->user()->is_master_agent)
             <div class="col-6">
                 <a href="{{ route('agent.shops.create') }}" class="text-decoration-none">
                     <div class="app-card mb-0 shadow-sm border text-center p-3" style="background: #f0fdf4;">
@@ -54,6 +59,16 @@
                     </div>
                 </a>
             </div>
+            @else
+            <div class="col-6">
+                <a href="{{ route('agent.orders.index') }}" class="text-decoration-none">
+                    <div class="app-card mb-0 shadow-sm border text-center p-3" style="background: #fdf4ff;">
+                        <i class="fas fa-history fa-lg text-danger mb-2"></i>
+                        <p class="small font-weight-bold text-dark mb-0">View Orders</p>
+                    </div>
+                </a>
+            </div>
+            @endif
         </div>
 
 

@@ -75,8 +75,16 @@
                             <td style="border:none; padding: 2px 0;">: {{ \Carbon\Carbon::parse($order->order_date)->format('d-m-Y') }}</td>
                         </tr>
                         <tr>
+                            <td style="border:none; padding: 2px 0;"><strong>Dispatch Date</strong></td>
+                            <td style="border:none; padding: 2px 0;">: {{ $order->expected_dispatch_date ? \Carbon\Carbon::parse($order->expected_dispatch_date)->format('d-m-Y') : 'N/A' }}</td>
+                        </tr>
+                        <tr>
                             <td style="border:none; padding: 2px 0;"><strong>Agent</strong></td>
                             <td style="border:none; padding: 2px 0;">: {{ $order->agent_name }}</td>
+                        </tr>
+                        <tr>
+                            <td style="border:none; padding: 2px 0;"><strong>Sales Man</strong></td>
+                            <td style="border:none; padding: 2px 0;">: {{ $order->sales_man_name ?? 'N/A' }}</td>
                         </tr>
                         <tr>
                             <td style="border:none; padding: 2px 0;"><strong>Booking Station</strong></td>

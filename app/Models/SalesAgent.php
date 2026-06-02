@@ -16,6 +16,7 @@ class SalesAgent extends Authenticatable
         'email',
         'phone',
         'password',
+        'is_master_agent',
         'address',
         'status',
         'see_price',

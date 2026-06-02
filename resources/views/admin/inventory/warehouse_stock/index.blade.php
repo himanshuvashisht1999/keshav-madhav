@@ -21,6 +21,36 @@
         <!-- CONTENT -->
         <section class="content">
             <div class="container-fluid">
+                <!-- TOTALS CARDS -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card shadow-sm border-0 bg-primary text-white" style="border-radius: 12px;">
+                            <div class="card-body p-3 d-flex align-items-center">
+                                <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 48px; height: 48px;">
+                                    <i class="fas fa-box fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 text-white-50">Total Boxes</h6>
+                                    <h4 class="mb-0 font-weight-bold" id="header_total_boxes">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card shadow-sm border-0 bg-success text-white" style="border-radius: 12px;">
+                            <div class="card-body p-3 d-flex align-items-center">
+                                <div class="bg-white text-success rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 48px; height: 48px;">
+                                    <i class="fas fa-tshirt fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 text-white-50">Total Pcs</h6>
+                                    <h4 class="mb-0 font-weight-bold" id="header_total_pcs">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- SINGLE CONSOLIDATED FILTER CARD -->
                 <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
                     <div class="card-body bg-light rounded p-4">
@@ -443,6 +473,14 @@
                             container.empty().css('opacity', '1');
                         }
                         
+                        // Update totals
+                        if (res.total_boxes !== undefined) {
+                            $('#header_total_boxes').text(res.total_boxes.toLocaleString());
+                        }
+                        if (res.total_pcs !== undefined) {
+                            $('#header_total_pcs').text(res.total_pcs.toLocaleString());
+                        }
+
                         container.append(res.html);
                         nextPage = res.next_page;
                         loading = false;
