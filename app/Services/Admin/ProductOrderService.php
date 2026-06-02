@@ -885,6 +885,12 @@ class ProductOrderService
                     }
 
                     $data->save();
+
+                    // Send WhatsApp message to Cutting Master
+                    if ($unit && $unit->phone) {
+                        $message = "Namaste {$unit->name},\n\nAapko ek naya order assign hua hai (Order No: *{$cuttingStage->sku}*).\nKripya apne mobile app me check karein.\n\n- SNAPKIDS";
+                        send_whatsapp_message($unit->phone, $message);
+                    }
                 }
             }
 

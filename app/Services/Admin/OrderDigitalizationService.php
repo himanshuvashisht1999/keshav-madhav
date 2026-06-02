@@ -235,7 +235,6 @@ class OrderDigitalizationService
                         // Get sizes for the transaction
                         $sizes = \App\Models\FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id', $firstRoll->id)->pluck('quantity', 'size')->toArray();
 
-                        // Create transaction (Cutting -> Printing)
                         $this->createTransactionWithDetails(
                             $lotNo,
                             3, // From Cutting
@@ -248,6 +247,9 @@ class OrderDigitalizationService
                             $request->production_datetime,
                             $sizes
                         );
+                        
+                        // Send WhatsApp notification to Printing Unit
+                        $this->sendAssignmentWhatsApp($order_product_set->printing_unit_id, $lotNo);
                     }
                 }
             }
@@ -1574,6 +1576,9 @@ class OrderDigitalizationService
                 $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file, $request->production_datetime);
             }
 
+            // Send WhatsApp notification
+            $this->sendAssignmentWhatsApp($request->to_stage_unit_id, $request->lot_no);
+
             DB::commit();
             return [
                 'status_code' => 1,
@@ -1654,6 +1659,9 @@ class OrderDigitalizationService
                 // Close ANY incoming assignments for this lot and this unit
                 $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file, $request->production_datetime);
             }
+
+            // Send WhatsApp notification
+            $this->sendAssignmentWhatsApp($request->to_stage_unit_id, $request->lot_no);
 
             DB::commit();
             return [
@@ -2277,6 +2285,9 @@ class OrderDigitalizationService
                 $this->closeIncomingAssignments($lot_no, $slip->stage_master_unit_id, $slip->slip_file, $request->production_datetime);
             }
 
+            // Send WhatsApp notification
+            $this->sendAssignmentWhatsApp($request->to_stage_id, $lot_no);
+
             // ✅ NEW: Sync with Unified Timing Table for the TARGET stage (with Protection)
             if ($transaction && $to_stage_id != 3) {
                 // Fetch unit info again to be sure (days, etc)
@@ -2411,5 +2422,14 @@ class OrderDigitalizationService
             ];
         }
         return ['status' => 0, 'message' => 'Assignment not found'];
+    }
+
+    private function sendAssignmentWhatsApp($unit_id, $lot_no)
+    {
+        $unit = \App\Models\StageMasterUnit::find($unit_id);
+        if ($unit && $unit->phone) {
+            $message = "Namaste {$unit->name},\n\nAapko ek naya lot assign hua hai (Lot No: *{$lot_no}*).\nKripya apne mobile app me check karein.\n\n- SNAPKIDS";
+            send_whatsapp_message($unit->phone, $message);
+        }
     }
 }

@@ -552,4 +552,44 @@ CLS
     return $tspl;
 }
 
-?>
+if (!function_exists('send_whatsapp_message')) {
+    function send_whatsapp_message($phone, $message)
+    {
+        // $apiKey can also be moved to .env in future: env('WHATSAPP_API_KEY', '...')
+        $apiKey = "14a7d8a2c76144343c3813705bb586a0db28724b888bc838e1";
+        $url = "https://app.messageautosender.com/api/v1/message/create";
+
+        $data = [
+            "receiverMobileNo" => $phone,
+            "message" => [
+                $message
+            ]
+        ];
+
+        $headers = [
+            "Content-Type: application/json",
+            "x-api-key: " . $apiKey
+        ];
+
+        $ch = curl_init();
+
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($data),
+            CURLOPT_HTTPHEADER => $headers,
+        ]);
+
+        $response = curl_exec($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            \Illuminate\Support\Facades\Log::error('WhatsApp API Error: ' . $error);
+            return false;
+        }
+
+        return json_decode($response, true);
+    }
+}
