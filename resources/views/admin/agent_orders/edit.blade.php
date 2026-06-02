@@ -218,7 +218,15 @@
 
                     <div class="col-md-2 border-right">
                         <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Order Remark</small>
-                        <textarea id="remark" class="form-control form-control-sm mt-1" rows="2" placeholder="Notes...">{{ $order->remark }}</textarea>
+                        @php
+                            $previousRemarks = \DB::table('agent_orders')->whereNotNull('remark')->where('remark', '!=', '')->distinct()->pluck('remark');
+                        @endphp
+                        <input type="text" id="remark" class="form-control form-control-sm mt-1" list="previous_remarks_list" placeholder="Notes..." value="{{ $order->remark }}" autocomplete="off">
+                        <datalist id="previous_remarks_list">
+                            @foreach($previousRemarks as $rem)
+                                <option value="{{ $rem }}">
+                            @endforeach
+                        </datalist>
                     </div>
 
                     <div class="col-md-2 text-center border-right">

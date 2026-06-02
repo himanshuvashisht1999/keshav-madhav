@@ -190,7 +190,15 @@
                             </div>
 
                             <label class="small font-weight-bold text-muted uppercase">Notes / Remark</label>
-                            <textarea id="orderRemark" class="form-control mb-4" rows="2" placeholder="Instructions...">{{ $order->remark }}</textarea>
+                            @php
+                                $previousRemarks = \DB::table('agent_orders')->whereNotNull('remark')->where('remark', '!=', '')->distinct()->pluck('remark');
+                            @endphp
+                            <input type="text" id="orderRemark" class="form-control mb-4" list="previous_remarks_list" placeholder="Instructions..." value="{{ $order->remark }}" autocomplete="off">
+                            <datalist id="previous_remarks_list">
+                                @foreach($previousRemarks as $rem)
+                                    <option value="{{ $rem }}">
+                                @endforeach
+                            </datalist>
 
                             <button type="button" class="btn btn-warning btn-lg btn-block shadow-lg rounded-pill update-fabric-order-btn" id="placeOrderBtn" disabled title="Fulfill targets to enable">
                                 <i class="fas fa-save mr-2"></i> UPDATE ORDER

@@ -1033,6 +1033,98 @@ class OrderController extends Controller
         return $pdf->download('Invoice-ORD-' . $id . '.pdf');
     }
 
+    public function downloadOrder(Request $request, $id)
+    {
+        $order = DB::table('agent_orders')
+            ->leftJoin('sales_agents', 'agent_orders.sales_agent_id', '=', 'sales_agents.id')
+            ->leftJoin('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+            ->leftJoin('vendors', 'agent_orders.master_vendor_id', '=', 'vendors.id')
+            ->where('agent_orders.id', $id)
+            ->select(
+                'agent_orders.*',
+                DB::raw('COALESCE(sales_agents.name, "Direct (No Agent)") as agent_name'),
+                DB::raw('COALESCE(master_customers.name, vendors.name) as shop_name'),
+                DB::raw('COALESCE(master_customers.email, vendors.email) as shop_email'),
+                DB::raw('COALESCE(master_customers.phone, vendors.phone) as shop_phone'),
+                DB::raw('COALESCE(master_customers.address, vendors.address) as shop_address'),
+                DB::raw('COALESCE(master_customers.see_price, 1) as see_price')
+            )
+            ->first();
+
+        if (!$order)
+            abort(404);
+
+        if ($order->sale_type === 'fabric') {
+            $items = DB::table('agent_order_fabric_items')
+                ->join('fabrics', 'agent_order_fabric_items.fabric_id', '=', 'fabrics.id')
+                ->join('fabric_receipt_details', 'agent_order_fabric_items.fabric_receipt_detail_id', '=', 'fabric_receipt_details.id')
+                ->where('agent_order_id', $id)
+                ->select(
+                    'agent_order_fabric_items.*',
+                    'fabrics.name as fabric_name',
+                    'fabrics.sku as fabric_sku',
+                    'fabric_receipt_details.roll_number',
+                    'fabric_receipt_details.batch_no'
+                )
+                ->get();
+
+            $settings = DB::table('settings')->first();
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.order-pdf-fabric', compact('order', 'items', 'settings'));
+            return $pdf->download("Order_Sheet_Fabric_{$order->id}.pdf");
+        }
+
+        $itemsRaw = DB::table('agent_order_items')
+            ->leftJoin('master_design_patterns', 'agent_order_items.pattern_id', '=', 'master_design_patterns.id')
+            ->leftJoin('master_product_fittings', 'agent_order_items.fitting_id', '=', 'master_product_fittings.id')
+            ->leftJoin('domestic_inventories', function ($join) {
+                $join->on('agent_order_items.product_id', '=', 'domestic_inventories.product_id')
+                    ->on('agent_order_items.color_id', '=', 'domestic_inventories.color_id')
+                    ->on('agent_order_items.size_set_id', '=', 'domestic_inventories.size_set_id')
+                    ->where('domestic_inventories.total_boxes', '>', 0);
+            })
+            ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+            ->where('agent_order_id', $id)
+            ->select(
+                'agent_order_items.*',
+                'master_design_patterns.name as db_pattern_name',
+                'master_product_fittings.name as db_fitting_name',
+                'racks.name as rack_name',
+                'storerooms.name as warehouse_name'
+            )
+            ->get();
+
+        $items = $itemsRaw->groupBy(function ($item) {
+            return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
+        })->map(function ($group) {
+            $first = $group->first();
+            $withRack = $group->whereNotNull('rack_name')->first() ?? $first;
+
+            return (object) [
+                'product_name' => $first->product_name,
+                'design_number' => $first->design_number,
+                'color_name' => $first->color_name,
+                'color_id' => $first->color_id,
+                'size_set_name' => $first->size_set_name,
+                'fitting_name' => $first->db_fitting_name ?? $first->fitting_name,
+                'pattern_name' => $first->db_pattern_name ?? $first->pattern_name,
+                'mrp' => $first->mrp,
+                'selling_price' => $first->selling_price,
+                'total_qty' => $group->sum('quantity'),
+                'box_count' => $group->sum('box_qty'),
+                'barcode' => $first->barcode,
+                'warehouse_name' => $withRack->warehouse_name ?? 'N/A',
+                'rack_name' => $withRack->rack_name ?? 'N/A',
+            ];
+        })->values();
+
+        $settings = DB::table('settings')->first();
+        $pdf = Pdf::loadView('admin.agent_orders.order-pdf', compact('order', 'items', 'settings'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download('Order_Sheet_ORD_' . $id . '.pdf');
+    }
+
     public function getVariationByBarcode(Request $request)
     {
         try {
