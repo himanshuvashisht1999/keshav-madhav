@@ -18,6 +18,10 @@ class FabricUnitController extends Controller {
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
+    public function allUnits(){
+        $units = \App\Models\FabricUnit::select('id', 'name')->where('status', 1)->get();
+        return response()->json($units);
+    }
     public function create(){
         return view('admin.master.fabric_unit.create');
     }

@@ -30,10 +30,16 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <div class="form-group">
-                                        <label><i class="fas fa-user mr-1 text-primary"></i> Select Washing Master <span class="text-danger">*</span></label>
-                                        <select name="washing_master_id" class="form-control select2" required>
+                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                            <span><i class="fas fa-user mr-1 text-primary"></i> Washing Master <span class="text-danger">*</span></span>
+                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                <a href="{{ route('admin.payment.master.washing_master.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="text-info" id="refreshMasterBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                            </span>
+                                        </label>
+                                        <select name="washing_master_id" id="washingMasterSelect" class="form-control select2" required>
                                             <option value="">Select Master</option>
                                             @foreach($washingMasters as $master)
                                                 <option value="{{ $master->id }}" {{ $data->washing_master_id == $master->id ? 'selected' : '' }}>{{ $master->name }}</option>
@@ -41,13 +47,13 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label><i class="fas fa-calendar-alt mr-1 text-info"></i> Voucher Date <span class="text-danger">*</span></label>
                                         <input type="date" name="voucher_date" class="form-control" value="{{ $data->voucher_date }}" required>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label><i class="fas fa-hashtag mr-1 text-secondary"></i> Voucher Number</label>
                                         <input type="text" name="voucher_number" class="form-control" value="{{ $data->voucher_number }}" placeholder="Enter Voucher Number">
@@ -161,6 +167,32 @@
     <script>
         $(document).ready(function() {
             let rowCount = {{ count($data->items) }};
+
+            if ($.fn.select2) {
+                $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
+            }
+
+            $('#refreshMasterBtn').on('click', function() {
+                var btn = $(this);
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.payment.master.washing_master.all_washing_masters') }}", function(data) {
+                    var select = $('#washingMasterSelect');
+                    var currentVal = select.val();
+                    if (select.hasClass('select2-hidden-accessible')) {
+                        select.select2('destroy');
+                    }
+                    select.empty();
+                    select.append('<option value="">Select Master</option>');
+                    data.forEach(function(item) {
+                        select.append('<option value="' + item.id + '">' + item.name + '</option>');
+                    });
+                    if (currentVal) select.val(currentVal);
+                    select.select2({ theme: 'bootstrap4', width: '100%' });
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() {
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                });
+            });
 
             // Update file label
             $('#documentFile').on('change', function() {

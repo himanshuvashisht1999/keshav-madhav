@@ -48,13 +48,11 @@
                                 </a>
 
                                 @if($order->dispatches->count() == 0)
-                                    <form action="{{ route('admin.agent-orders.destroy', $order->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this order? This will restore any deducted inventory.')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
-                                            <i class="fas fa-trash mr-1"></i> Delete
-                                        </button>
-                                    </form>
+                                    <a href="{{ route('admin.agent-orders.destroy', $order->id) }}"
+                                        onclick="return confirm('Are you sure you want to delete this order? This will restore any deducted inventory.')"
+                                        class="btn btn-sm btn-danger rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
+                                        <i class="fas fa-trash mr-1"></i> Delete
+                                    </a>
                                 @endif
                             @endif
                             <a href="{{ route('admin.agent-orders.index') }}"

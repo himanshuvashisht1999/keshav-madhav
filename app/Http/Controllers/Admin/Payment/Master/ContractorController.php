@@ -32,6 +32,12 @@ class ContractorController extends Controller
         return $this->service->indexList($request);
     }
 
+    public function allContractors()
+    {
+        $contractors = Contractor::select('id', 'name')->where('status', 1)->get();
+        return response()->json($contractors);
+    }
+
     public function create()
     {
         return view('admin.payment.master.contractor.create');

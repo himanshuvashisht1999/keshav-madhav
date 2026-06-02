@@ -19,6 +19,12 @@ class SizeController extends Controller {
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
+    public function allSizes(){
+        $data = \App\Models\MasterSizeMeasurement::select('id', 'name', 'size_group', 'no_of_pcs')
+                    ->whereIn('status', [1, 2])
+                    ->get();
+        return response()->json($data);
+    }
     public function create(){
         return view('admin.master.master-size.create');
     }

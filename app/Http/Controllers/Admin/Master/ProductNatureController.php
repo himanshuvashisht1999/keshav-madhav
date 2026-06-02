@@ -36,6 +36,10 @@ class ProductNatureController extends Controller {
             ->rawColumns(['action', 'status'])
             ->make(true);
     }
+    public function allProductNatures(){
+        $data = ProductNature::select('id', 'name')->where('status', 1)->get();
+        return response()->json($data);
+    }
     public function create(){
         return view('admin.master.product-nature.create');
     }

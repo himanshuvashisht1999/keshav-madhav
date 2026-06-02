@@ -19,6 +19,10 @@ class PatternController extends Controller {
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
+    public function allPatterns(){
+        $data = \App\Models\MasterPattern::select('id', 'name')->where('status', 1)->get();
+        return response()->json($data);
+    }
     public function create(){
         return view('admin.master.pattern.create');
     }

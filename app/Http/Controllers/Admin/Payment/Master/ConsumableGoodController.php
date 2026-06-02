@@ -32,6 +32,12 @@ class ConsumableGoodController extends Controller
         return $this->service->indexList($request);
     }
 
+    public function allConsumables()
+    {
+        $consumables = ConsumableGood::select('id', 'name')->where('status', 1)->get();
+        return response()->json($consumables);
+    }
+
     public function create()
     {
         return view('admin.payment.master.consumable_good.create');

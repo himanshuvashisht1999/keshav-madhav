@@ -31,6 +31,12 @@ class WashingMasterController extends Controller
         return $this->service->indexList($request);
     }
 
+    public function allWashingMasters()
+    {
+        $masters = WashingMaster::select('id', 'name')->where('status', 1)->get();
+        return response()->json($masters);
+    }
+
     public function create()
     {
         return view('admin.payment.master.washing_master.create');

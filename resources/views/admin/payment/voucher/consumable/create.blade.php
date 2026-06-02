@@ -31,8 +31,14 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label><i class="fas fa-user mr-1 text-primary"></i> Select Master <span class="text-danger">*</span></label>
-                                        <select name="consumable_good_id" class="form-control select2" required>
+                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                            <span><i class="fas fa-user mr-1 text-primary"></i> Select Master <span class="text-danger">*</span></span>
+                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                <a href="{{ route('admin.payment.master.consumable_good.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="text-info" id="refreshMasterBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                            </span>
+                                        </label>
+                                        <select name="consumable_good_id" id="masterSelect" class="form-control select2" required>
                                             <option value="">Select Master</option>
                                             @foreach($consumableGoods as $good)
                                                 <option value="{{ $good->id }}">{{ $good->name }}</option>
@@ -142,6 +148,32 @@
     <script>
         $(document).ready(function() {
             let rowCount = 1;
+
+            if ($.fn.select2) {
+                $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
+            }
+
+            $('#refreshMasterBtn').on('click', function() {
+                var btn = $(this);
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.payment.master.consumable_good.all_consumables') }}", function(data) {
+                    var select = $('#masterSelect');
+                    var currentVal = select.val();
+                    if (select.hasClass('select2-hidden-accessible')) {
+                        select.select2('destroy');
+                    }
+                    select.empty();
+                    select.append('<option value="">Select Master</option>');
+                    data.forEach(function(item) {
+                        select.append('<option value="' + item.id + '">' + item.name + '</option>');
+                    });
+                    if (currentVal) select.val(currentVal);
+                    select.select2({ theme: 'bootstrap4', width: '100%' });
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() {
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                });
+            });
 
             // Update file label
             $('#documentFile').on('change', function() {

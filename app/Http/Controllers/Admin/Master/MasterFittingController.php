@@ -19,6 +19,10 @@ class MasterFittingController extends Controller {
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
+    public function allFittings(){
+        $data = \App\Models\MasterProductFitting::select('id', 'name')->where('status', 1)->get();
+        return response()->json($data);
+    }
     public function create(){
         return view('admin.master.fitting.create');
     }

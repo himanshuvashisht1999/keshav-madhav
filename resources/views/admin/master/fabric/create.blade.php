@@ -141,8 +141,14 @@
 
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Fabric Composition</label>
-                                        <select name="composition_id" class="form-control select2" style="width: 100%;">
+                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                            <span>Fabric Composition</span>
+                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                <a href="{{ route('admin.master.fabric_composition.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="text-info" id="refreshCompositionBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                            </span>
+                                        </label>
+                                        <select name="composition_id" id="compositionSelect" class="form-control select2" style="width: 100%;">
                                             <option value="0">N/A</option>
                                             @foreach ($fab_composition_data as $single_data)
                                                 <option value="{{ $single_data->id }}"
@@ -159,8 +165,14 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Unit</label>
-                                        <select name="fabric_unit_id" class="form-control select2" style="width: 100%;">
+                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                            <span>Unit</span>
+                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                <a href="{{ route('admin.master.fabric_unit.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="text-info" id="refreshUnitBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                            </span>
+                                        </label>
+                                        <select name="fabric_unit_id" id="unitSelect" class="form-control select2" style="width: 100%;">
                                             <!-- <option value="">Select Unit</option> -->
                                             @foreach ($fab_unit_data as $single_data)
                                                 <option value="{{ $single_data->id }}"
@@ -244,7 +256,48 @@
 
     <script>
         $(document).ready(function() {
-            // Script logic if any
+            $('#refreshCompositionBtn').on('click', function() {
+                var btn = $(this);
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.master.fabric_composition.all_compositions') }}", function(data) {
+                    var select = $('#compositionSelect');
+                    var currentVal = select.val();
+                    if (select.hasClass('select2-hidden-accessible')) {
+                        select.select2('destroy');
+                    }
+                    select.empty();
+                    select.append('<option value="0">N/A</option>');
+                    data.forEach(function(item) {
+                        select.append('<option value="' + item.id + '">' + item.name + '</option>');
+                    });
+                    if (currentVal) select.val(currentVal);
+                    select.select2({ theme: 'bootstrap4', width: '100%' });
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() {
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                });
+            });
+
+            $('#refreshUnitBtn').on('click', function() {
+                var btn = $(this);
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.master.fabric_unit.all_units') }}", function(data) {
+                    var select = $('#unitSelect');
+                    var currentVal = select.val();
+                    if (select.hasClass('select2-hidden-accessible')) {
+                        select.select2('destroy');
+                    }
+                    select.empty();
+                    data.forEach(function(item) {
+                        select.append('<option value="' + item.id + '">' + item.name + ' (' + item.symbol + ')</option>');
+                    });
+                    if (currentVal) select.val(currentVal);
+                    select.select2({ theme: 'bootstrap4', width: '100%' });
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() {
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                });
+            });
         });
     </script>
 

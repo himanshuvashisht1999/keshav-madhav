@@ -19,6 +19,10 @@ class MasterColorController extends Controller {
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
+    public function allColors(){
+        $data = \App\Models\MasterColor::select('id', 'name')->where('status', 1)->get();
+        return response()->json($data);
+    }
     public function create(){
         return view('admin.master.colors.create');
     }

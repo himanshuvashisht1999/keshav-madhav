@@ -86,7 +86,13 @@
 
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>Series Name</label>
+                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                            <span>Series Name</span>
+                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                <a href="{{ route('admin.master.series.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="text-info" id="refreshSeriesBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                            </span>
+                                        </label>
                                         <select name="master_series_id" id="master_series_id" class="form-control select2"
                                             style="width: 100%;">
                                             <option value="">Select Series</option>
@@ -99,8 +105,14 @@
 
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>Brand</label>
-                                        <select name="brand_id" class="form-control select2" style="width: 100%;">
+                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                            <span>Brand</span>
+                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                <a href="{{ route('admin.master.brand.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="text-info" id="refreshBrandBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                            </span>
+                                        </label>
+                                        <select name="brand_id" id="brand_id" class="form-control select2" style="width: 100%;">
                                             <option value="">Select Brand</option>
                                             @foreach($brands as $brand)
                                                 <option value="{{ $brand->id }}" {{ $data->brand_id == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
@@ -119,8 +131,14 @@
 
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>Fitting</label>
-                                        <select name="master_product_fitting_id"
+                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                            <span>Fitting</span>
+                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                <a href="{{ route('admin.master.fitting.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="text-info" id="refreshFittingBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                            </span>
+                                        </label>
+                                        <select name="master_product_fitting_id" id="master_product_fitting_id"
                                             class="form-control select2"
                                             style="width: 100%;" {{ $data->is_locked_in_inventory ? 'disabled' : '' }}>
                                             <option value="">Select Fitting</option>
@@ -137,8 +155,14 @@
 
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>Pattern</label>
-                                        <select name="master_pattern_id" class="form-control select2"
+                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                            <span>Pattern</span>
+                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                <a href="{{ route('admin.master.pattern.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="text-info" id="refreshPatternBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                            </span>
+                                        </label>
+                                        <select name="master_pattern_id" id="master_pattern_id" class="form-control select2"
                                             style="width: 100%;" {{ $data->is_locked_in_inventory ? 'disabled' : '' }}>
                                             <option value="">Select Pattern</option>
                                             @foreach($garment_patterns as $p)
@@ -154,8 +178,14 @@
 
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>Product Nature</label>
-                                        <select name="product_nature_id" class="form-control select2"
+                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                            <span>Product Nature</span>
+                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                <a href="{{ route('admin.master.product-nature.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="text-info" id="refreshProductNatureBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                            </span>
+                                        </label>
+                                        <select name="product_nature_id" id="product_nature_id" class="form-control select2"
                                             style="width: 100%;" {{ $data->is_locked_in_inventory ? 'disabled' : '' }}>
                                             <option value="">Select Product Nature</option>
                                             @foreach($product_natures as $pn)
@@ -171,8 +201,14 @@
 
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>Fabric Type</label>
-                                        <select name="fabric_type_id" class="form-control select2"
+                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                            <span>Fabric Type</span>
+                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                <a href="{{ route('admin.master.fabric-type.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="text-info" id="refreshFabricTypeBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                            </span>
+                                        </label>
+                                        <select name="fabric_type_id" id="fabric_type_id" class="form-control select2"
                                             style="width: 100%;" {{ $data->is_locked_in_inventory ? 'disabled' : '' }}>
                                             <option value="">Select Fabric Type</option>
                                             @foreach($fabric_types as $ft)
@@ -204,7 +240,13 @@
                                                             <input type="hidden" name="variant_ids[]"
                                                                 value="{{ $variant->id }}">
                                                             <div class="form-group mb-0">
-                                                                <label>Size Set</label>
+                                                                <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                                                    <span>Size Set</span>
+                                                                    <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                                        <a href="{{ route('admin.master.size-measurement.index') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                                        <a href="javascript:void(0)" class="text-info refreshSizeSetBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                                                    </span>
+                                                                </label>
                                                                 <select name="size_sets[]"
                                                                     class="form-control select2 size-set-select"
                                                                     {{ $variant->is_locked_in_inventory ? 'disabled' : '' }}>
@@ -268,7 +310,13 @@
                                                                     name="variant_item_ids[{{ $sIdx }}][{{ $cIdx }}]"
                                                                     value="{{ $item->id }}">
                                                                 <div class="col-md-4">
-                                                                    <label class="small">Color</label>
+                                                                    <label class="d-flex justify-content-between align-items-center mb-1 small text-uppercase">
+                                                                        <span>Color</span>
+                                                                        <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                                            <a href="{{ route('admin.master.colors.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i></a>
+                                                                            <a href="javascript:void(0)" class="text-info refreshColorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                                                        </span>
+                                                                    </label>
                                                                     <select name="variant_colors[{{ $sIdx }}][{{ $cIdx }}]"
                                                                         class="form-control select2 color-select"
                                                                         {{ $item->is_locked_in_inventory ? 'disabled' : '' }}>
@@ -394,6 +442,118 @@
                 toggleRatioBtn($(this));
             });
 
+            // Refresh handlers
+            $('#refreshSeriesBtn').on('click', function() {
+                var btn = $(this);
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.master.series.all_series') }}", function(data) {
+                    var select = $('#master_series_id');
+                    var currentVal = select.val();
+                    select.empty().append('<option value="">Select Series</option>');
+                    data.forEach(function(item) { select.append('<option value="'+item.id+'">'+item.name+'</option>'); });
+                    if(currentVal) select.val(currentVal);
+                    select.trigger('change');
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
+            });
+            $('#refreshBrandBtn').on('click', function() {
+                var btn = $(this);
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.master.brand.all_brands') }}", function(data) {
+                    var select = $('#brand_id');
+                    var currentVal = select.val();
+                    select.empty().append('<option value="">Select Brand</option>');
+                    data.forEach(function(item) { select.append('<option value="'+item.id+'">'+item.name+'</option>'); });
+                    if(currentVal) select.val(currentVal);
+                    select.trigger('change');
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
+            });
+            $('#refreshFittingBtn').on('click', function() {
+                var btn = $(this);
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.master.fitting.all_fittings') }}", function(data) {
+                    var select = $('#master_product_fitting_id');
+                    var currentVal = select.val();
+                    select.empty().append('<option value="">Select Fitting</option>');
+                    data.forEach(function(item) { select.append('<option value="'+item.id+'">'+item.name+'</option>'); });
+                    if(currentVal) select.val(currentVal);
+                    select.trigger('change');
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
+            });
+            $('#refreshPatternBtn').on('click', function() {
+                var btn = $(this);
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.master.pattern.all_patterns') }}", function(data) {
+                    var select = $('#master_pattern_id');
+                    var currentVal = select.val();
+                    select.empty().append('<option value="">Select Pattern</option>');
+                    data.forEach(function(item) { select.append('<option value="'+item.id+'">'+item.name+'</option>'); });
+                    if(currentVal) select.val(currentVal);
+                    select.trigger('change');
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
+            });
+            $('#refreshProductNatureBtn').on('click', function() {
+                var btn = $(this);
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.master.product-nature.all_product_natures') }}", function(data) {
+                    var select = $('#product_nature_id');
+                    var currentVal = select.val();
+                    select.empty().append('<option value="">Select Product Nature</option>');
+                    data.forEach(function(item) { select.append('<option value="'+item.id+'">'+item.name+'</option>'); });
+                    if(currentVal) select.val(currentVal);
+                    select.trigger('change');
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
+            });
+            $('#refreshFabricTypeBtn').on('click', function() {
+                var btn = $(this);
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.master.fabric-type.all_fabric_types') }}", function(data) {
+                    var select = $('#fabric_type_id');
+                    var currentVal = select.val();
+                    select.empty().append('<option value="">Select Fabric Type</option>');
+                    data.forEach(function(item) { select.append('<option value="'+item.id+'">'+item.name+'</option>'); });
+                    if(currentVal) select.val(currentVal);
+                    select.trigger('change');
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
+            });
+            $(document).on('click', '.refreshSizeSetBtn', function() {
+                var btn = $(this);
+                var select = btn.closest('.form-group').find('select').length ? btn.closest('.form-group').find('select') : btn.closest('.col-md-4').find('select');
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.master.size.all_sizes') }}", function(data) {
+                    var currentVal = select.val();
+                    select.empty().append('<option value="">Select Size Set</option>');
+                    data.forEach(function(item) { 
+                        var option = $('<option></option>').attr('value', item.id)
+                            .attr('data-set-group', item.size_group)
+                            .attr('data-pcs', item.no_of_pcs)
+                            .text(item.name + ' (' + item.no_of_pcs + ' Pcs)');
+                        select.append(option); 
+                    });
+                    if(currentVal) select.val(currentVal);
+                    select.trigger('change');
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
+            });
+            $(document).on('click', '.refreshColorBtn', function() {
+                var btn = $(this);
+                var select = btn.closest('.col-md-4').find('select');
+                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                $.getJSON("{{ route('admin.master.colors.all_colors') }}", function(data) {
+                    var currentVal = select.val();
+                    select.empty().append('<option value="">Select Color</option>');
+                    data.forEach(function(item) { select.append('<option value="'+item.id+'">'+item.name+'</option>'); });
+                    if(currentVal) select.val(currentVal);
+                    select.trigger('change');
+                    btn.html('<i class="fas fa-sync-alt"></i>');
+                }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
+            });
+
             // Dynamic Rows Logic
             function reindexAll() {
                 $('.size-set-block').each(function (sIdx) {
@@ -423,7 +583,13 @@
                                         <div class="row align-items-end mb-3">
                                             <div class="col-md-4 text-left">
                                                 <input type="hidden" name="variant_ids[]" value="">
-                                                <label>Size Set</label>
+                                                <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                                    <span>Size Set</span>
+                                                    <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                        <a href="{{ route('admin.master.size-measurement.index') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                        <a href="javascript:void(0)" class="text-info refreshSizeSetBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                                    </span>
+                                                </label>
                                                  <select name="size_sets[]" class="form-control select2 size-set-select" style="width: 100%;">
                                                     <option value="">Select Size Set</option>
                                                     @foreach($sizes as $size)
@@ -450,6 +616,13 @@
                                             <h6>Colors & Images</h6>
                                             <div class="color-item-row row mb-2 align-items-center border-bottom pb-2">
                                                 <div class="col-md-4">
+                                                    <label class="d-flex justify-content-between align-items-center mb-1 small text-uppercase">
+                                                        <span>Color</span>
+                                                        <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                            <a href="{{ route('admin.master.colors.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i></a>
+                                                            <a href="javascript:void(0)" class="text-info refreshColorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                                        </span>
+                                                    </label>
                                                     <select name="variant_colors[${sIdx}][0]" class="form-control select2 color-select" style="width: 100%;">
                                                         <option value="">Select Color</option>
                                                         @foreach($colors as $color)
@@ -491,6 +664,13 @@
                                     <div class="color-item-row row mb-2 align-items-center border-bottom pb-2">
                                         <input type="hidden" name="variant_item_ids[${sIdx}][${cIdx}]" value="">
                                         <div class="col-md-4">
+                                            <label class="d-flex justify-content-between align-items-center mb-1 small text-uppercase">
+                                                <span>Color</span>
+                                                <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                    <a href="{{ route('admin.master.colors.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i></a>
+                                                    <a href="javascript:void(0)" class="text-info refreshColorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                                </span>
+                                            </label>
                                             <select name="variant_colors[${sIdx}][${cIdx}]" class="form-control select2 color-select" style="width: 100%;">
                                                 <option value="">Select Color</option>
                                                 @foreach($colors as $color)
@@ -629,13 +809,19 @@
                     },
                     success: function (response) {
                         if (response.new_size_set_id) {
-                            if (window.currentSizeSelect.find(`option[value="${response.new_size_set_id}"]`).length === 0) {
-                                let newOption = new Option(response.new_size_name + " (" + response.new_size_group + ")", response.new_size_set_id, true, true);
+                            let $existingOption = window.currentSizeSelect.find(`option[value="${response.new_size_set_id}"]`);
+                            let optionText = response.new_size_name + " (" + response.no_of_pcs + " Pcs)";
+                            if ($existingOption.length === 0) {
+                                let newOption = new Option(optionText, response.new_size_set_id, true, true);
                                 $(newOption).attr('data-set-group', response.new_size_group);
                                 $(newOption).attr('data-pcs', response.no_of_pcs);
                                 window.currentSizeSelect.append(newOption).trigger('change');
                             } else {
-                                window.currentSizeSelect.val(response.new_size_set_id).trigger('change');
+                                let newOption = new Option(optionText, response.new_size_set_id, true, true);
+                                $(newOption).attr('data-set-group', response.new_size_group);
+                                $(newOption).attr('data-pcs', response.no_of_pcs);
+                                $existingOption.replaceWith(newOption);
+                                window.currentSizeSelect.trigger('change');
                             }
                         }
                         closeRatioModal();

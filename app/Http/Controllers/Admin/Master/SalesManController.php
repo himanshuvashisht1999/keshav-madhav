@@ -21,6 +21,12 @@ class SalesManController extends Controller
         return view('admin.master.sales_man.index', compact('salesMen'));
     }
 
+    public function allSalesMen()
+    {
+        $sales_men = SalesMan::select('id', 'name')->where('status', 1)->get();
+        return response()->json($sales_men);
+    }
+
     public function create()
     {
         return view('admin.master.sales_man.create');

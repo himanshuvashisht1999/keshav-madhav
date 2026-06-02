@@ -21,6 +21,11 @@ class BrandController extends Controller {
         return $this->service->indexList($request);
     }
 
+    public function allBrands(){
+        $data = \App\Models\Brand::select('id', 'name')->where('status', 'active')->get();
+        return response()->json($data);
+    }
+
     public function create(){
         return view('admin.master.brand.create');
     }

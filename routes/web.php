@@ -612,6 +612,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('master/pattern')->name('master.pattern.')->group(function () {
             Route::get('/index', [AdminPatternController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminPatternController::class, 'indexList'])->name('indexList');
+            Route::get('/all_patterns', [AdminPatternController::class, 'allPatterns'])->name('all_patterns');
             Route::get('/create', [AdminPatternController::class, 'create'])->name('create');
             Route::post('/store', [AdminPatternController::class, 'store'])->name('store');
             Route::get('/edit', [AdminPatternController::class, 'edit'])->name('edit');
@@ -677,6 +678,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('master/fabric-composition')->name('master.fabric_composition.')->group(function () {
             Route::get('/index', [AdminFabricCompositionController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminFabricCompositionController::class, 'indexList'])->name('indexList');
+            Route::get('/all_compositions', [AdminFabricCompositionController::class, 'allCompositions'])->name('all_compositions');
             Route::get('/create', [AdminFabricCompositionController::class, 'create'])->name('create');
             Route::post('/store', [AdminFabricCompositionController::class, 'store'])->name('store');
             Route::get('/edit', [AdminFabricCompositionController::class, 'edit'])->name('edit');
@@ -704,6 +706,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('master/fabric_unit')->name('master.fabric_unit.')->group(function () {
             Route::get('/index', [AdminFabricUnitController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminFabricUnitController::class, 'indexList'])->name('indexList');
+            Route::get('/all_units', [AdminFabricUnitController::class, 'allUnits'])->name('all_units');
             Route::get('/create', [AdminFabricUnitController::class, 'create'])->name('create');
             Route::post('/store', [AdminFabricUnitController::class, 'store'])->name('store');
             Route::get('/edit', [AdminFabricUnitController::class, 'edit'])->name('edit');
@@ -880,6 +883,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('master/size')->name('master.size.')->group(function () {
             Route::get('/index', [AdminSizeController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminSizeController::class, 'indexList'])->name('indexList');
+            Route::get('/all_sizes', [AdminSizeController::class, 'allSizes'])->name('all_sizes');
             Route::get('/create', [AdminSizeController::class, 'create'])->name('create');
             Route::post('/store', [AdminSizeController::class, 'store'])->name('store');
             Route::get('/edit', [AdminSizeController::class, 'edit'])->name('edit');
@@ -942,6 +946,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('master/colors')->name('master.colors.')->group(function () {
             Route::get('/index', [AdminMasterColorController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminMasterColorController::class, 'indexList'])->name('indexList');
+            Route::get('/all_colors', [AdminMasterColorController::class, 'allColors'])->name('all_colors');
             Route::get('/create', [AdminMasterColorController::class, 'create'])->name('create');
             Route::post('/store', [AdminMasterColorController::class, 'store'])->name('store');
             Route::get('/edit', [AdminMasterColorController::class, 'edit'])->name('edit');
@@ -952,6 +957,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('master/product-nature')->name('master.product-nature.')->group(function () {
             Route::get('/index', [AdminProductNatureController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminProductNatureController::class, 'indexList'])->name('indexList');
+            Route::get('/all_product_natures', [AdminProductNatureController::class, 'allProductNatures'])->name('all_product_natures');
             Route::get('/create', [AdminProductNatureController::class, 'create'])->name('create');
             Route::post('/store', [AdminProductNatureController::class, 'store'])->name('store');
             Route::get('/edit', [AdminProductNatureController::class, 'edit'])->name('edit');
@@ -962,6 +968,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('master/fabric-type')->name('master.fabric-type.')->group(function () {
             Route::get('/index', [AdminFabricTypeController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminFabricTypeController::class, 'indexList'])->name('indexList');
+            Route::get('/all_fabric_types', [AdminFabricTypeController::class, 'allFabricTypes'])->name('all_fabric_types');
             Route::get('/create', [AdminFabricTypeController::class, 'create'])->name('create');
             Route::post('/store', [AdminFabricTypeController::class, 'store'])->name('store');
             Route::get('/edit', [AdminFabricTypeController::class, 'edit'])->name('edit');
@@ -971,6 +978,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('master/series')->name('master.series.')->group(function () {
             Route::get('/index', [AdminMasterSeriesController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminMasterSeriesController::class, 'indexList'])->name('indexList');
+            Route::get('/all_series', [AdminMasterSeriesController::class, 'allSeries'])->name('all_series');
             Route::get('/create', [AdminMasterSeriesController::class, 'create'])->name('create');
             Route::post('/store', [AdminMasterSeriesController::class, 'store'])->name('store');
             Route::get('/edit', [AdminMasterSeriesController::class, 'edit'])->name('edit');
@@ -980,6 +988,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('master/fitting')->name('master.fitting.')->group(function () {
             Route::get('/index', [AdminMasterFittingController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminMasterFittingController::class, 'indexList'])->name('indexList');
+            Route::get('/all_fittings', [AdminMasterFittingController::class, 'allFittings'])->name('all_fittings');
             Route::get('/create', [AdminMasterFittingController::class, 'create'])->name('create');
             Route::post('/store', [AdminMasterFittingController::class, 'store'])->name('store');
             Route::get('/edit', [AdminMasterFittingController::class, 'edit'])->name('edit');
@@ -1031,6 +1040,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
         Route::prefix('master/sales-man')->name('master.sales-man.')->group(function () {
             Route::get('/index', [\App\Http\Controllers\Admin\Master\SalesManController::class, 'index'])->name('index');
+            Route::get('/all_sales_men', [\App\Http\Controllers\Admin\Master\SalesManController::class, 'allSalesMen'])->name('all_sales_men');
             Route::get('/create', [\App\Http\Controllers\Admin\Master\SalesManController::class, 'create'])->name('create');
             Route::post('/store', [\App\Http\Controllers\Admin\Master\SalesManController::class, 'store'])->name('store');
             Route::get('/edit/{salesMan}', [\App\Http\Controllers\Admin\Master\SalesManController::class, 'edit'])->name('edit');
@@ -1081,6 +1091,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('master/brand')->name('master.brand.')->group(function () {
             Route::get('/index', [AdminBrandController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminBrandController::class, 'indexList'])->name('indexList');
+            Route::get('/all_brands', [AdminBrandController::class, 'allBrands'])->name('all_brands');
             Route::get('/create', [AdminBrandController::class, 'create'])->name('create');
             Route::post('/store', [AdminBrandController::class, 'store'])->name('store');
             Route::get('/edit', [AdminBrandController::class, 'edit'])->name('edit');
@@ -1394,6 +1405,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::prefix('washing_master')->name('washing_master.')->group(function () {
                     Route::get('/index', [AdminWashingMasterController::class, 'index'])->name('index');
                     Route::get('/indexList', [AdminWashingMasterController::class, 'indexList'])->name('indexList');
+                    Route::get('/all_washing_masters', [AdminWashingMasterController::class, 'allWashingMasters'])->name('all_washing_masters');
                     Route::get('/create', [AdminWashingMasterController::class, 'create'])->name('create');
                     Route::post('/store', [AdminWashingMasterController::class, 'store'])->name('store');
                     Route::get('/edit', [AdminWashingMasterController::class, 'edit'])->name('edit');
@@ -1412,6 +1424,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::prefix('contractor')->name('contractor.')->group(function () {
                     Route::get('/index', [AdminContractorController::class, 'index'])->name('index');
                     Route::get('/indexList', [AdminContractorController::class, 'indexList'])->name('indexList');
+                    Route::get('/all_contractors', [AdminContractorController::class, 'allContractors'])->name('all_contractors');
                     Route::get('/create', [AdminContractorController::class, 'create'])->name('create');
                     Route::post('/store', [AdminContractorController::class, 'store'])->name('store');
                     Route::get('/edit', [AdminContractorController::class, 'edit'])->name('edit');
@@ -1421,6 +1434,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::prefix('consumable_good')->name('consumable_good.')->group(function () {
                     Route::get('/index', [AdminConsumableGoodController::class, 'index'])->name('index');
                     Route::get('/indexList', [AdminConsumableGoodController::class, 'indexList'])->name('indexList');
+                    Route::get('/all_consumables', [AdminConsumableGoodController::class, 'allConsumables'])->name('all_consumables');
                     Route::get('/create', [AdminConsumableGoodController::class, 'create'])->name('create');
                     Route::post('/store', [AdminConsumableGoodController::class, 'store'])->name('store');
                     Route::get('/edit', [AdminConsumableGoodController::class, 'edit'])->name('edit');

@@ -56,7 +56,13 @@
                                     </div>
 
                                     <div class="form-group mb-4" id="customerWrapper" style="{{ old('party_type', request('party_type', 'customer')) == 'customer' ? '' : 'display:none;' }}">
-                                        <label class="text-muted small font-weight-bold text-uppercase">Select Customer <span class="text-danger">*</span></label>
+                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                            <span>Select Customer <span class="text-danger">*</span></span>
+                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                <a href="{{ route('admin.master.customer.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="text-info" id="refreshCustomerBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                            </span>
+                                        </label>
                                         <select name="master_customer_id" id="customerSelect" class="form-control select2 @error('master_customer_id') is-invalid @enderror">
                                             <option value="">-- Choose Customer --</option>
                                             @foreach($shops as $shop_item)
@@ -68,7 +74,13 @@
                                     </div>
 
                                     <div class="form-group mb-4" id="vendorWrapper" style="{{ old('party_type', request('party_type')) == 'vendor' ? '' : 'display:none;' }}">
-                                        <label class="text-muted small font-weight-bold text-uppercase">Select Vendor <span class="text-danger">*</span></label>
+                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                            <span>Select Vendor <span class="text-danger">*</span></span>
+                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                <a href="{{ route('admin.master.vendor.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="text-info" id="refreshVendorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                            </span>
+                                        </label>
                                         <select name="master_vendor_id" id="vendorSelect" class="form-control select2 @error('master_vendor_id') is-invalid @enderror">
                                             <option value="">-- Choose Vendor --</option>
                                             @foreach($vendors as $vendor_item)
@@ -101,7 +113,13 @@
                                     </div>
 
                                     <div class="form-group mb-4">
-                                        <label class="text-muted small font-weight-bold text-uppercase">Select Sales Man</label>
+                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
+                                            <span>Select Sales Man</span>
+                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                <a href="{{ route('admin.master.sales-man.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="text-info" id="refreshSalesManBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                            </span>
+                                        </label>
                                         <select name="sales_man_id" id="salesManSelect" class="form-control select2">
                                             <option value="">-- Optional: Choose Sales Man --</option>
                                             @foreach($salesMen as $man)
@@ -435,6 +453,75 @@
         if ($.fn.select2) {
             $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
         }
+
+        // Refresh Customer
+        $('#refreshCustomerBtn').on('click', function() {
+            var btn = $(this);
+            btn.html('<i class="fas fa-spinner fa-spin"></i>');
+            $.getJSON("{{ route('admin.sales_order.all_customers') }}", function(data) {
+                var select = $('#customerSelect');
+                var currentVal = select.val();
+                if (select.hasClass('select2-hidden-accessible')) {
+                    select.select2('destroy');
+                }
+                select.empty();
+                select.append('<option value="">-- Choose Customer --</option>');
+                data.forEach(function(item) {
+                    select.append('<option value="' + item.id + '">' + item.name + '</option>');
+                });
+                if (currentVal) select.val(currentVal);
+                select.select2({ theme: 'bootstrap4', width: '100%' });
+                btn.html('<i class="fas fa-sync-alt"></i>');
+            }).fail(function() {
+                btn.html('<i class="fas fa-sync-alt"></i>');
+            });
+        });
+
+        // Refresh Vendor
+        $('#refreshVendorBtn').on('click', function() {
+            var btn = $(this);
+            btn.html('<i class="fas fa-spinner fa-spin"></i>');
+            $.getJSON("{{ route('admin.purchase_order.all_vendors') }}", function(data) {
+                var select = $('#vendorSelect');
+                var currentVal = select.val();
+                if (select.hasClass('select2-hidden-accessible')) {
+                    select.select2('destroy');
+                }
+                select.empty();
+                select.append('<option value="">-- Choose Vendor --</option>');
+                data.forEach(function(item) {
+                    select.append('<option value="' + item.id + '">' + item.name + '</option>');
+                });
+                if (currentVal) select.val(currentVal);
+                select.select2({ theme: 'bootstrap4', width: '100%' });
+                btn.html('<i class="fas fa-sync-alt"></i>');
+            }).fail(function() {
+                btn.html('<i class="fas fa-sync-alt"></i>');
+            });
+        });
+
+        // Refresh Sales Man
+        $('#refreshSalesManBtn').on('click', function() {
+            var btn = $(this);
+            btn.html('<i class="fas fa-spinner fa-spin"></i>');
+            $.getJSON("{{ route('admin.master.sales-man.all_sales_men') }}", function(data) {
+                var select = $('#salesManSelect');
+                var currentVal = select.val();
+                if (select.hasClass('select2-hidden-accessible')) {
+                    select.select2('destroy');
+                }
+                select.empty();
+                select.append('<option value="">-- Optional: Choose Sales Man --</option>');
+                data.forEach(function(item) {
+                    select.append('<option value="' + item.id + '">' + item.name + '</option>');
+                });
+                if (currentVal) select.val(currentVal);
+                select.select2({ theme: 'bootstrap4', width: '100%' });
+                btn.html('<i class="fas fa-sync-alt"></i>');
+            }).fail(function() {
+                btn.html('<i class="fas fa-sync-alt"></i>');
+            });
+        });
 
         // Agent selection removed - automatically determined based on customer and order type
         $('input[name="party_type"]').change(function() {

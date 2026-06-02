@@ -19,6 +19,10 @@ class FabricCompositionController extends Controller {
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
+    public function allCompositions(){
+        $compositions = \App\Models\FabricComposition::select('id', 'name')->where('status', 1)->get();
+        return response()->json($compositions);
+    }
     public function create(){
         return view('admin.master.fabric_composition.create');
     }
