@@ -555,6 +555,13 @@ CLS
 if (!function_exists('send_whatsapp_message')) {
     function send_whatsapp_message($phone, $message)
     {
+        // Prevent sending WhatsApp messages when testing locally
+        $host = request()->getHost();
+        if (in_array($host, ['127.0.0.1', 'localhost', '::1'])) {
+            \Illuminate\Support\Facades\Log::info("WhatsApp message simulated on localhost. To: $phone, Message: $message");
+            return true;
+        }
+
         // $apiKey can also be moved to .env in future: env('WHATSAPP_API_KEY', '...')
         $apiKey = "14a7d8a2c76144343c3813705bb586a0db28724b888bc838e1";
         $url = "https://app.messageautosender.com/api/v1/message/create";
