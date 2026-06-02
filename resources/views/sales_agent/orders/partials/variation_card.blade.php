@@ -9,9 +9,9 @@
      data-pcs="{{ $variation->pcs_per_box }}"
      data-price="{{ $variation->unit_price }}">
     
-    <div class="position-relative">
+    <div class="position-relative" style="background-color: #f8f9fa; border-radius: 15px 15px 0 0; border-bottom: 1px solid #dee2e6;">
         @if($image)
-            <img src="{{ asset('assets/products/' . $image) }}" class="card-img-top zoom-image" alt="Product" style="height: 180px; object-fit: cover; border-radius: 15px 15px 0 0; cursor: pointer;">
+            <img src="{{ asset('assets/products/' . $image) }}" class="card-img-top zoom-image" alt="Product" style="height: 180px; object-fit: contain; border-radius: 15px 15px 0 0; cursor: pointer; width: 100%;">
         @else
             <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px; border-radius: 15px 15px 0 0;">
                 <i class="fas fa-image fa-3x text-muted opacity-25"></i>

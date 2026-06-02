@@ -565,7 +565,8 @@
                 list.empty();
 
                 const globalHtml = `
-                    <div class="card border-primary shadow-sm mb-3 rounded-lg" style="background-color: #f8faff;">
+                    <div class="card border-primary shadow-sm mb-3 rounded-lg overflow-hidden" style="background-color: #f8faff;">
+                        ${data.product.image ? `<div style="background-color: #f8f9fa; text-align: center; border-bottom: 1px solid #dee2e6;"><img src="${data.product.image}" class="zoom-image" style="max-height: 250px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer;"></div>` : `<div class="bg-light d-flex align-items-center justify-content-center" style="height: 150px; border-bottom: 1px solid #dee2e6;"><i class="fas fa-image fa-3x text-muted opacity-25"></i></div>`}
                         <div class="card-body p-3 d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="font-weight-bold text-primary mb-0"><i class="fas fa-layer-group mr-2"></i>Apply to All Colors</h6>
@@ -589,7 +590,8 @@
                     const currentQty = item ? item.qty : 0;
 
                     const html = `
-                        <div class="card border-0 shadow-sm mb-2 rounded-lg" data-key="${vKey}">
+                        <div class="card border-0 shadow-sm mb-3 rounded-lg overflow-hidden" data-key="${vKey}">
+                            ${color.image ? `<div style="background-color: #f8f9fa; text-align: center; border-bottom: 1px solid #dee2e6;"><img src="${color.image}" class="zoom-image" style="max-height: 250px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer;"></div>` : `<div class="bg-light d-flex align-items-center justify-content-center" style="height: 150px; border-bottom: 1px solid #dee2e6;"><i class="fas fa-image fa-3x text-muted opacity-25"></i></div>`}
                             <div class="card-body p-3 d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="font-weight-bold text-dark mb-0">${color.name}</h6>

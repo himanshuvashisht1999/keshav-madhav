@@ -1238,6 +1238,25 @@ class OrderController extends Controller
                     $mrp = $variant->mrp ?? 0;
                     $unit_price = $mrp - ($mrp * $discount_percentage / 100);
 
+                    // --- NEW: Add Images for Main Product and Colors ---
+                    $main_image = $product->photo;
+                    if (!$main_image && $variant && $variant->image) {
+                        $main_image = $variant->image;
+                    }
+
+                    foreach ($availableColors as $color) {
+                        $cImg = DB::table('production_goods_variant_colors')
+                            ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
+                            ->where('production_goods_variants.production_goods_id', $productId)
+                            ->where('production_goods_variants.master_size_measurement_id', $sizeSetId)
+                            ->where('production_goods_variant_colors.master_color_id', $color->id)
+                            ->whereNotNull('production_goods_variant_colors.image')
+                            ->value('production_goods_variant_colors.image');
+                        
+                        $color->image = $cImg ? asset('assets/products/' . $cImg) : ($main_image ? asset('assets/products/' . $main_image) : null);
+                    }
+                    // ----------------------------------------------------
+
                     return response()->json([
                         'success' => true,
                         'product' => [
@@ -1248,6 +1267,7 @@ class OrderController extends Controller
                             'size_set_name' => DB::table('master_size_measurements')->where('id', $sizeSetId)->value('name'),
                             'mrp' => $mrp,
                             'unit_price' => $unit_price,
+                            'image' => $main_image ? asset('assets/products/' . $main_image) : null,
                         ],
                         'colors' => $availableColors
                     ]);
@@ -1322,6 +1342,25 @@ class OrderController extends Controller
                 $mrp = $variant->mrp ?? 0;
                 $unit_price = $mrp - ($mrp * $discount_percentage / 100);
 
+                // --- NEW: Add Images for Main Product and Colors ---
+                $main_image = $product->photo;
+                if (!$main_image && $variant && $variant->image) {
+                    $main_image = $variant->image;
+                }
+
+                foreach ($availableColors as $color) {
+                    $cImg = DB::table('production_goods_variant_colors')
+                        ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
+                        ->where('production_goods_variants.production_goods_id', $productId)
+                        ->where('production_goods_variants.master_size_measurement_id', $sizeSetId)
+                        ->where('production_goods_variant_colors.master_color_id', $color->id)
+                        ->whereNotNull('production_goods_variant_colors.image')
+                        ->value('production_goods_variant_colors.image');
+                    
+                    $color->image = $cImg ? asset('assets/products/' . $cImg) : ($main_image ? asset('assets/products/' . $main_image) : null);
+                }
+                // ----------------------------------------------------
+
                 return response()->json([
                     'success' => true,
                     'product' => [
@@ -1332,6 +1371,7 @@ class OrderController extends Controller
                         'size_set_name' => DB::table('master_size_measurements')->where('id', $sizeSetId)->value('name'),
                         'mrp' => $mrp,
                         'unit_price' => $unit_price,
+                        'image' => $main_image ? asset('assets/products/' . $main_image) : null,
                     ],
                     'colors' => $availableColors
                 ]);
