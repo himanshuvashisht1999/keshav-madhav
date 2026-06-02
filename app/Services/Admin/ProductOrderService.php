@@ -1261,8 +1261,9 @@ class ProductOrderService
         $no_of_pcs = count(explode(',', $request->finalGroup)) ?? 0;
 
         $exists = MasterSizeMeasurement::where('set_size', $set_size)
+            ->where('size_group', $size_group)
             ->where('status', 2)
-            ->exists();
+            ->first();
         $new_size_set_id = '';
         $product = ProductionGoods::find($request->design_id);
         $design_number_str = $product ? $product->design_number : $request->design_id;
@@ -1280,13 +1281,7 @@ class ProductOrderService
             $save_data->save();
             $new_size_set_id = $save_data->id;
         } else {
-            $size_data = MasterSizeMeasurement::where('set_size', $set_size)
-                ->where('status', 2)->first();
-            $size_data->design_number = $design_number_str;
-            $size_data->size_group = $size_group;
-            $size_data->no_of_pcs = $no_of_pcs;
-            $size_data->save();
-            $new_size_set_id = $size_data->id;
+            $new_size_set_id = $exists->id;
         }
 
 

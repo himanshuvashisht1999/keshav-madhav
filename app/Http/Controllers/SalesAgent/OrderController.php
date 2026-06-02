@@ -1054,6 +1054,10 @@ class OrderController extends Controller
         if (!$order)
             abort(404);
 
+        if ($request->has('see_price')) {
+            $order->see_price = $request->see_price;
+        }
+
         if ($order->sale_type === 'fabric') {
             $items = DB::table('agent_order_fabric_items')
                 ->join('fabrics', 'agent_order_fabric_items.fabric_id', '=', 'fabrics.id')
