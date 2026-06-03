@@ -543,6 +543,21 @@ class FabricReceiptService
         if ($request->has('roll_details')) {
             $received_ids = [];
             foreach ($request->roll_details as $single_data) {
+                if (isset($single_data['detail_id']) && !empty($single_data['detail_id'])) {
+                    $received_ids[] = $single_data['detail_id'];
+                }
+            }
+
+            // Safety check: prevent removing rolls that are already used
+            $removed_rolls = $update_data->details()->whereNotIn('id', $received_ids)->get();
+            foreach ($removed_rolls as $removed) {
+                if ($removed->remaining_quantity < $removed->meter) {
+                    throw new \Exception("Cannot remove roll '{$removed->roll_number}' because it has already been used in production.");
+                }
+            }
+
+            $received_ids = [];
+            foreach ($request->roll_details as $single_data) {
                 $fab_data = Fabric::where('id', $single_data['fabric_id'])->first();
                 if (!$fab_data)
                     continue;

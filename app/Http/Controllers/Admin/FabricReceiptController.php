@@ -91,8 +91,12 @@ class FabricReceiptController extends Controller
     }
     public function update(FabricReceiptUpdateRequest $request)
     {
-        $data = $this->service->update($request);
-        return redirect()->route('admin.fabric_receipt.index')->withSuccess('The fabric receipt has been successfully updated.');
+        try {
+            $data = $this->service->update($request);
+            return redirect()->route('admin.fabric_receipt.index')->withSuccess('The fabric receipt has been successfully updated.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withInput()->withError($e->getMessage());
+        }
     }
     public function storeDetail(FabricReceiptDetailStoreRequest $request)
     {
