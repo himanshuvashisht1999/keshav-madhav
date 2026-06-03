@@ -25,6 +25,7 @@ class FabricRollAssigning extends Model
         'stage_master_unit_id',
         'to_stage_id',
         'roll_no',
+        'fabric_receipt_detail_id',
         'meter',
         'slip_create_date_time',
         'slip_file',
@@ -56,6 +57,11 @@ class FabricRollAssigning extends Model
     public function productionSlipDigitization()
     {
         return $this->belongsTo(\App\Models\ProductionSlipDigitization::class, 'production_slip_digitization_id');
+    }
+
+    public function fabricReceiptDetail()
+    {
+        return $this->belongsTo(\App\Models\FabricReceiptDetail::class, 'fabric_receipt_detail_id');
     }
 
 }

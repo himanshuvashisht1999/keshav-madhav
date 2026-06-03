@@ -626,7 +626,7 @@ class UploadedSlipsController extends Controller
                 $rolls = FabricRollAssigning::where('order_lot_id', $id)->get();
                 foreach ($rolls as $roll) {
                     // Revert FabricReceiptDetail meters
-                    $receipt = FabricReceiptDetail::where('roll_number', $roll->roll_no)->first();
+                    $receipt = FabricReceiptDetail::find($roll->fabric_receipt_detail_id);
                     if ($receipt) {
                         $receipt->remaining_quantity += $roll->meter;
                         $receipt->save();

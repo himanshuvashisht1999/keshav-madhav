@@ -134,7 +134,8 @@ class OrderDigitalizationService
                     $save_data_main->order_products_set_id = $request->design_id;
                     $save_data_main->order_no = $order_product_set->orderMain?->sku;
                     $save_data_main->stage_master_unit_id = $slip->stage_master_unit_id; // Get from slip
-                    $save_data_main->roll_no = $request->roll_no_list[$key];
+                    $save_data_main->fabric_receipt_detail_id = $request->roll_no_list[$key];
+                    $save_data_main->roll_no = null;
                     $save_data_main->meter = $request->meter_list[$key];
                     $save_data_main->slip_create_date_time = $request->slip_create_date_time ?? NULL;
                     $save_data_main->status = 1;
@@ -763,9 +764,7 @@ class OrderDigitalizationService
                 foreach ($fras as $fra) {
                     // Restore Roll Meter in Fabric Receipt
                     $fabricIds = explode(',', $fra->order_product_set?->fabric_id ?? '');
-                    $roll = \App\Models\FabricReceiptDetail::where('roll_number', $fra->roll_no)
-                        ->whereIn('fabric_id', array_filter($fabricIds))
-                        ->first();
+                    $roll = \App\Models\FabricReceiptDetail::find($fra->fabric_receipt_detail_id);
                     if ($roll) {
                         $new_qty = min($roll->meter, $roll->remaining_quantity + $fra->meter);
                         $roll->update(['remaining_quantity' => $new_qty]);

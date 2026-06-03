@@ -501,10 +501,10 @@ class ReportService
             if ($warehouseId) {
                 $rollQuery->where('master_fabric_warehouse_id', $warehouseId);
             }
-            $rollNumbers = $rollQuery->pluck('roll_number')->filter()->unique();
+            $rollIds = $rollQuery->pluck('id')->filter()->unique();
 
-            $internalUsages = \App\Models\FabricRollAssigning::with(['orderProductSet.colors', 'stageMasterUnit'])
-                ->whereIn('roll_no', $rollNumbers->isEmpty() ? ['NOT_REAL_ROLL'] : $rollNumbers)
+            $internalUsages = \App\Models\FabricRollAssigning::with(['orderProductSet.colors', 'stageMasterUnit', 'fabricReceiptDetail'])
+                ->whereIn('fabric_receipt_detail_id', $rollIds->isEmpty() ? [0] : $rollIds)
                 ->orderBy('created_at', 'desc')
                 ->get();
 
@@ -693,14 +693,14 @@ class ReportService
 
         $receipts = $query->get();
 
-        $rollNumbers = $receipts->pluck('roll_number')->filter()->unique();
+        $rollIds = $receipts->pluck('id')->filter()->unique();
 
-        if ($rollNumbers->isEmpty()) {
+        if ($rollIds->isEmpty()) {
             return [];
         }
 
-        $usages = \App\Models\FabricRollAssigning::with(['orderProductSet.colors', 'stageMasterUnit'])
-            ->whereIn('roll_no', $rollNumbers)
+        $usages = \App\Models\FabricRollAssigning::with(['orderProductSet.colors', 'stageMasterUnit', 'fabricReceiptDetail'])
+            ->whereIn('fabric_receipt_detail_id', $rollIds)
             ->get();
 
         $ledger = [];

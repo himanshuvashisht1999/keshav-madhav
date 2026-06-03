@@ -97,7 +97,7 @@ class FabricLedgerController extends Controller
 
         // C. Production (Cutting)
         $productionOutwards = FabricRollAssigning::with(['orderProductSet', 'stageMasterUnit'])
-            ->whereIn('roll_no', $receivedRollNumbers->isEmpty() ? ['-'] : $receivedRollNumbers)
+            ->whereIn('fabric_receipt_detail_id', $receivedRollIds->isEmpty() ? [0] : $receivedRollIds)
             ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
             ->get();
@@ -236,7 +236,7 @@ class FabricLedgerController extends Controller
             $inwardBefore = FabricReceiptDetail::where('fabric_id', $id)->where('status', '>', 0)->whereDate('created_at', '<', $startDate)->sum('meter');
             $salesBefore = AgentOrderFabricItem::whereHas('roll', fn($q) => $q->where('fabric_id', $id))->where('status', 'dispatched')->whereDate('created_at', '<', $startDate)->sum('meter');
             $returnsBefore = FabricReturnDetail::whereHas('receipt_detail', fn($q) => $q->where('fabric_id', $id))->whereDate('created_at', '<', $startDate)->sum('return_meter');
-            $productionBefore = FabricRollAssigning::whereIn('roll_no', $receivedRollNumbers->isEmpty() ? ['-'] : $receivedRollNumbers)->whereHas('orderProductSet', fn($q) => $q->whereRaw("FIND_IN_SET(?, fabric_id)", [$id]))->whereDate('created_at', '<', $startDate)->sum('meter');
+            $productionBefore = FabricRollAssigning::whereIn('fabric_receipt_detail_id', $receivedRollIds->isEmpty() ? [0] : $receivedRollIds)->whereHas('orderProductSet', fn($q) => $q->whereRaw("FIND_IN_SET(?, fabric_id)", [$id]))->whereDate('created_at', '<', $startDate)->sum('meter');
             $openingBalanceAmount = (float)$inwardBefore - (float)$salesBefore - (float)$returnsBefore - (float)$productionBefore;
         }
 

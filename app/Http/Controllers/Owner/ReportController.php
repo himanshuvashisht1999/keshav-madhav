@@ -99,7 +99,9 @@ class ReportController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $internalUsages = \App\Models\FabricRollAssigning::where('roll_no', $rollNo)
+        $receiptIds = \App\Models\FabricReceiptDetail::where('fabric_id', $fabricId)->where('roll_number', $rollNo)->pluck('id');
+
+        $internalUsages = \App\Models\FabricRollAssigning::whereIn('fabric_receipt_detail_id', $receiptIds->isEmpty() ? [0] : $receiptIds)
             ->with(['orderProductSet.colors', 'stageMasterUnit'])
             ->orderBy('created_at', 'desc')
             ->get();
