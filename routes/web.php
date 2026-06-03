@@ -45,6 +45,7 @@ use App\Http\Controllers\Admin\OrderStagesController as AdminOrderStagesControll
 use App\Http\Controllers\Admin\Master\ProductNatureController as AdminProductNatureController;
 use App\Http\Controllers\Admin\Master\FabricTypeController as AdminFabricTypeController;
 use App\Http\Controllers\Admin\Master\MasterColorController as AdminMasterColorController;
+use App\Http\Controllers\Admin\Master\MasterOrderRemarkController as AdminMasterOrderRemarkController;
 use App\Http\Controllers\Admin\Master\MasterFittingController as AdminMasterFittingController;
 use App\Http\Controllers\Admin\Master\MasterDesignController as AdminMasterDesignController;
 use App\Http\Controllers\Admin\Master\MasterMaterialController as AdminMasterMaterialController;
@@ -942,6 +943,16 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             // Route::get('/delete',[AdminProductionGoodsItemController::class,'delete'])->name('delete');
         });
 
+
+        Route::prefix('master/order-remarks')->name('master.order-remarks.')->group(function () {
+            Route::get('/index', [AdminMasterOrderRemarkController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminMasterOrderRemarkController::class, 'indexList'])->name('indexList');
+            Route::get('/create', [AdminMasterOrderRemarkController::class, 'create'])->name('create');
+            Route::post('/store', [AdminMasterOrderRemarkController::class, 'store'])->name('store');
+            Route::get('/edit', [AdminMasterOrderRemarkController::class, 'edit'])->name('edit');
+            Route::post('/update', [AdminMasterOrderRemarkController::class, 'update'])->name('update');
+            Route::get('/delete', [AdminMasterOrderRemarkController::class, 'delete'])->name('delete');
+        });
 
         Route::prefix('master/colors')->name('master.colors.')->group(function () {
             Route::get('/index', [AdminMasterColorController::class, 'index'])->name('index');

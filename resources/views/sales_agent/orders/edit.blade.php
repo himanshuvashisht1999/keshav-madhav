@@ -274,7 +274,7 @@
                                 <div class="form-group mb-2">
                                     <label class="small text-muted font-weight-bold">Remark</label>
                                     @php
-                                        $previousRemarks = \DB::table('agent_orders')->whereNotNull('remark')->where('remark', '!=', '')->distinct()->pluck('remark');
+                                        $previousRemarks = \DB::table('master_order_remarks')->where('status', 1)->orderBy('name')->pluck('name');
                                     @endphp
                                     <input type="text" id="remark" class="form-control form-control-sm" list="previous_remarks_list" placeholder="Any special instructions..." value="{{ $order->remark }}" autocomplete="off">
                                     <datalist id="previous_remarks_list">

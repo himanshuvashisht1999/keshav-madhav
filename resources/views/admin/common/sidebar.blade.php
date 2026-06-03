@@ -1073,6 +1073,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
 
                                                     <ul class="nav nav-treeview">
                                                         <li class="nav-item">
+                                                            <a href="{{ route('admin.master.order-remarks.index') }}"
+                                                                class="{{ str_contains($page_url, 'admin/master/order-remarks') ? 'nav-link active' : 'nav-link' }}">
+                                                                <i class="fas fa-circle"></i>
+                                                                <p>Order Remarks</p>
+                                                            </a>
+                                                        </li>
+                                                        <li class="nav-item">
                                                             <a href="{{ route('admin.master.colors.index') }}"
                                                                 class="{{ str_contains($page_url, 'admin/master/colors') ? 'nav-link active' : 'nav-link' }}">
                                                                 <i class="fas fa-circle"></i>
