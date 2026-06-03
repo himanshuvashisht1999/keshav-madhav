@@ -136,6 +136,7 @@
                                         <th>Order No</th>
                                         <th>PO Number</th>
                                         <th>Customer</th>
+                                        <th>Design No</th>
                                         <th>Order Date</th>
                                         <th class="text-center">Status</th>
                                         <th class="text-center">Action</th>
@@ -150,6 +151,37 @@
 
             </div>
         </section>
+    </div>
+
+    <!-- Designs Modal -->
+    <div class="modal fade" id="designsModal" tabindex="-1" role="dialog" aria-labelledby="designsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content" style="border-radius: 16px; max-height: 85vh;">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold" id="designsModalLabel">Design Numbers</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-0" style="overflow-y: auto;">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-light" style="position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th class="px-4">Design Number</th>
+                                    <th class="px-4">Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="designsModalBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <button type="button" class="btn btn-secondary" style="border-radius: 8px;" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- ================= SCRIPT ================= --}}
@@ -192,6 +224,23 @@
                         name: 'customer.name'
                     },
                     {
+                        data: 'designs',
+                        name: 'designs',
+                        orderable: false,
+                        searchable: false,
+                        render: function(data, type, row) {
+                            if (!data) return '-';
+                            let keys = Object.keys(data);
+                            if (keys.length === 1) {
+                                return '<b>' + keys[0] + '</b>';
+                            } else if (keys.length > 1) {
+                                let jsonStr = JSON.stringify(data).replace(/"/g, '&quot;');
+                                return `<a href="javascript:void(0)" class="badge badge-info text-white" style="font-size: 12px; cursor: pointer;" onclick="showDesignsModal(${jsonStr})">Multiple</a>`;
+                            }
+                            return '-';
+                        }
+                    },
+                    {
                         data: 'created_at',
                         name: 'created_at'
                     },
@@ -217,6 +266,22 @@
             });
 
         });
+
+        function showDesignsModal(designs) {
+            const tbody = document.getElementById('designsModalBody');
+            tbody.innerHTML = '';
+            
+            for (const [designNo, quantity] of Object.entries(designs)) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-4 font-weight-bold">${designNo}</td>
+                    <td class="px-4">${quantity} Pcs</td>
+                `;
+                tbody.appendChild(tr);
+            }
+            
+            $('#designsModal').modal('show');
+        }
     </script>
 
 @endsection

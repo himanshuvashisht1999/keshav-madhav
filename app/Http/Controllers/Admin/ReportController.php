@@ -383,6 +383,15 @@ class ReportController extends Controller
             );
     }
 
+    public function closePurchaseOrder($id)
+    {
+        $po = \App\Models\PurchaseOrder::findOrFail($id);
+        $po->is_closed = 1;
+        $po->save();
+        
+        return redirect()->back()->with('success', 'Purchase Order closed successfully. It will no longer be available for shipment receipts.');
+    }
+
     public function orderTrackingSystem(Request $request)
     {
         $response['data'] = $this->service->orderTrackingSystem($request);

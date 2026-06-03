@@ -260,9 +260,15 @@
     <div class="content-wrapper">
         <section class="content-header">
             <div class="container-fluid">
-                <header class="premium-page-header">
-                    <h1 class="page-title">Inventory Stock Entry</h1>
-                    <p class="page-subtitle">Add new production goods to your warehouse stock.</p>
+                <header class="premium-page-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="page-title">Inventory Stock Entry</h1>
+                        <p class="page-subtitle">Add new production goods to your warehouse stock.</p>
+                    </div>
+                    <div class="header-actions">
+                        <a href="{{ route('admin.inventory.create') }}" class="btn btn-primary shadow-sm"><i class="fas fa-plus mr-1"></i> Create New</a>
+                        <a href="javascript:window.location.reload();" class="btn btn-secondary shadow-sm ml-2"><i class="fas fa-sync-alt mr-1"></i> Refresh</a>
+                    </div>
                 </header>
             </div>
         </section>
@@ -376,7 +382,13 @@
                                 <!-- Row 1: Primary Details -->
                                 <div class="row">
                                     <div class="col-md-3 input-group-premium">
-                                        <label class="label-premium">Design No *</label>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="label-premium mb-0">Design No *</label>
+    <div class="action-links">
+        <a href="{{ route('admin.master.production-goods.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="design" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+    </div>
+</div>
                                         <select name="products[0][product_id]" class="form-control select2 design-select"
                                             required>
                                             <option value="">Select Design</option>
@@ -389,21 +401,39 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2 input-group-premium">
-                                        <label class="label-premium">Pattern *</label>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="label-premium mb-0">Pattern *</label>
+    <div class="action-links">
+        <a href="{{ route('admin.master.design-pattern.index') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="pattern" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+    </div>
+</div>
                                         <select name="products[0][pattern_id]" class="form-control select2 pattern-select"
                                             required>
                                             <option value="">Pattern</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2 input-group-premium">
-                                        <label class="label-premium">Fitting *</label>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="label-premium mb-0">Fitting *</label>
+    <div class="action-links">
+        <a href="{{ route('admin.master.fitting.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="fitting" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+    </div>
+</div>
                                         <select name="products[0][fitting_id]" class="form-control select2 fitting-select"
                                             required>
                                             <option value="">Fitting</option>
                                         </select>
                                     </div>
                                     <div class="col-md-3 input-group-premium">
-                                        <label class="label-premium">Warehouse *</label>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="label-premium mb-0">Warehouse *</label>
+    <div class="action-links">
+        <a href="{{ route('admin.master.storeroom.index') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="warehouse" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+    </div>
+</div>
                                         <select name="products[0][warehouse_id]"
                                             class="form-control select2 warehouse-select" required>
                                             <option value="">Warehouse</option>
@@ -424,14 +454,26 @@
                                 <!-- Row 2: Secondary Details -->
                                 <div class="row">
                                     <div class="col-md-3 input-group-premium">
-                                        <label class="label-premium">Size Set *</label>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="label-premium mb-0">Size Set *</label>
+    <div class="action-links">
+        <a href="{{ route('admin.master.size-measurement.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="size" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+    </div>
+</div>
                                         <select name="products[0][size_set_id]" class="form-control select2 size-set-select"
                                             required>
                                             <option value="">Select Size Set</option>
                                         </select>
                                     </div>
                                     <div class="col-md-3 input-group-premium">
-                                        <label class="label-premium">Color *</label>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="label-premium mb-0">Color *</label>
+    <div class="action-links">
+        <a href="{{ route('admin.master.colors.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="color" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+    </div>
+</div>
                                         <select name="products[0][color_id]" class="form-control select2 color-select"
                                             required>
                                             <option value="">Color</option>
@@ -598,7 +640,13 @@
 
                                             <div class="row">
                                                 <div class="col-md-3 input-group-premium">
-                                                    <label class="label-premium">Design No *</label>
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="label-premium mb-0">Design No *</label>
+    <div class="action-links">
+        <a href="{{ route('admin.master.production-goods.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="design" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+    </div>
+</div>
                                                     <select name="products[${idx}][product_id]" class="form-control select2 design-select" required>
                                                         <option value="">Select Design</option>
                                                         @foreach($products as $product)
@@ -607,19 +655,37 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-2 input-group-premium">
-                                                    <label class="label-premium">Pattern *</label>
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="label-premium mb-0">Pattern *</label>
+    <div class="action-links">
+        <a href="{{ route('admin.master.design-pattern.index') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="pattern" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+    </div>
+</div>
                                                     <select name="products[${idx}][pattern_id]" class="form-control select2 pattern-select" required>
                                                         <option value="">Pattern</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-2 input-group-premium">
-                                                    <label class="label-premium">Fitting *</label>
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="label-premium mb-0">Fitting *</label>
+    <div class="action-links">
+        <a href="{{ route('admin.master.fitting.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="fitting" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+    </div>
+</div>
                                                     <select name="products[${idx}][fitting_id]" class="form-control select2 fitting-select" required>
                                                         <option value="">Fitting</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-3 input-group-premium">
-                                                    <label class="label-premium">Warehouse *</label>
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="label-premium mb-0">Warehouse *</label>
+    <div class="action-links">
+        <a href="{{ route('admin.master.storeroom.index') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="warehouse" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+    </div>
+</div>
                                                     <select name="products[${idx}][warehouse_id]" class="form-control select2 warehouse-select" required>
                                                         <option value="">Warehouse</option>
                                                         @foreach($storerooms as $room)
@@ -636,13 +702,25 @@
                                             </div>
                                             <div class="row">
                                                 <div class="col-md-3 input-group-premium">
-                                                    <label class="label-premium">Size Set *</label>
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="label-premium mb-0">Size Set *</label>
+    <div class="action-links">
+        <a href="{{ route('admin.master.size-measurement.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="size" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+    </div>
+</div>
                                                     <select name="products[${idx}][size_set_id]" class="form-control select2 size-set-select" required>
                                                         <option value="">Select Size Set</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-3 input-group-premium">
-                                                    <label class="label-premium">Color *</label>
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="label-premium mb-0">Color *</label>
+    <div class="action-links">
+        <a href="{{ route('admin.master.colors.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="color" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+    </div>
+</div>
                                                     <select name="products[${idx}][color_id]" class="form-control select2 color-select" required>
                                                         <option value="">Color</option>
                                                     </select>
@@ -1285,6 +1363,75 @@
                     firstWarehouse.val(firstWarehouse.find('option:eq(1)').val()).trigger('change');
                 }
             })();
+
+            // Handle Master Refresh
+            $(document).on('click', '.btn-refresh-master', function(e) {
+                e.preventDefault();
+                var btn = $(this);
+                var type = btn.data('type');
+                var card = btn.closest('.inventory-item-card');
+                if(!card.length) {
+                    card = btn.closest('form'); // fallback
+                }
+                
+                var icon = btn.find('i');
+                icon.addClass('fa-spin');
+                
+                if (type === 'design' || type === 'warehouse') {
+                    $.getJSON("{{ route('admin.inventory.master_data') }}", function(data) {
+                        icon.removeClass('fa-spin');
+                        if(data.success !== false) {
+                            var allDesignSelects = $('.design-select');
+                            allDesignSelects.each(function() {
+                                var sel = $(this);
+                                var currentVal = sel.val();
+                                sel.empty().append('<option value="">Select Design</option>');
+                                $.each(data.products, function(i, p) {
+                                    var seriesName = p.series ? p.series.name : '';
+                                    var txt = p.design_number + ' (' + seriesName + ' ' + p.name_of_garment + ')';
+                                    sel.append($('<option>', {
+                                        value: p.id,
+                                        text: txt,
+                                        'data-name': p.name_of_garment
+                                    }));
+                                });
+                                sel.val(currentVal).trigger('change.select2');
+                            });
+                            
+                            var allWarehouseSelects = $('.warehouse-select');
+                            allWarehouseSelects.each(function() {
+                                var sel = $(this);
+                                var currentVal = sel.val();
+                                sel.empty().append('<option value="">Warehouse</option>');
+                                $.each(data.storerooms, function(i, s) {
+                                    sel.append($('<option>', {
+                                        value: s.id,
+                                        text: s.name
+                                    }));
+                                });
+                                sel.val(currentVal).trigger('change.select2');
+                            });
+                            toastr.success('Master data refreshed successfully');
+                        }
+                    }).fail(function() {
+                        icon.removeClass('fa-spin');
+                        toastr.error('Failed to refresh data');
+                    });
+                } else {
+                    // pattern, fitting, size, color are dependent on design.
+                    var designSelect = card.find('.design-select');
+                    if (designSelect.length && designSelect.val()) {
+                        designSelect.trigger('change');
+                        setTimeout(function() {
+                            icon.removeClass('fa-spin');
+                            toastr.success('Refreshed based on selected design');
+                        }, 800);
+                    } else {
+                        icon.removeClass('fa-spin');
+                        toastr.info('Please select a design first to load its variants');
+                    }
+                }
+            });
         });
     </script>
 @endsection

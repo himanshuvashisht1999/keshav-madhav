@@ -10,24 +10,7 @@
     <td class="text-center font-weight-bold text-success">{{ $row->total_boxes }}</td>
     <td class="text-center font-weight-bold text-primary">
         @php
-            $agentOrderBoxes = \App\Models\AgentOrderItem::whereHas('order', function ($q) {
-                $q->where('status', '!=', 'dispatched');
-            })
-            ->where('design_number', $row->design_number)
-            ->where('color_id', $row->color_id)
-            ->where('size_set_id', $row->size_set_id)
-            ->when($row->fitting_id, function ($q, $val) {
-                return $q->where('fitting_id', $val);
-            }, function ($q) {
-                return $q->whereNull('fitting_id');
-            })
-            ->when($row->pattern_id, function ($q, $val) {
-                return $q->where('pattern_id', $val);
-            }, function ($q) {
-                return $q->whereNull('pattern_id');
-            })
-            ->sum('box_qty');
-            echo (int)$agentOrderBoxes;
+            echo (int)$row->total_order;
         @endphp
     </td>
     <td class="text-center">

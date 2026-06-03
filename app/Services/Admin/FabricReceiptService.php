@@ -635,7 +635,7 @@ class FabricReceiptService
     }
     public function purchase_orders(Request $request)
     {
-        $data = PurchaseOrder::where('vendor_id', $request->vendor_id)->orderBy('id', 'desc')->get();
+        $data = PurchaseOrder::where('vendor_id', $request->vendor_id)->where('is_closed', 0)->orderBy('id', 'desc')->get();
         return $data;
     }
     public function purchase_order_items($purchase_order_id)

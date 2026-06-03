@@ -15,7 +15,19 @@
         <div class="card-grid">
             <div class="info-item">
                 <label>Customer</label>
-                <div class="value">{{ \Illuminate\Support\Str::limit($row['customer'], 20) }}</div>
+                <div class="value">{{ \Illuminate\Support\Str::limit($row['customer'], 15) }}</div>
+            </div>
+            <div class="info-item">
+                <label>Design</label>
+                <div class="value">
+                    @if(count($row['designs']) === 1)
+                        {{ array_key_first($row['designs']) }}
+                    @elseif(count($row['designs']) > 1)
+                        <a href="javascript:void(0)" class="badge badge-info text-white" style="font-size: 10px; cursor: pointer; text-decoration: none;" onclick='showDesignsModal(@json($row['designs']))'>Multiple</a>
+                    @else
+                        -
+                    @endif
+                </div>
             </div>
             <div class="info-item">
                 <label>Quantity</label>

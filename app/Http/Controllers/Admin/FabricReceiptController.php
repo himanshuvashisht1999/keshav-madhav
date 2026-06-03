@@ -31,7 +31,7 @@ class FabricReceiptController extends Controller
     {
         $response['vendors'] = $this->service->vendors();
         $response['cutting_units'] = $this->service->cutting_units();
-        $response['purchase_orders'] = \App\Models\PurchaseOrder::with('vendor')->where('status', 1)->orderBy('id', 'desc')->get(); // Only pending POs
+        $response['purchase_orders'] = \App\Models\PurchaseOrder::with('vendor')->where('status', 1)->where('is_closed', 0)->orderBy('id', 'desc')->get(); // Only pending POs
         $vendor_id = 0;
         $response['fabrics'] = $this->service->fabric_list_by_vendor($vendor_id);
         return view('admin.fabric_receipt.create_new', $response);
@@ -245,7 +245,7 @@ class FabricReceiptController extends Controller
 
     public function allPendingPOs()
     {
-        $data = \App\Models\PurchaseOrder::with('vendor')->where('status', 1)->orderBy('id', 'desc')->get();
+        $data = \App\Models\PurchaseOrder::with('vendor')->where('status', 1)->where('is_closed', 0)->orderBy('id', 'desc')->get();
         return response()->json($data);
     }
 }

@@ -27,10 +27,12 @@
         </div>
         
         <div class="bg-light rounded p-2 mb-3 d-flex justify-content-between align-items-center">
-            <div>
-                <small class="text-muted d-block uppercase tracking-wider font-weight-bold" style="font-size: 0.65rem;">Available</small>
-                <span class="font-weight-bold text-dark">{{ $variation->available_boxes }} Boxes</span>
-            </div>
+            @if(!isset($settings) || $settings->agent_app_show_stock)
+              <div>
+                  <small class="text-muted d-block uppercase tracking-wider font-weight-bold" style="font-size: 0.65rem;">Available</small>
+                  <span class="font-weight-bold text-dark available-text" data-base-available="{{ $variation->available_boxes }}">{{ $variation->available_boxes }} Boxes</span>
+              </div>
+            @endif
             @if($see_price)
             <div class="text-right">
                 <small class="text-muted d-block uppercase tracking-wider font-weight-bold" style="font-size: 0.65rem;">Price</small>
@@ -41,7 +43,7 @@
 
         <div class="quantity-control-app d-flex align-items-center justify-content-between p-1">
             <button class="btn btn-q btn-minus"><i class="fas fa-minus"></i></button>
-            <input type="number" class="box-qty-input font-weight-bold" value="0" min="0" max="{{ $variation->available_boxes }}" readonly>
+            <input type="number" class="box-qty-input font-weight-bold" value="0" min="0" @if(!isset($settings) || !$settings->agent_app_allow_over_stock) max="{{ $variation->available_boxes }}" @endif readonly>
             <button class="btn btn-q btn-plus"><i class="fas fa-plus"></i></button>
         </div>
     </div>

@@ -229,9 +229,14 @@ class OrderController extends Controller
                 'domestic_inventories.pattern_id',
                 DB::raw($discount_col)
             )
-                ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
-                ->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0')
-                ->orderBy('production_goods.design_number')
+                ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
+
+            $settings = \DB::table('settings')->first();
+            if (!$settings || !$settings->agent_app_allow_over_stock) {
+                $query->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0');
+            }
+
+            $boxes = $query->orderBy('production_goods.design_number')
                 ->paginate(50)
                 ->appends($request->except('page'));
         }
@@ -267,8 +272,9 @@ class OrderController extends Controller
             foreach ($boxes as $variation) {
                 $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
                 $image = $boxImages[$vKey] ?? null;
+                $settings = \DB::table('settings')->first();
                 $html .= '<div class="col-md-4 col-lg-3 mb-3 variation-row-container">' . 
-                         view('sales_agent.orders.partials.variation_card', compact('variation', 'vKey', 'image'))->render() . 
+                         view('sales_agent.orders.partials.variation_card', compact('variation', 'vKey', 'image', 'settings'))->render() . 
                          '</div>';
             }
             return response()->json([
@@ -279,8 +285,9 @@ class OrderController extends Controller
 
         // Fetch active sales men
         $sales_men = \App\Models\SalesMan::where('status', 1)->get();
+        $settings = \DB::table('settings')->first();
 
-        return view('sales_agent.orders.create', compact('shop', 'agent', 'designs', 'product_names', 'colors', 'size_sets', 'boxes', 'boxImages', 'gst_percentage', 'series', 'brands', 'fittings', 'patterns', 'product_natures', 'fabric_types', 'sales_men', 'party_type', 'isSampleSet'));
+        return view('sales_agent.orders.create', compact('shop', 'agent', 'designs', 'product_names', 'colors', 'size_sets', 'boxes', 'boxImages', 'gst_percentage', 'series', 'brands', 'fittings', 'patterns', 'product_natures', 'fabric_types', 'sales_men', 'party_type', 'isSampleSet', 'settings'));
     }
 
     public function store(Request $request)
@@ -702,8 +709,14 @@ class OrderController extends Controller
                     'domestic_inventories.pattern_id',
                     DB::raw($discount_col)
                 )
-                    ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
-                    ->orderBy('production_goods.design_number')
+                    ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
+
+                $settings = \DB::table('settings')->first();
+                if (!$settings || !$settings->agent_app_allow_over_stock) {
+                    $query->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0');
+                }
+
+                $boxes = $query->orderBy('production_goods.design_number')
                     ->paginate(50)
                     ->appends($request->except('page'));
             }
@@ -721,8 +734,14 @@ class OrderController extends Controller
                 'domestic_inventories.pattern_id',
                 DB::raw($discount_col)
             )
-                ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
-                ->orderBy('production_goods.design_number')
+                ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
+
+            $settings = \DB::table('settings')->first();
+            if (!$settings || !$settings->agent_app_allow_over_stock) {
+                $query->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0');
+            }
+
+            $boxes = $query->orderBy('production_goods.design_number')
                 ->paginate(50)
                 ->appends($request->except('page'));
         }
@@ -751,8 +770,11 @@ class OrderController extends Controller
             $boxImages[$key] = $image;
         }
 
-        $filteredCollection = $boxes->getCollection()->filter(function ($variation) {
-            return $variation->available_boxes > 0;
+        $settings = \DB::table('settings')->first();
+        $allowOverStock = $settings && $settings->agent_app_allow_over_stock;
+
+        $filteredCollection = $boxes->getCollection()->filter(function ($variation) use ($allowOverStock) {
+            return $allowOverStock || $variation->available_boxes > 0;
         })->values();
         $boxes->setCollection($filteredCollection);
 
@@ -761,8 +783,9 @@ class OrderController extends Controller
             foreach ($boxes as $variation) {
                 $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
                 $image = $boxImages[$vKey] ?? null;
+                $settings = \DB::table('settings')->first();
                 $html .= '<div class="col-md-4 col-lg-3 mb-3 variation-row-container">' . 
-                         view('sales_agent.orders.partials.variation_card', compact('variation', 'vKey', 'image'))->render() . 
+                         view('sales_agent.orders.partials.variation_card', compact('variation', 'vKey', 'image', 'settings'))->render() . 
                          '</div>';
             }
             return response()->json([
@@ -815,8 +838,9 @@ class OrderController extends Controller
 
         // Fetch active sales men
         $sales_men = \App\Models\SalesMan::where('status', 1)->get();
+        $settings = \DB::table('settings')->first();
 
-        return view('sales_agent.orders.edit', compact('shop', 'boxes', 'designs', 'product_names', 'colors', 'size_sets', 'order', 'selected_quantities', 'boxImages', 'gst_percentage', 'series', 'brands', 'fittings', 'patterns', 'product_natures', 'fabric_types', 'sales_men'));
+        return view('sales_agent.orders.edit', compact('shop', 'boxes', 'designs', 'product_names', 'colors', 'size_sets', 'order', 'selected_quantities', 'boxImages', 'gst_percentage', 'series', 'brands', 'fittings', 'patterns', 'product_natures', 'fabric_types', 'sales_men', 'settings'));
     }
 
     public function update(Request $request, $id)

@@ -60,7 +60,7 @@
 
             .card-grid {
                 display: grid;
-                grid-template-columns: 1.2fr 1fr;
+                grid-template-columns: 1fr 1fr 1fr;
                 gap: 15px;
                 padding-bottom: 15px;
                 border-bottom: 1px solid #f1f5f9;
@@ -142,6 +142,11 @@
                             <input type="text" name="order_no" class="form-control" style="border-radius: 8px; font-size: 13px;"
                                 placeholder="Search Order SKU..." value="{{ request('order_no') }}">
                         </div>
+                        <div class="mb-2">
+                            <label class="small font-weight-bold text-muted mb-1 d-block">Design Number</label>
+                            <input type="text" name="design_number" class="form-control" style="border-radius: 8px; font-size: 13px;"
+                                placeholder="Search Design No..." value="{{ request('design_number') }}">
+                        </div>
                         <div class="mb-3">
                             <label class="small font-weight-bold text-muted mb-1 d-block">Customer</label>
                             <select name="customer_id" class="form-control" style="border-radius: 8px; font-size: 13px;">
@@ -178,11 +183,15 @@
             <div class="card-body p-4">
                 <form action="{{ route('owner.order-summary.index') }}" method="GET">
                     <div class="row align-items-end">
-                        <div class="col-md-5">
+                        <div class="col-md-3">
                             <label class="small font-weight-bold text-muted mb-2 d-block">ORDER SKU</label>
                             <input type="text" name="order_no" class="form-control" value="{{ request('order_no') }}" placeholder="Enter SKU..." style="height: 38px;">
                         </div>
-                        <div class="col-md-5">
+                        <div class="col-md-3">
+                            <label class="small font-weight-bold text-muted mb-2 d-block">DESIGN NO</label>
+                            <input type="text" name="design_number" class="form-control" value="{{ request('design_number') }}" placeholder="Enter Design No..." style="height: 38px;">
+                        </div>
+                        <div class="col-md-4">
                             <label class="small font-weight-bold text-muted mb-2 d-block">CUSTOMER</label>
                             <select name="customer_id" class="form-control select2">
                                 <option value="">All Customers</option>
@@ -211,6 +220,7 @@
                                 <th>Date</th>
                                 <th>Order No</th>
                                 <th>Customer</th>
+                                <th>Design No</th>
                                 <th>Total Pcs</th>
                                 <th>Status</th>
                                 <th>Action</th>
@@ -229,6 +239,37 @@
         <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
     </div>
     <div id="load-more-trigger" style="height: 10px;"></div>
+
+    <!-- Designs Modal -->
+    <div class="modal fade" id="designsModal" tabindex="-1" role="dialog" aria-labelledby="designsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content" style="border-radius: 16px; max-height: 85vh;">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold" id="designsModalLabel">Design Numbers</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-0" style="overflow-y: auto;">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-light" style="position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th class="px-4">Design Number</th>
+                                    <th class="px-4">Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="designsModalBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <button type="button" class="btn btn-secondary" style="border-radius: 8px;" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 @section('scripts')
     <script>
@@ -283,5 +324,21 @@
                 });
             }
         });
+
+        function showDesignsModal(designs) {
+            const tbody = document.getElementById('designsModalBody');
+            tbody.innerHTML = '';
+            
+            for (const [designNo, quantity] of Object.entries(designs)) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-4 font-weight-bold">${designNo}</td>
+                    <td class="px-4">${quantity} Pcs</td>
+                `;
+                tbody.appendChild(tr);
+            }
+            
+            $('#designsModal').modal('show');
+        }
     </script>
 @endsection

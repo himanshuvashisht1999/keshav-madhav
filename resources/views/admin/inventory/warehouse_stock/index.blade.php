@@ -162,6 +162,16 @@
                                 </select>
                             </div>
                             
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Min Boxes</label>
+                                <input type="number" id="min_boxes_filter" class="form-control" placeholder="Min Qty" min="0">
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Max Boxes</label>
+                                <input type="number" id="max_boxes_filter" class="form-control" placeholder="Max Qty" min="0">
+                            </div>
+                            
                             <div class="col-md-1 mb-3">
                                 <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block">
                                     <i class="fas fa-undo"></i>
@@ -466,7 +476,9 @@
                         fitting_id: $('#fitting_filter').val(),
                         pattern_id: $('#pattern_filter').val(),
                         nature_id: $('#nature_filter').val(),
-                        fabric_type_id: $('#fabric_type_filter').val()
+                        fabric_type_id: $('#fabric_type_filter').val(),
+                        min_boxes: $('#min_boxes_filter').val(),
+                        max_boxes: $('#max_boxes_filter').val()
                     },
                     success: function(res) {
                         if (reset) {
@@ -525,9 +537,20 @@
                 loadMore(true);
             });
 
+            // Delay on typing numbers so it doesn't trigger on every keystroke too quickly
+            let filterTimer;
+            $('#min_boxes_filter, #max_boxes_filter').on('input', function () {
+                clearTimeout(filterTimer);
+                filterTimer = setTimeout(function() {
+                    loadMore(true);
+                }, 600);
+            });
+
             // Reset filter
             $('#reset_filters').on('click', function () {
                 $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #color_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter').val('').trigger('change');
+                $('#min_boxes_filter, #max_boxes_filter').val('');
+                loadMore(true);
             });
 
             // Filter Dynamic Racks

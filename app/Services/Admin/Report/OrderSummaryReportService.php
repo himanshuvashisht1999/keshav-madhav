@@ -12,7 +12,7 @@ class OrderSummaryReportService
 {
     public function indexList($request)
     {
-        $query = OrderMain::with(['customer'])
+        $query = OrderMain::with(['customer', 'OrderProductSets'])
             ->select('order_main.*')->orderBy('id', 'desc');
 
         return DataTables::of($query)
@@ -38,6 +38,12 @@ class OrderSummaryReportService
             })
             ->addColumn('customer_name', function ($row) {
                 return $row->customer->name ?? 'N/A';
+            })
+            ->addColumn('designs', function ($row) {
+                $designs = $row->OrderProductSets->groupBy('design_number')->map(function ($sets) {
+                    return $sets->sum('total_quantity');
+                })->toArray();
+                return $designs;
             })
             ->addColumn('total_pcs', function ($row) {
                 return getOrderDispatchData($row->id)['total'] ?? 0;

@@ -200,15 +200,33 @@
                 },
                 buttons: [
                     {
+                        text: 'Excel',
+                        className: 'btn-datatable btn-success ml-2',
+                        action: function (e, dt, node, config) {
+                            var params = dt.ajax.params();
+                            var qs = $.param(params);
+                            window.location.href = "{{ route('admin.product_order.exportOrders') }}?export_type=excel&" + qs;
+                        }
+                    },
+                    {
+                        text: 'PDF',
+                        className: 'btn-datatable btn-danger ml-2',
+                        action: function (e, dt, node, config) {
+                            var params = dt.ajax.params();
+                            var qs = $.param(params);
+                            window.location.href = "{{ route('admin.product_order.exportOrders') }}?export_type=pdf&" + qs;
+                        }
+                    },
+                    {
                         text: 'Create Corporate Order',
-                        className: 'btn-datatable',
+                        className: 'btn-datatable btn-primary ml-2',
                         action: function (e, dt, node, config) {
                             window.location.href = "{{ route('admin.sales_order.create') }}";
                         }
                     },
                     {
                         text: 'Create Domestic Order',
-                        className: 'btn-datatable btn-success ml-2',
+                        className: 'btn-datatable btn-info ml-2',
                         action: function (e, dt, node, config) {
                             window.location.href = "{{ route('admin.sales_order.create_domestic') }}";
                         }

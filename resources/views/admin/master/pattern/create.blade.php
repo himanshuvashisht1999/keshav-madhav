@@ -57,7 +57,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="exampleInputFile">Pattern Photoaa</label>
+                                        <label for="exampleInputFile">Pattern Photo</label>
                                         <div class="input-group">
                                             <div class="custom-file">
                                                 <input type="file" name="pattern_img" class="custom-file-input"

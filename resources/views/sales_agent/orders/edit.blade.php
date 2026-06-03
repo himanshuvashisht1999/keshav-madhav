@@ -447,6 +447,8 @@
 @push('scripts')
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
+        let allowOverStock = {{ isset($settings) && $settings->agent_app_allow_over_stock ? 'true' : 'false' }};
+        let showStock = {{ !isset($settings) || $settings->agent_app_show_stock ? 'true' : 'false' }};
         $(document).ready(function () {
             if ($.fn.select2) {
                 $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
@@ -595,7 +597,7 @@
                             <div class="card-body p-3 d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="font-weight-bold text-dark mb-0">${color.name}</h6>
-                                    <small class="text-muted">${color.available_boxes} Boxes available</small>
+                                    ${showStock ? `<small class="text-muted">${color.available_boxes} Boxes available</small>` : ''}
                                 </div>
                                 <div class="quantity-control-app d-flex align-items-center p-1">
                                     <button class="btn-q btn-minus-scan" data-key="${vKey}">-</button>
@@ -622,7 +624,7 @@
                 const input = $(this).closest('.quantity-control-app').find('.box-qty-scan-input');
                 const max = parseInt(input.attr('max'));
                 let val = parseInt(input.val()) || 0;
-                if (val < max) {
+                if (allowOverStock || val < max) {
                     val++;
                     input.val(val).trigger('change');
                 }
@@ -643,7 +645,7 @@
                 const max = parseInt($(this).attr('max'));
                 
                 if (qty < 0) qty = 0;
-                if (qty > max) qty = max;
+                if (!allowOverStock && qty > max) qty = max;
                 $(this).val(qty);
 
                 if (qty > 0) {
@@ -729,7 +731,7 @@
                 $('#colorSelectionList .box-qty-scan-input').each(function() {
                     const max = parseInt($(this).attr('max'));
                     let targetQty = globalQty;
-                    if (targetQty > max) targetQty = max; // Cap at max available
+                    if (!allowOverStock && targetQty > max) targetQty = max; // Cap at max available
                     
                     if (parseInt($(this).val()) !== targetQty) {
                         $(this).val(targetQty).trigger('change');
@@ -788,7 +790,20 @@
                 $('.variation-card').each(function () {
                     const key = $(this).data('key');
                     if (cart.has(key)) {
-                        cart.get(key).unit_price = parseFloat($(this).data('price'));
+                        const item = cart.get(key);
+                        item.unit_price = parseFloat($(this).data('price'));
+                        
+                        const availableText = $(this).find('.available-text');
+                        if (availableText.length) {
+                            const base = parseInt(availableText.data('base-available')) || 0;
+                            availableText.text((base - item.qty) + ' Boxes');
+                        }
+                    } else {
+                        const availableText = $(this).find('.available-text');
+                        if (availableText.length) {
+                            const base = parseInt(availableText.data('base-available')) || 0;
+                            availableText.text(base + ' Boxes');
+                        }
                     }
                 });
 
@@ -843,7 +858,7 @@
                 const max = parseInt($(this).attr('max'));
 
                 if (qty < 0) qty = 0;
-                if (qty > max) { qty = max; $(this).val(qty); }
+                if (!allowOverStock && qty > max) { qty = max; $(this).val(qty); }
 
                 if (qty > 0) {
                     cart.set(key, {
@@ -878,7 +893,7 @@
             $(document).on('click', '.btn-plus', function () {
                 const input = $(this).closest('.variation-card').find('.box-qty-input');
                 const current = parseInt(input.val()) || 0;
-                if (current < parseInt(input.attr('max'))) input.val(current + 1).trigger('change');
+                if (allowOverStock || current < parseInt(input.attr('max'))) input.val(current + 1).trigger('change');
             });
 
             $(document).on('click', '.btn-minus', function () {

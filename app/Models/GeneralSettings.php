@@ -34,6 +34,8 @@ class GeneralSettings extends Model
         'gst_order',
         'latitude',
         'longitude',
+        'agent_app_show_stock',
+        'agent_app_allow_over_stock',
         'created_at',
         'updated_at'
     ];

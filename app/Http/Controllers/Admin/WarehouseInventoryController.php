@@ -103,6 +103,14 @@ class WarehouseInventoryController extends Controller
             });
         }
         
+        if ($request->has('min_boxes') && $request->min_boxes !== null && $request->min_boxes !== '') {
+            $query->where('total_boxes', '>=', $request->min_boxes);
+        }
+
+        if ($request->has('max_boxes') && $request->max_boxes !== null && $request->max_boxes !== '') {
+            $query->where('total_boxes', '<=', $request->max_boxes);
+        }
+
         $query->latest();
 
         if ($request->has('load_more')) {

@@ -124,12 +124,22 @@ class OwnerAuthController extends Controller
             ->when($request->filled('customer_id'), function ($q) use ($request) {
                 $q->where('master_customer_id', $request->customer_id);
             })
+            ->when($request->filled('design_number'), function ($q) use ($request) {
+                $q->whereHas('OrderProductSets', function ($q2) use ($request) {
+                    $q2->where('design_number', 'like', '%' . $request->design_number . '%');
+                });
+            })
             ->orderBy('id', 'desc')
             ->paginate(10)
             ->withQueryString();
 
         $salesOrders->getCollection()->transform(function ($order) {
             $stats = getOrderDispatchData($order->id);
+            
+            $designs = $order->OrderProductSets->groupBy('design_number')->map(function ($sets) {
+                return $sets->sum('total_quantity');
+            })->toArray();
+
             return [
                 'id' => $order->id,
                 'order_no' => $order->sku,
@@ -139,6 +149,7 @@ class OwnerAuthController extends Controller
                 'order_type' => $order->order_type ?? '-',
                 'total_pcs' => $stats['total'],
                 'scanned_pcs' => $stats['packed'],
+                'designs' => $designs,
                 'lots' => [] // Optional: if we need lot count
             ];
         });

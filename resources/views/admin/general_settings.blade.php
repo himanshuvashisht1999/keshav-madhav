@@ -174,8 +174,40 @@
                                         </div>
                                     </div>
 
+                                    </div>
+                            </div>
+                    </div>
+                    <div class="card card-default">
+                        <div class="card-header">
+                            <h3 class="card-title">Agent App Settings</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="agent_app_show_stock" name="agent_app_show_stock" value="1" {{ $data->agent_app_show_stock ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="agent_app_show_stock">Show Available Stock</label>
+                                            <small class="form-text text-muted">If enabled, agents will see the available stock quantities.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="agent_app_allow_over_stock" name="agent_app_allow_over_stock" value="1" {{ $data->agent_app_allow_over_stock ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="agent_app_allow_over_stock">Allow Ordering Over Stock</label>
+                                            <small class="form-text text-muted">If enabled, agents can submit orders with quantities greater than available stock.</small>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
                     </div>
                     <div class="card card-default">
                         <div class="card-header">

@@ -178,8 +178,8 @@
 
                                             <td>
                                                 <span
-                                                    class="badge {{ $totalRemaining == 0 ? 'bg-success' : 'bg-warning text-dark' }}">
-                                                    {{ $totalRemaining == 0 ? 'Closed' : 'Open' }}
+                                                    class="badge {{ ($totalRemaining == 0 || $po->is_closed) ? 'bg-success' : 'bg-warning text-dark' }}">
+                                                    {{ ($totalRemaining == 0 || $po->is_closed) ? 'Closed' : 'Open' }}
                                                 </span>
                                             </td>
 
@@ -194,6 +194,14 @@
                                                     class="btn btn-sm btn-outline-primary expand-btn">
                                                     <i class="fas fa-eye"></i> View
                                                 </a>
+                                                @if(!$po->is_closed && $totalRemaining > 0)
+                                                <form action="{{ route('admin.report.purchase_order.close', $po->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to close this Purchase Order?');">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger expand-btn ms-1" title="Close PO">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </form>
+                                                @endif
                                             </td>
                                         </tr>
 

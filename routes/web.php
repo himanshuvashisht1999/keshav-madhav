@@ -353,6 +353,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
             Route::get('/index-order', [AdminProductOrderController::class, 'indexOrder'])->name('indexOrder');
             Route::get('/indexListOrder', [AdminProductOrderController::class, 'indexListOrder'])->name('indexListOrder');
+            Route::get('/export-orders', [AdminProductOrderController::class, 'exportOrders'])->name('exportOrders');
 
             Route::get('/index-order-set', [AdminProductOrderController::class, 'indexOrderSet'])->name('indexOrderSet');
             Route::get('/indexListOrderSet', [AdminProductOrderController::class, 'indexListOrderSet'])->name('indexListOrderSet');
@@ -792,6 +793,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/store', [AdminInventoryController::class, 'store'])->name('store');
             Route::get('/get-size-set-info/{id}', [AdminInventoryController::class, 'getSizeSetInfo'])->name('get_size_set_info');
             Route::get('/get-product-full-details', [AdminInventoryController::class, 'getProductFullDetails'])->name('get_product_full_details');
+            Route::get('/master-data', [AdminInventoryController::class, 'getMasterData'])->name('master_data');
             Route::get('/get-pricing-info', [AdminInventoryController::class, 'getPricingInfo'])->name('get_pricing_info');
             Route::get('/get-locations', [AdminInventoryController::class, 'getLocations'])->name('get_locations');
             Route::get('/get-domestic-inventory-for-consume', [AdminInventoryController::class, 'getDomesticInventoryForConsume'])->name('get_domestic_inventory_for_consume');
@@ -1209,6 +1211,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             });
 
             Route::get('/purchase-order/export', [AdminReportController::class, 'purchaseOrderExport'])->name('purchase_order.export');
+            Route::post('/purchase-order/close/{id}', [AdminReportController::class, 'closePurchaseOrder'])->name('purchase_order.close');
             Route::get('/order-tracking-system', [AdminReportController::class, 'orderTrackingSystem'])->name('orderTrackingSystem');
             Route::get('/order-lot-tracking', [AdminReportController::class, 'lotTrackingDetails'])->name('lotTrackingDetails');
             Route::get('/order-tracking/export', [AdminReportController::class, 'orderTrackingExport'])->name('orderTracking.export');

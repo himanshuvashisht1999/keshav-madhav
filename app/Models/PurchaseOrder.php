@@ -24,6 +24,7 @@ class PurchaseOrder extends Model
         'transport',
         'is_notify',
         'status',
+        'is_closed',
         'created_by',
         'created_at',
         'updated_at'

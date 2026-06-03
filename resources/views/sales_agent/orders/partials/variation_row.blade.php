@@ -31,7 +31,9 @@
     </td>
     <td class="text-center font-weight-bold">{{ number_format($variation->pcs_per_box, 0) }}</td>
     <td class="text-center">
+        @if(!isset($settings) || $settings->agent_app_show_stock)
         <span class="badge badge-info px-2 py-1">{{ $variation->available_boxes }} Boxes</span>
+        @endif
     </td>
     <td class="text-right">
         @if(Auth::guard('sales_agent')->user()->see_price)
@@ -47,7 +49,7 @@
                 <button class="btn btn-outline-secondary btn-minus" type="button">-</button>
             </div>
             <input type="number" class="form-control text-center box-qty-input" value="{{ $initialQty ?? 0 }}"
-                min="0" max="{{ $variation->available_boxes }}" data-key="{{ $vKey }}">
+                min="0" @if(!isset($settings) || !$settings->agent_app_allow_over_stock) max="{{ $variation->available_boxes }}" @endif data-key="{{ $vKey }}">
             <div class="input-group-append">
                 <button class="btn btn-outline-secondary btn-plus" type="button">+</button>
             </div>

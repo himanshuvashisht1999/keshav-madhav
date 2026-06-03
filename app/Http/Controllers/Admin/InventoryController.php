@@ -78,7 +78,18 @@ class InventoryController extends Controller
             'fittings.name as fitting_name',
             'patterns.name as pattern_name',
             'variants.mrp as mrp',
-            DB::raw('SUM(domestic_inventories.total_boxes) as total_boxes')
+            DB::raw('SUM(domestic_inventories.total_boxes) as total_boxes'),
+            DB::raw('(
+                SELECT COALESCE(SUM(aoi.box_qty), 0)
+                FROM agent_order_items aoi
+                JOIN agent_orders ao ON aoi.agent_order_id = ao.id
+                WHERE ao.status != "dispatched"
+                  AND aoi.design_number COLLATE utf8mb4_unicode_ci = products.design_number COLLATE utf8mb4_unicode_ci
+                  AND aoi.color_id = domestic_inventories.color_id
+                  AND aoi.size_set_id = domestic_inventories.size_set_id
+                  AND (aoi.fitting_id = domestic_inventories.fitting_id OR (aoi.fitting_id IS NULL AND domestic_inventories.fitting_id IS NULL))
+                  AND (aoi.pattern_id = domestic_inventories.pattern_id OR (aoi.pattern_id IS NULL AND domestic_inventories.pattern_id IS NULL))
+            ) as total_order')
         )
             ->leftJoin('production_goods as products', 'domestic_inventories.product_id', '=', 'products.id')
             ->leftJoin('master_series as series', 'products.master_series_id', '=', 'series.id')
@@ -90,6 +101,22 @@ class InventoryController extends Controller
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
             });
+
+        if ($request->has('min_total_boxes') && $request->min_total_boxes !== null) {
+            $query->having('total_boxes', '>=', $request->min_total_boxes);
+        }
+
+        if ($request->has('min_total_order') && $request->min_total_order !== null) {
+            $query->having('total_order', '>=', $request->min_total_order);
+        }
+
+        if ($request->has('stock_status') && !empty($request->stock_status)) {
+            if ($request->stock_status === 'shortage') {
+                $query->havingRaw('total_boxes < total_order');
+            } elseif ($request->stock_status === 'in_stock') {
+                $query->havingRaw('total_boxes >= total_order');
+            }
+        }
 
         // Filter by Size Set
         if ($request->has('size_set_id') && !empty($request->size_set_id)) {
@@ -244,6 +271,17 @@ class InventoryController extends Controller
         $customers = \App\Models\MasterCustomer::where('status', '1')->get();
 
         return view('admin.inventory.create', compact('products', 'colors', 'fittings', 'patterns', 'size_sets', 'storerooms', 'vendors', 'customers'));
+    }
+
+    public function getMasterData()
+    {
+        $products = \App\Models\ProductionGoods::with('series')->get();
+        $storerooms = \App\Models\Storeroom::where('status', '1')->get();
+
+        return response()->json([
+            'products' => $products,
+            'storerooms' => $storerooms
+        ]);
     }
 
     public function purchase()

@@ -47,6 +47,124 @@ class ProductOrderController extends Controller
     {
         return $this->service->indexListOrder($request);
     }
+
+    public function exportOrders(Request $request)
+    {
+        $query = \App\Models\OrderMain::query()
+            ->with('customer')
+            ->where('order_main.status', '!=', 0);
+
+        $query->orderBy('order_main.id', 'desc');
+
+        $searchValue = $request->get('search')['value'] ?? null;
+        if ($searchValue) {
+            $query->where(function ($q) use ($searchValue) {
+                $q->where('sku', 'like', "%{$searchValue}%")
+                    ->orWhere('po_number', 'like', "%{$searchValue}%");
+            });
+        }
+
+        if ($request->filled('sku')) {
+            $query->where('sku', 'like', "%{$request->get('sku')}%");
+        }
+        if ($request->filled('po_number')) {
+            $query->where('po_number', 'like', "%{$request->get('po_number')}%");
+        }
+        if ($request->filled('master_customer_id')) {
+            $query->where('master_customer_id', $request->get('master_customer_id'));
+        }
+        if ($request->filled('order_type')) {
+            $query->where('order_type', $request->get('order_type'));
+        }
+        if ($request->filled('created_at')) {
+            $query->whereDate('created_at', $request->get('created_at'));
+        }
+        if ($request->filled('created_month')) {
+            $query->whereMonth('created_at', $request->created_month);
+        }
+        if ($request->filled('created_year')) {
+            $query->whereYear('created_at', $request->created_year);
+        }
+        if ($request->filled('expected_delivery_date')) {
+            $query->whereDate('expected_delivery_date', $request->get('expected_delivery_date'));
+        }
+        if ($request->filled('expected_delivery_month')) {
+            $query->whereMonth('expected_delivery_date', $request->expected_delivery_month);
+        }
+        if ($request->filled('expected_delivery_year')) {
+            $query->whereYear('expected_delivery_date', $request->expected_delivery_year);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->get('status'));
+        }
+        if ($request->filled('assignment_status')) {
+            if ($request->assignment_status == 'assigned') {
+                $query->whereHas('OrderProductSets')->whereDoesntHave('OrderProductSets', function ($q) {
+                    $q->where('remain_total_quantity', '>', 0);
+                });
+            } elseif ($request->assignment_status == 'not_assigned') {
+                $query->whereHas('OrderProductSets', function ($q) {
+                    $q->where('remain_total_quantity', '>', 0);
+                });
+            }
+        }
+
+        $orders = $query->get();
+
+        if ($request->export_type == 'pdf') {
+            $pdf = \PDF::loadView('admin.product_order.export-orders', compact('orders'))
+                ->setPaper('a4', 'landscape');
+            return $pdf->download('Corporate_Orders.pdf');
+        } else {
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            $sheet->setCellValue('A1', 'ID');
+            $sheet->setCellValue('B1', 'PO No');
+            $sheet->setCellValue('C1', 'Order No');
+            $sheet->setCellValue('D1', 'Customer');
+            $sheet->setCellValue('E1', 'Order Type');
+            $sheet->setCellValue('F1', 'Order Date');
+            $sheet->setCellValue('G1', 'Expected Delivery Date');
+            $sheet->setCellValue('H1', 'Total Pcs');
+            $sheet->setCellValue('I1', 'Dispatch Pcs');
+            $sheet->setCellValue('J1', 'Status');
+
+            $row = 2;
+            foreach ($orders as $key => $order) {
+                $stats = getOrderDispatchData($order->id);
+                $total = $stats['total'] ?? 0;
+                $packed = $stats['packed'] ?? 0;
+                $remaining = $stats['remaining'] ?? 0;
+
+                $statusText = 'In Progress';
+                if ($remaining === 0) {
+                    $statusText = 'Completed';
+                } elseif ($packed > 0) {
+                    $statusText = 'Partial';
+                }
+
+                $sheet->setCellValue('A' . $row, $key + 1);
+                $sheet->setCellValue('B' . $row, $order->po_number ?? '-');
+                $sheet->setCellValue('C' . $row, $order->sku);
+                $sheet->setCellValue('D' . $row, $order->customer->name ?? '-');
+                $sheet->setCellValue('E' . $row, ucfirst($order->order_type));
+                $sheet->setCellValue('F' . $row, $order->created_at ? getformatDate($order->created_at) : '-');
+                $sheet->setCellValue('G' . $row, getformatDate($order->expected_delivery_date));
+                $sheet->setCellValue('H' . $row, $total);
+                $sheet->setCellValue('I' . $row, $packed);
+                $sheet->setCellValue('J' . $row, $statusText);
+                $row++;
+            }
+
+            $filePath = storage_path('app/public/corporate_orders_' . now()->format('Y-m-d_H-i-s') . '.xlsx');
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save($filePath);
+
+            return response()->download($filePath)->deleteFileAfterSend(true);
+        }
+    }
+
     public function indexOrderSet(Request $request)
     {
         $response['order_main_id'] = $request->id ?? 0;

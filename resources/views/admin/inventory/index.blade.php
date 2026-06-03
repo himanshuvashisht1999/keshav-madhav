@@ -17,7 +17,7 @@
         <section class="content">
             <div class="container-fluid">
                 <!-- SINGLE CONSOLIDATED FILTER CARD -->
-                <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+                <div class="card shadow-sm border-0" style="border-radius: 12px;">
                     <div class="card-body bg-light rounded p-4">
                         <div class="row align-items-end">
                             <div class="col-md-3 mb-3">
@@ -52,8 +52,24 @@
                                 </select>
                             </div>
                             <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Stock Status</label>
+                                <select id="stock_status_filter" class="form-control select2">
+                                    <option value="">All Items</option>
+                                    <option value="shortage">Shortage (Orders > Stock)</option>
+                                    <option value="in_stock">In Stock</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Min MRP</label>
                                 <input type="number" id="mrp_filter" class="form-control" placeholder="Min MRP">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Min Total Boxes</label>
+                                <input type="number" id="min_boxes_filter" class="form-control" placeholder="Min Boxes">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Min Total Order</label>
+                                <input type="number" id="min_order_filter" class="form-control" placeholder="Min Order">
                             </div>
                             
                             <div class="col-md-2 mb-3">
@@ -443,7 +459,10 @@
                         fitting_id: $('#fitting_filter').val(),
                         pattern_id: $('#pattern_filter').val(),
                         nature_id: $('#nature_filter').val(),
-                        fabric_type_id: $('#fabric_type_filter').val()
+                        fabric_type_id: $('#fabric_type_filter').val(),
+                        min_total_boxes: $('#min_boxes_filter').val(),
+                        min_total_order: $('#min_order_filter').val(),
+                        stock_status: $('#stock_status_filter').val()
                     },
                     success: function(res) {
                         if (reset) {
@@ -490,14 +509,14 @@
             });
 
             // Filter events
-            $('#design_number, #size_set_filter, #product_filter, #color_filter, #mrp_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter').on('keyup change', function () {
+            $('#design_number, #size_set_filter, #product_filter, #color_filter, #mrp_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter, #min_boxes_filter, #min_order_filter, #stock_status_filter').on('keyup change', function () {
                 loadMore(true);
             });
 
             // Reset filter
             $('#reset_filters').on('click', function () {
-                $('#design_number, #mrp_filter').val('');
-                $('#size_set_filter, #product_filter, #color_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter').val('').trigger('change');
+                $('#design_number, #mrp_filter, #min_boxes_filter, #min_order_filter').val('');
+                $('#size_set_filter, #product_filter, #color_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter, #stock_status_filter').val('').trigger('change');
             });
 
             // Initialize select2 for Modal
