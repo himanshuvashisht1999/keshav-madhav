@@ -44,6 +44,62 @@ class ProductionGoodsService
         return $this->datatable->indexList($request);
     }
 
+    public function exportData(Request $request)
+    {
+        $query = ProductionGoods::with('series', 'brand', 'fitting', 'pattern', 'productNature', 'fabricType')->where('status', '!=', 3)->orderBy('id','desc');
+                
+        if ($request->has('name_of_garment') && !empty($request->name_of_garment)) {
+            $searchTerm = $request->get('name_of_garment');
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('name_of_garment', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('series', function($sq) use ($searchTerm) {
+                      $sq->where('name', 'like', "%{$searchTerm}%");
+                  });
+            });
+        }
+
+        if ($request->has('brand_name') && !empty($request->brand_name)) {
+            $brandTerm = $request->get('brand_name');
+            $query->whereHas('brand', function($q) use ($brandTerm) {
+                $q->where('name', 'like', "%{$brandTerm}%");
+            });
+        }
+
+        if ($request->has('design_number') && !empty($request->design_number)) {
+            $query->where('design_number', 'like', "%{$request->get('design_number')}%");
+        }
+
+        if ($request->has('fitting_name') && !empty($request->fitting_name)) {
+            $term = $request->get('fitting_name');
+            $query->whereHas('fitting', function($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%");
+            });
+        }
+
+        if ($request->has('pattern_name') && !empty($request->pattern_name)) {
+            $term = $request->get('pattern_name');
+            $query->whereHas('pattern', function($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%");
+            });
+        }
+
+        if ($request->has('nature_name') && !empty($request->nature_name)) {
+            $term = $request->get('nature_name');
+            $query->whereHas('productNature', function($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%");
+            });
+        }
+
+        if ($request->has('fabric_type_name') && !empty($request->fabric_type_name)) {
+            $term = $request->get('fabric_type_name');
+            $query->whereHas('fabricType', function($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%");
+            });
+        }
+        
+        return $query->get();
+    }
+
     public function store(Request $request)
     {
         $printing_stage_after = $request->printing_stage_after ?? 0;

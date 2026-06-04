@@ -932,6 +932,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/delete', [AdminProductionGoodsController::class, 'delete'])->name('delete');
             Route::get('/view', [AdminProductionGoodsController::class, 'view'])->name('view');
             Route::get('/get-next-product-name', [AdminProductionGoodsController::class, 'getNextProductName'])->name('get-next-product-name');
+            Route::get('/export', [AdminProductionGoodsController::class, 'export'])->name('export');
+            Route::get('/pdf', [AdminProductionGoodsController::class, 'pdf'])->name('pdf');
         });
 
         Route::prefix('master/production-goods-item')->name('master.production-goods-item.')->group(function () {

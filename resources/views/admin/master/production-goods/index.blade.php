@@ -48,6 +48,18 @@
                             <input type="text" class="form-control" name="name_of_garment" id="name_of_garment" placeholder="Search Product Name..." autocomplete="off">
                         </td>
                         <td>
+                            <input type="text" class="form-control" name="fitting_name" id="fitting_name" placeholder="Search Fitting..." autocomplete="off">
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" name="pattern_name" id="pattern_name" placeholder="Search Pattern..." autocomplete="off">
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" name="nature_name" id="nature_name" placeholder="Search Nature..." autocomplete="off">
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" name="fabric_type_name" id="fabric_type_name" placeholder="Search Fabric Type..." autocomplete="off">
+                        </td>
+                        <td>
                         </td>
                     </tr>
                   <tr>
@@ -55,6 +67,10 @@
                     <th>Design Number</th>
                     <th>Brand</th>
                     <th>Product Name</th>
+                    <th>Fitting</th>
+                    <th>Pattern</th>
+                    <th>Nature</th>
+                    <th>Fabric Type</th>
                     <th>Action</th>
                   </tr>
                   </thead>
@@ -93,6 +109,10 @@
                     d.name_of_garment = $('#name_of_garment').val();
                     d.design_number = $('#design_number').val();
                     d.brand_name = $('#brand_name').val();
+                    d.fitting_name = $('#fitting_name').val();
+                    d.pattern_name = $('#pattern_name').val();
+                    d.nature_name = $('#nature_name').val();
+                    d.fabric_type_name = $('#fabric_type_name').val();
                 },
                 orderable: false
             },
@@ -101,10 +121,46 @@
                 {data: 'design_number', name: 'design_number'},
                 {data: 'brand_name', name: 'brand_name'},
                 {data: 'product_name_display', name: 'product_name_display'},
+                {data: 'fitting_name', name: 'fitting_name'},
+                {data: 'pattern_name', name: 'pattern_name'},
+                {data: 'nature_name', name: 'nature_name'},
+                {data: 'fabric_type_name', name: 'fabric_type_name'},
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
             buttons: [
+                {
+                    text: 'Export Excel',
+                    className: 'btn-datatable',
+                    action: function (e, dt, node, config) {
+                        var params = $.param({
+                            name_of_garment: $('#name_of_garment').val(),
+                            design_number: $('#design_number').val(),
+                            brand_name: $('#brand_name').val(),
+                            fitting_name: $('#fitting_name').val(),
+                            pattern_name: $('#pattern_name').val(),
+                            nature_name: $('#nature_name').val(),
+                            fabric_type_name: $('#fabric_type_name').val(),
+                        });
+                        window.location.href = "{{ route('admin.master.production-goods.export') }}?" + params;
+                    }
+                },
+                {
+                    text: 'Export PDF',
+                    className: 'btn-datatable',
+                    action: function (e, dt, node, config) {
+                        var params = $.param({
+                            name_of_garment: $('#name_of_garment').val(),
+                            design_number: $('#design_number').val(),
+                            brand_name: $('#brand_name').val(),
+                            fitting_name: $('#fitting_name').val(),
+                            pattern_name: $('#pattern_name').val(),
+                            nature_name: $('#nature_name').val(),
+                            fabric_type_name: $('#fabric_type_name').val(),
+                        });
+                        window.location.href = "{{ route('admin.master.production-goods.pdf') }}?" + params;
+                    }
+                },
                 {
                     text: 'Add New Product',
                     className: 'btn-datatable',
@@ -137,6 +193,10 @@
             oTable.draw();
             e.preventDefault();
         });
+        $('#fitting_name').on('keyup', function (e) { oTable.draw(); e.preventDefault(); });
+        $('#pattern_name').on('keyup', function (e) { oTable.draw(); e.preventDefault(); });
+        $('#nature_name').on('keyup', function (e) { oTable.draw(); e.preventDefault(); });
+        $('#fabric_type_name').on('keyup', function (e) { oTable.draw(); e.preventDefault(); });
 
        
 

@@ -19,7 +19,7 @@ class ProductionGoodsDataTable  {
     }
 
     public function indexList($request){
-        $queue = ProductionGoods::with('series', 'brand')->where('status', '!=', 3)->orderBy('id','desc');
+        $queue = ProductionGoods::with('series', 'brand', 'fitting', 'pattern', 'productNature', 'fabricType')->where('status', '!=', 3)->orderBy('id','desc');
         
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -44,6 +44,34 @@ class ProductionGoodsDataTable  {
 
                 if ($request->has('design_number') && !empty($request->design_number)) {
                     $query->where('design_number', 'like', "%{$request->get('design_number')}%");
+                }
+
+                if ($request->has('fitting_name') && !empty($request->fitting_name)) {
+                    $term = $request->get('fitting_name');
+                    $query->whereHas('fitting', function($q) use ($term) {
+                        $q->where('name', 'like', "%{$term}%");
+                    });
+                }
+
+                if ($request->has('pattern_name') && !empty($request->pattern_name)) {
+                    $term = $request->get('pattern_name');
+                    $query->whereHas('pattern', function($q) use ($term) {
+                        $q->where('name', 'like', "%{$term}%");
+                    });
+                }
+
+                if ($request->has('nature_name') && !empty($request->nature_name)) {
+                    $term = $request->get('nature_name');
+                    $query->whereHas('productNature', function($q) use ($term) {
+                        $q->where('name', 'like', "%{$term}%");
+                    });
+                }
+
+                if ($request->has('fabric_type_name') && !empty($request->fabric_type_name)) {
+                    $term = $request->get('fabric_type_name');
+                    $query->whereHas('fabricType', function($q) use ($term) {
+                        $q->where('name', 'like', "%{$term}%");
+                    });
                 }
                 
                 if ($request->has('status') && ($request->status != '')) {
@@ -78,6 +106,18 @@ class ProductionGoodsDataTable  {
             })
             ->addColumn('brand_name', function ($queue) {
                 return $queue->brand ? $queue->brand->name : '-';
+            })
+            ->addColumn('fitting_name', function ($queue) {
+                return $queue->fitting ? $queue->fitting->name : '-';
+            })
+            ->addColumn('pattern_name', function ($queue) {
+                return $queue->pattern ? $queue->pattern->name : '-';
+            })
+            ->addColumn('nature_name', function ($queue) {
+                return $queue->productNature ? $queue->productNature->name : '-';
+            })
+            ->addColumn('fabric_type_name', function ($queue) {
+                return $queue->fabricType ? $queue->fabricType->name : '-';
             })
             ->addColumn('product_name_display', function ($queue) {
                 $series = $queue->series ? $queue->series->name : '';

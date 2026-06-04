@@ -44,7 +44,10 @@ class OrderDigitalizationController extends Controller
         $response['skip_slip_data'] = $this->service->getSkipSlips();
         // dd($response['slip_data']);
         if (!empty($response['slip_data']['from_stage']['master_stage_id'])) {
-            $response['available_lots'] = $this->service->getAvailableLotsForStage($response['slip_data']['from_stage']['master_stage_id']);
+            $response['available_lots'] = $this->service->getAvailableLotsForStage(
+                $response['slip_data']['from_stage']['master_stage_id'],
+                $response['slip_data']['from_stage']['id'] ?? null
+            );
         } else {
             $response['available_lots'] = [];
         }

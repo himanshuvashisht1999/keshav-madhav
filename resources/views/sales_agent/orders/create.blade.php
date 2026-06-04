@@ -408,16 +408,21 @@
                 margin-top: auto;
                 align-items: flex-end;
                 display: flex;
+                height: 100%;
             }
 
             .modal.bottom-drawer .modal-content {
                 border-radius: 20px 20px 0 0;
                 width: 100%;
+                max-height: 90vh;
+                display: flex;
+                flex-direction: column;
             }
 
-            .modal-body {
-                max-height: 70vh;
+            .modal.bottom-drawer .modal-body {
                 overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                flex: 1;
             }
         }
 

@@ -78,9 +78,21 @@
                         </div>
 
                         {{-- PATTERN --}}
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <label class="font-weight-bold d-block">Pattern</label>
                             <p class="mb-0">{{ $data->pattern->name ?? '-' }}</p>
+                        </div>
+
+                        {{-- PRODUCT NATURE --}}
+                        <div class="col-md-3 mb-3">
+                            <label class="font-weight-bold d-block">Product Nature</label>
+                            <p class="mb-0">{{ $data->productNature->name ?? '-' }}</p>
+                        </div>
+
+                        {{-- FABRIC TYPE --}}
+                        <div class="col-md-3 mb-3">
+                            <label class="font-weight-bold d-block">Fabric Type</label>
+                            <p class="mb-0">{{ $data->fabricType->name ?? '-' }}</p>
                         </div>
 
                         {{-- ============================= --}}
@@ -161,18 +173,32 @@
                                                 <tr>
                                                     <td>
                                                         @if($variant->sizeSet)
-                                                            <strong>{{ $variant->sizeSet->name }}</strong> ({{ $variant->sizeSet->set_size }})
+                                                            <strong>{{ $variant->sizeSet->name }}</strong> ({{ $variant->sizeSet->no_of_pcs ?? $variant->sizeSet->set_size }} Pcs)
                                                         @else
                                                             <span class="text-muted">-</span>
                                                         @endif
+                                                        <br>
+                                                        @if($variant->image)
+                                                            <a href="{{ asset('assets/products/' . $variant->image) }}" target="_blank">
+                                                                <img src="{{ asset('assets/products/' . $variant->image) }}" class="img-thumbnail mt-2" style="max-height:80px;" alt="Set Image">
+                                                            </a>
+                                                        @endif
                                                     </td>
                                                     <td>
-                                                        @if($variant->colors && $variant->colors->count() > 0)
-                                                            <div class="d-flex flex-wrap" style="gap: 5px;">
-                                                                @foreach($variant->colors as $clr)
-                                                                    <span class="badge badge-pill border shadow-sm" style="background-color: #f8f9fa; color: #333; font-size: 0.9em; padding: 5px 10px;">
-                                                                        {{ $clr->name }}
-                                                                    </span>
+                                                        @if($variant->items && $variant->items->count() > 0)
+                                                            <div class="d-flex flex-wrap" style="gap: 15px;">
+                                                                @foreach($variant->items as $item)
+                                                                    <div class="border p-2 rounded text-center bg-white shadow-sm" style="min-width: 120px;">
+                                                                        <div class="font-weight-bold">{{ $item->color ? $item->color->name : '-' }}</div>
+                                                                        <div class="small text-muted mb-2">Barcode: <span class="badge badge-info">{{ $item->barcode }}</span></div>
+                                                                        @if($item->image)
+                                                                            <a href="{{ asset('assets/products/' . $item->image) }}" target="_blank">
+                                                                                <img src="{{ asset('assets/products/' . $item->image) }}" class="img-thumbnail" style="height: 60px; object-fit: cover;">
+                                                                            </a>
+                                                                        @else
+                                                                            <span class="text-muted small">No Image</span>
+                                                                        @endif
+                                                                    </div>
                                                                 @endforeach
                                                             </div>
                                                         @else
@@ -193,42 +219,7 @@
                         </div>
                     </div>
 
-                    <hr>
 
-                    {{-- ============================= --}}
-                    {{-- IMAGES SECTION --}}
-                    {{-- ============================= --}}
-
-                    <div class="row">
-
-                        {{-- MAIN IMAGE --}}
-                        <div class="col-md-4 mb-3">
-                            <label class="font-weight-bold d-block">Main Image</label>
-
-                            @php
-                                $mainImg = optional($data->images->where('is_main', 1)->first());
-                            @endphp
-
-                            <img src="{{ $mainImg ? $mainImg->image : asset('assets/products/default-image.png') }}"
-                                 class="img-thumbnail"
-                                 style="max-height:240px;object-fit:cover;">
-                        </div>
-
-                        {{-- OTHER IMAGES --}}
-                        <div class="col-md-8 mb-3 d-none">
-                            <label class="font-weight-bold d-block">Other Images</label>
-
-                            <div class="d-flex flex-wrap" style="gap:12px;">
-                                @forelse($data->images->where('is_main', 0) as $img)
-                                    <img src="{{ $img->image }}" class="img-thumbnail"
-                                         style="max-width:140px; max-height:140px; object-fit:cover;">
-                                @empty
-                                    <span class="text-muted">No additional images added.</span>
-                                @endforelse
-                            </div>
-                        </div>
-
-                    </div>
 
                     <hr>
 

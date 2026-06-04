@@ -94,4 +94,32 @@ class ProductionGoodsController extends Controller {
         return response()->json(['next_name' => $nextName]);
     }
 
+    public function export(Request $request)
+    {
+        $data = $this->service->exportData($request);
+
+        return response()
+            ->view('admin.master.production-goods.export', [
+                'data' => $data,
+                'exportedAt' => now()
+            ])
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header(
+                'Content-Disposition',
+                'attachment; filename="product-master-report-' . now()->format('d-m-Y_H-i') . '.xls"'
+            );
+    }
+
+    public function pdf(Request $request)
+    {
+        $data = $this->service->exportData($request);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.master.production-goods.export', [
+            'data' => $data,
+            'exportedAt' => now()
+        ])->setPaper('A4', 'landscape');
+
+        return $pdf->download('product-master-report-' . now()->format('d-m-Y_H-i') . '.pdf');
+    }
+
 }

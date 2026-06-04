@@ -1777,7 +1777,7 @@ class OrderDigitalizationService
             ->get();
     }
 
-    public function getAvailableLotsForStage($stage_id)
+    public function getAvailableLotsForStage($stage_id, $unit_id = null)
     {
         // 1. Get all lots that have entered this stage
         $model_name = ($stage_id == 1)
@@ -1787,9 +1787,12 @@ class OrderDigitalizationService
         $out_model_name = ($stage_id == 1)
             ? OrderPrintingToStichingTransaction::class
             : OrderStageTransaction::class;
-        $candidateLots = $model_name::where('to_stage_id', $stage_id)
-            ->distinct()
-            ->pluck('lot_no');
+        
+        $candidateLotsQuery = $model_name::where('to_stage_id', $stage_id);
+        if ($unit_id) {
+            $candidateLotsQuery->where('sub_stage_id_to', $unit_id);
+        }
+        $candidateLots = $candidateLotsQuery->distinct()->pluck('lot_no');
 
         $availableLots = [];
 
@@ -1798,14 +1801,20 @@ class OrderDigitalizationService
             // but loop is safer for complex size logic logic transparency.
 
             // Calculate Inflow (Total Items entered this stage)
-            $inflow = $model_name::where('to_stage_id', $stage_id)
-                ->where('lot_no', $lot_no)
-                ->sum('quantity');
+            $inflowQuery = $model_name::where('to_stage_id', $stage_id)
+                ->where('lot_no', $lot_no);
+            if ($unit_id) {
+                $inflowQuery->where('sub_stage_id_to', $unit_id);
+            }
+            $inflow = $inflowQuery->sum('quantity');
 
             // Calculate Outflow (Total Items left this stage)
-            $outflow = $out_model_name::where('from_stage_id', $stage_id)
-                ->where('lot_no', $lot_no)
-                ->sum('quantity');
+            $outflowQuery = $out_model_name::where('from_stage_id', $stage_id)
+                ->where('lot_no', $lot_no);
+            if ($unit_id) {
+                $outflowQuery->where('sub_stage_id', $unit_id);
+            }
+            $outflow = $outflowQuery->sum('quantity');
 
             // If there is stock remaining, add to list
             if (($inflow - $outflow) > 0) {
