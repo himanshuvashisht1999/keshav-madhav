@@ -1443,6 +1443,11 @@ class ProductOrderService
             $save_orderProductSet->remain_total_quantity = $order_quantity * $size_data->no_of_pcs;
             $save_orderProductSet->remain_set_quantity = $order_quantity;
             $save_orderProductSet->status = 1;
+            
+            // Save Printing Preference
+            $save_orderProductSet->is_printing = ($request->is_printing == 'yes' || $request->is_printing == 1) ? 1 : 0;
+            $save_orderProductSet->printing_unit_id = ($save_orderProductSet->is_printing == 1) ? $request->printing_unit_id : null;
+            
             $save_orderProductSet->save();
 
             $sizeCounts = array_count_values($size_explode);

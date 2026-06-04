@@ -879,11 +879,13 @@ class FabricReceiptService
     public function checkRollNo($request)
     {
         $query = FabricReceiptDetail::where('roll_number', $request->roll_no);
+        if ($request->has('fabric_id') && !empty($request->fabric_id)) {
+            $query->where('fabric_id', $request->fabric_id);
+        }
         if (isset($request->receipt_id) && !empty($request->receipt_id)) {
             $query->where('fabric_receipt_id', '!=', $request->receipt_id);
         }
-        $exists = $query->exists();
-        return $exists;
+        return $query->exists();
     }
 
     public function checkBillNo($request)

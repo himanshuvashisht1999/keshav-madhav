@@ -326,6 +326,9 @@ class TimeAllocationService {
             $updateData
         );
 
+        // ✅ Remove days_allocated before propagating to legacy tables, as they do not have this column
+        unset($updateData['days_allocated']);
+
         // ✅ Also propagate back to original tables for legacy compatibility (optional but safe for now)
         if ($stageId == 3) {
             $orderLot = \App\Models\OrderLot::where('lot_no', $lotNo)->first();

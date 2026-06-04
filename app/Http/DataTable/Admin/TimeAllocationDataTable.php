@@ -9,7 +9,7 @@ use Yajra\DataTables\Facades\DataTables;
 class TimeAllocationDataTable  {
 
     public function indexList($request){
-        $queue = MasterStageWiseTimeAllocation::query();
+        $queue = MasterStageWiseTimeAllocation::with('orderLot');
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -21,7 +21,10 @@ class TimeAllocationDataTable  {
                 }
             }) 
             ->editColumn('start_date_time', function ($queue) {
-				return date('Y-m-d H:i', strtotime($queue->start_date_time));
+                if ($queue->orderLot && $queue->orderLot->production_datetime) {
+                    return date('Y-m-d', strtotime($queue->orderLot->production_datetime));
+                }
+				return date('Y-m-d', strtotime($queue->start_date_time));
             })
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;

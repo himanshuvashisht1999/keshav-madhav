@@ -29,11 +29,15 @@
                                 <h5 class="text-primary mb-3">Basic Information</h5>
 
                                 <div class="form-group mb-3">
-                                    <label>Start Date & Time</label>
-                                    <!-- <input type="datetime-local" name="start_date_time" class="form-control datetime-picker" value="{{ date('Y-m-d\TH:i') }}" required> -->
+                                    <label>Start Date</label>
+                                    @php
+                                        $startDate = ($allocation->orderLot && $allocation->orderLot->production_datetime) 
+                                            ? $allocation->orderLot->production_datetime 
+                                            : $allocation->start_date_time;
+                                    @endphp
                                     <input type="text"
                                             class="form-control"
-                                            value="{{ date('Y-m-d H:i:s', strtotime($allocation->start_date_time)) }}"
+                                            value="{{ date('Y-m-d', strtotime($startDate)) }}"
                                             readonly>
                                 </div>
 
@@ -114,19 +118,19 @@
                                                                 min="0" step="0.5" required>
                                                         </td>
                                                         <td>
-                                                            <input type="datetime-local" class="form-control form-control-sm" 
+                                                            <input type="date" class="form-control form-control-sm" 
                                                                 name="start_dates[{{ $stage->id }}]" 
-                                                                value="{{ $tx['start_date'] ?? '' }}">
+                                                                value="{{ isset($tx['start_date']) && !empty($tx['start_date']) ? date('Y-m-d', strtotime($tx['start_date'])) : '' }}">
                                                         </td>
                                                         <td>
-                                                            <input type="datetime-local" class="form-control form-control-sm" 
+                                                            <input type="date" class="form-control form-control-sm" 
                                                                 name="end_dates[{{ $stage->id }}]" 
-                                                                value="{{ $tx['end_date'] ?? '' }}">
+                                                                value="{{ isset($tx['end_date']) && !empty($tx['end_date']) ? date('Y-m-d', strtotime($tx['end_date'])) : '' }}">
                                                         </td>
                                                         <td>
-                                                            <input type="datetime-local" class="form-control form-control-sm" 
+                                                            <input type="date" class="form-control form-control-sm" 
                                                                 name="complete_dates[{{ $stage->id }}]" 
-                                                                value="{{ $tx['complete_date'] ?? '' }}">
+                                                                value="{{ isset($tx['complete_date']) && !empty($tx['complete_date']) ? date('Y-m-d', strtotime($tx['complete_date'])) : '' }}">
                                                         </td>
                                                     </tr>
                                                 @endforeach

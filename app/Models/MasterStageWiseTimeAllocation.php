@@ -36,4 +36,8 @@ class MasterStageWiseTimeAllocation extends Model
     ];
 
     
+    public function orderLot()
+    {
+        return $this->belongsTo(\App\Models\OrderLot::class, 'lot_no', 'lot_no');
+    }
 }

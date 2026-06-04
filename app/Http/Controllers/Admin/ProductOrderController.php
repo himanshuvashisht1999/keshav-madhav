@@ -227,6 +227,7 @@ class ProductOrderController extends Controller
     public function createDomestic()
     {
         $response['cutting_units'] = $this->service->cutting_units();
+        $response['printing_units'] = $this->service->printing_units();
         $response['fabrics'] = $this->service->fabrics();
         $response['fittings'] = $this->service->fittings();
         $response['patterns'] = $this->service->getPatterns();

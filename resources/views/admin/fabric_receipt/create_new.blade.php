@@ -419,13 +419,14 @@
             });
 
             $(document).on('blur', '.roll-no', function (e) {
-
                 if (e.type === 'keypress' && e.which !== 13) return;
 
                 let rollNo = $(this).val().trim();
                 let input = $(this);
 
                 if (rollNo === '') return;
+
+                let fabricId = $(this).closest('tr').find('input[name*="[fabric_id]"]').val();
 
                 /* =========================
                 1️⃣ FORM LEVEL DUPLICATE CHECK
@@ -434,13 +435,16 @@
 
                 $('.roll-no').each(function () {
                     if (this !== input[0] && $(this).val().trim() === rollNo) {
-                        duplicateFound = true;
-                        return false; // break loop
+                        let otherFabricId = $(this).closest('tr').find('input[name*="[fabric_id]"]').val();
+                        if (fabricId === otherFabricId) {
+                            duplicateFound = true;
+                            return false; // break loop
+                        }
                     }
                 });
 
                 if (duplicateFound) {
-                    alert('Duplicate Roll / Lot No in current form');
+                    alert('Duplicate Roll / Lot No for the same fabric in current form');
                     input.val('').focus();
                     return; // 🚫 DB check stop
                 }
@@ -450,12 +454,13 @@
                     type: "POST",
                     data: {
                         roll_no: rollNo,
+                        fabric_id: fabricId,
                         warehouse_id: $('#master_fabric_warehouse_id').val(),
                         _token: "{{ csrf_token() }}"
                     },
                     success: function (res) {
                         if (res.exists) {
-                            alert('Roll No already exists');
+                            alert('Roll No already exists for this fabric');
                             input.val('').focus();
                         }
                     }

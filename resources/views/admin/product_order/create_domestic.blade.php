@@ -140,6 +140,29 @@
                                         </div>
                                     </div>
 
+                                    <hr>
+                                    <h5 class="mb-4 text-primary font-weight-bold">Printing Preferences</h5>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label>Printing Required?</label>
+                                                <select name="is_printing" id="is_printing" class="form-control" onchange="togglePrinting(this.value)">
+                                                    <option value="no">No</option>
+                                                    <option value="yes">Yes</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3" id="printing_unit_group" style="display:none;">
+                                                <label>Printing & Embroidery Unit</label>
+                                                <select name="printing_unit_id" id="printing_unit_id" class="form-control select2">
+                                                    <option value="">Select Printing Unit</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="form-group mb-4">
                                         <label>Remark</label>
                                         <textarea name="remark" class="form-control" rows="2"
@@ -163,11 +186,14 @@
     <!-- PHP DATA TO JS -->
     <script>
         const warehouses = Object.values(@json($cutting_units));
+        const printing_warehouses = Object.values(@json($printing_units ?? []));
     </script>
 
     <script>
         $(document).ready(function () {
             $('.select2').select2({ width: '100%' });
+            
+            printingWarehouseChange();
 
             // Show/Hide Update Ratio button
             $('#set_size_id').on('change', function () {
@@ -309,6 +335,34 @@
             }
 
             cuttingSelect.trigger('change.select2');
+        }
+
+        function printingWarehouseChange() {
+            let printingSelect = $('#printing_unit_id');
+            printingSelect.empty();
+            printingSelect.append('<option value="">Select Printing Unit</option>');
+
+            printing_warehouses.forEach(warehouse => {
+                if (warehouse.printing_units) {
+                    warehouse.printing_units.forEach(unit => {
+                        printingSelect.append(
+                            `<option value="${unit.id}">${unit.name} (${warehouse.warehouse_name})</option>`
+                        );
+                    });
+                }
+            });
+
+            printingSelect.trigger('change.select2');
+        }
+
+        function togglePrinting(val) {
+            if (val === 'yes') {
+                $('#printing_unit_group').show();
+                $('#printing_unit_id').prop('required', true);
+            } else {
+                $('#printing_unit_group').hide();
+                $('#printing_unit_id').prop('required', false).val('').trigger('change');
+            }
         }
     </script>
     <!-- CUSTOM SIZE MODAL -->
