@@ -34,8 +34,6 @@ class InventoryController extends Controller
         $query = DomesticInventory::select(
             'domestic_inventories.size_set_id',
             'domestic_inventories.color_id',
-            'domestic_inventories.fitting_id',
-            'domestic_inventories.pattern_id',
             'domestic_inventories.product_id',
             'pg.design_number',
             'pg.name_of_garment as product_name',
@@ -51,8 +49,8 @@ class InventoryController extends Controller
             ->leftJoin('production_goods as pg', 'domestic_inventories.product_id', '=', 'pg.id')
             ->leftJoin('master_colors as mc', 'domestic_inventories.color_id', '=', 'mc.id')
             ->leftJoin('master_size_measurements as msm', 'domestic_inventories.size_set_id', '=', 'msm.id')
-            ->leftJoin('master_product_fittings as fittings', 'domestic_inventories.fitting_id', '=', 'fittings.id')
-            ->leftJoin('master_design_patterns as patterns', 'domestic_inventories.pattern_id', '=', 'patterns.id')
+            ->leftJoin('master_product_fittings as fittings', 'pg.master_product_fitting_id', '=', 'fittings.id')
+            ->leftJoin('master_design_patterns as patterns', 'pg.master_pattern_id', '=', 'patterns.id')
             ->leftJoin('production_goods_variants as variants', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
@@ -76,8 +74,6 @@ class InventoryController extends Controller
         $query->groupBy(
             'domestic_inventories.size_set_id',
             'domestic_inventories.color_id',
-            'domestic_inventories.fitting_id',
-            'domestic_inventories.pattern_id',
             'domestic_inventories.product_id',
             'pg.design_number',
             'pg.name_of_garment',
@@ -131,10 +127,10 @@ class InventoryController extends Controller
             $query->where('domestic_inventories.size_set_id', $request->size_set_id);
         }
         if ($request->filled('fitting_id')) {
-            $query->where('domestic_inventories.fitting_id', $request->fitting_id);
+            $query->where('pg.master_product_fitting_id', $request->fitting_id);
         }
         if ($request->filled('pattern_id')) {
-            $query->where('domestic_inventories.pattern_id', $request->pattern_id);
+            $query->where('pg.master_pattern_id', $request->pattern_id);
         }
 
         $items = $query->select(

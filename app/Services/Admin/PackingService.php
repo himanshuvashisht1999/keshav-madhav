@@ -743,7 +743,7 @@ class PackingService
                             $pcs_per_box += ceil($detail->total_quantity / $ss_total);
                         }
 
-                        $gen_barcode = 'D' . $entry['product_id'] . 'S' . $entry['size_set_id'] . 'C' . $entry['color_id'] . 'P' . ($entry['pattern_id'] ?? 0) . 'F' . ($entry['fitting_id'] ?? 0);
+                        $gen_barcode = 'D' . $entry['product_id'] . 'S' . $entry['size_set_id'] . 'C' . $entry['color_id'];
                         $final_barcode = $barcode ?: $gen_barcode;
 
                         // Check for existing consolidated inventory entry
@@ -762,8 +762,6 @@ class PackingService
                                 'rack_id' => $rack_id,
                                 'product_id' => $entry['product_id'],
                                 'color_id' => $entry['color_id'],
-                                'fitting_id' => $entry['fitting_id'] ?? null,
-                                'pattern_id' => $entry['pattern_id'] ?? null,
                                 'size_set_id' => $entry['size_set_id'],
                                 'quantity' => $pcs_per_box,
                                 'total_boxes' => $qty,
@@ -1170,8 +1168,7 @@ class PackingService
                                     'rack_id' => $agg['rack_id'],
                                     'product_id' => $set->production_goods_id,
                                     'color_id' => $set->color_id,
-                                    'fitting_id' => $set->master_product_fitting_id,
-                                    'pattern_id' => $set->master_design_pattern_id,
+
                                     'size_set_id' => $set->set_size,
                                     'quantity' => ($v['box_count'] > 0 ? ceil($v['total_qty'] / $v['box_count']) : 0),
                                     'total_boxes' => $v['box_count'],
@@ -1542,8 +1539,7 @@ class PackingService
                     'rack_id' => $rackId,
                     'product_id' => $set->production_goods_id,
                     'color_id' => $set->color_id,
-                    'fitting_id' => $set->master_product_fitting_id,
-                    'pattern_id' => $set->master_design_pattern_id,
+
                     'size_id' => $detail->id,
                     'quantity' => $qty,
                     'per_piece_amount' => $item['per_piece_amount'] ?? $data['per_piece_amount'] ?? null,

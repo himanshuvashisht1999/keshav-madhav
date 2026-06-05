@@ -18,15 +18,13 @@ class DomesticInventoryHistory extends Model
         'old_product_id',
         'old_size_set_id',
         'old_color_id',
-        'old_fitting_id',
-        'old_pattern_id',
+
         'old_rack_id',
         'old_warehouse_id',
         'new_product_id',
         'new_size_set_id',
         'new_color_id',
-        'new_fitting_id',
-        'new_pattern_id',
+
         'new_rack_id',
         'new_warehouse_id',
         'box_quantity',
@@ -83,25 +81,7 @@ class DomesticInventoryHistory extends Model
         return $this->belongsTo(MasterSizeMeasurement::class, 'new_size_set_id');
     }
 
-    public function oldFitting()
-    {
-        return $this->belongsTo(MasterProductFitting::class, 'old_fitting_id');
-    }
 
-    public function newFitting()
-    {
-        return $this->belongsTo(MasterProductFitting::class, 'new_fitting_id');
-    }
-
-    public function oldPattern()
-    {
-        return $this->belongsTo(MasterDesignPattern::class, 'old_pattern_id');
-    }
-
-    public function newPattern()
-    {
-        return $this->belongsTo(MasterDesignPattern::class, 'new_pattern_id');
-    }
 
     public function oldRack()
     {

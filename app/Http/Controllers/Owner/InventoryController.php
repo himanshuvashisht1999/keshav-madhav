@@ -28,8 +28,6 @@ class InventoryController extends Controller
         $query = DomesticInventory::select(
             'domestic_inventories.size_set_id',
             'domestic_inventories.color_id',
-            'domestic_inventories.fitting_id',
-            'domestic_inventories.pattern_id',
             'domestic_inventories.product_id',
             'products.design_number',
             'products.name_of_garment as product_name',
@@ -45,8 +43,8 @@ class InventoryController extends Controller
             ->leftJoin('master_series as series', 'products.master_series_id', '=', 'series.id')
             ->leftJoin('master_colors as colors', 'domestic_inventories.color_id', '=', 'colors.id')
             ->leftJoin('master_size_measurements as sizes', 'domestic_inventories.size_set_id', '=', 'sizes.id')
-            ->leftJoin('master_product_fittings as fittings', 'domestic_inventories.fitting_id', '=', 'fittings.id')
-            ->leftJoin('master_design_patterns as patterns', 'domestic_inventories.pattern_id', '=', 'patterns.id')
+            ->leftJoin('master_product_fittings as fittings', 'products.master_product_fitting_id', '=', 'fittings.id')
+            ->leftJoin('master_design_patterns as patterns', 'products.master_pattern_id', '=', 'patterns.id')
             ->leftJoin('production_goods_variants as variants', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
@@ -65,8 +63,6 @@ class InventoryController extends Controller
         $query->groupBy(
             'domestic_inventories.size_set_id',
             'domestic_inventories.color_id',
-            'domestic_inventories.fitting_id',
-            'domestic_inventories.pattern_id',
             'domestic_inventories.product_id',
             'products.design_number',
             'products.name_of_garment',

@@ -96,8 +96,8 @@ class OrderController extends Controller
             ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
-            ->leftJoin('master_product_fittings', 'domestic_inventories.fitting_id', '=', 'master_product_fittings.id')
-            ->leftJoin('master_design_patterns', 'domestic_inventories.pattern_id', '=', 'master_design_patterns.id')
+            ->leftJoin('master_product_fittings', 'production_goods.master_product_fitting_id', '=', 'master_product_fittings.id')
+            ->leftJoin('master_design_patterns', 'production_goods.master_pattern_id', '=', 'master_design_patterns.id')
             ->leftJoinSub($prices, 'ip', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
                     ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
@@ -178,8 +178,6 @@ class OrderController extends Controller
                 'master_size_measurements.name as size_set_name',
                 'master_product_fittings.name as fitting_name',
                 'master_design_patterns.name as pattern_name',
-                'domestic_inventories.fitting_id',
-                'domestic_inventories.pattern_id',
                 DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
@@ -225,8 +223,6 @@ class OrderController extends Controller
                 'master_size_measurements.name',
                 'master_product_fittings.name',
                 'master_design_patterns.name',
-                'domestic_inventories.fitting_id',
-                'domestic_inventories.pattern_id',
                 DB::raw($discount_col)
             )
                 ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
@@ -359,7 +355,7 @@ class OrderController extends Controller
                 $pcs_per_box = (float) ($sizeSet->total_pieces ?? 0);
             }
 
-            $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'] . 'P' . ($product->master_pattern_id ?? 0) . 'F' . ($product->master_product_fitting_id ?? 0);
+            $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'];
 
             $total_pcs = $var['qty'] * $pcs_per_box;
 
@@ -371,9 +367,7 @@ class OrderController extends Controller
                 'design_number' => $product->design_number,
                 'color_name' => $color->name,
                 'size_set_name' => $sizeSet->name,
-                'fitting_id' => $product->master_product_fitting_id,
                 'fitting_name' => $fitting->name ?? null,
-                'pattern_id' => $product->master_pattern_id,
                 'pattern_name' => $pattern->name ?? null,
                 'quantity' => $total_pcs,
                 'box_qty' => $var['qty'],
@@ -487,8 +481,7 @@ class OrderController extends Controller
                             'old_product_id' => $inv->product_id,
                             'old_color_id' => $inv->color_id,
                             'old_size_set_id' => $inv->size_set_id,
-                            'old_fitting_id' => $inv->fitting_id,
-                            'old_pattern_id' => $inv->pattern_id,
+
                             'old_rack_id' => $inv->warehouse_rack_id,
                             'box_quantity' => $deduct,
                         ]);
@@ -574,8 +567,8 @@ class OrderController extends Controller
             ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
-            ->leftJoin('master_product_fittings', 'domestic_inventories.fitting_id', '=', 'master_product_fittings.id')
-            ->leftJoin('master_design_patterns', 'domestic_inventories.pattern_id', '=', 'master_design_patterns.id')
+            ->leftJoin('master_product_fittings', 'production_goods.master_product_fitting_id', '=', 'master_product_fittings.id')
+            ->leftJoin('master_design_patterns', 'production_goods.master_pattern_id', '=', 'master_design_patterns.id')
             ->leftJoinSub($prices, 'ip', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
                     ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
@@ -660,8 +653,6 @@ class OrderController extends Controller
             'master_size_measurements.name as size_set_name',
             'master_product_fittings.name as fitting_name',
             'master_design_patterns.name as pattern_name',
-            'domestic_inventories.fitting_id',
-            'domestic_inventories.pattern_id',
             DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
             DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
             DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
@@ -705,8 +696,6 @@ class OrderController extends Controller
                     'master_size_measurements.name',
                     'master_product_fittings.name',
                     'master_design_patterns.name',
-                    'domestic_inventories.fitting_id',
-                    'domestic_inventories.pattern_id',
                     DB::raw($discount_col)
                 )
                     ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
@@ -730,8 +719,6 @@ class OrderController extends Controller
                 'master_size_measurements.name',
                 'master_product_fittings.name',
                 'master_design_patterns.name',
-                'domestic_inventories.fitting_id',
-                'domestic_inventories.pattern_id',
                 DB::raw($discount_col)
             )
                 ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
@@ -918,7 +905,7 @@ class OrderController extends Controller
                 $pcs_per_box = (float) ($sizeSet->total_pieces ?? 0);
             }
 
-            $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'] . 'P' . ($product->master_pattern_id ?? 0) . 'F' . ($product->master_product_fitting_id ?? 0);
+            $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'];
             $total_pcs = $var['qty'] * $pcs_per_box;
 
             $items_to_create[] = [
@@ -930,9 +917,7 @@ class OrderController extends Controller
                 'design_number' => $product->design_number,
                 'color_name' => $color->name,
                 'size_set_name' => $sizeSet->name,
-                'fitting_id' => $product->master_product_fitting_id,
                 'fitting_name' => $fitting->name ?? null,
-                'pattern_id' => $product->master_pattern_id,
                 'pattern_name' => $pattern->name ?? null,
                 'box_qty' => $var['qty'],
                 'quantity' => $total_pcs,
@@ -1044,7 +1029,7 @@ class OrderController extends Controller
                 'mrp' => $first->mrp,
                 'selling_price' => $first->selling_price,
                 'total_qty' => $group->sum('quantity'),
-                'box_count' => $group->count(),
+                'box_count' => $group->sum('box_qty') > 0 ? $group->sum('box_qty') : $group->count(),
                 'status' => $first->dispatched_at ? 'Dispatched' : 'Pending',
                 'boxes' => $group
             ];
@@ -1154,8 +1139,6 @@ class OrderController extends Controller
         }
 
         $itemsRaw = DB::table('agent_order_items')
-            ->leftJoin('master_design_patterns', 'agent_order_items.pattern_id', '=', 'master_design_patterns.id')
-            ->leftJoin('master_product_fittings', 'agent_order_items.fitting_id', '=', 'master_product_fittings.id')
             ->leftJoin('domestic_inventories', function ($join) {
                 $join->on('agent_order_items.product_id', '=', 'domestic_inventories.product_id')
                     ->on('agent_order_items.color_id', '=', 'domestic_inventories.color_id')
@@ -1167,8 +1150,6 @@ class OrderController extends Controller
             ->where('agent_order_id', $id)
             ->select(
                 'agent_order_items.*',
-                'master_design_patterns.name as db_pattern_name',
-                'master_product_fittings.name as db_fitting_name',
                 'racks.name as rack_name',
                 'storerooms.name as warehouse_name'
             )
@@ -1223,7 +1204,7 @@ class OrderController extends Controller
 
             // Format: D{productId}S{sizeSetId}C{colorId}P{patternId}F{fittingId}
             if (strpos($barcode, 'D') === 0 && strpos($barcode, 'S') !== false) {
-                if (preg_match('/^D(\d+)S(\d+)C(\d+)P(\d+)F(\d+)$/', $barcode, $matches)) {
+                if (preg_match('/^D(\d+)S(\d+)C(\d+)(?:P(\d+)F(\d+))?$/', $barcode, $matches)) {
                     $productId = $matches[1];
                     $sizeSetId = $matches[2];
                     $colorId = $matches[3];

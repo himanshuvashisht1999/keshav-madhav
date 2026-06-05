@@ -251,7 +251,7 @@ class ProductionGoodsService
                                 $image->move(public_path('assets/products'), $imagePath);
                             }
 
-                            $barcode = 'D' . $save_data->id . 'S' . $sizeSetId . 'C' . $colorId . 'P' . $save_data->master_pattern_id . 'F' . $save_data->master_product_fitting_id;
+                            $barcode = 'D' . $save_data->id . 'S' . $sizeSetId . 'C' . $colorId;
                             \App\Models\ProductionGoodVariantItem::create([
                                 'variant_id' => $variant->id,
                                 'master_color_id' => $colorId,
@@ -331,12 +331,9 @@ class ProductionGoodsService
         // Basic fields (common)
         $update_data->company_id = $request->company_id; // from edit form
 
-        // If in inventory, block changes to fitting or pattern as they change all barcodes
-        if (!$isProductInInv) {
-            $update_data->master_product_fitting_id = $request->master_product_fitting_id;
-            $update_data->master_pattern_id = $request->master_pattern_id;
-            $update_data->design_number = $request->design_number ?? $update_data->design_number;
-        }
+        $update_data->master_product_fitting_id = $request->master_product_fitting_id;
+        $update_data->master_pattern_id = $request->master_pattern_id;
+        $update_data->design_number = $request->design_number ?? $update_data->design_number;
 
         $update_data->brand_id = $request->brand_id;
         $update_data->name_of_garment = $request->name_of_garment;
@@ -430,7 +427,7 @@ class ProductionGoodsService
                             $imagePath = $imageName;
                         }
 
-                        $barcode = 'D' . $productId . 'S' . $sizeSetId . 'C' . $colorId . 'P' . $update_data->master_pattern_id . 'F' . $update_data->master_product_fitting_id;
+                        $barcode = 'D' . $productId . 'S' . $sizeSetId . 'C' . $colorId;
                         $itemData = [
                             'variant_id' => $variant->id,
                             'master_color_id' => $colorId,

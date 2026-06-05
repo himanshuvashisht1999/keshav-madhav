@@ -50,17 +50,7 @@ class InventoryPriceController extends Controller
             $priceImage->mrp = $request->mrp;
             $priceImage->save();
 
-            // Broad update to sync DomesticInventory so existing unassigned stock reflects this new price
-            DomesticInventory::where('product_id', $priceImage->product_id)
-                ->where('color_id', $priceImage->color_id)
-                ->where('size_set_id', $priceImage->size_set_id)
-                ->where('fitting_id', $priceImage->fitting_id)
-                ->where('pattern_id', $priceImage->pattern_id)
-                ->where(function ($q) {
-                    $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-                })
-                ->update(['mrp' => $request->mrp]);
-            
+
             DB::commit();
 
             return response()->json(['success' => true, 'message' => 'Price updated successfully.']);
@@ -102,52 +92,32 @@ class InventoryPriceController extends Controller
         }
 
         $colorsToProcess = $request->color_id ?? [];
-        $fittingsToProcess = empty($request->fitting_id) ? [null] : $request->fitting_id;
-        $patternsToProcess = empty($request->pattern_id) ? [null] : $request->pattern_id;
-
         foreach ($colorsToProcess as $color_id) {
-            foreach ($fittingsToProcess as $fitting_id) {
-                foreach ($patternsToProcess as $pattern_id) {
-                    $data = [
-                        'product_id' => $request->product_id,
-                        'product_name' => $product_name,
-                        'color_id' => $color_id,
-                        'size_set_id' => $request->size_set_id,
-                        'fitting_id' => $fitting_id,
-                        'pattern_id' => $pattern_id,
-                        'mrp' => $request->mrp,
-                        'is_main' => 1,
-                        'status' => 1
-                    ];
+            $data = [
+                'product_id' => $request->product_id,
+                'product_name' => $product_name,
+                'color_id' => $color_id,
+                'size_set_id' => $request->size_set_id,
+                'fitting_id' => null,
+                'pattern_id' => null,
+                'mrp' => $request->mrp,
+                'is_main' => 1,
+                'status' => 1
+            ];
 
-                    if ($imageName) {
-                        $data['image_path'] = $imageName;
-                    }
-
-                    DomesticInventoryImage::updateOrCreate(
-                        [
-                            'product_id' => $request->product_id,
-                            'color_id' => $color_id,
-                            'size_set_id' => $request->size_set_id,
-                            'fitting_id' => $fitting_id,
-                            'pattern_id' => $pattern_id,
-                            'is_main' => 1
-                        ],
-                        $data
-                    );
-
-                    // Broad update to sync DomesticInventory so existing unassigned stock reflects this new price
-                    DomesticInventory::where('product_id', $request->product_id)
-                        ->where('color_id', $color_id)
-                        ->where('size_set_id', $request->size_set_id)
-                        ->where('fitting_id', $fitting_id)
-                        ->where('pattern_id', $pattern_id)
-                        ->where(function ($q) {
-                            $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-                        })
-                        ->update(['mrp' => $request->mrp]);
-                }
+            if ($imageName) {
+                $data['image_path'] = $imageName;
             }
+
+            DomesticInventoryImage::updateOrCreate(
+                [
+                    'product_id' => $request->product_id,
+                    'color_id' => $color_id,
+                    'size_set_id' => $request->size_set_id,
+                    'is_main' => 1
+                ],
+                $data
+            );
         }
 
         return redirect()->route('admin.inventory-prices.index')->with('success', 'Pricing profile saved successfully.');

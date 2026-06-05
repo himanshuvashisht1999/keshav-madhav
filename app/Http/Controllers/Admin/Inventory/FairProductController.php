@@ -111,12 +111,27 @@ class FairProductController extends Controller
             $mrp = $variant->mrp ?? 0;
             $sample->final_price = $mrp - ($mrp * ($sample->discount_percent / 100));
 
-            // Image selection priority: Variant -> Color -> Main Image
+            // Image selection priority: Specific Variant -> Specific Variant's color -> Any Variant -> Any Variant's color -> Main Image
             $displayImage = null;
-            foreach ($sample->product->variants as $v) {
-                if ($v->image) {
-                    $displayImage = $v->image;
-                    break;
+            if ($variant && $variant->image) {
+                $displayImage = $variant->image;
+            }
+
+            if (!$displayImage && $variant) {
+                foreach ($variant->items as $item) {
+                    if ($item->image) {
+                        $displayImage = $item->image;
+                        break;
+                    }
+                }
+            }
+
+            if (!$displayImage) {
+                foreach ($sample->product->variants as $v) {
+                    if ($v->image) {
+                        $displayImage = $v->image;
+                        break;
+                    }
                 }
             }
 
@@ -132,7 +147,7 @@ class FairProductController extends Controller
             }
 
             if (!$displayImage && $sample->product->mainImage) {
-                $displayImage = $sample->product->mainImage->image;
+                $displayImage = $sample->product->mainImage->getRawOriginal('image');
             }
 
             $sample->product->display_image = $displayImage;
@@ -168,18 +183,39 @@ class FairProductController extends Controller
         $products = $query->get();
 
         $products = $products->filter(function($product) use ($request) {
-            // Image selection priority: Variant -> Color -> Main Image
+            // Find specific variant for requested size set if provided
+            $specificVariant = null;
+            if ($request->size_set_id) {
+                $specificVariant = $product->variants->where('master_size_measurement_id', $request->size_set_id)->first();
+            }
+
+            // Image selection priority: Specific Variant -> Specific Variant's color -> Any Variant -> Any Variant's color -> Main Image
             $displayImage = null;
-            foreach ($product->variants as $variant) {
-                if ($variant->image) {
-                    $displayImage = $variant->image;
-                    break;
+            if ($specificVariant && $specificVariant->image) {
+                $displayImage = $specificVariant->image;
+            }
+
+            if (!$displayImage && $specificVariant) {
+                foreach ($specificVariant->items as $item) {
+                    if ($item->image) {
+                        $displayImage = $item->image;
+                        break;
+                    }
                 }
             }
 
             if (!$displayImage) {
-                foreach ($product->variants as $variant) {
-                    foreach ($variant->items as $item) {
+                foreach ($product->variants as $v) {
+                    if ($v->image) {
+                        $displayImage = $v->image;
+                        break;
+                    }
+                }
+            }
+
+            if (!$displayImage) {
+                foreach ($product->variants as $v) {
+                    foreach ($v->items as $item) {
                         if ($item->image) {
                             $displayImage = $item->image;
                             break 2;
@@ -189,7 +225,7 @@ class FairProductController extends Controller
             }
 
             if (!$displayImage && $product->mainImage) {
-                $displayImage = $product->mainImage->image;
+                $displayImage = $product->mainImage->getRawOriginal('image');
             }
 
             $product->display_image = $displayImage;
@@ -318,18 +354,33 @@ class FairProductController extends Controller
             $mrp = $variant->mrp ?? 0;
             $sample->final_price = $mrp - ($mrp * ($sample->discount_percent / 100));
 
-            // Image selection priority: Variant -> Color -> Main Image
+            // Image selection priority: Specific Variant -> Specific Variant's color -> Any Variant -> Any Variant's color -> Main Image
             $displayImage = null;
-            foreach ($sample->product->variants as $variant) {
-                if ($variant->image) {
-                    $displayImage = $variant->image;
-                    break;
+            if ($variant && $variant->image) {
+                $displayImage = $variant->image;
+            }
+
+            if (!$displayImage && $variant) {
+                foreach ($variant->items as $item) {
+                    if ($item->image) {
+                        $displayImage = $item->image;
+                        break;
+                    }
                 }
             }
 
             if (!$displayImage) {
-                foreach ($sample->product->variants as $variant) {
-                    foreach ($variant->items as $item) {
+                foreach ($sample->product->variants as $v) {
+                    if ($v->image) {
+                        $displayImage = $v->image;
+                        break;
+                    }
+                }
+            }
+
+            if (!$displayImage) {
+                foreach ($sample->product->variants as $v) {
+                    foreach ($v->items as $item) {
                         if ($item->image) {
                             $displayImage = $item->image;
                             break 2;
@@ -339,7 +390,7 @@ class FairProductController extends Controller
             }
 
             if (!$displayImage && $sample->product->mainImage) {
-                $displayImage = $sample->product->mainImage->image;
+                $displayImage = $sample->product->mainImage->getRawOriginal('image');
             }
 
             $sample->product->display_image = $displayImage;
@@ -363,12 +414,33 @@ class FairProductController extends Controller
             ->with(['product.series', 'product.fitting', 'product.pattern', 'product.variants.items', 'product.mainImage', 'sizeSet'])
             ->firstOrFail();
         
-        // Image selection priority: Variant -> Color -> Main Image
+        // Color chart is the list of colors available for this product and size set
+        $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $sample->product_id)
+            ->where('master_size_measurement_id', $sample->size_set_id)
+            ->with('items.color')
+            ->first();
+
+        // Image selection priority: Specific Variant -> Specific Variant's color -> Any Variant -> Any Variant's color -> Main Image
         $displayImage = null;
-        foreach ($sample->product->variants as $v) {
-            if ($v->image) {
-                $displayImage = $v->image;
-                break;
+        if ($variant && $variant->image) {
+            $displayImage = $variant->image;
+        }
+
+        if (!$displayImage && $variant) {
+            foreach ($variant->items as $item) {
+                if ($item->image) {
+                    $displayImage = $item->image;
+                    break;
+                }
+            }
+        }
+
+        if (!$displayImage) {
+            foreach ($sample->product->variants as $v) {
+                if ($v->image) {
+                    $displayImage = $v->image;
+                    break;
+                }
             }
         }
 
@@ -384,16 +456,10 @@ class FairProductController extends Controller
         }
 
         if (!$displayImage && $sample->product->mainImage) {
-            $displayImage = $sample->product->mainImage->image;
+            $displayImage = $sample->product->mainImage->getRawOriginal('image');
         }
 
         $sample->product->display_image = $displayImage;
-
-        // Color chart is the list of colors available for this product and size set
-        $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $sample->product_id)
-            ->where('master_size_measurement_id', $sample->size_set_id)
-            ->with('items.color')
-            ->first();
 
         // Calculate WSP (Net Price)
         $mrp = $variant->mrp ?? 0;

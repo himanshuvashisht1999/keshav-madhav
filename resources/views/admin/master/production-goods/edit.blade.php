@@ -140,16 +140,12 @@
                                         </label>
                                         <select name="master_product_fitting_id" id="master_product_fitting_id"
                                             class="form-control select2"
-                                            style="width: 100%;" {{ $data->is_locked_in_inventory ? 'disabled' : '' }}>
+                                            style="width: 100%;">
                                             <option value="">Select Fitting</option>
                                             @foreach($fittings as $fit)
                                                 <option value="{{ $fit->id }}" {{ $data->master_product_fitting_id == $fit->id ? 'selected' : '' }}>{{ $fit->name }}</option>
                                             @endforeach
                                         </select>
-                                        @if($data->is_locked_in_inventory)
-                                            <input type="hidden" name="master_product_fitting_id"
-                                                value="{{ $data->master_product_fitting_id }}">
-                                        @endif
                                     </div>
                                 </div>
 
@@ -163,16 +159,12 @@
                                             </span>
                                         </label>
                                         <select name="master_pattern_id" id="master_pattern_id" class="form-control select2"
-                                            style="width: 100%;" {{ $data->is_locked_in_inventory ? 'disabled' : '' }}>
+                                            style="width: 100%;">
                                             <option value="">Select Pattern</option>
                                             @foreach($garment_patterns as $p)
                                                 <option value="{{ $p->id }}" {{ $data->master_pattern_id == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
                                             @endforeach
                                         </select>
-                                        @if($data->is_locked_in_inventory)
-                                            <input type="hidden" name="master_pattern_id"
-                                                value="{{ $data->master_pattern_id }}">
-                                        @endif
                                     </div>
                                 </div>
 
@@ -186,16 +178,12 @@
                                             </span>
                                         </label>
                                         <select name="product_nature_id" id="product_nature_id" class="form-control select2"
-                                            style="width: 100%;" {{ $data->is_locked_in_inventory ? 'disabled' : '' }}>
+                                            style="width: 100%;">
                                             <option value="">Select Product Nature</option>
                                             @foreach($product_natures as $pn)
                                                 <option value="{{ $pn->id }}" {{ $data->product_nature_id == $pn->id ? 'selected' : '' }}>{{ $pn->name }}</option>
                                             @endforeach
                                         </select>
-                                        @if($data->is_locked_in_inventory)
-                                            <input type="hidden" name="product_nature_id"
-                                                value="{{ $data->product_nature_id }}">
-                                        @endif
                                     </div>
                                 </div>
 
@@ -209,16 +197,12 @@
                                             </span>
                                         </label>
                                         <select name="fabric_type_id" id="fabric_type_id" class="form-control select2"
-                                            style="width: 100%;" {{ $data->is_locked_in_inventory ? 'disabled' : '' }}>
+                                            style="width: 100%;">
                                             <option value="">Select Fabric Type</option>
                                             @foreach($fabric_types as $ft)
                                                 <option value="{{ $ft->id }}" {{ $data->fabric_type_id == $ft->id ? 'selected' : '' }}>{{ $ft->name }}</option>
                                             @endforeach
                                         </select>
-                                        @if($data->is_locked_in_inventory)
-                                            <input type="hidden" name="fabric_type_id"
-                                                value="{{ $data->fabric_type_id }}">
-                                        @endif
                                     </div>
                                 </div>
 

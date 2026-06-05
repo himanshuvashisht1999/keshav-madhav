@@ -16,8 +16,7 @@ class DeadStockInventory extends Model
         'rack_id',
         'product_id',
         'color_id',
-        'fitting_id',
-        'pattern_id',
+
         'size_id',
         'quantity',
         'barcode',
@@ -39,15 +38,7 @@ class DeadStockInventory extends Model
         return $this->belongsTo(MasterColor::class, 'color_id');
     }
 
-    public function fitting()
-    {
-        return $this->belongsTo(MasterProductFitting::class, 'fitting_id');
-    }
 
-    public function pattern()
-    {
-        return $this->belongsTo(MasterDesignPattern::class, 'pattern_id');
-    }
 
     public function size()
     {

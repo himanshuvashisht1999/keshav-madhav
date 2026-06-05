@@ -1570,7 +1570,7 @@ class ReportService
     {
 
         if (!$lot_no) {
-            return response()->json(['message' => 'Lot number required'], 422);
+            return null;
         }
 
         /* ---------------- LOTS DATA ---------------- */
@@ -1591,7 +1591,7 @@ class ReportService
             ->get();
 
         if ($lots_data->isEmpty()) {
-            return response()->json(['message' => 'No data found'], 404);
+            return null;
         }
 
         /* ---------------- ROLLS DATA ---------------- */

@@ -69,9 +69,9 @@
                             <div class="col-md-3 col-sm-6">
                                 <div class="form-group">
                                     <label class="small">Created Date Range</label>
-                                    <div class="d-flex">
-                                        <input type="date" class="form-control form-control-sm mr-2" name="start_date" id="start_date" value="{{ request('start_date') }}">
-                                        <input type="date" class="form-control form-control-sm" name="end_date" id="end_date" value="{{ request('end_date') }}">
+                                    <div class="d-flex flex-wrap">
+                                        <input type="date" class="form-control form-control-sm mb-2 mr-2" style="flex: 1 1 120px;" name="start_date" id="start_date" value="{{ request('start_date') }}">
+                                        <input type="date" class="form-control form-control-sm mb-2" style="flex: 1 1 120px;" name="end_date" id="end_date" value="{{ request('end_date') }}">
                                     </div>
                                 </div>
                             </div>

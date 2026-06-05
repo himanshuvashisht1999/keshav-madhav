@@ -61,11 +61,15 @@ class StockTransferController extends Controller
         }
 
         if ($request->has('fitting_id') && !empty($request->fitting_id)) {
-            $query->where('fitting_id', $request->fitting_id);
+            $query->whereHas('product', function($q) use ($request) {
+                $q->where('master_product_fitting_id', $request->fitting_id);
+            });
         }
 
         if ($request->has('pattern_id') && !empty($request->pattern_id)) {
-            $query->where('pattern_id', $request->pattern_id);
+            $query->whereHas('product', function($q) use ($request) {
+                $q->where('master_pattern_id', $request->pattern_id);
+            });
         }
 
         $perPage = 20;
@@ -112,14 +116,12 @@ class StockTransferController extends Controller
                     'old_product_id' => $inventory->product_id,
                     'old_size_set_id' => $inventory->size_set_id,
                     'old_color_id' => $inventory->color_id,
-                    'old_fitting_id' => $inventory->fitting_id,
-                    'old_pattern_id' => $inventory->pattern_id,
+
                     'old_rack_id' => $inventory->rack_id,
                     'new_product_id' => $inventory->product_id,
                     'new_size_set_id' => $inventory->size_set_id,
                     'new_color_id' => $inventory->color_id,
-                    'new_fitting_id' => $inventory->fitting_id,
-                    'new_pattern_id' => $inventory->pattern_id,
+
                     'new_rack_id' => $toRack->id,
                     'box_quantity' => $transferQty,
                     'type' => 'transfer'
@@ -130,8 +132,7 @@ class StockTransferController extends Controller
                     'product_id' => $inventory->product_id,
                     'color_id' => $inventory->color_id,
                     'size_set_id' => $inventory->size_set_id,
-                    'fitting_id' => $inventory->fitting_id,
-                    'pattern_id' => $inventory->pattern_id,
+
                     'rack_id' => $toRack->id,
                     'quantity' => $inventory->quantity,
                 ];

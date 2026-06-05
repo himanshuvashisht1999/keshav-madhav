@@ -7,7 +7,7 @@
 <head>
     @include('admin.common.meta')
 </head>
-<body class="hold-transition sidebar-mini layout-fixed km-admin">
+<body class="hold-transition sidebar-mini layout-fixed km-admin text-sm">
 	<div class="wrapper">
 		@include('admin.common.header')
 		@include('admin.common.sidebar')

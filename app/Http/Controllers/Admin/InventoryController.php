@@ -67,8 +67,6 @@ class InventoryController extends Controller
         $query = DomesticInventory::select(
             'domestic_inventories.size_set_id',
             'domestic_inventories.color_id',
-            'domestic_inventories.fitting_id',
-            'domestic_inventories.pattern_id',
             'domestic_inventories.product_id',
             'products.design_number',
             'products.name_of_garment as product_name',
@@ -87,16 +85,14 @@ class InventoryController extends Controller
                   AND aoi.design_number COLLATE utf8mb4_unicode_ci = products.design_number COLLATE utf8mb4_unicode_ci
                   AND aoi.color_id = domestic_inventories.color_id
                   AND aoi.size_set_id = domestic_inventories.size_set_id
-                  AND (aoi.fitting_id = domestic_inventories.fitting_id OR (aoi.fitting_id IS NULL AND domestic_inventories.fitting_id IS NULL))
-                  AND (aoi.pattern_id = domestic_inventories.pattern_id OR (aoi.pattern_id IS NULL AND domestic_inventories.pattern_id IS NULL))
             ) as total_order')
         )
             ->leftJoin('production_goods as products', 'domestic_inventories.product_id', '=', 'products.id')
             ->leftJoin('master_series as series', 'products.master_series_id', '=', 'series.id')
             ->leftJoin('master_colors as colors', 'domestic_inventories.color_id', '=', 'colors.id')
             ->leftJoin('master_size_measurements as sizes', 'domestic_inventories.size_set_id', '=', 'sizes.id')
-            ->leftJoin('master_product_fittings as fittings', 'domestic_inventories.fitting_id', '=', 'fittings.id')
-            ->leftJoin('master_design_patterns as patterns', 'domestic_inventories.pattern_id', '=', 'patterns.id')
+            ->leftJoin('master_product_fittings as fittings', 'products.master_product_fitting_id', '=', 'fittings.id')
+            ->leftJoin('master_design_patterns as patterns', 'products.master_pattern_id', '=', 'patterns.id')
             ->leftJoin('production_goods_variants as variants', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
@@ -155,12 +151,12 @@ class InventoryController extends Controller
 
         // Filter by Fitting
         if ($request->has('fitting_id') && !empty($request->fitting_id)) {
-            $query->where('domestic_inventories.fitting_id', $request->fitting_id);
+            $query->where('products.master_product_fitting_id', $request->fitting_id);
         }
 
         // Filter by Pattern
         if ($request->has('pattern_id') && !empty($request->pattern_id)) {
-            $query->where('domestic_inventories.pattern_id', $request->pattern_id);
+            $query->where('products.master_pattern_id', $request->pattern_id);
         }
 
         // Filter by Product Nature
@@ -176,8 +172,6 @@ class InventoryController extends Controller
         $query->groupBy(
             'domestic_inventories.size_set_id',
             'domestic_inventories.color_id',
-            'domestic_inventories.fitting_id',
-            'domestic_inventories.pattern_id',
             'domestic_inventories.product_id',
             'products.design_number',
             'products.name_of_garment',
@@ -220,8 +214,8 @@ class InventoryController extends Controller
             ->leftJoin('master_series as series', 'products.master_series_id', '=', 'series.id')
             ->leftJoin('master_colors as colors', 'domestic_inventories.color_id', '=', 'colors.id')
             ->leftJoin('master_size_measurements as sizes', 'domestic_inventories.size_set_id', '=', 'sizes.id')
-            ->leftJoin('master_product_fittings as fittings', 'domestic_inventories.fitting_id', '=', 'fittings.id')
-            ->leftJoin('master_design_patterns as patterns', 'domestic_inventories.pattern_id', '=', 'patterns.id')
+            ->leftJoin('master_product_fittings as fittings', 'products.master_product_fitting_id', '=', 'fittings.id')
+            ->leftJoin('master_design_patterns as patterns', 'products.master_pattern_id', '=', 'patterns.id')
             ->leftJoin('production_goods_variants as variants', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
@@ -244,10 +238,7 @@ class InventoryController extends Controller
             $query->where('domestic_inventories.size_set_id', $request->size_set_id);
         if ($request->has('color_id'))
             $query->where('domestic_inventories.color_id', $request->color_id);
-        if ($request->has('fitting_id'))
-            $query->where('domestic_inventories.fitting_id', $request->fitting_id);
-        if ($request->has('pattern_id'))
-            $query->where('domestic_inventories.pattern_id', $request->pattern_id);
+
 
         $items = $query->get();
         $group_info = $items->first();
@@ -311,8 +302,7 @@ class InventoryController extends Controller
             'products.*.product_id' => 'required',
             'products.*.color_id' => 'required',
             'products.*.size_set_id' => 'required',
-            'products.*.fitting_id' => 'required|exists:master_product_fittings,id',
-            'products.*.pattern_id' => 'required',
+
             'products.*.total_boxes' => 'required|integer|min:1',
             'products.*.pieces_per_box' => 'required|integer|min:1',
             'products.*.mrp' => 'required|numeric|min:0',
@@ -403,8 +393,8 @@ class InventoryController extends Controller
                     }
                 }
 
-                // Consistent Barcode Format: D{id}S{id}C{id}P{id}F{id} (using 0 for nulls)
-                $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'] . 'P' . ($item['pattern_id'] ?: 0) . 'F' . ($item['fitting_id'] ?: 0);
+                // Consistent Barcode Format: D{id}S{id}C{id}
+                $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'];
 
                 $inventory = DomesticInventory::where('barcode', $barcode)
                     ->where('rack_id', $item['rack_id'] ?? null)
@@ -419,8 +409,7 @@ class InventoryController extends Controller
                         'product_id' => $item['product_id'],
                         'color_id' => $item['color_id'],
                         'size_set_id' => $item['size_set_id'],
-                        'fitting_id' => $item['fitting_id'],
-                        'pattern_id' => $item['pattern_id'],
+
                         'quantity' => $item['pieces_per_box'],
                         'total_boxes' => $item['total_boxes'],
                         'barcode' => $barcode,
@@ -441,8 +430,7 @@ class InventoryController extends Controller
                     'new_product_id' => $item['product_id'],
                     'new_size_set_id' => $item['size_set_id'],
                     'new_color_id' => $item['color_id'],
-                    'new_fitting_id' => $item['fitting_id'],
-                    'new_pattern_id' => $item['pattern_id'],
+
                     'new_rack_id' => $item['rack_id'] ?? null,
                     'box_quantity' => $item['total_boxes'],
                     'pieces_per_box' => $item['pieces_per_box'],
@@ -536,18 +524,7 @@ class InventoryController extends Controller
         $locations = DomesticInventory::where('product_id', $request->product_id)
             ->where('size_set_id', $request->size_set_id)
             ->where('color_id', $request->color_id)
-            ->where(function ($q) use ($request) {
-                if ($request->fitting_id)
-                    $q->where('fitting_id', $request->fitting_id);
-                else
-                    $q->whereNull('fitting_id');
-            })
-            ->where(function ($q) use ($request) {
-                if ($request->pattern_id)
-                    $q->where('pattern_id', $request->pattern_id);
-                else
-                    $q->whereNull('pattern_id');
-            })
+
             // ->where(function ($q) {
             //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
             // })
@@ -587,18 +564,7 @@ class InventoryController extends Controller
                 ->where('color_id', $request->old_color_id)
                 ->where('rack_id', $request->old_rack_id);
 
-            // Match optional fields if provided initially
-            if ($request->filled('old_fitting_id')) {
-                $query->where('fitting_id', $request->old_fitting_id);
-            } else {
-                $query->whereNull('fitting_id');
-            }
 
-            if ($request->filled('old_pattern_id')) {
-                $query->where('pattern_id', $request->old_pattern_id);
-            } else {
-                $query->whereNull('pattern_id');
-            }
 
             // Exclude items already assigned to active orders via order_main_id (NULL or 0 means unassigned)
             // $query->where(function ($q) {
@@ -624,12 +590,11 @@ class InventoryController extends Controller
 
             $to_change = (int) $request->change_quantity;
 
-            $new_fitting_id = $request->new_fitting_id ?: null;
-            $new_pattern_id = $request->new_pattern_id ?: null;
+
             $new_rack_id = $request->new_rack_id;
 
-            // Consistent Barcode Format: D{id}S{id}C{id}P{id}F{id} (using 0 for nulls)
-            $new_barcode = 'D' . $request->new_product_id . 'S' . $request->new_size_set_id . 'C' . $request->new_color_id . 'P' . ($new_pattern_id ?: 0) . 'F' . ($new_fitting_id ?: 0);            // Perform Update with Splitting Logic
+            // Consistent Barcode Format: D{id}S{id}C{id}
+            $new_barcode = 'D' . $request->new_product_id . 'S' . $request->new_size_set_id . 'C' . $request->new_color_id;            // Perform Update with Splitting Logic
             foreach ($inventoryItems as $item) {
                 if ($to_change <= 0)
                     break;
@@ -642,9 +607,6 @@ class InventoryController extends Controller
                 $isSameAttributes = (
                     $item->product_id == $request->new_product_id &&
                     $item->size_set_id == $request->new_size_set_id &&
-                    $item->color_id == $request->new_color_id &&
-                    $item->fitting_id == $new_fitting_id &&
-                    $item->pattern_id == $new_pattern_id &&
                     $item->rack_id == $new_rack_id
                 );
 
@@ -659,13 +621,6 @@ class InventoryController extends Controller
                 // 1. Update/Create NEW DomesticInventory row
                 $new_item = DomesticInventory::where('product_id', $request->new_product_id)
                     ->where('size_set_id', $request->new_size_set_id)
-                    ->where('color_id', $request->new_color_id)
-                    ->where(function ($q) use ($new_fitting_id) {
-                        return $new_fitting_id ? $q->where('fitting_id', $new_fitting_id) : $q->whereNull('fitting_id');
-                    })
-                    ->where(function ($q) use ($new_pattern_id) {
-                        return $new_pattern_id ? $q->where('pattern_id', $new_pattern_id) : $q->whereNull('pattern_id');
-                    })
                     ->where('rack_id', $new_rack_id)
                     ->where('id', '!=', $item->id) // CRITICAL: Don't find yourself!
                     // ->where(function ($q) {
@@ -682,8 +637,7 @@ class InventoryController extends Controller
                     $new_item->product_id = $request->new_product_id;
                     $new_item->size_set_id = $request->new_size_set_id;
                     $new_item->color_id = $request->new_color_id;
-                    $new_item->fitting_id = $new_fitting_id;
-                    $new_item->pattern_id = $new_pattern_id;
+
                     $new_item->rack_id = $new_rack_id;
                     $new_item->total_boxes = $take;
                     $new_item->barcode = $new_barcode;
@@ -723,14 +677,12 @@ class InventoryController extends Controller
                 'old_product_id' => $request->old_product_id,
                 'old_size_set_id' => $request->old_size_set_id,
                 'old_color_id' => $request->old_color_id,
-                'old_fitting_id' => $request->old_fitting_id ?: null,
-                'old_pattern_id' => $request->old_pattern_id ?: null,
+
                 'old_rack_id' => $request->old_rack_id ?: null,
                 'new_product_id' => $request->new_product_id,
                 'new_size_set_id' => $request->new_size_set_id,
                 'new_color_id' => $request->new_color_id,
-                'new_fitting_id' => $new_fitting_id,
-                'new_pattern_id' => $new_pattern_id,
+
                 'new_rack_id' => $new_rack_id,
                 'box_quantity' => $request->change_quantity,
                 'type' => 'attribute_change'
@@ -850,17 +802,7 @@ class InventoryController extends Controller
                 ->where('color_id', $request->modal_color_id)
                 ->where('rack_id', $request->modal_old_rack_id);
 
-            if ($request->filled('modal_fitting_id')) {
-                $query->where('fitting_id', $request->modal_fitting_id);
-            } else {
-                $query->whereNull('fitting_id');
-            }
 
-            if ($request->filled('modal_pattern_id')) {
-                $query->where('pattern_id', $request->modal_pattern_id);
-            } else {
-                $query->whereNull('pattern_id');
-            }
 
             // Exclude items already assigned to orders
             // $query->where(function ($q) {
@@ -915,17 +857,7 @@ class InventoryController extends Controller
             ->where('size_set_id', $request->size_set_id)
             ->where('color_id', $request->color_id);
 
-        if ($request->filled('pattern_id')) {
-            $query->where('domestic_inventories.pattern_id', $request->pattern_id);
-        } else {
-            $query->whereNull('domestic_inventories.pattern_id');
-        }
 
-        if ($request->filled('fitting_id')) {
-            $query->where('domestic_inventories.fitting_id', $request->fitting_id);
-        } else {
-            $query->whereNull('domestic_inventories.fitting_id');
-        }
 
         $query->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
             ->where('racks.storeroom_id', $request->warehouse_id)
@@ -1122,7 +1054,7 @@ class InventoryController extends Controller
             // 1. Revert Old Stock
             $oldItems = \App\Models\DomesticInventoryHistory::where('purchase_id', $id)->get();
             foreach ($oldItems as $oldItem) {
-                $barcode = 'D' . $oldItem->new_product_id . 'S' . $oldItem->new_size_set_id . 'C' . $oldItem->new_color_id . 'P' . ($oldItem->new_pattern_id ?: 0) . 'F' . ($oldItem->new_fitting_id ?: 0);
+                $barcode = 'D' . $oldItem->new_product_id . 'S' . $oldItem->new_size_set_id . 'C' . $oldItem->new_color_id;
 
                 $inventory = \App\Models\DomesticInventory::where('barcode', $barcode)
                     ->where('rack_id', $oldItem->new_rack_id)
@@ -1147,7 +1079,7 @@ class InventoryController extends Controller
                 $customerId = $request->source_type == 'customer' ? $request->customer_id : null;
 
                 // Create/Update Inventory
-                $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'] . 'P' . ($item['pattern_id'] ?: 0) . 'F' . ($item['fitting_id'] ?: 0);
+                $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'];
 
                 $inventory = \App\Models\DomesticInventory::updateOrCreate([
                     'barcode' => $barcode,
@@ -1157,8 +1089,7 @@ class InventoryController extends Controller
                     'product_id' => $item['product_id'],
                     'size_set_id' => $item['size_set_id'],
                     'color_id' => $item['color_id'],
-                    'pattern_id' => $item['pattern_id'] ?: null,
-                    'fitting_id' => $item['fitting_id'] ?: null,
+
                     'quantity' => $item['pieces_per_box'], // Usually quantity per box
                 ]);
 
@@ -1171,8 +1102,7 @@ class InventoryController extends Controller
                     'new_product_id' => $item['product_id'],
                     'new_size_set_id' => $item['size_set_id'],
                     'new_color_id' => $item['color_id'],
-                    'new_pattern_id' => $item['pattern_id'] ?: null,
-                    'new_fitting_id' => $item['fitting_id'] ?: null,
+
                     'new_warehouse_id' => $item['warehouse_id'],
                     'new_rack_id' => $item['rack_id'],
                     'box_quantity' => $item['total_boxes'],
@@ -1221,7 +1151,7 @@ class InventoryController extends Controller
 
             foreach ($items as $item) {
                 // Reconstruct barcode (must match the logic in store)
-                $barcode = 'D' . $item->new_product_id . 'S' . $item->new_size_set_id . 'C' . $item->new_color_id . 'P' . ($item->new_pattern_id ?: 0) . 'F' . ($item->new_fitting_id ?: 0);
+                $barcode = 'D' . $item->new_product_id . 'S' . $item->new_size_set_id . 'C' . $item->new_color_id;
 
                 $inventory = \App\Models\DomesticInventory::where('barcode', $barcode)
                     ->where('rack_id', $item->new_rack_id)

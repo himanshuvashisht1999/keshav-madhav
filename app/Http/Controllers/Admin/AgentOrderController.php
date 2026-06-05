@@ -112,10 +112,11 @@ class AgentOrderController extends Controller
             // })
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
             ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
+            ->leftJoin('master_product_fittings', 'production_goods.master_product_fitting_id', '=', 'master_product_fittings.id')
+            ->leftJoin('master_design_patterns', 'production_goods.master_pattern_id', '=', 'master_design_patterns.id')
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
-            ->leftJoin('master_product_fittings', 'domestic_inventories.fitting_id', '=', 'master_product_fittings.id')
-            ->leftJoin('master_design_patterns', 'domestic_inventories.pattern_id', '=', 'master_design_patterns.id')
+
             ->leftJoinSub($prices, 'ip', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
                     ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
@@ -170,11 +171,12 @@ class AgentOrderController extends Controller
             $query->where('master_size_measurements.name', $request->size_set_name);
         }
         if ($request->filled('pattern_id')) {
-            $query->where('domestic_inventories.pattern_id', $request->pattern_id);
+            $query->where('production_goods.master_pattern_id', $request->pattern_id);
         }
         if ($request->filled('fitting_id')) {
-            $query->where('domestic_inventories.fitting_id', $request->fitting_id);
+            $query->where('production_goods.master_product_fitting_id', $request->fitting_id);
         }
+
         if ($request->filled('product_nature_id')) {
             $query->where('production_goods.product_nature_id', $request->product_nature_id);
         }
@@ -198,8 +200,7 @@ class AgentOrderController extends Controller
                 'master_size_measurements.name as size_set_name',
                 'master_product_fittings.name as fitting_name',
                 'master_design_patterns.name as pattern_name',
-                'domestic_inventories.fitting_id',
-                'domestic_inventories.pattern_id',
+
                 DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
@@ -217,8 +218,7 @@ class AgentOrderController extends Controller
             'master_size_measurements.name',
             'master_product_fittings.name',
             'master_design_patterns.name',
-            'domestic_inventories.fitting_id',
-            'domestic_inventories.pattern_id',
+
             DB::raw($discount_col)
         )
             ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
@@ -418,7 +418,7 @@ class AgentOrderController extends Controller
                     $pcs_per_box = (float) ($sizeSet->total_pieces ?? 0);
                 }
 
-                $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'] . 'P' . ($product->master_pattern_id ?? 0) . 'F' . ($product->master_product_fitting_id ?? 0);
+                $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'];
 
                 $total_pcs = $var['qty'] * $pcs_per_box;
 
@@ -430,9 +430,7 @@ class AgentOrderController extends Controller
                     'design_number' => $product->design_number,
                     'color_name' => $color->name,
                     'size_set_name' => $sizeSet->name,
-                    'fitting_id' => $product->master_product_fitting_id,
                     'fitting_name' => $fitting->name ?? null,
-                    'pattern_id' => $product->master_pattern_id,
                     'pattern_name' => $pattern->name ?? null,
                     'quantity' => $total_pcs,
                     'box_qty' => $var['qty'],
@@ -569,8 +567,7 @@ class AgentOrderController extends Controller
                                 'old_product_id' => $inv->product_id,
                                 'old_color_id' => $inv->color_id,
                                 'old_size_set_id' => $inv->size_set_id,
-                                'old_fitting_id' => $inv->fitting_id,
-                                'old_pattern_id' => $inv->pattern_id,
+
                                 'old_rack_id' => $inv->warehouse_rack_id,
                                 'box_quantity' => $deduct,
                             ]);
@@ -762,8 +759,9 @@ class AgentOrderController extends Controller
                 ->get();
         } else {
             $itemsRaw = DB::table('agent_order_items')
-                ->leftJoin('master_design_patterns', 'agent_order_items.pattern_id', '=', 'master_design_patterns.id')
-                ->leftJoin('master_product_fittings', 'agent_order_items.fitting_id', '=', 'master_product_fittings.id')
+                ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
+                ->leftJoin('master_design_patterns', 'production_goods.master_pattern_id', '=', 'master_design_patterns.id')
+                ->leftJoin('master_product_fittings', 'production_goods.master_product_fitting_id', '=', 'master_product_fittings.id')
                 ->leftJoin('domestic_inventories', function ($join) {
                     $join->on('agent_order_items.product_id', '=', 'domestic_inventories.product_id')
                         ->on('agent_order_items.color_id', '=', 'domestic_inventories.color_id')
@@ -1035,8 +1033,7 @@ class AgentOrderController extends Controller
                 'master_series.name as series_name',
                 'master_colors.name as color_name',
                 'master_size_measurements.name as size_set_name',
-                'domestic_inventories.fitting_id',
-                'domestic_inventories.pattern_id',
+
                 DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
@@ -1050,8 +1047,7 @@ class AgentOrderController extends Controller
                 'production_goods.design_number',
                 'master_colors.name',
                 'master_size_measurements.name',
-                'domestic_inventories.fitting_id',
-                'domestic_inventories.pattern_id',
+
                 DB::raw($discount_col)
             )
             ->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0 OR MAX(current_items.box_qty) > 0')
@@ -1219,7 +1215,7 @@ class AgentOrderController extends Controller
 
                 $total_pcs = $var['qty'] * $pcs_per_box;
 
-                $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'] . 'P' . ($product->master_pattern_id ?? 0) . 'F' . ($product->master_product_fitting_id ?? 0);
+                $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'];
 
                 $items_to_create[] = [
                     'product_id' => $var['product_id'],
@@ -1229,9 +1225,7 @@ class AgentOrderController extends Controller
                     'design_number' => $product->design_number,
                     'color_name' => $color->name,
                     'size_set_name' => $sizeSet->name,
-                    'fitting_id' => $product->master_product_fitting_id,
                     'fitting_name' => $fitting->name ?? null,
-                    'pattern_id' => $product->master_pattern_id,
                     'pattern_name' => $pattern->name ?? null,
                     'quantity' => $total_pcs,
                     'box_qty' => $var['qty'],
@@ -1350,8 +1344,7 @@ class AgentOrderController extends Controller
 
         $query = DB::table('agent_order_items')
             ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
-            ->leftJoin('master_design_patterns', 'agent_order_items.pattern_id', '=', 'master_design_patterns.id')
-            ->leftJoin('master_product_fittings', 'agent_order_items.fitting_id', '=', 'master_product_fittings.id')
+
             ->where('agent_order_id', $id);
 
         if ($brandId) {
@@ -1452,8 +1445,9 @@ class AgentOrderController extends Controller
         }
 
         $itemsRaw = DB::table('agent_order_items')
-            ->leftJoin('master_design_patterns', 'agent_order_items.pattern_id', '=', 'master_design_patterns.id')
-            ->leftJoin('master_product_fittings', 'agent_order_items.fitting_id', '=', 'master_product_fittings.id')
+            ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
+            ->leftJoin('master_design_patterns', 'production_goods.master_pattern_id', '=', 'master_design_patterns.id')
+            ->leftJoin('master_product_fittings', 'production_goods.master_product_fitting_id', '=', 'master_product_fittings.id')
             ->leftJoin('domestic_inventories', function ($join) {
                 $join->on('agent_order_items.product_id', '=', 'domestic_inventories.product_id')
                     ->on('agent_order_items.color_id', '=', 'domestic_inventories.color_id')
@@ -1700,8 +1694,9 @@ class AgentOrderController extends Controller
 
         // Only show items that are NOT yet dispatched
         $items = DB::table('agent_order_items')
-            ->leftJoin('master_design_patterns', 'agent_order_items.pattern_id', '=', 'master_design_patterns.id')
-            ->leftJoin('master_product_fittings', 'agent_order_items.fitting_id', '=', 'master_product_fittings.id')
+            ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
+            ->leftJoin('master_design_patterns', 'production_goods.master_pattern_id', '=', 'master_design_patterns.id')
+            ->leftJoin('master_product_fittings', 'production_goods.master_product_fitting_id', '=', 'master_product_fittings.id')
             ->leftJoin('domestic_inventories', function ($join) {
                 $join->on('agent_order_items.product_id', '=', 'domestic_inventories.product_id')
                     ->on('agent_order_items.color_id', '=', 'domestic_inventories.color_id')
@@ -1736,7 +1731,7 @@ class AgentOrderController extends Controller
                     'rack_name' => $item->rack_name ?? 'N/A',
                     'required' => 0,
                     'scanned' => 0,
-                    'barcode' => "D{$item->product_id}S{$item->size_set_id}C{$item->color_id}P{$item->pattern_id}F{$item->fitting_id}",
+                    'barcode' => "D{$item->product_id}S{$item->size_set_id}C{$item->color_id}",
                     'items' => []
                 ];
             }
@@ -1781,11 +1776,19 @@ class AgentOrderController extends Controller
         //     ->where('total_boxes', '>', 0)
         //     ->first();
 
-        $inventory = DB::table('domestic_inventories')
-
-            ->where('barcode', $input)
-            ->where('total_boxes', '>', 0)
-            ->first();
+        if (preg_match('/^D(\d+)S(\d+)C(\d+)/', $input, $matches)) {
+            $inventory = DB::table('domestic_inventories')
+                ->where('product_id', $matches[1])
+                ->where('size_set_id', $matches[2])
+                ->where('color_id', $matches[3])
+                ->where('total_boxes', '>', 0)
+                ->first();
+        } else {
+            $inventory = DB::table('domestic_inventories')
+                ->where('barcode', $input)
+                ->where('total_boxes', '>', 0)
+                ->first();
+        }
 
         if (!$inventory) {
             return response()->json(['success' => false, 'message' => 'No available stock found in inventory for: ' . $input]);
@@ -1794,7 +1797,9 @@ class AgentOrderController extends Controller
         // 2. Find the pending order item for this design
         $item = DB::table('agent_order_items')
             ->where('agent_order_id', $id)
-            ->where('barcode', $inventory->barcode)
+            ->where('product_id', $inventory->product_id)
+            ->where('color_id', $inventory->color_id)
+            ->where('size_set_id', $inventory->size_set_id)
             ->whereNull('dispatched_at')
             // Still have boxes to scan in this variant row
             ->whereRaw('scanned_box_qty < box_qty')
@@ -1864,10 +1869,19 @@ class AgentOrderController extends Controller
         $barcode = parseCompactBarcode($barcode);
 
         // 1. Find the summary inventory record for this barcode
-        $inventory = DB::table('domestic_inventories')
-            ->where('barcode', $barcode)
-            ->where('order_main_id', 0)
-            ->first();
+        if (preg_match('/^D(\d+)S(\d+)C(\d+)/', $barcode, $matches)) {
+            $inventory = DB::table('domestic_inventories')
+                ->where('product_id', $matches[1])
+                ->where('size_set_id', $matches[2])
+                ->where('color_id', $matches[3])
+                ->where('order_main_id', 0)
+                ->first();
+        } else {
+            $inventory = DB::table('domestic_inventories')
+                ->where('barcode', $barcode)
+                ->where('order_main_id', 0)
+                ->first();
+        }
 
         if (!$inventory) {
             return response()->json(['success' => false, 'message' => 'Inventory record for this box not found.']);
@@ -1876,7 +1890,9 @@ class AgentOrderController extends Controller
         // 2. Find the aggregate order item for this design in this order
         $item = DB::table('agent_order_items')
             ->where('agent_order_id', $id)
-            ->where('barcode', $barcode)
+            ->where('product_id', $inventory->product_id)
+            ->where('color_id', $inventory->color_id)
+            ->where('size_set_id', $inventory->size_set_id)
             ->whereNull('dispatched_at')
             ->where('scanned_box_qty', '>', 0)
             ->first();
@@ -2168,8 +2184,6 @@ class AgentOrderController extends Controller
                             'color_id' => $item->color_id,
                             'color_name' => $item->color_name ?? null,
                             'size_set_id' => $item->size_set_id,
-                            'fitting_id' => $item->fitting_id,
-                            'pattern_id' => $item->pattern_id,
                             'box_qty' => $item->box_qty - $item->scanned_box_qty,
                             'quantity' => $item->quantity - $scannedPcs, // remaining pcs
                             'selling_price' => $item->selling_price,
@@ -2576,8 +2590,7 @@ class AgentOrderController extends Controller
                             'product_id' => $item->product_id,
                             'color_id' => $item->color_id,
                             'size_set_id' => $item->size_set_id,
-                            'fitting_id' => $item->fitting_id,
-                            'pattern_id' => $item->pattern_id,
+
                             'quantity' => ($item->scanned_quantity / ($item->scanned_box_qty ?: 1)),
                             'total_boxes' => $qty,
                             'barcode' => $item->barcode,
@@ -2828,8 +2841,7 @@ class AgentOrderController extends Controller
                             'product_id' => $item->product_id,
                             'color_id' => $item->color_id,
                             'size_set_id' => $item->size_set_id,
-                            'fitting_id' => $item->fitting_id,
-                            'pattern_id' => $item->pattern_id,
+
                             'quantity' => ($item->scanned_quantity / ($item->scanned_box_qty ?: 1)),
                             'total_boxes' => $qty,
                             'barcode' => $item->barcode,
@@ -2950,8 +2962,6 @@ class AgentOrderController extends Controller
                         'product_id' => $item->product_id,
                         'color_id' => $item->color_id,
                         'size_set_id' => $item->size_set_id,
-                        'fitting_id' => $item->fitting_id,
-                        'pattern_id' => $item->pattern_id,
                         'total_boxes' => $item->box_qty,
                         'quantity' => ($item->box_qty > 0) ? ($item->quantity / $item->box_qty) : 0,
                         'box_no' => $item->box_no,

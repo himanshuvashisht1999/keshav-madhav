@@ -60,8 +60,7 @@
                         @forelse($batches as $batch)
                         <tr>
                             <td class="px-4 align-middle text-muted small">
-                                {{ $batch->created_at->format('d M Y') }}<br>
-                                {{ $batch->created_at->format('h:i A') }}
+                                {{ $batch->created_at->format('d M Y') }}
                             </td>
                             <td class="align-middle">
                                 <span class="barcode-display">{{ $batch->batch_no }}</span>
@@ -70,6 +69,9 @@
                                 <span class="badge badge-info px-3 py-2">{{ $batch->products_count }} Products</span>
                             </td>
                             <td class="align-middle text-right px-4">
+                                <a href="{{ route('admin.inventory.sample-product.show', $batch->id) }}" class="btn btn-sm btn-outline-info mr-1" title="View Catalog">
+                                    <i class="fas fa-eye"></i>
+                                </a>
                                 <a href="{{ route('admin.inventory.sample-product.edit', $batch->id) }}" class="btn btn-sm btn-outline-warning mr-1" title="Edit Catalog">
                                     <i class="fas fa-edit"></i>
                                 </a>

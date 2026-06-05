@@ -69,10 +69,11 @@ class SalesOrderController extends Controller
         $query = DomesticInventory::where('domestic_inventories.status', 1)
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
             ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
+            ->leftJoin('master_product_fittings', 'production_goods.master_product_fitting_id', '=', 'master_product_fittings.id')
+            ->leftJoin('master_design_patterns', 'production_goods.master_pattern_id', '=', 'master_design_patterns.id')
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
-            ->leftJoin('master_product_fittings', 'domestic_inventories.fitting_id', '=', 'master_product_fittings.id')
-            ->leftJoin('master_design_patterns', 'domestic_inventories.pattern_id', '=', 'master_design_patterns.id')
+
             ->leftJoinSub($prices, 'ip', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
                     ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
@@ -114,8 +115,7 @@ class SalesOrderController extends Controller
                 'master_size_measurements.name as size_set_name',
                 'master_product_fittings.name as fitting_name',
                 'master_design_patterns.name as pattern_name',
-                'domestic_inventories.fitting_id',
-                'domestic_inventories.pattern_id',
+
                 DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
@@ -133,8 +133,7 @@ class SalesOrderController extends Controller
             'master_size_measurements.name',
             'master_product_fittings.name',
             'master_design_patterns.name',
-            'domestic_inventories.fitting_id',
-            'domestic_inventories.pattern_id',
+
             DB::raw($discount_col)
         )
             ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
@@ -187,13 +186,11 @@ class SalesOrderController extends Controller
                 'design_number' => $product->design_number,
                 'color_name' => $color->name,
                 'size_set_name' => $sizeSet->name,
-                'fitting_id' => $product->master_product_fitting_id,
-                'pattern_id' => $product->master_pattern_id,
                 'quantity' => $total_pcs,
                 'box_qty' => $var['qty'],
                 'mrp' => $mrp,
                 'selling_price' => $unit_price,
-                'barcode' => 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'] . 'P' . ($product->master_pattern_id ?? 0) . 'F' . ($product->master_product_fitting_id ?? 0),
+                'barcode' => 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'],
                 'scanned_box_qty' => $var['qty'],
                 'scanned_quantity' => $total_pcs,
                 'dispatched_at' => now(),
@@ -283,8 +280,7 @@ class SalesOrderController extends Controller
                         'old_product_id' => $inv->product_id,
                         'old_color_id' => $inv->color_id,
                         'old_size_set_id' => $inv->size_set_id,
-                        'old_fitting_id' => $inv->fitting_id,
-                        'old_pattern_id' => $inv->pattern_id,
+
                         'old_rack_id' => $inv->warehouse_rack_id,
                         'box_quantity' => $deduct,
                     ]);

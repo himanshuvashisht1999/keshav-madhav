@@ -185,6 +185,11 @@ Route::prefix('agent')->group(function () {
     Route::middleware('auth:sales_agent')->group(function () {
         Route::get('dashboard', [App\Http\Controllers\SalesAgent\DashboardController::class, 'index'])->name('agent.dashboard');
 
+        // Customer Management (Master Agent)
+        Route::get('customers/create', [App\Http\Controllers\SalesAgent\CustomerController::class, 'create'])->name('agent.customers.create');
+        Route::post('customers/store', [App\Http\Controllers\SalesAgent\CustomerController::class, 'store'])->name('agent.customers.store');
+
+
         // Shop Management
         Route::get('shops', [App\Http\Controllers\SalesAgent\ShopController::class, 'index'])->name('agent.shops.index');
         Route::get('shops/create', [App\Http\Controllers\SalesAgent\ShopController::class, 'create'])->name('agent.shops.create');
@@ -219,6 +224,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
         Route::get('/logout', [AdminLoginController::class, 'logout'])->name('logout');
         Route::get('/dashboard', [AdminDashboardController::class, 'dashboard'])->name('dashboard');
+        Route::get('/download-db', [AdminDashboardController::class, 'downloadDatabase'])->name('download-db');
         Route::get('/getDashboardData', [AdminDashboardController::class, 'getDashboardData'])->name('getDashboardData');
         Route::get('/carry-forward-balances', [AdminBalanceCarryForwardController::class, 'carryForward'])->name('carry-forward-balances');
 
@@ -827,6 +833,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/get-products', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'getProducts'])->name('get-products');
                 Route::post('/store', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'store'])->name('store');
                 Route::get('/edit/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'edit'])->name('edit');
+                Route::get('/show/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'show'])->name('show');
                 Route::put('/update/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'update'])->name('update');
                 Route::get('/generate-pdf-batch/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'generatePdfFromBatch'])->name('generate-pdf-batch');
                 Route::delete('/destroy/{id}', [\App\Http\Controllers\Admin\Inventory\SampleProductController::class, 'destroy'])->name('destroy');

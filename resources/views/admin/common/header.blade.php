@@ -36,6 +36,11 @@
           @endif
         </li>
         <li class="nav-item">
+          <a class="nav-link text-success font-weight-bold" href="{{ route('admin.download-db') }}" title="Download Database SQL Backup">
+            <i class="fas fa-database"></i> Download DB
+          </a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" data-widget="fullscreen" href="#" role="button">
             <i class="fas fa-expand-arrows-alt"></i>
           </a>

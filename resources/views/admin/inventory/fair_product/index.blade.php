@@ -97,8 +97,7 @@
                         @forelse($batches as $batch)
                         <tr>
                             <td class="px-4 align-middle text-muted small">
-                                {{ $batch->created_at->format('d M Y') }}<br>
-                                {{ $batch->created_at->format('h:i A') }}
+                                {{ $batch->created_at->format('d M Y') }}
                             </td>
                             <td class="align-middle">
                                 <span class="barcode-display">{{ $batch->batch_no }}</span>

@@ -86,8 +86,9 @@
                         </button>
                     </div>
                     <div class="card-body p-0">
-                        <table class="table table-hover mb-0">
-                            <thead class="bg-light">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="bg-light">
                                 <tr>
                                     <th width="40">
                                         <div class="custom-control custom-checkbox ml-2">
@@ -217,7 +218,8 @@
                                     </tr>
                                 @endforelse
                             </tbody>
-                        </table>
+                            </table>
+                        </div>
                     </div>
                     @if($orders->hasPages())
                         <div class="card-footer bg-white">
@@ -318,8 +320,6 @@
             </div>
         </div>
     </div>
-    </div>
-
 @endsection
 
 

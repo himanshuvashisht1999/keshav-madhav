@@ -20,8 +20,7 @@ class DomesticInventory extends Model
         'rack_id',
         'product_id',
         'color_id',
-        'fitting_id',
-        'pattern_id',
+
         'size_set_id',
         'quantity',
         'box_no',
@@ -46,15 +45,7 @@ class DomesticInventory extends Model
         return $this->belongsTo(MasterColor::class, 'color_id');
     }
 
-    public function fitting()
-    {
-        return $this->belongsTo(MasterProductFitting::class, 'fitting_id');
-    }
 
-    public function pattern()
-    {
-        return $this->belongsTo(MasterDesignPattern::class, 'pattern_id');
-    }
 
     public function sizeSet()
     {
@@ -91,12 +82,12 @@ class DomesticInventory extends Model
 
     public function getFittingNameAttribute()
     {
-        return $this->fitting->name ?? '';
+        return $this->product->fitting->name ?? '';
     }
 
     public function getPatternNameAttribute()
     {
-        return $this->pattern->name ?? '';
+        return $this->product->pattern->name ?? '';
     }
 
     public function getSizeSetNameAttribute()

@@ -323,7 +323,7 @@
 
     <!-- Scan Selection Modal -->
     <div class="modal fade bottom-drawer" id="scanSelectionModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content border-0" style="border-radius: 20px 20px 0 0;">
                 <div class="modal-header border-0 bg-white pb-0" style="border-radius: 20px 20px 0 0;">
                     <h6 class="modal-title font-weight-bold text-dark mx-auto text-uppercase tracking-wider">Select Color & Quantity</h6>
@@ -355,13 +355,17 @@
     <div class="modal fade" id="imageZoomModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
             <div class="modal-content bg-transparent border-0">
-                <div class="modal-header border-0 pb-0 justify-content-end">
+                <div class="modal-header border-0 pb-0 justify-content-end" style="z-index: 1050;">
                     <button type="button" class="close text-white bg-dark rounded-circle p-2" data-dismiss="modal" aria-label="Close" style="opacity: 0.8;">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body text-center pt-0 pb-4">
+                <div class="modal-body text-center pt-0 pb-4" style="overflow: hidden; touch-action: none; position: relative;">
                     <img src="" id="zoomedImage" class="img-fluid rounded" style="max-height: 80vh; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                    <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1060; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 30px; display: flex; gap: 15px;">
+                        <button type="button" class="btn btn-light btn-sm rounded-circle" id="btnZoomOut" style="width: 40px; height: 40px;"><i class="fas fa-search-minus"></i></button>
+                        <button type="button" class="btn btn-light btn-sm rounded-circle" id="btnZoomIn" style="width: 40px; height: 40px;"><i class="fas fa-search-plus"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -467,16 +471,44 @@
 
 @push('scripts')
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
     <script>
         let allowOverStock = {{ isset($settings) && $settings->agent_app_allow_over_stock ? 'true' : 'false' }};
         let showStock = {{ !isset($settings) || $settings->agent_app_show_stock ? 'true' : 'false' }};
         $(document).ready(function () {
 
             // Image Zoom functionality
+            let pz = null;
+            const elem = document.getElementById('zoomedImage');
+            
             $(document).on('click', '.zoom-image', function() {
                 var src = $(this).attr('src');
                 $('#zoomedImage').attr('src', src);
                 $('#imageZoomModal').modal('show');
+                
+                if(pz) {
+                    pz.destroy();
+                }
+                pz = Panzoom(elem, {
+                    maxScale: 5,
+                    minScale: 1,
+                    contain: 'outside'
+                });
+                elem.parentElement.addEventListener('wheel', pz.zoomWithWheel);
+            });
+            
+            $(document).on('click', '#btnZoomIn', function() {
+                if(pz) pz.zoomIn();
+            });
+            
+            $(document).on('click', '#btnZoomOut', function() {
+                if(pz) pz.zoomOut();
+            });
+            
+            $('#imageZoomModal').on('hidden.bs.modal', function () {
+                if(pz) {
+                    pz.reset();
+                }
             });
             if ($.fn.select2) {
                 $('.select2').select2({ theme: 'bootstrap4', width: '100%' });

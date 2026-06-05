@@ -169,8 +169,7 @@ class WarehouseInventoryController extends Controller
                     data-design-no="' . $row->design_number . '"
                     data-color-id="' . $row->color_id . '"
                     data-size-set-id="' . $row->size_set_id . '"
-                    data-fitting-id="' . ($row->fitting_id ?? '') . '"
-                    data-pattern-id="' . ($row->pattern_id ?? '') . '"
+
                     data-available-boxes="' . $row->total_boxes . '"
                     data-rack-id="' . $row->rack_id . '">
                     <i class="fas fa-trash"></i></button>';
@@ -211,15 +210,11 @@ class WarehouseInventoryController extends Controller
                 'old_product_id' => $inventory->product_id,
                 'old_size_set_id' => $inventory->size_set_id,
                 'old_color_id' => $inventory->color_id,
-                'old_fitting_id' => $inventory->fitting_id,
-                'old_pattern_id' => $inventory->pattern_id,
-                'old_rack_id' => $inventory->rack_id,
+
                 'new_product_id' => $inventory->product_id,
                 'new_size_set_id' => $inventory->size_set_id,
                 'new_color_id' => $inventory->color_id,
-                'new_fitting_id' => $inventory->fitting_id,
-                'new_pattern_id' => $inventory->pattern_id,
-                'new_rack_id' => $toRack->id,
+
                 'box_quantity' => $transferQty,
                 'type' => 'transfer'
             ]);
@@ -229,9 +224,7 @@ class WarehouseInventoryController extends Controller
                 'product_id' => $inventory->product_id,
                 'color_id' => $inventory->color_id,
                 'size_set_id' => $inventory->size_set_id,
-                'fitting_id' => $inventory->fitting_id,
-                'pattern_id' => $inventory->pattern_id,
-                'rack_id' => $toRack->id,
+
                 'quantity' => $inventory->quantity, // Pieces per box must match
             ];
 
@@ -303,9 +296,7 @@ class WarehouseInventoryController extends Controller
                     'product_id' => $item->product_id,
                     'color_id' => $item->color_id,
                     'size_set_id' => $item->size_set_id,
-                    'fitting_id' => $item->fitting_id,
-                    'pattern_id' => $item->pattern_id,
-                    'rack_id' => $toRack->id,
+
                     'quantity' => $item->quantity,
                 ];
 
@@ -408,8 +399,7 @@ class WarehouseInventoryController extends Controller
             'product_id' => 'required|exists:production_goods,id',
             'color_id' => 'required|exists:master_colors,id',
             'size_set_id' => 'required|exists:master_size_measurements,id',
-            'fitting_id' => 'nullable|exists:master_product_fittings,id',
-            'pattern_id' => 'nullable|exists:master_design_patterns,id',
+
             'update_qty' => 'required|integer|min:1'
         ]);
 
@@ -422,39 +412,30 @@ class WarehouseInventoryController extends Controller
                 throw new \Exception("Cannot update more boxes than available.");
             }
 
-            $newFittingId = $request->fitting_id ?: null;
-            $newPatternId = $request->pattern_id ?: null;
 
-            // Log History
             \App\Models\DomesticInventoryHistory::create([
                 'user_id' => auth()->id(),
                 'old_product_id' => $inventory->product_id,
                 'old_size_set_id' => $inventory->size_set_id,
                 'old_color_id' => $inventory->color_id,
-                'old_fitting_id' => $inventory->fitting_id,
-                'old_pattern_id' => $inventory->pattern_id,
-                'old_rack_id' => $inventory->rack_id,
+
                 'new_product_id' => $request->product_id,
                 'new_size_set_id' => $request->size_set_id,
                 'new_color_id' => $request->color_id,
-                'new_fitting_id' => $newFittingId,
-                'new_pattern_id' => $newPatternId,
-                'new_rack_id' => $inventory->rack_id,
+
                 'box_quantity' => $updateQty,
                 'type' => 'attribute_change'
             ]);
 
             // Construct new barcode
-            $newBarcode = 'D' . $request->product_id . 'S' . $request->size_set_id . 'C' . $request->color_id . 'P' . ($newPatternId ?: 0) . 'F' . ($newFittingId ?: 0);
+            $newBarcode = 'D' . $request->product_id . 'S' . $request->size_set_id . 'C' . $request->color_id;
 
             // Match criteria for merging at SAME rack
             $matchCriteria = [
                 'product_id' => $request->product_id,
                 'color_id' => $request->color_id,
                 'size_set_id' => $request->size_set_id,
-                'fitting_id' => $newFittingId,
-                'pattern_id' => $newPatternId,
-                'rack_id' => $inventory->rack_id,
+
                 'quantity' => $inventory->quantity, // Pieces per box should ideally remain same
             ];
 
@@ -488,9 +469,7 @@ class WarehouseInventoryController extends Controller
                     $inventory->product_id = $request->product_id;
                     $inventory->color_id = $request->color_id;
                     $inventory->size_set_id = $request->size_set_id;
-                    $inventory->fitting_id = $newFittingId;
-                    $inventory->pattern_id = $newPatternId;
-                    $inventory->barcode = $newBarcode;
+
                     $inventory->save();
 
                     $boxesToUpdateIds = DB::table('packing_boxes')
@@ -534,9 +513,7 @@ class WarehouseInventoryController extends Controller
                     $newInventory->product_id = $request->product_id;
                     $newInventory->color_id = $request->color_id;
                     $newInventory->size_set_id = $request->size_set_id;
-                    $newInventory->fitting_id = $newFittingId;
-                    $newInventory->pattern_id = $newPatternId;
-                    $newInventory->total_boxes = $updateQty;
+
                     $newInventory->barcode = $newBarcode;
                     $newInventory->save();
 
@@ -589,9 +566,7 @@ class WarehouseInventoryController extends Controller
                 'old_product_id' => $inventory->product_id,
                 'old_size_set_id' => $inventory->size_set_id,
                 'old_color_id' => $inventory->color_id,
-                'old_fitting_id' => $inventory->fitting_id,
-                'old_pattern_id' => $inventory->pattern_id,
-                'old_rack_id' => $inventory->rack_id,
+
                 'box_quantity' => $request->delete_qty,
                 'type' => 'deletion'
             ]);

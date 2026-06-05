@@ -16,8 +16,7 @@ class SamplingInventory extends Model
         'rack_id',
         'product_id',
         'color_id',
-        'fitting_id',
-        'pattern_id',
+
         'size_id',
         'quantity',
         'barcode',

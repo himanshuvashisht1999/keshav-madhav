@@ -34,8 +34,7 @@ class BarcodeGeneratorController extends Controller
     {
         $request->validate([
             'design_id' => 'required|exists:production_goods,id',
-            'pattern_id' => 'required|exists:master_design_patterns,id',
-            'fitting_id' => 'required|exists:master_product_fittings,id',
+
             'color_ids' => 'required|array',
             'color_ids.*' => 'required|exists:master_colors,id',
             'size_set_ids' => 'required|array',
@@ -45,8 +44,8 @@ class BarcodeGeneratorController extends Controller
         ]);
 
         $design = ProductionGoods::with('series')->find($request->design_id);
-        $pattern = MasterDesignPattern::find($request->pattern_id);
-        $fitting = MasterProductFitting::find($request->fitting_id);
+        $pattern = $design->pattern;
+        $fitting = $design->fitting;
 
         $labels = [];
 
@@ -62,7 +61,7 @@ class BarcodeGeneratorController extends Controller
             $fullProductName = $seriesName . ' ' . $productName;
 
             // Generate a unique barcode string
-            $barcode = 'D' . $design->id . 'S' . $sizeSet->id . 'C' . $color->id . 'P' . $pattern->id . 'F' . $fitting->id;
+            $barcode = 'D' . $design->id . 'S' . $sizeSet->id . 'C' . $color->id;
 
             for ($i = 0; $i < $quantity; $i++) {
                 $labels[] = (object) [
@@ -158,8 +157,7 @@ class BarcodeGeneratorController extends Controller
     {
         $request->validate([
             'design_id' => 'required|exists:production_goods,id',
-            'pattern_id' => 'required|exists:master_design_patterns,id',
-            'fitting_id' => 'required|exists:master_product_fittings,id',
+
             'color_ids' => 'required|array',
             'color_ids.*' => 'required|exists:master_colors,id',
             'size_set_ids' => 'required|array',
@@ -176,9 +174,7 @@ class BarcodeGeneratorController extends Controller
 
             $barcode = 'D' . $request->design_id .
                 'S' . $request->size_set_ids[$key] .
-                'C' . $color_id .
-                'P' . $request->pattern_id .
-                'F' . $request->fitting_id;
+                'C' . $color_id;
 
             $quantity = $request->quantities[$key];
 
@@ -244,9 +240,7 @@ class BarcodeGeneratorController extends Controller
             // Reconstruct barcode logic (consistent with InventoryController)
             $barcode = 'D' . $item->new_product_id . 
                       'S' . $item->new_size_set_id . 
-                      'C' . $item->new_color_id . 
-                      'P' . ($item->new_pattern_id ?: 0) . 
-                      'F' . ($item->new_fitting_id ?: 0);
+                      'C' . $item->new_color_id;
 
             $boxes = (int) $item->box_quantity;
 

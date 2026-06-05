@@ -110,6 +110,66 @@ class DashboardController extends Controller
 
     }
 
+    public function downloadDatabase()
+    {
+        $fileName = 'db_backup_' . date('Y-m-d_H-i-s') . '.sql';
+
+        $headers = [
+            'Content-Type' => 'application/sql',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+            'Pragma' => 'no-cache',
+        ];
+
+        return response()->stream(function () {
+            // Disable strict mode for export if necessary
+            \DB::statement("SET SESSION SQL_MODE=''");
+            
+            $tables = \DB::select('SHOW TABLES');
+            $tables = array_map('current', json_decode(json_encode($tables), true));
+
+            echo "SET FOREIGN_KEY_CHECKS=0;\n\n";
+
+            foreach ($tables as $table) {
+                echo "-- --------------------------------------------------------\n";
+                echo "-- Table structure for `$table`\n";
+                echo "-- --------------------------------------------------------\n";
+                
+                try {
+                    $createTable = \DB::select("SHOW CREATE TABLE `$table`");
+                    $createSql = json_decode(json_encode($createTable[0]), true);
+                    $createSql = array_values($createSql)[1];
+                    echo "DROP TABLE IF EXISTS `$table`;\n";
+                    echo $createSql . ";\n\n";
+
+                    // Fetch data using unbuffered query to save memory
+                    $pdo = \DB::connection()->getPdo();
+                    $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+                    $stmt = $pdo->prepare("SELECT * FROM `$table`");
+                    $stmt->execute();
+                    
+                    while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                        $keys = array_keys($row);
+                        $values = array_map(function ($value) {
+                            if (is_null($value)) return 'NULL';
+                            $value = str_replace(["\r", "\n"], ["\\r", "\\n"], addslashes($value));
+                            return "'" . $value . "'";
+                        }, array_values($row));
+                        
+                        echo "INSERT INTO `$table` (`" . implode("`, `", $keys) . "`) VALUES (" . implode(", ", $values) . ");\n";
+                    }
+                    $stmt->closeCursor();
+                    $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
+                    echo "\n\n";
+                } catch (\Exception $e) {
+                    echo "-- Error exporting table $table: " . $e->getMessage() . "\n\n";
+                }
+            }
+
+            echo "SET FOREIGN_KEY_CHECKS=1;\n";
+        }, 200, $headers);
+    }
+
     public function getDashboardData(Request $request)
     {
         $fabricStock = $this->service->fabricStock($request)->original;

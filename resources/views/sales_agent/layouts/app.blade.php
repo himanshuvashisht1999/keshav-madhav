@@ -172,6 +172,12 @@
                 <i class="fas fa-store"></i>
                 <span>Shops</span>
             </a>
+            @else
+            <a href="{{ route('agent.customers.create') }}"
+                class="nav-item {{ request()->routeIs('agent.customers.*') ? 'active' : '' }}">
+                <i class="fas fa-user-plus"></i>
+                <span>Add Customer</span>
+            </a>
             @endif
 
             <a href="{{ route('agent.orders.index') }}"

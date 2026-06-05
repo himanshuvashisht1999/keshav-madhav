@@ -286,8 +286,7 @@ class PackingController extends Controller
             'product_id' => 'required',
             'size_set_id' => 'required',
             'color_id' => 'required',
-            'fitting_id' => 'required',
-            'pattern_id' => 'required',
+
             'quantity' => 'required|integer|min:1',
             'box_no' => 'nullable',
             'rack_id' => 'nullable'
@@ -337,7 +336,7 @@ class PackingController extends Controller
             }
 
             // Calculate barcode BEFORE creating box to link them properly
-            $barcode = 'D' . $data['product_id'] . 'S' . $data['size_set_id'] . 'C' . $data['color_id'] . 'P' . $data['pattern_id'] . 'F' . $data['fitting_id'];
+            $barcode = 'D' . $data['product_id'] . 'S' . $data['size_set_id'] . 'C' . $data['color_id'];
 
             // Create PackingBox with explicit property assignment
             $box = new \App\Models\PackingBox();
@@ -373,8 +372,7 @@ class PackingController extends Controller
                     'rack_id' => $data['rack_id'],
                     'product_id' => $data['product_id'],
                     'color_id' => $data['color_id'],
-                    'fitting_id' => $data['fitting_id'],
-                    'pattern_id' => $data['pattern_id'],
+
                     'size_set_id' => $data['size_set_id'],
                     'quantity' => $total_pieces_in_box,
                     'box_no' => $box_no,
@@ -390,8 +388,7 @@ class PackingController extends Controller
                 'new_product_id' => $data['product_id'],
                 'new_size_set_id' => $data['size_set_id'],
                 'new_color_id' => $data['color_id'],
-                'new_fitting_id' => $data['fitting_id'],
-                'new_pattern_id' => $data['pattern_id'],
+
                 'new_rack_id' => $data['rack_id'] ?? null,
                 'box_quantity' => 1,
                 'type' => 'packing'
@@ -473,8 +470,7 @@ class PackingController extends Controller
                         'slip_id' => $data['slip_id'],
                         'product_id' => $data['product_id'],
                         'color_id' => $data['color_id'],
-                        'fitting_id' => $data['fitting_id'],
-                        'pattern_id' => $data['pattern_id'],
+
                         'size_id' => $firstDetailId ?: 0,
                         'quantity' => $remToDeduct,
                         'per_piece_amount' => 0,
@@ -562,9 +558,7 @@ class PackingController extends Controller
                     ]);
 
                     // 4. Barcode Calculation
-                    $pattern_id = $box_plan['pattern_id'] ?? 0;
-                    $fitting_id = $box_plan['fitting_id'] ?? 0;
-                    $barcode = 'D' . $box_plan['product_id'] . 'S' . $box_plan['size_set_id'] . 'C' . $box_plan['color_id'] . 'P' . $pattern_id . 'F' . $fitting_id;
+                    $barcode = 'D' . $box_plan['product_id'] . 'S' . $box_plan['size_set_id'] . 'C' . $box_plan['color_id'];
 
                     // 3. New Box
                     // Create PackingBox with explicit property assignment
@@ -598,8 +592,7 @@ class PackingController extends Controller
                             'product_id' => $box_plan['product_id'],
                             'color_id' => $box_plan['color_id'],
                             'size_set_id' => $box_plan['size_set_id'],
-                            'pattern_id' => $pattern_id ?: null,
-                            'fitting_id' => $fitting_id ?: null,
+
                             'quantity' => $pcs_per_set,
                             'box_no' => $box_no,
                             'carton_no' => $currentCartonNo,
@@ -615,8 +608,7 @@ class PackingController extends Controller
                         'new_product_id' => $box_plan['product_id'],
                         'new_size_set_id' => $box_plan['size_set_id'],
                         'new_color_id' => $box_plan['color_id'],
-                        'new_fitting_id' => $fitting_id ?: null,
-                        'new_pattern_id' => $pattern_id ?: null,
+
                         'new_rack_id' => $currentRackId,
                         'box_quantity' => 1,
                         'type' => 'packing'
@@ -797,12 +789,12 @@ class PackingController extends Controller
 
     public function downloadDomesticBarcodeTxt($id)
     {
-        $inventory = \App\Models\DomesticInventory::with(['product.series', 'color', 'sizeSet', 'fitting', 'pattern'])->findOrFail($id);
+        $inventory = \App\Models\DomesticInventory::with(['product.series', 'product.fitting', 'product.pattern', 'color', 'sizeSet'])->findOrFail($id);
 
         $label = (object) [
             'product_name' => ($inventory->product->series->name ?? '') . ' ' . ($inventory->product->name ?? ''),
-            'fitting_name' => $inventory->fitting->name ?? 'N/A',
-            'pattern_name' => $inventory->pattern->name ?? 'N/A',
+            'fitting_name' => $inventory->fitting_name ?? 'N/A',
+            'pattern_name' => $inventory->pattern_name ?? 'N/A',
             'size_group' => $inventory->sizeSet->name ?? 'N/A',
             'no_of_pcs' => $inventory->quantity ?? '0',
             'color_name' => ($inventory->color->name ?? 'N/A') . ' (' . ($inventory->color_id ?? '') . ')',
@@ -822,7 +814,7 @@ class PackingController extends Controller
 
     public function downloadSlipBarcodeTxt($packing_main_id)
     {
-        $items = \App\Models\DomesticInventory::with(['product.series', 'color', 'fitting', 'pattern', 'sizeSet'])
+        $items = \App\Models\DomesticInventory::with(['product.series', 'product.fitting', 'product.pattern', 'color', 'sizeSet'])
             ->where('packing_main_id', $packing_main_id)
             ->get();
 
@@ -834,7 +826,7 @@ class PackingController extends Controller
         foreach ($items as $item) {
             $labels[] = (object) [
                 'product_name' => ($item->product->series->name ?? '') . ' ' . ($item->product->name ?? $item->product->name_of_garment ?? ''),
-                'fitting_name' => $item->fitting->name ?? 'N/A',
+                'fitting_name' => $item->fitting_name ?? 'N/A',
                 'pattern_name' => $item->pattern_name ?? 'N/A',
                 'size_group' => $item->size_set_name ?? 'N/A',
                 'no_of_pcs' => $item->quantity,
@@ -1238,7 +1230,7 @@ class PackingController extends Controller
                 }
                 $box_no = "BX-$datePrefix-" . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
 
-                $barcode = 'D' . $data['product_id'] . 'S' . $data['size_set_id'] . 'C' . $data['color_id'] . 'P' . ($data['pattern_id'] ?? 0) . 'F' . ($data['fitting_id'] ?? 0);
+                $barcode = 'D' . $data['product_id'] . 'S' . $data['size_set_id'] . 'C' . $data['color_id'];
 
                 // Create PackingBox with barcode
                 $box = new \App\Models\PackingBox();
@@ -1348,8 +1340,7 @@ class PackingController extends Controller
                         'rack_id' => $data['rack_id'],
                         'product_id' => $data['product_id'],
                         'color_id' => $data['color_id'],
-                        'fitting_id' => $data['fitting_id'] ?? null,
-                        'pattern_id' => $data['pattern_id'] ?? null,
+
                         'size_set_id' => $data['size_set_id'],
                         'quantity' => $actualPiecesInBox,
                         'box_no' => $box_no,

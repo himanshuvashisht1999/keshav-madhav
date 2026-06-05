@@ -44,24 +44,24 @@
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h1 class="h3 font-weight-bold text-dark mb-0">Sample Set Details</h1>
+                <h1 class="h3 font-weight-bold text-dark mb-0">Sample Catalog Details</h1>
                 <p class="text-muted">Viewing details for Batch <span class="barcode-display">{{ $batch->batch_no }}</span></p>
             </div>
             <div>
-                <a href="{{ route('admin.inventory.fair-product.index') }}" class="btn btn-outline-secondary px-4 mr-2">
+                <a href="{{ route('admin.inventory.sample-product.index') }}" class="btn btn-outline-secondary px-4 mr-2">
                     <i class="fas fa-arrow-left mr-2"></i> Back
                 </a>
-                <a href="{{ route('admin.inventory.fair-product.edit', $batch->id) }}" class="btn btn-warning px-4">
-                    <i class="fas fa-edit mr-2"></i> Edit Batch
+                <a href="{{ route('admin.inventory.sample-product.edit', $batch->id) }}" class="btn btn-warning px-4">
+                    <i class="fas fa-edit mr-2"></i> Edit Catalog
                 </a>
             </div>
         </div>
 
         <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="premium-card p-3 h-100">
+            <div class="col-md-12">
+                <div class="premium-card p-3">
                     <h6 class="text-muted text-uppercase small font-weight-bold mb-3">Batch Information</h6>
-                    <table class="table table-sm table-borderless mb-0">
+                    <table class="table table-sm table-borderless mb-0" style="max-width: 400px;">
                         <tr>
                             <td class="text-muted w-50">Batch Number:</td>
                             <td class="font-weight-bold"><span class="barcode-display">{{ $batch->batch_no }}</span></td>
@@ -75,32 +75,6 @@
                             <td class="font-weight-bold">{{ $batch->products->count() }}</td>
                         </tr>
                     </table>
-                </div>
-            </div>
-            <div class="col-md-8">
-                <div class="premium-card p-3 h-100">
-                    <h6 class="text-muted text-uppercase small font-weight-bold mb-3">Sales Agents</h6>
-                    <div class="d-flex flex-wrap gap-2">
-                        @php
-                            $salesAgents = \App\Models\SalesAgent::where('status', 1)->get();
-                            $agentNames = [];
-                            if(is_array($batch->sales_agent_ids)) {
-                                foreach($batch->sales_agent_ids as $id) {
-                                    $ag = $salesAgents->where('id', $id)->first();
-                                    if($ag) {
-                                        $agentNames[] = $ag->name;
-                                    }
-                                }
-                            }
-                        @endphp
-                        @if(count($agentNames) > 0)
-                            @foreach($agentNames as $name)
-                                <span class="badge badge-light border px-3 py-2 mr-2 mb-2" style="font-size: 0.9rem;">{{ $name }}</span>
-                            @endforeach
-                        @else
-                            <p class="text-muted mb-0">No specific sales agents assigned to this batch.</p>
-                        @endif
-                    </div>
                 </div>
             </div>
         </div>
@@ -145,7 +119,7 @@
                                 <span class="badge badge-light border">{{ $sample->sizeSet->name }}</span>
                             </td>
                             <td class="align-middle text-right">
-                                ₹{{ number_format($sample->final_price / (1 - ($sample->discount_percent / 100)), 2) }}
+                                ₹{{ number_format($sample->discount_percent < 100 ? $sample->final_price / (1 - ($sample->discount_percent / 100)) : $sample->final_price, 2) }}
                             </td>
                             <td class="align-middle text-right">
                                 <span class="text-danger font-weight-bold">{{ number_format($sample->discount_percent, 2) }}%</span>
@@ -161,7 +135,7 @@
                         <tr>
                             <td colspan="9" class="text-center py-5 text-muted">
                                 <i class="fas fa-box-open fa-3x mb-3"></i>
-                                <p>No products found in this sample set.</p>
+                                <p>No products found in this sample catalog.</p>
                             </td>
                         </tr>
                         @endforelse

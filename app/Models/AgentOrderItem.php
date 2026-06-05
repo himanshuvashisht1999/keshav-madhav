@@ -24,9 +24,7 @@ class AgentOrderItem extends Model
         'color_name',
         'size_name',
         'size_set_name',
-        'fitting_id',
         'fitting_name',
-        'pattern_id',
         'pattern_name',
         'quantity',
         'mrp',
@@ -60,13 +58,4 @@ class AgentOrderItem extends Model
         return $this->belongsTo(MasterSizeMeasurement::class, 'size_set_id');
     }
 
-    public function fitting()
-    {
-        return $this->belongsTo(MasterProductFitting::class, 'fitting_id');
-    }
-
-    public function pattern()
-    {
-        return $this->belongsTo(MasterDesignPattern::class, 'pattern_id');
-    }
 }

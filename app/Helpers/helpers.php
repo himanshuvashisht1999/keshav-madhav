@@ -344,14 +344,21 @@ function getIndianCurrency($number)
 function parseCompactBarcode($input)
 {
     $input = trim($input);
-    // Compact barcode format: 10 + D(5) + S(2) + C(3) + P(2) + F(2) = 16 digits
+    // Compact barcode format (Legacy): 10 + D(5) + S(2) + C(3) + P(2) + F(2) = 16 digits
     if (strlen($input) == 16 && str_starts_with($input, '10') && is_numeric($input)) {
         $d = (int) substr($input, 2, 5);
         $s = (int) substr($input, 7, 2);
         $c = (int) substr($input, 9, 3);
         $p = (int) substr($input, 12, 2);
         $f = (int) substr($input, 14, 2);
-        return "D{$d}S{$s}C{$c}P{$p}F{$f}";
+        return "D{$d}S{$s}C{$c}";
+    }
+    // Compact barcode format (New): 10 + D(5) + S(2) + C(3) = 12 digits
+    if (strlen($input) == 12 && str_starts_with($input, '10') && is_numeric($input)) {
+        $d = (int) substr($input, 2, 5);
+        $s = (int) substr($input, 7, 2);
+        $c = (int) substr($input, 9, 3);
+        return "D{$d}S{$s}C{$c}";
     }
     return $input;
 }
@@ -374,7 +381,7 @@ function generateBulkTsplByBarcodes($barcodes)
     $labels = [];
 
     // 1. Try to find in DomesticInventory first
-    $items = \App\Models\DomesticInventory::with(['product.series', 'color', 'fitting', 'pattern', 'sizeSet'])
+    $items = \App\Models\DomesticInventory::with(['product.series', 'product.fitting', 'product.pattern', 'color', 'sizeSet'])
         ->whereIn('barcode', $barcodeArray)
         ->get()
         ->keyBy('barcode');
@@ -387,6 +394,8 @@ function generateBulkTsplByBarcodes($barcodes)
         $compactBarcode = $code;
         if (preg_match('/D(\d+)S(\d+)C(\d+)P(\d+)F(\d+)/', $code, $matches)) {
             $compactBarcode = sprintf("10%05d%02d%03d%02d%02d", $matches[1], $matches[2], $matches[3], $matches[4], $matches[5]);
+        } elseif (preg_match('/D(\d+)S(\d+)C(\d+)/', $code, $matches)) {
+            $compactBarcode = sprintf("10%05d%02d%03d", $matches[1], $matches[2], $matches[3]);
         }
 
         if (isset($items[$code])) {
@@ -416,6 +425,24 @@ function generateBulkTsplByBarcodes($barcodes)
                         'product_name' => trim(($design->series->name ?? '') . ' ' . ($design->name_of_garment ?? '')),
                         'fitting_name' => $fitting->name,
                         'pattern_name' => $pattern->name,
+                        'size_group' => $sizeSet->name,
+                        'no_of_pcs' => $sizeSet->no_of_pcs,
+                        'color_name' => $color->name . ' (' . $color->id . ')',
+                        'design_number' => $design->design_number,
+                        'barcode' => $compactBarcode,
+                        'original_code' => $code
+                    ];
+                }
+            } elseif (preg_match('/D(\d+)S(\d+)C(\d+)/', $code, $matches)) {
+                $design = \App\Models\ProductionGoods::with('series')->find($matches[1]);
+                $sizeSet = \App\Models\MasterSizeMeasurement::find($matches[2]);
+                $color = \App\Models\MasterColor::find($matches[3]);
+
+                if ($design && $sizeSet && $color) {
+                    $labels[] = (object) [
+                        'product_name' => trim(($design->series->name ?? '') . ' ' . ($design->name_of_garment ?? '')),
+                        'fitting_name' => $design->fitting->name ?? '',
+                        'pattern_name' => $design->pattern->name ?? '',
                         'size_group' => $sizeSet->name,
                         'no_of_pcs' => $sizeSet->no_of_pcs,
                         'color_name' => $color->name . ' (' . $color->id . ')',
