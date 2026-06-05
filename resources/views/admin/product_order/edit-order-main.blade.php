@@ -263,37 +263,72 @@
                             </thead>
                             <tbody>
                                 @foreach($data->OrderProductSets as $set)
-                                    <tr class="product-row-item">
+                                    @php
+                                        $isAssigned = \App\Models\OrderCuttingStage::where('set_product_id', $set->id)->exists();
+                                    @endphp
+                                    <tr class="product-row-item" data-assigned="{{ $isAssigned ? 'true' : 'false' }}">
                                         <td>{{ $set->bar_code }}
                                             <input type="hidden" name="bar_codeList[]" value="{{ $set->bar_code }}">
                                         </td>
                                         <td>
-                                            <select name="designList[]"
-                                                class="form-control form-control-sm row-design-select select2" required>
-                                                <option value="{{ $set->production_goods_id }}" selected>
-                                                    {{ $set->design_number }}
-                                                </option>
-                                            </select>
+                                            @if($isAssigned)
+                                                <input type="hidden" name="designList[]" value="{{ $set->production_goods_id }}">
+                                                <select class="form-control form-control-sm row-design-select select2" disabled>
+                                                    <option value="{{ $set->production_goods_id }}" selected>
+                                                        {{ $set->design_number }}
+                                                    </option>
+                                                </select>
+                                            @else
+                                                <select name="designList[]"
+                                                    class="form-control form-control-sm row-design-select select2" required>
+                                                    <option value="{{ $set->production_goods_id }}" selected>
+                                                        {{ $set->design_number }}
+                                                    </option>
+                                                </select>
+                                            @endif
                                         </td>
                                         <td>
-                                            <select name="sizeList[]"
-                                                class="form-control form-control-sm row-size-select select2" required>
-                                                <option value="{{ $set->set_size }}" data-pcs="{{ $set->no_of_pcs }}" selected>
-                                                    {{ $set->size_measurement->name ?? '' }}
-                                                </option>
-                                            </select>
+                                            @if($isAssigned)
+                                                <input type="hidden" name="sizeList[]" value="{{ $set->set_size }}">
+                                                <select class="form-control form-control-sm row-size-select select2" disabled>
+                                                    <option value="{{ $set->set_size }}" data-pcs="{{ $set->no_of_pcs }}" selected>
+                                                        {{ $set->size_measurement->name ?? '' }}
+                                                    </option>
+                                                </select>
+                                            @else
+                                                <select name="sizeList[]"
+                                                    class="form-control form-control-sm row-size-select select2" required>
+                                                    <option value="{{ $set->set_size }}" data-pcs="{{ $set->no_of_pcs }}" selected>
+                                                        {{ $set->size_measurement->name ?? '' }}
+                                                    </option>
+                                                </select>
+                                            @endif
                                         </td>
                                         <td>
-                                            <select name="colourList[]"
-                                                class="form-control form-control-sm row-colour-select select2" required>
-                                                <option value="{{ $set->color_id }}" selected>{{ $set->colors->name ?? '' }}
-                                                </option>
-                                            </select>
+                                            @if($isAssigned)
+                                                <input type="hidden" name="colourList[]" value="{{ $set->color_id }}">
+                                                <select class="form-control form-control-sm row-colour-select select2" disabled>
+                                                    <option value="{{ $set->color_id }}" selected>{{ $set->colors->name ?? '' }}
+                                                    </option>
+                                                </select>
+                                            @else
+                                                <select name="colourList[]"
+                                                    class="form-control form-control-sm row-colour-select select2" required>
+                                                    <option value="{{ $set->color_id }}" selected>{{ $set->colors->name ?? '' }}
+                                                    </option>
+                                                </select>
+                                            @endif
                                         </td>
                                         <td>
-                                            <input type="number" name="product_quantity[]"
-                                                class="form-control form-control-sm row-qty-input"
-                                                value="{{ $set->set_quantity }}" min="1">
+                                            @if($isAssigned)
+                                                <input type="hidden" name="product_quantity[]" value="{{ $set->set_quantity }}">
+                                                <input type="number" class="form-control form-control-sm row-qty-input"
+                                                    value="{{ $set->set_quantity }}" disabled>
+                                            @else
+                                                <input type="number" name="product_quantity[]"
+                                                    class="form-control form-control-sm row-qty-input"
+                                                    value="{{ $set->set_quantity }}" min="1">
+                                            @endif
                                         </td>
                                         <td>
                                             <span class="row-pcs-per-set">{{ $set->no_of_pcs }}</span>
@@ -305,7 +340,12 @@
                                                 value="{{ $set->total_quantity }}">
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-danger btn-sm remove-row">X</button>
+                                            <input type="hidden" name="order_product_set_id[]" value="{{ $set->id }}">
+                                            @if($isAssigned)
+                                                <button type="button" class="btn btn-secondary btn-sm" disabled title="Assigned, cannot remove">X</button>
+                                            @else
+                                                <button type="button" class="btn btn-danger btn-sm remove-row">X</button>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach
@@ -540,6 +580,7 @@
                                             </td>
 
                                             <td>
+                                                <input type="hidden" name="order_product_set_id[]" value="0">
                                                 <button type="button" class="btn btn-danger btn-sm remove-row">X</button>
                                             </td>
                                         </tr>
@@ -947,6 +988,7 @@
 
         function populateRowSelects(row) {
             if (!globalMasterData) return;
+            if (row.data('assigned') === true) return;
 
             // Design
             let designSelect = row.find(".row-design-select");

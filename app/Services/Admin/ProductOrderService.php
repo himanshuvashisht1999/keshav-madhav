@@ -728,31 +728,34 @@ class ProductOrderService
             $order_main->corporate_order_file = $imgName;
             $order_main->save();
 
-            // Check if any product has been assigned to cutting. If so, maybe restrict delete?
-            // For now, let's just delete and recreate sets IF not assigned
-
             $existing_sets = OrderProductSet::where('order_main_id', $id)->get();
+            $assigned_set_ids = [];
+            $unassigned_set_ids = [];
             foreach ($existing_sets as $set) {
                 if (OrderCuttingStage::where('set_product_id', $set->id)->exists()) {
-                    // If assigned, we should probably keep it or update it?
-                    // This is complex. Let's assume user only edits before assignment for now.
+                    $assigned_set_ids[] = $set->id;
+                } else {
+                    $unassigned_set_ids[] = $set->id;
                 }
             }
 
-            // Simple approach: Delete old sets (only if they aren't assigned/processed) 
-            // and add new ones. 
-            // OR: smarter sync.
-            // Let's go with deleting unassigned sets.
+            // Delete old sets and details only for the unassigned ones
+            if (!empty($unassigned_set_ids)) {
+                OrderProductSetDetail::whereIn('order_products_set_id', $unassigned_set_ids)->delete();
+                OrderProductSet::whereIn('id', $unassigned_set_ids)->delete();
+            }
 
-            // Delete old sets and details
-            OrderProductSetDetail::whereIn('order_products_set_id', $existing_sets->pluck('id'))->delete();
-            OrderProductSet::where('order_main_id', $id)->delete();
-            OrderCuttingStage::where('order_main_id', $id)->delete();
-
-            // Create new sets
+            // Create or preserve sets
             $i = 0;
             foreach ($request->designList as $key => $design_id) {
                 $i++;
+                $setId = (int) ($request->order_product_set_id[$key] ?? 0);
+
+                // If the set is already assigned, it remains in the database. Skip recreation.
+                if ($setId > 0 && in_array($setId, $assigned_set_ids)) {
+                    continue;
+                }
+
                 $order_quantity = $request->product_quantity[$key];
 
                 $size_data = $this->getSizeDetails($request->sizeList[$key]);
