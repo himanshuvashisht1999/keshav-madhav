@@ -30,7 +30,7 @@
                     </div>
                     <div class="form-group mb-3">
                         <label class="small font-weight-bold text-muted">Phone Number <span class="text-danger">*</span></label>
-                        <input type="tel" name="phone" class="form-control rounded-lg" placeholder="Enter phone" value="{{ old('phone') }}">
+                        <input type="text" name="phone" class="form-control rounded-lg" placeholder="Enter phone" value="{{ old('phone') }}" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                     </div>
                     <div class="form-group mb-3">
                         <label class="small font-weight-bold text-muted">Email (Optional)</label>
@@ -57,35 +57,17 @@
                             </div>
                         </div>
                     </div>
+                    <div class="form-group mb-3">
+                        <label class="small font-weight-bold text-muted">Payment Term (Days)</label>
+                        <input type="number" name="payment_term_days" class="form-control rounded-lg" value="{{ old('payment_term_days', 120) }}">
+                    </div>
                 </div>
 
                 <!-- Direct Fields (Per Brand Discounts) -->
                 <div id="direct_fields" style="display: none;">
-                    <hr>
-                    <h6 class="font-weight-bold text-muted mb-3">Per Brand Discounts (%)</h6>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm small">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th>Brand Name</th>
-                                    <th width="120">Discount (%)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($items['brands'] as $brand)
-                                    <tr>
-                                        <td class="align-middle">{{ $brand->name }}</td>
-                                        <td>
-                                            <input type="number" step="0.01" min="0" max="100"
-                                                name="brand_discounts[{{ $brand->id }}]"
-                                                class="form-control form-control-sm"
-                                                value="{{ old('brand_discounts.' . $brand->id, 0) }}">
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                    @foreach($items['brands'] as $brand)
+                        <input type="hidden" name="brand_discounts[{{ $brand->id }}]" value="0">
+                    @endforeach
                 </div>
 
                 <!-- Agent Fields -->
@@ -107,7 +89,7 @@
                     </div>
                     <div class="form-group mb-3">
                         <label class="small font-weight-bold text-muted">Shop Phone Number <span class="text-danger">*</span></label>
-                        <input type="number" name="shop_phone" class="form-control rounded-lg" placeholder="E.g. 98XXXXXXXX" value="{{ old('shop_phone') }}">
+                        <input type="text" name="shop_phone" class="form-control rounded-lg" placeholder="E.g. 98XXXXXXXX" value="{{ old('shop_phone') }}" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                     </div>
                     <div class="form-group mb-3">
                         <label class="small font-weight-bold text-muted">Shop Email Address (Optional)</label>

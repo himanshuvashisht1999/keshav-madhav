@@ -26,6 +26,7 @@ class CustomerStoreRequest extends FormRequest
             'name' => 'required',
             'balance' => 'nullable|numeric',
             'balance_type' => 'required|in:Credit,Debit',
+            'payment_term_days' => 'nullable|integer',
         ];
 
         if ($this->type == 'domestic' && $this->subtype == 'agent') {

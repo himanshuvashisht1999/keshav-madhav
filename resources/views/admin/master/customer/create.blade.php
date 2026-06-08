@@ -134,6 +134,16 @@
                                                  @endif
                                              </div>
                                          </div>
+                                         <div class="col-md-6">
+                                             <div class="form-group">
+                                                 <label>Payment Term (Days)</label>
+                                                 <input type="number" name="payment_term_days" class="form-control"
+                                                     placeholder="E.g. 120" value="{{old('payment_term_days', 120)}}">
+                                                 @if ($errors->has('payment_term_days'))
+                                                     <span class="invalid-feedback d-block">{{ $errors->first('payment_term_days') }}</span>
+                                                 @endif
+                                             </div>
+                                         </div>
                                     </div>
                                 </div>
 
@@ -242,6 +252,16 @@
                                                  </select>
                                                  @if ($errors->has('balance_type'))
                                                      <span class="invalid-feedback d-block">{{ $errors->first('balance_type') }}</span>
+                                                 @endif
+                                             </div>
+                                         </div>
+                                         <div class="col-md-6">
+                                             <div class="form-group">
+                                                 <label>Payment Term (Days)</label>
+                                                 <input type="number" name="payment_term_days" class="form-control"
+                                                     placeholder="E.g. 120" value="{{old('payment_term_days', 120)}}">
+                                                 @if ($errors->has('payment_term_days'))
+                                                     <span class="invalid-feedback d-block">{{ $errors->first('payment_term_days') }}</span>
                                                  @endif
                                              </div>
                                          </div>

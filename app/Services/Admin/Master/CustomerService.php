@@ -336,6 +336,7 @@ class CustomerService
             }
             $shop->balance = $balance;
             $shop->status = 1;
+            $shop->payment_term_days = $request->payment_term_days ?? 120;
             $shop->save();
 
             MasterOpeningBalance::updateOrCreate(
@@ -368,6 +369,7 @@ class CustomerService
         $save_data->balance = $balance;
         $save_data->status = $request->status ?? 1;
         $save_data->type = $type;
+        $save_data->payment_term_days = $request->payment_term_days ?? 120;
 
         if ($type == 'domestic') {
             $save_data->subtype = $subtype;
@@ -435,6 +437,7 @@ class CustomerService
 
         $update_data->status = $request->status;
         $update_data->type = $type;
+        $update_data->payment_term_days = $request->payment_term_days ?? $update_data->payment_term_days;
 
         if ($type == 'domestic') {
             $update_data->subtype = $subtype;
@@ -494,6 +497,7 @@ class CustomerService
             }
             $shop->balance = $balance;
             $shop->status = 1;
+            $shop->payment_term_days = $request->payment_term_days ?? 120;
             $shop->save();
 
             MasterOpeningBalance::updateOrCreate(

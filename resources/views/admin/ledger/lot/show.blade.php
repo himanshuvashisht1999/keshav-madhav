@@ -8,7 +8,11 @@
                 <div class="row mb-2">
                     <div class="col-sm-6">
                         <h1>Lot Ledger: {{ $lot->lot_no }}</h1>
-                        <p class="text-muted mb-0">Order SKU: {{ $lot->orderMain->sku ?? '-' }} | Customer: {{ $lot->orderMain->customer->name ?? '-' }}</p>
+                        <p class="text-muted mb-0">
+                            Order SKU: {{ $lot->orderMain->sku ?? '-' }} | 
+                            Customer: {{ $lot->orderMain->customer->name ?? '-' }} |
+                            Current Stage: <span class="badge badge-info">{{ $lot->last_current_stage ?? 'N/A' }}</span>
+                        </p>
                     </div>
                     <div class="col-sm-6">
                         <div class="float-sm-right text-right text-end">

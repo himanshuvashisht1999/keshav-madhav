@@ -244,6 +244,10 @@
                         <div>{{ $lot->orderProductSet->orderMain->customer->name ?? '-' }}</div>
                     </div>
                     <div class="info-card">
+                        <label>Current Stage</label>
+                        <div>{{ $data['last_current_stage'] ?? 'N/A' }}</div>
+                    </div>
+                    <div class="info-card">
                         <label>Report Date</label>
                         <div>{{ now()->format('d M Y') }}</div>
                     </div>

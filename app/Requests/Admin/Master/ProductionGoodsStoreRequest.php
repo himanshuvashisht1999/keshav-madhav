@@ -18,7 +18,7 @@ class ProductionGoodsStoreRequest extends FormRequest
 
         // BASE RULES — always required
         $rules = [
-            'design_number'    => 'required',
+            'design_number'    => 'required|unique:production_goods,design_number',
             //'name_of_garment'  => 'required',
             // 'main_image'  => 'required',
             // 'sku'              => 'required|unique:production_goods,sku',
@@ -44,6 +44,7 @@ class ProductionGoodsStoreRequest extends FormRequest
     {
         return [
             'design_number.required'     => 'Design number is required.',
+            'design_number.unique'       => 'Design number already exists.',
             'name_of_garment.required'   => 'Product name is required.',
             'type_of_garment.required'   => 'Product type is required for General company.',
             'garment_pattern.required'   => 'Product pattern is required for General company.',

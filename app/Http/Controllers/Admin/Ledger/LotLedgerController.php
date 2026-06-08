@@ -43,6 +43,7 @@ class LotLedgerController extends Controller
                 ->get()
                 ->sum('total');
             $lot->lot_quantity = $quantity ?? 0;
+            $lot->last_current_stage = getLastCurrentStage($lot->lot_no);
             return $lot;
         });
 
@@ -58,6 +59,8 @@ class LotLedgerController extends Controller
             'orderProductSet.master_product_fitting',
             'orderProductSet.colors'
         ])->where('lot_no', $lot_no)->firstOrFail();
+
+        $lot->last_current_stage = getLastCurrentStage($lot_no);
 
         $transactions = collect();
 

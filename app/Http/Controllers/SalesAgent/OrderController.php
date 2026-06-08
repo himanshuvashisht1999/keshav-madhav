@@ -156,10 +156,10 @@ class OrderController extends Controller
             $query->where('production_goods.master_pattern_id', $request->pattern_id);
         }
         if ($request->filled('product_nature_id')) {
-            $query->where('production_goods.master_product_nature_id', $request->product_nature_id);
+            $query->where('production_goods.product_nature_id', $request->product_nature_id);
         }
         if ($request->filled('fabric_type_id')) {
-            $query->where('production_goods.master_fabric_type_id', $request->fabric_type_id);
+            $query->where('production_goods.fabric_type_id', $request->fabric_type_id);
         }
 
         $query->leftJoinSub($allocated, 'alloc', function ($join) {
@@ -632,10 +632,10 @@ class OrderController extends Controller
             $query->where('production_goods.master_pattern_id', $request->pattern_id);
         }
         if ($request->filled('product_nature_id')) {
-            $query->where('production_goods.master_product_nature_id', $request->product_nature_id);
+            $query->where('production_goods.product_nature_id', $request->product_nature_id);
         }
         if ($request->filled('fabric_type_id')) {
-            $query->where('production_goods.master_fabric_type_id', $request->fabric_type_id);
+            $query->where('production_goods.fabric_type_id', $request->fabric_type_id);
         }
 
         $query->leftJoinSub($allocated, 'alloc', function ($join) {

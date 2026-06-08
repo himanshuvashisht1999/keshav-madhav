@@ -289,6 +289,16 @@ function getLotDetails($lot_id, $master_stage)
     ];
 }
 
+function getLastCurrentStage($lot_no)
+{
+    $latestStageTiming = \App\Models\OrderLotStageTiming::with('stage')
+        ->where('lot_no', $lot_no)
+        ->orderBy('id', 'desc')
+        ->first();
+
+    return $latestStageTiming ? ($latestStageTiming->stage->name ?? 'N/A') : 'N/A';
+}
+
 
 function getOrderDispatchData($orderMainId)
 {
@@ -626,4 +636,293 @@ if (!function_exists('send_whatsapp_message')) {
 
         return json_decode($response, true);
     }
-}
+}if (!function_exists('deleteProductionSession')) {
+    function deleteProductionSession($type, $id)
+    {
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            $slip_id = null;
+
+            if ($type == 'lot') {
+                $session = \App\Models\OrderLot::findOrFail($id);
+                $slip_id = $session->production_slip_digitization_id;
+
+                if (\App\Models\OrderPrintingStageTransaction::where('lot_no', $session->lot_no)->exists() || \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)->exists()) {
+                    throw new \Exception('Cannot delete Lot. Printing stage has already moved quantity forward.');
+                }
+
+                // Revert FabricRollAssigning
+                $rolls = \App\Models\FabricRollAssigning::where('order_lot_id', $id)->get();
+                foreach ($rolls as $roll) {
+                    // Revert FabricReceiptDetail meters
+                    $receipt = \App\Models\FabricReceiptDetail::find($roll->fabric_receipt_detail_id);
+                    if ($receipt) {
+                        $receipt->remaining_quantity += $roll->meter;
+                        $receipt->save();
+                    }
+
+                    // Revert OrderProductSetDetail quantities
+                    $details = \App\Models\FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id', $roll->id)->get();
+                    foreach ($details as $detail) {
+                        $setDetail = \App\Models\OrderProductSetDetail::where('order_products_set_id', $session->order_products_set_id)
+                            ->where('size', $detail->size)
+                            ->first();
+                        if ($setDetail) {
+                            $setDetail->remaining_lot_allocated += $detail->quantity;
+                            $setDetail->save();
+                        }
+
+                        // Restore OrderCuttingStage remaining_quantity
+                        $cs = \App\Models\OrderCuttingStage::where('set_product_id', $session->order_products_set_id)
+                            ->where('to_assign_id', $roll->stage_master_unit_id)
+                            ->where('status', '!=', 0)
+                            ->orderBy('updated_at', 'desc')
+                            ->first();
+                        if ($cs) {
+                            $cs->increment('remaining_quantity', $detail->quantity);
+                            $cs->update(['status' => 1]); // Back to partial/assigned status
+                        }
+
+                        $detail->delete();
+                    }
+                    $roll->delete();
+                }
+                $session->delete();
+
+            } elseif ($type == 'packing') {
+                $service = new \App\Services\Admin\PackingService();
+                $result = $service->deletePackingSession($id); // In this case $id is slip_id
+                if ($result['status'] == 'error') {
+                    throw new \Exception($result['message']);
+                }
+                $slip_id = $id;
+
+            } elseif ($type == 'printing' || $type == 'transfer' || $type == 'printing_stitching' || $type == 'godam') {
+                $modelMap = [
+                    'printing' => \App\Models\OrderPrintingStageTransaction::class,
+                    'transfer' => \App\Models\OrderStageTransaction::class,
+                    'printing_stitching' => \App\Models\OrderPrintingToStichingTransaction::class,
+                    'godam' => \App\Models\OrderGodamStageTransaction::class
+                ];
+                $model = $modelMap[$type];
+                $session = $model::findOrFail($id);
+                $slip_id = $session->production_slip_digitization_id;
+
+                if ($session->remaining_quantity != $session->quantity) {
+                    throw new \Exception('Cannot delete. Some quantity has already been moved forward.');
+                }
+
+                // Restore Source Quantity
+                if ($type == 'printing') {
+                    // Source was Cutting (Lot)
+                    $otherPrinting = \App\Models\OrderPrintingStageTransaction::where('lot_no', $session->lot_no)
+                        ->where('id', '!=', $id)
+                        ->exists();
+                    if (!$otherPrinting) {
+                        \App\Models\OrderLot::where('lot_no', $session->lot_no)->update(['is_printing' => 0]);
+                    }
+                    \App\Models\FabricRollAssigning::where('lot_no', $session->lot_no)
+                        ->where('to_stage_id', 1)
+                        ->update(['status' => 1, 'to_stage_id' => null]);
+                    
+                    // Delete details
+                    \App\Models\OrderPrintingStageTransactionDetail::where('order_printing_stage_transaction_id', $id)->delete();
+
+                } elseif ($type == 'printing_stitching') {
+                    // Source was Printing
+                    $sources = \App\Models\OrderPrintingStageTransaction::where('lot_no', $session->lot_no)
+                        ->where('sub_stage_id_to', $session->sub_stage_id)
+                        ->get();
+                    $qtyToRestore = $session->quantity;
+                    foreach($sources as $src) {
+                        if ($qtyToRestore <= 0) break;
+                        $space = $src->quantity - $src->remaining_quantity;
+                        if ($space > 0) {
+                            $restoreAmt = min($space, $qtyToRestore);
+                            $src->remaining_quantity += $restoreAmt;
+                            $src->save();
+                            $qtyToRestore -= $restoreAmt;
+                        }
+                    }
+                    \App\Models\OrderPrintingToStichingTransactionDetail::where('order_printing_to_stiching_transaction_id', $id)->delete();
+                    
+                } elseif ($type == 'godam') {
+                    // Source was Printing or Stitching etc.
+                    $sources = \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)
+                        ->where('to_stage_id', $session->from_stage_id)
+                        ->where('sub_stage_id_to', $session->sub_stage_id)
+                        ->get();
+                    if($sources->isEmpty()) {
+                        $sources = \App\Models\OrderPrintingStageTransaction::where('lot_no', $session->lot_no)
+                            ->where('to_stage_id', $session->from_stage_id)
+                            ->where('sub_stage_id_to', $session->sub_stage_id)
+                            ->get();
+                    }
+                    if($sources->isEmpty()) {
+                        $sources = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $session->lot_no)
+                            ->where('to_stage_id', $session->from_stage_id)
+                            ->where('sub_stage_id_to', $session->sub_stage_id)
+                            ->get();
+                    }
+                    $qtyToRestore = $session->quantity;
+                    foreach($sources as $src) {
+                        if ($qtyToRestore <= 0) break;
+                        $space = $src->quantity - $src->remaining_quantity;
+                        if ($space > 0) {
+                            $restoreAmt = min($space, $qtyToRestore);
+                            $src->remaining_quantity += $restoreAmt;
+                            $src->save();
+                            $qtyToRestore -= $restoreAmt;
+                        }
+                    }
+                    \App\Models\OrderGodamStageTransactionDetail::where('order_godam_stage_transaction_id', $id)->delete();
+
+                } elseif ($type == 'transfer') {
+                    // General transfer restore
+                    if ($session->from_stage_id == 3 || $session->from_stage_id == 13) {
+                        // From Cutting or Godam (Initial Stitching Session)
+                        $otherStitching = \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)
+                            ->where('to_stage_id', 4)
+                            ->where('id', '!=', $id)
+                            ->exists();
+                        if (!$otherStitching) {
+                            $otherStitching = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $session->lot_no)
+                                ->exists();
+                        }
+                        if (!$otherStitching) {
+                            \App\Models\OrderLot::where('lot_no', $session->lot_no)->update(['is_stitching' => 0]);
+                        }
+                        \App\Models\FabricRollAssigning::where('lot_no', $session->lot_no)
+                            ->where('to_stage_id', $session->to_stage_id)
+                            ->update(['status' => 1, 'to_stage_id' => null]);
+
+                        // If it came from Godam, we must restore the Godam transactions proportionally
+                        if ($session->from_stage_id == 13) {
+                            $godamTxs = \App\Models\OrderGodamStageTransaction::where('lot_no', $session->lot_no)
+                                ->where('sub_stage_id_to', $session->sub_stage_id)
+                                ->get();
+                            
+                            $sessionDetails = \App\Models\OrderStageTransactionDetail::where('order_stage_transaction_id', $id)->get();
+                            
+                            $qtyToRestore = $session->quantity;
+                            foreach ($godamTxs as $gTx) {
+                                if ($qtyToRestore <= 0) break;
+                                $space = $gTx->quantity - $gTx->remaining_quantity;
+                                if ($space > 0) {
+                                    $restoreAmt = min($space, $qtyToRestore);
+                                    $gTx->remaining_quantity += $restoreAmt;
+                                    $gTx->status = 1;
+                                    $gTx->save();
+                                    $qtyToRestore -= $restoreAmt;
+                                }
+                            }
+                            
+                            // Restore details size by size
+                            foreach ($sessionDetails as $sd) {
+                                $detailQtyToRestore = $sd->quantity;
+                                $gDetails = \App\Models\OrderGodamStageTransactionDetail::whereIn('order_godam_stage_transaction_id', $godamTxs->pluck('id'))
+                                    ->where('size', $sd->size)
+                                    ->get();
+                                foreach($gDetails as $gd) {
+                                    if ($detailQtyToRestore <= 0) break;
+                                    $dSpace = $gd->quantity - $gd->remaining_quantity;
+                                    if ($dSpace > 0) {
+                                        $dRestoreAmt = min($dSpace, $detailQtyToRestore);
+                                        $gd->remaining_quantity += $dRestoreAmt;
+                                        $gd->save();
+                                        $detailQtyToRestore -= $dRestoreAmt;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // From another stage transaction
+                        $sources = \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)
+                            ->where('to_stage_id', $session->from_stage_id)
+                            ->where('sub_stage_id_to', $session->sub_stage_id)
+                            ->get();
+                        if($sources->isEmpty()) {
+                            // Try Printing if not found in StageTransactions
+                            $sources = \App\Models\OrderPrintingStageTransaction::where('lot_no', $session->lot_no)
+                                ->where('to_stage_id', $session->from_stage_id)
+                                ->where('sub_stage_id_to', $session->sub_stage_id)
+                                ->get();
+                        }
+                        if($sources->isEmpty()) {
+                            // Try PrintingToStiching for cases where Stitching (from Printing) was the source
+                            $sources = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $session->lot_no)
+                                ->where('to_stage_id', $session->from_stage_id)
+                                ->where('sub_stage_id_to', $session->sub_stage_id)
+                                ->get();
+                        }
+
+                        $qtyToRestore = $session->quantity;
+                        foreach($sources as $src) {
+                            if ($qtyToRestore <= 0) break;
+                            $space = $src->quantity - $src->remaining_quantity;
+                            if ($space > 0) {
+                                $restoreAmt = min($space, $qtyToRestore);
+                                $src->remaining_quantity += $restoreAmt;
+                                $src->save();
+                                $qtyToRestore -= $restoreAmt;
+                            }
+                        }
+                    }
+                    \App\Models\OrderStageTransactionDetail::where('order_stage_transaction_id', $id)->delete();
+                }
+
+                $session->delete();
+            }
+
+            // Reset Digitized Status of Slip
+            if ($slip_id) {
+                \App\Models\ProductionSlipDigitization::where('id', $slip_id)->update([
+                    'status' => 0,
+                    'save_type' => 1, // Restore save type
+                    'lot_no' => null,
+                    'to_stage_id' => null
+                ]);
+            }
+
+            // Clean up orphaned parts and timings for the deleted session
+            if (isset($session) && isset($session->lot_no)) {
+                if ($type == 'lot') {
+                    \App\Models\ProductionSlipDigitizationParts::where('lot_no', $session->lot_no)->delete();
+                    \App\Models\OrderLotStageTiming::where('lot_no', $session->lot_no)->delete();
+                } else {
+                    if ($slip_id) {
+                        \App\Models\ProductionSlipDigitizationParts::where('production_slip_digitization_id', $slip_id)->delete();
+                    }
+                    if (isset($session->to_stage_id)) {
+                        // Check if other transactions exist for this stage
+                        $hasOther = false;
+                        if ($session->to_stage_id == 1) {
+                            $hasOther = \App\Models\OrderPrintingStageTransaction::where('lot_no', $session->lot_no)
+                                ->where('id', '!=', $id)->exists();
+                        } elseif ($session->to_stage_id == 4) {
+                            $hasOther = \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)
+                                ->where('to_stage_id', 4)->where('id', '!=', ($type == 'transfer' ? $id : 0))->exists();
+                            if (!$hasOther) {
+                                $hasOther = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $session->lot_no)
+                                    ->where('to_stage_id', 4)->where('id', '!=', ($type == 'printing_stitching' ? $id : 0))->exists();
+                            }
+                        } else {
+                            $hasOther = \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)
+                                ->where('to_stage_id', $session->to_stage_id)->where('id', '!=', ($type == 'transfer' ? $id : 0))->exists();
+                        }
+
+                        if (!$hasOther) {
+                            \App\Models\OrderLotStageTiming::where('lot_no', $session->lot_no)->where('master_stage_id', $session->to_stage_id)->delete();
+                        }
+                    }
+                }
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+            return ['status' => 'success', 'message' => 'Session deleted and quantities restored successfully.'];
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return ['status' => 'error', 'message' => 'Error deleting session: ' . $e->getMessage()];
+        }
+    }
+}

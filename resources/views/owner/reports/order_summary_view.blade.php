@@ -250,7 +250,7 @@
                         <span style="font-weight: 800; color: var(--slate-900);">Lot: {{ $lot['lot_no'] }}</span>
                         <span class="badge badge-dark px-3 py-2" style="border-radius: 8px;">{{ $lot['lot_quantity'] }} Pcs</span>
                     </div>
-                    <div class="text-xs font-weight-bold mt-2" style="color: var(--slate-600);">Ref: {{ $lot['order_no'] }} <br> Customer: {{ $data['order']->customer->name ?? 'N/A' }}</div>
+                    <div class="text-xs font-weight-bold mt-2" style="color: var(--slate-600);">Ref: {{ $lot['order_no'] }} <br> Customer: {{ $data['order']->customer->name ?? 'N/A' }} <br> Stage: {{ $lot['last_current_stage'] ?? 'N/A' }}</div>
                 </div>
             @empty
                 <div class="text-center py-5 text-muted font-weight-bold">No Lot data available</div>
@@ -430,6 +430,7 @@
                                     <th>Lot No</th>
                                     <th>Order No</th>
                                     <th>Customer Name</th>
+                                    <th>Current Stage</th>
                                     <th>Lot Quantity</th>
                                     <th class="text-center pr-4">Action</th>
                                 </tr>
@@ -441,13 +442,14 @@
                                         <td class="font-weight-bold">{{ $lot['lot_no'] }}</td>
                                         <td>{{ $lot['order_no'] }}</td>
                                         <td>{{ $data['order']->customer->name ?? 'N/A' }}</td>
+                                        <td class="font-weight-bold text-dark">{{ $lot['last_current_stage'] ?? 'N/A' }}</td>
                                         <td class="font-weight-bold">{{ $lot['lot_quantity'] }} Pcs</td>
                                         <td class="text-center pr-4">
                                             <a href="{{ route('owner.lot-details', ['lot_no' => $lot['lot_no']]) }}" class="btn btn-sm btn-outline-dark px-3 font-weight-bold" style="border-radius: 6px;">View</a>
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="6" class="text-center py-5 text-muted font-weight-bold">No lot data available.</td></tr>
+                                    <tr><td colspan="7" class="text-center py-5 text-muted font-weight-bold">No lot data available.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>

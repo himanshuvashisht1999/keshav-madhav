@@ -66,6 +66,7 @@ class CustomerController extends Controller
             }
             $shop->balance = $balance;
             $shop->status = 1;
+            $shop->payment_term_days = $request->payment_term_days ?? 120;
             $shop->save();
 
             MasterOpeningBalance::updateOrCreate(
@@ -99,6 +100,7 @@ class CustomerController extends Controller
         $save_data->status = $request->status ?? 1;
         $save_data->type = $type;
         $save_data->subtype = $subtype;
+        $save_data->payment_term_days = $request->payment_term_days ?? 120;
 
         $save_data->save();
 

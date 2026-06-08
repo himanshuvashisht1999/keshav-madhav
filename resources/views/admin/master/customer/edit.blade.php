@@ -120,13 +120,20 @@
                                                 <input type="number" step="0.01" name="balance" class="form-control" placeholder="Enter opening balance" value="{{ $data->currentOpeningBalance ? $data->currentOpeningBalance->amount : 0 }}">
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
+                                         <div class="col-md-4">
+                                             <div class="form-group">
                                                  <label>Opening Balance Type</label>
                                                  <select name="balance_type" class="form-control select2" style="width: 100%;">
                                                      <option value="Credit" {{ ($data->currentOpeningBalance && $data->currentOpeningBalance->balance_type == 'Credit') ? 'selected' : ($data->balance >= 0 ? 'selected' : '') }}>Credit</option>
                                                      <option value="Debit" {{ ($data->currentOpeningBalance && $data->currentOpeningBalance->balance_type == 'Debit') ? 'selected' : ($data->balance < 0 ? 'selected' : '') }}>Debit</option>
                                                  </select>
+                                             </div>
+                                         </div>
+                                         <div class="col-md-4">
+                                             <div class="form-group">
+                                                 <label>Payment Term (Days)</label>
+                                                 <input type="number" name="payment_term_days" class="form-control"
+                                                     placeholder="E.g. 120" value="{{old('payment_term_days', $data->payment_term_days ?? 120)}}">
                                              </div>
                                          </div>
                                     </div>
@@ -249,6 +256,13 @@
                                                      <option value="Credit" {{ ($shop && $shop->currentOpeningBalance && $shop->currentOpeningBalance->balance_type == 'Credit') ? 'selected' : (($shop->balance ?? 0) >= 0 ? 'selected' : '') }}>Credit</option>
                                                      <option value="Debit" {{ ($shop && $shop->currentOpeningBalance && $shop->currentOpeningBalance->balance_type == 'Debit') ? 'selected' : (($shop->balance ?? 0) < 0 ? 'selected' : '') }}>Debit</option>
                                                  </select>
+                                             </div>
+                                         </div>
+                                         <div class="col-md-4">
+                                             <div class="form-group">
+                                                 <label>Payment Term (Days)</label>
+                                                 <input type="number" name="payment_term_days" class="form-control"
+                                                     placeholder="E.g. 120" value="{{old('payment_term_days', $shop->payment_term_days ?? 120)}}">
                                              </div>
                                          </div>
                                     </div>

@@ -36,6 +36,7 @@
                                         <th>Order SKU</th>
                                         <th>Customer</th>
                                         <th>Fabric</th>
+                                        <th>Current Stage</th>
                                         <th>Total Assigned (Pcs)</th>
                                         <th>Status</th>
                                         <th>Action</th>
@@ -48,6 +49,7 @@
                                             <td>{{ $lot->orderMain->sku ?? '-' }}</td>
                                             <td>{{ $lot->orderMain->customer->name ?? '-' }}</td>
                                             <td>{{ $lot->orderProductSet->fabric->name ?? '-' }}</td>
+                                            <td class="font-weight-bold">{{ $lot->last_current_stage ?? 'N/A' }}</td>
                                             <td class="text-success font-weight-bold">{{ number_format($lot->lot_quantity, 0) }}</td>
                                             <td>
                                                 @if($lot->status == 1)
@@ -66,7 +68,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="text-center">No Lots Found</td>
+                                            <td colspan="8" class="text-center">No Lots Found</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

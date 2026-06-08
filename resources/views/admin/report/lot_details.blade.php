@@ -388,6 +388,157 @@
                     </div>
                 </div>
 
+                {{-- ================= ALL SESSIONS AS CARDS ================= --}}
+                <div class="section mt-4">
+                    <div class="section-title">Production Sessions</div>
+                    <div class="progress-grid">
+
+                        @php
+                            $cutting_unit = '-';
+                            if(isset($data['lots_data']) && count($data['lots_data']) > 0) {
+                                $first_lot = $data['lots_data']->first();
+                                if($first_lot && $first_lot->productionSlipDigitization && $first_lot->productionSlipDigitization->getUnitMaster) {
+                                    $cutting_unit = $first_lot->productionSlipDigitization->getUnitMaster->name;
+                                }
+                            }
+
+                            // Compute last session
+                            $lastSessionType = null;
+                            $lastSessionId = null;
+                            $allTxs = collect();
+                            if(isset($data['lots'])) {
+                                foreach($data['lots'] as $lot) {
+                                    $allTxs->push(['type' => 'lot', 'id' => $lot->id, 'created_at' => $lot->created_at]);
+                                }
+                            }
+                            if(isset($data['printings'])) {
+                                foreach($data['printings'] as $p) {
+                                    $allTxs->push(['type' => 'printing', 'id' => $p->id, 'created_at' => $p->created_at]);
+                                }
+                            }
+                            if(isset($data['stage_transactions'])) {
+                                foreach($data['stage_transactions'] as $st) {
+                                    $type = 'transfer';
+                                    if (get_class($st) == 'App\Models\OrderPrintingToStichingTransaction') $type = 'printing_stitching';
+                                    if (get_class($st) == 'App\Models\OrderGodamStageTransaction') $type = 'godam';
+                                    $allTxs->push(['type' => $type, 'id' => $st->id, 'created_at' => $st->created_at]);
+                                }
+                            }
+                            $lastTx = $allTxs->sortBy('created_at')->last();
+                            if ($lastTx) {
+                                $lastSessionType = $lastTx['type'];
+                                $lastSessionId = $lastTx['id'];
+                            }
+                        @endphp
+
+                        {{-- TYPE 1 : ROLLS (Sessions) --}}
+                        @if(count($data['lots']) > 0)
+                            @foreach($data['lots'] as $index => $lot)
+                                @php $currentRolls = $data['rolls']->where('order_lot_id', $lot->id); @endphp
+                                <div class="stage-card card-completed">
+                                    <span class="status-badge badge-completed">Cutting</span>
+                                    
+                                    @if($lastSessionType == 'lot' && $lastSessionId == $lot->id)
+                                        <form action="{{ route('admin.report.lots.delete-session', ['type' => 'lot', 'id' => $lot->id]) }}" method="POST" style="position: absolute; top: 12px; right: 80px; z-index: 10;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-link text-danger p-0 m-0" onclick="return confirm('Are you sure you want to delete this session? Quantities will be restored.');" title="Delete Session">
+                                                <i class="fas fa-trash-alt" style="font-size: 14px;"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <div class="mb-3" style="margin-top: 28px;">
+                                        <div class="text-muted" style="font-size: 11px; margin-bottom: 2px;">
+                                            Stage: <strong class="text-dark">Cutting</strong>
+                                        </div>
+                                        <div class="text-muted" style="font-size: 11px;">
+                                            Unit: <strong class="text-dark">{{ $cutting_unit }}</strong>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="stage-metrics">
+                                        <div class="metric" style="text-align: left;">Date<strong>{{ \Carbon\Carbon::parse($lot->production_datetime)->format('d M Y') }}</strong></div>
+                                        <div class="metric" style="text-align: center;">Rolls<strong>{{ $currentRolls->count() }}</strong></div>
+                                        <div class="metric" style="text-align: right;">Meters<strong>{{ $currentRolls->sum('meter') }}</strong></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @endif
+
+                        {{-- TYPE 2 : PRINTING --}}
+                        @if(count($data['printings']) > 0)
+                            @foreach($data['printings'] as $index => $printing)
+                                <div class="stage-card card-progress">
+                                    <span class="status-badge badge-progress">Printing</span>
+                                    
+                                    @if($lastSessionType == 'printing' && $lastSessionId == $printing->id)
+                                        <form action="{{ route('admin.report.lots.delete-session', ['type' => 'printing', 'id' => $printing->id]) }}" method="POST" style="position: absolute; top: 12px; right: 85px; z-index: 10;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-link text-danger p-0 m-0" onclick="return confirm('Are you sure you want to delete this session? Quantities will be restored.');" title="Delete Session">
+                                                <i class="fas fa-trash-alt" style="font-size: 14px;"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <div class="mb-3" style="margin-top: 28px;">
+                                        <div class="text-muted" style="font-size: 11px; margin-bottom: 2px;">
+                                            Stage: <strong class="text-dark">{{ $printing->from_stage?->name ?? 'Cutting' }} <i class="fas fa-arrow-right mx-1 text-muted" style="font-size:9px;"></i> {{ $printing->to_stage?->name ?? '-' }}</strong>
+                                        </div>
+                                        <div class="text-muted" style="font-size: 11px;">
+                                            Unit: <strong class="text-dark">{{ $cutting_unit }} <i class="fas fa-arrow-right mx-1 text-muted" style="font-size:9px;"></i> {{ $printing->getToUnitMaster?->name ?? '-' }}</strong>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="stage-metrics">
+                                        <div class="metric" style="text-align: left;">Date<strong>{{ \Carbon\Carbon::parse($printing->production_datetime)->format('d M Y') }}</strong></div>
+                                        <div class="metric" style="text-align: right;">Pieces<strong>{{ $printing->quantity }}</strong></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @endif
+
+                        {{-- TYPE 3 : STAGE TRANSFER --}}
+                        @if(count($data['stage_transactions']) > 0)
+                            @foreach($data['stage_transactions'] as $index => $transaction)
+                                @php
+                                    $txType = 'transfer';
+                                    if (get_class($transaction) == 'App\Models\OrderPrintingToStichingTransaction') $txType = 'printing_stitching';
+                                    if (get_class($transaction) == 'App\Models\OrderGodamStageTransaction') $txType = 'godam';
+                                @endphp
+                                <div class="stage-card" style="border-left-color: #f59e0b; background: #fffbeb;">
+                                    <span class="status-badge" style="background: #fef3c7; color: #b45309;">Transfer</span>
+                                    
+                                    @if($lastSessionType == $txType && $lastSessionId == $transaction->id)
+                                        <form action="{{ route('admin.report.lots.delete-session', ['type' => $txType, 'id' => $transaction->id]) }}" method="POST" style="position: absolute; top: 12px; right: 85px; z-index: 10;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-link text-danger p-0 m-0" onclick="return confirm('Are you sure you want to delete this session? Quantities will be restored.');" title="Delete Session">
+                                                <i class="fas fa-trash-alt" style="font-size: 14px;"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <div class="mb-3" style="margin-top: 28px;">
+                                        <div class="text-muted" style="font-size: 11px; margin-bottom: 2px;">
+                                            Stage: <strong class="text-dark">{{ $transaction->from_stage?->name ?? '-' }} <i class="fas fa-arrow-right mx-1 text-muted" style="font-size:9px;"></i> {{ $transaction->to_stage?->name ?? '-' }}</strong>
+                                        </div>
+                                        <div class="text-muted" style="font-size: 11px;">
+                                            Unit: <strong class="text-dark">{{ $transaction->getFromUnitMaster?->name ?? '-' }} <i class="fas fa-arrow-right mx-1 text-muted" style="font-size:9px;"></i> {{ $transaction->getToUnitMaster?->name ?? '-' }}</strong>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="stage-metrics">
+                                        <div class="metric" style="text-align: left;">Date<strong>{{ \Carbon\Carbon::parse($transaction->production_datetime)->format('d M Y') }}</strong></div>
+                                        <div class="metric" style="text-align: right;">Pieces<strong>{{ $transaction->quantity }}</strong></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @endif
+
+                    </div>
+                </div>
             </div>
         </section>
     </div>

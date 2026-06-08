@@ -1353,7 +1353,11 @@ class ReportService
             ])
 
             ->when($searchLot, function ($q) use ($searchLot) {
-                $q->where('lot_no', 'like', "%{$searchLot}%");
+                if (is_array($searchLot)) {
+                    $q->whereIn('lot_no', $searchLot);
+                } else {
+                    $q->where('lot_no', 'like', "%{$searchLot}%");
+                }
             })
 
             ->when($searchOrder, function ($q) use ($searchOrder) {
@@ -1394,7 +1398,11 @@ class ReportService
             'orderProductSet'
         ])
             ->when($searchLot, function ($q) use ($searchLot) {
-                $q->where('lot_no', 'like', "%{$searchLot}%");
+                if (is_array($searchLot)) {
+                    $q->whereIn('lot_no', $searchLot);
+                } else {
+                    $q->where('lot_no', 'like', "%{$searchLot}%");
+                }
             })
             ->when($searchOrder, function ($q) use ($searchOrder) {
                 $q->where('order_main_id', $searchOrder);
@@ -1411,6 +1419,7 @@ class ReportService
                 ->sum('total');
 
             return [
+                'id' => $lot->id,
                 'order_id' => $lot->order_main_id,
                 'order_no' => $lot->orderMain->sku ?? '',
                 'customer_name' => $lot->orderMain->customer->name ?? '',
@@ -1419,7 +1428,8 @@ class ReportService
                 'status' => $lot->status,
                 'is_printing' => $lot->is_printing,
                 'is_stitching' => $lot->is_stitching,
-                'date' => $lot->created_at->format('d M, Y')
+                'date' => $lot->created_at->format('d M, Y'),
+                'last_current_stage' => getLastCurrentStage($lot->lot_no),
             ];
         });
     }
@@ -1599,11 +1609,91 @@ class ReportService
             ->select('id', 'roll_no', 'meter')
             ->get();
 
+        /* ---------------- ALL SESSIONS DATA ---------------- */
+        $lots = \App\Models\OrderLot::where('lot_no', $lot_no)
+            ->with([
+                'orderMain',
+                'orderProductSet.fabric',
+                'orderProductSet.colors',
+                'orderProductSet.master_design_pattern',
+                'orderProductSet.master_product_fitting',
+            ])->get();
+
+        $printings = \App\Models\OrderPrintingStageTransaction::where('lot_no', $lot_no)
+            ->with([
+                'from_stage',
+                'to_stage',
+                'getToUnitMaster',
+                'orderProduct.orderProductSet.fabric',
+                'orderProduct.orderProductSet.colors',
+                'orderProduct.orderProductSet.master_design_pattern',
+                'orderProduct.orderProductSet.master_product_fitting',
+                'orderProduct.orderProductSet.orderMain.customer',
+                'details'
+            ])->get();
+
+        $stage_tx = \App\Models\OrderStageTransaction::where('lot_no', $lot_no)
+            ->with([
+                'from_stage',
+                'to_stage',
+                'getToUnitMaster',
+                'getFromUnitMaster',
+                'orderProduct.orderProductSet.fabric',
+                'orderProduct.orderProductSet.colors',
+                'orderProduct.orderProductSet.master_design_pattern',
+                'orderProduct.orderProductSet.master_product_fitting',
+                'orderProduct.orderProductSet.orderMain.customer',
+                'details'
+            ])->get();
+
+        $printing_to_stitching_tx = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lot_no)
+            ->with([
+                'from_stage',
+                'to_stage',
+                'getToUnitMaster',
+                'getFromUnitMaster',
+                'orderProduct.orderProductSet.fabric',
+                'orderProduct.orderProductSet.colors',
+                'orderProduct.orderProductSet.master_design_pattern',
+                'orderProduct.orderProductSet.master_product_fitting',
+                'orderProduct.orderProductSet.orderMain.customer',
+                'details'
+            ])->get();
+
+        $godam_tx = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_no)
+            ->with([
+                'from_stage',
+                'to_stage',
+                'getToUnitMaster',
+                'getFromUnitMaster',
+                'orderProduct.orderProductSet.fabric',
+                'orderProduct.orderProductSet.colors',
+                'orderProduct.orderProductSet.master_design_pattern',
+                'orderProduct.orderProductSet.master_product_fitting',
+                'orderProduct.orderProductSet.orderMain.customer',
+                'godamDetails'
+            ])->get();
+
+        $godam_tx->each(function($tx) {
+            $tx->details = $tx->godamDetails;
+        });
+
+        $stage_transactions = $stage_tx->concat($printing_to_stitching_tx)->concat($godam_tx);
+        
+        $rolls = \App\Models\FabricRollAssigning::with(['fabricRollAssigningsDetail', 'stageMasterUnit.masterFabricWarehouse'])
+            ->where('lot_no', $lot_no)
+            ->get();
+
         return [
             // 'order'      => $order,
             'lot_no' => $lot_no,
             'lots_data' => $lots_data,
             'rolls_data' => $rolls_data,
+            'last_current_stage' => getLastCurrentStage($lot_no),
+            'lots' => $lots,
+            'printings' => $printings,
+            'stage_transactions' => $stage_transactions,
+            'rolls' => $rolls
         ];
     }
 

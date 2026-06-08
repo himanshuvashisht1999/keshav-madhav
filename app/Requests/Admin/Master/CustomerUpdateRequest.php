@@ -26,6 +26,7 @@ class CustomerUpdateRequest extends FormRequest
             'name' => 'required',
             'balance' => 'nullable|numeric',
             'balance_type' => 'required|in:Credit,Debit',
+            'payment_term_days' => 'nullable|integer',
         ];
 
         // If it's an existing record, we might need to check if it's a shop (parent_id exists)

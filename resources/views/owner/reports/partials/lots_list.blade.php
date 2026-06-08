@@ -12,6 +12,8 @@
         </div>
         <span class="customer-name">
             <i class="far fa-user mr-2 text-warning"></i> {{ $row['customer_name'] }}
+            <br>
+            <i class="fas fa-layer-group mr-2 text-info mt-2"></i> Stage: {{ $row['last_current_stage'] ?? 'N/A' }}
         </span>
         <div class="action-link">
             View Progress <i class="fas fa-arrow-right"></i>

@@ -250,6 +250,7 @@
                                             <th>#</th>
                                             <th>Lot No</th>
                                             <th>Design No</th>
+                                            <th>Current Stage</th>
                                             <th>Lot Quantity</th>
                                             <th class="text-end">Action</th>
                                         </tr>
@@ -260,6 +261,7 @@
                                                 <td>{{ $index + 1 }}</td>
                                                 <td>{{ $row['lot_no'] }}</td>
                                                 <td>{{ $row['design_number'] ?? 'N/A' }}</td>
+                                                <td>{{ $row['last_current_stage'] ?? 'N/A' }}</td>
                                                 <td class="text-end fw-bold">
                                                     {{ $row['lot_quantity'] ?? '0' }}
                                                 </td>
@@ -273,9 +275,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                            <tr>
-                                                <td colspan="5" class="text-center text-muted py-3">No Lot Data Available</td>
-                                            </tr>
+                                                <td colspan="6" class="text-center text-muted py-3">No Lot Data Available</td>
                                             </tr>
                                         @endforelse
                                     </tbody>

@@ -24,7 +24,7 @@ class ProductionGoodsUpdateRequest extends FormRequest
 
         // Base rules common for all companies
         $rules = [
-            'design_number' => 'required',
+            'design_number' => 'required|unique:production_goods,design_number,' . $request->id,
             //'name_of_garment'  => 'required',
             // 'sku'              => 'required|unique:production_goods,sku,' . $request->id,
         ];
@@ -49,6 +49,7 @@ class ProductionGoodsUpdateRequest extends FormRequest
     {
         return [
             'design_number.required' => 'Design number is required.',
+            'design_number.unique' => 'Design number already exists.',
             'name_of_garment.required' => 'Product name is required.',
             'type_of_garment.required' => 'Product type is required for General company.',
             'garment_pattern.required' => 'Product pattern is required for General company.',

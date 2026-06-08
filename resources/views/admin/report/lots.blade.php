@@ -81,10 +81,12 @@
 
                             <div class="col-md-4">
                                 <label class="fw-bold">Lot No</label>
-                                <select name="lot_no" id="lot_no" class="form-control select2">
-                                    <option value="">All</option>
+                                <select name="lot_no[]" id="lot_no" class="form-control select2" multiple data-placeholder="Select Lot(s)">
+                                    @php
+                                        $selectedLots = (array) request('lot_no', []);
+                                    @endphp
                                     @forelse($lotNos as $index => $row)
-                                    <option value="{{ $row['lot_no'] }}" {{ request('lot_no') == $row['lot_no'] ? 'selected' : '' }}>
+                                    <option value="{{ $row['lot_no'] }}" {{ in_array($row['lot_no'], $selectedLots) ? 'selected' : '' }}>
                                         {{ $row['lot_no'] }}
                                     </option>
                                     @endforeach
@@ -114,16 +116,27 @@
 
             {{-- TABLE --}}
             <div class="card report-card">
+                <form id="delete-multiple-form" action="{{ route('admin.report.lots.delete-multiple') }}" method="POST">
+                    @csrf
                 <div class="card-body">
+                    <div class="mb-3 text-end">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete selected lots and all their related data?')">
+                            <i class="fas fa-trash"></i> Delete Selected
+                        </button>
+                    </div>
                     <div class="table-responsive">
 
                         <table class="table table-bordered table-report">
                             <thead>
                                 <tr>
+                                    <th style="width: 40px;" class="text-center">
+                                        <input type="checkbox" id="selectAll">
+                                    </th>
                                     <th>#</th>
                                     <th>Lot No</th>
                                     <th>Order No</th>
                                     <th>Customer Name</th>
+                                    <th>Current Stage</th>
                                     <th>Lot Quantity</th>
                                     <th class="text-end">Action</th>
                                 </tr>
@@ -134,10 +147,14 @@
                                     @isset($row['lot_no'])
 
                                         <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" name="lot_ids[]" value="{{ $row['id'] ?? '' }}" class="lot-checkbox">
+                                            </td>
                                             <td>{{ $data->firstItem() + $index }}</td>
                                             <td>{{ $row['lot_no'] }}</td>
                                             <td>{{ $row['order_no'] }}</td>
                                             <td>{{ $row['customer_name'] }}</td>
+                                            <td>{{ $row['last_current_stage'] ?? 'N/A' }}</td>
                                             <td class="text-end fw-bold">
                                                 {{ $row['lot_quantity'] ?? '0' }}
                                             </td>
@@ -153,7 +170,7 @@
                                     @endisset
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted">
+                                        <td colspan="7" class="text-center text-muted">
                                             No data found
                                         </td>
                                     </tr>
@@ -167,6 +184,7 @@
                         </div>
                     </div>
                 </div>
+                </form>
             </div>
 
         </div>
@@ -190,7 +208,7 @@
 
     // helper: refill lot dropdown
     function fillLotDropdown(lots) {
-        lotSelect.empty().append(`<option value="">All</option>`);
+        lotSelect.empty();
         lots.forEach(lot => {
             lotSelect.append(`<option value="${lot}">${lot}</option>`);
         });
@@ -213,6 +231,20 @@
 
         fillLotDropdown(unique(filteredLots));
     };
+
+    $(document).ready(function() {
+        $('#selectAll').on('click', function() {
+            $('.lot-checkbox').prop('checked', this.checked);
+        });
+
+        $('.lot-checkbox').on('change', function() {
+            if ($('.lot-checkbox:checked').length === $('.lot-checkbox').length) {
+                $('#selectAll').prop('checked', true);
+            } else {
+                $('#selectAll').prop('checked', false);
+            }
+        });
+    });
 </script>
 
 @endsection

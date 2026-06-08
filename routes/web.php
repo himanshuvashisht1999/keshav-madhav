@@ -939,6 +939,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/delete', [AdminProductionGoodsController::class, 'delete'])->name('delete');
             Route::get('/view', [AdminProductionGoodsController::class, 'view'])->name('view');
             Route::get('/get-next-product-name', [AdminProductionGoodsController::class, 'getNextProductName'])->name('get-next-product-name');
+            Route::get('/check-design-number', [AdminProductionGoodsController::class, 'checkDesignNumber'])->name('check-design-number');
             Route::get('/export', [AdminProductionGoodsController::class, 'export'])->name('export');
             Route::get('/pdf', [AdminProductionGoodsController::class, 'pdf'])->name('pdf');
         });
@@ -1195,7 +1196,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/sales-order/detail/{id}', [AdminReportController::class, 'salesOrderDetail'])->name('sales-order.detail');
             Route::get('/sales-order/export', [AdminReportController::class, 'salesOrderExport'])->name('sales-order.export');
             Route::get('/lots', [AdminReportController::class, 'lots'])->name('lots');
+            Route::post('/lots/delete-multiple', [AdminReportController::class, 'deleteMultipleLots'])->name('lots.delete-multiple');
             Route::get('/lots/lot-details/{lot_no}', [AdminReportController::class, 'lotDetails'])->name('lots.lot-details');
+            Route::delete('/lots/delete-session/{type}/{id}', [AdminReportController::class, 'deleteLotSession'])->name('lots.delete-session');
             Route::get('/lots/lot-details-pdf/{lot_no}', [AdminReportController::class, 'lotDetailsPdf'])->name('lots.lot-details.pdf');
             Route::get('/stock', [AdminReportController::class, 'stock'])->name('stock');
             Route::get('/stock/roll-details', [AdminReportController::class, 'fabricRollDetails'])->name('stock.roll.details');

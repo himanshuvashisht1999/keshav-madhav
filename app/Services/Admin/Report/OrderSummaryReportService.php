@@ -189,7 +189,8 @@ class OrderSummaryReportService
                 'cutting_master' => $cuttingMaster,
                 'start_time' => $timing ? $timing->start_date : null,
                 'end_time' => $timing ? $timing->end_date : null,
-                'status' => $timing ? $timing->status : 0
+                'status' => $timing ? $timing->status : 0,
+                'last_current_stage' => getLastCurrentStage($lot->lot_no),
             ];
         });
 

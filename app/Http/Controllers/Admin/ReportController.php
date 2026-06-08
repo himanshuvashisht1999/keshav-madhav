@@ -439,6 +439,117 @@ class ReportController extends Controller
         return view('admin.report.lots', $response);
     }
 
+    private function forceDeleteLot($id)
+    {
+        $session = \App\Models\OrderLot::findOrFail($id);
+        $slip_id = $session->production_slip_digitization_id;
+
+        if (\App\Models\ProductionOutflowInventory::where('lot_no', $session->lot_no)->exists()) {
+            throw new \Exception("Cannot delete Lot {$session->lot_no}. It is already in packing.");
+        }
+
+        // FORCIBLY DELETE ALL SUBSEQUENT TRANSACTIONS FOR THIS LOT
+        $printingTxs = \App\Models\OrderPrintingStageTransaction::where('lot_no', $session->lot_no)->get();
+        foreach($printingTxs as $ptx) {
+            \App\Models\OrderPrintingStageTransactionDetail::where('order_printing_stage_transaction_id', $ptx->id)->delete();
+            $ptx->delete();
+        }
+
+        $stageTxs = \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)->get();
+        foreach($stageTxs as $stx) {
+            \App\Models\OrderStageTransactionDetail::where('order_stage_transaction_id', $stx->id)->delete();
+            $stx->delete();
+        }
+
+        $printStitchTxs = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $session->lot_no)->get();
+        foreach($printStitchTxs as $pstx) {
+            \App\Models\OrderPrintingToStichingTransactionDetail::where('order_printing_to_stiching_transaction_id', $pstx->id)->delete();
+            $pstx->delete();
+        }
+
+        $godamTxs = \App\Models\OrderGodamStageTransaction::where('lot_no', $session->lot_no)->get();
+        foreach($godamTxs as $gtx) {
+            \App\Models\OrderGodamStageTransactionDetail::where('order_godam_stage_transaction_id', $gtx->id)->delete();
+            $gtx->delete();
+        }
+
+        \App\Models\MasterStageWiseTimeAllocation::where('lot_no', $session->lot_no)->delete();
+
+        $parts = \App\Models\ProductionSlipDigitizationParts::where('lot_no', $session->lot_no)->get();
+        foreach($parts as $part) {
+            \App\Models\ProductionDigitizationSetsDetails::where('production_slip_digitization_parts_id', $part->id)->delete();
+            $part->delete();
+        }
+        \App\Models\OrderCuttingStage::where('lot_no', $session->lot_no)->delete();
+
+        // Revert FabricRollAssigning
+        $rolls = \App\Models\FabricRollAssigning::where('order_lot_id', $id)->get();
+        foreach ($rolls as $roll) {
+            // Revert FabricReceiptDetail meters
+            $receipt = \App\Models\FabricReceiptDetail::find($roll->fabric_receipt_detail_id);
+            if ($receipt) {
+                $receipt->remaining_quantity += $roll->meter;
+                $receipt->save();
+            }
+
+            // Revert OrderProductSetDetail quantities
+            $details = \App\Models\FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id', $roll->id)->get();
+            foreach ($details as $detail) {
+                $setDetail = \App\Models\OrderProductSetDetail::where('order_products_set_id', $session->order_products_set_id)
+                    ->where('size', $detail->size)
+                    ->first();
+                if ($setDetail) {
+                    $setDetail->remaining_lot_allocated += $detail->quantity;
+                    $setDetail->save();
+                }
+
+                $detail->delete();
+            }
+            $roll->delete();
+        }
+        $session->delete();
+
+        // Reset Digitized Status of Slip
+        if ($slip_id) {
+            \App\Models\ProductionSlipDigitization::where('id', $slip_id)->update([
+                'status' => 0,
+                'save_type' => 1, // Restore save type
+                'lot_no' => null,
+                'to_stage_id' => null
+            ]);
+        }
+    }
+
+    public function deleteMultipleLots(Request $request)
+    {
+        $ids = $request->input('lot_ids', []);
+        
+        if (empty($ids)) {
+            return redirect()->back()->with('error', 'No lots selected for deletion.');
+        }
+
+        $successCount = 0;
+        $errorMsg = null;
+
+        foreach ($ids as $id) {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+            try {
+                $this->forceDeleteLot($id);
+                \Illuminate\Support\Facades\DB::commit();
+                $successCount++;
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\DB::rollBack();
+                $errorMsg = $e->getMessage();
+            }
+        }
+
+        if ($successCount > 0) {
+            return redirect()->back()->with('success', "$successCount lot(s) deleted successfully." . ($errorMsg ? " But encountered error: " . $errorMsg : ""));
+        }
+
+        return redirect()->back()->with('error', $errorMsg ?: 'Error deleting selected lots.');
+    }
+
     public function lotDetails(Request $request)
     {
         $response['data'] = $this->service->lotDetails($request->lot_no);
@@ -458,6 +569,17 @@ class ReportController extends Controller
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('owner.reports.lot_details_pdf', $response)->setPaper('A4', 'portrait');
         return $pdf->download('lot-details-' . $request->lot_no . '.pdf');
+    }
+
+    public function deleteLotSession($type, $id)
+    {
+        $result = deleteProductionSession($type, $id);
+
+        if ($result['status'] === 'success') {
+            return redirect()->back()->with('success', $result['message']);
+        } else {
+            return redirect()->back()->with('error', $result['message']);
+        }
     }
 
     public function unitAssignments(Request $request)

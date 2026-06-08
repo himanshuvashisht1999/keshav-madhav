@@ -94,6 +94,18 @@ class ProductionGoodsController extends Controller {
         return response()->json(['next_name' => $nextName]);
     }
 
+    public function checkDesignNumber(Request $request) {
+        $designNumber = $request->design_number;
+        $id = $request->id;
+
+        $query = \App\Models\ProductionGoods::where('design_number', $designNumber);
+        if ($id) {
+            $query->where('id', '!=', $id);
+        }
+        
+        return response()->json(['exists' => $query->exists()]);
+    }
+
     public function export(Request $request)
     {
         $data = $this->service->exportData($request);

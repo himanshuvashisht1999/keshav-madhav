@@ -23,6 +23,7 @@ class MasterCustomer extends Model
         'password',
         'contact_person',
         'gst_number',
+        'payment_term_days',
     ];
 
     public function brandDiscounts()

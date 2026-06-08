@@ -498,6 +498,34 @@
                 }
             });
 
+            // Design Number Validation
+            $('input[name="design_number"]').on('blur', function() {
+                var designNumber = $(this).val();
+                var $input = $(this);
+                var $formGroup = $input.closest('.form-group');
+                
+                // remove existing error if any
+                $formGroup.find('.design-number-error').remove();
+                
+                if (designNumber) {
+                    $.ajax({
+                        url: "{{ route('admin.master.production-goods.check-design-number') }}",
+                        type: "GET",
+                        data: { design_number: designNumber },
+                        success: function (data) {
+                            if (data.exists) {
+                                $input.addClass('is-invalid');
+                                $input.after('<span class="text-danger small design-number-error">This design number already exists.</span>');
+                            } else {
+                                $input.removeClass('is-invalid');
+                            }
+                        }
+                    });
+                } else {
+                    $input.removeClass('is-invalid');
+                }
+            });
+
             // Dynamic Rows Logic
             function reindexAll() {
                 $('.size-set-block').each(function (sIdx) {

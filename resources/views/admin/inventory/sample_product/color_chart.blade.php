@@ -110,9 +110,9 @@
                     @if($sample->product->pattern)
                         <div class="size-badge" style="margin-top: 0; background: #fff7ed; color: #9a3412;">Pattern: {{ $sample->product->pattern->name }}</div>
                     @endif
-                    <div class="size-badge" style="margin-top: 0; background: #fdf2f8; color: #9d174d; border-color: #fbcfe8;">
+                    <!-- <div class="size-badge" style="margin-top: 0; background: #fdf2f8; color: #9d174d; border-color: #fbcfe8;">
                         WSP: Rs. {{ number_format($sample->final_price, 2) }}
-                    </div>
+                    </div> -->
                 </div>
             </div>
         </div>
