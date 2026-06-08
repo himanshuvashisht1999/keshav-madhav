@@ -98,7 +98,8 @@ class ProductionGoodsController extends Controller {
         $designNumber = $request->design_number;
         $id = $request->id;
 
-        $query = \App\Models\ProductionGoods::where('design_number', $designNumber);
+        $query = \App\Models\ProductionGoods::where('design_number', $designNumber)
+            ->where('status', '!=', 3);
         if ($id) {
             $query->where('id', '!=', $id);
         }

@@ -24,7 +24,14 @@ class ProductionGoodsUpdateRequest extends FormRequest
 
         // Base rules common for all companies
         $rules = [
-            'design_number' => 'required|unique:production_goods,design_number,' . $request->id,
+            'design_number' => [
+                'required',
+                \Illuminate\Validation\Rule::unique('production_goods', 'design_number')
+                    ->ignore($request->id)
+                    ->where(function ($query) {
+                        return $query->where('status', '!=', 3);
+                    }),
+            ],
             //'name_of_garment'  => 'required',
             // 'sku'              => 'required|unique:production_goods,sku,' . $request->id,
         ];

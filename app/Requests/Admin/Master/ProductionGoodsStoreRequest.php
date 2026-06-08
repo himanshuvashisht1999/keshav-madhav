@@ -18,7 +18,13 @@ class ProductionGoodsStoreRequest extends FormRequest
 
         // BASE RULES — always required
         $rules = [
-            'design_number'    => 'required|unique:production_goods,design_number',
+            'design_number' => [
+                'required',
+                \Illuminate\Validation\Rule::unique('production_goods', 'design_number')
+                    ->where(function ($query) {
+                        return $query->where('status', '!=', 3);
+                    }),
+            ],
             //'name_of_garment'  => 'required',
             // 'main_image'  => 'required',
             // 'sku'              => 'required|unique:production_goods,sku',
