@@ -1166,6 +1166,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/edit', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'edit'])->name('edit');
             Route::post('/update', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'update'])->name('update');
             Route::get('/delete', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'delete'])->name('delete');
+            Route::get('/{id}/racks', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'racks'])->name('racks');
 
             // Rack AJAX
             Route::post('/rack/store', [\App\Http\Controllers\Admin\Master\AdminMasterStoreroomController::class, 'storeRack'])->name('rack.store');

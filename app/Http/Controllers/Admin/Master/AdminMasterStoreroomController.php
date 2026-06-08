@@ -28,6 +28,7 @@ class AdminMasterStoreroomController extends Controller
                 ->addColumn('action', function($row){
                     $parameter = $row->id;
                     return '
+                    <a href="' . route('admin.master.storeroom.racks', ['id' => $parameter]) . '" class="btn btn-sm btn-info" data-toggle="tooltip" data-placement="top" title="View Racks"><i class="fas fa-list text-white"></i> Racks</a>
                     <a href="' . route('admin.master.storeroom.edit', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted"></i></a>
                     <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash text-danger"></i></a>
                     ';
@@ -57,6 +58,12 @@ class AdminMasterStoreroomController extends Controller
         $id = $request->id;
         $storeroom = Storeroom::with('racks')->findOrFail($id);
         return view('admin.master.storeroom.edit', compact('storeroom'));
+    }
+
+    public function racks($id)
+    {
+        $storeroom = Storeroom::with('racks')->findOrFail($id);
+        return view('admin.master.storeroom.racks', compact('storeroom'));
     }
 
     public function update(Request $request)

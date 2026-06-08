@@ -443,7 +443,13 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2 input-group-premium">
-                                        <label class="label-premium">Rack</label>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="label-premium mb-0">Rack</label>
+                                            <div class="action-links">
+                                                <a href="javascript:void(0)" class="text-primary btn-add-new-rack" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+                                                <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="rack" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+                                            </div>
+                                        </div>
                                         <select name="products[0][rack_id]" class="form-control select2 rack-select"
                                             required>
                                             <option value="">Rack</option>
@@ -517,7 +523,35 @@
                     </div>
                 </form>
             </div>
+            </div>
         </section>
+    </div>
+
+    <!-- Quick Add Rack Modal -->
+    <div class="modal fade" id="quickRackModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Rack</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="quick_rack_warehouse_id">
+                    <div class="mb-3">
+                        <label>Rack Name *</label>
+                        <input type="text" id="quick_rack_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Capacity (Optional)</label>
+                        <input type="number" id="quick_rack_capacity" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="btnSubmitQuickRack">Save Rack</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -694,7 +728,13 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-2 input-group-premium">
-                                                    <label class="label-premium">Rack</label>
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <label class="label-premium mb-0">Rack</label>
+                                                        <div class="action-links">
+                                                            <a href="javascript:void(0)" class="text-primary btn-add-new-rack" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
+                                                            <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="rack" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
+                                                        </div>
+                                                    </div>
                                                     <select name="products[${idx}][rack_id]" class="form-control select2 rack-select" required>
                                                         <option value="">Rack</option>
                                                     </select>
@@ -1417,6 +1457,18 @@
                         icon.removeClass('fa-spin');
                         toastr.error('Failed to refresh data');
                     });
+                } else if (type === 'rack') {
+                    var warehouseSelect = card.find('.warehouse-select');
+                    if (warehouseSelect.length && warehouseSelect.val()) {
+                        warehouseSelect.trigger('change');
+                        setTimeout(function() {
+                            icon.removeClass('fa-spin');
+                            toastr.success('Racks refreshed for selected warehouse');
+                        }, 500);
+                    } else {
+                        icon.removeClass('fa-spin');
+                        toastr.info('Please select a warehouse first to load its racks');
+                    }
                 } else {
                     // pattern, fitting, size, color are dependent on design.
                     var designSelect = card.find('.design-select');
@@ -1431,6 +1483,60 @@
                         toastr.info('Please select a design first to load its variants');
                     }
                 }
+            });
+
+            // Quick Rack Add Handlers
+            $(document).on('click', '.btn-add-new-rack', function(e) {
+                e.preventDefault();
+                let card = $(this).closest('.inventory-item-card');
+                let warehouseId = card.find('.warehouse-select').val();
+                if (!warehouseId) {
+                    toastr.warning('Please select a warehouse first.');
+                    return;
+                }
+                $('#quick_rack_warehouse_id').val(warehouseId);
+                $('#quick_rack_name').val('');
+                $('#quick_rack_capacity').val('');
+                // Store reference to the card to refresh its rack dropdown after
+                $('#quickRackModal').data('targetCard', card);
+                $('#quickRackModal').modal('show');
+            });
+
+            $('#btnSubmitQuickRack').on('click', function() {
+                let wId = $('#quick_rack_warehouse_id').val();
+                let name = $('#quick_rack_name').val();
+                let cap = $('#quick_rack_capacity').val();
+                let btn = $(this);
+
+                if (!name) { toastr.error('Name is required'); return; }
+
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+
+                $.post("{{ route('admin.master.storeroom.rack.store') }}", {
+                    _token: "{{ csrf_token() }}",
+                    storeroom_id: wId,
+                    name: name,
+                    capacity: cap
+                }, function(res) {
+                    btn.prop('disabled', false).text('Save Rack');
+                    if (res.status === 'success') {
+                        toastr.success('Rack added successfully');
+                        $('#quickRackModal').modal('hide');
+                        let card = $('#quickRackModal').data('targetCard');
+                        if (card) {
+                            card.find('.warehouse-select').trigger('change');
+                            setTimeout(() => {
+                                card.find('.rack-select').val(res.rack.id).trigger('change.select2');
+                            }, 500);
+                        }
+                    } else {
+                        toastr.error(res.message || 'Error adding rack');
+                    }
+                }).fail(function(xhr) {
+                    btn.prop('disabled', false).text('Save Rack');
+                    let error = xhr.responseJSON ? (xhr.responseJSON.message || 'Failed to add rack') : 'Failed to add rack';
+                    toastr.error(error);
+                });
             });
         });
     </script>
