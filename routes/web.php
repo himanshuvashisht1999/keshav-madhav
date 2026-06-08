@@ -765,7 +765,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
             // Warehouse Stock Routes
             Route::get('/warehouse-stock', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'index'])->name('warehouse_stock');
-            Route::get('/warehouse-stock/show/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'show'])->name('warehouse_stock.show');
+            Route::get('/warehouse-stock/show/{product_id}/{size_set_id}/{rack_id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'show'])->name('warehouse_stock.show');
             Route::get('/warehouse-stock/list', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'indexList'])->name('warehouse_stock.list');
             Route::get('/warehouse-stock/history', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'history'])->name('warehouse_stock.history');
             Route::get('/warehouse-stock/history/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'showHistory'])->name('warehouse_stock.history.show');
@@ -860,6 +860,13 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/{id}/download-prn', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generatePurchasePrn'])->name('download-prn');
                 Route::post('/{id}/update', [AdminInventoryController::class, 'purchaseHistoryUpdate'])->name('update');
                 Route::delete('/{id}/delete', [AdminInventoryController::class, 'purchaseHistoryDestroy'])->name('destroy');
+            });
+
+            Route::prefix('/inbound-history')->name('inbound_history.')->group(function () {
+                Route::get('/', [AdminInventoryController::class, 'inboundHistoryIndex'])->name('index');
+                Route::get('/list', [AdminInventoryController::class, 'inboundHistoryList'])->name('list');
+                Route::get('/show/{id}', [AdminInventoryController::class, 'inboundHistoryShow'])->name('show');
+                Route::get('/{id}/download-prn', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateInboundPrn'])->name('download-prn');
             });
 
             // Stock Disposal Routes

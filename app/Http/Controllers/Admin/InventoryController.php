@@ -1031,6 +1031,67 @@ class InventoryController extends Controller
         return view('admin.inventory.purchase_history.show', compact('purchase'));
     }
 
+    public function inboundHistoryIndex()
+    {
+        return view('admin.inventory.inbound_history.index');
+    }
+
+    public function inboundHistoryList(Request $request)
+    {
+        $query = \App\Models\PackingMain::where('order_main_id', 0)
+            ->where('slip_id', 0)
+            ->with(['creator'])
+            ->withCount('boxes as total_boxes');
+
+        if ($request->has('start_date') && $request->start_date) {
+            $query->whereDate('packing_date', '>=', $request->start_date);
+        }
+        if ($request->has('end_date') && $request->end_date) {
+            $query->whereDate('packing_date', '<=', $request->end_date);
+        }
+
+        // Order by latest
+        $query->orderBy('id', 'desc');
+
+        return Datatables::of($query)
+            ->addIndexColumn()
+            ->addColumn('date', function ($row) {
+                return date('d M Y', strtotime($row->packing_date ?? $row->created_at));
+            })
+            ->filterColumn('date', function($query, $keyword) {
+                $query->whereRaw("DATE_FORMAT(packing_date, '%d %b %Y') like ?", ["%{$keyword}%"])
+                      ->orWhereRaw("DATE_FORMAT(created_at, '%d %b %Y') like ?", ["%{$keyword}%"]);
+            })
+            ->addColumn('action', function ($row) {
+                return '<div class="btn-group">
+                            <a href="' . route('admin.inventory.inbound_history.show', $row->id) . '" class="btn btn-sm btn-soft-info mr-1" title="View Details"><i class="fas fa-eye"></i> View Detail</a>
+                        </div>';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
+    public function inboundHistoryShow($id)
+    {
+        $session = \App\Models\PackingMain::where('order_main_id', 0)
+            ->where('slip_id', 0)
+            ->findOrFail($id);
+            
+        $items = \App\Models\DomesticInventoryHistory::with([
+            'newProduct.series',
+            'newProduct.fitting',
+            'newProduct.pattern',
+            'newSizeSet',
+            'newColor',
+            'newRack.storeroom'
+        ])->where('created_at', $session->created_at)
+          ->whereIn('type', ['creation', 'sample'])
+          ->get();
+
+        return view('admin.inventory.inbound_history.show', compact('session', 'items'));
+    }
+
+
     public function purchaseHistoryUpdate(Request $request, $id)
     {
         DB::beginTransaction();

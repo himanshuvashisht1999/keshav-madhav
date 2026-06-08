@@ -291,6 +291,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                     </a>
                                 </li>
                                 <li class="nav-item">
+                                    <a href="{{ route('admin.inventory.inbound_history.index') }}"
+                                        class="{{ str_contains($page_url, 'admin/inventory/inbound-history') ? 'nav-link active' : 'nav-link' }}"
+                                        style="position:static;">
+                                        <i class="far fa-circle nav-icon text-success"></i>
+                                        <p>Inbound History</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
                                     <a href="{{ route('admin.inventory.purchase_history.index') }}"
                                         class="{{ str_contains($page_url, 'admin/inventory/purchase-history') ? 'nav-link active' : 'nav-link' }}"
                                         style="position:static;">

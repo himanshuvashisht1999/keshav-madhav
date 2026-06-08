@@ -111,7 +111,13 @@ class WarehouseInventoryController extends Controller
             $query->where('total_boxes', '<=', $request->max_boxes);
         }
 
-        $query->latest();
+        $query->select(
+            'product_id', 
+            'size_set_id', 
+            'rack_id',
+            DB::raw('SUM(total_boxes) as total_boxes'),
+            DB::raw('MAX(quantity) as quantity') // Assuming pieces per box is the same, use MAX
+        )->groupBy('product_id', 'size_set_id', 'rack_id');
 
         if ($request->has('load_more')) {
             $perPage = 20;
@@ -120,14 +126,19 @@ class WarehouseInventoryController extends Controller
             $html = '';
             $start = ($results->currentPage() - 1) * $perPage + 1;
             foreach ($results as $index => $row) {
+                // Ensure relationships are loaded for the view
+                $row->loadMissing(['product.series', 'sizeSet', 'rack.storeroom']);
                 $html .= view('admin.inventory.warehouse_stock.partials.row', [
                     'row' => $row,
                     'index' => $start + $index
                 ])->render();
             }
 
-            $totalBoxes = (clone $query)->sum('total_boxes');
-            $totalPcs = (clone $query)->sum(DB::raw('total_boxes * quantity'));
+            // To calculate total sum across all groups
+            $totalsQuery = clone $query;
+            $totalsQuery->getQuery()->groups = null; // Remove group by to calculate sum correctly
+            $totalBoxes = DB::query()->fromSub($query, 'sub')->sum('total_boxes');
+            $totalPcs = DB::query()->fromSub($query, 'sub')->sum(DB::raw('total_boxes * quantity'));
 
             return response()->json([
                 'html' => $html,
@@ -137,24 +148,21 @@ class WarehouseInventoryController extends Controller
             ]);
         }
         
-        $totalBoxes = (clone $query)->sum('total_boxes');
-        $totalPcs = (clone $query)->sum(DB::raw('total_boxes * quantity'));
+        $totalBoxes = DB::query()->fromSub($query, 'sub')->sum('total_boxes');
+        $totalPcs = DB::query()->fromSub($query, 'sub')->sum(DB::raw('total_boxes * quantity'));
 
         return Datatables::of($query)
             ->with('total_boxes', $totalBoxes)
             ->with('total_pcs', $totalPcs)
             ->addIndexColumn()
             ->addColumn('product_name', function ($row) {
-                return $row->product_name;
+                return $row->product->name_of_garment ?? 'N/A';
             })
             ->addColumn('design_number', function ($row) {
-                return $row->design_number;
+                return $row->product->design_number ?? 'N/A';
             })
             ->addColumn('size_set_name', function ($row) {
-                return $row->size_set_name;
-            })
-            ->addColumn('color_name', function ($row) {
-                return $row->color_name;
+                return $row->sizeSet->name ?? 'N/A';
             })
             ->addColumn('location', function ($row) {
                 $wh = $row->rack->storeroom->name ?? 'N/A';
@@ -162,27 +170,58 @@ class WarehouseInventoryController extends Controller
                 return $wh . ' / ' . $rk;
             })
             ->addColumn('action', function ($row) {
-                $btn = '<a href="' . route('admin.inventory.warehouse_stock.show', $row->id) . '" class="btn btn-xs btn-primary mr-1" title="View"><i class="fas fa-eye"></i></a>';
-                $btn .= '<button type="button" class="btn btn-xs btn-danger ml-1 btn-delete-boxes" title="Delete Boxes" 
-                    data-id="' . $row->id . '" 
-                    data-product-id="' . $row->product_id . '"
-                    data-design-no="' . $row->design_number . '"
-                    data-color-id="' . $row->color_id . '"
-                    data-size-set-id="' . $row->size_set_id . '"
-
-                    data-available-boxes="' . $row->total_boxes . '"
-                    data-rack-id="' . $row->rack_id . '">
-                    <i class="fas fa-trash"></i></button>';
+                $btn = '<a href="' . route('admin.inventory.warehouse_stock.show', [$row->product_id, $row->size_set_id, $row->rack_id]) . '" class="btn btn-xs btn-primary mr-1" title="View"><i class="fas fa-eye"></i></a>';
                 return $btn;
             })
             ->rawColumns(['action'])
             ->make(true);
     }
 
-    public function show($id)
+    public function show($product_id, $size_set_id, $rack_id)
     {
-        $data = DomesticInventory::with(['product.series', 'sizeSet', 'color', 'rack.storeroom', 'orderMain.customer', 'carton', 'box'])->findOrFail($id);
-        return view('admin.inventory.warehouse_stock.show', compact('data'));
+        $product_id = $product_id == 0 ? null : $product_id;
+        $size_set_id = $size_set_id == 0 ? null : $size_set_id;
+        $rack_id = $rack_id == 0 ? null : $rack_id;
+
+        $query = DomesticInventory::with(['product.series', 'sizeSet', 'color', 'rack.storeroom', 'carton', 'box']);
+        
+        if ($product_id) {
+            $query->where('product_id', $product_id);
+        } else {
+            $query->whereNull('product_id');
+        }
+
+        if ($size_set_id) {
+            $query->where('size_set_id', $size_set_id);
+        } else {
+            $query->whereNull('size_set_id');
+        }
+
+        if ($rack_id) {
+            $query->where('rack_id', $rack_id);
+        } else {
+            $query->whereNull('rack_id');
+        }
+
+        $items = $query->get();
+            
+        if ($items->isEmpty()) {
+            return redirect()->route('admin.inventory.warehouse_stock')->withError('No inventory found for this selection.');
+        }
+
+        // Pass the grouping attributes for display
+        $product = $items->first()->product;
+        $sizeSet = $items->first()->sizeSet;
+        $rack = $items->first()->rack;
+
+        $storerooms = Storeroom::where('status', '1')->get();
+        $size_sets = \App\Models\MasterSizeMeasurement::all();
+        $products = \App\Models\ProductionGoods::with('series')->get();
+        $colors = \App\Models\MasterColor::all();
+        $fittings = \App\Models\MasterProductFitting::all();
+        $patterns = \App\Models\MasterDesignPattern::all();
+
+        return view('admin.inventory.warehouse_stock.show', compact('items', 'product', 'sizeSet', 'rack', 'storerooms', 'size_sets', 'products', 'colors', 'fittings', 'patterns'));
     }
 
     public function transferRow(Request $request)

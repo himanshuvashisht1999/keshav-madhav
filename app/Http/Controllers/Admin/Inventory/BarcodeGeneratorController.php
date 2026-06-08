@@ -263,4 +263,42 @@ class BarcodeGeneratorController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
         ]);
     }
+
+    public function generateInboundPrn($id)
+    {
+        $session = \App\Models\PackingMain::where('order_main_id', 0)
+            ->where('slip_id', 0)
+            ->findOrFail($id);
+            
+        $items = \App\Models\DomesticInventoryHistory::where('created_at', $session->created_at)
+          ->whereIn('type', ['creation', 'sample'])
+          ->get();
+
+        $barcodeList = [];
+
+        foreach ($items as $item) {
+            $barcode = 'D' . $item->new_product_id . 
+                      'S' . $item->new_size_set_id . 
+                      'C' . $item->new_color_id;
+
+            $boxes = (int) $item->box_quantity;
+
+            for ($i = 0; $i < $boxes; $i++) {
+                $barcodeList[] = $barcode;
+            }
+        }
+
+        if (empty($barcodeList)) {
+            return back()->withError('No valid barcodes found for this session.');
+        }
+
+        $tspl = generateBulkTsplByBarcodes($barcodeList);
+
+        $fileName = 'inbound_session_labels_' . $session->id . '_' . time() . '.prn';
+
+        return response($tspl, 200, [
+            'Content-Type' => 'application/octet-stream',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
+    }
 }

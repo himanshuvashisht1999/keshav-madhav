@@ -39,60 +39,74 @@
                 <div class="card-body">
 
                     <div class="row">
-
                         {{-- Company --}}
-                        <div class="col-md-6 mb-3">
-                            <label class="font-weight-bold d-block">Company</label>
-
-                            <p class="mb-0">
-                                @if($data->company_id == 2)
-                                    Snapkid
-                                @else
-                                    General
-                                @endif
-                            </p>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 bg-light rounded shadow-xs h-100">
+                                <label class="small text-muted mb-1 d-block uppercase font-weight-bold"><i class="fas fa-building text-secondary mr-1"></i> Company</label>
+                                <span class="h6 font-weight-bold text-dark">
+                                    @if($data->company_id == 2)
+                                        Snapkid
+                                    @else
+                                        General
+                                    @endif
+                                </span>
+                            </div>
                         </div>
 
                         {{-- DESIGN NUMBER (Shown for both companies) --}}
-                        <div class="col-md-4 mb-3">
-                            <label class="font-weight-bold d-block">Design Number</label>
-                            <p class="mb-0">{{ $data->design_number ?? '-' }}</p>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 bg-light rounded shadow-xs h-100">
+                                <label class="small text-muted mb-1 d-block uppercase font-weight-bold"><i class="fas fa-hashtag text-secondary mr-1"></i> Design Number</label>
+                                <span class="h6 font-weight-bold text-dark">{{ $data->design_number ?? '-' }}</span>
+                            </div>
                         </div>
 
                         {{-- BRAND --}}
-                        <div class="col-md-4 mb-3">
-                            <label class="font-weight-bold d-block">Brand</label>
-                            <p class="mb-0">{{ $data->brand->name ?? '-' }}</p>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 bg-light rounded shadow-xs h-100">
+                                <label class="small text-muted mb-1 d-block uppercase font-weight-bold"><i class="fas fa-tag text-secondary mr-1"></i> Brand</label>
+                                <span class="h6 font-weight-bold text-dark">{{ $data->brand->name ?? '-' }}</span>
+                            </div>
                         </div>
 
                         {{-- PRODUCT NAME --}}
-                        <div class="col-md-4 mb-3">
-                            <label class="font-weight-bold d-block">Product Name</label>
-                            <p class="mb-0">{{ $data->name_of_garment ?? '-' }}</p>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 bg-light rounded shadow-xs h-100">
+                                <label class="small text-muted mb-1 d-block uppercase font-weight-bold"><i class="fas fa-box text-secondary mr-1"></i> Product Name</label>
+                                <span class="h6 font-weight-bold text-dark">{{ trim(($data->series->name ?? '') . ' ' . ($data->name_of_garment ?? '')) ?: '-' }}</span>
+                            </div>
                         </div>
 
                         {{-- FITTING --}}
-                        <div class="col-md-4 mb-3">
-                            <label class="font-weight-bold d-block">Fitting</label>
-                            <p class="mb-0">{{ $data->fitting->name ?? '-' }}</p>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 bg-light rounded shadow-xs h-100">
+                                <label class="small text-muted mb-1 d-block uppercase font-weight-bold"><i class="fas fa-tshirt text-secondary mr-1"></i> Fitting</label>
+                                <span class="h6 font-weight-bold text-dark">{{ $data->fitting->name ?? '-' }}</span>
+                            </div>
                         </div>
 
                         {{-- PATTERN --}}
                         <div class="col-md-3 mb-3">
-                            <label class="font-weight-bold d-block">Pattern</label>
-                            <p class="mb-0">{{ $data->pattern->name ?? '-' }}</p>
+                            <div class="p-3 bg-light rounded shadow-xs h-100">
+                                <label class="small text-muted mb-1 d-block uppercase font-weight-bold"><i class="fas fa-chess-board text-secondary mr-1"></i> Pattern</label>
+                                <span class="h6 font-weight-bold text-dark">{{ $data->pattern->name ?? '-' }}</span>
+                            </div>
                         </div>
 
                         {{-- PRODUCT NATURE --}}
                         <div class="col-md-3 mb-3">
-                            <label class="font-weight-bold d-block">Product Nature</label>
-                            <p class="mb-0">{{ $data->productNature->name ?? '-' }}</p>
+                            <div class="p-3 bg-light rounded shadow-xs h-100">
+                                <label class="small text-muted mb-1 d-block uppercase font-weight-bold"><i class="fas fa-leaf text-secondary mr-1"></i> Product Nature</label>
+                                <span class="h6 font-weight-bold text-dark">{{ $data->productNature->name ?? '-' }}</span>
+                            </div>
                         </div>
 
                         {{-- FABRIC TYPE --}}
                         <div class="col-md-3 mb-3">
-                            <label class="font-weight-bold d-block">Fabric Type</label>
-                            <p class="mb-0">{{ $data->fabricType->name ?? '-' }}</p>
+                            <div class="p-3 bg-light rounded shadow-xs h-100">
+                                <label class="small text-muted mb-1 d-block uppercase font-weight-bold"><i class="fas fa-layer-group text-secondary mr-1"></i> Fabric Type</label>
+                                <span class="h6 font-weight-bold text-dark">{{ $data->fabricType->name ?? '-' }}</span>
+                            </div>
                         </div>
 
                         {{-- ============================= --}}
@@ -101,51 +115,61 @@
                         @if($data->company_id == 1)
 
                             {{-- Product Type --}}
-                            <div class="col-md-6 mb-3">
-                                <label class="font-weight-bold d-block">Product Type</label>
-                                @php
-                                    $type = $product_types->firstWhere('sku', $data->type_of_garment);
-                                @endphp
-                                <p class="mb-0">{{ $type ? $type->name : '-' }}</p>
+                            <div class="col-md-3 mb-3">
+                                <div class="p-3 bg-light rounded shadow-xs h-100">
+                                    <label class="small text-muted mb-1 d-block uppercase font-weight-bold"><i class="fas fa-boxes text-secondary mr-1"></i> Product Type</label>
+                                    @php
+                                        $type = $product_types->firstWhere('sku', $data->type_of_garment);
+                                    @endphp
+                                    <span class="h6 font-weight-bold text-dark">{{ $type ? $type->name : '-' }}</span>
+                                </div>
                             </div>
 
                             {{-- Product Size --}}
-                            <div class="col-md-6 mb-3">
-                                <label class="font-weight-bold d-block">Product Size</label>
-                                @php
-                                    $size = $sizes->firstWhere('id', $data->master_size_id);
-                                @endphp
-                                <p class="mb-0">{{ $size ? $size->sku : '-' }}</p>
+                            <div class="col-md-3 mb-3">
+                                <div class="p-3 bg-light rounded shadow-xs h-100">
+                                    <label class="small text-muted mb-1 d-block uppercase font-weight-bold"><i class="fas fa-compress-arrows-alt text-secondary mr-1"></i> Product Size</label>
+                                    @php
+                                        $size = $sizes->firstWhere('id', $data->master_size_id);
+                                    @endphp
+                                    <span class="h6 font-weight-bold text-dark">{{ $size ? $size->sku : '-' }}</span>
+                                </div>
                             </div>
 
                             {{-- Product Color --}}
-                            <div class="col-md-6 mb-3">
-                                <label class="font-weight-bold d-block">Color</label>
-                                @php
-                                    $color = $colors->firstWhere('id', $data->master_color_id);
-                                @endphp
-                                <p class="mb-0">{{ $color ? $color->name : '-' }}</p>
+                            <div class="col-md-3 mb-3">
+                                <div class="p-3 bg-light rounded shadow-xs h-100">
+                                    <label class="small text-muted mb-1 d-block uppercase font-weight-bold"><i class="fas fa-palette text-secondary mr-1"></i> Color</label>
+                                    @php
+                                        $color = $colors->firstWhere('id', $data->master_color_id);
+                                    @endphp
+                                    <span class="h6 font-weight-bold text-dark">{{ $color ? $color->name : '-' }}</span>
+                                </div>
                             </div>
 
                             {{-- Product Pattern --}}
-                            <div class="col-md-6 mb-3">
-                                <label class="font-weight-bold d-block">Product Pattern</label>
-                                <p class="mb-0">{{ $data->garment_pattern ?? '-' }}</p>
+                            <div class="col-md-3 mb-3">
+                                <div class="p-3 bg-light rounded shadow-xs h-100">
+                                    <label class="small text-muted mb-1 d-block uppercase font-weight-bold"><i class="fas fa-vector-square text-secondary mr-1"></i> Product Pattern</label>
+                                    <span class="h6 font-weight-bold text-dark">{{ $data->garment_pattern ?? '-' }}</span>
+                                </div>
                             </div>
 
                         @endif
                         {{-- END GENERAL FIELDS --}}
 
                         {{-- STATUS --}}
-                        <div class="col-md-6 mb-3">
-                            <label class="font-weight-bold d-block">Status</label>
-                            <p class="mb-0">
-                                @if($data->status == 1)
-                                    <span class="badge badge-success">Published</span>
-                                @else
-                                    <span class="badge badge-primary">Pending BOM</span>
-                                @endif
-                            </p>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 bg-light rounded shadow-xs h-100">
+                                <label class="small text-muted mb-1 d-block uppercase font-weight-bold"><i class="fas fa-info-circle text-secondary mr-1"></i> Status</label>
+                                <span class="d-block mt-1">
+                                    @if($data->status == 1)
+                                        <span class="badge badge-success px-2 py-1">Published</span>
+                                    @else
+                                        <span class="badge badge-primary px-2 py-1">Pending BOM</span>
+                                    @endif
+                                </span>
+                            </div>
                         </div>
 
                     </div>
@@ -335,3 +359,14 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<style>
+    .shadow-xs {
+        box-shadow: 0 0 0.2rem rgba(0,0,0,.05);
+    }
+    .uppercase {
+        text-transform: uppercase;
+    }
+</style>
+@endpush

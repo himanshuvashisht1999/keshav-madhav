@@ -109,10 +109,6 @@ class OutflowInventoryController extends Controller
             'newColor',
             'oldSizeSet',
             'newSizeSet',
-            'oldFitting',
-            'newFitting',
-            'oldPattern',
-            'newPattern',
             'oldRack.storeroom',
             'newRack.storeroom'
         ])->orderBy('created_at', 'desc');
@@ -176,13 +172,11 @@ class OutflowInventoryController extends Controller
                 $design = $row->oldProduct ? $row->oldProduct->design_number : 'N/A';
                 $color = $row->oldColor ? $row->oldColor->name : 'N/A';
                 $size = $row->oldSizeSet ? $row->oldSizeSet->name : 'N/A';
-                $fitting = $row->oldFitting ? $row->oldFitting->name : 'N/A';
-                $pattern = $row->oldPattern ? $row->oldPattern->name : 'N/A';
                 $rack = $row->oldRack ? ($row->oldRack->storeroom->name . ' / ' . $row->oldRack->name) : 'N/A';
 
                 return '<div class="small">' .
                     '<strong class="text-dark">D: ' . $design . '</strong> | C: ' . $color . ' | S: ' . $size . '<br>' .
-                    '<span class="text-muted">F: ' . $fitting . ' | P: ' . $pattern . ' | R: ' . $rack . '</span>' .
+                    '<span class="text-muted">R: ' . $rack . '</span>' .
                     '</div>';
             })
             ->addColumn('new_details', function ($row) {
@@ -193,13 +187,11 @@ class OutflowInventoryController extends Controller
                 $design = $row->newProduct ? $row->newProduct->design_number : 'N/A';
                 $color = $row->newColor ? $row->newColor->name : 'N/A';
                 $size = $row->newSizeSet ? $row->newSizeSet->name : 'N/A';
-                $fitting = $row->newFitting ? $row->newFitting->name : 'N/A';
-                $pattern = $row->newPattern ? $row->newPattern->name : 'N/A';
                 $rack = $row->newRack ? ($row->newRack->storeroom->name . ' / ' . $row->newRack->name) : 'N/A';
 
                 return '<div class="small">' .
                     '<strong class="text-success">D: ' . $design . '</strong> | C: ' . $color . ' | S: ' . $size . '<br>' .
-                    '<span class="text-muted">F: ' . $fitting . ' | P: ' . $pattern . ' | R: ' . $rack . '</span>' .
+                    '<span class="text-muted">R: ' . $rack . '</span>' .
                     '</div>';
             })
             ->editColumn('box_quantity', function ($row) {
