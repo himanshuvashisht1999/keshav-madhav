@@ -351,6 +351,14 @@
 
 
                                             <div class="row mt-4">
+                                                <div class="col-12 mb-3 mt-2 text-center">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input" id="sendWhatsappRolls" name="send_whatsapp" value="1" checked>
+                                                        <label class="custom-control-label font-weight-bold text-success" for="sendWhatsappRolls">
+                                                            <i class="fab fa-whatsapp mr-1"></i> Send WhatsApp Message
+                                                        </label>
+                                                    </div>
+                                                </div>
 
                                                 <div class="col-md-6 mb-2">
                                                     <button type="submit" onclick="setFinal(this,0)"
@@ -427,6 +435,14 @@
                                             </div>
 
                                             <div class="row mt-4">
+                                                <div class="col-12 mb-3 mt-2 text-center">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input" id="sendWhatsappStitching" name="send_whatsapp" value="1" checked>
+                                                        <label class="custom-control-label font-weight-bold text-success" for="sendWhatsappStitching">
+                                                            <i class="fab fa-whatsapp mr-1"></i> Send WhatsApp Message
+                                                        </label>
+                                                    </div>
+                                                </div>
                                                 <div class="col-md-6 mb-2">
                                                     <button type="submit" onclick="setFinal(this,0)"
                                                         class="btn btn-outline-success btn-lg w-100 shadow-sm border-2">
@@ -497,6 +513,14 @@
                                             </div>
 
                                             <div class="row mt-4">
+                                                <div class="col-12 mb-3 mt-2 text-center">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input" id="sendWhatsappPrinting" name="send_whatsapp" value="1" checked>
+                                                        <label class="custom-control-label font-weight-bold text-success" for="sendWhatsappPrinting">
+                                                            <i class="fab fa-whatsapp mr-1"></i> Send WhatsApp Message
+                                                        </label>
+                                                    </div>
+                                                </div>
                                                 <div class="col-md-6 mb-2">
                                                     <button type="submit" onclick="setFinal(this,0)"
                                                         class="btn btn-outline-info btn-lg w-100 shadow-sm border-2">

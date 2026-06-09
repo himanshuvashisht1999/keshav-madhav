@@ -22,45 +22,28 @@
     <section class="content">
         <div class="container-fluid">
             <!-- MAIN DETAILS CARD -->
-            <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
-                <div class="card-header bg-white border-0 pt-4 px-4">
-                    <h5 class="card-title font-weight-bold"><i class="fas fa-box text-primary mr-2"></i> Product Information</h5>
-                </div>
-                <div class="card-body p-4">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="p-3 bg-light rounded shadow-xs mb-3">
-                                <label class="small text-muted mb-1 d-block uppercase font-weight-bold">Product Name</label>
-                                <span class="h6 font-weight-bold text-dark">{{ $product->series->name ?? '' }} {{ $product->name_of_garment ?? 'N/A' }}</span>
-                            </div>
+            <div class="card shadow-sm border-0 mb-4 bg-light" style="border-radius: 12px;">
+                <div class="card-body p-3">
+                    <div class="row align-items-center text-center text-md-left">
+                        <div class="col-md-3 border-right mb-2 mb-md-0">
+                            <label class="small text-muted mb-0 d-block uppercase font-weight-bold"><i class="fas fa-box text-primary mr-1"></i> Product Name</label>
+                            <span class="h6 font-weight-bold text-dark mb-0">{{ $product->series->name ?? '' }} {{ $product->name_of_garment ?? 'N/A' }}</span>
                         </div>
-                        <div class="col-md-4">
-                            <div class="p-3 bg-light rounded shadow-xs mb-3">
-                                <label class="small text-muted mb-1 d-block uppercase font-weight-bold">Design Number</label>
-                                <span class="h6 font-weight-bold text-dark">{{ $product->design_number ?? 'N/A' }}</span>
-                            </div>
+                        <div class="col-md-2 border-right mb-2 mb-md-0">
+                            <label class="small text-muted mb-0 d-block uppercase font-weight-bold">Design Number</label>
+                            <span class="h6 font-weight-bold text-dark mb-0">{{ $product->design_number ?? 'N/A' }}</span>
                         </div>
-                        <div class="col-md-4">
-                            <div class="p-3 bg-light rounded shadow-xs mb-3">
-                                <label class="small text-muted mb-1 d-block uppercase font-weight-bold">Size Set</label>
-                                <span class="h6 font-weight-bold text-dark">{{ $sizeSet->name ?? 'N/A' }}</span>
-                            </div>
+                        <div class="col-md-2 border-right mb-2 mb-md-0">
+                            <label class="small text-muted mb-0 d-block uppercase font-weight-bold">Size Set</label>
+                            <span class="h6 font-weight-bold text-dark mb-0">{{ $sizeSet->name ?? 'N/A' }}</span>
                         </div>
-                    </div>
-
-                    <h6 class="font-weight-bold text-dark mb-3 mt-3"><i class="fas fa-map-marker-alt text-danger mr-2"></i> Current Location</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="p-3 border rounded mb-3">
-                                <label class="small text-muted mb-1 d-block">Warehouse</label>
-                                <span class="font-weight-bold">{{ $rack->storeroom->name ?? 'N/A' }}</span>
-                            </div>
+                        <div class="col-md-3 border-right mb-2 mb-md-0">
+                            <label class="small text-muted mb-0 d-block uppercase font-weight-bold"><i class="fas fa-map-marker-alt text-danger mr-1"></i> Warehouse</label>
+                            <span class="h6 font-weight-bold text-dark mb-0">{{ $rack->storeroom->name ?? 'N/A' }}</span>
                         </div>
-                        <div class="col-md-6">
-                            <div class="p-3 border rounded mb-3">
-                                <label class="small text-muted mb-1 d-block">Rack / Bin</label>
-                                <span class="font-weight-bold">{{ $rack->name ?? 'N/A' }}</span>
-                            </div>
+                        <div class="col-md-2">
+                            <label class="small text-muted mb-0 d-block uppercase font-weight-bold">Rack / Bin</label>
+                            <span class="h6 font-weight-bold text-dark mb-0">{{ $rack->name ?? 'N/A' }}</span>
                         </div>
                     </div>
                 </div>

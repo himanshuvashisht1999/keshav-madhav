@@ -87,7 +87,7 @@
                                                                     <th width="40">#</th>
                                                                     <th>Roll No</th>
                                                                     <th>Remaining (Mtr)</th>
-                                                                    <th>Barcode</th>
+                                                                    <th width="120">Dispose (Mtr)</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody id="rollsBody">
@@ -283,7 +283,7 @@
                                 <td><div class="custom-control custom-checkbox"><input class="custom-control-input roll-check" type="checkbox" name="roll_ids[]" id="roll_${r.id}" value="${r.id}"><label for="roll_${r.id}" class="custom-control-label"></label></div></td>
                                 <td><span class="badge badge-info">${r.roll_number}</span><div class="small text-muted">${r.fabric.name}</div></td>
                                 <td><strong>${r.remaining_quantity}</strong> mtr</td>
-                                <td><small>${r.barcode}</small></td>
+                                <td><input type="number" name="roll_qty[${r.id}]" class="form-control form-control-sm" max="${r.remaining_quantity}" min="0.01" step="0.01" value="${r.remaining_quantity}"></td>
                             </tr>`;
                         });
                     } else {

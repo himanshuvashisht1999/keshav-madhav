@@ -250,7 +250,9 @@ class OrderDigitalizationService
                         );
                         
                         // Send WhatsApp notification to Printing Unit
-                        $this->sendAssignmentWhatsApp($order_product_set->printing_unit_id, $lotNo);
+                        if ($request->has('send_whatsapp')) {
+                            $this->sendAssignmentWhatsApp($order_product_set->printing_unit_id, $lotNo);
+                        }
                     }
                 }
             }
@@ -1576,7 +1578,9 @@ class OrderDigitalizationService
             }
 
             // Send WhatsApp notification
-            $this->sendAssignmentWhatsApp($request->to_stage_unit_id, $request->lot_no);
+            if ($request->has('send_whatsapp')) {
+                $this->sendAssignmentWhatsApp($request->to_stage_unit_id, $request->lot_no);
+            }
 
             DB::commit();
             return [
@@ -1660,7 +1664,9 @@ class OrderDigitalizationService
             }
 
             // Send WhatsApp notification
-            $this->sendAssignmentWhatsApp($request->to_stage_unit_id, $request->lot_no);
+            if ($request->has('send_whatsapp')) {
+                $this->sendAssignmentWhatsApp($request->to_stage_unit_id, $request->lot_no);
+            }
 
             DB::commit();
             return [
@@ -2294,7 +2300,9 @@ class OrderDigitalizationService
             }
 
             // Send WhatsApp notification
-            $this->sendAssignmentWhatsApp($request->to_stage_id, $lot_no);
+            if ($request->has('send_whatsapp')) {
+                $this->sendAssignmentWhatsApp($request->to_stage_id, $lot_no);
+            }
 
             // ✅ NEW: Sync with Unified Timing Table for the TARGET stage (with Protection)
             if ($transaction && $to_stage_id != 3) {

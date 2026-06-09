@@ -22,26 +22,26 @@ class PurchaseLedgerController extends Controller
                 DB::raw('COALESCE(fabric_receipts.total_amount, 0) as grand_total')
             );
 
-        // Item Receipts (Invoices)
-        $itemsQuery = DB::table('items_receipts')
-            ->join('vendors', 'items_receipts.vendor_id', '=', 'vendors.id')
+        // Item Receipts (Invoices) - from Domestic Inventory Purchases
+        $itemsQuery = DB::table('domestic_inventory_purchases')
+            ->join('vendors', 'domestic_inventory_purchases.vendor_id', '=', 'vendors.id')
             ->select(
-                'items_receipts.id as ref_id',
+                'domestic_inventory_purchases.id as ref_id',
                 DB::raw('NULL as invoice_no'),
                 'vendors.name as vendor_name',
                 DB::raw("CAST('Product/Accessory' AS CHAR) COLLATE utf8mb4_unicode_ci as item_type"),
-                'items_receipts.time as date',
-                DB::raw('0 as grand_total') // No amount columns in items_receipts
+                'domestic_inventory_purchases.purchase_date as date',
+                DB::raw('COALESCE(domestic_inventory_purchases.total_amount, 0) as grand_total')
             );
 
         if ($request->filled('from_date')) {
             $fabricsQuery->whereDate('fabric_receipts.time', '>=', $request->from_date);
-            $itemsQuery->whereDate('items_receipts.time', '>=', $request->from_date);
+            $itemsQuery->whereDate('domestic_inventory_purchases.purchase_date', '>=', $request->from_date);
         }
 
         if ($request->filled('to_date')) {
             $fabricsQuery->whereDate('fabric_receipts.time', '<=', $request->to_date);
-            $itemsQuery->whereDate('items_receipts.time', '<=', $request->to_date);
+            $itemsQuery->whereDate('domestic_inventory_purchases.purchase_date', '<=', $request->to_date);
         }
 
         if ($request->filled('item_type')) {
@@ -54,7 +54,7 @@ class PurchaseLedgerController extends Controller
 
         if ($request->filled('vendor_id')) {
             $fabricsQuery->where('fabric_receipts.vendor_id', $request->vendor_id);
-            $itemsQuery->where('items_receipts.vendor_id', $request->vendor_id);
+            $itemsQuery->where('domestic_inventory_purchases.vendor_id', $request->vendor_id);
         }
 
         $combinedQuery = $fabricsQuery->union($itemsQuery);

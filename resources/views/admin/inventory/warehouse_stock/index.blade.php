@@ -4,13 +4,42 @@
         <!-- PAGE HEADER -->
         <section class="content-header">
             <div class="container-fluid">
-                <div class="row mb-3 align-items-center">
-                    <div class="col-sm-6">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                    <!-- Left: Title -->
+                    <div>
                         <h1 class="m-0 font-weight-bold text-dark">Warehouse Stock</h1>
                         <small class="text-muted">Manage inventory physical locations and transfers</small>
                     </div>
-                    <div class="col-sm-6 text-right">
-                        <a href="{{ route('admin.inventory.warehouse_stock.history') }}" class="btn btn-outline-primary shadow-sm mr-2">
+
+                    <!-- Center: Totals -->
+                    <div class="d-flex">
+                        <div class="card shadow-sm border-0 bg-primary text-white mb-0" style="border-radius: 12px; min-width: 200px;">
+                            <div class="card-body p-2 d-flex align-items-center">
+                                <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-box fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 text-white-50" style="font-size: 13px;">Total Boxes</h6>
+                                    <h5 class="mb-0 font-weight-bold" id="header_total_boxes">0</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card shadow-sm border-0 bg-success text-white mb-0 ml-3" style="border-radius: 12px; min-width: 200px;">
+                            <div class="card-body p-2 d-flex align-items-center">
+                                <div class="bg-white text-success rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-tshirt fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 text-white-50" style="font-size: 13px;">Total Pcs</h6>
+                                    <h5 class="mb-0 font-weight-bold" id="header_total_pcs">0</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Action Button -->
+                    <div>
+                        <a href="{{ route('admin.inventory.warehouse_stock.history') }}" class="btn btn-outline-primary shadow-sm">
                             <i class="fas fa-history mr-1"></i> Transfer History
                         </a>
                     </div>
@@ -21,35 +50,6 @@
         <!-- CONTENT -->
         <section class="content">
             <div class="container-fluid">
-                <!-- TOTALS CARDS -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="card shadow-sm border-0 bg-primary text-white" style="border-radius: 12px;">
-                            <div class="card-body p-3 d-flex align-items-center">
-                                <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 48px; height: 48px;">
-                                    <i class="fas fa-box fa-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0 text-white-50">Total Boxes</h6>
-                                    <h4 class="mb-0 font-weight-bold" id="header_total_boxes">0</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card shadow-sm border-0 bg-success text-white" style="border-radius: 12px;">
-                            <div class="card-body p-3 d-flex align-items-center">
-                                <div class="bg-white text-success rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 48px; height: 48px;">
-                                    <i class="fas fa-tshirt fa-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0 text-white-50">Total Pcs</h6>
-                                    <h4 class="mb-0 font-weight-bold" id="header_total_pcs">0</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- SINGLE CONSOLIDATED FILTER CARD -->
                 <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
@@ -156,7 +156,7 @@
                             
                             <div class="col-md-2 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Min Boxes</label>
-                                <input type="number" id="min_boxes_filter" class="form-control" placeholder="Min Qty" min="0">
+                                <input type="number" id="min_boxes_filter" class="form-control" placeholder="Min Qty" min="0" value="1">
                             </div>
 
                             <div class="col-md-2 mb-3">
@@ -348,7 +348,8 @@
             // Reset filter
             $('#reset_filters').on('click', function () {
                 $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter').val('').trigger('change');
-                $('#min_boxes_filter, #max_boxes_filter').val('');
+                $('#min_boxes_filter').val('1');
+                $('#max_boxes_filter').val('');
                 loadMore(true);
             });
 

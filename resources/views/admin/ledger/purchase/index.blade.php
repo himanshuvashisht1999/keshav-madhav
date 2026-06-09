@@ -30,7 +30,7 @@
                         <form action="{{ route('admin.ledger.purchase.index') }}" method="GET" class="row align-items-end">
                             <div class="col-md-3 mb-2">
                                 <label class="small text-muted font-weight-bold">Filter by Vendor</label>
-                                <select name="vendor_id" class="form-control select2">
+                                <select name="vendor_id" class="form-control select2" onchange="this.form.submit()">
                                     <option value="">All Vendors</option>
                                     @foreach($vendors as $vendor)
                                         <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>
@@ -41,7 +41,7 @@
                             </div>
                             <div class="col-md-2 mb-2">
                                 <label class="small text-muted font-weight-bold">Item Type</label>
-                                <select name="item_type" class="form-control">
+                                <select name="item_type" class="form-control" onchange="this.form.submit()">
                                     <option value="">All Types</option>
                                     <option value="Product/Accessory" {{ request('item_type') === 'Product/Accessory' ? 'selected' : '' }}>Product/Accessory</option>
                                     <option value="Fabric" {{ request('item_type') === 'Fabric' ? 'selected' : '' }}>Fabric</option>
@@ -49,11 +49,11 @@
                             </div>
                             <div class="col-md-2 mb-2">
                                 <label class="small text-muted font-weight-bold">From Date</label>
-                                <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}">
+                                <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}" onchange="this.form.submit()">
                             </div>
                             <div class="col-md-3 mb-2">
                                 <label class="small text-muted font-weight-bold">To Date</label>
-                                <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
+                                <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}" onchange="this.form.submit()">
                             </div>
                             <div class="col-md-2 mb-2">
                                 <button type="submit" class="btn btn-primary btn-block">
@@ -104,7 +104,7 @@
                                                     <i class="fas fa-eye mr-1"></i> View
                                                 </a>
                                             @else
-                                                <a href="{{ route('admin.item_receipt.view', ['id' => $item->ref_id]) }}"
+                                                <a href="{{ route('admin.inventory.purchase_history.show', ['id' => $item->ref_id]) }}"
                                                     class="btn btn-primary btn-sm px-3 shadow-sm" style="border-radius: 6px;">
                                                     <i class="fas fa-eye mr-1"></i> View
                                                 </a>

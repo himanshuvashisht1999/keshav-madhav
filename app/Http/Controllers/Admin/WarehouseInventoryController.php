@@ -104,11 +104,11 @@ class WarehouseInventoryController extends Controller
         }
         
         if ($request->has('min_boxes') && $request->min_boxes !== null && $request->min_boxes !== '') {
-            $query->where('total_boxes', '>=', $request->min_boxes);
+            $query->havingRaw('SUM(total_boxes) >= ?', [$request->min_boxes]);
         }
 
         if ($request->has('max_boxes') && $request->max_boxes !== null && $request->max_boxes !== '') {
-            $query->where('total_boxes', '<=', $request->max_boxes);
+            $query->havingRaw('SUM(total_boxes) <= ?', [$request->max_boxes]);
         }
 
         $query->select(
@@ -118,6 +118,11 @@ class WarehouseInventoryController extends Controller
             DB::raw('SUM(total_boxes) as total_boxes'),
             DB::raw('MAX(quantity) as quantity') // Assuming pieces per box is the same, use MAX
         )->groupBy('product_id', 'size_set_id', 'rack_id');
+
+        // Calculate total sum across all groups (BEFORE pagination mutates $query)
+        $totalsQuery = clone $query;
+        $totalBoxes = DB::query()->fromSub($totalsQuery, 'sub')->sum('total_boxes');
+        $totalPcs = DB::query()->fromSub($totalsQuery, 'sub')->sum(DB::raw('total_boxes * quantity'));
 
         if ($request->has('load_more')) {
             $perPage = 20;
@@ -134,12 +139,6 @@ class WarehouseInventoryController extends Controller
                 ])->render();
             }
 
-            // To calculate total sum across all groups
-            $totalsQuery = clone $query;
-            $totalsQuery->getQuery()->groups = null; // Remove group by to calculate sum correctly
-            $totalBoxes = DB::query()->fromSub($query, 'sub')->sum('total_boxes');
-            $totalPcs = DB::query()->fromSub($query, 'sub')->sum(DB::raw('total_boxes * quantity'));
-
             return response()->json([
                 'html' => $html,
                 'next_page' => $results->nextPageUrl() ? $results->currentPage() + 1 : null,
@@ -148,9 +147,6 @@ class WarehouseInventoryController extends Controller
             ]);
         }
         
-        $totalBoxes = DB::query()->fromSub($query, 'sub')->sum('total_boxes');
-        $totalPcs = DB::query()->fromSub($query, 'sub')->sum(DB::raw('total_boxes * quantity'));
-
         return Datatables::of($query)
             ->with('total_boxes', $totalBoxes)
             ->with('total_pcs', $totalPcs)

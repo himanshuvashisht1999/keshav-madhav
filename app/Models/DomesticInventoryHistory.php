@@ -102,4 +102,24 @@ class DomesticInventoryHistory extends Model
     {
         return $this->belongsTo(Storeroom::class, 'new_warehouse_id');
     }
+
+    public function oldPattern()
+    {
+        return $this->belongsTo(MasterDesignPattern::class, 'old_pattern_id');
+    }
+
+    public function newPattern()
+    {
+        return $this->belongsTo(MasterDesignPattern::class, 'new_pattern_id');
+    }
+
+    public function oldFitting()
+    {
+        return $this->belongsTo(MasterProductFitting::class, 'old_fitting_id');
+    }
+
+    public function newFitting()
+    {
+        return $this->belongsTo(MasterProductFitting::class, 'new_fitting_id');
+    }
 }

@@ -32,7 +32,6 @@
                                             <th width="40">#</th>
                                             <th>Disposal No</th>
                                             <th>Date</th>
-                                            <th>User</th>
                                             <th>Type</th>
                                             <th>Total Items</th>
                                             <th>Reason</th>
@@ -49,43 +48,7 @@
     </section>
 </div>
 
-<!-- Details Modal -->
-<div class="modal fade" id="detailsModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-light">
-                <h5 class="modal-title font-weight-bold">Disposal Details: <span id="modal_disp_no"></span></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="row mb-3 pb-3 border-bottom">
-                    <div class="col-md-6">
-                        <label class="text-muted small text-uppercase mb-1">Reason</label>
-                        <p class="font-weight-bold text-dark mb-0" id="modal_reason"></p>
-                    </div>
-                    <div class="col-md-6 text-md-right">
-                        <label class="text-muted small text-uppercase mb-1">Remarks</label>
-                        <p class="text-dark mb-0" id="modal_remarks"></p>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered table-hover">
-                        <thead class="bg-light">
-                            <tr>
-                                <th>Item / Barcode</th>
-                                <th width="150" class="text-right">Quantity</th>
-                            </tr>
-                        </thead>
-                        <tbody id="modal_items_body"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-</div>
+
 @endsection
 
 @section('scripts')
@@ -102,10 +65,9 @@
                     data: 'created_at',
                     name: 'created_at',
                     render: function(data) {
-                        return moment(data).format('D MMM YYYY, h:mm A');
+                        return moment(data).format('D MMM YYYY');
                     }
                 },
-                {data: 'user.name', name: 'user.name', defaultContent: '<span class="text-muted">N/A</span>'},
                 {
                     data: 'item_type',
                     name: 'item_type',
@@ -138,33 +100,7 @@
             }
         });
 
-        // View Details
-        $(document).on('click', '.view-details', function() {
-            let id = $(this).data('id');
-            $.get("{{ url('admin/inventory/stock-disposal/show') }}/" + id, function(res) {
-                $('#modal_disp_no').text(res.disposal_no);
-                $('#modal_reason').text(res.reason);
-                $('#modal_remarks').text(res.remarks || 'No remarks provided.');
-                
-                let rows = '';
-                res.items.forEach(item => {
-                    let itemName = '-';
-                    if (res.item_type === 'fabric') {
-                        itemName = `Roll: <span class="badge badge-info">${item.fabric_receipt_detail?.roll_number}</span> 
-                                   <div class="small text-muted">${item.fabric_receipt_detail?.fabric?.name || 'Fabric'}</div>`;
-                    } else {
-                        itemName = `<span class="font-weight-bold">${item.domestic_inventory?.product?.design_number || 'Product'}</span>
-                                   <div class="small text-muted">${item.domestic_inventory?.color?.name} / ${item.domestic_inventory?.size_set?.name}</div>`;
-                    }
-                    rows += `<tr>
-                        <td>${itemName} <br><small class="text-muted">Barcode: ${item.barcode || 'N/A'}</small></td>
-                        <td class="text-right"><strong>${item.quantity}</strong> ${res.item_type === 'fabric' ? 'Mtr' : 'Boxes'}</td>
-                    </tr>`;
-                });
-                $('#modal_items_body').html(rows);
-                $('#detailsModal').modal('show');
-            });
-        });
+
 
         // Delete Disposal
         $(document).on('click', '.delete-disposal', function() {

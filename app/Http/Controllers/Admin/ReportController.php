@@ -644,6 +644,45 @@ class ReportController extends Controller
     public function fabricReturnView($id)
     {
         $response['return'] = $this->service->getFabricReturnDetails($id);
-        return view('admin.report.fabric_return_view', $response);
+    }
+
+    public function salesManReport(Request $request)
+    {
+        $salesMen = \App\Models\SalesMan::with(['orders' => function($q) use ($request) {
+            if ($request->filled('start_date') && $request->filled('end_date')) {
+                $q->whereBetween('order_date', [$request->start_date, $request->end_date]);
+            }
+        }, 'orders.dispatches'])->get();
+
+        return view('admin.report.sales_man', compact('salesMen'));
+    }
+
+    public function salesManReportDetail($id, Request $request)
+    {
+        $salesMan = \App\Models\SalesMan::findOrFail($id);
+        $ordersQuery = $salesMan->orders()->with(['dispatches', 'items', 'fabricItems', 'shop', 'vendor']);
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $ordersQuery->whereBetween('order_date', [$request->start_date, $request->end_date]);
+        }
+
+        if ($request->filled('order_no')) {
+            $ordersQuery->where('id', $request->order_no);
+        }
+
+        if ($request->filled('party_name')) {
+            $partyName = $request->party_name;
+            $ordersQuery->where(function($q) use ($partyName) {
+                $q->whereHas('shop', function($sq) use ($partyName) {
+                    $sq->where('name', 'like', '%' . $partyName . '%');
+                })->orWhereHas('vendor', function($vq) use ($partyName) {
+                    $vq->where('name', 'like', '%' . $partyName . '%');
+                });
+            });
+        }
+
+        $orders = $ordersQuery->latest('order_date')->get();
+
+        return view('admin.report.sales_man_detail', compact('salesMan', 'orders'));
     }
 }

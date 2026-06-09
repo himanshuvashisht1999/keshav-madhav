@@ -28,7 +28,7 @@ class StockDisposalController extends Controller
             ->addIndexColumn()
             ->addColumn('action', function ($row) {
                 return '<div class="btn-group">
-                    <button class="btn btn-xs btn-info view-details" data-id="'.$row->id.'" title="View Details"><i class="fas fa-eye"></i></button>
+                    <a href="'.route('admin.inventory.stock_disposal.show', $row->id).'" class="btn btn-xs btn-info" title="View Details"><i class="fas fa-eye"></i></a>
                     <a href="'.route('admin.inventory.stock_disposal.edit', $row->id).'" class="btn btn-xs btn-primary" title="Edit Full Details"><i class="fas fa-edit"></i></a>
                     <button class="btn btn-xs btn-danger delete-disposal" data-id="'.$row->id.'" title="Delete/Restore Stock"><i class="fas fa-trash"></i></button>
                 </div>';
@@ -38,8 +38,8 @@ class StockDisposalController extends Controller
 
     public function show($id)
     {
-        $main = StockDisposalMain::with(['user', 'items.fabricReceiptDetail.fabric', 'items.domesticInventory.product'])->findOrFail($id);
-        return response()->json($main);
+        $main = StockDisposalMain::with(['user', 'items.fabricReceiptDetail.fabric', 'items.domesticInventory.product', 'items.domesticInventory.color', 'items.domesticInventory.sizeSet'])->findOrFail($id);
+        return view('admin.stock_disposal.show', compact('main'));
     }
 
     public function create()
@@ -231,7 +231,10 @@ class StockDisposalController extends Controller
                     $fabric = FabricReceiptDetail::find($roll_id);
                     if (!$fabric) continue;
 
-                    $qty = $fabric->remaining_quantity;
+                    $requested_qty = $request->input('roll_qty.' . $roll_id, $fabric->remaining_quantity);
+                    $qty = min((float)$requested_qty, $fabric->remaining_quantity);
+
+                    if ($qty <= 0) continue;
 
                     StockDisposalItem::create([
                         'stock_disposal_main_id' => $main->id,
@@ -240,7 +243,7 @@ class StockDisposalController extends Controller
                         'quantity' => $qty
                     ]);
 
-                    $fabric->remaining_quantity = 0;
+                    $fabric->remaining_quantity -= $qty;
                     $fabric->save();
 
                     FabricInventoryHistory::create([
@@ -249,10 +252,10 @@ class StockDisposalController extends Controller
                         'old_warehouse_id' => $fabric->master_fabric_warehouse_id,
                         'new_warehouse_id' => null,
                         'roll_id' => $fabric->id,
-                        'old_quantity' => $qty,
-                        'new_quantity' => 0,
+                        'old_quantity' => $fabric->remaining_quantity + $qty,
+                        'new_quantity' => $fabric->remaining_quantity,
                         'type' => 'Disposal',
-                        'remarks' => "Disposed (No: {$disposal_no}). Reason: {$request->reason}. " . $request->remarks
+                        'remarks' => "Disposed " . ($qty == ($fabric->remaining_quantity + $qty) ? 'Complete Roll' : $qty . ' mtr') . " (No: {$disposal_no}). Reason: {$request->reason}. " . $request->remarks
                     ]);
                 }
             } else {
@@ -382,7 +385,10 @@ class StockDisposalController extends Controller
                     $fabric = FabricReceiptDetail::find($roll_id);
                     if (!$fabric) continue;
 
-                    $qty = $fabric->remaining_quantity;
+                    $requested_qty = $request->input('roll_qty.' . $roll_id, $fabric->remaining_quantity);
+                    $qty = min((float)$requested_qty, $fabric->remaining_quantity);
+
+                    if ($qty <= 0) continue;
 
                     StockDisposalItem::create([
                         'stock_disposal_main_id' => $main->id,
@@ -391,7 +397,7 @@ class StockDisposalController extends Controller
                         'quantity' => $qty
                     ]);
 
-                    $fabric->remaining_quantity = 0;
+                    $fabric->remaining_quantity -= $qty;
                     $fabric->save();
 
                     FabricInventoryHistory::create([
@@ -399,7 +405,7 @@ class StockDisposalController extends Controller
                         'fabric_id' => $fabric->fabric_id,
                         'roll_id' => $fabric->id,
                         'type' => 'Disposal (Updated)',
-                        'remarks' => "Updated Disposal (No: {$disposal_no}). Reason: {$request->reason}"
+                        'remarks' => "Updated Disposal (No: {$disposal_no}). " . ($qty == ($fabric->remaining_quantity + $qty) ? 'Complete Roll' : $qty . ' mtr') . ". Reason: {$request->reason}"
                     ]);
                 }
             } else {

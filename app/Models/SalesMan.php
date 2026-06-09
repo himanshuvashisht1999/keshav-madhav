@@ -18,4 +18,9 @@ class SalesMan extends Model
         'address',
         'status',
     ];
+
+    public function orders()
+    {
+        return $this->hasMany(AgentOrder::class, 'sales_man_id');
+    }
 }

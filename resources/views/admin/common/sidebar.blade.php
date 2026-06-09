@@ -808,13 +808,20 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                     </a>
                                 </li>
 
-                                {{-- <li class="nav-item">
+                                <li class="nav-item">
                                     <a href="{{ route('admin.report.agent-ledger.index') }}"
                                         class="{{ str_contains(strtolower($page_url), 'admin/report/agent-ledger') ? 'nav-link active' : 'nav-link' }}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Agent Ledger Report</p>
                                     </a>
-                                </li> --}}
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.reports.salesManReport') }}"
+                                        class="{{ str_contains(strtolower($page_url), 'admin/reports/sales-man-report') ? 'nav-link active' : 'nav-link' }}">
+                                        <i class="far fa-circle nav-icon text-info"></i>
+                                        <p>Sales Man Report</p>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                     @endcan
@@ -1305,6 +1312,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                         </a>
 
                         <ul class="nav nav-treeview">
+
                             <li class="nav-item">
                                 <a href="{{ route('admin.reports.purchaseOrder') }}"
                                     class="{{ str_contains(strtolower($page_url), 'admin/reports/purchase-order') ? 'nav-link active' : 'nav-link' }}">

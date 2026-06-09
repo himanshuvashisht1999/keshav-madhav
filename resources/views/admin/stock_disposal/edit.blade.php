@@ -87,7 +87,7 @@
                                                                     <th width="40">#</th>
                                                                     <th>Roll No</th>
                                                                     <th>Remaining (Mtr)</th>
-                                                                    <th>Barcode</th>
+                                                                    <th width="120">Dispose (Mtr)</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody id="rollsBody">
@@ -97,7 +97,7 @@
                                                                         <td><div class="custom-control custom-checkbox"><input class="custom-control-input roll-check" type="checkbox" name="roll_ids[]" id="roll_{{ $r->id }}" value="{{ $r->id }}" checked><label for="roll_{{ $r->id }}" class="custom-control-label"></label></div></td>
                                                                         <td><span class="badge badge-info">{{ $r->roll_number }}</span><div class="small text-muted">{{ $r->fabric->name }}</div></td>
                                                                         <td><strong>{{ $r->remaining_quantity + $item->quantity }}</strong> mtr <small class="text-success">(Incl. current disposal)</small></td>
-                                                                        <td><small>{{ $r->barcode }}</small></td>
+                                                                        <td><input type="number" name="roll_qty[{{ $r->id }}]" class="form-control form-control-sm" max="{{ $r->remaining_quantity + $item->quantity }}" min="0.01" step="0.01" value="{{ $item->quantity }}"></td>
                                                                     </tr>
                                                                 @endforeach
                                                             </tbody>
@@ -279,6 +279,7 @@
 
         let currentFabricIds = {!! json_encode($main->items->pluck('fabricReceiptDetail.fabric_id')->unique()->values()) !!};
         let currentRollIds = {!! json_encode($main->items->pluck('item_id')->values()) !!};
+        let currentRollQty = {!! json_encode($main->items->pluck('quantity', 'item_id')) !!};
 
         // --- Fabric Logic ---
         $('#fabric_warehouse').change(function(e, isInitial = false) {
@@ -317,12 +318,15 @@
                     if (data.length > 0) {
                         data.forEach(r => {
                             let checked = currentRollIds.includes(r.id.toString()) || currentRollIds.includes(r.id) ? "checked" : "";
+                            let originalQty = currentRollQty[r.id] ? parseFloat(currentRollQty[r.id]) : 0;
+                            let totalAvailable = parseFloat(r.remaining_quantity) + originalQty;
+                            let inputVal = checked ? originalQty : totalAvailable;
 
                             rows += `<tr>
                                 <td><div class="custom-control custom-checkbox"><input class="custom-control-input roll-check" type="checkbox" name="roll_ids[]" id="roll_${r.id}" value="${r.id}" ${checked}><label for="roll_${r.id}" class="custom-control-label"></label></div></td>
                                 <td><span class="badge badge-info">${r.roll_number}</span><div class="small text-muted">${r.fabric.name}</div></td>
-                                <td><strong>${r.remaining_quantity}</strong> mtr</td>
-                                <td><small>${r.barcode}</small></td>
+                                <td><strong>${totalAvailable}</strong> mtr</td>
+                                <td><input type="number" name="roll_qty[${r.id}]" class="form-control form-control-sm" max="${totalAvailable}" min="0.01" step="0.01" value="${inputVal}"></td>
                             </tr>`;
                         });
                     } else {

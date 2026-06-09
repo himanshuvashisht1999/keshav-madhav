@@ -1327,6 +1327,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/unit-assignments/{type}/{id}/reopen', [AdminReportController::class, 'reopenUnitAssignment'])->name('unit-assignments.reopen');
 
             Route::get('/design-wip', [AdminReportController::class, 'designWip'])->name('design-wip');
+            
+            Route::get('/sales-man-report', [AdminReportController::class, 'salesManReport'])->name('salesManReport');
+            Route::get('/sales-man-report/{id}', [AdminReportController::class, 'salesManReportDetail'])->name('salesManReportDetail');
         });
     });
 

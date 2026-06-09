@@ -205,6 +205,14 @@
                                 {{-- ACTION BUTTONS --}}
                                 <div class="mt-4 row">
                                     <input type="hidden" name="is_final" id="is_final_input" value="1">
+                                    <div class="col-12 mb-3 mt-2 text-center">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="sendWhatsapp" name="send_whatsapp" value="1" checked>
+                                            <label class="custom-control-label font-weight-bold text-success" for="sendWhatsapp">
+                                                <i class="fab fa-whatsapp mr-1"></i> Send WhatsApp Message
+                                            </label>
+                                        </div>
+                                    </div>
                                     <div class="col-md-6 mb-2">
                                         <button type="submit" class="btn btn-success btn-lg w-100 font-weight-bold" onclick="$('#is_final_input').val(1)">
                                             <i class="fas fa-check-double mr-1"></i> Final Submission
