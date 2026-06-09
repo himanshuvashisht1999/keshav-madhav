@@ -16,22 +16,20 @@
         <!-- CONTENT -->
         <section class="content">
             <div class="container-fluid">
-                <!-- SINGLE CONSOLIDATED FILTER CARD -->
-                <div class="card shadow-sm border-0" style="border-radius: 12px;">
-                    <div class="card-body bg-light rounded p-4">
+                <!-- FILTER CARD -->
+                <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+                        <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-filter mr-2"></i>Filter Inventory</h6>
+                    </div>
+                    <div class="card-body bg-white rounded p-4 pt-2">
+                        <!-- Primary Filters Row -->
                         <div class="row align-items-end">
                             <div class="col-md-3 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Design Number</label>
-                                <input type="text" id="design_number" class="form-control" placeholder="Search Design...">
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Size Set</label>
-                                <select id="size_set_filter" class="form-control select2">
-                                    <option value="">All Size Sets</option>
-                                    @foreach($size_sets as $set)
-                                        <option value="{{ $set->size_set_id }}">{{ $set->size_set_name }}</option>
-                                    @endforeach
-                                </select>
+                                <div class="input-group">
+                                    <div class="input-group-prepend"><span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span></div>
+                                    <input type="text" id="design_number" class="form-control border-left-0" placeholder="Search Design...">
+                                </div>
                             </div>
                             <div class="col-md-2 mb-3">
                                 <label class="small font-weight-bold text-muted mb-1">Product</label>
@@ -39,6 +37,15 @@
                                     <option value="">All Products</option>
                                     @foreach($products as $prod)
                                         <option value="{{ $prod->product_id }}">{{ $prod->product_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">Size Set</label>
+                                <select id="size_set_filter" class="form-control select2">
+                                    <option value="">All Size Sets</option>
+                                    @foreach($size_sets as $set)
+                                        <option value="{{ $set->size_set_id }}">{{ $set->size_set_name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -51,86 +58,98 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Stock Status</label>
-                                <select id="stock_status_filter" class="form-control select2">
-                                    <option value="">All Items</option>
-                                    <option value="shortage">Shortage (Orders > Stock)</option>
-                                    <option value="in_stock">In Stock</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Min MRP</label>
-                                <input type="number" id="mrp_filter" class="form-control" placeholder="Min MRP">
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Min Total Boxes</label>
-                                <input type="number" id="min_boxes_filter" class="form-control" placeholder="Min Boxes">
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Min Total Order</label>
-                                <input type="number" id="min_order_filter" class="form-control" placeholder="Min Order">
-                            </div>
                             
                             <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Series</label>
-                                <select id="series_filter" class="form-control select2">
-                                    <option value="">All Series</option>
-                                    @foreach($master_series as $s)
-                                        <option value="{{ $s->id }}">{{ $s->name }}</option>
-                                    @endforeach
-                                </select>
+                                <button class="btn btn-outline-primary btn-block" type="button" data-toggle="collapse" data-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
+                                    <i class="fas fa-sliders-h mr-1"></i> Advanced
+                                </button>
                             </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Brand</label>
-                                <select id="brand_filter" class="form-control select2">
-                                    <option value="">All Brands</option>
-                                    @foreach($brands as $b)
-                                        <option value="{{ $b->id }}">{{ $b->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Fitting</label>
-                                <select id="fitting_filter" class="form-control select2">
-                                    <option value="">All Fittings</option>
-                                    @foreach($master_fittings as $f)
-                                        <option value="{{ $f->id }}">{{ $f->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Pattern</label>
-                                <select id="pattern_filter" class="form-control select2">
-                                    <option value="">All Patterns</option>
-                                    @foreach($master_patterns as $p)
-                                        <option value="{{ $p->id }}">{{ $p->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Product Nature</label>
-                                <select id="nature_filter" class="form-control select2">
-                                    <option value="">All Natures</option>
-                                    @foreach($natures as $n)
-                                        <option value="{{ $n->id }}">{{ $n->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Fabric Type</label>
-                                <select id="fabric_type_filter" class="form-control select2">
-                                    <option value="">All Fabric Types</option>
-                                    @foreach($fabric_types as $ft)
-                                        <option value="{{ $ft->id }}">{{ $ft->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
                             <div class="col-md-1 mb-3">
-                                <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block">
+                                <button id="reset_filters" class="btn btn-secondary btn-block" title="Reset Filters">
                                     <i class="fas fa-undo"></i>
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Filters Collapse -->
+                        <div class="collapse mt-2" id="advancedFilters">
+                            <div class="p-4 bg-light rounded border">
+                                <div class="row">
+                                    <div class="col-md-2 mb-3">
+                                        <label class="small font-weight-bold text-muted mb-1">Stock Status</label>
+                                        <select id="stock_status_filter" class="form-control select2">
+                                            <option value="">All Items</option>
+                                            <option value="shortage">Shortage (Orders > Stock)</option>
+                                            <option value="in_stock">In Stock</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="small font-weight-bold text-muted mb-1">Min MRP</label>
+                                        <input type="number" id="mrp_filter" class="form-control" placeholder="Min MRP">
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="small font-weight-bold text-muted mb-1">Min Total Boxes</label>
+                                        <input type="number" id="min_boxes_filter" class="form-control" placeholder="Min Boxes">
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="small font-weight-bold text-muted mb-1">Min Total Order</label>
+                                        <input type="number" id="min_order_filter" class="form-control" placeholder="Min Order">
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="small font-weight-bold text-muted mb-1">Series</label>
+                                        <select id="series_filter" class="form-control select2">
+                                            <option value="">All Series</option>
+                                            @foreach($master_series as $s)
+                                                <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="small font-weight-bold text-muted mb-1">Brand</label>
+                                        <select id="brand_filter" class="form-control select2">
+                                            <option value="">All Brands</option>
+                                            @foreach($brands as $b)
+                                                <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="small font-weight-bold text-muted mb-1">Fitting</label>
+                                        <select id="fitting_filter" class="form-control select2">
+                                            <option value="">All Fittings</option>
+                                            @foreach($master_fittings as $f)
+                                                <option value="{{ $f->id }}">{{ $f->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="small font-weight-bold text-muted mb-1">Pattern</label>
+                                        <select id="pattern_filter" class="form-control select2">
+                                            <option value="">All Patterns</option>
+                                            @foreach($master_patterns as $p)
+                                                <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="small font-weight-bold text-muted mb-1">Product Nature</label>
+                                        <select id="nature_filter" class="form-control select2">
+                                            <option value="">All Natures</option>
+                                            @foreach($natures as $n)
+                                                <option value="{{ $n->id }}">{{ $n->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="small font-weight-bold text-muted mb-1">Fabric Type</label>
+                                        <select id="fabric_type_filter" class="form-control select2">
+                                            <option value="">All Fabric Types</option>
+                                            @foreach($fabric_types as $ft)
+                                                <option value="{{ $ft->id }}">{{ $ft->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

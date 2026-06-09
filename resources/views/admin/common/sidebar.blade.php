@@ -30,35 +30,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                         </a>
                     </li> -->
                     @can('manage-purchase-order')
-                        <li
-                            class="{{ (str_contains($page_url, 'admin/purchase-order') || str_contains($page_url, 'admin/purchase-order')) ? 'nav-item menu-open' : 'nav-item' }} ">
-                            <a href="#"
+                        <li class="nav-item">
+                            <a href="{{ route('admin.purchase_order.index') }}"
                                 class="{{ str_contains($page_url, 'admin/purchase-order') ? 'nav-link active' : 'nav-link' }} border_class">
                                 <i class="nav-icon fas fa-cube"></i>
                                 <p>
-                                    PURCHASE ORDER
-                                    <i class="right fas fa-angle-left"></i>
+                                    FABRIC POs
                                 </p>
                             </a>
-
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.purchase_order.index') }}"
-                                        class="{{ (str_contains($page_url, 'admin/purchase-order/index') || str_contains($page_url, 'admin/purchase-order/view')) ? 'nav-link active' : 'nav-link' }}"
-                                        style="position:static;">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Fabric POs</p>
-                                    </a>
-                                </li>
-                                <!-- <li class="nav-item">
-                                                                <a href="{{ route('admin.purchase_order.adjustment') }}"
-                                                                    class="{{ (str_contains($page_url, 'admin/purchase-order/adjustment')) ? 'nav-link active' : 'nav-link' }}"
-                                                                    style="position:static;">
-                                                                    <i class="far fa-circle nav-icon"></i>
-                                                                    <p>Adjust POs With Fabric Shipments</p>
-                                                                </a>
-                                                            </li> -->
-                            </ul>
                         </li>
                     @endcan
 
