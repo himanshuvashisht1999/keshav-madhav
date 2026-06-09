@@ -11,6 +11,7 @@ class AgentOrder extends Model
 
     protected $fillable = [
         'sales_agent_id',
+        'master_agent_id',
         'party_type',
         'master_customer_id',
         'master_vendor_id',
@@ -36,6 +37,11 @@ class AgentOrder extends Model
     ];
 
     protected $appends = ['paid_amount', 'balance_amount', 'shop_name'];
+
+    public function masterAgent()
+    {
+        return $this->belongsTo(SalesAgent::class, 'master_agent_id');
+    }
 
     public function items()
     {

@@ -299,15 +299,19 @@ class OrderController extends Controller
         $agent = Auth::guard('sales_agent')->user();
         $agent_id = $agent->id;
         
+        $master_agent_id = null;
+
         $party_type = $request->party_type ?? 'customer';
         if ($party_type == 'vendor') {
             $customer = \DB::table('vendors')->where('id', $request->shop_id)->first();
             if (!$customer) abort(404);
             $actual_agent_id = 0;
+            if ($agent->is_master_agent) $master_agent_id = $agent_id;
         } else {
             $customer = \App\Models\MasterCustomer::findOrFail($request->shop_id);
             if ($agent->is_master_agent) {
                 $actual_agent_id = $customer->sales_agent_id ?: 0;
+                $master_agent_id = $agent_id;
             } else {
                 $actual_agent_id = $agent_id;
             }
@@ -411,6 +415,7 @@ class OrderController extends Controller
         try {
             $order = AgentOrder::create([
                 'sales_agent_id' => $actual_agent_id,
+                'master_agent_id' => $master_agent_id,
                 'sales_man_id' => $request->sales_man_id,
                 'party_type' => $party_type,
                 'master_customer_id' => $party_type == 'customer' ? $request->shop_id : null,
@@ -513,6 +518,8 @@ class OrderController extends Controller
         
         if (!$agent->is_master_agent) {
             $query->where('sales_agent_id', $agent->id);
+        } else {
+            $query->where('master_agent_id', $agent->id);
         }
         
         $order = $query->firstOrFail();
@@ -846,6 +853,8 @@ class OrderController extends Controller
         
         if (!$agent->is_master_agent) {
             $query->where('sales_agent_id', $agent->id);
+        } else {
+            $query->where('master_agent_id', $agent->id);
         }
         
         $order = $query->firstOrFail();
@@ -989,7 +998,7 @@ class OrderController extends Controller
     {
         $agent = Auth::guard('sales_agent')->user();
         if ($agent->is_master_agent) {
-            $orders = AgentOrder::with(['shop', 'vendor'])
+            $orders = AgentOrder::where('master_agent_id', $agent->id)->with(['shop', 'vendor'])
                 ->latest()
                 ->paginate(10);
         } else {
@@ -1008,6 +1017,8 @@ class OrderController extends Controller
         
         if (!$agent->is_master_agent) {
             $query->where('sales_agent_id', $agent->id);
+        } else {
+            $query->where('master_agent_id', $agent->id);
         }
         
         $order = $query->firstOrFail();

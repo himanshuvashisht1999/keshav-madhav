@@ -16,14 +16,15 @@ class DashboardController extends Controller
 
         if ($is_master) {
             $stats = [
-                'total_orders' => \DB::table('agent_orders')->count(),
-                'pending_orders' => \DB::table('agent_orders')->where('status', 'pending')->count(),
+                'total_orders' => \DB::table('agent_orders')->where('master_agent_id', $agent_id)->count(),
+                'pending_orders' => \DB::table('agent_orders')->where('master_agent_id', $agent_id)->where('status', 'pending')->count(),
                 'total_shops' => MasterCustomer::count(),
             ];
 
             $recent_orders = \DB::table('agent_orders')
                 ->leftJoin('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
                 ->leftJoin('vendors', 'agent_orders.master_vendor_id', '=', 'vendors.id')
+                ->where('agent_orders.master_agent_id', $agent_id)
                 ->select('agent_orders.*', \DB::raw('COALESCE(master_customers.name, vendors.name) as shop_name'))
                 ->latest('order_date')
                 ->limit(5)
