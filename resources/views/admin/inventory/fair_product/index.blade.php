@@ -34,46 +34,56 @@
 </style>
 
 <div class="content-wrapper">
-    <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="h3 font-weight-bold text-dark mb-0">Sample Sets</h1>
-                <p class="text-muted">Manage your grouped sample sets for customers.</p>
+    <!-- PAGE HEADER -->
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2 align-items-center">
+                <div class="col-sm-6">
+                    <h1 class="m-0 font-weight-bold text-dark h4">Sample Sets</h1>
+                    <small class="text-muted">Manage your grouped sample sets for customers.</small>
+                </div>
+                <div class="col-sm-6 text-right">
+                    <a href="{{ route('admin.inventory.fair-product.create') }}" class="btn btn-sm btn-primary px-3 shadow-sm">
+                        <i class="fas fa-plus mr-1"></i> Create New Sample Set
+                    </a>
+                </div>
             </div>
-            <a href="{{ route('admin.inventory.fair-product.create') }}" class="btn btn-primary px-4">
-                <i class="fas fa-plus mr-2"></i> Create New Sample Set
-            </a>
         </div>
+    </section>
+
+    <!-- CONTENT -->
+    <section class="content">
+        <div class="container-fluid">
 
         <!-- FILTER CARD -->
-        <div class="card shadow-sm border-0 mb-4 premium-card">
-            <div class="card-body p-3">
+        <div class="card shadow-sm border-0 mb-3 premium-card">
+            <div class="card-body p-2">
                 <form action="{{ route('admin.inventory.fair-product.index') }}" method="GET" class="row align-items-end">
-                    <div class="col-md-2">
-                        <label class="small text-muted font-weight-bold">Batch No</label>
-                        <input type="text" name="batch_no" class="form-control" value="{{ request('batch_no') }}" placeholder="FAIR-...">
+                    <div class="col-md mb-2">
+                        <label class="small text-muted font-weight-bold mb-1">Batch No</label>
+                        <input type="text" name="batch_no" class="form-control form-control-sm" value="{{ request('batch_no') }}" placeholder="FAIR-...">
                     </div>
-                    <div class="col-md-3">
-                        <label class="small text-muted font-weight-bold">Sales Agent</label>
-                        <select name="sales_agent_ids[]" class="form-control select2" multiple>
+                    <div class="col-md mb-2">
+                        <label class="small text-muted font-weight-bold mb-1">Sales Agent</label>
+                        <select name="sales_agent_ids[]" class="form-control select2 form-control-sm" multiple>
                             @foreach($salesAgents as $agent)
                                 <option value="{{ $agent->id }}" {{ is_array(request('sales_agent_ids')) && in_array($agent->id, request('sales_agent_ids')) ? 'selected' : '' }}>{{ $agent->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="small text-muted font-weight-bold">From Date</label>
-                        <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}">
+                    <div class="col-md mb-2">
+                        <label class="small text-muted font-weight-bold mb-1">From Date</label>
+                        <input type="date" name="from_date" class="form-control form-control-sm" value="{{ request('from_date') }}">
                     </div>
-                    <div class="col-md-2">
-                        <label class="small text-muted font-weight-bold">To Date</label>
-                        <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
+                    <div class="col-md mb-2">
+                        <label class="small text-muted font-weight-bold mb-1">To Date</label>
+                        <input type="date" name="to_date" class="form-control form-control-sm" value="{{ request('to_date') }}">
                     </div>
-                    <div class="col-md-3 mt-2 mt-md-0 d-flex">
-                        <button type="submit" class="btn btn-primary w-50 mr-1">
-                            <i class="fas fa-filter mr-1"></i> Filter
+                    <div class="col-md-auto mb-2 d-flex text-right">
+                        <button type="submit" class="btn btn-sm btn-primary shadow-sm mr-1 px-3">
+                            <i class="fas fa-filter"></i> Filter
                         </button>
-                        <a href="{{ route('admin.inventory.fair-product.index') }}" class="btn btn-outline-secondary w-50 ml-1">
+                        <a href="{{ route('admin.inventory.fair-product.index') }}" class="btn btn-sm btn-outline-secondary shadow-sm px-3">
                             Reset
                         </a>
                     </div>
@@ -166,5 +176,6 @@
             @endif
         </div>
     </div>
+    </section>
 </div>
 @endsection

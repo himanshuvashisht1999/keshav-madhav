@@ -2,23 +2,23 @@
 
 @section('content')
     <div class="content-wrapper">
-        <div class="content-header">
+        <div class="content-header pt-2 pb-1">
             <div class="container-fluid d-flex justify-content-between align-items-center">
                 <div>
-                    <h1 class="m-0 font-weight-bold text-dark"><i class="fas fa-history mr-2"></i>Dispatch Logs</h1>
-                    <p class="text-muted">Track consolidated shipments dispatched to shops.</p>
+                    <h4 class="m-0 text-dark"><i class="fas fa-history mr-2"></i>Dispatch Logs</h4>
+                    <p class="text-muted small mb-0">Track consolidated shipments dispatched to shops.</p>
                 </div>
                 
                 <div class="text-center">
-                    <div class="bg-primary text-white px-4 py-2 rounded shadow-sm">
-                        <span class="d-block small font-weight-bold text-uppercase text-white-50">Total Grand Total</span>
-                        <span class="h4 mb-0 font-weight-bold">₹{{ number_format($totalGrandTotal ?? 0, 2) }}</span>
+                    <div class="bg-primary text-white px-3 py-1 rounded shadow-sm">
+                        <span class="d-block small text-uppercase text-white-50">Total Grand Total</span>
+                        <span class="h5 mb-0">₹{{ number_format($totalGrandTotal ?? 0, 2) }}</span>
                     </div>
                 </div>
 
                 <div>
-                    <a href="{{ route('admin.agent-orders.index') }}" class="btn btn-outline-secondary shadow-sm px-4" style="border-radius: 8px;">
-                        <i class="fas fa-arrow-left mr-2"></i> BACK TO ORDERS
+                    <a href="{{ route('admin.agent-orders.index') }}" class="btn btn-outline-secondary btn-sm shadow-sm px-3" style="border-radius: 6px;">
+                        <i class="fas fa-arrow-left mr-1"></i> BACK TO ORDERS
                     </a>
                 </div>
             </div>
@@ -27,12 +27,12 @@
         <section class="content">
             <div class="container-fluid">
                 <!-- FILTER CARD -->
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-body p-3">
+                <div class="card shadow-sm border-0 mb-3 bg-light">
+                    <div class="card-body p-2">
                         <form action="{{ route('admin.agent-orders.dispatches.index') }}" method="GET" class="row align-items-end">
-                            <div class="col-md-2 mb-2">
-                                <label class="small text-muted font-weight-bold">Filter by Party</label>
-                                <select name="shop_id" class="form-control select2">
+                            <div class="col-md-2 mb-1">
+                                <label class="small text-muted mb-0">Filter by Party</label>
+                                <select name="shop_id" class="form-control form-control-sm select2">
                                     <option value="">All Parties</option>
                                     @foreach($shops as $shop)
                                         <option value="{{ $shop->id }}" {{ request('shop_id') == $shop->id ? 'selected' : '' }}>
@@ -41,9 +41,9 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-2">
-                                <label class="small text-muted font-weight-bold">Filter by Vendor</label>
-                                <select name="vendor_id" class="form-control select2">
+                            <div class="col-md-2 mb-1">
+                                <label class="small text-muted mb-0">Filter by Vendor</label>
+                                <select name="vendor_id" class="form-control form-control-sm select2">
                                     <option value="">All Vendors</option>
                                     @foreach($vendors as $vendor)
                                         <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>
@@ -52,24 +52,24 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-2">
-                                <label class="small text-muted font-weight-bold">Dispatch Type</label>
-                                <select name="dispatch_type" class="form-control">
+                            <div class="col-md-2 mb-1">
+                                <label class="small text-muted mb-0">Dispatch Type</label>
+                                <select name="dispatch_type" class="form-control form-control-sm">
                                     <option value="">All Types</option>
                                     <option value="item" {{ request('dispatch_type') === 'item' ? 'selected' : '' }}>Item</option>
                                     <option value="fabric" {{ request('dispatch_type') === 'fabric' ? 'selected' : '' }}>Fabric</option>
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-2">
-                                <label class="small text-muted font-weight-bold">From Date</label>
-                                <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}">
+                            <div class="col-md-2 mb-1">
+                                <label class="small text-muted mb-0">From Date</label>
+                                <input type="date" name="from_date" class="form-control form-control-sm" value="{{ request('from_date') }}">
                             </div>
-                            <div class="col-md-2 mb-2">
-                                <label class="small text-muted font-weight-bold">To Date</label>
-                                <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
+                            <div class="col-md-2 mb-1">
+                                <label class="small text-muted mb-0">To Date</label>
+                                <input type="date" name="to_date" class="form-control form-control-sm" value="{{ request('to_date') }}">
                             </div>
-                            <div class="col-md-2 mb-2">
-                                <button type="submit" class="btn btn-primary btn-block">
+                            <div class="col-md-2 mb-1">
+                                <button type="submit" class="btn btn-primary btn-sm btn-block shadow-sm">
                                     <i class="fas fa-filter mr-1"></i> APPLY
                                 </button>
                             </div>
@@ -82,35 +82,28 @@
                         <table class="table table-hover mb-0">
                             <thead class="bg-light">
                                 <tr>
-                                    <th>Dispatch ID</th>
-                                    <th>Party Name</th>
-                                    <th>Agent</th>
-                                    {{-- <th>LR No.</th> --}}
-                                    {{-- <th>Transport</th> --}}
-                                    <th>Grand Total</th>
-                                    {{-- <th>Other Charges</th> --}}
-                                    <th>Date</th>
-                                    <th>Remark</th>
-                                    <th class="text-right">Actions</th>
+                                    <th class="font-weight-normal">Dispatch ID</th>
+                                    <th class="font-weight-normal">Party Name</th>
+                                    <th class="font-weight-normal">Agent</th>
+                                    <th class="font-weight-normal">Grand Total</th>
+                                    <th class="font-weight-normal">Date</th>
+                                    <th class="font-weight-normal">Remark</th>
+                                    <th class="font-weight-normal text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($dispatches as $dispatch)
                                     <tr>
-                                        <td>#DSP-{{ str_pad($dispatch->id, 5, '0', STR_PAD_LEFT) }}</td>
+                                        <td><small>#DSP-{{ str_pad($dispatch->id, 5, '0', STR_PAD_LEFT) }}</small></td>
                                         <td>
-                                            <strong>
-                                                @if($dispatch->party_type === 'vendor')
-                                                    {{ $dispatch->vendor->name ?? 'N/A' }} <span class="badge badge-warning ml-1">Vendor</span>
-                                                @else
-                                                    {{ $dispatch->shop->name ?? 'N/A' }}
-                                                @endif
-                                            </strong>
+                                            @if($dispatch->party_type === 'vendor')
+                                                {{ $dispatch->vendor->name ?? 'N/A' }} <span class="badge badge-warning ml-1">Vendor</span>
+                                            @else
+                                                {{ $dispatch->shop->name ?? 'N/A' }}
+                                            @endif
                                         </td>
                                         <td><span class="badge badge-info">{{ $dispatch->agent->name ?? 'Direct' }}</span></td>
-                                        {{-- <td>{{ $dispatch->lr_no ?? 'Pending' }}</td> --}}
-                                        {{-- <td>{{ $dispatch->transport_name ?? 'N/A' }}</td> --}}
-                                        <td><span class="text-primary font-weight-bold">₹{{ number_format($dispatch->grand_total, 2) }}</span></td>
+                                        <td><span class="text-primary">₹{{ number_format($dispatch->grand_total, 2) }}</span></td>
                                         {{-- <td>₹{{ number_format($dispatch->other_charges ?? 0, 2) }}</td> --}}
                                         <td>{{ $dispatch->dispatch_date ? date('d M Y', strtotime($dispatch->dispatch_date)) : 'N/A' }}</td>
                                         <td><small class="text-muted">{{ Str::limit($dispatch->remark, 30) }}</small></td>

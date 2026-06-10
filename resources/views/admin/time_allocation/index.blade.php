@@ -22,9 +22,9 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card">
-                        <div class="card-header">
+                        <!-- <div class="card-header">
                             <h3 class="card-title">Lot Time Allocation List</h3>
-                        </div>
+                        </div> -->
                         <div class="card-body">
                             <table id="dataTable" class="table table-bordered table-striped w-100">
                                 <thead>

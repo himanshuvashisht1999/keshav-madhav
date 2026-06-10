@@ -24,51 +24,52 @@
         .content-wrapper {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background-color: var(--bg-main);
-            padding-bottom: 300px;
+            padding-bottom: 150px;
         }
 
         .premium-page-header {
-            padding: 2rem 0;
+            padding: 0.75rem 0;
         }
 
         .page-title {
-            font-size: 1.875rem;
-            font-weight: 800;
+            font-size: 1.25rem;
+            font-weight: 700;
             color: var(--text-main);
-            letter-spacing: -0.025em;
-            margin-bottom: 0.5rem;
+            letter-spacing: -0.015em;
+            margin-bottom: 0.25rem;
         }
 
         .page-subtitle {
             color: var(--text-muted);
-            font-size: 1rem;
+            font-size: 0.875rem;
+            margin-bottom: 0;
         }
 
         /* ITEM CARD STYLING */
         .inventory-item-card {
             background: var(--card-bg);
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow);
-            margin-bottom: 24px;
+            margin-bottom: 16px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: visible;
         }
 
         .inventory-item-card:hover {
-            box-shadow: var(--shadow-lg);
+            box-shadow: var(--shadow-md);
             transform: translateY(-2px);
         }
 
         .card-header-premium {
-            padding: 1rem 1.5rem;
+            padding: 0.75rem 1rem;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
             background: #fcfdfe;
-            border-radius: 16px 16px 0 0;
+            border-radius: 12px 12px 0 0;
         }
 
         .item-number {
@@ -83,7 +84,7 @@
         }
 
         .card-body-premium {
-            padding: 1.5rem;
+            padding: 1rem;
         }
 
         .input-group-premium {
@@ -101,7 +102,7 @@
         }
 
         .form-control-premium {
-            height: 44px;
+            /* height: 44px; */
             width: 100%;
             font-size: 0.9375rem;
             border-radius: 10px;
@@ -119,7 +120,7 @@
 
         /* SELECT2 CUSTOMIZATION */
         .select2-container--bootstrap4 .select2-selection {
-            height: 44px !important;
+            /* height: 44px !important; */
             border-radius: 10px !important;
             border: 1px solid var(--border-color) !important;
             display: flex;
@@ -382,7 +383,7 @@
                                 <!-- Row 1: Primary Details -->
                                 <div class="row">
                                     <div class="col-md-3 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Design No *</label>
     <div class="action-links">
         <a href="{{ route('admin.master.production-goods.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
@@ -401,7 +402,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Pattern *</label>
     <div class="action-links">
         <a href="{{ route('admin.master.design-pattern.index') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
@@ -414,7 +415,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Fitting *</label>
     <div class="action-links">
         <a href="{{ route('admin.master.fitting.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
@@ -427,7 +428,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Warehouse *</label>
     <div class="action-links">
         <a href="{{ route('admin.master.storeroom.index') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
@@ -443,7 +444,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
                                             <label class="label-premium mb-0">Rack</label>
                                             <div class="action-links">
                                                 <a href="javascript:void(0)" class="text-primary btn-add-new-rack" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
@@ -460,7 +461,7 @@
                                 <!-- Row 2: Secondary Details -->
                                 <div class="row">
                                     <div class="col-md-3 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Size Set *</label>
     <div class="action-links">
         <a href="{{ route('admin.master.size-measurement.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
@@ -473,7 +474,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Color *</label>
     <div class="action-links">
         <a href="{{ route('admin.master.colors.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
@@ -674,7 +675,7 @@
 
                                             <div class="row">
                                                 <div class="col-md-3 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Design No *</label>
     <div class="action-links">
         <a href="{{ route('admin.master.production-goods.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
@@ -689,7 +690,7 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-2 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Pattern *</label>
     <div class="action-links">
         <a href="{{ route('admin.master.design-pattern.index') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
@@ -701,7 +702,7 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-2 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Fitting *</label>
     <div class="action-links">
         <a href="{{ route('admin.master.fitting.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
@@ -713,7 +714,7 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-3 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Warehouse *</label>
     <div class="action-links">
         <a href="{{ route('admin.master.storeroom.index') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
@@ -728,7 +729,7 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-2 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
                                                         <label class="label-premium mb-0">Rack</label>
                                                         <div class="action-links">
                                                             <a href="javascript:void(0)" class="text-primary btn-add-new-rack" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
@@ -742,7 +743,7 @@
                                             </div>
                                             <div class="row">
                                                 <div class="col-md-3 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Size Set *</label>
     <div class="action-links">
         <a href="{{ route('admin.master.size-measurement.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
@@ -754,7 +755,7 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-3 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Color *</label>
     <div class="action-links">
         <a href="{{ route('admin.master.colors.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>

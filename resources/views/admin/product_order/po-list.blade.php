@@ -35,50 +35,40 @@
                         </button>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-2">
                     <form method="GET" action="{{ route('admin.product_order.poList') }}">
-                        <div class="row">
-                            <div class="col-md-3 col-sm-6">
-                                <div class="form-group">
-                                    <label for="search" class="small">Search (PO No / Order SKU)</label>
-                                    <input type="text" class="form-control form-control-sm" name="search" id="search" value="{{ request('search') }}" placeholder="Enter PO No or SKU">
+                        <div class="row align-items-end">
+                            <div class="col-md-3 col-sm-6 mb-2">
+                                <label for="search" class="small mb-1">Search (PO No / Order SKU)</label>
+                                <input type="text" class="form-control form-control-sm" name="search" id="search" value="{{ request('search') }}" placeholder="Enter PO No or SKU">
+                            </div>
+                            <div class="col-md-2 col-sm-6 mb-2">
+                                <label for="vendor_id" class="small mb-1">Vendor</label>
+                                <select class="form-control form-control-sm select2" name="vendor_id" id="vendor_id" style="width: 100%;">
+                                    <option value="">All Vendors</option>
+                                    @foreach($vendors as $vendor)
+                                        <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>{{ $vendor->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-sm-6 mb-2">
+                                <label for="customer_id" class="small mb-1">Customer</label>
+                                <select class="form-control form-control-sm select2" name="customer_id" id="customer_id" style="width: 100%;">
+                                    <option value="">All Customers</option>
+                                    @foreach($customers as $customer)
+                                        <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-2">
+                                <label class="small mb-1">Created Date</label>
+                                <div class="d-flex">
+                                    <input type="date" class="form-control form-control-sm mr-2" name="start_date" id="start_date" value="{{ request('start_date') }}">
+                                    <input type="date" class="form-control form-control-sm" name="end_date" id="end_date" value="{{ request('end_date') }}">
                                 </div>
                             </div>
-                            <div class="col-md-3 col-sm-6">
-                                <div class="form-group">
-                                    <label for="vendor_id" class="small">Vendor</label>
-                                    <select class="form-control form-control-sm select2" name="vendor_id" id="vendor_id" style="width: 100%;">
-                                        <option value="">All Vendors</option>
-                                        @foreach($vendors as $vendor)
-                                            <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>{{ $vendor->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6">
-                                <div class="form-group">
-                                    <label for="customer_id" class="small">Customer</label>
-                                    <select class="form-control form-control-sm select2" name="customer_id" id="customer_id" style="width: 100%;">
-                                        <option value="">All Customers</option>
-                                        @foreach($customers as $customer)
-                                            <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6">
-                                <div class="form-group">
-                                    <label class="small">Created Date Range</label>
-                                    <div class="d-flex flex-wrap">
-                                        <input type="date" class="form-control form-control-sm mb-2 mr-2" style="flex: 1 1 120px;" name="start_date" id="start_date" value="{{ request('start_date') }}">
-                                        <input type="date" class="form-control form-control-sm mb-2" style="flex: 1 1 120px;" name="end_date" id="end_date" value="{{ request('end_date') }}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-12 text-right">
-                                <button type="submit" class="btn btn-sm btn-primary mr-2"><i class="fa fa-filter"></i> Filter</button>
+                            <div class="col-md-2 col-sm-12 mb-2 text-right">
+                                <button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-filter"></i> Filter</button>
                                 <a href="{{ route('admin.product_order.poList') }}" class="btn btn-sm btn-secondary"><i class="fa fa-undo"></i> Reset</a>
                             </div>
                         </div>

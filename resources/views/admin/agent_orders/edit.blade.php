@@ -2,14 +2,14 @@
 
 @section('content')
     <div class="content-wrapper">
-        <div class="content-header">
+        <div class="content-header pt-2 pb-1">
             <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1 class="m-0 text-dark font-weight-bold">Edit Order #ORD-{{ $order->id }}</h1>
-                        <p class="text-muted small mb-0"><i class="fas fa-store mr-1"></i> {{ $shop->name ?? 'N/A' }} | <i class="fas fa-user mr-1"></i> Agent: {{ $order->agent->name ?? 'N/A' }}</p>
+                <div class="row mb-2 align-items-center">
+                    <div class="col-md-7 col-sm-6">
+                        <h4 class="m-0 text-dark font-weight-bold text-truncate" title="Edit Order #ORD-{{ $order->id }}">Edit Order #ORD-{{ $order->id }}</h4>
+                        <p class="text-muted small mb-0 text-truncate"><i class="fas fa-store mr-1"></i> <span class="text-primary">{{ $shop->name ?? 'N/A' }}</span> | <i class="fas fa-user mr-1"></i> Agent: {{ $order->agent->name ?? 'N/A' }}</p>
                     </div>
-                    <div class="col-sm-6">
+                    <div class="col-md-5 col-sm-6">
                         <ol class="breadcrumb float-sm-right">
                             <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
                             <li class="breadcrumb-item"><a href="{{ route('admin.agent-orders.index') }}">Agent Orders</a></li>
@@ -23,20 +23,18 @@
         <section class="content pb-5 mb-5" style="padding-bottom: 150px !important;">
             <div class="container-fluid">
                 <!-- Filters Section -->
-                <div class="card shadow-sm border-0 mb-4 bg-light">
-                    <div class="card-body p-3">
+                <div class="card shadow-sm border-0 mb-3 bg-light">
+                    <div class="card-body p-2">
                         <form method="GET" action="{{ route('admin.agent-orders.edit', $order->id) }}" id="filterForm">
-                            <div class="row mb-3">
-                                <div class="col-12">
-                                    <div class="custom-control custom-switch border p-2 rounded bg-white shadow-sm" style="border-radius: 10px !important;">
+                            <div class="row align-items-end">
+                                <div class="col-md-2 col-12 mb-1">
+                                    <div class="custom-control custom-switch border p-1 rounded bg-white shadow-sm" style="border-radius: 6px !important;">
                                         <input type="checkbox" class="custom-control-input" id="sampleSetToggle" name="sample_set" value="1" {{ (request()->has('product_name') ? request('sample_set') == '1' : $order->is_sample_set == 1) ? 'checked' : '' }} onchange="this.form.submit()">
-                                        <label class="custom-control-label font-weight-bold ml-2 pt-1 text-primary" for="sampleSetToggle" style="cursor:pointer; user-select: none;">Use Sample Set Pricing for this Order</label>
+                                        <label class="custom-control-label font-weight-bold ml-2 pt-1 text-primary small" for="sampleSetToggle" style="cursor:pointer; user-select: none;">Sample Set Price</label>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row align-items-end">
-                                <div class="col-md-2 col-6 mb-2">
-                                    <label class="small font-weight-bold text-muted mb-1">Design No</label>
+                                <div class="col-md-2 col-6 mb-1">
+                                    <label class="small font-weight-bold text-muted mb-0">Design No</label>
                                     <select name="design_number" class="form-control form-control-sm select2">
                                         <option value="">All Designs</option>
                                         @foreach($designs as $design)
@@ -46,8 +44,8 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-3 col-6 mb-2">
-                                    <label class="small font-weight-bold text-muted mb-1">Product Name</label>
+                                <div class="col-md-2 col-6 mb-1">
+                                    <label class="small font-weight-bold text-muted mb-0">Product Name</label>
                                     <select name="product_name" class="form-control form-control-sm select2">
                                         <option value="">All Products</option>
                                         @foreach($product_names as $name)
@@ -57,8 +55,8 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-2 col-6 mb-2">
-                                    <label class="small font-weight-bold text-muted mb-1">Color</label>
+                                <div class="col-md-2 col-6 mb-1">
+                                    <label class="small font-weight-bold text-muted mb-0">Color</label>
                                     <select name="color_name" class="form-control form-control-sm select2">
                                         <option value="">All Colors</option>
                                         @foreach($colors as $color)
@@ -68,8 +66,8 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-2 col-6 mb-2">
-                                    <label class="small font-weight-bold text-muted mb-1">Size Set</label>
+                                <div class="col-md-2 col-6 mb-1">
+                                    <label class="small font-weight-bold text-muted mb-0">Size Set</label>
                                     <select name="size_set_name" class="form-control form-control-sm select2">
                                         <option value="">All Sets</option>
                                         @foreach($size_sets as $set)
@@ -79,11 +77,11 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-3 col-12 mb-2 text-right">
-                                    <button type="submit" class="btn btn-primary btn-sm px-4 mr-2">
+                                <div class="col-md-2 col-12 mb-1 text-right">
+                                    <button type="submit" class="btn btn-primary btn-sm px-3 mr-1 shadow-sm">
                                         <i class="fas fa-search mr-1"></i> Filter
                                     </button>
-                                    <a href="{{ route('admin.agent-orders.edit', $order->id) }}" class="btn btn-secondary btn-sm px-3">
+                                    <a href="{{ route('admin.agent-orders.edit', $order->id) }}" class="btn btn-secondary btn-sm px-2 shadow-sm">
                                         <i class="fas fa-undo"></i>
                                     </a>
                                 </div>
@@ -99,7 +97,7 @@
                             <h6 class="font-weight-bold mb-0 text-dark">
                                 <i class="fas fa-boxes mr-2 text-primary"></i> Inventory Selection
                             </h6>
-                            <span class="badge badge-light border text-muted px-3 py-2">
+                            <span class="badge badge-light border text-muted px-3 py-2" id="variationsCount">
                                 {{ $boxes->total() }} Items Available
                             </span>
                         </div>
@@ -312,6 +310,11 @@
                         }
                         container.append(response.html);
                         nextPage = response.next_page;
+                        
+                        if (response.total_count !== undefined) {
+                            $('#variationsCount').text(response.total_count + ' Items Available');
+                        }
+
                         loading = false;
                         $('#loading-spinner').hide();
                         updateUI();

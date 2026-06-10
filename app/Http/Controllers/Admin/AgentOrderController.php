@@ -265,7 +265,8 @@ class AgentOrderController extends Controller
             }
             return response()->json([
                 'html' => $html,
-                'next_page' => $boxes->nextPageUrl() ? $boxes->currentPage() + 1 : null
+                'next_page' => $boxes->nextPageUrl() ? $boxes->currentPage() + 1 : null,
+                'total_count' => $boxes->total()
             ]);
         }
 
@@ -1113,7 +1114,8 @@ class AgentOrderController extends Controller
             }
             return response()->json([
                 'html' => $html,
-                'next_page' => $boxes->nextPageUrl() ? $boxes->currentPage() + 1 : null
+                'next_page' => $boxes->nextPageUrl() ? $boxes->currentPage() + 1 : null,
+                'total_count' => $boxes->total()
             ]);
         }
 
@@ -2494,10 +2496,33 @@ class AgentOrderController extends Controller
         return $pdf->download('Packing_Slip_' . $dispatch->id . '.pdf');
     }
 
-    public function indexReturns()
+    public function indexReturns(Request $request)
     {
-        $returns = AgentOrderReturn::with(['dispatch.vendor', 'dispatch.shop', 'dispatch.agent', 'creator'])->latest()->paginate(20);
-        return view('admin.agent_orders.returns.index', compact('returns'));
+        $query = AgentOrderReturn::with(['dispatch.vendor', 'dispatch.shop', 'dispatch.agent', 'creator']);
+
+        if ($request->filled('shop_id')) {
+            $query->whereHas('dispatch', function($q) use ($request) {
+                $q->where('master_customer_id', $request->shop_id);
+            });
+        }
+        if ($request->filled('vendor_id')) {
+            $query->whereHas('dispatch', function($q) use ($request) {
+                $q->where('master_vendor_id', $request->vendor_id);
+            });
+        }
+        if ($request->filled('from_date')) {
+            $query->whereDate('return_date', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('return_date', '<=', $request->to_date);
+        }
+
+        $returns = $query->latest()->paginate(20)->appends($request->query());
+        
+        $shops = DB::table('master_customers')->select('id', 'name')->where('status', 1)->get();
+        $vendors = DB::table('vendors')->select('id', 'name')->where('status', 1)->get();
+
+        return view('admin.agent_orders.returns.index', compact('returns', 'shops', 'vendors'));
     }
 
     public function returnCreate($id)

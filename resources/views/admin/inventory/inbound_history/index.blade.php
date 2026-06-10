@@ -17,17 +17,17 @@
         }
 
         .premium-page-header {
-            padding: 1.5rem 0;
+            padding: 0.75rem 0;
             background: #fff;
             border-bottom: 1px solid #e2e8f0;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
 
         .page-title {
-            font-size: 1.75rem;
-            font-weight: 800;
+            font-size: 1.25rem;
+            font-weight: 700;
             color: var(--text-main);
-            letter-spacing: -0.025em;
+            letter-spacing: -0.015em;
             margin: 0;
         }
 
@@ -47,11 +47,11 @@
             font-weight: 700;
             color: var(--text-muted);
             border-top: none;
-            padding: 1rem;
+            padding: 0.75rem 1rem;
         }
 
         .table td {
-            padding: 1rem;
+            padding: 0.75rem 1rem;
             vertical-align: middle;
             color: var(--text-main);
             font-size: 0.875rem;
@@ -86,8 +86,8 @@
                         <h1 class="page-title">Inbound Stock Session History</h1>
                         <p class="text-muted mb-0 small">Track and view all manual stock entry sessions</p>
                     </div>
-                    <a href="{{ route('admin.inventory.create') }}" class="btn btn-primary shadow-sm" style="border-radius: 0.75rem; padding: 0.6rem 1.5rem; font-weight: 600;">
-                        <i class="fas fa-plus mr-2"></i>New Stock Generate
+                    <a href="{{ route('admin.inventory.create') }}" class="btn btn-primary btn-sm shadow-sm" style="border-radius: 0.5rem; padding: 0.4rem 1rem; font-weight: 600;">
+                        <i class="fas fa-plus mr-1"></i>New Stock Generate
                     </a>
                 </div>
             </div>
@@ -96,19 +96,19 @@
         <section class="content">
             <div class="container-fluid">
                 <!-- FILTER CARD -->
-                <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
-                    <div class="card-body bg-light rounded p-4">
+                <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px;">
+                    <div class="card-body bg-light rounded p-2">
                         <div class="row align-items-end">
-                            <div class="col-md-3">
-                                <label class="small font-weight-bold text-muted mb-1">Start Date</label>
-                                <input type="date" id="start_date" class="form-control">
+                            <div class="col-md-3 mb-1">
+                                <label class="small font-weight-bold text-muted mb-0">Start Date</label>
+                                <input type="date" id="start_date" class="form-control form-control-sm">
                             </div>
-                            <div class="col-md-3">
-                                <label class="small font-weight-bold text-muted mb-1">End Date</label>
-                                <input type="date" id="end_date" class="form-control">
+                            <div class="col-md-3 mb-1">
+                                <label class="small font-weight-bold text-muted mb-0">End Date</label>
+                                <input type="date" id="end_date" class="form-control form-control-sm">
                             </div>
-                            <div class="col-md-2 mt-3 mt-md-0">
-                                <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block">
+                            <div class="col-md-2 mb-1">
+                                <button id="reset_filters" class="btn btn-secondary btn-sm shadow-sm btn-block">
                                     <i class="fas fa-undo"></i> Reset Filters
                                 </button>
                             </div>

@@ -2,23 +2,23 @@
 
 @section('content')
 <div class="content-wrapper">
-    <div class="content-header">
+    <div class="content-header pt-2 pb-1">
         <div class="container-fluid">
             @if(!isset($boxes))
                 <div class="row align-items-center">
                     <div class="col-sm-6">
-                        <h1 class="m-0 font-weight-bold text-dark"><i class="fas fa-plus-circle mr-2"></i>Create New {{ request('order_type') == 'direct' ? 'Direct' : 'Sales' }} Order</h1>
+                        <h4 class="m-0 font-weight-bold text-dark"><i class="fas fa-plus-circle mr-2"></i>Create New {{ request('order_type') == 'direct' ? 'Direct' : 'Sales' }} Order</h4>
                         <p class="text-muted">Initiate a new order by selecting {{ request('order_type') == 'direct' ? 'a customer' : 'an agent and a customer' }}.</p>
                     </div>
                 </div>
             @else
                 <div class="row align-items-center">
-                    <div class="col-sm-6">
-                        <h1 class="m-0 font-weight-bold text-dark"><i class="fas fa-shopping-basket mr-2"></i>New {{ request('order_type') == 'direct' ? 'Direct' : 'Agent' }} Order: {{ $shop->name }}</h1>
-                        <p class="text-muted small mb-0"><i class="fas fa-user-tie mr-1"></i> {{ $agent->id === 'direct' ? 'Direct Sale (No Agent)' : 'Agent: ' . $agent->name }}</p>
+                    <div class="col-md-8 col-sm-7">
+                        <h4 class="m-0 font-weight-bold text-dark text-truncate" title="New {{ request('order_type') == 'direct' ? 'Direct' : 'Agent' }} Order: {{ $shop->name }}"><i class="fas fa-shopping-basket mr-2"></i>New {{ request('order_type') == 'direct' ? 'Direct' : 'Agent' }} Order: <span class="text-primary">{{ $shop->name }}</span></h4>
+                        <p class="text-muted small mb-0 text-truncate"><i class="fas fa-user-tie mr-1"></i> {{ $agent->id === 'direct' ? 'Direct Sale (No Agent)' : 'Agent: ' . $agent->name }}</p>
                     </div>
-                    <div class="col-sm-6 text-right">
-                        <a href="{{ route('admin.agent-orders.create') }}" class="btn btn-outline-secondary btn-sm">
+                    <div class="col-md-4 col-sm-5 text-right">
+                        <a href="{{ route('admin.agent-orders.create') }}" class="btn btn-outline-secondary btn-sm shadow-sm">
                             <i class="fas fa-exchange-alt mr-1"></i> Change Agent/Shop
                         </a>
                     </div>
@@ -166,8 +166,8 @@
                 <div class="row">
                     <div class="col-12">
                         <!-- Filters -->
-                        <div class="card shadow-sm border-0 mb-4 bg-light">
-                            <div class="card-body p-3">
+                        <div class="card shadow-sm border-0 mb-3 bg-light">
+                            <div class="card-body p-2">
                                 <form method="GET" action="{{ route('admin.agent-orders.create') }}" id="filterForm">
                                     <input type="hidden" name="sales_agent_id" value="{{ $agent->id }}">
                                     <input type="hidden" name="sales_man_id" value="{{ request('sales_man_id') }}">
@@ -176,9 +176,9 @@
                                     <input type="hidden" name="master_vendor_id" value="{{ request('master_vendor_id') }}">
                                     <input type="hidden" name="order_date" value="{{ request('order_date') }}">
                                     <input type="hidden" name="order_type" value="{{ request('order_type') }}">
-                                    <div class="row align-items-end mb-2">
-                                        <div class="col-md-3 col-6 mb-2">
-                                            <label class="small font-weight-bold text-muted mb-1">Design No</label>
+                                    <div class="row align-items-end">
+                                        <div class="col-md-3 col-6 mb-1">
+                                            <label class="small font-weight-bold text-muted mb-0">Design No</label>
                                             <select name="design_number" class="form-control form-control-sm select2">
                                                 <option value="">All Designs</option>
                                                 @foreach($designs as $design)
@@ -188,8 +188,8 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-3 col-6 mb-2">
-                                            <label class="small font-weight-bold text-muted mb-1">Product Name</label>
+                                        <div class="col-md-3 col-6 mb-1">
+                                            <label class="small font-weight-bold text-muted mb-0">Product Name</label>
                                             <select name="product_name" class="form-control form-control-sm select2">
                                                 <option value="">All Products</option>
                                                 @foreach($product_names as $name)
@@ -199,8 +199,8 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-3 col-6 mb-2">
-                                            <label class="small font-weight-bold text-muted mb-1">Color</label>
+                                        <div class="col-md-3 col-6 mb-1">
+                                            <label class="small font-weight-bold text-muted mb-0">Color</label>
                                             <select name="color_name" class="form-control form-control-sm select2">
                                                 <option value="">All Colors</option>
                                                 @foreach($colors as $color)
@@ -210,8 +210,8 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-3 col-6 mb-2">
-                                            <label class="small font-weight-bold text-muted mb-1">Size Set</label>
+                                        <div class="col-md-3 col-6 mb-1">
+                                            <label class="small font-weight-bold text-muted mb-0">Size Set</label>
                                             <select name="size_set_name" class="form-control form-control-sm select2">
                                                 <option value="">All Sets</option>
                                                 @foreach($size_sets as $set)
@@ -221,10 +221,8 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                    </div>
-                                    <div class="row align-items-end">
-                                        <div class="col-md-2 col-6 mb-2">
-                                            <label class="small font-weight-bold text-muted mb-1">Pattern</label>
+                                        <div class="col-md-2 col-6 mb-1">
+                                            <label class="small font-weight-bold text-muted mb-0">Pattern</label>
                                             <select name="pattern_id" class="form-control form-control-sm select2">
                                                 <option value="">All Patterns</option>
                                                 @foreach($patterns as $id => $name)
@@ -234,8 +232,8 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-2 col-6 mb-2">
-                                            <label class="small font-weight-bold text-muted mb-1">Fitting</label>
+                                        <div class="col-md-2 col-6 mb-1">
+                                            <label class="small font-weight-bold text-muted mb-0">Fitting</label>
                                             <select name="fitting_id" class="form-control form-control-sm select2">
                                                 <option value="">All Fittings</option>
                                                 @foreach($fittings as $id => $name)
@@ -245,8 +243,8 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-2 col-6 mb-2">
-                                            <label class="small font-weight-bold text-muted mb-1">Product Nature</label>
+                                        <div class="col-md-2 col-6 mb-1">
+                                            <label class="small font-weight-bold text-muted mb-0">Product Nature</label>
                                             <select name="product_nature_id" class="form-control form-control-sm select2">
                                                 <option value="">All Natures</option>
                                                 @foreach($product_natures as $id => $name)
@@ -256,8 +254,8 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-2 col-6 mb-2">
-                                            <label class="small font-weight-bold text-muted mb-1">Fabric Type</label>
+                                        <div class="col-md-2 col-6 mb-1">
+                                            <label class="small font-weight-bold text-muted mb-0">Fabric Type</label>
                                             <select name="fabric_type_id" class="form-control form-control-sm select2">
                                                 <option value="">All Fabrics</option>
                                                 @foreach($fabric_types as $id => $name)
@@ -267,12 +265,12 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-4 col-12 mb-2 text-right">
-                                            <button type="submit" class="btn btn-primary btn-sm px-4 mr-2">
+                                        <div class="col-md-4 col-12 mb-1 text-right">
+                                            <button type="submit" class="btn btn-primary btn-sm px-4 mr-2 shadow-sm">
                                                 <i class="fas fa-search mr-1"></i> Filter
                                             </button>
                                             <a href="{{ route('admin.agent-orders.create', ['order_type' => request('order_type'), 'sales_agent_id' => $agent->id, 'sales_man_id' => request('sales_man_id'), 'master_customer_id' => $shop->id, 'order_date' => request('order_date')]) }}" 
-                                               class="btn btn-secondary btn-sm px-3">
+                                               class="btn btn-secondary btn-sm px-3 shadow-sm">
                                                 <i class="fas fa-undo"></i>
                                             </a>
                                         </div>
@@ -288,7 +286,7 @@
                                     <h6 class="font-weight-bold mb-0 text-dark">
                                         <i class="fas fa-boxes mr-2 text-primary"></i> Available Inventory
                                     </h6>
-                                    <span class="badge badge-light border text-muted px-3 py-2">
+                                    <span class="badge badge-light border text-muted px-3 py-2" id="variationsCount">
                                         {{ $boxes->total() }} Variations Available
                                     </span>
                                 </div>
@@ -605,6 +603,11 @@
                         // Append and filter out potential duplicates if needed, but append is standard
                         container.append(response.html);
                         nextPage = response.next_page;
+                        
+                        if (response.total_count !== undefined) {
+                            $('#variationsCount').text(response.total_count + ' Variations Available');
+                        }
+
                         loading = false;
                         $('#loading-spinner').hide();
                         updateUI();

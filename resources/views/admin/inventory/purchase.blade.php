@@ -109,7 +109,7 @@
         }
 
         .form-control-premium {
-            height: 44px;
+            /* height: 44px; */
             width: 100%;
             font-size: 0.9375rem;
             border-radius: 10px;
@@ -127,7 +127,7 @@
 
         /* SELECT2 CUSTOMIZATION */
         .select2-container--bootstrap4 .select2-selection {
-            height: 44px !important;
+            /* height: 44px !important; */
             border-radius: 10px !important;
             border: 1px solid var(--border-color) !important;
             display: flex;

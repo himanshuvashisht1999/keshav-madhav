@@ -13,16 +13,16 @@
 
             <!-- FILTER CARD -->
             <div class="card shadow-sm border-0">
-                <div class="card-body bg-light rounded">
+                <div class="card-body bg-light rounded p-2">
                     <form method="GET" action="{{ route('admin.uploaded-slips.index') }}">
-                        <div class="row">
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted">Lot Number</label>
-                                <input type="text" name="lot_no" class="form-control" placeholder="Search Lot..." value="{{ request('lot_no') }}">
+                        <div class="row align-items-end">
+                            <div class="col-md mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">Lot Number</label>
+                                <input type="text" name="lot_no" class="form-control form-control-sm" placeholder="Search Lot..." value="{{ request('lot_no') }}">
                             </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted">From Stage</label>
-                                <select name="from_stage_id" class="form-control select2">
+                            <div class="col-md mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">From Stage</label>
+                                <select name="from_stage_id" class="form-control select2 form-control-sm">
                                     <option value="">-- All Stages --</option>
                                     @foreach($stages as $stage)
                                         <option value="{{ $stage->id }}" {{ request('from_stage_id') == $stage->id ? 'selected' : '' }}>
@@ -31,9 +31,9 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted">To Stage</label>
-                                <select name="to_stage_id" class="form-control select2">
+                            <div class="col-md mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">To Stage</label>
+                                <select name="to_stage_id" class="form-control select2 form-control-sm">
                                     <option value="">-- All Stages --</option>
                                     @foreach($stages as $stage)
                                         <option value="{{ $stage->id }}" {{ request('to_stage_id') == $stage->id ? 'selected' : '' }}>
@@ -42,9 +42,9 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted">Unit</label>
-                                <select name="stage_master_unit_id" class="form-control select2">
+                            <div class="col-md mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">Unit</label>
+                                <select name="stage_master_unit_id" class="form-control select2 form-control-sm">
                                     <option value="">-- All Units --</option>
                                     @foreach($units as $unit)
                                         <option value="{{ $unit->id }}" {{ request('stage_master_unit_id') == $unit->id ? 'selected' : '' }}>
@@ -53,27 +53,25 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted">Status</label>
-                                <select name="status" class="form-control select2">
+                            <div class="col-md mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">Status</label>
+                                <select name="status" class="form-control select2 form-control-sm">
                                     <option value="all" {{ request('status') === 'all' || !request()->has('status') ? 'selected' : '' }}>-- Show All --</option>
                                     <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Pending</option>
                                     <option value="1" {{ request('status') == 1 ? 'selected' : '' }}>Digitized</option>
                                     <option value="2" {{ request('status') == 2 ? 'selected' : '' }}>Skipped</option>
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted">Date</label>
-                                <input type="date" name="date" class="form-control" value="{{ request('date') }}">
+                            <div class="col-md mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">Date</label>
+                                <input type="date" name="date" class="form-control form-control-sm" value="{{ request('date') }}">
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12 d-flex justify-content-end mt-2">
-                                <button type="submit" class="btn btn-primary px-4 shadow-sm mr-2">
-                                    <i class="fas fa-filter mr-1"></i> Filter
+                            <div class="col-md-auto mb-2 text-right">
+                                <button type="submit" class="btn btn-sm btn-primary px-3 shadow-sm mr-1">
+                                    <i class="fas fa-filter"></i>
                                 </button>
-                                <a href="{{ route('admin.uploaded-slips.index') }}" class="btn btn-outline-secondary px-3 shadow-sm">
-                                    <i class="fas fa-undo mr-1"></i> Reset
+                                <a href="{{ route('admin.uploaded-slips.index') }}" class="btn btn-sm btn-outline-secondary px-2 shadow-sm">
+                                    <i class="fas fa-undo"></i>
                                 </a>
                             </div>
                         </div>

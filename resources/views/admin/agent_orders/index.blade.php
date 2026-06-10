@@ -3,18 +3,20 @@
 @section('content')
     <div class="content-wrapper">
         <div class="content-header">
-            <div class="container-fluid d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="m-0 font-weight-bold text-dark"><i class="fas fa-shopping-cart mr-2"></i>Sales Agent Orders</h1>
-                    <p class="text-muted">Review and dispatch orders placed by sales agents.</p>
-                </div>
-                <div>
-                    <a href="{{ route('admin.agent-orders.dispatches.index') }}" class="btn btn-info shadow-sm px-4 mr-2" style="border-radius: 8px;">
-                        <i class="fas fa-truck mr-2"></i> VIEW DISPATCHES
-                    </a>
-                    <a href="{{ route('admin.agent-orders.create') }}" class="btn btn-primary shadow-sm px-4" style="border-radius: 8px;">
-                        <i class="fas fa-plus mr-2"></i> CREATE SALES ORDER
-                    </a>
+            <div class="container-fluid">
+                <div class="row align-items-center mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0 font-weight-bold text-dark h4"><i class="fas fa-shopping-cart mr-2"></i>Sales Agent Orders</h1>
+                        <small class="text-muted">Review and dispatch orders placed by sales agents.</small>
+                    </div>
+                    <div class="col-sm-6 text-right">
+                        <a href="{{ route('admin.agent-orders.dispatches.index') }}" class="btn btn-sm btn-info shadow-sm px-3 mr-1" style="border-radius: 8px;">
+                            <i class="fas fa-truck mr-1"></i> VIEW DISPATCHES
+                        </a>
+                        <a href="{{ route('admin.agent-orders.create') }}" class="btn btn-sm btn-primary shadow-sm px-3" style="border-radius: 8px;">
+                            <i class="fas fa-plus mr-1"></i> CREATE SALES ORDER
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -22,12 +24,12 @@
         <section class="content">
             <div class="container-fluid">
                 <!-- FILTER CARD -->
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-body p-3">
+                <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px;">
+                    <div class="card-body bg-light rounded p-2">
                         <form action="{{ route('admin.agent-orders.index') }}" method="GET" class="row align-items-end">
-                            <div class="col-md-3">
-                                <label class="small text-muted font-weight-bold">Filter by Agent</label>
-                                <select name="agent_id" id="agent_id" class="form-control select2">
+                            <div class="col-md mb-2">
+                                <label class="small text-muted font-weight-bold mb-1">Filter by Agent</label>
+                                <select name="agent_id" id="agent_id" class="form-control select2 form-control-sm">
                                     <option value="">All Agents</option>
                                     @foreach($agents as $agent)
                                         <option value="{{ $agent->id }}" {{ request('agent_id') == $agent->id ? 'selected' : '' }}>
@@ -37,9 +39,9 @@
                                     <option value="direct" {{ request('agent_id') == 'direct' ? 'selected' : '' }}>Direct (No Agent)</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <label class="small text-muted font-weight-bold">Filter by Party</label>
-                                <select name="party_id" id="party_id" class="form-control select2">
+                            <div class="col-md mb-2">
+                                <label class="small text-muted font-weight-bold mb-1">Filter by Party</label>
+                                <select name="party_id" id="party_id" class="form-control select2 form-control-sm">
                                     <option value="">All Parties</option>
                                     @foreach($parties as $party)
                                         <option value="{{ $party->combined_id }}" {{ request('party_id') == $party->combined_id ? 'selected' : '' }}>
@@ -48,28 +50,28 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <label class="small text-muted font-weight-bold">Status</label>
-                                <select name="status" class="form-control select2">
+                            <div class="col-md mb-2">
+                                <label class="small text-muted font-weight-bold mb-1">Status</label>
+                                <select name="status" class="form-control select2 form-control-sm">
                                     <option value="">Any Status</option>
                                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>PENDING</option>
                                     <option value="dispatched" {{ request('status') == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <label class="small text-muted font-weight-bold">Sale Type</label>
-                                <select name="sale_type" class="form-control select2">
+                            <div class="col-md mb-2">
+                                <label class="small text-muted font-weight-bold mb-1">Sale Type</label>
+                                <select name="sale_type" class="form-control select2 form-control-sm">
                                     <option value="">Any Type</option>
                                     <option value="item" {{ request('sale_type') == 'item' ? 'selected' : '' }}>ITEM (Box)</option>
                                     <option value="fabric" {{ request('sale_type') == 'fabric' ? 'selected' : '' }}>FABRIC (Roll)</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary px-4">
-                                    <i class="fas fa-filter mr-1"></i> APPLY
+                            <div class="col-md-auto mb-2 text-right d-flex">
+                                <button type="submit" class="btn btn-sm btn-primary px-3 shadow-sm mr-1">
+                                    <i class="fas fa-filter"></i> APPLY
                                 </button>
-                                <a href="{{ route('admin.agent-orders.index') }}" class="btn btn-outline-secondary px-4 mt-2">
-                                    <i class="fas fa-undo mr-1"></i> RESET
+                                <a href="{{ route('admin.agent-orders.index') }}" class="btn btn-sm btn-outline-secondary px-3 shadow-sm">
+                                    <i class="fas fa-undo"></i> RESET
                                 </a>
                             </div>
                         </form>
@@ -87,34 +89,43 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="bg-light">
+                            <style>
+                                .ultra-compact-table th, .ultra-compact-table td {
+                                    padding: 0.3rem 0.2rem !important;
+                                    font-size: 0.8rem;
+                                }
+                                .ultra-compact-table .btn-sm {
+                                    padding: 0.15rem 0.4rem;
+                                    font-size: 0.75rem;
+                                }
+                            </style>
+                            <table class="table table-sm table-hover mb-0 align-middle ultra-compact-table">
+                                <thead class="bg-light text-muted">
                                 <tr>
-                                    <th width="40">
-                                        <div class="custom-control custom-checkbox ml-2">
+                                    <th width="30" class="text-center align-middle">
+                                        <div class="custom-control custom-checkbox ml-1">
                                             <input type="checkbox" class="custom-control-input" id="checkAll">
                                             <label class="custom-control-label" for="checkAll"></label>
                                         </div>
                                     </th>
-                                    <th>Order ID</th>
-                                    <th>Agent</th>
-                                    <th>Shop Name</th>
-                                    <th>Type</th>
-                                    <th>Total Pcs</th>
-                                    <th class="text-center">Scanned</th>
-                                    <th>Grand Total</th>
-                                    <th>Status</th>
-                                    <!-- <th>Payment</th> -->
-                                    <th>Date</th>
-                                    <th class="text-right">Actions</th>
+                                    <th class="align-middle">Order ID</th>
+                                    <th class="align-middle">Agent</th>
+                                    <th class="align-middle">Shop Name</th>
+                                    <th class="align-middle">Type</th>
+                                    <th class="align-middle">Total Pcs</th>
+                                    <th class="text-center align-middle">Scanned</th>
+                                    <th class="align-middle">Grand Total</th>
+                                    <th class="align-middle">Status</th>
+                                    <th class="align-middle">Date</th>
+                                    <th class="text-right align-middle">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($orders as $order)
                                     <tr data-shop-id="{{ $order->master_customer_id }}">
-                                        <td>
+                                        <td class="text-center">
                                             @if($order->status != 'dispatched')
-                                            <div class="custom-control custom-checkbox ml-2">
+                                            <div class="custom-control custom-checkbox ml-1">
                                                 <input type="checkbox" name="order_ids[]" value="{{ $order->id }}" 
                                                     class="custom-control-input order-checkbox" id="check_{{ $order->id }}"
                                                     data-scanned-amount="{{ $order->scanned_amount }}"
@@ -123,29 +134,29 @@
                                             </div>
                                             @endif
                                         </td>
-                                        <td>
+                                        <td class="text-nowrap">
                                             <a href="{{ route('admin.agent-orders.show', $order->id) }}" class="font-weight-bold">
                                                 #ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}
                                             </a>
                                         </td>
                                         <td><span class="badge badge-info">{{ $order->agent_name }}</span></td>
-                                        <td><strong>{{ $order->shop_name }}</strong></td>
-                                        <td>
-                                            <div class="small">
-                                                <span class="badge badge-outline-secondary">{{ strtoupper($order->order_type ?? 'normal') }}</span><br>
+                                        <td><strong style="font-size: 0.8rem; line-height: 1.1;">{{ $order->shop_name }}</strong></td>
+                                        <td class="text-nowrap">
+                                            <div style="line-height: 1.1;">
+                                                <span class="badge badge-outline-secondary" style="font-size:0.65rem;">{{ strtoupper($order->order_type ?? 'normal') }}</span><br>
                                                 <a href="{{ route('admin.agent-orders.edit', $order->id) }}" class="text-decoration-none">
-                                                    <span class="text-muted font-weight-bold">{{ ucfirst($order->sale_type ?? 'item') }}</span>
+                                                    <span class="text-muted font-weight-bold" style="font-size:0.75rem;">{{ ucfirst($order->sale_type ?? 'item') }}</span>
                                                 </a>
                                             </div>
                                         </td>
-                                        <td>{{ number_format($order->total_qty, $order->sale_type == 'fabric' ? 2 : 0) }} {{ $order->sale_type == 'fabric' ? 'm' : 'Pcs' }}</td>
+                                        <td class="text-nowrap">{{ number_format($order->total_qty, $order->sale_type == 'fabric' ? 2 : 0) }} {{ $order->sale_type == 'fabric' ? 'm' : 'Pcs' }}</td>
                                         <td class="text-center">
                                             @if($order->sale_type == 'fabric')
-                                                <span class="badge badge-secondary px-3 py-2">
+                                                <span class="badge badge-secondary px-2 py-1">
                                                     {{ $order->total_boxes }} Rolls
                                                 </span>
                                             @else
-                                                <span class="badge {{ $order->scanned_count == $order->total_boxes ? 'badge-success' : 'badge-info' }} px-3 py-2">
+                                                <span class="badge {{ $order->scanned_count == $order->total_boxes ? 'badge-success' : 'badge-info' }} px-2 py-1">
                                                     {{ $order->scanned_count }} / {{ $order->total_boxes }}
                                                 </span>
                                             @endif
@@ -170,12 +181,12 @@
                                             @endif
                                         </td> -->
                                         <td class="text-nowrap">
-                                            <div class="text-dark font-weight-bold">{{ date('d M Y', strtotime($order->order_date)) }}</div>
+                                            <div class="text-dark font-weight-bold">{{ date('d/m/y', strtotime($order->order_date)) }}</div>
                                         </td>
                                         <td class="text-right text-nowrap">
-                                            <div class="d-flex justify-content-end align-items-center" style="gap: 5px;">
+                                            <div class="d-flex justify-content-end align-items-center" style="gap: 2px;">
                                                 <div class="btn-group">
-                                                    <button type="button" class="btn btn-success btn-sm px-2 shadow-sm rounded-pill dropdown-toggle" 
+                                                    <button type="button" class="btn btn-success btn-sm shadow-sm rounded-pill dropdown-toggle" style="padding: 0.15rem 0.35rem;"
                                                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Download Order Sheet">
                                                         <i class="fas fa-file-pdf"></i>
                                                     </button>
@@ -189,23 +200,23 @@
                                                     </div>
                                                 </div>
                                                 <a href="{{ route('admin.agent-orders.show', $order->id) }}"
-                                                    class="btn btn-primary btn-sm px-2 shadow-sm rounded-pill" title="View Order">
+                                                    class="btn btn-primary btn-sm shadow-sm rounded-pill" style="padding: 0.15rem 0.35rem;" title="View Order">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 @if($order->status == 'pending' && $order->scanned_count == 0)
                                                 <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
-                                                    class="btn btn-info btn-sm px-2 shadow-sm rounded-pill" title="Edit Order">
+                                                    class="btn btn-info btn-sm shadow-sm rounded-pill" style="padding: 0.15rem 0.35rem;" title="Edit Order">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 <a href="{{ route('admin.agent-orders.destroy', $order->id) }}"
-                                                    class="btn btn-danger btn-sm px-2 shadow-sm rounded-pill" 
+                                                    class="btn btn-danger btn-sm shadow-sm rounded-pill" style="padding: 0.15rem 0.35rem;" 
                                                     onclick="return confirm('Are you sure you want to delete this order? This will revert any reserved stock.');"
                                                     title="Delete Order">
                                                     <i class="fas fa-trash"></i>
                                                 </a>
                                                 @elseif($order->status == 'pending')
                                                 <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
-                                                    class="btn btn-info btn-sm px-2 shadow-sm rounded-pill" title="Edit Order">
+                                                    class="btn btn-info btn-sm shadow-sm rounded-pill" style="padding: 0.15rem 0.35rem;" title="Edit Order">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 @endif

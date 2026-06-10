@@ -17,55 +17,49 @@
         <section class="content">
             <div class="container-fluid">
                 <!-- FILTER CARD -->
-                <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
-                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
-                        <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-filter mr-2"></i>Filter Inventory</h6>
-                    </div>
-                    <div class="card-body bg-white rounded p-4 pt-2">
+                <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px;">
+                    <div class="card-body bg-light rounded p-2">
                         <!-- Primary Filters Row -->
                         <div class="row align-items-end">
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md mb-2">
                                 <label class="small font-weight-bold text-muted mb-1">Design Number</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-sm">
                                     <div class="input-group-prepend"><span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span></div>
                                     <input type="text" id="design_number" class="form-control border-left-0" placeholder="Search Design...">
                                 </div>
                             </div>
-                            <div class="col-md-2 mb-3">
+                            <div class="col-md mb-2">
                                 <label class="small font-weight-bold text-muted mb-1">Product</label>
-                                <select id="product_filter" class="form-control select2">
+                                <select id="product_filter" class="form-control select2 form-control-sm">
                                     <option value="">All Products</option>
                                     @foreach($products as $prod)
                                         <option value="{{ $prod->product_id }}">{{ $prod->product_name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-3">
+                            <div class="col-md mb-2">
                                 <label class="small font-weight-bold text-muted mb-1">Size Set</label>
-                                <select id="size_set_filter" class="form-control select2">
+                                <select id="size_set_filter" class="form-control select2 form-control-sm">
                                     <option value="">All Size Sets</option>
                                     @foreach($size_sets as $set)
                                         <option value="{{ $set->size_set_id }}">{{ $set->size_set_name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-3">
+                            <div class="col-md mb-2">
                                 <label class="small font-weight-bold text-muted mb-1">Color</label>
-                                <select id="color_filter" class="form-control select2">
+                                <select id="color_filter" class="form-control select2 form-control-sm">
                                     <option value="">All Colors</option>
                                     @foreach($colors as $color)
                                         <option value="{{ $color->color_id }}">{{ $color->color_name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            
-                            <div class="col-md-2 mb-3">
-                                <button class="btn btn-outline-primary btn-block" type="button" data-toggle="collapse" data-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
-                                    <i class="fas fa-sliders-h mr-1"></i> Advanced
+                            <div class="col-md-auto mb-2 text-right">
+                                <button class="btn btn-sm btn-outline-primary shadow-sm mr-1" type="button" data-toggle="collapse" data-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
+                                    <i class="fas fa-sliders-h"></i> Advanced
                                 </button>
-                            </div>
-                            <div class="col-md-1 mb-3">
-                                <button id="reset_filters" class="btn btn-secondary btn-block" title="Reset Filters">
+                                <button id="reset_filters" class="btn btn-sm btn-secondary shadow-sm" title="Reset Filters">
                                     <i class="fas fa-undo"></i>
                                 </button>
                             </div>

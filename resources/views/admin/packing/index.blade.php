@@ -22,28 +22,28 @@
         <section class="content">
             <div class="container-fluid">
                 <!-- FILTER CARD -->
-                <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
-                    <div class="card-body bg-light rounded">
+                <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px;">
+                    <div class="card-body bg-light rounded p-2">
                         <div class="row align-items-end">
-                            <div class="col-md-3 mb-2">
-                                <label class="small font-weight-bold text-muted">Order No</label>
-                                <input type="text" id="order_no" class="form-control" placeholder="Search Order...">
+                            <div class="col-md mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">Order No</label>
+                                <input type="text" id="order_no" class="form-control form-control-sm" placeholder="Search Order...">
                             </div>
-                            <div class="col-md-3 mb-2">
-                                <label class="small font-weight-bold text-muted">Customer Name</label>
-                                <input type="text" id="customer_name" class="form-control" placeholder="Search Customer...">
+                            <div class="col-md mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">Customer Name</label>
+                                <input type="text" id="customer_name" class="form-control form-control-sm" placeholder="Search Customer...">
                             </div>
-                            <div class="col-md-2 mb-2">
-                                <label class="small font-weight-bold text-muted">Start Date</label>
-                                <input type="date" id="start_date" class="form-control">
+                            <div class="col-md mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">Start Date</label>
+                                <input type="date" id="start_date" class="form-control form-control-sm">
                             </div>
-                            <div class="col-md-2 mb-2">
-                                <label class="small font-weight-bold text-muted">End Date</label>
-                                <input type="date" id="end_date" class="form-control">
+                            <div class="col-md mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">End Date</label>
+                                <input type="date" id="end_date" class="form-control form-control-sm">
                             </div>
-                            <div class="col-md-2 mb-2">
-                                <button id="resetFilters" class="btn btn-outline-secondary btn-block">
-                                    <i class="fas fa-undo mr-1"></i> Reset
+                            <div class="col-md-auto mb-2 text-right">
+                                <button id="resetFilters" class="btn btn-sm btn-outline-secondary px-3 shadow-sm">
+                                    <i class="fas fa-undo"></i> Reset
                                 </button>
                             </div>
                         </div>
