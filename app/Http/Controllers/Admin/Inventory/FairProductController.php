@@ -88,6 +88,7 @@ class FairProductController extends Controller
                 'productId' => $p->product_id,
                 'sizeId' => $p->size_set_id,
                 'discount' => $p->discount_percent,
+                'barcodeCount' => $p->barcode_count,
                 'mrp' => $variant->mrp ?? 0,
                 'designNo' => $p->product->design_number,
                 'garment' => $fullName,
@@ -283,13 +284,15 @@ class FairProductController extends Controller
             $productId = $item['product_id'];
             $sizeSetId = $item['size_set_id'];
             $discountPercent = $item['discount_percent'] ?? 0;
+            $barcodeCount = $item['barcode_count'] ?? 1;
             
             $fairProduct = FairProduct::create([
                 'fair_batch_id' => $batch->id,
                 'product_id' => $productId,
                 'size_set_id' => $sizeSetId,
                 'barcode' => 'TEMP',
-                'discount_percent' => $discountPercent
+                'discount_percent' => $discountPercent,
+                'barcode_count' => $barcodeCount
             ]);
 
             $fairProduct->update([
@@ -319,13 +322,15 @@ class FairProductController extends Controller
             $productId = $item['product_id'];
             $sizeSetId = $item['size_set_id'];
             $discountPercent = $item['discount_percent'] ?? 0;
+            $barcodeCount = $item['barcode_count'] ?? 1;
             
             $fairProduct = FairProduct::create([
                 'fair_batch_id' => $batch->id,
                 'product_id' => $productId,
                 'size_set_id' => $sizeSetId,
                 'barcode' => 'TEMP',
-                'discount_percent' => $discountPercent
+                'discount_percent' => $discountPercent,
+                'barcode_count' => $barcodeCount
             ]);
 
             $fairProduct->update([

@@ -16,21 +16,43 @@ class VendorDataTable  {
     public function indexList($request){
         $queue = Vendor::with('currentOpeningBalance')->where('status', '!=', 3);
 
-        return DataTables::of($queue)->addIndexColumn()
-            ->filter(function ($query) use ($request) {
-                if ($request->has('name') && !empty($request->name)) {
-                    $query->where('name', 'like', "%{$request->get('name')}%");
-                }
-                if ($request->has('phone') && !empty($request->phone)) {
-                    $query->where('phone', 'like', "%{$request->get('phone')}%");
-                }
-                if ($request->has('email') && !empty($request->email)) {
-                    $query->where('email', 'like', "%{$request->get('email')}%");
-                }
+        if ($request->has('name') && !empty($request->name)) {
+            $queue->where('name', 'like', "%{$request->get('name')}%");
+        }
+        if ($request->has('phone') && !empty($request->phone)) {
+            $queue->where('phone', 'like', "%{$request->get('phone')}%");
+        }
+        if ($request->has('email') && !empty($request->email)) {
+            $queue->where('email', 'like', "%{$request->get('email')}%");
+        }
+        if ($request->has('status') && $request->filled('status')) {
+            $queue->where('status', $request->get('status'));
+        }
 
-                if ($request->has('status') && $request->filled('status')) {
-                    $query->where('status', $request->get('status'));
+        $filteredVendors = (clone $queue)->get();
+        $totalCurrentBalance = $filteredVendors->sum('balance');
+        
+        $totalOpeningBalance = 0;
+        $vendorIds = $filteredVendors->pluck('id')->toArray();
+        if (!empty($vendorIds)) {
+            $opBalances = \App\Models\MasterOpeningBalance::where('master_type', 'vendor')
+                ->whereIn('master_id', $vendorIds)
+                ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
+                ->get();
+            foreach ($opBalances as $ob) {
+                $amt = (float) $ob->amount;
+                if (strtolower(trim($ob->balance_type)) === 'debit') {
+                    $amt = -$amt;
                 }
+                $totalOpeningBalance += $amt;
+            }
+        }
+
+        return DataTables::of($queue)->addIndexColumn()
+            ->with('total_opening_balance', $totalOpeningBalance)
+            ->with('total_current_balance', $totalCurrentBalance)
+            ->filter(function ($query) {
+                // Do nothing to preserve DataTables default if any or just let it be
             }) 
             ->order(function ($query) {
                 $query->orderBy('id', 'asc');

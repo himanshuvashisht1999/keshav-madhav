@@ -15,7 +15,8 @@ class FairProduct extends Model
         'size_set_id',
         'barcode',
         'qrcode',
-        'discount_percent'
+        'discount_percent',
+        'barcode_count'
     ];
 
     public function batch()

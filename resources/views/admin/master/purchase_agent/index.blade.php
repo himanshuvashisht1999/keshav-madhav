@@ -75,6 +75,19 @@
                 ajax: {
                     url: '{!! route('admin.master.purchase-agent.indexList') !!}',
                 },
+                drawCallback: function(settings) {
+                    var json = settings.json;
+                    if (json) {
+                        let opBal = json.total_opening_balance || 0;
+                        let currBal = json.total_current_balance || 0;
+                        
+                        let opType = opBal >= 0 ? 'Cr' : 'Dr';
+                        let currType = currBal >= 0 ? 'Cr' : 'Dr';
+                        
+                        $('.info-box-text:contains("Opening")').next('.info-box-number').text('₹ ' + Math.abs(opBal).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ' + opType);
+                        $('.info-box-text:contains("Current Balance")').next('.info-box-number').text('₹ ' + Math.abs(currBal).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ' + currType);
+                    }
+                },
                 columns: [
                     { data: 'DT_RowIndex', name: 'id' },
                     { data: 'name', name: 'name' },

@@ -526,16 +526,19 @@ function generateFairBulkTspl($samples)
         $mrp = $variant->mrp ?? 0;
         $final_price = $mrp - ($mrp * ($sample->discount_percent / 100));
 
-        $labels[] = (object) [
-            'product_name' => trim(($sample->product->series->name ?? '') . ' ' . ($sample->product->name_of_garment ?? '')),
-            'fitting_name' => $sample->product->fitting->name ?? '',
-            'pattern_name' => $sample->product->pattern->name ?? '',
-            'size_group' => $sample->sizeSet->name,
-            'no_of_pcs' => $sample->sizeSet->no_of_pcs ?? '',
-            'wsp' => 'Rs. ' . number_format($final_price, 2),
-            'barcode' => $sample->barcode,
-            'url' => route('fair-product.color-chart', ['barcode' => $sample->barcode])
-        ];
+        $count = $sample->barcode_count ?? 1;
+        for ($i = 0; $i < $count; $i++) {
+            $labels[] = (object) [
+                'product_name' => trim(($sample->product->series->name ?? '') . ' ' . ($sample->product->name_of_garment ?? '')),
+                'fitting_name' => $sample->product->fitting->name ?? '',
+                'pattern_name' => $sample->product->pattern->name ?? '',
+                'size_group' => $sample->sizeSet->name,
+                'no_of_pcs' => $sample->sizeSet->no_of_pcs ?? '',
+                'wsp' => 'Rs. ' . number_format($final_price, 2),
+                'barcode' => $sample->barcode,
+                'url' => route('fair-product.color-chart', ['barcode' => $sample->barcode])
+            ];
+        }
     }
 
     if (empty($labels)) return "";

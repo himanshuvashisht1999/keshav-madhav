@@ -839,9 +839,16 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                 </li>
                                 <li class="nav-item">
                                     <a href="{{ route('admin.ledger.party.index') }}"
-                                        class="{{ str_contains(strtolower($page_url), 'admin/ledger/party') ? 'nav-link active' : 'nav-link' }}">
+                                        class="{{ str_contains(strtolower($page_url), 'admin/ledger/party') && !str_contains(strtolower($page_url), 'type_id=sales_agent') ? 'nav-link active' : 'nav-link' }}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Party Ledger</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.ledger.party.index', ['type_id' => 'sales_agent']) }}"
+                                        class="{{ str_contains(strtolower($page_url), 'type_id=sales_agent') ? 'nav-link active' : 'nav-link' }}">
+                                        <i class="far fa-circle nav-icon text-purple"></i>
+                                        <p>Sales Agent Ledger</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">

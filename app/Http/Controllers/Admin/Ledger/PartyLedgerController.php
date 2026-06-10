@@ -339,7 +339,44 @@ class PartyLedgerController extends Controller
                 $tx->running_balance = $balance;
             }
 
-            return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'shops');
+            if ($viewMode === 'party_wise') {
+                foreach ($shops as $shop) {
+                    // Filter transactions for this specific customer
+                    $shopTx = $transactions->where('customer_id', $shop->id)->values();
+                    
+                    // Calculate opening balance for this customer
+                    $shopOpeningAmt = 0;
+                    $shopOpening = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
+                        ->where('master_id', $shop->id)
+                        ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
+                        ->first();
+
+                    if ($shopOpening) {
+                        $balanceType = strtolower(trim($shopOpening->balance_type));
+                        $obAmount = (float) $shopOpening->amount;
+                        if ($balanceType === 'debit') {
+                            $shopOpeningAmt -= $obAmount;
+                        } else {
+                            $shopOpeningAmt += $obAmount;
+                        }
+                    }
+
+                    $shopBal = $shopOpeningAmt;
+                    foreach ($shopTx as $tx) {
+                        $shopBal += ($tx->credit - $tx->debit);
+                        $tx->running_balance = $shopBal;
+                    }
+
+                    $groupedLedgers[] = (object)[
+                        'shop' => $shop,
+                        'opening_balance' => $shopOpeningAmt,
+                        'closing_balance' => $shopBal,
+                        'transactions' => $shopTx
+                    ];
+                }
+            }
+
+            return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'shops', 'viewMode', 'groupedLedgers');
         }
 
         // Resolve Master

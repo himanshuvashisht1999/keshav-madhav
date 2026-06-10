@@ -50,12 +50,39 @@ class CustomerDataTable  {
         $hasDateFilter = !empty($startDate) || !empty($endDate);
         
         $calculatedBalances = [];
+        $totalOpeningBalance = 0;
+        $totalCurrentBalance = 0;
+
         if ($hasDateFilter) {
             $customerIds = (clone $queue)->pluck('id')->toArray();
             $calculatedBalances = app(\App\Services\Admin\Master\CustomerService::class)->calculateCustomerBalances($customerIds, $startDate, $endDate);
+            foreach ($calculatedBalances as $cb) {
+                $totalOpeningBalance += $cb['opening_balance'];
+                $totalCurrentBalance += $cb['closing_balance'];
+            }
+        } else {
+            $filteredCustomers = (clone $queue)->get();
+            $totalCurrentBalance = $filteredCustomers->sum('balance');
+            
+            $customerIds = $filteredCustomers->pluck('id')->toArray();
+            if (!empty($customerIds)) {
+                $opBalances = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
+                    ->whereIn('master_id', $customerIds)
+                    ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
+                    ->get();
+                foreach ($opBalances as $ob) {
+                    $amt = (float) $ob->amount;
+                    if (strtolower(trim($ob->balance_type)) === 'debit') {
+                        $amt = -$amt;
+                    }
+                    $totalOpeningBalance += $amt;
+                }
+            }
         }
 
         return DataTables::of($queue)->addIndexColumn()
+            ->with('total_opening_balance', $totalOpeningBalance)
+            ->with('total_current_balance', $totalCurrentBalance)
             ->order(function ($query) {
                 $query->orderBy('id', 'asc');
             })

@@ -12,17 +12,39 @@ class PurchaseAgentDataTable
     {
         $queue = PurchaseAgent::withSum('vendors', 'balance')->with('currentOpeningBalance');
 
-        return DataTables::of($queue)->addIndexColumn()
-            ->filter(function ($query) use ($request) {
-                $query->orderBy('id', 'desc');
-                if ($request->has('search') && !empty($request->get('search')['value'])) {
-                    $searchValue = $request->get('search')['value'];
-                    $query->where(function ($q) use ($searchValue) {
-                        $q->where('name', 'like', "%{$searchValue}%")
-                          ->orWhere('email', 'like', "%{$searchValue}%")
-                          ->orWhere('phone', 'like', "%{$searchValue}%");
-                    });
+        if ($request->has('search') && !empty($request->get('search')['value'])) {
+            $searchValue = $request->get('search')['value'];
+            $queue->where(function ($q) use ($searchValue) {
+                $q->where('name', 'like', "%{$searchValue}%")
+                  ->orWhere('email', 'like', "%{$searchValue}%")
+                  ->orWhere('phone', 'like', "%{$searchValue}%");
+            });
+        }
+
+        $filteredAgents = (clone $queue)->get();
+        $totalCurrentBalance = $filteredAgents->sum('vendors_sum_balance');
+        
+        $totalOpeningBalance = 0;
+        $agentIds = $filteredAgents->pluck('id')->toArray();
+        if (!empty($agentIds)) {
+            $opBalances = \App\Models\MasterOpeningBalance::where('master_type', 'purchase_agent')
+                ->whereIn('master_id', $agentIds)
+                ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
+                ->get();
+            foreach ($opBalances as $ob) {
+                $amt = (float) $ob->amount;
+                if (strtolower(trim($ob->balance_type)) === 'debit') {
+                    $amt = -$amt;
                 }
+                $totalOpeningBalance += $amt;
+            }
+        }
+
+        return DataTables::of($queue)->addIndexColumn()
+            ->with('total_opening_balance', $totalOpeningBalance)
+            ->with('total_current_balance', $totalCurrentBalance)
+            ->filter(function ($query) {
+                $query->orderBy('id', 'desc');
             })
             ->editColumn('balance', function ($queue) {
                 $balance = $queue->vendors_sum_balance ?? 0;

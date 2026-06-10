@@ -247,6 +247,7 @@
                         productId: item.productId,
                         sizeId: item.sizeId,
                         discount: item.discount,
+                        barcodeCount: item.barcodeCount || 1,
                         mrp: item.mrp
                     };
                     productDetails[item.productId] = {
@@ -382,7 +383,7 @@
                 chip.toggleClass('selected', checkbox.prop('checked'));
 
                 if (checkbox.prop('checked')) {
-                    selectedItems[key] = { productId, sizeId, mrp, discount: 0 };
+                    selectedItems[key] = { productId, sizeId, mrp, discount: 0, barcodeCount: 1 };
                 } else {
                     delete selectedItems[key];
                 }
@@ -412,14 +413,22 @@
                             </button>
                         </div>
                         <div class="row no-gutters align-items-center mt-2">
-                            <div class="col-6">
+                            <div class="col-4">
                                 <div class="x-small font-weight-bold text-muted text-uppercase">MRP: ₹${item.mrp}</div>
                             </div>
-                            <div class="col-6">
+                            <div class="col-4 px-1">
                                 <div class="input-group input-group-sm">
                                     <input type="number" class="form-control discount-input" placeholder="Disc %" value="${item.discount}" data-key="${key}" step="0.01" min="0" max="100">
                                     <div class="input-group-append">
                                         <span class="input-group-text x-small">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control barcode-count-input" title="Barcode Count" placeholder="Count" value="${item.barcodeCount}" data-key="${key}" step="1" min="1">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text x-small"><i class="fas fa-barcode"></i></span>
                                     </div>
                                 </div>
                             </div>
@@ -430,6 +439,7 @@
                         <input type="hidden" name="items[${count}][product_id]" value="${item.productId}">
                         <input type="hidden" name="items[${count}][size_set_id]" value="${item.sizeId}">
                         <input type="hidden" name="items[${count}][discount_percent]" value="${item.discount}">
+                        <input type="hidden" name="items[${count}][barcode_count]" value="${item.barcodeCount}">
                     `;
                 });
 
@@ -463,6 +473,19 @@
                 if (selectedItems[key]) {
                     selectedItems[key].discount = val;
                     $(`input[name$="[discount_percent]"]`).each(function (index) {
+                        if (Object.keys(selectedItems)[index] === key) {
+                            $(this).val(val);
+                        }
+                    });
+                }
+            });
+
+            $(document).on('input', '.barcode-count-input', function () {
+                let key = $(this).data('key');
+                let val = parseInt($(this).val()) || 1;
+                if (selectedItems[key]) {
+                    selectedItems[key].barcodeCount = val;
+                    $(`input[name$="[barcode_count]"]`).each(function (index) {
                         if (Object.keys(selectedItems)[index] === key) {
                             $(this).val(val);
                         }

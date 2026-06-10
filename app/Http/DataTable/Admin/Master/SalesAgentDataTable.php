@@ -13,19 +13,41 @@ class SalesAgentDataTable
     {
         $queue = SalesAgent::where('status', '!=', 3)->withSum('shops as total_balance', 'balance')->with('currentOpeningBalance')->withCount('shops');
 
+        if ($request->has('search') && !empty($request->get('search')['value'])) {
+            $searchValue = $request->get('search')['value'];
+            $queue->where(function ($q) use ($searchValue) {
+                $q->where('name', 'like', "%{$searchValue}%")
+                    ->orWhere('phone', 'like', "%{$searchValue}%");
+            });
+        }
+        if ($request->has('name') && !empty($request->name)) {
+            $queue->where('name', 'like', "%{$request->get('name')}%");
+        }
+
+        $filteredAgents = (clone $queue)->get();
+        $totalCurrentBalance = $filteredAgents->sum('total_balance');
+        
+        $totalOpeningBalance = 0;
+        $agentIds = $filteredAgents->pluck('id')->toArray();
+        if (!empty($agentIds)) {
+            $opBalances = \App\Models\MasterOpeningBalance::where('master_type', 'sales_agent')
+                ->whereIn('master_id', $agentIds)
+                ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
+                ->get();
+            foreach ($opBalances as $ob) {
+                $amt = (float) $ob->amount;
+                if (strtolower(trim($ob->balance_type)) === 'debit') {
+                    $amt = -$amt;
+                }
+                $totalOpeningBalance += $amt;
+            }
+        }
+
         return DataTables::of($queue)->addIndexColumn()
-            ->filter(function ($query) use ($request) {
+            ->with('total_opening_balance', $totalOpeningBalance)
+            ->with('total_current_balance', $totalCurrentBalance)
+            ->filter(function ($query) {
                 $query->orderBy('id', 'desc');
-                if ($request->has('search') && !empty($request->get('search')['value'])) {
-                    $searchValue = $request->get('search')['value'];
-                    $query->where(function ($q) use ($searchValue) {
-                        $q->where('name', 'like', "%{$searchValue}%")
-                            ->orWhere('phone', 'like', "%{$searchValue}%");
-                    });
-                }
-                if ($request->has('name') && !empty($request->name)) {
-                    $query->where('name', 'like', "%{$request->get('name')}%");
-                }
             })
 
             ->editColumn('status', function ($queue) {
