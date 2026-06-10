@@ -1,54 +1,216 @@
 @extends('admin.layouts.app')
 
 @section('content')
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-main: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .content-wrapper {
+            background-color: var(--bg-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            padding-bottom: 2rem;
+        }
+
+        .premium-page-header {
+            padding: 1.5rem 0;
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 1.5rem;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.025em;
+            margin: 0 0 0.25rem 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .page-title i {
+            color: #6366f1;
+            background: #eef2ff;
+            padding: 0.5rem;
+            border-radius: 10px;
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+        }
+
+        .stat-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+            height: 100%;
+        }
+
+        .stat-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+            border-color: #cbd5e1;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .stat-info {
+            flex-grow: 1;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin: 0;
+        }
+
+        .btn-action {
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            border: none;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .bg-soft-primary { background: #eef2ff; color: #4f46e5; }
+        .bg-soft-success { background: #ecfdf5; color: #059669; }
+        .bg-soft-warning { background: #fffbeb; color: #d97706; }
+        .bg-soft-info { background: #f0fdfa; color: #0d9488; }
+        .bg-soft-danger { background: #fef2f2; color: #dc2626; }
+        .bg-soft-secondary { background: #f8fafc; color: #475569; }
+        .bg-primary-gradient { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #fff; }
+
+        .order-card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            background: #fff;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .order-card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #fcfdfe;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table thead th {
+            background: #f8fafc;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            color: var(--text-muted);
+            border-top: none;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 1.5rem;
+        }
+
+        .table td {
+            padding: 1rem 1.5rem;
+            vertical-align: middle;
+            color: var(--text-main);
+            font-size: 0.875rem;
+            border-top: 1px solid #f1f5f9;
+        }
+    </style>
+
     <div class="content-wrapper">
-        <div class="content-header">
-            <div class="container-fluid d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="m-0 font-weight-bold text-dark"><i class="fas fa-shipping-fast mr-2"></i> Dispatch
-                        #DSP-{{ str_pad($dispatch->id, 5, '0', STR_PAD_LEFT) }}</h1>
-                    <p class="text-muted mb-0">Party: <strong>
-                            @if ($dispatch->party_type === 'vendor')
-                                {{ $dispatch->vendor->name ?? 'N/A' }} <span class="badge badge-warning shadow-sm ml-1"
-                                    style="font-size: 10px;">VENDOR</span>
-                            @else
-                                {{ $dispatch->shop->name ?? 'N/A' }}
-                            @endif
-                        </strong> &nbsp;|&nbsp;
-                        Agent: <strong>{{ $dispatch->agent->name ?? 'Direct' }}</strong></p>
-                </div>
-                <div class="d-flex align-items-center">
-                    @if(!$isFabric)
-                    <div class="mr-3">
-                        <select id="brandSelect" class="form-control form-control-sm shadow-sm"
-                            style="border-radius: 8px; min-width: 150px; height: 38px;">
-                            <option value="actual">Actual</option>
-                            <option value="2">Surgical</option>
-                            <option value="1">Snapkid</option>
-                        </select>
+        <div class="content-header" style="background: #fff; border-bottom: 1px solid #e2e8f0; padding: 1.25rem 0; margin-bottom: 1.5rem;">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-md-5">
+                        <h1 class="m-0 font-weight-bold text-dark" style="font-size: 1.5rem; letter-spacing: -0.025em;">
+                            <i class="fas fa-truck-loading text-primary mr-2"></i> Dispatch #DSP-{{ str_pad($dispatch->id, 5, '0', STR_PAD_LEFT) }}
+                        </h1>
+                        <p class="text-muted mb-0 mt-1" style="font-size: 0.875rem;">
+                            Party: <strong class="text-dark">
+                                @if ($dispatch->party_type === 'vendor')
+                                    {{ $dispatch->vendor->name ?? 'N/A' }} <span class="badge badge-warning shadow-sm ml-1" style="font-size: 10px;">VENDOR</span>
+                                @else
+                                    {{ $dispatch->shop->name ?? 'N/A' }}
+                                @endif
+                            </strong> 
+                            <span class="mx-2 text-light-gray">|</span>
+                            Agent: <strong class="text-dark">{{ $dispatch->agent->name ?? 'Direct' }}</strong>
+                        </p>
                     </div>
-                    @endif
-                    <button type="button" class="btn btn-outline-warning shadow-sm px-4 mr-2"
-                        style="border-radius: 8px;" data-toggle="modal" data-target="#editInvoiceModal">
-                        <i class="fas fa-edit mr-2"></i> EDIT INVOICE
-                    </button>
-                    <a href="{{ route('admin.agent-orders.dispatches.return.create', $dispatch->id) }}"
-                        class="btn btn-outline-danger shadow-sm px-4 mr-2" style="border-radius: 8px;">
-                        <i class="fas fa-undo mr-2"></i> SALES RETURN
-                    </a>
-                    <a href="{{ route('admin.agent-orders.dispatches.destroy', $dispatch->id) }}"
-                        class="btn btn-danger shadow-sm px-4 mr-2" style="border-radius: 8px;"
-                        onclick="return confirm('Are you sure you want to PERMANENTLY delete this dispatch? This will reverse stock and customer balance.')">
-                        <i class="fas fa-trash-alt mr-2"></i> DELETE DISPATCH
-                    </a>
-                    <a href="{{ route('admin.agent-orders.dispatches.download-packing-slip', $dispatch->id) }}"
-                        id="packingSlipBtn" class="btn btn-outline-info shadow-sm px-4 mr-2" style="border-radius: 8px;">
-                        <i class="fas fa-boxes mr-2"></i> PACKING SLIP
-                    </a>
-                    <a href="{{ route('admin.agent-orders.dispatches.download-invoice', $dispatch->id) }}" id="invoiceBtn"
-                        class="btn btn-primary shadow-sm px-4" style="border-radius: 8px;">
-                        <i class="fas fa-file-invoice mr-2"></i> DOWNLOAD INVOICE
-                    </a>
+                    <div class="col-md-7 text-md-right mt-3 mt-md-0 d-flex flex-wrap align-items-center justify-content-md-end" style="gap: 0.5rem;">
+                        @if(!$isFabric)
+                        <div>
+                            <select id="brandSelect" class="form-control form-control-sm shadow-sm"
+                                style="border-radius: 8px; min-width: 120px; height: 36px; border: 1px solid #e2e8f0;">
+                                <option value="actual">Actual Brand</option>
+                                <option value="2">Surgical</option>
+                                <option value="1">Snapkid</option>
+                            </select>
+                        </div>
+                        @endif
+                        
+                        <button type="button" class="btn btn-action bg-white border text-warning" data-toggle="modal" data-target="#editInvoiceModal" title="Edit Invoice">
+                            <i class="fas fa-edit"></i> <span class="d-none d-xl-inline">Edit Invoice</span>
+                        </button>
+                        
+                        <a href="{{ route('admin.agent-orders.dispatches.return.create', $dispatch->id) }}" class="btn btn-action bg-white border text-danger" title="Sales Return">
+                            <i class="fas fa-undo"></i> <span class="d-none d-xl-inline">Sales Return</span>
+                        </a>
+                        
+                        <a href="{{ route('admin.agent-orders.dispatches.destroy', $dispatch->id) }}" class="btn btn-action bg-soft-danger text-danger border-0" onclick="return confirm('Are you sure you want to PERMANENTLY delete this dispatch? This will reverse stock and customer balance.')" title="Delete Dispatch">
+                            <i class="fas fa-trash-alt"></i> <span class="d-none d-xl-inline">Delete</span>
+                        </a>
+
+                        <a href="{{ route('admin.agent-orders.dispatches.download-packing-slip', $dispatch->id) }}" id="packingSlipBtn" class="btn btn-action bg-soft-info text-info border-0">
+                            <i class="fas fa-box-open"></i> Packing Slip
+                        </a>
+                        
+                        <a href="{{ route('admin.agent-orders.dispatches.download-invoice', $dispatch->id) }}" id="invoiceBtn" class="btn btn-action bg-primary-gradient">
+                            <i class="fas fa-file-invoice"></i> Download Invoice
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -56,107 +218,78 @@
         <!-- Edit Invoice Modal -->
         <div class="modal fade" id="editInvoiceModal" tabindex="-1" role="dialog" aria-labelledby="editInvoiceModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
-                    <div class="modal-header bg-warning text-white" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
-                        <h5 class="modal-title font-weight-bold" id="editInvoiceModalLabel"><i class="fas fa-edit mr-2"></i> Update Dispatch Invoice</h5>
-                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <div class="modal-content shadow-lg border-0" style="border-radius: 16px;">
+                    <div class="modal-header bg-white border-bottom-0" style="padding: 1.5rem 1.5rem 0.5rem;">
+                        <h5 class="modal-title font-weight-bold text-dark" id="editInvoiceModalLabel">
+                            <i class="fas fa-edit text-warning mr-2"></i> Update Dispatch Invoice
+                        </h5>
+                        <button type="button" class="close text-muted" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <form id="editInvoiceForm">
                         @csrf
-                        <div class="modal-body p-4">
+                        <div class="modal-body px-4 pb-4">
                             <div class="form-group mb-3">
-                                <label class="font-weight-bold text-muted small text-uppercase">Dispatch Date</label>
-                                <div class="input-group shadow-sm">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-calendar-alt text-primary"></i></span>
-                                    </div>
-                                    <input type="datetime-local" class="form-control border-left-0" id="dispatch_date" name="dispatch_date" value="{{ date('Y-m-d\TH:i', strtotime($dispatch->dispatch_date)) }}" required>
-                                </div>
+                                <label class="stat-label">Dispatch Date</label>
+                                <input type="datetime-local" class="form-control" style="border-radius: 10px; height: 44px;" id="dispatch_date" name="dispatch_date" value="{{ date('Y-m-d\TH:i', strtotime($dispatch->dispatch_date)) }}" required>
                             </div>
                             <div class="form-group mb-3">
-                                <label class="font-weight-bold text-muted small text-uppercase">Subtotal Amount (Total Pcs * Price)</label>
-                                <div class="input-group shadow-sm">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-rupee-sign text-primary"></i></span>
-                                    </div>
-                                    <input type="number" step="0.01" class="form-control border-left-0" id="total_amount" name="total_amount" value="{{ $dispatch->total_amount }}" required>
-                                </div>
+                                <label class="stat-label">Subtotal Amount (Pcs * Price)</label>
+                                <input type="number" step="0.01" class="form-control" style="border-radius: 10px; height: 44px;" id="total_amount" name="total_amount" value="{{ $dispatch->total_amount }}" required>
                             </div>
                             <div class="form-group mb-3">
-                                <label class="font-weight-bold text-muted small text-uppercase">Extra Discount</label>
-                                <div class="input-group shadow-sm">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-minus-circle text-danger"></i></span>
-                                    </div>
-                                    <input type="number" step="0.01" class="form-control border-left-0" id="discount_amount" name="discount_amount" value="{{ $dispatch->discount_amount ?? 0 }}">
-                                </div>
+                                <label class="stat-label">Extra Discount</label>
+                                <input type="number" step="0.01" class="form-control" style="border-radius: 10px; height: 44px;" id="discount_amount" name="discount_amount" value="{{ $dispatch->discount_amount ?? 0 }}">
                             </div>
                             <div class="form-group mb-3">
-                                <label class="font-weight-bold text-muted small text-uppercase">Other Charges</label>
-                                <div class="input-group shadow-sm">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-plus-circle text-info"></i></span>
-                                    </div>
-                                    <input type="number" step="0.01" class="form-control border-left-0" id="other_charges" name="other_charges" value="{{ $dispatch->other_charges ?? 0 }}">
-                                </div>
+                                <label class="stat-label">Other Charges</label>
+                                <input type="number" step="0.01" class="form-control" style="border-radius: 10px; height: 44px;" id="other_charges" name="other_charges" value="{{ $dispatch->other_charges ?? 0 }}">
                             </div>
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group mb-3">
-                                        <label class="font-weight-bold text-muted small text-uppercase">GST %</label>
-                                        <div class="input-group shadow-sm">
-                                            <input type="number" step="any" class="form-control" id="gst_percentage" name="gst_percentage" value="{{ $dispatch->gst_percentage ?? 5 }}">
-                                            <div class="input-group-append">
-                                                <span class="input-group-text bg-white"><i class="fas fa-percentage text-secondary"></i></span>
-                                            </div>
-                                        </div>
+                                        <label class="stat-label">GST %</label>
+                                        <input type="number" step="any" class="form-control" style="border-radius: 10px; height: 44px;" id="gst_percentage" name="gst_percentage" value="{{ $dispatch->gst_percentage ?? 5 }}">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group mb-3">
-                                        <label class="font-weight-bold text-muted small text-uppercase">GST Amount</label>
-                                        <div class="input-group shadow-sm">
-                                            <div class="input-group-prepend">
-                                                <span class="input-group-text bg-white border-right-0"><i class="fas fa-rupee-sign text-muted"></i></span>
-                                            </div>
-                                            <input type="number" step="any" class="form-control border-left-0" id="gst_amount_input" value="{{ round($dispatch->gst_amount, 2) }}">
-                                        </div>
+                                        <label class="stat-label">GST Amount</label>
+                                        <input type="number" step="any" class="form-control" style="border-radius: 10px; height: 44px;" id="gst_amount_input" value="{{ round($dispatch->gst_amount, 2) }}">
                                     </div>
                                 </div>
                             </div>
                             <div class="form-group mb-3">
-                                <label class="font-weight-bold text-muted small text-uppercase">Remark</label>
-                                <textarea name="remark" class="form-control shadow-sm" rows="2" placeholder="Update dispatch remark">{{ $dispatch->remark }}</textarea>
+                                <label class="stat-label">Remark</label>
+                                <textarea name="remark" class="form-control" style="border-radius: 10px;" rows="2">{{ $dispatch->remark }}</textarea>
                             </div>
-                            <hr class="my-4">
-                            <div class="bg-light p-3 rounded-lg text-center shadow-sm border">
-                                <h6 class="text-muted text-uppercase mb-1 small font-weight-bold">Final Grand Total</h6>
+                            <div class="bg-light p-3 rounded text-center mt-4">
+                                <h6 class="stat-label mb-1">Final Grand Total</h6>
                                 <h3 class="mb-0 text-primary font-weight-bold" id="grand_total_display">₹{{ number_format($dispatch->grand_total, 2) }}</h3>
                             </div>
                         </div>
-                        <div class="modal-footer bg-light p-3" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
-                            <button type="button" class="btn btn-outline-secondary px-4 mr-2" data-dismiss="modal" style="border-radius: 8px;">Cancel</button>
-                            <button type="submit" class="btn btn-warning px-5 font-weight-bold" style="border-radius: 8px;">UPDATE INVOICE</button>
+                        <div class="modal-footer bg-white border-top-0 px-4 pb-4">
+                            <button type="button" class="btn btn-action bg-white border text-muted" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-action bg-warning text-dark font-weight-bold">Save Changes</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
 
-        <section class="content mt-3">
+        <section class="content">
             <div class="container-fluid">
-
                 <!-- KPI Summary Cards -->
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="card shadow-sm border-0 h-100">
-                            <div class="card-body text-center py-4">
-                                <h6 class="text-muted font-weight-bold text-uppercase mb-2">Dispatch Date</h6>
-                                <h5 class="font-weight-bold mb-0 text-dark">
-                                    {{ $dispatch->dispatch_date ? date('d M Y, h:i A', strtotime($dispatch->dispatch_date)) : 'N/A' }}
-                                </h5>
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3 mb-md-0">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-soft-primary">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-label">Dispatch Date</div>
+                                <div class="stat-value" style="font-size: 1rem;">{{ $dispatch->dispatch_date ? date('d M Y, h:i A', strtotime($dispatch->dispatch_date)) : 'N/A' }}</div>
                             </div>
                         </div>
                     </div>
@@ -164,114 +297,97 @@
                         $overallQty = $groupedItems->sum('total_qty');
                         $overallFabricMeters = $fabricItems->sum('meter');
                     @endphp
-                    <div class="col-md-3">
-                        <div class="card shadow-sm border-0 h-100">
-                            <div class="card-body text-center py-4">
-                                <h6 class="text-muted font-weight-bold text-uppercase mb-2">Total Units</h6>
-                                <h4 class="font-weight-bold mb-0 text-primary">
+                    <div class="col-md-3 mb-3 mb-md-0">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-soft-info">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-label">Total Units</div>
+                                <div class="stat-value text-info">
                                     @if($overallQty > 0) {{ number_format($overallQty) }} PCs @endif
                                     @if($overallQty > 0 && $overallFabricMeters > 0) + @endif
                                     @if($overallFabricMeters > 0) {{ number_format($overallFabricMeters, 2) }} m @endif
-                                </h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3 mb-md-0">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-soft-success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-label">Status</div>
+                                <div class="stat-value text-success" style="font-size: 1.1rem;">{{ strtoupper($dispatch->status) }}</div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card shadow-sm border-0 h-100">
-                            <div class="card-body text-center py-4">
-                                <h6 class="text-muted font-weight-bold text-uppercase mb-2">Shipment Status</h6>
-                                <span class="badge badge-success px-4 py-2"
-                                    style="font-size: 14px;">{{ strtoupper($dispatch->status) }}</span>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-soft-secondary">
+                                <i class="fas fa-calculator"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-label">Subtotal</div>
+                                <div class="stat-value">₹{{ number_format($dispatch->total_amount, 2) }}</div>
                             </div>
                         </div>
                     </div>
-                
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3 mb-md-0">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-soft-danger">
+                                <i class="fas fa-tags"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-label">Extra Discount</div>
+                                <div class="stat-value text-danger">₹{{ number_format($dispatch->discount_amount ?? 0, 2) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3 mb-md-0">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-soft-warning">
+                                <i class="fas fa-percent"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-label">GST ({{ number_format($dispatch->gst_percentage ?? 5, 1) }}%)</div>
+                                <div class="stat-value text-warning">₹{{ number_format($dispatch->gst_amount, 2) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3 mb-md-0">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-soft-secondary">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-label">Other Charges</div>
+                                <div class="stat-value">₹{{ number_format($dispatch->other_charges ?? 0, 2) }}</div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-md-3">
-                        <div class="card shadow-sm border-0 border-left-primary h-100">
-                            <div class="card-body py-3">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Subtotal</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ number_format($dispatch->total_amount, 2) }}</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-calculator fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">
+                            <div class="stat-icon" style="background: rgba(255,255,255,0.2); color: #fff;">
+                                <i class="fas fa-rupee-sign"></i>
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mt-4 mb-4">
-                        <div class="card shadow-sm border-0 border-left-danger h-100">
-                            <div class="card-body py-3">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Extra Discount</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ number_format($dispatch->discount_amount ?? 0, 2) }}</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-tags fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mt-4 mb-4">
-                        <div class="card shadow-sm border-0 border-left-info h-100">
-                            <div class="card-body py-3">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">GST ({{ number_format($dispatch->gst_percentage ?? 5, 1) }}%)</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ number_format($dispatch->gst_amount, 2) }}</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-percent fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mt-4 mb-4">
-                        <div class="card shadow-sm border-0 border-left-warning h-100">
-                            <div class="card-body py-3">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Other Charges</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ number_format($dispatch->other_charges ?? 0, 2) }}</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-plus fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mt-4 mb-4">
-                        <div class="card shadow-sm bg-success border-0 h-100 text-white">
-                            <div class="card-body py-3">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-white-50 text-uppercase mb-1">Final Amount</div>
-                                        <div class="h4 mb-0 font-weight-bold">₹{{ number_format($dispatch->grand_total, 2) }}</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-check-circle fa-2x text-white-50"></i>
-                                    </div>
-                                </div>
+                            <div class="stat-info text-white">
+                                <div class="stat-label text-white-50">Final Amount</div>
+                                <div class="stat-value text-white">₹{{ number_format($dispatch->grand_total, 2) }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 @if($dispatch->remark)
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <div class="card shadow-sm border-0 border-left-info">
-                            <div class="card-body py-3">
-                                <h6 class="text-info font-weight-bold text-uppercase small mb-2"><i class="fas fa-comment-dots mr-2"></i>Dispatch Remark</h6>
-                                <p class="mb-0 text-dark font-weight-bold">{{ $dispatch->remark }}</p>
-                            </div>
-                        </div>
+                <div class="card order-card mb-4">
+                    <div class="card-body p-4 bg-soft-info">
+                        <h6 class="stat-label text-info"><i class="fas fa-comment-dots mr-2"></i>Dispatch Remark</h6>
+                        <p class="mb-0 text-dark font-weight-500">{{ $dispatch->remark }}</p>
                     </div>
                 </div>
                 @endif

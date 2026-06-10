@@ -17,10 +17,10 @@
         }
 
         .premium-page-header {
-            padding: 1.5rem 0;
+            padding: 1rem 0;
             background: #fff;
             border-bottom: 1px solid #e2e8f0;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
 
         .page-title {
@@ -104,8 +104,8 @@
         <section class="content">
             <div class="container-fluid">
                 <!-- FILTER CARD -->
-                <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
-                    <div class="card-body bg-light rounded p-4">
+                <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px;">
+                    <div class="card-body bg-light rounded p-3">
                         <div class="row align-items-end">
                             <div class="col-md-2">
                                 <label class="small font-weight-bold text-muted mb-1">Start Date</label>
