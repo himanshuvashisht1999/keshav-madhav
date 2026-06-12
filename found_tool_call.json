@@ -1,0 +1,10 @@
+{
+    "name": "view_file",
+    "args": {
+        "AbsolutePath": "\"c:\\\\xampp\\\\htdocs\\\\keshav-madhav\\\\resources\\\\views\\\\admin\\\\inventory\\\\fair_product\\\\create.blade.php\"",
+        "EndLine": "450",
+        "StartLine": "240",
+        "toolAction": "\"Viewing file contents\"",
+        "toolSummary": "\"View create.blade.php js part 1\""
+    }
+}

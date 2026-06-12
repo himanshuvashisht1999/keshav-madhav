@@ -1329,9 +1329,15 @@ class OrderController extends Controller
                 }
 
                 // Get available colors from DomesticInventory
-                $availableColors = \App\Models\DomesticInventory::where('product_id', $productId)
+                $availableColorsQuery = \App\Models\DomesticInventory::where('product_id', $productId)
                     ->where('size_set_id', $sizeSetId)
-                    ->where('domestic_inventories.status', 1)
+                    ->where('domestic_inventories.status', 1);
+
+                if ($fairProduct && !empty($fairProduct->color_ids)) {
+                    $availableColorsQuery->whereIn('color_id', $fairProduct->color_ids);
+                }
+
+                $availableColors = $availableColorsQuery
                     ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
                     ->select('master_colors.id', 'master_colors.name', DB::raw('SUM(domestic_inventories.total_boxes) as available_boxes'), DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'))
                     ->groupBy('master_colors.id', 'master_colors.name')

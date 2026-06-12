@@ -13,10 +13,15 @@ class FairProduct extends Model
         'fair_batch_id',
         'product_id',
         'size_set_id',
+        'color_ids',
         'barcode',
         'qrcode',
         'discount_percent',
         'barcode_count'
+    ];
+
+    protected $casts = [
+        'color_ids' => 'array',
     ];
 
     public function batch()

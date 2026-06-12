@@ -84,9 +84,18 @@ class FairProductController extends Controller
                 ->where('master_size_measurement_id', $p->size_set_id)
                 ->first();
 
+            $colorIds = is_array($p->color_ids) ? $p->color_ids : json_decode($p->color_ids, true);
+            $colorIds = $colorIds ?: [];
+            $colorNames = [];
+            if (!empty($colorIds)) {
+                $colorNames = \App\Models\MasterColor::whereIn('id', $colorIds)->pluck('name')->toArray();
+            }
+
             return [
                 'productId' => $p->product_id,
                 'sizeId' => $p->size_set_id,
+                'colorIds' => $colorIds,
+                'colorNames' => $colorNames,
                 'discount' => $p->discount_percent,
                 'barcodeCount' => $p->barcode_count,
                 'mrp' => $variant->mrp ?? 0,
@@ -152,6 +161,14 @@ class FairProductController extends Controller
             }
 
             $sample->product->display_image = $displayImage;
+
+            $colorIds = is_array($sample->color_ids) ? $sample->color_ids : json_decode($sample->color_ids, true);
+            $colorIds = $colorIds ?: [];
+            $colorNames = [];
+            if (!empty($colorIds)) {
+                $colorNames = \App\Models\MasterColor::whereIn('id', $colorIds)->pluck('name')->toArray();
+            }
+            $sample->color_names = $colorNames;
         }
 
         return view('admin.inventory.fair_product.show', compact('batch'));
@@ -246,20 +263,32 @@ class FairProductController extends Controller
                 $sizeQuery->where('size_set_id', $request->size_set_id);
             }
 
-            $product->available_sizes = $sizeQuery->with('sizeSet')
+            $product->available_sizes = $sizeQuery->with(['sizeSet', 'color'])
                 ->get()
-                ->map(function($inventory) use ($product) {
+                ->groupBy('size_set_id')
+                ->map(function($inventories, $sizeSetId) use ($product) {
+                    $firstInv = $inventories->first();
                     $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $product->id)
-                        ->where('master_size_measurement_id', $inventory->size_set_id)
+                        ->where('master_size_measurement_id', $sizeSetId)
                         ->first();
                     
+                    $colors = $inventories->groupBy('color_id')->map(function($colorInvs) {
+                        $firstColorInv = $colorInvs->first();
+                        if (!$firstColorInv->color) return null;
+                        return [
+                            'id' => $firstColorInv->color->id,
+                            'name' => $firstColorInv->color->name,
+                            'total_boxes' => $colorInvs->sum('total_boxes'),
+                        ];
+                    })->filter()->values()->toArray();
+
                     return [
-                        'id' => $inventory->sizeSet->id,
-                        'name' => $inventory->sizeSet->name,
-                        'mrp' => $variant->mrp ?? 0
+                        'id' => $sizeSetId,
+                        'name' => $firstInv->sizeSet->name,
+                        'mrp' => $variant->mrp ?? 0,
+                        'colors' => $colors
                     ];
                 })
-                ->unique('id')
                 ->values();
             
             $totalBoxes = $product->color_stock->sum('total_boxes');
@@ -283,6 +312,7 @@ class FairProductController extends Controller
         foreach ($request->items as $item) {
             $productId = $item['product_id'];
             $sizeSetId = $item['size_set_id'];
+            $colorIds = isset($item['color_ids']) ? $item['color_ids'] : null;
             $discountPercent = $item['discount_percent'] ?? 0;
             $barcodeCount = $item['barcode_count'] ?? 1;
             
@@ -290,6 +320,7 @@ class FairProductController extends Controller
                 'fair_batch_id' => $batch->id,
                 'product_id' => $productId,
                 'size_set_id' => $sizeSetId,
+                'color_ids' => $colorIds,
                 'barcode' => 'TEMP',
                 'discount_percent' => $discountPercent,
                 'barcode_count' => $barcodeCount
@@ -316,26 +347,61 @@ class FairProductController extends Controller
         ]);
 
         // Simple approach: delete existing products and recreate
-        $batch->products()->delete();
+        $existingProducts = $batch->products->keyBy(function($item) {
+            return $item->product_id . '-' . $item->size_set_id;
+        });
+
+        $submittedKeys = [];
 
         foreach ($request->items as $item) {
             $productId = $item['product_id'];
             $sizeSetId = $item['size_set_id'];
+            $colorIds = isset($item['color_ids']) ? $item['color_ids'] : null;
+            
+            // Clean up colorIds array if it has empty strings
+            if (is_array($colorIds)) {
+                $colorIds = array_filter($colorIds, function($value) {
+                    return $value !== null && $value !== '';
+                });
+                $colorIds = empty($colorIds) ? null : array_values($colorIds);
+            }
+
             $discountPercent = $item['discount_percent'] ?? 0;
             $barcodeCount = $item['barcode_count'] ?? 1;
+            $key = $productId . '-' . $sizeSetId;
+            $submittedKeys[] = $key;
             
-            $fairProduct = FairProduct::create([
-                'fair_batch_id' => $batch->id,
-                'product_id' => $productId,
-                'size_set_id' => $sizeSetId,
-                'barcode' => 'TEMP',
-                'discount_percent' => $discountPercent,
-                'barcode_count' => $barcodeCount
-            ]);
+            if ($existingProducts->has($key)) {
+                // Update existing product to keep the same barcode
+                $fairProduct = $existingProducts->get($key);
+                $fairProduct->update([
+                    'color_ids' => $colorIds,
+                    'discount_percent' => $discountPercent,
+                    'barcode_count' => $barcodeCount
+                ]);
+            } else {
+                // Create new product if added
+                $fairProduct = FairProduct::create([
+                    'fair_batch_id' => $batch->id,
+                    'product_id' => $productId,
+                    'size_set_id' => $sizeSetId,
+                    'color_ids' => $colorIds,
+                    'barcode' => 'TEMP',
+                    'discount_percent' => $discountPercent,
+                    'barcode_count' => $barcodeCount
+                ]);
 
-            $fairProduct->update([
-                'barcode' => 'F' . strtoupper(base_convert($fairProduct->id, 10, 36))
-            ]);
+                $fairProduct->update([
+                    'barcode' => 'F' . strtoupper(base_convert($fairProduct->id, 10, 36))
+                ]);
+            }
+        }
+        
+        // Delete any products that were removed from the UI
+        foreach ($existingProducts as $key => $product) {
+            if (!in_array($key, $submittedKeys)) {
+                $product->delete();
+            }
         }
 
         return redirect()->route('admin.inventory.fair-product.index')->with('success', 'Sample set updated successfully');
@@ -422,7 +488,12 @@ class FairProductController extends Controller
         // Color chart is the list of colors available for this product and size set
         $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $sample->product_id)
             ->where('master_size_measurement_id', $sample->size_set_id)
-            ->with('items.color')
+            ->with(['items' => function($q) use ($sample) {
+                $q->with('color');
+                if (!empty($sample->color_ids)) {
+                    $q->whereIn('master_color_id', $sample->color_ids);
+                }
+            }])
             ->first();
 
         // Image selection priority: Specific Variant -> Specific Variant's color -> Any Variant -> Any Variant's color -> Main Image

@@ -115,6 +115,7 @@
                             <th class="py-3">Design No</th>
                             <th class="py-3">Product Description</th>
                             <th class="py-3">Size Set</th>
+                            <th class="py-3">Colors</th>
                             <th class="py-3 text-right">MRP</th>
                             <th class="py-3 text-right">Discount</th>
                             <th class="py-3 text-right">Final Price</th>
@@ -143,6 +144,17 @@
                             </td>
                             <td class="align-middle">
                                 <span class="badge badge-light border">{{ $sample->sizeSet->name }}</span>
+                            </td>
+                            <td class="align-middle">
+                                @if(!empty($sample->color_names))
+                                    <div class="d-flex flex-wrap gap-1" style="gap: 4px;">
+                                    @foreach($sample->color_names as $colorName)
+                                        <span class="badge" style="background-color: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-weight: 500;">{{ $colorName }}</span>
+                                    @endforeach
+                                    </div>
+                                @else
+                                    <span class="badge bg-light text-muted border">No Colors</span>
+                                @endif
                             </td>
                             <td class="align-middle text-right">
                                 ₹{{ number_format($sample->final_price / (1 - ($sample->discount_percent / 100)), 2) }}

@@ -25,6 +25,19 @@
             background: #fff;
         }
 
+        .premium-sidebar {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+
         .filter-card {
             background: #fff;
             border-radius: 12px;
@@ -89,17 +102,82 @@
             box-shadow: 0 12px 25px -5px rgba(99, 102, 241, 0.4);
             color: #fff;
         }
+
+        /* Premium Product Card Styles */
+        .product-card-premium {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #fff;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .product-card-premium:hover {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+            border-color: #cbd5e1;
+        }
+        .badge-primary-light {
+            background: #eef2ff;
+            color: #4f46e5;
+            border: 1px solid #e0e7ff;
+            font-size: 12px;
+        }
+        .size-item-premium {
+            transition: all 0.2s ease;
+            border: 1px solid #e2e8f0;
+        }
+        .size-item-premium:hover {
+            border-color: #cbd5e1;
+        }
+        .size-item-premium.selected {
+            border-color: #6366f1;
+            background-color: #fff !important;
+            box-shadow: 0 0 0 1px #6366f1;
+        }
+        .color-pill-premium {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            user-select: none;
+            font-weight: 600;
+        }
+        .color-pill-premium:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        .color-pill-premium.active {
+            background: #4f46e5;
+            color: #fff;
+            border-color: #4f46e5;
+        }
+        .color-pill-premium.active .badge {
+            background: #fff !important;
+            color: #4f46e5 !important;
+        }
     </style>
 
     <div class="content-wrapper">
         <div class="container-fluid">
             <div class="premium-header py-3 mb-4 d-flex justify-content-between align-items-center">
-                <h1 class="h5 font-weight-bold text-dark mb-0">Create Sample Set</h1>
-                <p class="text-muted small mb-0">Filter and select size sets to generate barcodes.</p>
+                <div>
+                    <h1 class="h5 font-weight-bold text-dark mb-0">{{ isset($batch) ? 'Edit Sample Set' : 'Create Sample Set' }}</h1>
+                    <p class="text-muted small mb-0">Filter and select size sets to generate barcodes.</p>
+                </div>
+                <button type="button" class="btn btn-primary shadow-sm" data-toggle="modal" data-target="#selectedItemsModal">
+                    <i class="fas fa-shopping-cart mr-2"></i> Selected Items <span class="badge badge-light text-primary ml-1" id="selected-count" style="font-size: 14px;">0</span>
+                </button>
             </div>
 
             <div class="row">
-                <div class="col-md-9">
+                <div class="col-md-12">
                     <div class="filter-card py-3 mb-3">
                         <div class="row">
                             <div class="col-md-2 mb-2">
@@ -182,50 +260,84 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="col-md-3">
-                    <div class="premium-sidebar">
-                        <h5 class="h6 font-weight-bold mb-4 text-dark d-flex align-items-center">
-                            <i class="fas fa-shopping-cart mr-2 text-primary"></i>
-                            {{ isset($batch) ? 'Edit Sample Set' : 'Selected Sample Items' }}
-                        </h5>
-
-                        <form
-                            action="{{ isset($batch) ? route('admin.inventory.fair-product.update', $batch->id) : route('admin.inventory.fair-product.store') }}"
-                            method="POST" id="fairForm" class="mb-3">
-                            @csrf
-                            @if(isset($batch)) @method('PUT') @endif
-
-                            <div class="form-group mb-3">
-                                <label class="x-small font-weight-bold text-uppercase text-muted mb-1">Sales Agents</label>
-                                <select name="sales_agent_ids[]" class="form-control select2" multiple>
-                                    @foreach($salesAgents as $agent)
-                                        <option value="{{ $agent->id }}" {{ isset($batch) && is_array($batch->sales_agent_ids) && in_array($agent->id, $batch->sales_agent_ids) ? 'selected' : '' }}>{{ $agent->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div id="hidden-inputs"></div>
-                            <button type="submit" class="btn btn-generate w-100 position-static py-2 mb-3" id="btn-submit"
-                                style="display: none;">
-                                <i class="fas fa-save mr-2"></i> {{ isset($batch) ? 'Update Sample Set' : 'Generate Sample Set' }}
+            <div class="modal fade" id="selectedItemsModal" tabindex="-1" role="dialog" aria-labelledby="selectedItemsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl" role="document">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                        <div class="modal-header border-0 bg-light px-4 py-3">
+                            <h5 class="modal-title font-weight-bold text-dark d-flex align-items-center" id="selectedItemsModalLabel">
+                                <i class="fas fa-shopping-cart mr-2 text-primary"></i>
+                                {{ isset($batch) ? 'Edit Sample Set' : 'Selected Sample Items' }}
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
                             </button>
-                        </form>
-
-                        <div id="global-discount-container" class="mb-3" style="display: none;">
-                            <label class="x-small font-weight-bold text-uppercase text-muted mb-1">Global Discount %</label>
-                            <div class="input-group input-group-sm">
-                                <input type="number" id="global-discount" class="form-control"
-                                    placeholder="Type to apply to all..." min="0" max="100" step="0.01">
-                                <div class="input-group-append">
-                                    <span class="input-group-text x-small">%</span>
-                                </div>
-                            </div>
                         </div>
+                        <div class="modal-body p-4 bg-white">
+                            <form
+                                action="{{ isset($batch) ? route('admin.inventory.fair-product.update', $batch->id) : route('admin.inventory.fair-product.store') }}"
+                                method="POST" id="fairForm" class="mb-3">
+                                @csrf
+                                @if(isset($batch)) @method('PUT') @endif
 
-                        <div id="selected-list" style="flex: 1; overflow-y: auto;">
-                            <div class="text-center py-4 text-muted border rounded border-dashed">
-                                <p class="mb-0 small">Empty</p>
+                                <div class="row align-items-end">
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-0">
+                                            <label class="x-small font-weight-bold text-uppercase text-muted mb-1">Sales Agents</label>
+                                            <select name="sales_agent_ids[]" class="form-control select2-modal" multiple>
+                                                @foreach($salesAgents as $agent)
+                                                    <option value="{{ $agent->id }}" {{ isset($batch) && is_array($batch->sales_agent_ids) && in_array($agent->id, $batch->sales_agent_ids) ? 'selected' : '' }}>{{ $agent->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div id="global-discount-container" style="display: none;">
+                                            <label class="x-small font-weight-bold text-uppercase text-muted mb-1">Global Discount %</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" id="global-discount" class="form-control"
+                                                    placeholder="Type to apply to all..." min="0" max="100" step="0.01">
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text x-small">%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5 text-right">
+                                        <button type="submit" class="btn btn-generate position-static py-2 px-4 w-100" id="btn-submit"
+                                            style="display: none;">
+                                            <i class="fas fa-save mr-2"></i> {{ isset($batch) ? 'Update Sample Set' : 'Generate Sample Set' }}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="hidden-inputs"></div>
+                            </form>
+
+                            <div class="table-responsive mt-4 border rounded">
+                                <table class="table table-bordered table-hover bg-white mb-0" id="selected-table">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th class="x-small text-uppercase font-weight-bold">Product</th>
+                                            <th class="x-small text-uppercase font-weight-bold">Design & Size</th>
+                                            <th class="x-small text-uppercase font-weight-bold">MRP</th>
+                                            <th class="x-small text-uppercase font-weight-bold">Discount %</th>
+                                            <th class="x-small text-uppercase font-weight-bold">Barcode Count</th>
+                                            <th class="x-small text-uppercase font-weight-bold text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="selected-list">
+                                        <tr>
+                                            <td colspan="6" class="text-center py-5 text-muted border-dashed">
+                                                <div class="d-flex flex-column align-items-center justify-content-center">
+                                                    <i class="fas fa-box-open fa-2x mb-2 opacity-50"></i>
+                                                    <p class="mb-0 small">No items selected yet.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -236,6 +348,12 @@
 
     <script>
         $(document).ready(function () {
+            @if ($errors->any())
+                @foreach ($errors->all() as $error)
+                    toastr.error("{{ $error }}");
+                @endforeach
+            @endif
+
             let selectedItems = {};
             let productDetails = {};
             let sizeDetails = {};
@@ -246,24 +364,39 @@
                     selectedItems[item.productId + '-' + item.sizeId] = {
                         productId: item.productId,
                         sizeId: item.sizeId,
+                        colorIds: item.colorIds ? item.colorIds.map(id => parseInt(id)) : [],
                         discount: item.discount,
                         barcodeCount: item.barcodeCount || 1,
                         mrp: item.mrp
                     };
-                    productDetails[item.productId] = {
-                        designNo: item.designNo,
-                        garment: item.garment
-                    };
-                    sizeDetails[item.sizeId] = {
-                        name: item.sizeName
-                    };
                 });
-                setTimeout(renderSelectedList, 100);
+                
+                // Set product details for existing items without loading from API
+                @foreach($existingItems as $item)
+                    productDetails['{{ $item["productId"] }}'] = {
+                        designNo: '{{ $item["designNo"] }}',
+                        garment: '{!! addslashes($item["garment"]) !!}'
+                    };
+                    sizeDetails['{{ $item["sizeId"] }}'] = { name: '{{ $item["sizeName"] }}' };
+                @endforeach
+                
+                // Update count badge initially
+                $('#selected-count').text(Object.keys(selectedItems).length);
+                renderSelectedList();
             @endif
 
             $('.select2').select2({
                 theme: 'bootstrap4',
                 width: '100%'
+            });
+            
+            // Re-initialize select2 for modal elements after the modal is shown
+            $('#selectedItemsModal').on('shown.bs.modal', function () {
+                $('.select2-modal').select2({
+                    theme: 'bootstrap4',
+                    width: '100%',
+                    dropdownParent: $('#selectedItemsModal')
+                });
             });
 
             $('#btn-filter').on('click', function () {
@@ -323,40 +456,55 @@
                                     sizeDetails[size.id] = { name: size.name };
                                     let key = product.id + '-' + size.id;
                                     let isChecked = !!selectedItems[key];
+                                    let selectedColors = isChecked && selectedItems[key].colorIds ? selectedItems[key].colorIds.map(id => parseInt(id)) : [];
+
+                                    let colorHtml = '';
+                                    if (size.colors && size.colors.length > 0) {
+                                        colorHtml = `<div class="colors-drawer mt-2 pt-2 border-top" style="${isChecked ? '' : 'display:none;'}">
+                                            <p class="text-muted mb-2 font-weight-bold" style="font-size: 10px; letter-spacing: 0.5px;">AVAILABLE COLORS</p>
+                                            <div class="d-flex flex-wrap" style="gap: 6px;">`;
+                                        size.colors.forEach(color => {
+                                            let isColorChecked = selectedColors.includes(color.id);
+                                            colorHtml += `
+                                                <label class="color-pill-premium ${isColorChecked ? 'active' : ''}">
+                                                    <input type="checkbox" class="color-checkbox d-none" value="${color.id}" data-key="${key}" ${isColorChecked ? 'checked' : ''}>
+                                                    ${color.name}
+                                                    <span class="badge ${isColorChecked ? 'badge-light' : 'badge-light text-muted border'} ml-1" style="font-size: 9.5px;">${color.total_boxes}</span>
+                                                </label>
+                                            `;
+                                        });
+                                        colorHtml += `</div></div>`;
+                                    }
+
                                     sizeHtml += `
-                                        <label class="size-set-chip py-1 px-3 small ${isChecked ? 'selected' : ''}" 
-                                            data-product-id="${product.id}" 
-                                            data-size-id="${size.id}" 
-                                            data-mrp="${size.mrp}"
-                                            style="font-size: 11px;">
-                                            <input type="checkbox" ${isChecked ? 'checked' : ''}>
-                                            ${size.name}
-                                        </label>
+                                        <div class="size-item-premium mb-2 bg-white rounded p-2 ${isChecked ? 'selected' : ''}">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <label class="custom-control custom-checkbox mb-0 size-set-chip" data-product-id="${product.id}" data-size-id="${size.id}" data-mrp="${size.mrp}" style="cursor: pointer; display: flex; align-items: center; width: 100%;">
+                                                    <input type="checkbox" class="custom-control-input" ${isChecked ? 'checked' : ''}>
+                                                    <span class="custom-control-label font-weight-bold text-dark" style="font-size: 13px;">${size.name}</span>
+                                                </label>
+                                                <span class="text-muted small font-weight-bold">₹${size.mrp}</span>
+                                            </div>
+                                            ${colorHtml}
+                                        </div>
                                     `;
                                 });
                             }
 
-                            let stockHtml = '';
-                            if (product.color_stock && product.color_stock.length > 0) {
-                                stockHtml = '<div class="mt-2 border-top pt-1"><p class="x-small font-weight-bold text-muted mb-1 text-uppercase">Stock (Boxes):</p><div class="d-flex flex-wrap">';
-                                product.color_stock.forEach(stock => {
-                                    stockHtml += `<span class="badge badge-light border mr-1 mb-1" style="font-size: 10px; color: #1b4332;">${stock.color.name}: <b>${stock.total_boxes}</b></span>`;
-                                });
-                                stockHtml += '</div></div>';
-                            }
-
                             html += `
-                            <div class="col-md-6 mb-3">
-                                <div class="product-card p-2 border-0 shadow-sm h-100">
-                                    <div class="d-flex">
-                                        <img src="${imageUrl}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
-                                        <div class="ml-2 flex-grow-1" style="min-width: 0;">
-                                            <h6 class="mb-0 font-weight-bold text-truncate text-dark" title="${fullName}">${fullName}</h6>
-                                            <p class="text-primary x-small font-weight-bold mb-1"># ${product.design_number}</p>
-                                            <div class="d-flex flex-wrap">
-                                                ${sizeHtml}
-                                            </div>
-                                            ${stockHtml}
+                            <div class="col-md-6 mb-4">
+                                <div class="product-card-premium h-100 d-flex flex-column">
+                                    <div class="d-flex align-items-start p-3 border-bottom bg-white">
+                                        <img src="${imageUrl}" class="rounded shadow-sm" style="width: 80px; height: 80px; object-fit: cover; border: 1px solid #e2e8f0;">
+                                        <div class="ml-3 flex-grow-1" style="min-width: 0;">
+                                            <h5 class="mb-1 font-weight-bold text-dark text-truncate" style="font-size: 15px;" title="${fullName}">${fullName}</h5>
+                                            <span class="badge badge-primary-light px-2 py-1"># ${product.design_number}</span>
+                                        </div>
+                                    </div>
+                                    <div class="p-3 flex-grow-1" style="background: #f8fafc;">
+                                        <h6 class="text-uppercase text-muted font-weight-bold mb-3" style="font-size: 11px; letter-spacing: 0.5px;">Select Sizes & Colors</h6>
+                                        <div class="sizes-list">
+                                            ${sizeHtml}
                                         </div>
                                     </div>
                                 </div>
@@ -371,29 +519,95 @@
                 });
             });
 
-            $(document).on('click', '.size-set-chip', function () {
-                let chip = $(this);
-                let checkbox = chip.find('input');
-                let productId = chip.data('product-id');
-                let sizeId = chip.data('size-id');
-                let mrp = chip.data('mrp');
-                let key = productId + '-' + sizeId;
-
-                checkbox.prop('checked', !checkbox.prop('checked'));
-                chip.toggleClass('selected', checkbox.prop('checked'));
-
-                if (checkbox.prop('checked')) {
-                    selectedItems[key] = { productId, sizeId, mrp, discount: 0, barcodeCount: 1 };
-                } else {
-                    delete selectedItems[key];
+            $(document).on('click', '.size-set-chip', function (e) {
+                // Prevent event firing if clicked on custom-control-input directly,
+                // because label click will trigger it anyway
+                if ($(e.target).hasClass('color-checkbox') || $(e.target).closest('.colors-drawer').length > 0) {
+                    return;
                 }
-                renderSelectedList();
+                
+                let chip = $(this);
+                let container = chip.closest('.size-item-premium');
+                let checkbox = chip.find('input[type="checkbox"]').first();
+                
+                // If the user clicked the label (not the checkbox itself), toggle the checkbox manually
+                // Since this is a custom-control label, clicking it toggles the checkbox automatically.
+                // We just need to sync our state. Wait for the event loop so the checkbox value is updated.
+                setTimeout(() => {
+                    let productId = chip.data('product-id');
+                    let sizeId = chip.data('size-id');
+                    let mrp = chip.data('mrp');
+                    let key = productId + '-' + sizeId;
+
+                    let isChecked = checkbox.prop('checked');
+                    container.toggleClass('selected', isChecked);
+                    
+                    let colorOptions = container.find('.colors-drawer');
+
+                    if (isChecked) {
+                        selectedItems[key] = { productId, sizeId, mrp, discount: 0, barcodeCount: 1, colorIds: [] };
+                        colorOptions.slideDown(200);
+                    } else {
+                        delete selectedItems[key];
+                        colorOptions.slideUp(200);
+                        colorOptions.find('.color-checkbox').prop('checked', false);
+                        colorOptions.find('.color-pill-premium').removeClass('active');
+                    }
+                    renderSelectedList();
+                }, 10);
             });
+
+            $(document).on('change', '.color-checkbox', function(e) {
+                let key = $(this).data('key');
+                let colorId = parseInt($(this).val());
+                let pill = $(this).closest('.color-pill-premium');
+                
+                if (!selectedItems[key]) return;
+                
+                if (!selectedItems[key].colorIds) {
+                    selectedItems[key].colorIds = [];
+                }
+                
+                if ($(this).prop('checked')) {
+                    if (!selectedItems[key].colorIds.includes(colorId)) {
+                        selectedItems[key].colorIds.push(colorId);
+                    }
+                    pill.addClass('active');
+                    pill.find('.badge').removeClass('text-muted border').addClass('text-primary');
+                } else {
+                    selectedItems[key].colorIds = selectedItems[key].colorIds.filter(id => id !== colorId);
+                    pill.removeClass('active');
+                    pill.find('.badge').addClass('text-muted border').removeClass('text-primary');
+                }
+                renderHiddenInputsOnly();
+            });
+
+            function renderHiddenInputsOnly() {
+                let hiddenHtml = '';
+                let count = 0;
+                Object.keys(selectedItems).forEach(key => {
+                    let item = selectedItems[key];
+                    count++;
+                    hiddenHtml += `
+                        <input type="hidden" name="items[${count}][product_id]" value="${item.productId}">
+                        <input type="hidden" name="items[${count}][size_set_id]" value="${item.sizeId}">
+                        <input type="hidden" name="items[${count}][discount_percent]" value="${item.discount}">
+                        <input type="hidden" name="items[${count}][barcode_count]" value="${item.barcodeCount}">
+                    `;
+                    if (item.colorIds && item.colorIds.length > 0) {
+                        item.colorIds.forEach(colorId => {
+                            hiddenHtml += `<input type="hidden" name="items[${count}][color_ids][]" value="${colorId}">`;
+                        });
+                    } else {
+                        hiddenHtml += `<input type="hidden" name="items[${count}][color_ids][]" value="">`;
+                    }
+                });
+                $('#hidden-inputs').html(hiddenHtml);
+            }
 
             function renderSelectedList() {
                 let html = '';
                 let count = 0;
-                let hiddenHtml = '';
 
                 Object.keys(selectedItems).forEach(key => {
                     let item = selectedItems[key];
@@ -402,49 +616,43 @@
                     count++;
 
                     html += `
-                    <div class="selected-item p-3 mb-3 border rounded bg-white shadow-sm animate-in" style="border-left: 4px solid var(--primary) !important;">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div style="flex: 1; min-width: 0;">
-                                <div class="font-weight-bold text-dark text-truncate mb-0" style="font-size: 13px;">${p.garment}</div>
-                                <div class="x-small text-muted">#${p.designNo} | ${s.name}</div>
+                    <tr>
+                        <td class="align-middle">
+                            <div class="font-weight-bold text-dark text-truncate mb-0" style="max-width: 250px;" title="${p.garment}">${p.garment}</div>
+                        </td>
+                        <td class="align-middle">
+                            <div class="small text-muted">#${p.designNo} | ${s.name}</div>
+                        </td>
+                        <td class="align-middle">
+                            <div class="small font-weight-bold text-muted text-uppercase">₹${item.mrp}</div>
+                        </td>
+                        <td class="align-middle">
+                            <div class="input-group input-group-sm" style="max-width: 120px;">
+                                <input type="number" class="form-control discount-input" placeholder="Disc %" value="${item.discount}" data-key="${key}" step="0.01" min="0" max="100">
+                                <div class="input-group-append">
+                                    <span class="input-group-text small">%</span>
+                                </div>
                             </div>
-                            <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-selected" data-key="${key}">
-                                <i class="fas fa-times-circle"></i>
+                        </td>
+                        <td class="align-middle">
+                            <div class="input-group input-group-sm" style="max-width: 120px;">
+                                <input type="number" class="form-control barcode-count-input" title="Barcode Count" placeholder="Count" value="${item.barcodeCount}" data-key="${key}" step="1" min="1">
+                                <div class="input-group-append">
+                                    <span class="input-group-text small"><i class="fas fa-barcode"></i></span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="align-middle text-center">
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-selected" data-key="${key}">
+                                <i class="fas fa-trash"></i>
                             </button>
-                        </div>
-                        <div class="row no-gutters align-items-center mt-2">
-                            <div class="col-4">
-                                <div class="x-small font-weight-bold text-muted text-uppercase">MRP: ₹${item.mrp}</div>
-                            </div>
-                            <div class="col-4 px-1">
-                                <div class="input-group input-group-sm">
-                                    <input type="number" class="form-control discount-input" placeholder="Disc %" value="${item.discount}" data-key="${key}" step="0.01" min="0" max="100">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text x-small">%</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="input-group input-group-sm">
-                                    <input type="number" class="form-control barcode-count-input" title="Barcode Count" placeholder="Count" value="${item.barcodeCount}" data-key="${key}" step="1" min="1">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text x-small"><i class="fas fa-barcode"></i></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    `;
-                    hiddenHtml += `
-                        <input type="hidden" name="items[${count}][product_id]" value="${item.productId}">
-                        <input type="hidden" name="items[${count}][size_set_id]" value="${item.sizeId}">
-                        <input type="hidden" name="items[${count}][discount_percent]" value="${item.discount}">
-                        <input type="hidden" name="items[${count}][barcode_count]" value="${item.barcodeCount}">
+                        </td>
+                    </tr>
                     `;
                 });
 
                 if (count === 0) {
-                    $('#selected-list').html('<div class="text-center py-4 text-muted border rounded border-dashed"><p class="mb-0 small">Empty</p></div>');
+                    $('#selected-list').html('<tr><td colspan="6" class="text-center py-5 text-muted border-dashed"><div class="d-flex flex-column align-items-center justify-content-center"><i class="fas fa-box-open fa-2x mb-2 opacity-50"></i><p class="mb-0 small">No items selected yet.</p></div></td></tr>');
                     $('#btn-submit').hide();
                     $('#global-discount-container').hide();
                 } else {
@@ -452,7 +660,9 @@
                     $('#btn-submit').show();
                     $('#global-discount-container').show();
                 }
-                $('#hidden-inputs').html(hiddenHtml);
+                
+                $('#selected-count').text(count);
+                renderHiddenInputsOnly();
             }
 
             $('#global-discount').on('input', function () {
