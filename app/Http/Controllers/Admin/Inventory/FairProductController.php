@@ -578,11 +578,20 @@ class FairProductController extends Controller
 
         $samples = FairProduct::with(['product.series', 'product.fitting', 'product.pattern', 'sizeSet'])
             ->whereIn('barcode', $barcodes)
-            ->get();
+            ->get()
+            ->keyBy('barcode');
 
-        if ($samples->isEmpty()) return back()->with('error', 'No products found for the provided barcodes.');
+        $finalSamples = collect();
+        foreach ($barcodes as $code) {
+            if (isset($samples[$code])) {
+                // Do not override barcode_count, respect the database value
+                $finalSamples->push(clone $samples[$code]);
+            }
+        }
 
-        $tspl = generateFairBulkTspl($samples);
+        if ($finalSamples->isEmpty()) return back()->with('error', 'No products found for the provided barcodes.');
+
+        $tspl = generateFairBulkTspl($finalSamples);
         
         $filename = "Fair_Custom_" . date('Ymd_His') . ".prn";
         
