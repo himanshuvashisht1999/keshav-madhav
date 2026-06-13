@@ -48,10 +48,19 @@
                 <p class="text-muted">Viewing details for Batch <span class="barcode-display">{{ $batch->batch_no }}</span></p>
             </div>
             <div>
-                <a href="{{ route('admin.inventory.fair-product.index') }}" class="btn btn-outline-secondary px-4 mr-2">
+                <a href="{{ route('admin.inventory.fair-product.index') }}" class="btn btn-outline-secondary px-3 mr-1">
                     <i class="fas fa-arrow-left mr-2"></i> Back
                 </a>
-                <a href="{{ route('admin.inventory.fair-product.edit', $batch->id) }}" class="btn btn-warning px-4">
+                <a href="{{ route('admin.inventory.fair-product.generate-pdf-batch', $batch->id) }}?show_wsp=yes" class="btn btn-outline-success px-3 mr-1" title="PDF with WSP">
+                    <i class="fas fa-file-invoice-dollar"></i> WSP
+                </a>
+                <a href="{{ route('admin.inventory.fair-product.generate-pdf-batch', $batch->id) }}?show_wsp=no" class="btn btn-outline-primary px-3 mr-1" title="PDF No Price">
+                    <i class="fas fa-file-pdf"></i> NO WSP
+                </a>
+                <a href="{{ route('admin.inventory.fair-product.download-prn') }}?batch_id={{ $batch->id }}" class="btn btn-outline-dark px-3 mr-1" title="Download PRN (Printer)">
+                    <i class="fas fa-print"></i> PRN
+                </a>
+                <a href="{{ route('admin.inventory.fair-product.edit', $batch->id) }}" class="btn btn-warning px-3">
                     <i class="fas fa-edit mr-2"></i> Edit Batch
                 </a>
             </div>
