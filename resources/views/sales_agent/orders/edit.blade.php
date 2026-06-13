@@ -29,7 +29,7 @@
             </div>
 
             <!-- Order-Level Settings and Filters -->
-            <form method="GET" action="{{ route('agent.orders.edit', $order->id) }}" id="filterForm">
+            <form method="GET" action="{{ route('agent.orders.edit', $order->id) }}" id="filterForm" class="allow-multiple-submit">
                 <div class="container-fluid pt-3 px-3">
                     <div class="custom-control custom-switch border p-2 rounded bg-white shadow-sm" style="border-radius: 10px !important;">
                         <input type="checkbox" class="custom-control-input" id="sampleSetToggle" name="sample_set" value="1" {{ (request()->has('product_name') ? request('sample_set') == '1' : $order->is_sample_set == 1) ? 'checked' : '' }} onchange="this.form.submit()">
@@ -122,8 +122,8 @@
                         <button type="submit"
                             class="btn btn-primary btn-sm flex-grow-1 mr-2 rounded-pill font-weight-bold">Apply
                             Filters</button>
-                        <a href="{{ route('agent.orders.edit', $order->id) }}" class="btn btn-light btn-sm rounded-pill"><i
-                                class="fas fa-undo"></i></a>
+                        <button type="button" id="resetFiltersBtn" class="btn btn-light btn-sm rounded-pill"><i
+                                class="fas fa-undo"></i></button>
                     </div>
                 </div>
             </form>
@@ -809,7 +809,27 @@
                 loadMore();
             });
 
-            function loadMore() {
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                loadMore(true);
+                $('#filtersCollapse').collapse('hide');
+            });
+
+            $('#resetFiltersBtn').click(function(e) {
+                e.preventDefault();
+                $('#filterForm')[0].reset();
+                $('.select2').val(null).trigger('change');
+                $('#filterForm').submit();
+            });
+
+            function loadMore(reset = false) {
+                if (reset) {
+                    nextPage = 1;
+                    loading = false;
+                    container.empty();
+                    $('#loadMoreBtn').show();
+                }
+
                 if (loading || !nextPage) return;
                 loading = true;
                 $('#loading-spinner').show();
@@ -823,6 +843,9 @@
                     method: 'GET',
                     data: requestData,
                     success: function (response) {
+                        if (reset) {
+                            container.empty();
+                        }
                         container.append(response.html);
                         nextPage = response.next_page;
                         loading = false;

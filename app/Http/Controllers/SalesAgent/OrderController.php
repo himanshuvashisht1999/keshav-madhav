@@ -614,6 +614,9 @@ class OrderController extends Controller
             $discount_col = 'COALESCE(sales_agent_brand_discounts.discount_percentage, 0)';
         }
 
+        // Clone query BEFORE filters to fetch all selected items from the DB
+        $unfilteredQuery = $query->clone();
+
         if ($request->filled('design_number')) {
             $query->where('production_goods.design_number', $request->design_number);
         }
@@ -789,7 +792,7 @@ class OrderController extends Controller
         }
 
         // Selected quantities for existing order with updated prices
-        $existing_items_with_prices = $query->clone()
+        $existing_items_with_prices = $unfilteredQuery->clone()
             ->join('agent_order_items as current_items', function ($join) use ($order) {
                 $join->on('domestic_inventories.product_id', '=', 'current_items.product_id')
                     ->on('domestic_inventories.color_id', '=', 'current_items.color_id')
