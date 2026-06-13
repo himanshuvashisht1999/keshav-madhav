@@ -928,12 +928,16 @@
                         unit_price: parseFloat(card.data('price'))
                     });
 
-                    // Move to top
+                    // Move the PREVIOUSLY edited card to the top when selecting a new product
                     const row = card.closest('.variation-row-container');
-                    if (!row.hasClass('has-qty-top')) {
-                        row.addClass('has-qty-top').prependTo('#variation-container');
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    if (window.lastEditedCard && window.lastEditedCard.data('key') !== key) {
+                        const prevRow = window.lastEditedCard.closest('.variation-row-container');
+                        if (!prevRow.hasClass('has-qty-top')) {
+                            prevRow.addClass('has-qty-top').prependTo('#variation-container');
+                        }
                     }
+                    window.lastEditedCard = card;
                 } else {
                     cart.delete(key);
                     card.closest('.variation-row-container').removeClass('has-qty-top');
