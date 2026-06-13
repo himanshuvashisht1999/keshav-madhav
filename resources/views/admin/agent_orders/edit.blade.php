@@ -81,9 +81,9 @@
                                     <button type="submit" class="btn btn-primary btn-sm px-3 mr-1 shadow-sm">
                                         <i class="fas fa-search mr-1"></i> Filter
                                     </button>
-                                    <a href="{{ route('admin.agent-orders.edit', $order->id) }}" class="btn btn-secondary btn-sm px-2 shadow-sm">
+                                    <button type="button" id="btn-reset-filters" class="btn btn-secondary btn-sm px-2 shadow-sm">
                                         <i class="fas fa-undo"></i>
-                                    </a>
+                                    </button>
                                 </div>
                             </div>
                         </form>
@@ -338,6 +338,11 @@
             $('#filterForm').on('submit', function(e) {
                 e.preventDefault();
                 loadMore(true);
+            });
+
+            $('#btn-reset-filters').on('click', function() {
+                $('#filterForm select').val('').trigger('change');
+                // The 'change' event will automatically trigger loadMore(true) due to the listener above
             });
             // --- INFINITE SCROLL & REAL-TIME FILTER END ---
 

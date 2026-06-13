@@ -561,29 +561,29 @@ CLS
         $tspl .= "CLS\n";
 
         if ($left) {
-            $tspl .= "TEXT 40,110,\"3\",0,2,2,\"{$left->product_name}\"\n";
+            $tspl .= "TEXT 20,110,\"3\",0,2,2,\"{$left->product_name}\"\n";
             // More space after product name, smaller font
-            $tspl .= "TEXT 40,200,\"2\",0,2,2,\"{$left->size_group}\"\n";
-            $tspl .= "TEXT 40,260,\"2\",0,2,2,\"{$left->fitting_name}\"\n";
+            $tspl .= "TEXT 20,200,\"2\",0,2,2,\"{$left->size_group}\"\n";
+            $tspl .= "TEXT 20,260,\"2\",0,2,2,\"{$left->fitting_name}\"\n";
             // Increase height of WSP line
-            $tspl .= "TEXT 40,320,\"2\",0,2,3,\"{$left->wsp}\"\n";
+            $tspl .= "TEXT 20,320,\"2\",0,2,3,\"{$left->wsp}\"\n";
             // Barcode more bottom
-            $tspl .= "BARCODE 40,420,\"128\",120,0,0,3,6,\"{$left->barcode}\"\n";
+            $tspl .= "BARCODE 20,420,\"128\",120,0,0,3,6,\"{$left->barcode}\"\n";
             // Barcode text under Barcode
-            $tspl .= "TEXT 40,560,\"2\",0,1,1,\"{$left->barcode}\"\n";
+            $tspl .= "TEXT 20,560,\"2\",0,1,1,\"{$left->barcode}\"\n";
         }
 
         if ($right) {
-            $tspl .= "TEXT 440,110,\"3\",0,2,2,\"{$right->product_name}\"\n";
+            $tspl .= "TEXT 420,110,\"3\",0,2,2,\"{$right->product_name}\"\n";
             // More space after product name, smaller font
-            $tspl .= "TEXT 440,200,\"2\",0,2,2,\"{$right->size_group}\"\n";
-            $tspl .= "TEXT 440,260,\"2\",0,2,2,\"{$right->fitting_name}\"\n";
+            $tspl .= "TEXT 420,200,\"2\",0,2,2,\"{$right->size_group}\"\n";
+            $tspl .= "TEXT 420,260,\"2\",0,2,2,\"{$right->fitting_name}\"\n";
             // Increase height of WSP line
-            $tspl .= "TEXT 440,320,\"2\",0,2,3,\"{$right->wsp}\"\n";
+            $tspl .= "TEXT 420,320,\"2\",0,2,3,\"{$right->wsp}\"\n";
             // Barcode more bottom
-            $tspl .= "BARCODE 440,420,\"128\",120,0,0,3,6,\"{$right->barcode}\"\n";
+            $tspl .= "BARCODE 420,420,\"128\",120,0,0,3,6,\"{$right->barcode}\"\n";
             // Barcode text under Barcode
-            $tspl .= "TEXT 440,560,\"2\",0,1,1,\"{$right->barcode}\"\n";
+            $tspl .= "TEXT 420,560,\"2\",0,1,1,\"{$right->barcode}\"\n";
         }
 
         $tspl .= "PRINT 1\n";
@@ -639,7 +639,8 @@ if (!function_exists('send_whatsapp_message')) {
 
         return json_decode($response, true);
     }
-}if (!function_exists('deleteProductionSession')) {
+}
+if (!function_exists('deleteProductionSession')) {
     function deleteProductionSession($type, $id)
     {
         \Illuminate\Support\Facades\DB::beginTransaction();
