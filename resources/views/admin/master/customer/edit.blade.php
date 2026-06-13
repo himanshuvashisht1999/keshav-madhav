@@ -88,6 +88,17 @@
                                                 @endif
                                             </div>
                                         </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="exampleInputGst">GST Number</label>
+                                                <input type="text" name="gst_number" class="form-control" placeholder="Enter GST number" value="{{$data->gst_number}}">
+                                                @if ($errors->has('gst_number'))
+                                                    <span class="invalid-feedback d-block">
+                                                    {{ $errors->first('gst_number') }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
 
                                         <div class="col-md-6">
                                             <div class="form-group">
@@ -222,6 +233,12 @@
                                             <div class="form-group">
                                                 <label>Shop Email Address (Optional)</label>
                                                 <input type="email" name="shop_email" class="form-control" placeholder="example@gmail.com" value="{{ $shop->email ?? '' }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Shop GST Number (Optional)</label>
+                                                <input type="text" name="shop_gst_number" class="form-control" placeholder="Enter GST number" value="{{ $shop->gst_number ?? '' }}">
                                             </div>
                                         </div>
                                         <div class="col-md-6">

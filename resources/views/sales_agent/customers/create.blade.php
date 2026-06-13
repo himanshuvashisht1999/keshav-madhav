@@ -37,6 +37,10 @@
                         <input type="email" name="email" class="form-control rounded-lg" placeholder="Enter email" value="{{ old('email') }}">
                     </div>
                     <div class="form-group mb-3">
+                        <label class="small font-weight-bold text-muted">GST Number (Optional)</label>
+                        <input type="text" name="gst_number" class="form-control rounded-lg" placeholder="Enter GST number" value="{{ old('gst_number') }}">
+                    </div>
+                    <div class="form-group mb-3">
                         <label class="small font-weight-bold text-muted">Full Address (Optional)</label>
                         <textarea name="address" class="form-control rounded-lg" rows="2" placeholder="Enter address">{{ old('address') }}</textarea>
                     </div>
@@ -94,6 +98,10 @@
                     <div class="form-group mb-3">
                         <label class="small font-weight-bold text-muted">Shop Email Address (Optional)</label>
                         <input type="email" name="shop_email" class="form-control rounded-lg" placeholder="example@gmail.com" value="{{ old('shop_email') }}">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="small font-weight-bold text-muted">Shop GST Number (Optional)</label>
+                        <input type="text" name="shop_gst_number" class="form-control rounded-lg" placeholder="Enter GST number" value="{{ old('shop_gst_number') }}">
                     </div>
                     <div class="form-group mb-3">
                         <label class="small font-weight-bold text-muted">Shop Full Address (Optional)</label>

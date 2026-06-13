@@ -323,6 +323,7 @@ class CustomerService
             $shop->name = $request->shop_name;
             $shop->phone = $request->shop_phone;
             $shop->email = $request->shop_email;
+            $shop->gst_number = $request->shop_gst_number;
             $shop->address = $request->shop_address;
             $shop->type = 'domestic';
             $shop->subtype = 'agent';
@@ -359,6 +360,7 @@ class CustomerService
         $save_data->name = $request->name;
         $save_data->phone = $request->phone;
         $save_data->email = $request->email;
+        $save_data->gst_number = $request->gst_number;
         $save_data->address = $request->address;
         $balance = $request->balance ?? 0;
         if ($request->balance_type == 'Debit') {
@@ -423,6 +425,7 @@ class CustomerService
             $update_data->name = $request->name ?: $update_data->name;
             $update_data->phone = $request->phone ?: $update_data->phone;
             $update_data->email = $request->email ?: $update_data->email;
+            $update_data->gst_number = $request->gst_number !== null ? $request->gst_number : $update_data->gst_number;
             $update_data->address = $request->address ?: $update_data->address;
             $balance = $request->balance ?? $update_data->balance;
             if ($request->balance_type == 'Debit') {
@@ -454,6 +457,7 @@ class CustomerService
                     $update_data->name = $request->shop_name ?: $update_data->name;
                     $update_data->phone = $request->shop_phone ?: $update_data->phone;
                     $update_data->email = $request->shop_email ?: $update_data->email;
+                    $update_data->gst_number = $request->shop_gst_number !== null ? $request->shop_gst_number : $update_data->gst_number;
                     $update_data->address = $request->shop_address ?: $update_data->address;
                 }
             }

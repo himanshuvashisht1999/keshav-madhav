@@ -53,6 +53,7 @@ class CustomerController extends Controller
             $shop->name = $request->shop_name;
             $shop->phone = $request->shop_phone;
             $shop->email = $request->shop_email;
+            $shop->gst_number = $request->shop_gst_number;
             $shop->address = $request->shop_address;
             $shop->type = 'domestic';
             $shop->subtype = 'agent';
@@ -89,6 +90,7 @@ class CustomerController extends Controller
         $save_data->name = $request->name;
         $save_data->phone = $request->phone;
         $save_data->email = $request->email;
+        $save_data->gst_number = $request->gst_number;
         $save_data->address = $request->address;
         $balance = $request->balance ?? 0;
         if ($request->balance_type == 'Debit') {
