@@ -36,6 +36,7 @@ class GeneralSettings extends Model
         'longitude',
         'agent_app_show_stock',
         'agent_app_allow_over_stock',
+        'agent_app_allow_over_stock_sample',
         'created_at',
         'updated_at'
     ];

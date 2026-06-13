@@ -188,7 +188,7 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <div class="custom-control custom-switch">
                                             <input type="checkbox" class="custom-control-input" id="agent_app_show_stock" name="agent_app_show_stock" value="1" {{ $data->agent_app_show_stock ? 'checked' : '' }}>
@@ -197,12 +197,21 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <div class="custom-control custom-switch">
                                             <input type="checkbox" class="custom-control-input" id="agent_app_allow_over_stock" name="agent_app_allow_over_stock" value="1" {{ $data->agent_app_allow_over_stock ? 'checked' : '' }}>
                                             <label class="custom-control-label" for="agent_app_allow_over_stock">Allow Ordering Over Stock</label>
-                                            <small class="form-text text-muted">If enabled, agents can submit orders with quantities greater than available stock.</small>
+                                            <small class="form-text text-muted">If enabled, agents can submit orders with quantities greater than available stock for all products.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="agent_app_allow_over_stock_sample" name="agent_app_allow_over_stock_sample" value="1" {{ $data->agent_app_allow_over_stock_sample ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="agent_app_allow_over_stock_sample">Allow Ordering Over Stock for Sample Set (Fair Product)</label>
+                                            <small class="form-text text-muted">If enabled, agents can overstock only on sample set products.</small>
                                         </div>
                                     </div>
                                 </div>

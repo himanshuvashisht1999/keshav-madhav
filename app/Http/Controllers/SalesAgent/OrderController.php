@@ -184,6 +184,12 @@ class OrderController extends Controller
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp')
             );
 
+        if ($isSampleSet) {
+            $query->addSelect(DB::raw('MAX(fp.product_id) IS NOT NULL as is_sample_product'));
+        } else {
+            $query->addSelect(DB::raw('0 as is_sample_product'));
+        }
+        
         $hasFilters = $request->filled('design_number') || 
                       $request->filled('product_name') || 
                       $request->filled('color_name') || 
@@ -228,8 +234,16 @@ class OrderController extends Controller
                 ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
 
             $settings = \DB::table('settings')->first();
-            if (!$settings || !$settings->agent_app_allow_over_stock) {
-                $query->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0');
+            
+            $allowGlobal = $settings && $settings->agent_app_allow_over_stock;
+            $allowSample = $settings && $settings->agent_app_allow_over_stock_sample;
+            
+            if (!$allowGlobal) {
+                if ($allowSample && $isSampleSet) {
+                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL)');
+                } else {
+                    $query->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0');
+                }
             }
 
             $boxes = $query->orderBy('production_goods.design_number')
@@ -668,6 +682,13 @@ class OrderController extends Controller
             DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
             DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp')
         );
+
+        if ($isSampleSet) {
+            $query->addSelect(DB::raw('MAX(fp.product_id) IS NOT NULL as is_sample_product'));
+        } else {
+            $query->addSelect(DB::raw('0 as is_sample_product'));
+        }
+
         $hasFilters = $request->filled('design_number') || 
                       $request->filled('product_name') || 
                       $request->filled('color_name') || 
@@ -711,8 +732,15 @@ class OrderController extends Controller
                     ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
 
                 $settings = \DB::table('settings')->first();
-                if (!$settings || !$settings->agent_app_allow_over_stock) {
-                    $query->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0');
+                $allowGlobal = $settings && $settings->agent_app_allow_over_stock;
+                $allowSample = $settings && $settings->agent_app_allow_over_stock_sample;
+                
+                if (!$allowGlobal) {
+                    if ($allowSample && $isSampleSet) {
+                        $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL)');
+                    } else {
+                        $query->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0');
+                    }
                 }
 
                 $boxes = $query->orderBy('production_goods.design_number')
@@ -734,8 +762,15 @@ class OrderController extends Controller
                 ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
 
             $settings = \DB::table('settings')->first();
-            if (!$settings || !$settings->agent_app_allow_over_stock) {
-                $query->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0');
+            $allowGlobal = $settings && $settings->agent_app_allow_over_stock;
+            $allowSample = $settings && $settings->agent_app_allow_over_stock_sample;
+            
+            if (!$allowGlobal) {
+                if ($allowSample && $isSampleSet) {
+                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL)');
+                } else {
+                    $query->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0');
+                }
             }
 
             $boxes = $query->orderBy('production_goods.design_number')

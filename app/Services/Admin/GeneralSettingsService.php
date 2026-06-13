@@ -76,6 +76,7 @@ class GeneralSettingsService
         $update_data->gst_order = $request->gst_order;
         $update_data->agent_app_show_stock = $request->has('agent_app_show_stock') ? 1 : 0;
         $update_data->agent_app_allow_over_stock = $request->has('agent_app_allow_over_stock') ? 1 : 0;
+        $update_data->agent_app_allow_over_stock_sample = $request->has('agent_app_allow_over_stock_sample') ? 1 : 0;
         $update_data->save();
 
         return true;

@@ -30,6 +30,7 @@ class GeneralSettingsUpdateRequest extends FormRequest{
             'meta_description' =>'required',
             'agent_app_show_stock' => 'nullable|boolean',
             'agent_app_allow_over_stock' => 'nullable|boolean',
+            'agent_app_allow_over_stock_sample' => 'nullable|boolean',
             // 'header_script' => 'required',
             // 'footer_script' => 'required',
             // 'facebook' => 'required',

@@ -41,9 +41,19 @@
             @endif
         </div>
 
+        @php
+            $canOverstock = false;
+            if (isset($settings)) {
+                if ($settings->agent_app_allow_over_stock) {
+                    $canOverstock = true;
+                } elseif ($settings->agent_app_allow_over_stock_sample && isset($variation->is_sample_product) && $variation->is_sample_product) {
+                    $canOverstock = true;
+                }
+            }
+        @endphp
         <div class="quantity-control-app d-flex align-items-center justify-content-between p-1">
             <button class="btn btn-q btn-minus"><i class="fas fa-minus"></i></button>
-            <input type="number" class="box-qty-input font-weight-bold" value="0" min="0" @if(!isset($settings) || !$settings->agent_app_allow_over_stock) max="{{ $variation->available_boxes }}" @endif readonly>
+            <input type="number" class="box-qty-input font-weight-bold" value="0" min="0" @if(!$canOverstock) max="{{ $variation->available_boxes }}" @endif readonly>
             <button class="btn btn-q btn-plus"><i class="fas fa-plus"></i></button>
         </div>
     </div>

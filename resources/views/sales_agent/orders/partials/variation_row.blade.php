@@ -44,12 +44,22 @@
         @endif
     </td>
     <td class="text-center px-4">
+        @php
+            $canOverstock = false;
+            if (isset($settings)) {
+                if ($settings->agent_app_allow_over_stock) {
+                    $canOverstock = true;
+                } elseif ($settings->agent_app_allow_over_stock_sample && isset($variation->is_sample_product) && $variation->is_sample_product) {
+                    $canOverstock = true;
+                }
+            }
+        @endphp
         <div class="input-group input-group-sm quantity-control">
             <div class="input-group-prepend">
                 <button class="btn btn-outline-secondary btn-minus" type="button">-</button>
             </div>
             <input type="number" class="form-control text-center box-qty-input" value="{{ $initialQty ?? 0 }}"
-                min="0" @if(!isset($settings) || !$settings->agent_app_allow_over_stock) max="{{ $variation->available_boxes }}" @endif data-key="{{ $vKey }}">
+                min="0" @if(!$canOverstock) max="{{ $variation->available_boxes }}" @endif data-key="{{ $vKey }}">
             <div class="input-group-append">
                 <button class="btn btn-outline-secondary btn-plus" type="button">+</button>
             </div>
