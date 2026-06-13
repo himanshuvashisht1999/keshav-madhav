@@ -808,6 +808,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/barcode-generator/generate-tspl', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateTspl'])->name('barcode-generator.generate-tspl');
             Route::post('/barcode-generator/generate-bulk', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateBulk'])->name('barcode-generator.generate-bulk');
             Route::post('/barcode-generator/generate-bulk-tspl', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateBulkTspl'])->name('barcode-generator.generate-bulk-tspl');
+            Route::post('/barcode-generator/generate-by-barcodes', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateByBarcodes'])->name('barcode-generator.generate-by-barcodes');
 
             Route::get('/get-products-by-series', [AdminInventoryController::class, 'getProductsBySeries'])->name('get_products_by_series');
             Route::get('/get-product-details', [AdminInventoryController::class, 'getProductDetails'])->name('get_product_details');
@@ -850,6 +851,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::put('/update/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'update'])->name('update');
                 Route::get('/generate-pdf-batch/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'generatePdfFromBatch'])->name('generate-pdf-batch');
                 Route::get('/download-prn', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'downloadPrn'])->name('download-prn');
+                Route::post('/download-prn-by-barcodes', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'downloadPrnByBarcodes'])->name('download-prn-by-barcodes');
                 Route::delete('/destroy/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'destroy'])->name('destroy');
             });
             Route::prefix('/purchase-history')->name('purchase_history.')->group(function () {

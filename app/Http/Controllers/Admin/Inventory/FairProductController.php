@@ -563,4 +563,31 @@ class FairProductController extends Controller
             ->header('Content-Type', 'text/plain')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
+    public function downloadPrnByBarcodes(Request $request)
+    {
+        $request->validate([
+            'barcodes' => 'required|string',
+        ]);
+
+        $barcodes = array_map('trim', explode("\n", $request->barcodes));
+        $barcodes = array_filter($barcodes);
+
+        if (empty($barcodes)) {
+            return back()->with('error', 'No valid barcodes provided.');
+        }
+
+        $samples = FairProduct::with(['product.series', 'product.fitting', 'product.pattern', 'sizeSet'])
+            ->whereIn('barcode', $barcodes)
+            ->get();
+
+        if ($samples->isEmpty()) return back()->with('error', 'No products found for the provided barcodes.');
+
+        $tspl = generateFairBulkTspl($samples);
+        
+        $filename = "Fair_Custom_" . date('Ymd_His') . ".prn";
+        
+        return response($tspl)
+            ->header('Content-Type', 'text/plain')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
 }

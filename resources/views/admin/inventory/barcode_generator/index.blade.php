@@ -136,6 +136,32 @@
                         </div>
                     </div>
                 </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="card card-default">
+                            <div class="card-header">
+                                <h3 class="card-title">Generate PRN by Barcodes</h3>
+                            </div>
+                            <form action="{{ route('admin.inventory.barcode-generator.generate-by-barcodes') }}" method="POST"
+                                target="_blank" class="allow-multiple-submit">
+                                @csrf
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label>Enter Barcodes <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" name="barcodes" rows="5" placeholder="Paste or type barcodes here (one per line)" required></textarea>
+                                        <small class="form-text text-muted">
+                                            Enter multiple barcodes separated by a new line. The system will automatically generate a PRN file for all valid barcodes.
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="card-footer text-right">
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-print"></i> Generate PRN File</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </div>

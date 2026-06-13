@@ -43,6 +43,9 @@
                     <small class="text-muted">Manage your grouped sample sets for customers.</small>
                 </div>
                 <div class="col-sm-6 text-right">
+                    <button type="button" class="btn btn-sm btn-dark px-3 shadow-sm mr-2" data-toggle="modal" data-target="#prnModal">
+                        <i class="fas fa-barcode mr-1"></i> Generate PRN by Barcodes
+                    </button>
                     <a href="{{ route('admin.inventory.fair-product.create') }}" class="btn btn-sm btn-primary px-3 shadow-sm">
                         <i class="fas fa-plus mr-1"></i> Create New Sample Set
                     </a>
@@ -90,6 +93,7 @@
                 </form>
             </div>
         </div>
+
 
         <div class="premium-card">
             <div class="table-responsive">
@@ -177,5 +181,37 @@
         </div>
     </div>
     </section>
+
+    <!-- PRN Modal -->
+    <div class="modal fade" id="prnModal" tabindex="-1" role="dialog" aria-labelledby="prnModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold" id="prnModalLabel"><i class="fas fa-barcode mr-2 text-primary"></i>Generate PRN by Barcodes</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="{{ route('admin.inventory.fair-product.download-prn-by-barcodes') }}" method="POST" target="_blank">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="form-group mb-0">
+                            <label class="small text-muted font-weight-bold mb-1">Enter Barcodes</label>
+                            <textarea class="form-control" name="barcodes" rows="5" placeholder="Paste or type sample set barcodes here (one per line, e.g. F...)" required></textarea>
+                            <small class="form-text text-muted mt-2">
+                                Enter multiple barcodes separated by a new line. The system will automatically generate a PRN file for all valid barcodes.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0">
+                        <button type="button" class="btn btn-sm btn-secondary shadow-sm px-3" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm btn-dark shadow-sm px-3">
+                            <i class="fas fa-print mr-1"></i> Generate Custom PRN
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

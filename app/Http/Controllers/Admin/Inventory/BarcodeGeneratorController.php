@@ -301,4 +301,30 @@ class BarcodeGeneratorController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
         ]);
     }
+    public function generateByBarcodes(Request $request)
+    {
+        $request->validate([
+            'barcodes' => 'required|string',
+        ]);
+
+        $barcodes = array_map('trim', explode("\n", $request->barcodes));
+        $barcodes = array_filter($barcodes);
+
+        if (empty($barcodes)) {
+            return back()->withError('No valid barcodes provided.');
+        }
+
+        $tspl = generateBulkTsplByBarcodes($barcodes);
+
+        if (empty($tspl)) {
+            return back()->withError('Could not generate PRN for the provided barcodes. They might be invalid or not found.');
+        }
+
+        $fileName = 'custom_barcodes_' . time() . '.prn';
+
+        return response($tspl, 200, [
+            'Content-Type' => 'application/octet-stream',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
+    }
 }
