@@ -207,7 +207,7 @@
                                     <input type="hidden" name="is_final" id="is_final_input" value="1">
                                     <div class="col-12 mb-3 mt-2 text-center">
                                         <div class="custom-control custom-switch">
-                                            <input type="checkbox" class="custom-control-input" id="sendWhatsapp" name="send_whatsapp" value="1" checked>
+                                            <input type="checkbox" class="custom-control-input" id="sendWhatsapp" name="send_whatsapp" value="1">
                                             <label class="custom-control-label font-weight-bold text-success" for="sendWhatsapp">
                                                 <i class="fab fa-whatsapp mr-1"></i> Send WhatsApp Message
                                             </label>

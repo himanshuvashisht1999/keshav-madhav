@@ -168,6 +168,9 @@
                             </div>
                         </div>
                         <div class="text-right mt-2">
+                            <button type="button" id="btn-reset-filters" class="btn btn-secondary px-4 btn-sm mr-2">
+                                <i class="fas fa-undo mr-2"></i> Reset Filters
+                            </button>
                             <button type="button" id="btn-filter" class="btn btn-primary px-4 btn-sm">
                                 <i class="fas fa-search mr-2"></i> Find Products
                             </button>
@@ -253,6 +256,18 @@
             $('.select2').select2({
                 theme: 'bootstrap4',
                 width: '100%'
+            });
+
+            $('#btn-reset-filters').on('click', function() {
+                $('#brand_id').val('').trigger('change');
+                $('#fitting_id').val('').trigger('change');
+                $('#pattern_id').val('').trigger('change');
+                $('#series_id').val('').trigger('change');
+                $('#design_number').val('').trigger('change');
+                $('#size_set_id').val('').trigger('change');
+                $('#mrp_from').val('');
+                $('#mrp_to').val('');
+                $('#product-container').html('<div class="col-12 text-center py-5 text-muted bg-white rounded border"><i class="fas fa-box-open fa-3x mb-3"></i><p>Use filters to find products</p></div>');
             });
 
             $('#btn-filter').on('click', function () {

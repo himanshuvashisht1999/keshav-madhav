@@ -353,7 +353,7 @@
                                             <div class="row mt-4">
                                                 <div class="col-12 mb-3 mt-2 text-center">
                                                     <div class="custom-control custom-switch">
-                                                        <input type="checkbox" class="custom-control-input" id="sendWhatsappRolls" name="send_whatsapp" value="1" checked>
+                                                        <input type="checkbox" class="custom-control-input" id="sendWhatsappRolls" name="send_whatsapp" value="1">
                                                         <label class="custom-control-label font-weight-bold text-success" for="sendWhatsappRolls">
                                                             <i class="fab fa-whatsapp mr-1"></i> Send WhatsApp Message
                                                         </label>
@@ -437,7 +437,7 @@
                                             <div class="row mt-4">
                                                 <div class="col-12 mb-3 mt-2 text-center">
                                                     <div class="custom-control custom-switch">
-                                                        <input type="checkbox" class="custom-control-input" id="sendWhatsappStitching" name="send_whatsapp" value="1" checked>
+                                                        <input type="checkbox" class="custom-control-input" id="sendWhatsappStitching" name="send_whatsapp" value="1">
                                                         <label class="custom-control-label font-weight-bold text-success" for="sendWhatsappStitching">
                                                             <i class="fab fa-whatsapp mr-1"></i> Send WhatsApp Message
                                                         </label>
@@ -515,7 +515,7 @@
                                             <div class="row mt-4">
                                                 <div class="col-12 mb-3 mt-2 text-center">
                                                     <div class="custom-control custom-switch">
-                                                        <input type="checkbox" class="custom-control-input" id="sendWhatsappPrinting" name="send_whatsapp" value="1" checked>
+                                                        <input type="checkbox" class="custom-control-input" id="sendWhatsappPrinting" name="send_whatsapp" value="1">
                                                         <label class="custom-control-label font-weight-bold text-success" for="sendWhatsappPrinting">
                                                             <i class="fab fa-whatsapp mr-1"></i> Send WhatsApp Message
                                                         </label>

@@ -106,7 +106,7 @@
                                                 <label class="text-muted small font-weight-bold text-uppercase">Sale Type <span class="text-danger">*</span></label>
                                                 <select name="sale_type" id="saleTypeSelect" class="form-control @error('sale_type') is-invalid @enderror" required>
                                                     <option value="item" {{ old('sale_type', 'item') == 'item' ? 'selected' : '' }}>Item (Ready Goods)</option>
-                                                    <option value="fabric" {{ old('sale_type') == 'fabric' ? 'selected' : '' }}>Fabric (Under Development)</option>
+                                                    <option value="fabric" {{ old('sale_type') == 'fabric' ? 'selected' : '' }}>Fabric</option>
                                                 </select>
                                             </div>
                                         </div>

@@ -11,7 +11,7 @@
                         <th>Date</th>
                         <th>Warehouse</th>
                         <th>Supplier</th>
-                        <th>PO Number</th>
+                        <th>Bill No</th>
                         <th>Shipment No</th>
                         <th>Roll No</th>
                         <th class="text-end">Price/Mtr</th>
@@ -30,7 +30,7 @@
                         <td>{{ optional($row->fabric_receipt)->created_at ? $row->fabric_receipt->created_at->format('d M Y') : $row->created_at->format('d M Y') }}</td>
                         <td>{{ $row->master_fabric_warehouse?->cutting_master_name }}</td>
                         <td>{{ $row->fabric_receipt->vendor->name ?? '-' }}</td>
-                        <td>{{ $row->purchase_order?->sku ?? '-' }}</td>
+                        <td>{{ $row->fabric_receipt->bill_no ?? '-' }}</td>
                         <td>{{ $row->shipment_number ?? '-' }}</td>
                         <td><span class="badge bg-secondary">{{ $row->roll_number }}</span></td>
                         <td class="text-end">{{ number_format($row->price_per_meter, 2) }}</td>
