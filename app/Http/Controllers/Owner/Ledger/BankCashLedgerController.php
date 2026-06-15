@@ -262,6 +262,63 @@ class BankCashLedgerController extends Controller
             }
         }
 
+        if ($startDate) {
+            $preDebit = 0;
+            $preCredit = 0;
+
+            $paymentsPre = Payment::query()
+                ->where('payment_method_id', $id)
+                ->where('payment_method_type', $modelName)
+                ->where(function($q) {
+                    $q->where('paymentable_type', '!=', \App\Models\JournalVoucher::class)
+                      ->orWhereNull('paymentable_type');
+                })
+                ->whereDate('payment_date', '<', $startDate)
+                ->get();
+
+            foreach ($paymentsPre as $p) {
+                $isCredit = in_array($p->payment_type, ['received', 'credit']);
+                if ($isCredit) {
+                    $preCredit += (float) $p->amount;
+                } else {
+                    $preDebit += (float) $p->amount;
+                }
+            }
+
+            $adjPre = \App\Models\PaymentAdjustment::where('payment_mode', $mode)
+                ->where('payment_account_id', $id)
+                ->whereDate('date', '<', $startDate)
+                ->get();
+
+            foreach ($adjPre as $adj) {
+                $isCredit = $adj->type === 'debit';
+                if ($isCredit) {
+                    $preCredit += (float) $adj->amount;
+                } else {
+                    $preDebit += (float) $adj->amount;
+                }
+            }
+
+            $vouPre = \App\Models\JournalVoucherItem::with('voucher')
+                ->whereIn('master_type', $masterIds)
+                ->where('master_id', $id)
+                ->whereHas('voucher', function($q) use ($startDate) {
+                    $q->whereDate('date', '<', $startDate);
+                })
+                ->get();
+
+            foreach ($vouPre as $v) {
+                $isCredit = strtolower($v->type) === 'credit';
+                if ($isCredit) {
+                    $preCredit += (float) $v->amount;
+                } else {
+                    $preDebit += (float) $v->amount;
+                }
+            }
+
+            $openingBalAmount += ($preCredit - $preDebit);
+        }
+
         // Sort and Calculate Balance
         $transactions = $transactions->sort(function ($a, $b) {
             $dateA = \Carbon\Carbon::parse($a->date)->format('Y-m-d');
@@ -279,6 +336,8 @@ class BankCashLedgerController extends Controller
             $balance += ($tx->credit - $tx->debit);
             $tx->running_balance = $balance;
         }
+
+        $party->balance = $balance;
 
         $viewMode = 'mix';
 
