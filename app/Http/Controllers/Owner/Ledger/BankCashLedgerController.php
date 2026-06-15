@@ -163,20 +163,47 @@ class BankCashLedgerController extends Controller
             ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
             ->get();
 
-        foreach ($adjustments as $adj) {
-            // For the bank/cash account, the type is reverse of the party's adjustment type
-            $isCredit = $adj->type === 'debit'; 
-            
-            $transactions->push((object) [
-                'date' => $adj->date,
-                'created_at' => $adj->created_at,
-                'type' => 'Adjustment',
-                'ref' => $adj->batch_id ?? ('Adj #' . $adj->id),
-                'debit' => $isCredit ? 0 : (float) $adj->amount,
-                'credit' => $isCredit ? (float) $adj->amount : 0,
-                'description' => '[Dist] ' . ($adj->remarks ?: $adj->entity_name),
-                'view_url' => $adj->batch_id ? route('owner.payment.adjustment.show', $adj->batch_id) : '#'
-            ]);
+        $groupedAdjustments = $adjustments->groupBy(function($item) {
+            return $item->batch_id ?: 'single_' . $item->id;
+        });
+
+        foreach ($groupedAdjustments as $key => $group) {
+            if (str_starts_with($key, 'single_')) {
+                $adj = $group->first();
+                $isCredit = $adj->type === 'debit'; 
+                $transactions->push((object) [
+                    'date' => $adj->date,
+                    'created_at' => $adj->created_at,
+                    'type' => 'Adjustment',
+                    'ref' => 'Adj #' . $adj->id,
+                    'debit' => $isCredit ? 0 : (float) $adj->amount,
+                    'credit' => $isCredit ? (float) $adj->amount : 0,
+                    'description' => '[Dist] ' . ($adj->remarks ?: $adj->entity_name),
+                    'view_url' => '#'
+                ]);
+            } else {
+                $first = $group->first();
+                $totalDebit = 0;
+                $totalCredit = 0;
+                foreach ($group as $adj) {
+                    $isCredit = $adj->type === 'debit'; 
+                    if ($isCredit) {
+                        $totalCredit += (float) $adj->amount;
+                    } else {
+                        $totalDebit += (float) $adj->amount;
+                    }
+                }
+                $transactions->push((object) [
+                    'date' => $first->date,
+                    'created_at' => $first->created_at,
+                    'type' => 'Adjustment',
+                    'ref' => $key,
+                    'debit' => $totalDebit,
+                    'credit' => $totalCredit,
+                    'description' => 'Grouped Adjustments (' . $group->count() . ' entries)',
+                    'view_url' => route('owner.payment.adjustment.show', $key)
+                ]);
+            }
         }
 
         // 3. Fetch Journal Vouchers
@@ -190,17 +217,29 @@ class BankCashLedgerController extends Controller
             })
             ->get();
 
-        foreach ($vouchers as $v) {
-            $isCredit = strtolower($v->type) === 'credit';
+        $groupedVouchers = $vouchers->groupBy('journal_voucher_id');
+
+        foreach ($groupedVouchers as $jvId => $group) {
+            $first = $group->first();
+            $totalDebit = 0;
+            $totalCredit = 0;
+            foreach ($group as $v) {
+                $isCredit = strtolower($v->type) === 'credit';
+                if ($isCredit) {
+                    $totalCredit += (float) $v->amount;
+                } else {
+                    $totalDebit += (float) $v->amount;
+                }
+            }
             $transactions->push((object) [
-                'date' => $v->voucher->date,
-                'created_at' => $v->created_at,
+                'date' => $first->voucher->date,
+                'created_at' => $first->created_at,
                 'type' => 'Journal Voucher',
-                'ref' => $v->voucher->voucher_no,
-                'debit' => $isCredit ? 0 : (float) $v->amount,
-                'credit' => $isCredit ? (float) $v->amount : 0,
-                'description' => $v->narration ?: $v->voucher->narration ?: 'Journal Entry',
-                'view_url' => route('owner.payment.journal-voucher.show', $v->voucher->id)
+                'ref' => $first->voucher->voucher_no,
+                'debit' => $totalDebit,
+                'credit' => $totalCredit,
+                'description' => $first->narration ?: $first->voucher->narration ?: 'Journal Entry' . ($group->count() > 1 ? ' (' . $group->count() . ' items)' : ''),
+                'view_url' => route('owner.payment.journal-voucher.show', $first->voucher->id)
             ]);
         }
 
