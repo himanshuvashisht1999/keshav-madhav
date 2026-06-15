@@ -1051,10 +1051,14 @@ class AgentOrderController extends Controller
 
                 DB::raw($discount_col)
             )
-            ->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0 OR MAX(current_items.box_qty) > 0')
+            ->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0 OR MAX(current_items.box_qty) > 0)')
             ->orderByRaw('current_order_qty DESC')
-            ->orderBy('production_goods.design_number')
-            ->paginate(20)
+            ->orderBy('production_goods.design_number');
+
+        // Clone the builder before applying pagination, so we can fetch all selected items
+        $queryForSelected = $query->clone();
+
+        $boxes = $query->paginate(20)
             ->appends($request->except('page'));
 
         // Fetch images for the boxes
@@ -1082,7 +1086,7 @@ class AgentOrderController extends Controller
         }
 
         // Selected quantities for existing order with updated prices
-        $existing_items_with_prices = $query->clone()
+        $existing_items_with_prices = $queryForSelected
             ->havingRaw('MAX(current_items.box_qty) > 0')
             ->get();
 
