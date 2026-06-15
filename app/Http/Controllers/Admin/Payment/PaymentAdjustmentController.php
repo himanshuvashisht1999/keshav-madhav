@@ -25,6 +25,22 @@ class PaymentAdjustmentController extends Controller
             $query->whereDate('date', '<=', $request->to_date);
         }
 
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->filled('payment_account_id')) {
+            $query->where('payment_account_id', $request->payment_account_id);
+        }
+
+        if ($request->filled('amount_from')) {
+            $query->where('amount', '>=', $request->amount_from);
+        }
+
+        if ($request->filled('amount_to')) {
+            $query->where('amount', '<=', $request->amount_to);
+        }
+
         $adjustments = $query->orderBy('id', 'desc')->get();
         
         $totalDebit = $adjustments->where('type', 'debit')->sum('amount');
@@ -34,7 +50,11 @@ class PaymentAdjustmentController extends Controller
         $grouped = $adjustments->groupBy(function ($item) {
             return $item->batch_id ?? 'unique_' . $item->id;
         });
-        return view('admin.payment.adjustment.index', compact('grouped', 'totalDebit', 'totalCredit'));
+
+        $bankAccounts = BankAccount::where('status', 1)->get();
+        $cashAccounts = CashPayment::where('status', 1)->get();
+
+        return view('admin.payment.adjustment.index', compact('grouped', 'totalDebit', 'totalCredit', 'bankAccounts', 'cashAccounts'));
     }
 
     public function show($batchId)

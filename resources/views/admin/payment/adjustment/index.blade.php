@@ -32,22 +32,54 @@
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body p-3">
                     <form action="{{ route('admin.payment.adjustment.index') }}" method="GET" class="row align-items-end">
-                        <div class="col-md-3">
+                        <div class="col-md-2 mb-2">
                             <label class="small text-muted font-weight-bold">From Date</label>
                             <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2 mb-2">
                             <label class="small text-muted font-weight-bold">To Date</label>
                             <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
                         </div>
-                        <div class="col-md-2 col-sm-6 mt-2 mt-md-0">
-                            <button type="submit" class="btn btn-primary btn-block">
-                                <i class="fas fa-filter mr-1"></i> APPLY
+                        <div class="col-md-2 mb-2">
+                            <label class="small text-muted font-weight-bold">Type</label>
+                            <select name="type" class="form-control">
+                                <option value="">All Types</option>
+                                <option value="credit" {{ request('type') == 'credit' ? 'selected' : '' }}>Credit</option>
+                                <option value="debit" {{ request('type') == 'debit' ? 'selected' : '' }}>Debit</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="small text-muted font-weight-bold">To Account</label>
+                            <select name="payment_account_id" class="form-control">
+                                <option value="">All Accounts</option>
+                                <optgroup label="Bank Accounts">
+                                    @foreach($bankAccounts as $acc)
+                                        <option value="{{ $acc->id }}" {{ request('payment_account_id') == $acc->id ? 'selected' : '' }}>{{ $acc->bank_name }}</option>
+                                    @endforeach
+                                </optgroup>
+                                <optgroup label="Cash Accounts">
+                                    @foreach($cashAccounts as $acc)
+                                        <option value="{{ $acc->id }}" {{ request('payment_account_id') == $acc->id ? 'selected' : '' }}>{{ $acc->name }}</option>
+                                    @endforeach
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="col-md-1 mb-2">
+                            <label class="small text-muted font-weight-bold">Amt From</label>
+                            <input type="number" step="0.01" name="amount_from" class="form-control px-1" value="{{ request('amount_from') }}">
+                        </div>
+                        <div class="col-md-1 mb-2">
+                            <label class="small text-muted font-weight-bold">Amt To</label>
+                            <input type="number" step="0.01" name="amount_to" class="form-control px-1" value="{{ request('amount_to') }}">
+                        </div>
+                        <div class="col-md-1 col-sm-6 mb-2">
+                            <button type="submit" class="btn btn-primary btn-block px-1" title="Apply Filter">
+                                <i class="fas fa-filter"></i>
                             </button>
                         </div>
-                        <div class="col-md-2 col-sm-6 mt-2 mt-md-0">
-                            <a href="{{ route('admin.payment.adjustment.index') }}" class="btn btn-outline-secondary btn-block">
-                                <i class="fas fa-undo mr-1"></i> RESET
+                        <div class="col-md-1 col-sm-6 mb-2">
+                            <a href="{{ route('admin.payment.adjustment.index') }}" class="btn btn-outline-secondary btn-block px-1" title="Reset Filters">
+                                <i class="fas fa-undo"></i>
                             </a>
                         </div>
                     </form>
