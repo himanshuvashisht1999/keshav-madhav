@@ -1947,89 +1947,114 @@ class OrderDigitalizationService
         } else {
             // Regular Movement (Forward)
             // Existing logic to determine to_stage_id
-            $to_stage_id = 0;
             if ($current_stage_id == 1) {
                 $is_stitching = \App\Models\OrderLot::where('lot_no', $lot_no)->value('is_stitching');
-                if (!$is_stitching) {
-                    $to_stage_id = 13; // Godam
+                if ($is_stitching) {
+                    $stitching_timing = \App\Models\OrderLotStageTiming::where('lot_no', $lot_no)->where('master_stage_id', 4)->first();
+                    if ($stitching_timing && $stitching_timing->unit_id) {
+                        $units = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
+                            ->where('id', $stitching_timing->unit_id)
+                            ->where('status', 1)
+                            ->get();
+                    } else {
+                        $units = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
+                            ->where('master_stage_id', 4)
+                            ->where('status', 1)
+                            ->get();
+                    }
                 } else {
-                    $to_stage_id = 4;
-                }
-            } elseif ($current_stage_id == 3) {
-                $to_stage_id = 4;
-            } elseif ($current_stage_id == 4) {
-                $to_stage_id = 5;
-            } elseif ($current_stage_id == 5) {
-                $to_stage_id = 6;
-            } elseif ($current_stage_id == 6) {
-                $to_stage_id = 7;
-            } elseif ($current_stage_id == 7) {
-                $to_stage_id = 8;
-            } elseif ($current_stage_id == 8) {
-                $to_stage_id = 9;
-            } elseif ($current_stage_id == 9) {
-                $to_stage_id = 10;
-            } elseif ($current_stage_id == 10) {
-                $to_stage_id = 11;
-            } elseif ($current_stage_id == 11) {
-                $to_stage_id = 12;
-            }
-
-            if ($to_stage_id > 0) {
-                $filtered = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
-                    ->where('master_stage_id', $to_stage_id)
-                    ->where('status', 1)
-                    ->get();
-
-                // Second: without that stage (exclude already fetched)
-                if ($to_stage_id == 11) {
-                    $others = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
-                        ->where('master_stage_id', '!=', $to_stage_id)
+                    $units = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
+                        ->where('master_stage_id', 13) // Godam
                         ->where('status', 1)
-                        ->get();
-                } else {
-                    $others = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
-                        ->where('master_stage_id', '!=', $to_stage_id)
-                        ->where('status', 1)
-                        ->whereNotIn('master_stage_id', [11, 12, 13])
                         ->get();
                 }
 
-                // Merge both (filtered first)
-                $available_units = $filtered->concat($others)->map(function ($u) {
+                $available_units = $units->map(function ($u) {
                     $whName = $u->masterFabricWarehouse->name ?? $u->masterFabricWarehouse->cutting_master_name ?? 'No Warehouse';
                     return [
                         'id' => $u->id,
                         'name' => $u->name . ' (' . $whName . ')',
                         'master_stage_name' => $u->masterStage->name ?? null
                     ];
-                });
-            }
-
-            // Also check for Godam if applicable
-            $stage_check = OrderStageTransaction::where('lot_no', $lot_no)->where(function ($q) {
-                $q->where('from_stage_id', 3)->orWhere('to_stage_id', 4);
-            })->first();
-
-            if (!$stage_check) {
-                $stage_check = OrderPrintingToStichingTransaction::where('lot_no', $lot_no)->first();
-            }
-
-            if (!$stage_check) {
-                $godam_units = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
-                    ->where('master_stage_id', 13)
-                    ->get()
-                    ->map(function ($u) {
+                })->toArray();
+            } else {
+                $to_stage_id = 0;
+                if ($current_stage_id == 3) {
+                    $to_stage_id = 4;
+                } elseif ($current_stage_id == 4) {
+                    $to_stage_id = 5;
+                } elseif ($current_stage_id == 5) {
+                    $to_stage_id = 6;
+                } elseif ($current_stage_id == 6) {
+                    $to_stage_id = 7;
+                } elseif ($current_stage_id == 7) {
+                    $to_stage_id = 8;
+                } elseif ($current_stage_id == 8) {
+                    $to_stage_id = 9;
+                } elseif ($current_stage_id == 9) {
+                    $to_stage_id = 10;
+                } elseif ($current_stage_id == 10) {
+                    $to_stage_id = 11;
+                } elseif ($current_stage_id == 11) {
+                    $to_stage_id = 12;
+                }
+    
+                if ($to_stage_id > 0) {
+                    $filtered = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
+                        ->where('master_stage_id', $to_stage_id)
+                        ->where('status', 1)
+                        ->get();
+    
+                    // Second: without that stage (exclude already fetched)
+                    if ($to_stage_id == 11) {
+                        $others = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
+                            ->where('master_stage_id', '!=', $to_stage_id)
+                            ->where('status', 1)
+                            ->get();
+                    } else {
+                        $others = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
+                            ->where('master_stage_id', '!=', $to_stage_id)
+                            ->where('status', 1)
+                            ->whereNotIn('master_stage_id', [11, 12, 13])
+                            ->get();
+                    }
+    
+                    // Merge both (filtered first)
+                    $available_units = $filtered->concat($others)->map(function ($u) {
                         $whName = $u->masterFabricWarehouse->name ?? $u->masterFabricWarehouse->cutting_master_name ?? 'No Warehouse';
                         return [
                             'id' => $u->id,
                             'name' => $u->name . ' (' . $whName . ')',
-                            'master_stage_name' => $u->masterStage->name
+                            'master_stage_name' => $u->masterStage->name ?? null
                         ];
                     });
-                
-                $availArray = is_array($available_units) ? $available_units : $available_units->toArray();
-                $available_units = array_merge($availArray, $godam_units->toArray());
+                }
+    
+                // Also check for Godam if applicable
+                $stage_check = OrderStageTransaction::where('lot_no', $lot_no)->where(function ($q) {
+                    $q->where('from_stage_id', 3)->orWhere('to_stage_id', 4);
+                })->first();
+    
+                if (!$stage_check) {
+                    $stage_check = OrderPrintingToStichingTransaction::where('lot_no', $lot_no)->first();
+                }
+    
+                if (!$stage_check) {
+                    $godam_units = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
+                        ->where('master_stage_id', 13)
+                        ->get()
+                        ->map(function ($u) {
+                            $whName = $u->masterFabricWarehouse->name ?? $u->masterFabricWarehouse->cutting_master_name ?? 'No Warehouse';
+                            return [
+                                'id' => $u->id,
+                                'name' => $u->name . ' (' . $whName . ')',
+                                'master_stage_name' => $u->masterStage->name
+                            ];
+                        });
+                    
+                    $availArray = is_array($available_units) ? $available_units : $available_units->toArray();
+                    $available_units = array_merge($availArray, $godam_units->toArray());
+                }
             }
         }
 
