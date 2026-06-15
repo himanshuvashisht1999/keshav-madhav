@@ -169,6 +169,12 @@ Route::prefix('owner')->name('owner.')->group(function () {
             Route::get('/show/{type}/{id}', [\App\Http\Controllers\Owner\Ledger\PartyLedgerController::class, 'show'])->name('show');
             Route::get('/download/{type}/{id}', [\App\Http\Controllers\Owner\Ledger\PartyLedgerController::class, 'download'])->name('download');
         });
+        
+        Route::prefix('bank-cash-ledger')->name('bank-cash-ledger.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Owner\Ledger\BankCashLedgerController::class, 'index'])->name('index');
+            Route::get('/show/{type}/{id}', [\App\Http\Controllers\Owner\Ledger\BankCashLedgerController::class, 'show'])->name('show');
+            Route::get('/download/{type}/{id}', [\App\Http\Controllers\Owner\Ledger\BankCashLedgerController::class, 'download'])->name('download');
+        });
 
         Route::get('/pending-payments', [\App\Http\Controllers\Admin\Payment\PendingPaymentController::class, 'index'])->name('payment.pending.index');
         Route::get('/payment-history', [\App\Http\Controllers\Admin\Payment\PaymentHistoryController::class, 'index'])->name('payment.history.index');
@@ -1265,6 +1271,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'index'])->name('index');
                 Route::get('/show/{type}/{id}', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'show'])->name('show');
                 Route::get('/download/{type}/{id}', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'download'])->name('download');
+            });
+            Route::prefix('/bank-cash-ledger')->name('bank-cash-ledger.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Admin\Ledger\BankCashLedgerController::class, 'index'])->name('index');
+                Route::get('/show/{type}/{id}', [App\Http\Controllers\Admin\Ledger\BankCashLedgerController::class, 'show'])->name('show');
+                Route::get('/download/{type}/{id}', [App\Http\Controllers\Admin\Ledger\BankCashLedgerController::class, 'download'])->name('download');
             });
             Route::prefix('/sales')->name('sales.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\SalesLedgerController::class, 'index'])->name('index');

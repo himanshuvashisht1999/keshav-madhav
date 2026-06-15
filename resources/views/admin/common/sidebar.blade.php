@@ -845,6 +845,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                     </a>
                                 </li>
                                 <li class="nav-item">
+                                    <a href="{{ route('admin.ledger.bank-cash-ledger.index') }}"
+                                        class="{{ str_contains(strtolower($page_url), 'admin/ledger/bank-cash-ledger') ? 'nav-link active' : 'nav-link' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Bank & Cash Ledger</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
                                     <a href="{{ route('admin.ledger.party.index', ['type_id' => 'sales_agent']) }}"
                                         class="{{ str_contains(strtolower($page_url), 'type_id=sales_agent') ? 'nav-link active' : 'nav-link' }}">
                                         <i class="far fa-circle nav-icon text-purple"></i>

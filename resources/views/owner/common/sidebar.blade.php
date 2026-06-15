@@ -26,6 +26,14 @@ $general_setting = App\Models\GeneralSettings::where('status', 1)->first();
                         <p>Party Ledger</p>
                     </a>
                 </li>
+
+                <li class="nav-item">
+                    <a href="{{ route('owner.bank-cash-ledger.index') }}"
+                        class="nav-link {{ request()->routeIs('owner.bank-cash-ledger.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-university"></i>
+                        <p>Bank & Cash Ledger</p>
+                    </a>
+                </li>
                 <li class="nav-header">REPORTS</li>
                 <li class="nav-item">
                     <a href="{{ route('owner.stock') }}"

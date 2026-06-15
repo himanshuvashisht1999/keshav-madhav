@@ -20,7 +20,7 @@ class PartyLedgerController extends Controller
         $search = $request->query('search');
         $typeId = $request->query('type_id'); // Adjustment Master ID or 'sales_agent'
 
-        $masters = \App\Models\AdjustmentMaster::where('status', 1)->get();
+        $masters = \App\Models\AdjustmentMaster::whereNotIn('name', ['Bank Account', 'Cash Master'])->where('status', 1)->get();
         $parties = collect();
 
         if ($typeId) {
@@ -394,87 +394,80 @@ class PartyLedgerController extends Controller
 
         $transactions = collect();
 
-        // Special Detailed Logic for Customers, Vendors, Banks and Cash
-        $isBankOrCash = in_array(strtolower($master->name), ['bank account', 'cash master']);
-        if (strtolower($master->name) === 'customer' || strtolower($master->name) === 'vendor' || $isBankOrCash) {
+        // Special Detailed Logic for Customers, Vendors
+        if (strtolower($master->name) === 'customer' || strtolower($master->name) === 'vendor') {
             $isCustomer = strtolower($master->name) === 'customer';
             $isVendor = strtolower($master->name) === 'vendor';
             
             $partyIdField = $isCustomer ? 'master_customer_id' : 'master_vendor_id';
             $directIdField = $isCustomer ? 'customer_id' : 'vendor_id';
 
-        // 1. Sales (Dispatches) - DEBIT
-        $dispatches = AgentOrderDispatch::where($partyIdField, $id)
-            ->where('party_type', $type)
-            ->where('status', 'dispatched')
-            ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
-            ->get();
-
-        foreach ($dispatches as $d) {
-            $transactions->push((object) [
-                'date' => $d->dispatch_date,
-                'created_at' => $d->created_at,
-                'type' => 'Sale',
-                'ref' => 'Dispatch #' . $d->id,
-                'debit' => (float) $d->grand_total,
-                'credit' => 0,
-                'description' => 'Sales Dispatch: ' . ($d->remark ?? '-'),
-                'view_url' => route('admin.agent-orders.dispatches.show', $d->id)
-            ]);
-        }
-
-        // 2. Standard Order Dispatches - DEBIT
-        if ($type === 'customer') {
-            $orderDispatches = \App\Models\OrderDispatch::where($directIdField, $id)
+            // 1. Sales (Dispatches) - DEBIT
+            $dispatches = AgentOrderDispatch::where($partyIdField, $id)
+                ->where('party_type', $type)
+                ->where('status', 'dispatched')
                 ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
                 ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
                 ->get();
 
-            foreach ($orderDispatches as $od) {
+            foreach ($dispatches as $d) {
                 $transactions->push((object) [
-                    'date' => $od->dispatch_date,
-                    'created_at' => $od->created_at,
-                    'type' => 'Order Dispatch',
-                    'ref' => 'OD #' . ($od->sku ?? $od->id),
-                    'debit' => (float) $od->total_amount,
+                    'date' => $d->dispatch_date,
+                    'created_at' => $d->created_at,
+                    'type' => 'Sale',
+                    'ref' => 'Dispatch #' . $d->id,
+                    'debit' => (float) $d->grand_total,
                     'credit' => 0,
-                    'description' => 'Regular Order Dispatch',
-                    'view_url' => route('admin.order-dispatch.view', ['id' => $od->id])
+                    'description' => 'Sales Dispatch: ' . ($d->remark ?? '-'),
+                    'view_url' => route('admin.agent-orders.dispatches.show', $d->id)
                 ]);
             }
-        }
 
-        // 3. Sales Returns - CREDIT
-        $salesReturns = AgentOrderReturn::whereHas('dispatch', function ($q) use ($id, $partyIdField, $type) {
-            $q->where($partyIdField, $id)->where('party_type', $type);
-        })
-            ->when($startDate, fn($q) => $q->whereDate('return_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('return_date', '<=', $endDate))
-            ->get();
+            // 2. Standard Order Dispatches - DEBIT
+            if ($type === 'customer') {
+                $orderDispatches = \App\Models\OrderDispatch::where($directIdField, $id)
+                    ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
+                    ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
+                    ->get();
 
-        foreach ($salesReturns as $r) {
-            $transactions->push((object) [
-                'date' => $r->return_date,
-                'created_at' => $r->created_at,
-                'type' => 'Sale Return',
-                'ref' => 'Return #' . $r->id,
-                'debit' => 0,
-                'credit' => (float) $r->grand_total,
-                'description' => 'Sales Return',
-                'view_url' => route('admin.agent-orders.returns.show', $r->id)
-            ]);
-        }
+                foreach ($orderDispatches as $od) {
+                    $transactions->push((object) [
+                        'date' => $od->dispatch_date,
+                        'created_at' => $od->created_at,
+                        'type' => 'Order Dispatch',
+                        'ref' => 'OD #' . ($od->sku ?? $od->id),
+                        'debit' => (float) $od->total_amount,
+                        'credit' => 0,
+                        'description' => 'Regular Order Dispatch',
+                        'view_url' => route('admin.order-dispatch.view', ['id' => $od->id])
+                    ]);
+                }
+            }
 
+            // 3. Sales Returns - CREDIT
+            $salesReturns = AgentOrderReturn::whereHas('dispatch', function ($q) use ($id, $partyIdField, $type) {
+                $q->where($partyIdField, $id)->where('party_type', $type);
+            })
+                ->when($startDate, fn($q) => $q->whereDate('return_date', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('return_date', '<=', $endDate))
+                ->get();
+
+            foreach ($salesReturns as $r) {
+                $transactions->push((object) [
+                    'date' => $r->return_date,
+                    'created_at' => $r->created_at,
+                    'type' => 'Sale Return',
+                    'ref' => 'Return #' . $r->id,
+                    'debit' => 0,
+                    'credit' => (float) $r->grand_total,
+                    'description' => 'Sales Return',
+                    'view_url' => route('admin.agent-orders.returns.show', $r->id)
+                ]);
+            }
         // 4. Payments
         $paymentsQuery = Payment::query();
-        if ($isBankOrCash) {
-            $paymentsQuery->where('payment_method_id', $id)
-                ->where('payment_method_type', $modelName);
-        } else {
-            $paymentsQuery->where('party_id', $id)
-                ->where('party_type', $modelName);
-        }
+        $paymentsQuery->where('party_id', $id)
+            ->where('party_type', $modelName);
 
         // Exclude Journal Voucher payments to avoid double counting with JournalVoucherItem query
         $paymentsQuery->where(function($q) {
@@ -520,91 +513,65 @@ class PartyLedgerController extends Controller
         }
 
         // 5. Finished Goods Purchases (Inventory Purchase) - CREDIT
-        $inventoryPurchases = \App\Models\DomesticInventoryPurchase::where($directIdField, $id)
-            ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
-            ->get();
-
-        foreach ($inventoryPurchases as $ip) {
-            $transactions->push((object) [
-                'date' => $ip->created_at,
-                'created_at' => $ip->created_at,
-                'type' => 'Inventory Purchase',
-                'ref' => 'InvPur #' . $ip->id,
-                'debit' => 0,
-                'credit' => (float) $ip->total_amount,
-                'description' => 'Inventory Purchase: ' . ($ip->remarks ?? '-'),
-                'view_url' => route('admin.inventory.purchase_history.show', ['id' => $ip->id])
-            ]);
-        }
-
-        // 6. Vendor Specific: Fabric Purchases (Inwards) - CREDIT
-        if ($type === 'vendor') {
-            $receipts = FabricReceipt::where('vendor_id', $id)
+            $inventoryPurchases = \App\Models\DomesticInventoryPurchase::where($directIdField, $id)
                 ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
                 ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
                 ->get();
 
-            foreach ($receipts as $r) {
+            foreach ($inventoryPurchases as $ip) {
                 $transactions->push((object) [
-                    'date' => $r->created_at,
-                    'created_at' => $r->created_at,
-                    'type' => 'Fabric Purchase',
-                    'ref' => 'Receipt #' . $r->sku,
+                    'date' => $ip->created_at,
+                    'created_at' => $ip->created_at,
+                    'type' => 'Inventory Purchase',
+                    'ref' => 'InvPur #' . $ip->id,
                     'debit' => 0,
-                    'credit' => (float) $r->total_amount,
-                    'description' => 'Fabric Inward (Shipment: ' . ($r->shipment_id ?? '-') . ')',
-                    'view_url' => route('admin.fabric_receipt.view', ['id' => $r->id])
+                    'credit' => (float) $ip->total_amount,
+                    'description' => 'Inventory Purchase: ' . ($ip->remarks ?? '-'),
+                    'view_url' => route('admin.inventory.purchase_history.show', ['id' => $ip->id])
                 ]);
             }
 
-            // 7. Vendor Specific: Returns to Vendor (Purchase Returns) - DEBIT
-            $pReturns = FabricReturn::whereHas('receipt', function ($q) use ($id) {
-                $q->where('vendor_id', $id);
-            })
-                ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
-                ->get();
+            // 6. Vendor Specific: Fabric Purchases (Inwards) - CREDIT
+            if ($type === 'vendor') {
+                $receipts = FabricReceipt::where('vendor_id', $id)
+                    ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
+                    ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
+                    ->get();
 
-            foreach ($pReturns as $pr) {
-                $transactions->push((object) [
-                    'date' => $pr->date,
-                    'created_at' => $pr->created_at,
-                    'type' => 'Fabric Return',
-                    'ref' => 'Return #' . ($pr->return_number ?? $pr->id),
-                    'debit' => (float) $pr->total_amount,
-                    'credit' => 0,
-                    'description' => 'Fabric Return to Vendor',
-                    'view_url' => route('admin.report.fabric_return_view', $pr->id)
-                ]);
+                foreach ($receipts as $r) {
+                    $transactions->push((object) [
+                        'date' => $r->created_at,
+                        'created_at' => $r->created_at,
+                        'type' => 'Fabric Purchase',
+                        'ref' => 'Receipt #' . $r->sku,
+                        'debit' => 0,
+                        'credit' => (float) $r->total_amount,
+                        'description' => 'Fabric Inward (Shipment: ' . ($r->shipment_id ?? '-') . ')',
+                        'view_url' => route('admin.fabric_receipt.view', ['id' => $r->id])
+                    ]);
+                }
+
+                // 7. Vendor Specific: Returns to Vendor (Purchase Returns) - DEBIT
+                $pReturns = FabricReturn::whereHas('receipt', function ($q) use ($id) {
+                    $q->where('vendor_id', $id);
+                })
+                    ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+                    ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
+                    ->get();
+
+                foreach ($pReturns as $pr) {
+                    $transactions->push((object) [
+                        'date' => $pr->date,
+                        'created_at' => $pr->created_at,
+                        'type' => 'Fabric Return',
+                        'ref' => 'Return #' . ($pr->return_number ?? $pr->id),
+                        'debit' => (float) $pr->total_amount,
+                        'credit' => 0,
+                        'description' => 'Fabric Return to Vendor',
+                        'view_url' => route('admin.report.fabric_return_view', $pr->id)
+                    ]);
+                }
             }
-        }
-
-        // 7b. Adjustments (for Bank/Cash or others)
-        if ($isBankOrCash) {
-            $mode = strtolower($master->name) === 'bank account' ? 'bank' : 'cash';
-            $adjustments = \App\Models\PaymentAdjustment::where('payment_mode', $mode)
-                ->where('payment_account_id', $id)
-                ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
-                ->get();
-
-            foreach ($adjustments as $adj) {
-                // For the bank/cash account, the type is reverse of the party's adjustment type
-                $isCredit = $adj->type === 'debit'; 
-                
-                $transactions->push((object) [
-                    'date' => $adj->date,
-                    'created_at' => $adj->created_at,
-                    'type' => 'Adjustment',
-                    'ref' => $adj->batch_id ?? ('Adj #' . $adj->id),
-                    'debit' => $isCredit ? 0 : (float) $adj->amount,
-                    'credit' => $isCredit ? (float) $adj->amount : 0,
-                    'description' => '[Dist] ' . ($adj->remarks ?: $adj->entity_name),
-                    'view_url' => $adj->batch_id ? route('admin.payment.adjustment.show', $adj->batch_id) : '#'
-                ]);
-            }
-        }
     } else {
         // Generic Logic for other masters: Just fetch PaymentAdjustments
             $adjustments = \App\Models\PaymentAdjustment::where('adjustment_master_id', $master->id)

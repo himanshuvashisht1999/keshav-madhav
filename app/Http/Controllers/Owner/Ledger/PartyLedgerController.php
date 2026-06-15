@@ -20,7 +20,7 @@ class PartyLedgerController extends Controller
         $search = $request->query('search');
         $typeId = $request->query('type_id'); // Adjustment Master ID or 'sales_agent'
 
-        $masters = \App\Models\AdjustmentMaster::where('status', 1)->get();
+        $masters = \App\Models\AdjustmentMaster::whereNotIn('name', ['Bank Account', 'Cash Master'])->where('status', 1)->get();
         $parties = collect();
 
         if ($typeId) {
@@ -74,7 +74,7 @@ class PartyLedgerController extends Controller
                                 $q->where('name', 'LIKE', "%$search%");
                             }
                         })
-                        // ->limit(100)
+                        ->limit(100) // Safety limit for "All" view
                         ->get()
                         ->map(function ($v) use ($master) {
                             $v->party_type = strtolower($master->name);
@@ -91,7 +91,7 @@ class PartyLedgerController extends Controller
                 ->when($search, function ($q) use ($search) {
                     $q->where('name', 'LIKE', "%$search%");
                 })
-                // ->limit(100)
+                ->limit(100)
                 ->get()
                 ->map(function ($v) {
                     $v->party_type = 'sales_agent';
@@ -105,24 +105,7 @@ class PartyLedgerController extends Controller
         // Sort by name
         $parties = $parties->sortBy('name');
 
-        $page = $request->input('page', 1);
-        $perPage = 15;
-        $paginatedParties = new \Illuminate\Pagination\LengthAwarePaginator(
-            $parties->forPage($page, $perPage)->values(),
-            $parties->count(),
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
-
-        if ($request->ajax()) {
-            return response()->json([
-                'html' => view('owner.party-ledger.partials.ledger_list', ['parties' => $paginatedParties])->render(),
-                'next_page' => $paginatedParties->hasMorePages() ? $paginatedParties->currentPage() + 1 : null
-            ]);
-        }
-
-        return view('owner.party-ledger.index', ['parties' => $paginatedParties, 'masters' => $masters]);
+        return view('owner.party-ledger.index', compact('parties', 'masters'));
     }
 
     public function show(Request $request, $type, $id)
@@ -181,7 +164,7 @@ class PartyLedgerController extends Controller
                     'debit' => (float) $d->grand_total,
                     'credit' => 0,
                     'description' => ($d->shop->name ?? 'Shop') . ' - Sales Dispatch: ' . ($d->remark ?? '-'),
-                    'view_url' => route('admin.agent-orders.dispatches.show', $d->id)
+                    'view_url' => route('owner.agent-orders.dispatches.show', $d->id)
                 ]);
             }
 
@@ -201,7 +184,7 @@ class PartyLedgerController extends Controller
                     'debit' => (float) $od->total_amount,
                     'credit' => 0,
                     'description' => ($od->customer->name ?? 'Customer') . ' - Regular Order Dispatch',
-                    'view_url' => route('admin.order-dispatch.view', ['id' => $od->id])
+                    'view_url' => route('owner.order-dispatch.view', ['id' => $od->id])
                 ]);
             }
 
@@ -223,7 +206,7 @@ class PartyLedgerController extends Controller
                     'debit' => 0,
                     'credit' => (float) $r->grand_total,
                     'description' => ($r->dispatch->shop->name ?? 'Shop') . ' - Sales Return',
-                    'view_url' => route('admin.agent-orders.returns.show', $r->id)
+                    'view_url' => route('owner.agent-orders.returns.show', $r->id)
                 ]);
             }
 
@@ -265,7 +248,7 @@ class PartyLedgerController extends Controller
                     'debit' => $debit,
                     'credit' => $credit,
                     'description' => $desc . ($p->remarks ? ': ' . $p->remarks : ''),
-                    'view_url' => route('admin.payment.history.show', $p->id)
+                    'view_url' => route('owner.payment.history.show', $p->id)
                 ]);
             }
 
@@ -285,7 +268,7 @@ class PartyLedgerController extends Controller
                     'debit' => 0,
                     'credit' => (float) $ip->total_amount,
                     'description' => ($ip->customer->name ?? 'Customer') . ' - Inventory Purchase: ' . ($ip->remarks ?? '-'),
-                    'view_url' => route('admin.inventory.purchase_history.show', ['id' => $ip->id])
+                    'view_url' => route('owner.inventory.purchase_history.show', ['id' => $ip->id])
                 ]);
             }
 
@@ -317,7 +300,7 @@ class PartyLedgerController extends Controller
                     'debit' => $isCredit ? 0 : (float) $v->amount,
                     'credit' => $isCredit ? (float) $v->amount : 0,
                     'description' => $cName . ' - ' . ($v->narration ?: $v->voucher->narration ?: 'Journal Entry'),
-                    'view_url' => route('admin.payment.journal-voucher.show', $v->voucher->id)
+                    'view_url' => route('owner.payment.journal-voucher.show', $v->voucher->id)
                 ]);
             }
 
@@ -356,7 +339,44 @@ class PartyLedgerController extends Controller
                 $tx->running_balance = $balance;
             }
 
-            return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'shops');
+            if ($viewMode === 'party_wise') {
+                foreach ($shops as $shop) {
+                    // Filter transactions for this specific customer
+                    $shopTx = $transactions->where('customer_id', $shop->id)->values();
+                    
+                    // Calculate opening balance for this customer
+                    $shopOpeningAmt = 0;
+                    $shopOpening = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
+                        ->where('master_id', $shop->id)
+                        ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
+                        ->first();
+
+                    if ($shopOpening) {
+                        $balanceType = strtolower(trim($shopOpening->balance_type));
+                        $obAmount = (float) $shopOpening->amount;
+                        if ($balanceType === 'debit') {
+                            $shopOpeningAmt -= $obAmount;
+                        } else {
+                            $shopOpeningAmt += $obAmount;
+                        }
+                    }
+
+                    $shopBal = $shopOpeningAmt;
+                    foreach ($shopTx as $tx) {
+                        $shopBal += ($tx->credit - $tx->debit);
+                        $tx->running_balance = $shopBal;
+                    }
+
+                    $groupedLedgers[] = (object)[
+                        'shop' => $shop,
+                        'opening_balance' => $shopOpeningAmt,
+                        'closing_balance' => $shopBal,
+                        'transactions' => $shopTx
+                    ];
+                }
+            }
+
+            return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'shops', 'viewMode', 'groupedLedgers');
         }
 
         // Resolve Master
@@ -374,87 +394,80 @@ class PartyLedgerController extends Controller
 
         $transactions = collect();
 
-        // Special Detailed Logic for Customers, Vendors, Banks and Cash
-        $isBankOrCash = in_array(strtolower($master->name), ['bank account', 'cash master']);
-        if (strtolower($master->name) === 'customer' || strtolower($master->name) === 'vendor' || $isBankOrCash) {
+        // Special Detailed Logic for Customers, Vendors
+        if (strtolower($master->name) === 'customer' || strtolower($master->name) === 'vendor') {
             $isCustomer = strtolower($master->name) === 'customer';
             $isVendor = strtolower($master->name) === 'vendor';
             
             $partyIdField = $isCustomer ? 'master_customer_id' : 'master_vendor_id';
             $directIdField = $isCustomer ? 'customer_id' : 'vendor_id';
 
-        // 1. Sales (Dispatches) - DEBIT
-        $dispatches = AgentOrderDispatch::where($partyIdField, $id)
-            ->where('party_type', $type)
-            ->where('status', 'dispatched')
-            ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
-            ->get();
-
-        foreach ($dispatches as $d) {
-            $transactions->push((object) [
-                'date' => $d->dispatch_date,
-                'created_at' => $d->created_at,
-                'type' => 'Sale',
-                'ref' => 'Dispatch #' . $d->id,
-                'debit' => (float) $d->grand_total,
-                'credit' => 0,
-                'description' => 'Sales Dispatch: ' . ($d->remark ?? '-'),
-                'view_url' => route('admin.agent-orders.dispatches.show', $d->id)
-            ]);
-        }
-
-        // 2. Standard Order Dispatches - DEBIT
-        if ($type === 'customer') {
-            $orderDispatches = \App\Models\OrderDispatch::where($directIdField, $id)
+            // 1. Sales (Dispatches) - DEBIT
+            $dispatches = AgentOrderDispatch::where($partyIdField, $id)
+                ->where('party_type', $type)
+                ->where('status', 'dispatched')
                 ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
                 ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
                 ->get();
 
-            foreach ($orderDispatches as $od) {
+            foreach ($dispatches as $d) {
                 $transactions->push((object) [
-                    'date' => $od->dispatch_date,
-                    'created_at' => $od->created_at,
-                    'type' => 'Order Dispatch',
-                    'ref' => 'OD #' . ($od->sku ?? $od->id),
-                    'debit' => (float) $od->total_amount,
+                    'date' => $d->dispatch_date,
+                    'created_at' => $d->created_at,
+                    'type' => 'Sale',
+                    'ref' => 'Dispatch #' . $d->id,
+                    'debit' => (float) $d->grand_total,
                     'credit' => 0,
-                    'description' => 'Regular Order Dispatch',
-                    'view_url' => route('admin.order-dispatch.view', ['id' => $od->id])
+                    'description' => 'Sales Dispatch: ' . ($d->remark ?? '-'),
+                    'view_url' => route('owner.agent-orders.dispatches.show', $d->id)
                 ]);
             }
-        }
 
-        // 3. Sales Returns - CREDIT
-        $salesReturns = AgentOrderReturn::whereHas('dispatch', function ($q) use ($id, $partyIdField, $type) {
-            $q->where($partyIdField, $id)->where('party_type', $type);
-        })
-            ->when($startDate, fn($q) => $q->whereDate('return_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('return_date', '<=', $endDate))
-            ->get();
+            // 2. Standard Order Dispatches - DEBIT
+            if ($type === 'customer') {
+                $orderDispatches = \App\Models\OrderDispatch::where($directIdField, $id)
+                    ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
+                    ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
+                    ->get();
 
-        foreach ($salesReturns as $r) {
-            $transactions->push((object) [
-                'date' => $r->return_date,
-                'created_at' => $r->created_at,
-                'type' => 'Sale Return',
-                'ref' => 'Return #' . $r->id,
-                'debit' => 0,
-                'credit' => (float) $r->grand_total,
-                'description' => 'Sales Return',
-                'view_url' => route('admin.agent-orders.returns.show', $r->id)
-            ]);
-        }
+                foreach ($orderDispatches as $od) {
+                    $transactions->push((object) [
+                        'date' => $od->dispatch_date,
+                        'created_at' => $od->created_at,
+                        'type' => 'Order Dispatch',
+                        'ref' => 'OD #' . ($od->sku ?? $od->id),
+                        'debit' => (float) $od->total_amount,
+                        'credit' => 0,
+                        'description' => 'Regular Order Dispatch',
+                        'view_url' => route('owner.order-dispatch.view', ['id' => $od->id])
+                    ]);
+                }
+            }
 
+            // 3. Sales Returns - CREDIT
+            $salesReturns = AgentOrderReturn::whereHas('dispatch', function ($q) use ($id, $partyIdField, $type) {
+                $q->where($partyIdField, $id)->where('party_type', $type);
+            })
+                ->when($startDate, fn($q) => $q->whereDate('return_date', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('return_date', '<=', $endDate))
+                ->get();
+
+            foreach ($salesReturns as $r) {
+                $transactions->push((object) [
+                    'date' => $r->return_date,
+                    'created_at' => $r->created_at,
+                    'type' => 'Sale Return',
+                    'ref' => 'Return #' . $r->id,
+                    'debit' => 0,
+                    'credit' => (float) $r->grand_total,
+                    'description' => 'Sales Return',
+                    'view_url' => route('owner.agent-orders.returns.show', $r->id)
+                ]);
+            }
         // 4. Payments
         $paymentsQuery = Payment::query();
-        if ($isBankOrCash) {
-            $paymentsQuery->where('payment_method_id', $id)
-                ->where('payment_method_type', $modelName);
-        } else {
-            $paymentsQuery->where('party_id', $id)
-                ->where('party_type', $modelName);
-        }
+        $paymentsQuery->where('party_id', $id)
+            ->where('party_type', $modelName);
 
         // Exclude Journal Voucher payments to avoid double counting with JournalVoucherItem query
         $paymentsQuery->where(function($q) {
@@ -495,96 +508,70 @@ class PartyLedgerController extends Controller
                 'debit' => $debit,
                 'credit' => $credit,
                 'description' => $desc . ($p->remarks ? ': ' . $p->remarks : ''),
-                'view_url' => route('admin.payment.history.show', $p->id)
+                'view_url' => route('owner.payment.history.show', $p->id)
             ]);
         }
 
         // 5. Finished Goods Purchases (Inventory Purchase) - CREDIT
-        $inventoryPurchases = \App\Models\DomesticInventoryPurchase::where($directIdField, $id)
-            ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
-            ->get();
-
-        foreach ($inventoryPurchases as $ip) {
-            $transactions->push((object) [
-                'date' => $ip->created_at,
-                'created_at' => $ip->created_at,
-                'type' => 'Inventory Purchase',
-                'ref' => 'InvPur #' . $ip->id,
-                'debit' => 0,
-                'credit' => (float) $ip->total_amount,
-                'description' => 'Inventory Purchase: ' . ($ip->remarks ?? '-'),
-                'view_url' => route('admin.inventory.purchase_history.show', ['id' => $ip->id])
-            ]);
-        }
-
-        // 6. Vendor Specific: Fabric Purchases (Inwards) - CREDIT
-        if ($type === 'vendor') {
-            $receipts = FabricReceipt::where('vendor_id', $id)
+            $inventoryPurchases = \App\Models\DomesticInventoryPurchase::where($directIdField, $id)
                 ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
                 ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
                 ->get();
 
-            foreach ($receipts as $r) {
+            foreach ($inventoryPurchases as $ip) {
                 $transactions->push((object) [
-                    'date' => $r->created_at,
-                    'created_at' => $r->created_at,
-                    'type' => 'Fabric Purchase',
-                    'ref' => 'Receipt #' . $r->sku,
+                    'date' => $ip->created_at,
+                    'created_at' => $ip->created_at,
+                    'type' => 'Inventory Purchase',
+                    'ref' => 'InvPur #' . $ip->id,
                     'debit' => 0,
-                    'credit' => (float) $r->total_amount,
-                    'description' => 'Fabric Inward (Shipment: ' . ($r->shipment_id ?? '-') . ')',
-                    'view_url' => route('admin.fabric_receipt.view', ['id' => $r->id])
+                    'credit' => (float) $ip->total_amount,
+                    'description' => 'Inventory Purchase: ' . ($ip->remarks ?? '-'),
+                    'view_url' => route('owner.inventory.purchase_history.show', ['id' => $ip->id])
                 ]);
             }
 
-            // 7. Vendor Specific: Returns to Vendor (Purchase Returns) - DEBIT
-            $pReturns = FabricReturn::whereHas('receipt', function ($q) use ($id) {
-                $q->where('vendor_id', $id);
-            })
-                ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
-                ->get();
+            // 6. Vendor Specific: Fabric Purchases (Inwards) - CREDIT
+            if ($type === 'vendor') {
+                $receipts = FabricReceipt::where('vendor_id', $id)
+                    ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
+                    ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
+                    ->get();
 
-            foreach ($pReturns as $pr) {
-                $transactions->push((object) [
-                    'date' => $pr->date,
-                    'created_at' => $pr->created_at,
-                    'type' => 'Fabric Return',
-                    'ref' => 'Return #' . ($pr->return_number ?? $pr->id),
-                    'debit' => (float) $pr->total_amount,
-                    'credit' => 0,
-                    'description' => 'Fabric Return to Vendor',
-                    'view_url' => route('admin.report.fabric_return_view', $pr->id)
-                ]);
+                foreach ($receipts as $r) {
+                    $transactions->push((object) [
+                        'date' => $r->created_at,
+                        'created_at' => $r->created_at,
+                        'type' => 'Fabric Purchase',
+                        'ref' => 'Receipt #' . $r->sku,
+                        'debit' => 0,
+                        'credit' => (float) $r->total_amount,
+                        'description' => 'Fabric Inward (Shipment: ' . ($r->shipment_id ?? '-') . ')',
+                        'view_url' => route('owner.fabric_receipt.view', ['id' => $r->id])
+                    ]);
+                }
+
+                // 7. Vendor Specific: Returns to Vendor (Purchase Returns) - DEBIT
+                $pReturns = FabricReturn::whereHas('receipt', function ($q) use ($id) {
+                    $q->where('vendor_id', $id);
+                })
+                    ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+                    ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
+                    ->get();
+
+                foreach ($pReturns as $pr) {
+                    $transactions->push((object) [
+                        'date' => $pr->date,
+                        'created_at' => $pr->created_at,
+                        'type' => 'Fabric Return',
+                        'ref' => 'Return #' . ($pr->return_number ?? $pr->id),
+                        'debit' => (float) $pr->total_amount,
+                        'credit' => 0,
+                        'description' => 'Fabric Return to Vendor',
+                        'view_url' => route('owner.report.fabric_return_view', $pr->id)
+                    ]);
+                }
             }
-        }
-
-        // 7b. Adjustments (for Bank/Cash or others)
-        if ($isBankOrCash) {
-            $mode = strtolower($master->name) === 'bank account' ? 'bank' : 'cash';
-            $adjustments = \App\Models\PaymentAdjustment::where('payment_mode', $mode)
-                ->where('payment_account_id', $id)
-                ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
-                ->get();
-
-            foreach ($adjustments as $adj) {
-                // For the bank/cash account, the type is reverse of the party's adjustment type
-                $isCredit = $adj->type === 'debit'; 
-                
-                $transactions->push((object) [
-                    'date' => $adj->date,
-                    'created_at' => $adj->created_at,
-                    'type' => 'Adjustment',
-                    'ref' => $adj->batch_id ?? ('Adj #' . $adj->id),
-                    'debit' => $isCredit ? 0 : (float) $adj->amount,
-                    'credit' => $isCredit ? (float) $adj->amount : 0,
-                    'description' => '[Dist] ' . ($adj->remarks ?: $adj->entity_name),
-                    'view_url' => $adj->batch_id ? route('admin.payment.adjustment.show', $adj->batch_id) : '#'
-                ]);
-            }
-        }
     } else {
         // Generic Logic for other masters: Just fetch PaymentAdjustments
             $adjustments = \App\Models\PaymentAdjustment::where('adjustment_master_id', $master->id)
@@ -603,7 +590,7 @@ class PartyLedgerController extends Controller
                     'debit' => $isCredit ? 0 : (float) $adj->amount,
                     'credit' => $isCredit ? (float) $adj->amount : 0,
                     'description' => $adj->remarks ?: ($isCredit ? 'Credit Adjustment' : 'Debit Adjustment'),
-                    'view_url' => $adj->batch_id ? route('admin.payment.adjustment.show', $adj->batch_id) : '#'
+                    'view_url' => $adj->batch_id ? route('owner.payment.adjustment.show', $adj->batch_id) : '#'
                 ]);
             }
 
@@ -647,7 +634,7 @@ class PartyLedgerController extends Controller
                     'debit' => $debit,
                     'credit' => $credit,
                     'description' => $desc . ($p->remarks ? ': ' . $p->remarks : ''),
-                    'view_url' => route('admin.payment.history.show', $p->id)
+                    'view_url' => route('owner.payment.history.show', $p->id)
                 ]);
             }
 
@@ -730,7 +717,7 @@ class PartyLedgerController extends Controller
                 'debit' => $isCredit ? 0 : (float) $v->amount,
                 'credit' => $isCredit ? (float) $v->amount : 0,
                 'description' => $v->narration ?: $v->voucher->narration ?: 'Journal Entry',
-                'view_url' => route('admin.payment.journal-voucher.show', $v->voucher->id)
+                'view_url' => route('owner.payment.journal-voucher.show', $v->voucher->id)
             ]);
         }
 
