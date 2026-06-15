@@ -744,6 +744,7 @@ if (!function_exists('deleteProductionSession')) {
                         if ($space > 0) {
                             $restoreAmt = min($space, $qtyToRestore);
                             $src->remaining_quantity += $restoreAmt;
+                            $src->status = 1; // Mark as active again since quantity was restored
                             $src->save();
                             $qtyToRestore -= $restoreAmt;
                         }
@@ -775,6 +776,7 @@ if (!function_exists('deleteProductionSession')) {
                         if ($space > 0) {
                             $restoreAmt = min($space, $qtyToRestore);
                             $src->remaining_quantity += $restoreAmt;
+                            $src->status = 1;
                             $src->save();
                             $qtyToRestore -= $restoreAmt;
                         }
@@ -867,6 +869,7 @@ if (!function_exists('deleteProductionSession')) {
                             if ($space > 0) {
                                 $restoreAmt = min($space, $qtyToRestore);
                                 $src->remaining_quantity += $restoreAmt;
+                                $src->status = 1; // Mark as active again since quantity was restored
                                 $src->save();
                                 $qtyToRestore -= $restoreAmt;
                             }

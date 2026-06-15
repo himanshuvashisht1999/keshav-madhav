@@ -185,7 +185,10 @@ class ReportController extends Controller
         $response['data'] = $this->service->lotDetails($request->lot_no);
 
         if (!$response['data']) {
-            return redirect()->back()->with('error', 'Lot not found or no data available.');
+            if (session()->has('success')) {
+                return redirect()->route('owner.lots')->with('success', session('success') . ' The lot has been completely removed.');
+            }
+            return redirect()->route('owner.lots')->with('error', 'Lot not found or no data available.');
         }
 
         $response['master_stages'] = $this->service->master_stages();

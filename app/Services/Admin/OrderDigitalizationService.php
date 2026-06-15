@@ -600,13 +600,22 @@ class OrderDigitalizationService
                 ->first();
         }
         $from_stage_id = $results->from_stage_id;
+        $stitching_unit_id = null;
 
         // Default to packing (11) if it's a rework slip
         if ($results->type === 'rework') {
             $to_stage_id = 11;
         } else {
             if ($from_stage_id == 1) {
-                $to_stage_id = 4;
+                $stitchingTx = \App\Models\OrderStageTransaction::where('lot_no', $results->lot_no)
+                    ->where('to_stage_id', 4)
+                    ->first();
+                if ($stitchingTx) {
+                    $to_stage_id = 4;
+                    $stitching_unit_id = $stitchingTx->sub_stage_id_to;
+                } else {
+                    $to_stage_id = 13; // Godam
+                }
             }
             if ($from_stage_id == 3) {
                 $to_stage_id = 4;
@@ -661,6 +670,11 @@ class OrderDigitalizationService
 
                     // if($results->from_stage_id != $unit_data['master_stage_id']){
                     if ($unit_data['master_stage_id'] == $to_stage_id) {
+                        if ($from_stage_id == 1 && $to_stage_id == 4 && $stitching_unit_id !== null) {
+                            if ($unit_data['id'] != $stitching_unit_id) {
+                                continue;
+                            }
+                        }
                         $unit_master_data[] = [
                             'id' => $unit_data['id'],
                             'master_stage_id' => $unit_data['master_stage_id'],
@@ -806,6 +820,7 @@ class OrderDigitalizationService
                     'image' => null,
                     'is_closed_for_unit' => 0,
                     'complete_date' => null,
+                    'status' => 1,
                     'remaining_quantity' => DB::raw('quantity') // Reset to full available quantity
                 ];
 

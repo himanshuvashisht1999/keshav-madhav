@@ -553,6 +553,14 @@ class ReportController extends Controller
     public function lotDetails(Request $request)
     {
         $response['data'] = $this->service->lotDetails($request->lot_no);
+
+        if (empty($response['data'])) {
+            if (session()->has('success')) {
+                return redirect()->route('admin.report.lots')->with('success', session('success') . ' The lot has been completely removed.');
+            }
+            return redirect()->route('admin.report.lots')->with('error', 'Lot not found or has been completely deleted.');
+        }
+
         $response['master_stages'] = $this->service->master_stages();
         // dd($response['data']);
         return view('admin.report.lot_details', $response);
