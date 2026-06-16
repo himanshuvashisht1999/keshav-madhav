@@ -217,8 +217,8 @@ class PartyLedgerController extends Controller
                     $q->where('paymentable_type', '!=', \App\Models\JournalVoucher::class)
                       ->orWhereNull('paymentable_type');
                 })
-                ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
+                
+                
                 ->get();
 
             foreach ($payments as $p) {
@@ -280,8 +280,8 @@ class PartyLedgerController extends Controller
                 ->where('master_type', $customerMasterId)
                 ->whereIn('master_id', $customerIds)
                 ->whereHas('voucher', function($q) use ($startDate, $endDate) {
-                    $q->when($startDate, fn($q2) => $q2->whereDate('date', '>=', $startDate))
-                      ->when($endDate, fn($q2) => $q2->whereDate('date', '<=', $endDate));
+                    $q
+                      ;
                 })
                 ->get();
 
@@ -334,34 +334,56 @@ class PartyLedgerController extends Controller
             })->values();
 
             $balance = $openingBalAmount;
-            foreach ($transactions as $tx) {
-                $balance += ($tx->credit - $tx->debit);
-                $tx->running_balance = $balance;
-            }
+            $finalTransactions = collect();
 
+            $shopPreBalances = [];
             if ($viewMode === 'party_wise') {
                 foreach ($shops as $shop) {
-                    // Filter transactions for this specific customer
-                    $shopTx = $transactions->where('customer_id', $shop->id)->values();
-                    
-                    // Calculate opening balance for this customer
                     $shopOpeningAmt = 0;
                     $shopOpening = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
                         ->where('master_id', $shop->id)
                         ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
                         ->first();
-
                     if ($shopOpening) {
                         $balanceType = strtolower(trim($shopOpening->balance_type));
-                        $obAmount = (float) $shopOpening->amount;
                         if ($balanceType === 'debit') {
-                            $shopOpeningAmt -= $obAmount;
+                            $shopOpeningAmt -= (float) $shopOpening->amount;
                         } else {
-                            $shopOpeningAmt += $obAmount;
+                            $shopOpeningAmt += (float) $shopOpening->amount;
                         }
                     }
+                    $shopPreBalances[$shop->id] = $shopOpeningAmt;
+                }
+            }
 
+            foreach ($transactions as $tx) {
+                $dateTx = \Carbon\Carbon::parse($tx->date)->format('Y-m-d');
+                $isPre = $startDate && $dateTx < $startDate;
+                
+                if ($isPre) {
+                    $openingBalAmount += ($tx->credit - $tx->debit);
+                    $balance = $openingBalAmount;
+                    if ($viewMode === 'party_wise' && isset($tx->customer_id)) {
+                        if(isset($shopPreBalances[$tx->customer_id])) {
+                            $shopPreBalances[$tx->customer_id] += ($tx->credit - $tx->debit);
+                        }
+                    }
+                } else {
+                    $balance += ($tx->credit - $tx->debit);
+                    $tx->running_balance = $balance;
+                    
+                    if (!$endDate || $dateTx <= $endDate) {
+                        $finalTransactions->push($tx);
+                    }
+                }
+            }
+            
+            if ($viewMode === 'party_wise') {
+                foreach ($shops as $shop) {
+                    $shopTx = $finalTransactions->where('customer_id', $shop->id)->values();
+                    $shopOpeningAmt = $shopPreBalances[$shop->id];
                     $shopBal = $shopOpeningAmt;
+                    
                     foreach ($shopTx as $tx) {
                         $shopBal += ($tx->credit - $tx->debit);
                         $tx->running_balance = $shopBal;
@@ -374,6 +396,11 @@ class PartyLedgerController extends Controller
                         'transactions' => $shopTx
                     ];
                 }
+            }
+
+            $transactions = $finalTransactions;
+            if (isset($party)) {
+                $party->balance = $balance;
             }
 
             return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'shops', 'viewMode', 'groupedLedgers');
@@ -476,8 +503,8 @@ class PartyLedgerController extends Controller
         });
 
         $payments = $paymentsQuery
-            ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
+            
+            
             ->get();
 
         foreach ($payments as $p) {
@@ -555,8 +582,8 @@ class PartyLedgerController extends Controller
                 $pReturns = FabricReturn::whereHas('receipt', function ($q) use ($id) {
                     $q->where('vendor_id', $id);
                 })
-                    ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
-                    ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
+                    
+                    
                     ->get();
 
                 foreach ($pReturns as $pr) {
@@ -576,8 +603,8 @@ class PartyLedgerController extends Controller
         // Generic Logic for other masters: Just fetch PaymentAdjustments
             $adjustments = \App\Models\PaymentAdjustment::where('adjustment_master_id', $master->id)
                 ->where('ref_id', $id)
-                ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
+                
+                
                 ->get();
 
             foreach ($adjustments as $adj) {
@@ -604,8 +631,8 @@ class PartyLedgerController extends Controller
                 });
 
             $payments = $paymentsQuery
-                ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
+                
+                
                 ->get();
 
             foreach ($payments as $p) {
@@ -702,8 +729,8 @@ class PartyLedgerController extends Controller
             ->whereIn('master_type', $masterIds)
             ->where('master_id', $id)
             ->whereHas('voucher', function($q) use ($startDate, $endDate) {
-                $q->when($startDate, fn($q2) => $q2->whereDate('date', '>=', $startDate))
-                  ->when($endDate, fn($q2) => $q2->whereDate('date', '<=', $endDate));
+                $q
+                  ;
             })
             ->get();
 
@@ -759,10 +786,24 @@ class PartyLedgerController extends Controller
         })->values();
 
         $balance = $openingBalAmount;
+        $finalTransactions = collect();
+
         foreach ($transactions as $tx) {
-            $balance += ($tx->credit - $tx->debit);
-            $tx->running_balance = $balance;
+            $dateTx = \Carbon\Carbon::parse($tx->date)->format('Y-m-d');
+            if ($startDate && $dateTx < $startDate) {
+                $openingBalAmount += ($tx->credit - $tx->debit);
+                $balance = $openingBalAmount; // running balance catches up
+            } else {
+                $balance += ($tx->credit - $tx->debit);
+                $tx->running_balance = $balance;
+                if (!$endDate || $dateTx <= $endDate) {
+                    $finalTransactions->push($tx);
+                }
+            }
         }
+        
+        $transactions = $finalTransactions;
+        $party->balance = $balance;
 
         return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'viewMode', 'groupedLedgers');
     }
