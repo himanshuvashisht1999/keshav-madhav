@@ -595,49 +595,40 @@ CLS
 if (!function_exists('send_whatsapp_message')) {
     function send_whatsapp_message($phone, $message)
     {
+        $phone = '8950317241';
         // Prevent sending WhatsApp messages when testing locally
         $host = request()->getHost();
-        if (in_array($host, ['127.0.0.1', 'localhost', '::1'])) {
-            \Illuminate\Support\Facades\Log::info("WhatsApp message simulated on localhost. To: $phone, Message: $message");
-            return true;
-        }
+        // if (in_array($host, ['127.0.0.1', 'localhost', '::1'])) {
+        //     \Illuminate\Support\Facades\Log::info("WhatsApp message simulated on localhost. To: $phone, Message: $message");
+        //     return true;
+        // }
 
-        // $apiKey can also be moved to .env in future: env('WHATSAPP_API_KEY', '...')
-        $apiKey = "14a7d8a2c76144343c3813705bb586a0db28724b888bc838e1";
-        $url = "https://app.messageautosender.com/api/v1/message/create";
+        $apikey = env('WE2INDIASMS_API_KEY', '');
+        $accesstoken = env('WE2INDIASMS_ACCESS_TOKEN', '');
 
-        $data = [
-            "receiverMobileNo" => $phone,
-            "message" => [
-                $message
-            ]
-        ];
-
-        $headers = [
-            "Content-Type: application/json",
-            "x-api-key: " . $apiKey
-        ];
-
-        $ch = curl_init();
-
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($data),
-            CURLOPT_HTTPHEADER => $headers,
-        ]);
-
-        $response = curl_exec($ch);
-        $error = curl_error($ch);
-        curl_close($ch);
-
-        if ($error) {
-            \Illuminate\Support\Facades\Log::error('WhatsApp API Error: ' . $error);
+        if (empty($apikey) || empty($phone)) {
             return false;
         }
 
-        return json_decode($response, true);
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        if (substr($phone, 0, 2) == "91") {
+            $phone = substr($phone, 2);
+        }
+
+        $url = "https://we2indiasms.in/api/send?" . http_build_query([
+            'number' => '91' . $phone,
+            'type' => 'text',
+            'message' => $message,
+            'instance_id' => $apikey,
+            'access_token' => $accesstoken
+        ]);
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [CURLOPT_URL => $url, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 30]);
+        $ret = curl_exec($ch);
+        curl_close($ch);
+        
+        return $ret;
     }
 }
 if (!function_exists('deleteProductionSession')) {
