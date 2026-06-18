@@ -20,6 +20,7 @@ class PackingService
     public function getPackingList()
     {
         return PackingMain::with(['order.customer'])
+            ->where('slip_id', '!=', 0)
             ->orderBy('id', 'desc')
             ->get();
     }
@@ -27,7 +28,7 @@ class PackingService
     public function indexList($request)
     {
         // List individual Packing Sessions (Slips)
-        $query = PackingMain::with(['order.customer']);
+        $query = PackingMain::with(['order.customer'])->where('slip_id', '!=', 0);
 
         // Filter by Order No (SKU)
         if ($request->has('order_no') && !empty($request->order_no)) {
