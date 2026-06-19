@@ -63,6 +63,11 @@
                         <h1>Fabric Purchase Order ({{ $data->sku }})</h1>
                     </div>
                     <div class="col-sm-6 text-right">
+                        <a href="{{ route('admin.purchase_order.send_whatsapp_report', ['id' => $data->id]) }}"
+                            class="btn text-white mr-2" style="background-color: #25D366; border-color: #25D366;"
+                            onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $data->vendor->phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
+                            <i class="fab fa-whatsapp"></i> Send WhatsApp
+                        </a>
                         <a href="{{ route('admin.purchase_order.download_report', ['id' => $data->id]) }}"
                             class="btn btn-success">
                             <i class="fas fa-file-pdf"></i> Download PDF

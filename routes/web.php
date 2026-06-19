@@ -245,6 +245,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/delete', [AdminPurchaseOrderController::class, 'delete'])->name('delete');
             Route::get('/view', [AdminPurchaseOrderController::class, 'view'])->name('view');
             Route::get('/download-report', [AdminPurchaseOrderController::class, 'downloadReport'])->name('download_report');
+            Route::get('/send-whatsapp-report', [AdminPurchaseOrderController::class, 'sendWhatsappReport'])->name('send_whatsapp_report');
 
 
             Route::get('/estimation', [AdminPurchaseOrderController::class, 'estimation'])->name('estimation');

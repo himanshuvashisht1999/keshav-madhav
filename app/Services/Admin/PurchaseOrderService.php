@@ -129,6 +129,38 @@ class PurchaseOrderService
         return $pdf->download($fileName);
     }
 
+    public function sendWhatsappReport(Request $request)
+    {
+        $data = $this->view($request);
+        $general_setting = $this->general_setting();
+        $pdf = \PDF::loadView('admin.purchase_order.report_pdf', compact('data', 'general_setting'));
+
+        $fileName = 'Purchase_Order_' . str_replace('/', '_', $data->sku) . '.pdf';
+
+        $phone = $request->phone ?? ($data->vendor->phone ?? '');
+        
+        if (empty($phone)) {
+            return back()->with('error', 'No phone number available for this vendor.');
+        }
+
+        $dir = public_path('whatsapp_pdfs');
+        if (!file_exists($dir)) {
+            mkdir($dir, 0777, true);
+        }
+
+        $pdf->save($dir . '/' . $fileName);
+        $physicalPath = $dir . '/' . $fileName;
+
+        $msg = "Dear {$data->vendor->name},\n\nYour Purchase Order #{$data->sku} has been generated.\nPlease find it attached.\n\nThank you!";
+        $status = send_whatsapp_attachment($phone, $msg, $physicalPath, $fileName);
+
+        if ($status !== false) {
+            return back()->with('success', 'WhatsApp PO sent to ' . $phone . ' successfully.');
+        } else {
+            return back()->with('error', 'Failed to send WhatsApp message. Please check API credentials or phone number.');
+        }
+    }
+
     public function edit(Request $request)
     {
         $data = PurchaseOrder::with('fabric_warehouse', 'items')->where('id', $request->id)->first();

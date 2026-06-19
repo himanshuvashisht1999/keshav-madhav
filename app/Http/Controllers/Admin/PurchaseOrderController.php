@@ -170,6 +170,10 @@ class PurchaseOrderController extends Controller
     {
         return $this->service->downloadReport($request);
     }
+    public function sendWhatsappReport(Request $request)
+    {
+        return $this->service->sendWhatsappReport($request);
+    }
     public function delete(Request $request)
     {
         $data = $this->service->delete($request);
