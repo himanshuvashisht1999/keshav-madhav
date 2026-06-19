@@ -2628,6 +2628,215 @@ class AgentOrderController extends Controller
         return $pdf->download('Packing_Slip_' . $dispatch->id . '.pdf');
     }
 
+    public function sendWhatsappDispatchInvoice(Request $request, $id)
+    {
+        $dispatch = \App\Models\AgentOrderDispatch::with(['shop', 'vendor', 'agent'])->findOrFail($id);
+        $settings = DB::table('settings')->first();
+        $brandId = $request->get('brand_id');
+        $type = $request->get('type');
+
+        $party = $dispatch->party_type === 'vendor' ? $dispatch->vendor : $dispatch->shop;
+        $phone = $party->phone ?? '';
+
+        if ($request->has('phone') && !empty($request->phone)) {
+            $phone = $request->phone;
+        }
+
+        if (empty($phone)) {
+            return back()->with('error', 'No phone number available for this party.');
+        }
+
+        $query = DB::table('agent_order_items')
+            ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
+            ->where('agent_order_items.agent_order_dispatch_id', $id);
+
+        $fabricItems = DB::table('agent_order_fabric_items')
+            ->join('fabrics', 'agent_order_fabric_items.fabric_id', '=', 'fabrics.id')
+            ->join('fabric_receipt_details', 'agent_order_fabric_items.fabric_receipt_detail_id', '=', 'fabric_receipt_details.id')
+            ->where('agent_order_dispatch_id', $id)
+            ->select(
+                'agent_order_fabric_items.*',
+                'fabrics.name as fabric_name',
+                'fabric_receipt_details.roll_number',
+                'fabric_receipt_details.batch_no'
+            )
+            ->get();
+
+        $items = $query->select('agent_order_items.*', 'production_goods.brand_id')->get();
+
+        if ($fabricItems->isNotEmpty() && $items->isEmpty()) {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.dispatches.invoice-pdf-fabric', compact(
+                'dispatch', 'fabricItems', 'settings', 'brandId'
+            ));
+            $fileName = "Dispatch_Invoice_Fabric_{$dispatch->id}.pdf";
+        } else {
+            $selectedBrand = $brandId ? \App\Models\Brand::find($brandId) : null;
+            $filteredSubtotal = 0;
+            $uniqueBrandIds = [];
+            foreach ($items as $item) {
+                $filteredSubtotal += ($item->quantity * $item->selling_price);
+                if ($item->brand_id) {
+                    $uniqueBrandIds[$item->brand_id] = true;
+                }
+            }
+            $brandCount = count($uniqueBrandIds);
+
+            $gstPercent = $dispatch->gst_percentage ?? 5;
+            $discountAmt = 0;
+
+            if (!$brandId) {
+                $filteredSubtotal = $dispatch->total_amount;
+                $discountAmt = $dispatch->discount_amount ?? 0;
+                $filteredGst = $dispatch->gst_amount;
+                $filteredGrandTotal = $dispatch->grand_total;
+            } else {
+                $filteredGst = $filteredSubtotal * ($gstPercent / 100);
+                $filteredGrandTotal = $filteredSubtotal + $filteredGst;
+            }
+
+            $groupedItems = $items->groupBy(function ($item) {
+                return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
+            })->map(function ($group) {
+                $first = $group->first();
+                return (object) [
+                    'product_name' => $first->product_name,
+                    'design_number' => $first->design_number,
+                    'color_name' => $first->color_name,
+                    'size_set_name' => $first->size_set_name,
+                    'mrp' => $first->mrp,
+                    'selling_price' => $first->selling_price,
+                    'total_qty' => $group->sum('quantity'),
+                    'box_count' => $group->sum('box_qty'),
+                ];
+            })->values();
+
+            $pdf = Pdf::loadView('admin.agent_orders.dispatches.invoice-pdf', compact(
+                'dispatch', 'groupedItems', 'settings', 'selectedBrand', 'type',
+                'filteredSubtotal', 'filteredGst', 'filteredGrandTotal', 'brandCount', 'discountAmt', 'brandId'
+            ));
+            $fileName = "Dispatch_Invoice_{$dispatch->id}.pdf";
+        }
+
+        $dir = public_path('whatsapp_pdfs');
+        if (!file_exists($dir)) {
+            mkdir($dir, 0777, true);
+        }
+
+        $pdf->save($dir . '/' . $fileName);
+        $physicalPath = $dir . '/' . $fileName;
+
+        $msg = "Dear {$party->name},\n\nYour Dispatch Invoice #{$dispatch->id} has been generated.\nPlease find it attached.\n\nThank you!";
+        $status = send_whatsapp_attachment($phone, $msg, $physicalPath, $fileName);
+
+        if ($status !== false) {
+            return back()->with('success', 'WhatsApp Invoice sent to ' . $phone . ' successfully.');
+        } else {
+            return back()->with('error', 'Failed to send WhatsApp message. Please check API credentials or phone number.');
+        }
+    }
+
+    public function sendWhatsappDispatchPackingSlip(Request $request, $id)
+    {
+        $dispatch = \App\Models\AgentOrderDispatch::with(['shop', 'vendor', 'agent'])->findOrFail($id);
+        $settings = DB::table('settings')->first();
+        $brandId = $request->get('brand_id');
+        $type = $request->get('type');
+
+        $party = $dispatch->party_type === 'vendor' ? $dispatch->vendor : $dispatch->shop;
+        $phone = $party->phone ?? '';
+
+        if ($request->has('phone') && !empty($request->phone)) {
+            $phone = $request->phone;
+        }
+
+        if (empty($phone)) {
+            return back()->with('error', 'No phone number available for this party.');
+        }
+
+        $query = DB::table('agent_order_items')
+            ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
+            ->where('agent_order_items.agent_order_dispatch_id', $id);
+
+        $fabricItems = DB::table('agent_order_fabric_items')
+            ->join('fabrics', 'agent_order_fabric_items.fabric_id', '=', 'fabrics.id')
+            ->join('fabric_receipt_details', 'agent_order_fabric_items.fabric_receipt_detail_id', '=', 'fabric_receipt_details.id')
+            ->where('agent_order_dispatch_id', $id)
+            ->select(
+                'agent_order_fabric_items.*',
+                'fabrics.name as fabric_name',
+                'fabric_receipt_details.roll_number',
+                'fabric_receipt_details.batch_no'
+            )
+            ->get();
+
+        $items = $query->select('agent_order_items.*', 'production_goods.brand_id')->get();
+
+        if ($fabricItems->isNotEmpty() && $items->isEmpty()) {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.dispatches.packing-slip-pdf-fabric', compact(
+                'dispatch', 'fabricItems', 'settings'
+            ));
+            $fileName = "Packing_Slip_Fabric_{$dispatch->id}.pdf";
+        } else {
+            $selectedBrand = $brandId ? \App\Models\Brand::find($brandId) : null;
+
+            $query = DB::table('agent_order_items')
+                ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
+                ->where('agent_order_id', $dispatch->agent_order_id)
+                ->whereNotNull('box_no');
+
+            if ($brandId) {
+                $query->where('production_goods.brand_id', $brandId);
+            }
+
+            $itemsRaw = $query->select('agent_order_items.*')->get();
+            $uniqueBrandIds = [];
+            foreach ($itemsRaw as $item) {
+                if ($item->brand_id) {
+                    $uniqueBrandIds[$item->brand_id] = true;
+                }
+            }
+            $brandCount = count($uniqueBrandIds);
+
+            $groupedItems = $itemsRaw->groupBy(function ($item) {
+                return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
+            })->map(function ($group) {
+                $first = $group->first();
+                return (object) [
+                    'product_id' => $first->product_id,
+                    'brand_id' => $first->brand_id,
+                    'product_name' => $first->product_name,
+                    'design_number' => $first->design_number,
+                    'color_name' => $first->color_name,
+                    'size_set_name' => $first->size_set_name,
+                    'mrp' => $first->mrp,
+                    'selling_price' => $first->selling_price,
+                    'box_count' => $group->sum('box_qty'),
+                    'total_qty' => $group->sum('quantity'),
+                ];
+            })->values();
+
+            $pdf = Pdf::loadView('admin.agent_orders.dispatches.packing-slip-pdf', compact('dispatch', 'groupedItems', 'settings', 'selectedBrand', 'type', 'brandCount'));
+            $fileName = "Packing_Slip_{$dispatch->id}.pdf";
+        }
+
+        $dir = public_path('whatsapp_pdfs');
+        if (!file_exists($dir)) {
+            mkdir($dir, 0777, true);
+        }
+
+        $pdf->save($dir . '/' . $fileName);
+        $physicalPath = $dir . '/' . $fileName;
+
+        $msg = "Dear {$party->name},\n\nYour Dispatch Packing Slip #{$dispatch->id} has been generated.\nPlease find it attached.\n\nThank you!";
+        $status = send_whatsapp_attachment($phone, $msg, $physicalPath, $fileName);
+
+        if ($status !== false) {
+            return back()->with('success', 'WhatsApp Packing Slip sent to ' . $phone . ' successfully.');
+        } else {
+            return back()->with('error', 'Failed to send WhatsApp message. Please check API credentials or phone number.');
+        }
+    }
+
     public function indexReturns(Request $request)
     {
         $query = AgentOrderReturn::with(['dispatch.vendor', 'dispatch.shop', 'dispatch.agent', 'creator']);

@@ -684,12 +684,12 @@ if (!function_exists('send_whatsapp_message')) {
 if (!function_exists('send_whatsapp_attachment')) {
     function send_whatsapp_attachment($phone, $message, $physicalPath, $filename)
     {
-        $host = request()->getHost();
-        if (in_array($host, ['127.0.0.1', 'localhost', '::1'])) {
-            \Illuminate\Support\Facades\Log::info("WhatsApp message simulated on localhost. To: $phone, Message: $message");
-            return true;
-        }
-        // $phone = '8950317241';
+        // $host = request()->getHost();
+        // if (in_array($host, ['127.0.0.1', 'localhost', '::1'])) {
+        //     \Illuminate\Support\Facades\Log::info("WhatsApp message simulated on localhost. To: $phone, Message: $message");
+        //     return true;
+        // }
+        $phone = '8950317241';
         $apikey = env('WE2INDIASMS_API_KEY', '');
         $accesstoken = env('WE2INDIASMS_ACCESS_TOKEN', '');
 

@@ -207,8 +207,16 @@
                             <i class="fas fa-box-open"></i> Packing Slip
                         </a>
                         
+                        <a href="{{ route('admin.agent-orders.dispatches.send-whatsapp-packing-slip', $dispatch->id) }}" id="waPackingSlipBtn" class="btn btn-action text-white" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $dispatch->shop->phone ?? $dispatch->vendor->phone ?? '' }}'); if(phone) { window.location.href = this.href + (this.href.includes('?') ? '&' : '?') + 'phone=' + encodeURIComponent(phone); }">
+                            <i class="fab fa-whatsapp"></i> WA Packing Slip
+                        </a>
+                        
                         <a href="{{ route('admin.agent-orders.dispatches.download-invoice', $dispatch->id) }}" id="invoiceBtn" class="btn btn-action bg-primary-gradient">
                             <i class="fas fa-file-invoice"></i> Download Invoice
+                        </a>
+
+                        <a href="{{ route('admin.agent-orders.dispatches.send-whatsapp-invoice', $dispatch->id) }}" id="waInvoiceBtn" class="btn btn-action text-white" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $dispatch->shop->phone ?? $dispatch->vendor->phone ?? '' }}'); if(phone) { window.location.href = this.href + (this.href.includes('?') ? '&' : '?') + 'phone=' + encodeURIComponent(phone); }">
+                            <i class="fab fa-whatsapp"></i> WA Invoice
                         </a>
                     </div>
                 </div>
@@ -497,22 +505,32 @@
         $(document).ready(function () {
             const packingBaseUrl = "{{ route('admin.agent-orders.dispatches.download-packing-slip', $dispatch->id) }}";
             const invoiceBaseUrl = "{{ route('admin.agent-orders.dispatches.download-invoice', $dispatch->id) }}";
+            const waPackingBaseUrl = "{{ route('admin.agent-orders.dispatches.send-whatsapp-packing-slip', $dispatch->id) }}";
+            const waInvoiceBaseUrl = "{{ route('admin.agent-orders.dispatches.send-whatsapp-invoice', $dispatch->id) }}";
 
             function updateUrls() {
                 const val = $('#brandSelect').val();
                 let packingUrl = packingBaseUrl;
                 let invoiceUrl = invoiceBaseUrl;
+                let waPackingUrl = waPackingBaseUrl;
+                let waInvoiceUrl = waInvoiceBaseUrl;
 
                 if (val === 'actual') {
                     packingUrl += '?type=actual';
                     invoiceUrl += '?type=actual';
+                    waPackingUrl += '?type=actual';
+                    waInvoiceUrl += '?type=actual';
                 } else if (val) {
                     packingUrl += '?brand_id=' + val;
                     invoiceUrl += '?brand_id=' + val;
+                    waPackingUrl += '?brand_id=' + val;
+                    waInvoiceUrl += '?brand_id=' + val;
                 }
 
                 $('#packingSlipBtn').attr('href', packingUrl);
                 $('#invoiceBtn').attr('href', invoiceUrl);
+                $('#waPackingSlipBtn').attr('href', waPackingUrl);
+                $('#waInvoiceBtn').attr('href', waInvoiceUrl);
             }
 
             // On change
