@@ -25,6 +25,8 @@ class PurchaseOrderStoreRequest extends FormRequest{
             'date' => 'required',
             'vendor_id' => 'required',
             'delivery_date' => 'required',
+            'fabric_warehouse_id' => 'required',
+            'master_company_id' => 'required',
         ];
     }
 

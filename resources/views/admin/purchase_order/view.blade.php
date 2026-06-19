@@ -91,7 +91,7 @@
                                 <p class="mb-0">{{ $general_setting->email }}</p>
                                 <p class="mb-0">Phone: {{ $general_setting->phone }}</p>
                             @endif
-                            <p class="mt-2"><b>Delivery Warehouse Address:</b> {{ $data->fabric_warehouse->address }}</p>
+                            <p class="mt-2"><b>Delivery Warehouse Address:</b> {{ $data->fabric_warehouse->address ?? 'N/A' }}</p>
                         </div>
                         <div class="col-md-6 text-right">
                             <img src="{{ $general_setting->logo }}" height="80" alt="Logo">
@@ -203,7 +203,7 @@
                         <div class="col-md-6">
                             <h5 class="text-primary"><b>Delivery Warehouse Address</b></h5>
                             <div style="background:#f1f1f1; padding:12px; border-radius:6px;">
-                                {{ $data->fabric_warehouse->address }}
+                                {{ $data->fabric_warehouse->address ?? 'N/A' }}
                             </div>
                         </div>
                         <div class="col-md-6">

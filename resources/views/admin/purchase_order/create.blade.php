@@ -68,7 +68,7 @@
                                             <a href="javascript:void(0)" class="text-info" id="refreshWarehouseBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
                                         </span>
                                     </label>
-                                    <select name="fabric_warehouse_id" id="warehouse-select" class="form-control select2">
+                                    <select name="fabric_warehouse_id" id="warehouse-select" class="form-control select2" required>
                                         @foreach($fabric_warehouses as $w)
                                             <option value="{{ $w->id }}">{{ $w->cutting_master_name }}</option>
                                         @endforeach
@@ -79,8 +79,7 @@
                                 <div class="col-md-6 mt-2">
                                     <label>Expected Delivery Date</label>
 
-                                    <input type="date" name="delivery_date" class="form-control" value="{{ old('delivery_date') }}"
-                                        placeholder="Select Expected Delivery Date">
+                                    <input type="date" name="delivery_date" class="form-control" value="{{ old('delivery_date') }}" placeholder="Select Expected Delivery Date" required>
 
 
                                 </div>
@@ -94,7 +93,7 @@
                                             <a href="javascript:void(0)" class="text-info" id="refreshCompanyBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
                                         </span>
                                     </label>
-                                    <select name="master_company_id" id="company-select" class="form-control select2">
+                                    <select name="master_company_id" id="company-select" class="form-control select2" required>
                                         <option value="">Select Company</option>
                                         @foreach($companies as $c)
                                             <option value="{{ $c->id }}">{{ $c->name }}</option>
