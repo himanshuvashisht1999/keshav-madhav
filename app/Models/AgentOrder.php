@@ -79,6 +79,14 @@ class AgentOrder extends Model
         return $this->shop ? $this->shop->name : 'N/A';
     }
 
+    public function getShopPhoneAttribute()
+    {
+        if ($this->party_type === 'vendor') {
+            return $this->vendor ? $this->vendor->phone : '';
+        }
+        return $this->shop ? $this->shop->phone : '';
+    }
+
     public function agent()
     {
         return $this->belongsTo(SalesAgent::class, 'sales_agent_id');

@@ -21,27 +21,55 @@
                     @if(Auth::guard('sales_agent')->user()->see_price)
                         <p class="small mb-1 opacity-75">Grand Total</p>
                         <h3 class="font-weight-bold mb-0">₹{{ number_format($order->grand_total, 2) }}</h3>
-                        <div class="dropdown mt-2">
-                            <button class="btn btn-sm btn-success dropdown-toggle rounded-pill px-4 font-weight-bold shadow-sm" 
-                                type="button" id="downloadOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-file-pdf mr-1"></i> Order Sheet
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="downloadOrderDropdown">
-                                <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=1">
-                                    <i class="fas fa-file-invoice-dollar text-success mr-2"></i> With Price
-                                </a>
-                                <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=0">
-                                    <i class="fas fa-file-contract text-secondary mr-2"></i> Without Price
-                                </a>
+                        <div class="d-flex justify-content-end mt-2">
+                            <div class="dropdown mr-2">
+                                <button class="btn btn-sm btn-success dropdown-toggle rounded-pill px-4 font-weight-bold shadow-sm" 
+                                    type="button" id="whatsappOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="background-color: #25D366; border-color: #25D366;">
+                                    <i class="fab fa-whatsapp mr-1"></i> WhatsApp PDF
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="whatsappOrderDropdown">
+                                    <a class="dropdown-item py-2" href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=1" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
+                                        <i class="fas fa-file-invoice-dollar text-success mr-2"></i> With Price
+                                    </a>
+                                    <a class="dropdown-item py-2" href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=0" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
+                                        <i class="fas fa-file-contract text-secondary mr-2"></i> Without Price
+                                    </a>
+                                    <a class="dropdown-item py-2" href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=2" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
+                                        <i class="fas fa-file-invoice text-info mr-2"></i> Unit Price Only
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-success dropdown-toggle rounded-pill px-4 font-weight-bold shadow-sm" 
+                                    type="button" id="downloadOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fas fa-file-pdf mr-1"></i> Order Sheet
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="downloadOrderDropdown">
+                                    <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=1">
+                                        <i class="fas fa-file-invoice-dollar text-success mr-2"></i> With Price
+                                    </a>
+                                    <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=0">
+                                        <i class="fas fa-file-contract text-secondary mr-2"></i> Without Price
+                                    </a>
+                                    <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=2">
+                                        <i class="fas fa-file-invoice text-info mr-2"></i> Unit Price Only
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     @else
                         <p class="small mb-1 opacity-75">Items</p>
                         <h3 class="font-weight-bold mb-0">{{ $order->total_qty }} pcs</h3>
-                        <a href="{{ route('agent.orders.download-order', $order->id) }}?see_price=0"
-                            class="btn btn-sm btn-success mt-2 rounded-pill px-4 font-weight-bold shadow-sm">
-                            <i class="fas fa-file-pdf mr-1"></i> Order Sheet
-                        </a>
+                        <div class="d-flex justify-content-end mt-2">
+                            <a href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=0"
+                                class="btn btn-sm btn-success rounded-pill px-4 font-weight-bold shadow-sm mr-2" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
+                                <i class="fab fa-whatsapp mr-1"></i> WhatsApp PDF
+                            </a>
+                            <a href="{{ route('agent.orders.download-order', $order->id) }}?see_price=0"
+                                class="btn btn-sm btn-success rounded-pill px-4 font-weight-bold shadow-sm">
+                                <i class="fas fa-file-pdf mr-1"></i> Order Sheet
+                            </a>
+                        </div>
                     @endif
                 </div>
             </div>

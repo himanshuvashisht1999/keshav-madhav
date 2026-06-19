@@ -36,6 +36,8 @@
                 }
             }
             $showPrice = ($order->see_price == 1);
+            $showUnitPriceOnly = ($order->see_price == 2);
+            $showAnyPrice = ($showPrice || $showUnitPriceOnly);
         @endphp
 
         <div class="header-section">
@@ -103,14 +105,16 @@
             <thead>
                 <tr>
                     <th width="5%">S.N.</th>
-                    <th width="{{ $showPrice ? '23%' : '43%' }}">Product Particulars</th>
+                    <th width="{{ $showPrice ? '23%' : ($showUnitPriceOnly ? '33%' : '43%') }}">Product Particulars</th>
                     <th width="10%" class="text-center">Warehouse</th>
                     <th width="10%" class="text-center">Rack</th>
                     <th width="10%" class="text-center">Set/Size</th>
                     <th width="8%" class="text-center">Boxes</th>
                     <th width="9%" class="text-center">Pcs Qty</th>
-                    @if($showPrice)
+                    @if($showAnyPrice)
                     <th width="12%" class="text-right">Unit Price</th>
+                    @endif
+                    @if($showPrice)
                     <th width="13%" class="text-right">Total</th>
                     @endif
                 </tr>
@@ -129,8 +133,10 @@
                         <td class="text-center">{{ $item->size_set_name }}</td>
                         <td class="text-center">{{ number_format($item->box_count, 0) }}</td>
                         <td class="text-center">{{ number_format($item->total_qty, 0) }}</td>
-                        @if($showPrice)
+                        @if($showAnyPrice)
                         <td class="text-right">Rs. {{ number_format($item->selling_price, 2) }}</td>
+                        @endif
+                        @if($showPrice)
                         <td class="text-right">Rs. {{ number_format($item->total_qty * $item->selling_price, 2) }}</td>
                         @endif
                     </tr>
@@ -138,15 +144,17 @@
                 @endforeach
 
                 @for ($i = count($items); $i < 15; $i++)
-                    <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td>@if($showPrice)<td></td><td></td>@endif</tr>
+                    <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td>@if($showAnyPrice)<td></td>@endif @if($showPrice)<td></td>@endif</tr>
                 @endfor
 
                 <tr class="total-row">
                     <td colspan="5" class="text-right">TOTAL</td>
                     <td class="text-center">{{ $tBoxes }}</td>
                     <td class="text-center">{{ $tPcs }}</td>
-                    @if($showPrice)
+                    @if($showAnyPrice)
                     <td></td>
+                    @endif
+                    @if($showPrice)
                     <td class="text-right">Rs. {{ number_format($tAmt, 2) }}</td>
                     @endif
                 </tr>

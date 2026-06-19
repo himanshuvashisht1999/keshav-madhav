@@ -36,6 +36,8 @@
                 }
             }
             $showPrice = ($order->see_price == 1);
+            $showUnitPriceOnly = ($order->see_price == 2);
+            $showAnyPrice = ($showPrice || $showUnitPriceOnly);
         @endphp
 
         <div class="header-section">
@@ -107,8 +109,10 @@
                     <th>Fabric Details</th>
                     <th class="text-center">Batch No</th>
                     <th class="text-center">Meter</th>
-                    @if($showPrice)
+                    @if($showAnyPrice)
                     <th width="12%" class="text-right">Price/m</th>
+                    @endif
+                    @if($showPrice)
                     <th width="13%" class="text-right">Total</th>
                     @endif
                 </tr>
@@ -122,8 +126,10 @@
                         <td>{{ $item->fabric_name }}</td>
                         <td class="text-center">{{ $item->batch_no }}</td>
                         <td class="text-center">{{ number_format($item->meter, 2) }} m</td>
-                        @if($showPrice)
+                        @if($showAnyPrice)
                         <td class="text-right">Rs. {{ number_format($item->selling_price, 2) }}</td>
+                        @endif
+                        @if($showPrice)
                         <td class="text-right">Rs. {{ number_format($item->meter * $item->selling_price, 2) }}</td>
                         @endif
                     </tr>
@@ -131,14 +137,16 @@
                 @endforeach
 
                 @for ($i = count($items); $i < 15; $i++)
-                    <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td>@if($showPrice)<td></td><td></td>@endif</tr>
+                    <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td>@if($showAnyPrice)<td></td>@endif @if($showPrice)<td></td>@endif</tr>
                 @endfor
 
                 <tr class="total-row">
                     <td colspan="4" class="text-right">TOTAL</td>
                     <td class="text-center">{{ number_format($tMeters, 2) }} m</td>
-                    @if($showPrice)
+                    @if($showAnyPrice)
                     <td></td>
+                    @endif
+                    @if($showPrice)
                     <td class="text-right">Rs. {{ number_format($tAmt, 2) }}</td>
                     @endif
                 </tr>

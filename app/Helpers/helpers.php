@@ -592,16 +592,66 @@ CLS
     return $tspl;
 }
 
+if (!function_exists('send_whatsapp_message11')) {
+    function send_whatsapp_message11($phone, $message)
+    {
+        return true;
+        // Prevent sending WhatsApp messages when testing locally
+        $host = request()->getHost();
+        if (in_array($host, ['127.0.0.1', 'localhost', '::1'])) {
+            \Illuminate\Support\Facades\Log::info("WhatsApp message simulated on localhost. To: $phone, Message: $message");
+            return true;
+        }
+
+        // $apiKey can also be moved to .env in future: env('WHATSAPP_API_KEY', '...')
+        $apiKey = "14a7d8a2c76144343c3813705bb586a0db28724b888bc838e1";
+        $url = "https://app.messageautosender.com/api/v1/message/create";
+
+        $data = [
+            "receiverMobileNo" => $phone,
+            "message" => [
+                $message
+            ]
+        ];
+
+        $headers = [
+            "Content-Type: application/json",
+            "x-api-key: " . $apiKey
+        ];
+
+        $ch = curl_init();
+
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($data),
+            CURLOPT_HTTPHEADER => $headers,
+        ]);
+
+        $response = curl_exec($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            \Illuminate\Support\Facades\Log::error('WhatsApp API Error: ' . $error);
+            return false;
+        }
+
+        return json_decode($response, true);
+    }
+}
+
 if (!function_exists('send_whatsapp_message')) {
     function send_whatsapp_message($phone, $message)
     {
-        $phone = '8950317241';
+        // $phone = '8950317241';
         // Prevent sending WhatsApp messages when testing locally
         $host = request()->getHost();
-        // if (in_array($host, ['127.0.0.1', 'localhost', '::1'])) {
-        //     \Illuminate\Support\Facades\Log::info("WhatsApp message simulated on localhost. To: $phone, Message: $message");
-        //     return true;
-        // }
+        if (in_array($host, ['127.0.0.1', 'localhost', '::1'])) {
+            \Illuminate\Support\Facades\Log::info("WhatsApp message simulated on localhost. To: $phone, Message: $message");
+            return true;
+        }
 
         $apikey = env('WE2INDIASMS_API_KEY', '');
         $accesstoken = env('WE2INDIASMS_ACCESS_TOKEN', '');
@@ -627,7 +677,56 @@ if (!function_exists('send_whatsapp_message')) {
         curl_setopt_array($ch, [CURLOPT_URL => $url, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 30]);
         $ret = curl_exec($ch);
         curl_close($ch);
-        
+        return $ret;
+    }
+}
+
+if (!function_exists('send_whatsapp_attachment')) {
+    function send_whatsapp_attachment($phone, $message, $physicalPath, $filename)
+    {
+        $host = request()->getHost();
+        if (in_array($host, ['127.0.0.1', 'localhost', '::1'])) {
+            \Illuminate\Support\Facades\Log::info("WhatsApp message simulated on localhost. To: $phone, Message: $message");
+            return true;
+        }
+        // $phone = '8950317241';
+        $apikey = env('WE2INDIASMS_API_KEY', '');
+        $accesstoken = env('WE2INDIASMS_ACCESS_TOKEN', '');
+
+        if (empty($apikey) || empty($phone) || empty($physicalPath) || !file_exists($physicalPath)) {
+            return false;
+        }
+
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        if (substr($phone, 0, 2) == "91") {
+            $phone = substr($phone, 2);
+        }
+
+        $base64 = base64_encode(file_get_contents($physicalPath));
+        $dataUrl = 'data:application/pdf;base64,' . $base64;
+
+        $url = "https://we2indiasms.in/api/send";
+
+        $postData = [
+            'number' => '91' . $phone,
+            'type' => 'media',
+            'message' => $message,
+            'media_url' => $dataUrl,
+            'filename' => $filename,
+            'instance_id' => $apikey,
+            'access_token' => $accesstoken
+        ];
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query($postData),
+            CURLOPT_TIMEOUT => 30
+        ]);
+        $ret = curl_exec($ch);
+        curl_close($ch);
         return $ret;
     }
 }

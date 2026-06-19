@@ -217,6 +217,7 @@ Route::prefix('agent')->group(function () {
         Route::get('orders/get-variation-by-barcode', [App\Http\Controllers\SalesAgent\OrderController::class, 'getVariationByBarcode'])->name('agent.orders.get-variation-by-barcode');
         Route::get('orders/{id}', [App\Http\Controllers\SalesAgent\OrderController::class, 'orderDetails'])->name('agent.orders.show');
         Route::get('orders/{id}/download-order', [App\Http\Controllers\SalesAgent\OrderController::class, 'downloadOrder'])->name('agent.orders.download-order');
+        Route::get('orders/{id}/send-whatsapp-order', [App\Http\Controllers\SalesAgent\OrderController::class, 'sendWhatsappOrder'])->name('agent.orders.send-whatsapp-order');
     });
 });
 
@@ -563,6 +564,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::put('/{id}/update', [AdminAgentOrderController::class, 'update'])->name('update');
             Route::get('/{id}/download-invoice', [AdminAgentOrderController::class, 'downloadInvoice'])->name('download-invoice');
             Route::get('/{id}/download-order', [AdminAgentOrderController::class, 'downloadOrder'])->name('download-order');
+            Route::get('/{id}/send-whatsapp-order', [AdminAgentOrderController::class, 'sendWhatsappOrder'])->name('send-whatsapp-order');
             Route::get('/{id}/download-packing-slip', [AdminAgentOrderController::class, 'downloadPackingSlip'])->name('download-packing-slip');
             Route::get('/{id}/dispatch-scan', [AdminAgentOrderController::class, 'dispatchScan'])->name('dispatch-scan');
             Route::post('/{id}/process-scan', [AdminAgentOrderController::class, 'processScan'])->name('process-scan');

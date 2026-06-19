@@ -197,6 +197,9 @@
                                                         <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=0">
                                                             <i class="fas fa-barcode text-muted mr-2"></i> Without Price
                                                         </a>
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=2">
+                                                            <i class="fas fa-file-invoice text-info mr-2"></i> Unit Price Only
+                                                        </a>
                                                     </div>
                                                 </div>
                                                 <a href="{{ route('admin.agent-orders.show', $order->id) }}"
