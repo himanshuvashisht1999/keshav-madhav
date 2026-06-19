@@ -589,6 +589,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/dispatches/{id}/return', [AdminAgentOrderController::class, 'returnStore'])->name('dispatches.return.store');
             Route::get('/returns', [AdminAgentOrderController::class, 'indexReturns'])->name('returns.index');
             Route::get('/returns/{id}/download-pdf', [AdminAgentOrderController::class, 'downloadReturnPdf'])->name('returns.download-pdf');
+            Route::get('/returns/{id}/send-whatsapp-pdf', [AdminAgentOrderController::class, 'sendWhatsappReturnPdf'])->name('returns.send-whatsapp-pdf');
             Route::get('/returns/{id}', [AdminAgentOrderController::class, 'returnShow'])->name('returns.show');
             Route::get('/returns/{id}/edit', [AdminAgentOrderController::class, 'returnEdit'])->name('returns.edit');
             Route::post('/returns/{id}/update', [AdminAgentOrderController::class, 'returnUpdate'])->name('returns.update');

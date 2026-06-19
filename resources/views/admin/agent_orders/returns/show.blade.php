@@ -19,6 +19,9 @@
                     <button id="deleteReturnBtn" class="btn btn-danger rounded-pill ml-2">
                         <i class="fas fa-trash mr-1"></i> Delete
                     </button>
+                    <a href="{{ route('admin.agent-orders.returns.send-whatsapp-pdf', $return->id) }}" class="btn text-white rounded-pill ml-2" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $return->dispatch->shop->phone ?? $return->dispatch->vendor->phone ?? '' }}'); if(phone) { window.location.href = this.href + '?phone=' + encodeURIComponent(phone); }">
+                        <i class="fab fa-whatsapp mr-1"></i> WhatsApp
+                    </a>
                     <a href="{{ route('admin.agent-orders.returns.download-pdf', $return->id) }}" class="btn btn-primary rounded-pill ml-2">
                         <i class="fas fa-file-pdf mr-1"></i> Download PDF
                     </a>

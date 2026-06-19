@@ -3105,6 +3105,61 @@ class AgentOrderController extends Controller
         return $pdf->download('Sales_Return_SR_' . $return->id . '.pdf');
     }
 
+    public function sendWhatsappReturnPdf(Request $request, $id)
+    {
+        $return = AgentOrderReturn::with(['dispatch.vendor', 'dispatch.shop', 'dispatch.agent', 'items', 'creator'])->findOrFail($id);
+        $settings = DB::table('settings')->first();
+        
+        $party = $return->dispatch->party_type === 'vendor' ? $return->dispatch->vendor : $return->dispatch->shop;
+        $phone = $party->phone ?? '';
+
+        if ($request->has('phone') && !empty($request->phone)) {
+            $phone = $request->phone;
+        }
+
+        if (empty($phone)) {
+            return back()->with('error', 'No phone number available for this party.');
+        }
+
+        foreach ($return->items as $item) {
+            if ($item->item_type === 'standard') {
+                $original = AgentOrderItem::find($item->item_id);
+                $item->product_name = $original->product_name ?? 'N/A';
+                $item->design_number = $original->design_number ?? 'N/A';
+                $item->color_name = $original->color_name ?? 'N/A';
+                $item->size_set_name = $original->size_set_name ?? 'N/A';
+                $item->unit = 'Boxes';
+            } else {
+                $original = AgentOrderFabricItem::with('fabric')->find($item->item_id);
+                $item->product_name = $original->fabric->name ?? 'Fabric';
+                $item->design_number = 'N/A';
+                $item->color_name = 'N/A';
+                $item->size_set_name = 'N/A';
+                $item->unit = 'm';
+            }
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.returns.return-pdf', compact('return', 'settings'));
+        $fileName = 'Sales_Return_SR_' . $return->id . '.pdf';
+
+        $dir = public_path('whatsapp_pdfs');
+        if (!file_exists($dir)) {
+            mkdir($dir, 0777, true);
+        }
+
+        $pdf->save($dir . '/' . $fileName);
+        $physicalPath = $dir . '/' . $fileName;
+
+        $msg = "Dear {$party->name},\n\nYour Sales Return #SR-{$return->id} has been generated.\nPlease find it attached.\n\nThank you!";
+        $status = send_whatsapp_attachment($phone, $msg, $physicalPath, $fileName);
+
+        if ($status !== false) {
+            return back()->with('success', 'WhatsApp Sales Return sent to ' . $phone . ' successfully.');
+        } else {
+            return back()->with('error', 'Failed to send WhatsApp message. Please check API credentials or phone number.');
+        }
+    }
+
     public function returnUpdate(Request $request, $id)
     {
         $return = AgentOrderReturn::with('items')->findOrFail($id);
