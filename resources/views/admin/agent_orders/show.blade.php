@@ -296,15 +296,14 @@
                                                     </td>
                                                     <td>
                                                         <strong>{{ $item->product_name }}</strong><br>
-                                                        <small style="color:#666;">
-                                                            Design: {{ $item->design_number }} | Color: {{ $item->color_name }} |
-                                                            Set:
-                                                            {{ $item->size_set_name }} | Barcode: {{ $item->barcode }}
-                                                            @if(isset($item->fitting_name) && $item->fitting_name) | Fit:
-                                                            {{ $item->fitting_name }} @endif
-                                                            @if(isset($item->pattern_name) && $item->pattern_name) | Pat:
-                                                            {{ $item->pattern_name }} @endif
-                                                        </small>
+                                                        <div class="d-flex flex-wrap mt-1" style="gap: 4px;">
+                                                            <span class="badge badge-light border text-muted" style="font-size: 11px; font-weight: 500;">Dsg: {{ $item->design_number }}</span>
+                                                            <span class="badge badge-light border text-muted" style="font-size: 11px; font-weight: 500;">Col: {{ $item->color_name }}</span>
+                                                            <span class="badge badge-light border text-muted" style="font-size: 11px; font-weight: 500;">Set: {{ $item->size_set_name }}</span>
+                                                            @if($item->barcode) <span class="badge badge-light border text-muted" style="font-size: 11px; font-weight: 500;"><i class="fas fa-barcode mr-1"></i>{{ $item->barcode }}</span> @endif
+                                                            @if(isset($item->fitting_name) && $item->fitting_name) <span class="badge badge-light border text-muted" style="font-size: 11px; font-weight: 500;">Fit: {{ $item->fitting_name }}</span> @endif
+                                                            @if(isset($item->pattern_name) && $item->pattern_name) <span class="badge badge-light border text-muted" style="font-size: 11px; font-weight: 500;">Pat: {{ $item->pattern_name }}</span> @endif
+                                                        </div>
                                                     </td>
                                                     <td class="text-center">
                                                         <span class="badge badge-light border">WH: {{ $item->warehouse_name }}</span><br>
