@@ -248,8 +248,8 @@
                             <div class="card-header bg-dark text-white">
                                 <h3 class="card-title"><i class="fas fa-list mr-2"></i>Ordered Items</h3>
                             </div>
-                            <div class="card-body p-0">
-                                <table class="table table-striped mb-0">
+                            <div class="card-body p-0 table-responsive">
+                                <table class="table table-striped table-hover mb-0 align-middle">
                                     @if($order->sale_type === 'fabric')
                                         <thead>
                                             <tr>
@@ -288,40 +288,42 @@
                                         <tbody>
                                             @foreach($items as $item)
                                                 <tr>
-                                                    <td>
+                                                    <td class="align-middle">
                                                         <span
                                                             class="badge {{ $item->status == 'Scanned' ? 'badge-success' : ($item->status == 'Partial' ? 'badge-info' : 'badge-primary') }}">
                                                             {{ $item->scanned_box_qty }} / {{ $item->box_count }} Boxes
                                                         </span>
                                                     </td>
-                                                    <td>
-                                                        <strong>{{ $item->product_name }}</strong><br>
-                                                        <div class="d-flex flex-wrap mt-1" style="gap: 4px;">
-                                                            <span class="badge badge-light border text-muted" style="font-size: 11px; font-weight: 500;">Dsg: {{ $item->design_number }}</span>
-                                                            <span class="badge badge-light border text-muted" style="font-size: 11px; font-weight: 500;">Col: {{ $item->color_name }}</span>
-                                                            <span class="badge badge-light border text-muted" style="font-size: 11px; font-weight: 500;">Set: {{ $item->size_set_name }}</span>
-                                                            @if($item->barcode) <span class="badge badge-light border text-muted" style="font-size: 11px; font-weight: 500;"><i class="fas fa-barcode mr-1"></i>{{ $item->barcode }}</span> @endif
-                                                            @if(isset($item->fitting_name) && $item->fitting_name) <span class="badge badge-light border text-muted" style="font-size: 11px; font-weight: 500;">Fit: {{ $item->fitting_name }}</span> @endif
-                                                            @if(isset($item->pattern_name) && $item->pattern_name) <span class="badge badge-light border text-muted" style="font-size: 11px; font-weight: 500;">Pat: {{ $item->pattern_name }}</span> @endif
+                                                    <td class="align-middle">
+                                                        <strong class="text-dark">{{ $item->product_name }}</strong>
+                                                        <div class="text-muted mt-1" style="font-size: 12px; line-height: 1.4;">
+                                                            <span class="mr-2"><i class="fas fa-hashtag mr-1"></i>{{ $item->design_number }}</span>
+                                                            <span class="mr-2"><i class="fas fa-palette mr-1"></i>{{ $item->color_name }}</span>
+                                                            <span class="mr-2"><i class="fas fa-ruler-combined mr-1"></i>{{ $item->size_set_name }}</span>
+                                                            @if($item->barcode) <span class="mr-2"><i class="fas fa-barcode mr-1"></i>{{ $item->barcode }}</span> @endif
+                                                            @if(isset($item->fitting_name) && $item->fitting_name) <span class="mr-2"><strong>Fit:</strong> {{ $item->fitting_name }}</span> @endif
+                                                            @if(isset($item->pattern_name) && $item->pattern_name) <span class="mr-2"><strong>Pat:</strong> {{ $item->pattern_name }}</span> @endif
                                                         </div>
                                                     </td>
-                                                    <td class="text-center">
-                                                        <span class="badge badge-light border">WH: {{ $item->warehouse_name }}</span><br>
-                                                        <span class="badge badge-light border">Rack: {{ $item->rack_name }}</span>
+                                                    <td class="text-center align-middle text-nowrap">
+                                                        <div class="small text-left d-inline-block">
+                                                            <div class="text-muted mb-1"><i class="fas fa-warehouse mr-1"></i>{{ $item->warehouse_name }}</div>
+                                                            <div class="text-muted"><i class="fas fa-layer-group mr-1"></i>{{ $item->rack_name }}</div>
+                                                        </div>
                                                     </td>
-                                                    <td class="text-center font-weight-bold">{{ $item->total_qty }} pcs</td>
-                                                    <td class="text-right">₹{{ number_format($item->selling_price, 2) }}</td>
-                                                    <td class="text-right font-weight-bold text-primary">
+                                                    <td class="text-center font-weight-bold align-middle">{{ $item->total_qty }} pcs</td>
+                                                    <td class="text-right align-middle text-muted">₹{{ number_format($item->selling_price, 2) }}</td>
+                                                    <td class="text-right font-weight-bold text-primary align-middle">
                                                         ₹{{ number_format($item->total_qty * $item->selling_price, 2) }}</td>
-                                                    <td class="text-right">
+                                                    <td class="text-right align-middle">
                                                         @if($item->status == 'Dispatched')
-                                                            <span class="badge badge-success"><i
+                                                            <span class="badge badge-success px-2 py-1"><i
                                                                     class="fas fa-check mr-1"></i>{{ $item->status }}</span>
                                                         @elseif($item->status == 'Scanned')
-                                                            <span class="badge badge-info"><i
+                                                            <span class="badge badge-info px-2 py-1"><i
                                                                     class="fas fa-barcode mr-1"></i>{{ $item->status }}</span>
                                                         @else
-                                                            <span class="badge badge-secondary">{{ $item->status }}</span>
+                                                            <span class="badge badge-secondary px-2 py-1">{{ $item->status }}</span>
                                                         @endif
                                                     </td>
                                                 </tr>
