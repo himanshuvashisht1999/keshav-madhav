@@ -35,7 +35,7 @@ class WarehouseInventoryController extends Controller
         return view('admin.inventory.warehouse_stock.index', compact('storerooms', 'size_sets', 'products', 'colors', 'designs', 'fittings', 'patterns', 'series', 'brands', 'natures', 'fabric_types'));
     }
 
-    public function indexList(Request $request)
+    private function buildIndexQuery(Request $request)
     {
         $query = DomesticInventory::with(['product.series', 'sizeSet', 'color', 'rack.storeroom']);
 
@@ -119,6 +119,13 @@ class WarehouseInventoryController extends Controller
             DB::raw('MAX(quantity) as quantity') // Assuming pieces per box is the same, use MAX
         )->groupBy('product_id', 'size_set_id', 'rack_id');
 
+        return $query;
+    }
+
+    public function indexList(Request $request)
+    {
+        $query = $this->buildIndexQuery($request);
+
         // Calculate total sum across all groups (BEFORE pagination mutates $query)
         $totalsQuery = clone $query;
         $totalBoxes = DB::query()->fromSub($totalsQuery, 'sub')->sum('total_boxes');
@@ -171,6 +178,32 @@ class WarehouseInventoryController extends Controller
             })
             ->rawColumns(['action'])
             ->make(true);
+    }
+
+    public function export(Request $request)
+    {
+        $query = $this->buildIndexQuery($request);
+        // eager load to avoid N+1 in export
+        $query->with(['product.series', 'sizeSet', 'rack.storeroom']);
+        
+        $data = $query->get();
+
+        if ($request->type === 'pdf') {
+            $pdf = Pdf::loadView('admin.inventory.warehouse_stock.export_pdf', compact('data'))
+                      ->setPaper('A4', 'landscape');
+            return $pdf->download('warehouse-stock-' . now()->format('Y-m-d_H-i') . '.pdf');
+        }
+
+        return response()
+            ->view('admin.inventory.warehouse_stock.export_excel', [
+                'data' => $data,
+                'exportedAt' => now()
+            ])
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header(
+                'Content-Disposition',
+                'attachment; filename="warehouse-stock-' . now()->format('Y-m-d_H-i') . '.xls"'
+            );
     }
 
     public function show($product_id, $size_set_id, $rack_id)

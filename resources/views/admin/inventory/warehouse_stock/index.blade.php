@@ -39,6 +39,15 @@
 
                     <!-- Right: Action Button -->
                     <div>
+                        <div class="dropdown d-inline-block">
+                            <button class="btn btn-outline-success shadow-sm dropdown-toggle mr-2" type="button" id="exportDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-download mr-1"></i> Export
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="exportDropdown">
+                                <a class="dropdown-item" href="#" id="export_pdf"><i class="fas fa-file-pdf text-danger mr-2"></i> Download PDF</a>
+                                <a class="dropdown-item" href="#" id="export_excel"><i class="fas fa-file-excel text-success mr-2"></i> Download Excel</a>
+                            </div>
+                        </div>
                         <a href="{{ route('admin.inventory.warehouse_stock.history') }}" class="btn btn-outline-primary shadow-sm">
                             <i class="fas fa-history mr-1"></i> Transfer History
                         </a>
@@ -365,6 +374,35 @@
                         });
                     });
                 }
+            });
+
+            // Export logic
+            function getExportUrl(type) {
+                let url = '{{ route("admin.inventory.warehouse_stock.export") }}?type=' + type;
+                url += '&storeroom_id=' + ($('#storeroom_filter').val() || '');
+                url += '&rack_id=' + ($('#rack_filter').val() || '');
+                url += '&size_set_id=' + ($('#size_set_filter').val() || '');
+                url += '&design_filter=' + ($('#design_filter').val() || '');
+                url += '&product_id=' + ($('#product_filter').val() || '');
+                url += '&series_id=' + ($('#series_filter').val() || '');
+                url += '&brand_id=' + ($('#brand_filter').val() || '');
+                url += '&fitting_id=' + ($('#fitting_filter').val() || '');
+                url += '&pattern_id=' + ($('#pattern_filter').val() || '');
+                url += '&nature_id=' + ($('#nature_filter').val() || '');
+                url += '&fabric_type_id=' + ($('#fabric_type_filter').val() || '');
+                url += '&min_boxes=' + ($('#min_boxes_filter').val() || '');
+                url += '&max_boxes=' + ($('#max_boxes_filter').val() || '');
+                return url;
+            }
+
+            $('#export_pdf').on('click', function(e) {
+                e.preventDefault();
+                window.location.href = getExportUrl('pdf');
+            });
+
+            $('#export_excel').on('click', function(e) {
+                e.preventDefault();
+                window.location.href = getExportUrl('excel');
             });
         });
     </script>

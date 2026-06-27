@@ -779,6 +779,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/warehouse-stock', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'index'])->name('warehouse_stock');
             Route::get('/warehouse-stock/show/{product_id}/{size_set_id}/{rack_id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'show'])->name('warehouse_stock.show');
             Route::get('/warehouse-stock/list', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'indexList'])->name('warehouse_stock.list');
+            Route::get('/warehouse-stock/export', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'export'])->name('warehouse_stock.export');
             Route::get('/warehouse-stock/history', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'history'])->name('warehouse_stock.history');
             Route::get('/warehouse-stock/history/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'showHistory'])->name('warehouse_stock.history.show');
             Route::get('/warehouse-stock/history-list', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'indexHistoryList'])->name('warehouse_stock.history.list');

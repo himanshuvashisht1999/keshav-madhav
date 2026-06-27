@@ -75,14 +75,7 @@ class InventoryController extends Controller
             'patterns.name as pattern_name',
             'variants.mrp as mrp',
             DB::raw('SUM(domestic_inventories.total_boxes) as total_boxes'),
-            DB::raw('(
-                SELECT COALESCE(SUM(aoi.box_qty), 0)
-                FROM agent_order_items aoi
-                JOIN agent_orders ao ON aoi.agent_order_id = ao.id
-                WHERE ao.status != "dispatched"
-                  AND aoi.design_number COLLATE utf8mb4_unicode_ci = products.design_number COLLATE utf8mb4_unicode_ci
-                  AND aoi.size_set_id = domestic_inventories.size_set_id
-            ) as total_order')
+            DB::raw('COALESCE(MAX(order_totals.total_qty), 0) as total_order')
         )
             ->leftJoin('production_goods as products', 'domestic_inventories.product_id', '=', 'products.id')
             ->leftJoin('master_series as series', 'products.master_series_id', '=', 'series.id')
@@ -92,6 +85,18 @@ class InventoryController extends Controller
             ->leftJoin('production_goods_variants as variants', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
+            })
+            ->leftJoin(DB::raw('(
+                SELECT aoi.design_number COLLATE utf8mb4_unicode_ci as design_number, 
+                       aoi.size_set_id, 
+                       SUM(aoi.box_qty) as total_qty
+                FROM agent_order_items aoi
+                JOIN agent_orders ao ON aoi.agent_order_id = ao.id
+                WHERE ao.status != "dispatched"
+                GROUP BY aoi.design_number, aoi.size_set_id
+            ) as order_totals'), function ($join) {
+                $join->on('products.design_number', '=', 'order_totals.design_number')
+                     ->on('domestic_inventories.size_set_id', '=', 'order_totals.size_set_id');
             });
 
         if ($request->has('min_total_boxes') && $request->min_total_boxes !== null) {
