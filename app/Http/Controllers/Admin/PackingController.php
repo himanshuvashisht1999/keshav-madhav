@@ -72,8 +72,18 @@ class PackingController extends Controller
         $unit_available = [];
 
         if (!$order) {
+            $validOrderIds = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
+                ->where('order_stage_transactions.to_stage_id', 11) // Packing
+                ->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
+                ->where('order_stage_transactions.remaining_quantity', '>', 0)
+                ->pluck('order_lots.order_main_id')
+                ->unique()
+                ->toArray();
+
             // Fetch ALL active orders for dropdown (Corporate & Domestic)
             $active_orders = \App\Models\OrderMain::with('customer')
+                ->whereIn('id', $validOrderIds)
                 ->whereIn('status', [0, 1, 2]) // Pending, Confirmed, Partial
                 ->orderBy('id', 'desc')->get();
         } else {
@@ -194,7 +204,17 @@ class PackingController extends Controller
             return redirect()->route('admin.packing.process', $slip_id);
         }
 
+        $validOrderIds = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+            ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
+            ->where('order_stage_transactions.to_stage_id', 11) // Packing
+            ->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
+            ->where('order_stage_transactions.remaining_quantity', '>', 0)
+            ->pluck('order_lots.order_main_id')
+            ->unique()
+            ->toArray();
+
         $active_orders = \App\Models\OrderMain::with('customer')
+            ->whereIn('id', $validOrderIds)
             ->where('order_type', 'domestic')
             ->orderBy('id', 'desc')
             ->get();

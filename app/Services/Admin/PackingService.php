@@ -174,14 +174,14 @@ class PackingService
                 'boxes' => function ($q) {
                     $q->whereNull('packing_carton_id')
                       ->with([
-                          'domesticInventory.product', 'domesticInventory.color', 'domesticInventory.sizeSet', 'domesticInventory.pattern', 'domesticInventory.fitting',
+                          'domesticInventory.product.pattern', 'domesticInventory.product.fitting', 'domesticInventory.color', 'domesticInventory.sizeSet', 
                           'items.detail.orderProductSet.product', 'items.detail.orderProductSet.colors', 'items.detail.orderProductSet.size_measurement', 
                           'items.detail.orderProductSet.master_design_pattern', 'items.detail.orderProductSet.master_product_fitting'
                       ]);
                 },
                 'cartons.boxes' => function($q) {
                     $q->with([
-                        'domesticInventory.product', 'domesticInventory.color', 'domesticInventory.sizeSet', 'domesticInventory.pattern', 'domesticInventory.fitting',
+                        'domesticInventory.product.pattern', 'domesticInventory.product.fitting', 'domesticInventory.color', 'domesticInventory.sizeSet', 
                         'items.detail.orderProductSet.product', 'items.detail.orderProductSet.colors', 'items.detail.orderProductSet.size_measurement',
                         'items.detail.orderProductSet.master_design_pattern', 'items.detail.orderProductSet.master_product_fitting'
                     ]);

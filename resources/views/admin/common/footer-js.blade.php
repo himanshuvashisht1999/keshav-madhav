@@ -114,13 +114,33 @@
           return;
         }
 
+        // HTML5 validation check
+        if (this.checkValidity && !this.checkValidity()) {
+            return;
+        }
+
         if ($form.data('submitted') === true) {
           e.preventDefault();
           return false;
         }
 
         $form.data('submitted', true);
-        $form.find('button[type="submit"], input[type="submit"]').prop('disabled', true);
+        
+        // Defer disabling the button so we can check if another script prevented submission
+        setTimeout(function() {
+            if (e.isDefaultPrevented()) {
+                $form.data('submitted', false);
+            } else {
+                var $buttons = $form.find('button[type="submit"], input[type="submit"]');
+                $buttons.prop('disabled', true);
+                
+                // Auto-enable after 5 seconds as a fallback
+                setTimeout(function() {
+                    $form.data('submitted', false);
+                    $buttons.prop('disabled', false);
+                }, 5000);
+            }
+        }, 10);
       });
 
       // Global fix to auto-focus Select2 search field when opened
