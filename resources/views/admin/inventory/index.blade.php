@@ -9,6 +9,16 @@
                         <h1 class="m-0 font-weight-bold text-dark">Domestic Inventory</h1>
                         <small class="text-muted">Manage and track packed domestic orders in inventory</small>
                     </div>
+                    <div class="col-sm-6 text-right">
+                        <div class="d-inline-block bg-white shadow-sm border rounded px-3 py-2 mr-2 text-left">
+                            <span class="text-muted small font-weight-bold text-uppercase">Total Boxes</span>
+                            <h5 class="mb-0 font-weight-bold text-success" id="grand_total_boxes">-</h5>
+                        </div>
+                        <div class="d-inline-block bg-white shadow-sm border rounded px-3 py-2 text-left">
+                            <span class="text-muted small font-weight-bold text-uppercase">Total Orders</span>
+                            <h5 class="mb-0 font-weight-bold text-primary" id="grand_total_orders">-</h5>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -160,7 +170,6 @@
                                         <th class="py-3">Product Name</th>
                                         <th class="py-3">Design No.</th>
                                         <th class="py-3">Size Set</th>
-                                        <th class="py-3">Color</th>
                                         <th class="py-3">Fitting</th>
                                         <th class="py-3">Pattern</th>
                                         <th class="py-3">MRP</th>
@@ -487,12 +496,17 @@
                         loading = false;
                         $('#loading-spinner').hide();
 
+                        if (res.grand_totals) {
+                            $('#grand_total_boxes').text(res.grand_totals.boxes);
+                            $('#grand_total_orders').text(res.grand_totals.orders);
+                        }
+
                         if (!nextPage) {
                             $('#no-more-data').show();
                         }
                         
                         if (container.is(':empty')) {
-                            container.append('<tr><td colspan="11" class="text-center py-5 text-muted">No inventory records found.</td></tr>');
+                            container.append('<tr><td colspan="10" class="text-center py-5 text-muted">No inventory records found.</td></tr>');
                             $('#no-more-data').hide();
                         }
                     },

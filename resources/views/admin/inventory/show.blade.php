@@ -43,10 +43,7 @@
                                         <th class="pl-4 py-3 text-muted small text-uppercase">Size Set</th>
                                         <td class="py-3"><span class="badge badge-light border">{{ $group_info->size_set_name }}</span></td>
                                     </tr>
-                                    <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Color</th>
-                                        <td class="py-3"><span class="badge badge-info shadow-sm">{{ $group_info->color_name ?? 'N/A' }}</span></td>
-                                    </tr>
+
                                     <tr>
                                         <th class="pl-4 py-3 text-muted small text-uppercase">Fitting</th>
                                         <td class="py-3 font-weight-bold">{{ $group_info->fitting_name ?? 'N/A' }}</td>
@@ -61,34 +58,15 @@
                                     </tr>
                                     <tr>
                                         <th class="pl-4 py-3 text-muted small text-uppercase">Total Boxes</th>
-                                        <td class="py-3 font-weight-bold">{{ $items->unique('box_no')->count() }}</td>
+                                        <td class="py-3 font-weight-bold">{{ $items->sum('total_boxes') }}</td>
                                     </tr>
                                     <tr>
                                         <th class="pl-4 py-3 text-muted small text-uppercase">Total Quantity</th>
-                                        <td class="py-3 font-weight-bold text-primary" style="font-size: 1.2rem;">{{ $items->sum('quantity') }} <small>Pcs</small></td>
+                                        <td class="py-3 font-weight-bold text-primary" style="font-size: 1.2rem;">
+                                            {{ $items->sum(function($item) { return $item->quantity * $item->total_boxes; }) }} <small>Pcs</small>
+                                        </td>
                                     </tr>
-                                    @if($group_info->barcode)
-                                        <tr>
-                                            <th class="pl-4 py-3 text-muted small text-uppercase align-middle">Group Barcode</th>
-                                            <td class="py-3">
-                                                <div class="d-flex align-items-center">
-                                                    <div class="text-center mr-3">
-                                                        <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($group_info->barcode, 'C128', 1.2, 45) }}" alt="barcode" style="max-width: 150px;" />
-                                                        <div class="small font-weight-bold mt-1">{{ $group_info->barcode }}</div>
-                                                    </div>
-                                                    <form action="{{ route('admin.inventory.barcode-generator.generate-bulk-tspl') }}" method="POST" target="_blank">
-                                                        @csrf
-                                                        @foreach($items as $item)
-                                                            <input type="hidden" name="ids[]" value="{{ $item->id }}">
-                                                        @endforeach
-                                                        <button type="submit" class="btn btn-primary btn-sm rounded-circle shadow-sm" title="Print All Barcodes for this Group">
-                                                            <i class="fas fa-print"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endif
+
                                 </table>
                             </div>
                         </div>
@@ -97,16 +75,25 @@
                     <!-- RIGHT COLUMN: TABLE -->
                     <div class="col-md-8">
                         <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
-                            <div class="card-header bg-success py-3">
+                            <div class="card-header bg-success py-3 d-flex justify-content-between align-items-center">
                                 <h3 class="card-title font-weight-bold mb-0">Content Details</h3>
+                                <select id="colorFilter" class="form-control form-control-sm w-auto">
+                                    <option value="">All Colors</option>
+                                    @php
+                                        $unique_colors = $items->pluck('color_name')->unique()->filter();
+                                    @endphp
+                                    @foreach($unique_colors as $color)
+                                        <option value="{{ $color }}">{{ $color }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div class="card-body p-0">
                                 <table class="table table-striped table-hover mb-0">
                                     <thead class="bg-light contrast-text">
                                         <tr>
                                             <th class="pl-4 py-3">Rack</th>
-                                            <th class="py-3">Date</th>
-                                            <th class="py-3">Order No</th>
+                                            <th class="py-3">Barcode</th>
+                                            <th class="py-3">Color</th>
                                             <th class="py-3">Pcs/Box</th>
                                             <th class="text-center py-3">Total Boxes</th>
                                             <th class="text-center py-3">Total Qty</th>
@@ -114,7 +101,7 @@
                                     </thead>
                                     <tbody>
                                         @foreach($items as $item)
-                                            <tr>
+                                            <tr class="item-row" data-color="{{ $item->color_name ?? 'N/A' }}">
                                                 <td class="pl-4 py-3">
                                                     @if($item->rack)
                                                         <span class="badge badge-info">{{ $item->rack->name }}</span>
@@ -122,10 +109,8 @@
                                                         <span class="text-muted">Unassigned</span>
                                                     @endif
                                                 </td>
-                                                <td class="py-3">
-                                                    {{ $item->created_at->format('d M Y') }}
-                                                </td>
-                                                <td class="py-3 font-weight-bold text-primary">{{ $item->orderMain->sku ?? 'N/A' }}</td>
+                                                <td class="py-3 font-weight-bold text-dark">{{ $item->barcode }}</td>
+                                                <td class="py-3 font-weight-bold">{{ $item->color_name ?? 'N/A' }}</td>
                                                 <td class="py-3 text-center">{{ $item->quantity }}</td>
                                                 <td class="text-center py-3 font-weight-bold text-success">{{ $item->total_boxes }}</td>
                                                 <td class="text-center py-3 font-weight-bold text-success" style="font-size: 1.1rem;">{{ $item->quantity * $item->total_boxes }}</td>
@@ -153,4 +138,21 @@
             border: none;
         }
     </style>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#colorFilter').on('change', function() {
+                var selectedColor = $(this).val();
+                if (selectedColor) {
+                    $('.item-row').hide();
+                    $('.item-row').filter(function() {
+                        return $(this).data('color') == selectedColor;
+                    }).show();
+                } else {
+                    $('.item-row').show();
+                }
+            });
+        });
+    </script>
 @endsection

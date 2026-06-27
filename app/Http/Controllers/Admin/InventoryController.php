@@ -66,12 +66,10 @@ class InventoryController extends Controller
         // Group by Product Name, Design Number, Size Set, MRP, Selling Price
         $query = DomesticInventory::select(
             'domestic_inventories.size_set_id',
-            'domestic_inventories.color_id',
             'domestic_inventories.product_id',
             'products.design_number',
             'products.name_of_garment as product_name',
             'series.name as series_name',
-            'colors.name as color_name',
             'sizes.name as size_set_name',
             'fittings.name as fitting_name',
             'patterns.name as pattern_name',
@@ -83,13 +81,11 @@ class InventoryController extends Controller
                 JOIN agent_orders ao ON aoi.agent_order_id = ao.id
                 WHERE ao.status != "dispatched"
                   AND aoi.design_number COLLATE utf8mb4_unicode_ci = products.design_number COLLATE utf8mb4_unicode_ci
-                  AND aoi.color_id = domestic_inventories.color_id
                   AND aoi.size_set_id = domestic_inventories.size_set_id
             ) as total_order')
         )
             ->leftJoin('production_goods as products', 'domestic_inventories.product_id', '=', 'products.id')
             ->leftJoin('master_series as series', 'products.master_series_id', '=', 'series.id')
-            ->leftJoin('master_colors as colors', 'domestic_inventories.color_id', '=', 'colors.id')
             ->leftJoin('master_size_measurements as sizes', 'domestic_inventories.size_set_id', '=', 'sizes.id')
             ->leftJoin('master_product_fittings as fittings', 'products.master_product_fitting_id', '=', 'fittings.id')
             ->leftJoin('master_design_patterns as patterns', 'products.master_pattern_id', '=', 'patterns.id')
@@ -171,12 +167,10 @@ class InventoryController extends Controller
 
         $query->groupBy(
             'domestic_inventories.size_set_id',
-            'domestic_inventories.color_id',
             'domestic_inventories.product_id',
             'products.design_number',
             'products.name_of_garment',
             'series.name',
-            'colors.name',
             'sizes.name',
             'fittings.name',
             'patterns.name',
@@ -186,6 +180,20 @@ class InventoryController extends Controller
         if ($request->has('load_more')) {
             $perPage = 20;
             $results = $query->paginate($perPage);
+
+            $grand_totals = null;
+            if ($results->currentPage() == 1) {
+                $sql = $query->toSql();
+                $totals = DB::table(DB::raw("($sql) as sub"))
+                    ->mergeBindings($query->getQuery())
+                    ->selectRaw('SUM(total_boxes) as sum_total_boxes, SUM(total_order) as sum_total_order')
+                    ->first();
+                    
+                $grand_totals = [
+                    'boxes' => (int)($totals->sum_total_boxes ?? 0),
+                    'orders' => (int)($totals->sum_total_order ?? 0)
+                ];
+            }
 
             $html = '';
             $start = ($results->currentPage() - 1) * $perPage + 1;
@@ -198,7 +206,8 @@ class InventoryController extends Controller
 
             return response()->json([
                 'html' => $html,
-                'next_page' => $results->nextPageUrl() ? $results->currentPage() + 1 : null
+                'next_page' => $results->nextPageUrl() ? $results->currentPage() + 1 : null,
+                'grand_totals' => $grand_totals
             ]);
         }
 

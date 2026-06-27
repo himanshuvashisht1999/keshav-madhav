@@ -3,7 +3,6 @@
     <td>{{ trim($row->product_name) ?: $row->design_number }}</td>
     <td>{{ $row->design_number }}</td>
     <td>{{ $row->size_set_name }}</td>
-    <td>{{ $row->color_name }}</td>
     <td>{{ $row->fitting_name }}</td>
     <td>{{ $row->pattern_name }}</td>
     <td>₹{{ number_format($row->mrp ?? 0, 2) }}</td>
@@ -18,7 +17,6 @@
             $params = [
                 'product_id' => $row->product_id,
                 'size_set_id' => $row->size_set_id,
-                'color_id' => $row->color_id,
                 'fitting_id' => $row->fitting_id,
                 'pattern_id' => $row->pattern_id,
             ];
