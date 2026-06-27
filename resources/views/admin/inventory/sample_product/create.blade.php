@@ -340,18 +340,29 @@
                                 });
                             }
 
-                            let stockHtml = '';
-                            if (product.color_stock && product.color_stock.length > 0) {
-                                stockHtml = '<div class="mt-2 border-top pt-1"><p class="x-small font-weight-bold text-muted mb-1 text-uppercase">Stock (Boxes):</p><div class="d-flex flex-wrap">';
-                                product.color_stock.forEach(stock => {
-                                    stockHtml += `<span class="badge badge-light border mr-1 mb-1" style="font-size: 10px; color: #1b4332;">${stock.color.name}: <b>${stock.total_boxes}</b></span>`;
+                            // Build initial stock (all colors or filtered by active size_set_id)
+                            let activeFilterSizeId = $('#size_set_id').val();
+                            let allSizesStock = product.all_sizes_color_stock || {};
+
+                            function buildStockHtml(colorStockArr) {
+                                if (!colorStockArr || colorStockArr.length === 0) return '';
+                                let s = '<div class="mt-2 border-top pt-1 stock-section"><p class="x-small font-weight-bold text-muted mb-1 text-uppercase">Stock (Boxes):</p><div class="d-flex flex-wrap">';
+                                colorStockArr.forEach(stock => {
+                                    let colorName = stock.color ? stock.color.name : (stock.color_name || 'N/A');
+                                    s += `<span class="badge badge-light border mr-1 mb-1" style="font-size: 10px; color: #1b4332;">${colorName}: <b>${stock.total_boxes}</b></span>`;
                                 });
-                                stockHtml += '</div></div>';
+                                s += '</div></div>';
+                                return s;
                             }
+
+                            let initialStockData = product.color_stock;
+                            let stockHtml = buildStockHtml(initialStockData);
+
+                            let allSizesStockJson = JSON.stringify(allSizesStock).replace(/'/g, "&#39;").replace(/"/g, '&quot;');
 
                             html += `
                             <div class="col-md-6 mb-3">
-                                <div class="product-card p-2 border-0 shadow-sm h-100">
+                                <div class="product-card p-2 border-0 shadow-sm h-100" data-product-id="${product.id}" data-all-stock='${JSON.stringify(allSizesStock)}'>
                                     <div class="d-flex">
                                         <img src="${imageUrl}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
                                         <div class="ml-2 flex-grow-1" style="min-width: 0;">
@@ -360,7 +371,7 @@
                                             <div class="d-flex flex-wrap">
                                                 ${sizeHtml}
                                             </div>
-                                            ${stockHtml}
+                                            <div class="stock-display">${stockHtml}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -391,6 +402,66 @@
                 } else {
                     delete selectedItems[key];
                 }
+
+                // Aggregate stock for all selected sizes on this product card
+                let card = chip.closest('.product-card');
+                let allStock = card.data('all-stock') || {};
+                let stockDisplay = card.find('.stock-display');
+
+                // Collect all selected size IDs for this product
+                let selectedSizeIds = [];
+                let selectedSizeNames = [];
+                card.find('.size-set-chip input:checked').each(function() {
+                    let parentChip = $(this).closest('.size-set-chip');
+                    selectedSizeIds.push(String(parentChip.data('size-id')));
+                    selectedSizeNames.push(parentChip.text().trim());
+                });
+
+                if (selectedSizeIds.length === 0) {
+                    // Nothing selected — show all combined stock
+                    let allCombined = {};
+                    Object.values(allStock).forEach(function(sizeStockArr) {
+                        (sizeStockArr || []).forEach(function(stock) {
+                            let cn = stock.color_name || 'N/A';
+                            allCombined[cn] = (allCombined[cn] || 0) + parseInt(stock.total_boxes);
+                        });
+                    });
+                    let entries = Object.entries(allCombined);
+                    if (entries.length > 0) {
+                        let s = '<div class="mt-2 border-top pt-1"><p class="x-small font-weight-bold text-muted mb-1 text-uppercase">Stock (Boxes):</p><div class="d-flex flex-wrap">';
+                        entries.forEach(function([cn, boxes]) {
+                            s += `<span class="badge badge-light border mr-1 mb-1" style="font-size: 10px; color: #1b4332;">${cn}: <b>${boxes}</b></span>`;
+                        });
+                        s += '</div></div>';
+                        stockDisplay.html(s);
+                    } else {
+                        stockDisplay.html('');
+                    }
+                } else {
+                    // Merge color totals across all selected sizes
+                    let merged = {};
+                    selectedSizeIds.forEach(function(sid) {
+                        let sizeStockArr = allStock[sid] || [];
+                        sizeStockArr.forEach(function(stock) {
+                            let cn = stock.color_name || 'N/A';
+                            merged[cn] = (merged[cn] || 0) + parseInt(stock.total_boxes);
+                        });
+                    });
+
+                    let label = selectedSizeNames.join(' + ');
+                    let entries = Object.entries(merged);
+                    if (entries.length > 0) {
+                        let s = '<div class="mt-2 border-top pt-1"><p class="x-small font-weight-bold text-muted mb-1 text-uppercase">Stock (Boxes) - ' + label + ':</p><div class="d-flex flex-wrap">';
+                        entries.forEach(function([cn, boxes]) {
+                            s += `<span class="badge badge-light border mr-1 mb-1" style="font-size: 10px; color: #1b4332;">${cn}: <b>${boxes}</b></span>`;
+                        });
+                        s += '</div></div>';
+                        stockDisplay.html(s);
+                    } else {
+                        stockDisplay.html('<div class="mt-2 border-top pt-1"><p class="x-small text-muted mb-0">No stock for selected sizes</p></div>');
+                    }
+                }
+
                 renderSelectedList();
             });
 

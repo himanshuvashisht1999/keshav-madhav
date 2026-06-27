@@ -177,6 +177,21 @@ class SampleProductController extends Controller
                 ->unique('id')
                 ->values();
             
+            $allSizesColorStock = [];
+            foreach ($product->available_sizes as $sz) {
+                $szStock = DomesticInventory::where('product_id', $product->id)
+                    ->where('size_set_id', $sz['id'])
+                    ->where('quantity', '>', 0)
+                    ->select('color_id', DB::raw('SUM(total_boxes) as total_boxes'))
+                    ->with('color')
+                    ->groupBy('color_id')
+                    ->get()
+                    ->map(fn($s) => ['color_name' => $s->color->name ?? 'N/A', 'total_boxes' => $s->total_boxes])
+                    ->values();
+                $allSizesColorStock[(string) $sz['id']] = $szStock;
+            }
+            $product->setAttribute('all_sizes_color_stock', $allSizesColorStock);
+
             $totalBoxes = $product->color_stock->sum('total_boxes');
             return $product->available_sizes->count() > 0 && $totalBoxes > 0;
         })->values();
