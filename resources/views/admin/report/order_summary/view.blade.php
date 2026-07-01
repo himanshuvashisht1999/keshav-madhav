@@ -279,7 +279,17 @@
                                             </tr>
                                         @endforelse
                                     </tbody>
-
+                                    @if(count($lotsData) > 0)
+                                    <tfoot>
+                                        <tr class="bg-light font-weight-bold">
+                                            <td colspan="4" class="text-right font-weight-bold">Total:</td>
+                                            <td class="text-end fw-bold">
+                                                {{ collect($lotsData)->sum('lot_quantity') }}
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                    @endif
                                 </table>
                             </div>
 

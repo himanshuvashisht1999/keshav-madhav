@@ -58,7 +58,11 @@
                                     </tr>
                                     <tr>
                                         <th class="pl-4 py-3 text-muted small text-uppercase">Total Boxes</th>
-                                        <td class="py-3 font-weight-bold">{{ $items->sum('total_boxes') }}</td>
+                                        <td class="py-3 font-weight-bold text-success">{{ $items->sum('total_boxes') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="pl-4 py-3 text-muted small text-uppercase">Total Order</th>
+                                        <td class="py-3 font-weight-bold text-danger">{{ $total_order }} Boxes</td>
                                     </tr>
                                     <tr>
                                         <th class="pl-4 py-3 text-muted small text-uppercase">Total Quantity</th>

@@ -494,7 +494,7 @@ class AgentOrderController extends Controller
                 'other_charges' => $other_charges,
                 'grand_total' => $grand_total,
                 'expected_dispatch_date' => $request->expected_dispatch_date,
-                'status' => $status,
+                'status' => $request->status ?? $status,
                 'order_type' => $order_type,
                 'sale_type' => $sale_type,
                 'is_sample_set' => $request->input('is_sample_set', 0),
@@ -696,7 +696,24 @@ class AgentOrderController extends Controller
             $query->where('agent_orders.master_vendor_id', $request->vendor_id);
         }
         if ($request->filled('status')) {
-            $query->where('agent_orders.status', $request->status);
+            if ($request->status === 'delayed') {
+                $query->where(function ($q) {
+                    $q->where('agent_orders.status', 'delayed')
+                      ->orWhere(function ($q2) {
+                          $q2->where('agent_orders.status', 'pending')
+                             ->whereNotNull('agent_orders.expected_dispatch_date')
+                             ->where('agent_orders.expected_dispatch_date', '<', date('Y-m-d'));
+                      });
+                });
+            } elseif ($request->status === 'pending') {
+                $query->where('agent_orders.status', 'pending')
+                      ->where(function ($q) {
+                          $q->whereNull('agent_orders.expected_dispatch_date')
+                            ->orWhere('agent_orders.expected_dispatch_date', '>=', date('Y-m-d'));
+                      });
+            } else {
+                $query->where('agent_orders.status', $request->status);
+            }
         }
         if ($request->filled('sale_type')) {
             $query->where('agent_orders.sale_type', $request->sale_type);
@@ -760,8 +777,11 @@ class AgentOrderController extends Controller
                 'agent_orders.created_at',
                 'agent_orders.status',
                 'agent_orders.sale_type',
+                'agent_orders.order_type',
                 'agent_orders.grand_total',
                 'agent_orders.total_qty',
+                'agent_orders.order_date',
+                'agent_orders.expected_dispatch_date',
                 DB::raw('COALESCE(sales_agents.name, "Direct (No Agent)") as agent_name'),
                 DB::raw('COALESCE(master_customers.name, vendors.name)    as shop_name')
             );
@@ -784,7 +804,26 @@ class AgentOrderController extends Controller
                 else                  $query->where('agent_orders.master_customer_id', $pId);
             }
         }
-        if ($request->filled('status'))    $query->where('agent_orders.status',    $request->status);
+        if ($request->filled('status')) {
+            if ($request->status === 'delayed') {
+                $query->where(function ($q) {
+                    $q->where('agent_orders.status', 'delayed')
+                      ->orWhere(function ($q2) {
+                          $q2->where('agent_orders.status', 'pending')
+                             ->whereNotNull('agent_orders.expected_dispatch_date')
+                             ->where('agent_orders.expected_dispatch_date', '<', date('Y-m-d'));
+                      });
+                });
+            } elseif ($request->status === 'pending') {
+                $query->where('agent_orders.status', 'pending')
+                      ->where(function ($q) {
+                          $q->whereNull('agent_orders.expected_dispatch_date')
+                            ->orWhere('agent_orders.expected_dispatch_date', '>=', date('Y-m-d'));
+                      });
+            } else {
+                $query->where('agent_orders.status', $request->status);
+            }
+        }
         if ($request->filled('sale_type')) $query->where('agent_orders.sale_type', $request->sale_type);
         if ($request->filled('payment_status')) {
             if ($request->payment_status == 'paid') {
@@ -831,8 +870,8 @@ class AgentOrderController extends Controller
         $sheet->setTitle('Agent Orders');
 
         // ── Header row ──
-        $headers = ['#', 'Order ID', 'Date', 'Agent', 'Shop / Party', 'Type', 'Sale Type', 'Total Pcs', 'Grand Total (₹)', 'Status'];
-        $cols    = range('A', 'J');
+        $headers = ['#', 'Order ID', 'Order Date', 'Agent', 'Shop / Party', 'Order Type', 'Sale Type', 'Total Pcs', 'Grand Total (₹)', 'Status', 'Delivery Date'];
+        $cols    = range('A', 'K');
         foreach ($headers as $i => $h) {
             $cell = $cols[$i] . '1';
             $sheet->setCellValue($cell, $h);
@@ -848,18 +887,19 @@ class AgentOrderController extends Controller
         foreach ($rows as $i => $o) {
             $sheet->setCellValue('A' . $row, $i + 1);
             $sheet->setCellValue('B' . $row, '#ORD-' . str_pad($o->id, 5, '0', STR_PAD_LEFT));
-            $sheet->setCellValue('C' . $row, \Carbon\Carbon::parse($o->created_at)->format('d M Y'));
+            $sheet->setCellValue('C' . $row, \Carbon\Carbon::parse($o->order_date)->format('d M Y'));
             $sheet->setCellValue('D' . $row, $o->agent_name);
             $sheet->setCellValue('E' . $row, $o->shop_name);
-            $sheet->setCellValue('F' . $row, ucfirst($o->sale_type ?? 'item'));
-            $sheet->setCellValue('G' . $row, strtoupper($o->status ?? ''));
+            $sheet->setCellValue('F' . $row, strtoupper($o->order_type ?? 'normal'));
+            $sheet->setCellValue('G' . $row, ucfirst($o->sale_type ?? 'item'));
             $sheet->setCellValue('H' . $row, $o->total_qty);
             $sheet->setCellValue('I' . $row, $o->grand_total);
-            $sheet->setCellValue('J' . $row, ucfirst($o->status ?? ''));
+            $sheet->setCellValue('J' . $row, strtoupper($o->status ?? ''));
+            $sheet->setCellValue('K' . $row, $o->expected_dispatch_date ? \Carbon\Carbon::parse($o->expected_dispatch_date)->format('d M Y') : '-');
 
             // Zebra striping
             if ($row % 2 === 0) {
-                $sheet->getStyle("A{$row}:J{$row}")->getFill()->setFillType(Fill::FILL_SOLID)
+                $sheet->getStyle("A{$row}:K{$row}")->getFill()->setFillType(Fill::FILL_SOLID)
                       ->getStartColor()->setRGB('f8fafc');
             }
             $row++;
@@ -869,15 +909,15 @@ class AgentOrderController extends Controller
         $sheet->setCellValue('A' . $row, 'TOTAL');
         $sheet->setCellValue('H' . $row, $rows->sum('total_qty'));
         $sheet->setCellValue('I' . $row, $rows->sum('grand_total'));
-        $sheet->getStyle("A{$row}:J{$row}")->getFont()->setBold(true);
-        $sheet->getStyle("A{$row}:J{$row}")->getFill()->setFillType(Fill::FILL_SOLID)
+        $sheet->getStyle("A{$row}:K{$row}")->getFont()->setBold(true);
+        $sheet->getStyle("A{$row}:K{$row}")->getFill()->setFillType(Fill::FILL_SOLID)
               ->getStartColor()->setRGB('fef9c3');
 
         // ── Column widths & borders ──
         foreach ($cols as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
-        $sheet->getStyle("A1:J{$row}")->getBorders()->getAllBorders()
+        $sheet->getStyle("A1:K{$row}")->getBorders()->getAllBorders()
               ->setBorderStyle(Border::BORDER_THIN);
 
         $filename = 'Agent_Orders_' . now()->format('d-m-Y_H-i') . '.xlsx';
@@ -1026,8 +1066,8 @@ class AgentOrderController extends Controller
     {
         $order = AgentOrder::where('id', $id)->firstOrFail();
 
-        if ($order->status != 'pending') {
-            return redirect()->back()->with('error', 'Only pending orders can be edited.');
+        if ($order->status != 'pending' && $order->status != 'delayed') {
+            return redirect()->back()->with('error', 'Only pending or delayed orders can be edited.');
         }
 
         $shop = $order->party_type === 'vendor' ? $order->vendor : $order->shop;
@@ -1286,8 +1326,8 @@ class AgentOrderController extends Controller
     {
         $order = AgentOrder::where('id', $id)->firstOrFail();
 
-        if ($order->status != 'pending') {
-            return response()->json(['success' => false, 'message' => 'Only pending orders can be edited.'], 403);
+        if ($order->status != 'pending' && $order->status != 'delayed') {
+            return response()->json(['success' => false, 'message' => 'Only pending or delayed orders can be edited.'], 403);
         }
 
         $sale_type = $request->sale_type ?: $order->sale_type;
@@ -1439,6 +1479,7 @@ class AgentOrderController extends Controller
                 'other_charges' => $other_charges,
                 'grand_total' => $grand_total,
                 'expected_dispatch_date' => $expected_dispatch_date,
+                'status' => $request->status ?? $order->status,
                 'is_sample_set' => $request->input('is_sample_set', 0),
                 'booking_station' => $request->booking_station,
                 'transport' => $request->transport,

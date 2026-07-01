@@ -130,8 +130,11 @@
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between p-2">
                                         <span class="text-muted">Status:</span>
+                                        @php
+                                            $isDelayed = ($order->status == 'delayed') || ($order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d'));
+                                        @endphp
                                         <span
-                                            class="badge {{ $order->status == 'pending' ? 'badge-warning' : 'badge-success' }}">{{ strtoupper($order->status) }}</span>
+                                            class="badge {{ $isDelayed ? 'badge-danger' : ($order->status == 'pending' ? 'badge-warning' : 'badge-success') }}">{{ $isDelayed ? 'DELAYED' : strtoupper($order->status) }}</span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between p-2">
                                         <span class="text-muted">Payment:</span>
@@ -151,10 +154,9 @@
                                     <li class="list-group-item d-flex justify-content-between p-2">
                                         <span class="text-muted">Exp. Dispatch:</span>
                                         <span
-                                            class="font-weight-bold {{ $order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d') ? 'text-danger' : '' }}">
+                                            class="font-weight-bold {{ in_array($order->status, ['pending', 'delayed']) && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d') ? 'text-danger' : '' }}">
                                             {{ $order->expected_dispatch_date ? \Carbon\Carbon::parse($order->expected_dispatch_date)->format('d-m-Y') : 'N/A' }}
                                         </span>
-                                    </li>
                                     <li class="list-group-item d-flex justify-content-between p-2">
                                         <span class="text-muted">Subtotal:</span>
                                         <span class="font-weight-bold">₹{{ number_format($order->total_amount, 2) }}</span>
@@ -204,7 +206,7 @@
                                     </div>
                                 </div>
 
-                                @if($order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d'))
+                                 @if(in_array($order->status, ['pending', 'delayed']) && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d'))
                                     <div class="alert alert-danger animate__animated animate__shakeX mt-3 mb-0 shadow-sm border-left border-danger"
                                         style="border-left-width: 5px !important;">
                                         <div class="d-flex align-items-center">
@@ -219,7 +221,7 @@
                                     </div>
                                 @endif
 
-                                @if(in_array($order->status, ['pending', 'partially_dispatched']))
+                                @if(in_array($order->status, ['pending', 'delayed', 'partially_dispatched']))
                                     <hr>
                                     <div class="alert alert-info small mb-3">
                                         <i class="fas fa-barcode mr-1"></i>

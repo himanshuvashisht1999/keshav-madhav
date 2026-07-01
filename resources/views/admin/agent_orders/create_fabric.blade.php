@@ -198,7 +198,17 @@
                                 <div class="form-group mb-3">
                                     <label class="small font-weight-bold text-muted uppercase">Expected Dispatch</label>
                                     <input type="date" id="expectedDispatchDate" class="form-control"
-                                        value="{{ date('Y-m-d', strtotime('+3 days')) }}" min="{{ date('Y-m-d') }}">
+                                        value="{{ date('Y-m-d', strtotime('+3 days')) }}">
+                                </div>
+
+
+                                <div class="form-group mb-3">
+                                    <label class="small font-weight-bold text-muted uppercase">Status</label>
+                                    <select id="orderStatus" class="form-control">
+                                        <option value="pending" selected>PENDING</option>
+                                        <option value="delayed">DELAYED</option>
+                                        <option value="dispatched">DISPATCHED</option>
+                                    </select>
                                 </div>
 
                                 <div class="row">
@@ -707,6 +717,7 @@
                                 gst_amount: $('#gstAmountInput').val(),
                                 other_charges: $('#other_charges').val(),
                                 expected_dispatch_date: $('#expectedDispatchDate').val(),
+                                status: $('#orderStatus').val() || null,
                                 booking_station: $('#booking_station').val(),
                                 transport: $('#transport').val(),
                                 remark: $('#orderRemark').val()

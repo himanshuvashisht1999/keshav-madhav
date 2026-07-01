@@ -261,7 +261,17 @@ class InventoryController extends Controller
             return redirect()->route('admin.inventory.index')->with('error', 'Inventory group info not found.');
         }
 
-        return view('admin.inventory.show', compact('items', 'group_info'));
+        $total_order = 0;
+        if ($group_info->design_number) {
+            $total_order = DB::table('agent_order_items')
+                ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+                ->where('agent_orders.status', '!=', 'dispatched')
+                ->where('agent_order_items.design_number', $group_info->design_number)
+                ->where('agent_order_items.size_set_id', $request->size_set_id)
+                ->sum('agent_order_items.box_qty') ?? 0;
+        }
+
+        return view('admin.inventory.show', compact('items', 'group_info', 'total_order'));
     }
     public function create()
     {

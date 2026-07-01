@@ -398,7 +398,15 @@
                             <div class="col-md-2 border-right">
                                 <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Expected Dispatch</small>
                                 <input type="date" id="expectedDispatchDate" class="form-control form-control-sm mt-1" 
-                                    value="{{ date('Y-m-d', strtotime('+3 days')) }}" min="{{ date('Y-m-d') }}">
+                                    value="{{ date('Y-m-d', strtotime('+3 days')) }}">
+                            </div>
+                            <div class="col-md-2 border-right">
+                                <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Status</small>
+                                <select id="orderStatus" class="form-control form-control-sm mt-1">
+                                    <option value="pending" selected>PENDING</option>
+                                    <option value="delayed">DELAYED</option>
+                                    <option value="dispatched">DISPATCHED</option>
+                                </select>
                             </div>
                             @endif
 
@@ -811,6 +819,7 @@
                                 is_sample_set: $('#sampleSetToggle').is(':checked') ? 1 : 0,
                                 variations: variations,
                                 expected_dispatch_date: $('#expectedDispatchDate').val(),
+                                status: $('#orderStatus').val() || null,
                                 discount_percentage: $('#discountPercentage').val(),
                                 discount_amount: $('#discountAmountInput').val(),
                                 gst_percentage: $('#gstPercentage').val(),

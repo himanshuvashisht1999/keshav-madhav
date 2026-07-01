@@ -77,6 +77,7 @@
         table.data-tbl tr:nth-child(even) td { background: #f8fafc; }
 
         .badge-pending    { background:#fef3c7; color:#92400e; padding:1px 5px; border-radius:3px; font-size:7px; font-weight:bold; }
+        .badge-delayed    { background:#fee2e2; color:#991b1b; padding:1px 5px; border-radius:3px; font-size:7px; font-weight:bold; }
         .badge-dispatched { background:#d1fae5; color:#065f46; padding:1px 5px; border-radius:3px; font-size:7px; font-weight:bold; }
 
         /* ── Totals row ── */
@@ -153,13 +154,14 @@
             <tr>
                 <th width="3%">#</th>
                 <th width="9%">Order ID</th>
-                <th width="10%">Date</th>
-                <th width="16%">Agent</th>
-                <th width="18%">Shop / Party</th>
+                <th width="10%">Order Date</th>
+                <th width="14%">Agent</th>
+                <th width="16%">Shop / Party</th>
                 <th width="8%">Sale Type</th>
                 <th width="8%">Total Pcs</th>
-                <th width="12%">Grand Total (Rs.)</th>
+                <th width="11%">Grand Total (Rs.)</th>
                 <th width="8%">Status</th>
+                <th width="13%">Delivery Date</th>
             </tr>
         </thead>
         <tbody>
@@ -167,7 +169,7 @@
                 <tr>
                     <td>{{ $i + 1 }}</td>
                     <td><strong>#ORD-{{ str_pad($o->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
-                    <td>{{ \Carbon\Carbon::parse($o->created_at)->format('d M Y') }}</td>
+                    <td>{{ \Carbon\Carbon::parse($o->order_date)->format('d M Y') }}</td>
                     <td>{{ $o->agent_name }}</td>
                     <td>{{ $o->shop_name }}</td>
                     <td>{{ ucfirst($o->sale_type ?? 'item') }}</td>
@@ -176,14 +178,17 @@
                     <td>
                         @if($o->status == 'dispatched')
                             <span class="badge-dispatched">DISPATCHED</span>
+                        @elseif($o->status == 'delayed')
+                            <span class="badge-delayed">DELAYED</span>
                         @else
                             <span class="badge-pending">PENDING</span>
                         @endif
                     </td>
+                    <td>{{ $o->expected_dispatch_date ? \Carbon\Carbon::parse($o->expected_dispatch_date)->format('d M Y') : '-' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" style="text-align:center; padding:20px; color:#94a3b8;">No records found.</td>
+                    <td colspan="10" style="text-align:center; padding:20px; color:#94a3b8;">No records found.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -192,7 +197,7 @@
                 <td colspan="6" style="text-align:right;">TOTAL</td>
                 <td>{{ number_format($totals->total_pieces) }}</td>
                 <td>Rs. {{ number_format($totals->total_grand_total, 2) }}</td>
-                <td>{{ $totals->total_orders }} orders</td>
+                <td colspan="2" style="text-align:center;">{{ $totals->total_orders }} orders</td>
             </tr>
         </tfoot>
     </table>

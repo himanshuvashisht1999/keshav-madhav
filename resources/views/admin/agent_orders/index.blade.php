@@ -55,6 +55,7 @@
                                 <select name="status" class="form-control select2 form-control-sm">
                                     <option value="">Any Status</option>
                                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>PENDING</option>
+                                    <option value="delayed" {{ request('status') == 'delayed' ? 'selected' : '' }}>DELAYED</option>
                                     <option value="dispatched" {{ request('status') == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
                                 </select>
                             </div>
@@ -183,6 +184,7 @@
                                     <th class="align-middle">Grand Total</th>
                                     <th class="align-middle">Status</th>
                                     <th class="align-middle">Date</th>
+                                    <th class="align-middle">Delivery Date</th>
                                     <th class="text-right align-middle">Actions</th>
                                 </tr>
                             </thead>
@@ -231,9 +233,12 @@
                                                 class="text-primary font-weight-bold">₹{{ number_format($order->grand_total, 2) }}</span>
                                         </td>
                                         <td>
+                                            @php
+                                                $isDelayed = ($order->status == 'delayed') || ($order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d'));
+                                            @endphp
                                             <span
-                                                class="badge {{ $order->status == 'pending' ? 'badge-warning' : 'badge-success' }}">
-                                                {{ strtoupper($order->status) }}
+                                                class="badge {{ $isDelayed ? 'badge-danger' : ($order->status == 'pending' ? 'badge-warning' : 'badge-success') }}">
+                                                {{ $isDelayed ? 'DELAYED' : strtoupper($order->status) }}
                                             </span>
                                         </td>
                                         <!-- <td>
@@ -248,6 +253,13 @@
                                         </td> -->
                                         <td class="text-nowrap">
                                             <div class="text-dark font-weight-bold">{{ date('d/m/y', strtotime($order->order_date)) }}</div>
+                                        </td>
+                                        <td class="text-nowrap">
+                                            @if($order->expected_dispatch_date)
+                                                <div class="text-success font-weight-bold">{{ date('d/m/y', strtotime($order->expected_dispatch_date)) }}</div>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
                                         </td>
                                         <td class="text-right text-nowrap">
                                             <div class="d-flex justify-content-end align-items-center" style="gap: 2px;">
@@ -272,7 +284,7 @@
                                                     class="btn btn-primary btn-sm shadow-sm rounded-pill" style="padding: 0.15rem 0.35rem;" title="View Order">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                @if($order->status == 'pending' && $order->scanned_count == 0)
+                                                @if(in_array($order->status, ['pending', 'delayed']) && $order->scanned_count == 0)
                                                 <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
                                                     class="btn btn-info btn-sm shadow-sm rounded-pill" style="padding: 0.15rem 0.35rem;" title="Edit Order">
                                                     <i class="fas fa-edit"></i>
@@ -283,7 +295,7 @@
                                                     title="Delete Order">
                                                     <i class="fas fa-trash"></i>
                                                 </a>
-                                                @elseif($order->status == 'pending')
+                                                @elseif(in_array($order->status, ['pending', 'delayed']))
                                                 <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
                                                     class="btn btn-info btn-sm shadow-sm rounded-pill" style="padding: 0.15rem 0.35rem;" title="Edit Order">
                                                     <i class="fas fa-edit"></i>

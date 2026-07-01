@@ -204,8 +204,15 @@
                     <div class="col-md-2 border-right">
                         <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Expected Dispatch</small>
                         <input type="date" id="expectedDispatchDate" class="form-control form-control-sm mt-1"
-                            value="{{ $order->expected_dispatch_date ?: (\Carbon\Carbon::parse($order->expected_dispatch_date)->format('Y-m-d') ?: date('Y-m-d', strtotime('+3 days'))) }}"
-                            min="{{ date('Y-m-d') }}">
+                            value="{{ $order->expected_dispatch_date ?: (\Carbon\Carbon::parse($order->expected_dispatch_date)->format('Y-m-d') ?: date('Y-m-d', strtotime('+3 days'))) }}">
+                    </div>
+                    <div class="col-md-2 border-right">
+                        <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Status</small>
+                        <select id="orderStatus" class="form-control form-control-sm mt-1">
+                            <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>PENDING</option>
+                            <option value="delayed" {{ $order->status == 'delayed' ? 'selected' : '' }}>DELAYED</option>
+                            <option value="dispatched" {{ $order->status == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
+                        </select>
                     </div>
 
                     <div class="col-md-2 border-right">
@@ -549,9 +556,10 @@
                                 gst_amount: $('#gstAmountInput').val(),
                                 other_charges: otherCharges,
                                 expected_dispatch_date: expectedDate,
+                                status: $('#orderStatus').val(),
                                 remark: $('#remark').val(),
                                 booking_station: $('#booking_station').val(),
-                                transport: $('#transport').val()
+                                transport: $('#transport') .val()
                             },
                             success: function (response) {
                                 if (response.success) {

@@ -171,7 +171,17 @@
 
                             <div class="form-group mb-3">
                                 <label class="small font-weight-bold text-muted uppercase">Expected Dispatch</label>
-                                <input type="date" id="expectedDispatchDate" class="form-control" value="{{ $order->expected_dispatch_date ? date('Y-m-d', strtotime($order->expected_dispatch_date)) : '' }}" min="{{ date('Y-m-d') }}">
+                                <input type="date" id="expectedDispatchDate" class="form-control" value="{{ $order->expected_dispatch_date ? date('Y-m-d', strtotime($order->expected_dispatch_date)) : '' }}">
+                            </div>
+
+
+                            <div class="form-group mb-3">
+                                <label class="small font-weight-bold text-muted uppercase">Status</label>
+                                <select id="orderStatus" class="form-control">
+                                    <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>PENDING</option>
+                                    <option value="delayed" {{ $order->status == 'delayed' ? 'selected' : '' }}>DELAYED</option>
+                                    <option value="dispatched" {{ $order->status == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
+                                </select>
                             </div>
 
                             <div class="row">
@@ -634,6 +644,7 @@
                             gst_amount: $('#gstAmountInput').val(),
                             other_charges: $('#other_charges').val(),
                             expected_dispatch_date: $('#expectedDispatchDate').val(),
+                            status: $('#orderStatus').val(),
                             booking_station: $('#booking_station').val(),
                             transport: $('#transport').val(),
                             remark: $('#orderRemark').val()

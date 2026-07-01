@@ -454,12 +454,21 @@ class ProductionGoodsService
         }
 
         // Delete variants/items that are no longer present, BUT ONLY if they are not in inventory
+        // (Or if they are in inventory but we are keeping at least one other item with the same barcode)
         $itemsToDelete = \App\Models\ProductionGoodVariantItem::whereIn('variant_id', $keepVariantIds)
             ->whereNotIn('id', $keepItemIds)->get();
 
         foreach ($itemsToDelete as $it) {
             if (!\App\Models\DomesticInventory::where('barcode', $it->barcode)->exists()) {
                 $it->delete();
+            } else {
+                // If it has inventory, we can still delete it if there is at least one other item with the same barcode being kept
+                $isBarcodeKept = \App\Models\ProductionGoodVariantItem::whereIn('id', $keepItemIds)
+                    ->where('barcode', $it->barcode)
+                    ->exists();
+                if ($isBarcodeKept) {
+                    $it->delete();
+                }
             }
         }
 
