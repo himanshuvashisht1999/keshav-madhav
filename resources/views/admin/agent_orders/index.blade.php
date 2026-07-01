@@ -272,11 +272,22 @@
                                                         <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=1">
                                                             <i class="fas fa-tag text-success mr-2"></i> With Price
                                                         </a>
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=1&with_warehouse=1">
+                                                            <i class="fas fa-warehouse text-success mr-2"></i> With Price & Wh. Details
+                                                        </a>
+                                                        <div class="dropdown-divider"></div>
                                                         <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=0">
                                                             <i class="fas fa-barcode text-muted mr-2"></i> Without Price
                                                         </a>
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=0&with_warehouse=1">
+                                                            <i class="fas fa-warehouse text-muted mr-2"></i> Without Price & Wh. Details
+                                                        </a>
+                                                        <div class="dropdown-divider"></div>
                                                         <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=2">
                                                             <i class="fas fa-file-invoice text-info mr-2"></i> Unit Price Only
+                                                        </a>
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=2&with_warehouse=1">
+                                                            <i class="fas fa-warehouse text-info mr-2"></i> Unit Price & Wh. Details
                                                         </a>
                                                     </div>
                                                 </div>

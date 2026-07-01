@@ -234,6 +234,20 @@ class InventoryController extends Controller
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
             })
+            ->leftJoin(DB::raw('(
+                SELECT aoi.design_number COLLATE utf8mb4_unicode_ci as design_number, 
+                       aoi.size_set_id, 
+                       aoi.color_id,
+                       SUM(aoi.box_qty) as color_total_order
+                FROM agent_order_items aoi
+                JOIN agent_orders ao ON aoi.agent_order_id = ao.id
+                WHERE ao.status != "dispatched"
+                GROUP BY aoi.design_number, aoi.size_set_id, aoi.color_id
+            ) as color_order_totals'), function ($join) {
+                $join->on('products.design_number', '=', 'color_order_totals.design_number')
+                     ->on('domestic_inventories.size_set_id', '=', 'color_order_totals.size_set_id')
+                     ->on('domestic_inventories.color_id', '=', 'color_order_totals.color_id');
+            })
             ->select(
                 'domestic_inventories.*',
                 'products.design_number',
@@ -243,7 +257,8 @@ class InventoryController extends Controller
                 'sizes.name as size_set_name',
                 'fittings.name as fitting_name',
                 'patterns.name as pattern_name',
-                'variants.mrp as mrp'
+                'variants.mrp as mrp',
+                DB::raw('COALESCE(color_order_totals.color_total_order, 0) as color_total_order')
             );
 
         if ($request->has('product_id'))

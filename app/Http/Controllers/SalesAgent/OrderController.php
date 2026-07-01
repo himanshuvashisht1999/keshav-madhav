@@ -1036,11 +1036,14 @@ class OrderController extends Controller
     {
         $agent = Auth::guard('sales_agent')->user();
         if ($agent->is_master_agent) {
-            $orders = AgentOrder::where('master_agent_id', $agent->id)->with(['shop', 'vendor'])
+            $orders = AgentOrder::where('master_agent_id', $agent->id)
+                ->whereDate('created_at', date('Y-m-d'))
+                ->with(['shop', 'vendor'])
                 ->latest()
                 ->paginate(10);
         } else {
             $orders = AgentOrder::where('sales_agent_id', $agent->id)
+                ->whereDate('created_at', date('Y-m-d'))
                 ->with(['shop', 'vendor'])
                 ->latest()
                 ->paginate(10);

@@ -1694,8 +1694,9 @@ class AgentOrderController extends Controller
         })->values();
 
         $settings = DB::table('settings')->first();
+        $withWarehouse = ($request->get('with_warehouse') == 1);
 
-        $pdf = Pdf::loadView('admin.agent_orders.order-pdf', compact('order', 'items', 'settings'))
+        $pdf = Pdf::loadView('admin.agent_orders.order-pdf', compact('order', 'items', 'settings', 'withWarehouse'))
             ->setPaper('a4', 'portrait');
 
         return $pdf->download('Order_Sheet_ORD_' . $id . '.pdf');
@@ -1738,6 +1739,7 @@ class AgentOrderController extends Controller
             $order->see_price = $request->see_price;
         }
 
+        $settings = DB::table('settings')->first();
         $pdf = null;
         $fileName = '';
 
@@ -1755,7 +1757,6 @@ class AgentOrderController extends Controller
                 )
                 ->get();
 
-            $settings = DB::table('settings')->first();
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.order-pdf-fabric', compact('order', 'items', 'settings'));
             $fileName = "Order_Sheet_Fabric_{$order->id}.pdf";
         } else {
@@ -1805,8 +1806,9 @@ class AgentOrderController extends Controller
                 ];
             })->values();
 
-            $settings = DB::table('settings')->first();
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.order-pdf', compact('order', 'items', 'settings'))
+            $withWarehouse = ($request->get('with_warehouse') == 1);
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.order-pdf', compact('order', 'items', 'settings', 'withWarehouse'))
                 ->setPaper('a4', 'portrait');
             $fileName = "Order_Sheet_ORD_{$order->id}.pdf";
         }

@@ -100,6 +100,7 @@
                                             <th class="py-3">Color</th>
                                             <th class="py-3">Pcs/Box</th>
                                             <th class="text-center py-3">Total Boxes</th>
+                                            <th class="text-center py-3">Total Order</th>
                                             <th class="text-center py-3">Total Qty</th>
                                         </tr>
                                     </thead>
@@ -117,6 +118,7 @@
                                                 <td class="py-3 font-weight-bold">{{ $item->color_name ?? 'N/A' }}</td>
                                                 <td class="py-3 text-center">{{ $item->quantity }}</td>
                                                 <td class="text-center py-3 font-weight-bold text-success">{{ $item->total_boxes }}</td>
+                                                <td class="text-center py-3 font-weight-bold text-danger">{{ $item->color_total_order }}</td>
                                                 <td class="text-center py-3 font-weight-bold text-success" style="font-size: 1.1rem;">{{ $item->quantity * $item->total_boxes }}</td>
                                             </tr>
                                         @endforeach
