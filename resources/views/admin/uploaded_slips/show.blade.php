@@ -75,6 +75,25 @@
                                 </div>
                             </div>
 
+                            @php
+                                $toDestinations = collect();
+                                foreach($printings as $p) {
+                                    $stageName = $p->to_stage ? $p->to_stage->name : null;
+                                    $unitName = $p->getToUnitMaster ? $p->getToUnitMaster->name : null;
+                                    if ($stageName) {
+                                        $toDestinations->push($stageName . ($unitName ? ' (' . $unitName . ')' : ''));
+                                    }
+                                }
+                                foreach($stage_transactions as $st) {
+                                    $stageName = $st->to_stage ? $st->to_stage->name : null;
+                                    $unitName = $st->getToUnitMaster ? $st->getToUnitMaster->name : null;
+                                    if ($stageName) {
+                                        $toDestinations->push($stageName . ($unitName ? ' (' . $unitName . ')' : ''));
+                                    }
+                                }
+                                $toDisplay = $toDestinations->unique()->filter()->implode(' / ') ?: '-';
+                            @endphp
+
                             <!-- From Stage Block -->
                             <div class="p-4 d-flex align-items-center border-end" style="flex: 1.5; min-width: 250px;">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center me-3 shadow-xs" style="width: 54px; height: 54px; background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe;">
@@ -83,20 +102,20 @@
                                 <div>
                                     <div class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 0.5px;">From Stage</div>
                                     <div class="h5 mb-0 fw-bold text-dark">{{ $slip->fromStage?->name ?? '-' }}</div>
+                                    @if($slip->getUnitMaster)
+                                        <div class="text-muted mt-1" style="font-size: 0.85rem;"><i class="fas fa-user-tie me-1 text-secondary"></i> {{ $slip->getUnitMaster->name }}</div>
+                                    @endif
                                 </div>
                             </div>
 
-                            <!-- Unit / Warehouse Block -->
+                            <!-- To Stage Block -->
                             <div class="p-4 d-flex align-items-center" style="flex: 2; min-width: 300px;">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center me-3 shadow-xs" style="width: 54px; height: 54px; background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0;">
                                     <i class="fas fa-industry fs-4"></i>
                                 </div>
                                 <div>
-                                    <div class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 0.5px;">Unit / Warehouse</div>
-                                    <div class="h5 mb-0 fw-bold text-dark">{{ $slip->getUnitMaster?->name }}</div>
-                                    @if($slip->getUnitMaster?->masterFabricWarehouse?->cutting_master_name)
-                                        <div class="text-muted mt-1" style="font-size: 0.85rem;"><i class="fas fa-user-tie me-1 text-secondary"></i> {{ $slip->getUnitMaster?->masterFabricWarehouse?->cutting_master_name }}</div>
-                                    @endif
+                                    <div class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 0.5px;">To Stage</div>
+                                    <div class="h5 mb-0 fw-bold text-dark">{{ $toDisplay }}</div>
                                 </div>
                             </div>
 
