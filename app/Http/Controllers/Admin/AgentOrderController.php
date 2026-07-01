@@ -475,8 +475,7 @@ class AgentOrderController extends Controller
 
         $grand_total = $taxable_amount + $gst_amount + $other_charges;
 
-        $status = $order_type === 'direct' ? 'dispatched' : 'pending';
-
+        $status = $order_type === 'direct' ? 'dispatched' : ($request->status ?? 'pending');
         DB::beginTransaction();
         try {
             $order = AgentOrder::create([
@@ -494,7 +493,7 @@ class AgentOrderController extends Controller
                 'other_charges' => $other_charges,
                 'grand_total' => $grand_total,
                 'expected_dispatch_date' => $request->expected_dispatch_date,
-                'status' => $request->status ?? $status,
+                'status' => $status,
                 'order_type' => $order_type,
                 'sale_type' => $sale_type,
                 'is_sample_set' => $request->input('is_sample_set', 0),
