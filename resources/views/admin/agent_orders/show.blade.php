@@ -334,14 +334,14 @@
                                                             <select class="form-control form-control-sm location-select" data-item-id="{{ $item->id }}" style="min-width: 180px; display: inline-block;">
                                                                 @foreach($item->available_locations as $loc)
                                                                     <option value="{{ $loc->rack_id }}" {{ $item->rack_name == $loc->rack_name && $item->warehouse_name == $loc->warehouse_name ? 'selected' : '' }}>
-                                                                        {{ $loc->warehouse_name }} - {{ $loc->rack_name }} ({{ $loc->boxes }} Box)
+                                                                        {{ $loc->warehouse_name }} - {{ $loc->rack_name }} ({{ $loc->rack_id }}) ({{ $loc->boxes }} Box)
                                                                     </option>
                                                                 @endforeach
                                                             </select>
                                                         @else
                                                             <div class="small text-left d-inline-block">
                                                                 <div class="text-muted mb-1"><i class="fas fa-warehouse mr-1"></i>{{ $item->warehouse_name }}</div>
-                                                                <div class="text-muted"><i class="fas fa-layer-group mr-1"></i>{{ $item->rack_name }}</div>
+                                                                <div class="text-muted"><i class="fas fa-layer-group mr-1"></i>{{ $item->rack_name }} @if($item->rack_id) ({{ $item->rack_id }}) @endif</div>
                                                             </div>
                                                         @endif
                                                     </td>

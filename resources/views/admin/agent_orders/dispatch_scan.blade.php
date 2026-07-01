@@ -99,7 +99,7 @@
                                                             F: {{ $group['fitting_name'] }}
                                                             <br>
                                                             <span class="badge badge-light border mt-1">WH: {{ $group['warehouse_name'] }}</span>
-                                                            <span class="badge badge-light border mt-1">Rack: {{ $group['rack_name'] }}</span>
+                                                            <span class="badge badge-light border mt-1">Rack: {{ $group['rack_name'] }} @if($group['rack_id']) ({{ $group['rack_id'] }}) @endif</span>
                                                             <span class="badge badge-info mt-1">Barcode:
                                                                 {{ $group['barcode'] }}</span>
                                                         </small>

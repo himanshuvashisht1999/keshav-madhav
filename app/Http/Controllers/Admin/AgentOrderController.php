@@ -967,18 +967,20 @@ class AgentOrderController extends Controller
                 ->where('agent_order_id', $id)
                 ->select(
                     'agent_order_items.*',
+                    'agent_order_items.rack_id as item_rack_id',
                     'master_design_patterns.name as db_pattern_name',
                     'master_product_fittings.name as db_fitting_name'
                 )
                 ->get();
 
             $items = $itemsRaw->map(function ($item) {
+                $itemRackId = $item->item_rack_id ?? null;
                 $inventoryInfo = null;
-                if ($item->rack_id) {
+                if ($itemRackId) {
                     $inventoryInfo = DB::table('racks')
                         ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                        ->where('racks.id', $item->rack_id)
-                        ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
+                        ->where('racks.id', $itemRackId)
+                        ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name')
                         ->first();
                 }
 
@@ -990,7 +992,7 @@ class AgentOrderController extends Controller
                         ->where('domestic_inventories.color_id', $item->color_id)
                         ->where('domestic_inventories.size_set_id', $item->size_set_id)
                         ->where('domestic_inventories.total_boxes', '>', 0)
-                        ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
+                        ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name')
                         ->first();
                 }
 
@@ -1025,6 +1027,7 @@ class AgentOrderController extends Controller
                     'barcode' => $item->barcode,
                     'warehouse_name' => $inventoryInfo->warehouse_name ?? 'N/A',
                     'rack_name' => $inventoryInfo->rack_name ?? 'N/A',
+                    'rack_id' => $inventoryInfo->rack_id ?? null,
                     'available_locations' => $availableLocations,
                 ];
             });
@@ -2072,6 +2075,7 @@ class AgentOrderController extends Controller
             ->whereNull('dispatched_at')
             ->select(
                 'agent_order_items.*',
+                'agent_order_items.rack_id as item_rack_id',
                 'master_design_patterns.name as db_pattern_name',
                 'master_product_fittings.name as db_fitting_name'
             )
@@ -2081,15 +2085,28 @@ class AgentOrderController extends Controller
         foreach ($items as $item) {
             $key = $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id;
             if (!isset($groupedItems[$key])) {
-                $inventoryInfo = DB::table('domestic_inventories')
-                    ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                    ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                    ->where('domestic_inventories.product_id', $item->product_id)
-                    ->where('domestic_inventories.color_id', $item->color_id)
-                    ->where('domestic_inventories.size_set_id', $item->size_set_id)
-                    ->where('domestic_inventories.total_boxes', '>', 0)
-                    ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
-                    ->first();
+                $itemRackId = $item->item_rack_id ?? null;
+                $inventoryInfo = null;
+                
+                if ($itemRackId) {
+                    $inventoryInfo = DB::table('racks')
+                        ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                        ->where('racks.id', $itemRackId)
+                        ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name')
+                        ->first();
+                }
+
+                if (!$inventoryInfo) {
+                    $inventoryInfo = DB::table('domestic_inventories')
+                        ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                        ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                        ->where('domestic_inventories.product_id', $item->product_id)
+                        ->where('domestic_inventories.color_id', $item->color_id)
+                        ->where('domestic_inventories.size_set_id', $item->size_set_id)
+                        ->where('domestic_inventories.total_boxes', '>', 0)
+                        ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name')
+                        ->first();
+                }
 
                 $groupedItems[$key] = [
                     'product_name' => $item->product_name,
@@ -2100,6 +2117,7 @@ class AgentOrderController extends Controller
                     'fitting_name' => $item->db_fitting_name ?? $item->fitting_name,
                     'warehouse_name' => $inventoryInfo->warehouse_name ?? 'N/A',
                     'rack_name' => $inventoryInfo->rack_name ?? 'N/A',
+                    'rack_id' => $inventoryInfo->rack_id ?? null,
                     'required' => 0,
                     'scanned' => 0,
                     'barcode' => "D{$item->product_id}S{$item->size_set_id}C{$item->color_id}",
