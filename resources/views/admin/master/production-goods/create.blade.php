@@ -526,6 +526,67 @@
                 }
             });
 
+            // Prevent duplicate size set selections across different blocks
+            function updateSizeSetOptions() {
+                let selectedValues = [];
+                $('.size-set-select').each(function() {
+                    let val = $(this).val();
+                    if (val) {
+                        selectedValues.push(val);
+                    }
+                });
+
+                $('.size-set-select').each(function() {
+                    let currentSelect = $(this);
+                    let currentValue = currentSelect.val();
+
+                    currentSelect.find('option').each(function() {
+                        let optionVal = $(this).val();
+                        if (optionVal) {
+                            if (selectedValues.includes(optionVal) && optionVal !== currentValue) {
+                                $(this).prop('disabled', true);
+                            } else {
+                                $(this).prop('disabled', false);
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Prevent duplicate color selections within the same size set block
+            function updateColorOptions() {
+                $('.size-set-block').each(function() {
+                    let block = $(this);
+                    let selectedColors = [];
+                    
+                    block.find('.color-select').each(function() {
+                        let val = $(this).val();
+                        if (val) {
+                            selectedColors.push(val);
+                        }
+                    });
+
+                    block.find('.color-select').each(function() {
+                        let currentSelect = $(this);
+                        let currentValue = currentSelect.val();
+
+                        currentSelect.find('option').each(function() {
+                            let optionVal = $(this).val();
+                            if (optionVal) {
+                                if (selectedColors.includes(optionVal) && optionVal !== currentValue) {
+                                    $(this).prop('disabled', true);
+                                } else {
+                                    $(this).prop('disabled', false);
+                                }
+                            }
+                        });
+                    });
+                });
+            }
+
+            $(document).on('change', '.size-set-select', updateSizeSetOptions);
+            $(document).on('change', '.color-select', updateColorOptions);
+
             // Dynamic Rows Logic
             function reindexAll() {
                 $('.size-set-block').each(function (sIdx) {
@@ -547,7 +608,14 @@
                 // Update remove buttons for size sets
                 let setBlocks = $('.size-set-block');
                 setBlocks.find('.remove-size-set').prop('disabled', setBlocks.length === 1);
+
+                updateSizeSetOptions();
+                updateColorOptions();
             }
+
+            // Run initial check
+            updateSizeSetOptions();
+            updateColorOptions();
 
             // Add Size Set
             $('.add-size-set').on('click', function () {
