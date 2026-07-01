@@ -176,6 +176,7 @@
                             </td>
                             <td class="align-middle text-center px-4">
                                 <span class="barcode-display">{{ $sample->barcode }}</span>
+                                <i class="far fa-copy ml-1 text-primary copy-barcode" data-barcode="{{ $sample->barcode }}" title="Copy Barcode" style="cursor: pointer;"></i>
                             </td>
                         </tr>
                         @empty
@@ -193,3 +194,21 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    $(document).on('click', '.copy-barcode', function() {
+        const barcode = $(this).data('barcode');
+        navigator.clipboard.writeText(barcode).then(() => {
+            Toast.fire({
+                icon: 'success',
+                title: 'Barcode copied to clipboard!'
+            });
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+        });
+    });
+});
+</script>
+@endpush

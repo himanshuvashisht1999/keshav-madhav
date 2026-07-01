@@ -67,25 +67,36 @@ class FairProductController extends Controller
             ->orderBy('design_number')
             ->pluck('design_number');
         $sizeSets = MasterSizeMeasurement::where('status', 1)->orderBy('name')->get();
+        
+        $productsList = ProductionGoods::select(
+            DB::raw('DISTINCT(TRIM(CONCAT(COALESCE((SELECT name FROM master_series WHERE id = production_goods.master_series_id), ""), " ", COALESCE(production_goods.name_of_garment, "")))) as full_name')
+        )
+        ->whereNotNull('name_of_garment')
+        ->where('name_of_garment', '!=', '')
+        ->orderBy('full_name')
+        ->pluck('full_name')
+        ->filter()
+        ->values();
 
-        return view('admin.inventory.fair_product.index', compact('batches', 'salesAgents', 'designNumbers', 'sizeSets'));
+        return view('admin.inventory.fair_product.index', compact('batches', 'salesAgents', 'designNumbers', 'sizeSets', 'productsList'));
     }
 
     public function searchByDesign(Request $request)
     {
-        $designNo    = trim($request->get('design_number', ''));
-        $sizeSetId   = $request->get('size_set_id');
-        $salesAgentId= $request->get('sales_agent_id');
+        $designNo     = trim($request->get('design_number', ''));
+        $sizeSetId    = $request->get('size_set_id');
+        $salesAgentId = $request->get('sales_agent_id');
+        $productName  = $request->get('product_name');
 
-        if (!$designNo && !$sizeSetId && !$salesAgentId) {
+        if (!$designNo && !$sizeSetId && !$salesAgentId && !$productName) {
             return response()->json([]);
         }
 
         // Build query
         $query = FairProduct::with([
-            'product',   // ProductionGoods → design_number
-            'batch',     // FairBatch → sales_agent_ids, batch_no
-            'sizeSet',   // MasterSizeMeasurement → name
+            'product.series', // Preload series for full name formatting
+            'batch',          // FairBatch → sales_agent_ids, batch_no
+            'sizeSet',        // MasterSizeMeasurement → name
         ]);
 
         if ($designNo) {
@@ -106,6 +117,12 @@ class FairProductController extends Controller
             });
         }
 
+        if ($productName) {
+            $query->whereHas('product', function ($q) use ($productName) {
+                $q->where(DB::raw('TRIM(CONCAT(COALESCE((SELECT name FROM master_series WHERE id = production_goods.master_series_id), ""), " ", COALESCE(production_goods.name_of_garment, "")))'), $productName);
+            });
+        }
+
         $products = $query->get();
 
         // Pre-load all agents once
@@ -119,8 +136,13 @@ class FairProductController extends Controller
                 ->values()
                 ->implode(', ');
 
+            $seriesName = $fp->product->series->name ?? '';
+            $garmentName = $fp->product->name_of_garment ?? '';
+            $fullName = trim($seriesName . ' ' . $garmentName);
+
             return [
                 'design_number' => $fp->product->design_number ?? '-',
+                'product_name'  => $fullName ?: '-',
                 'batch_no'      => $fp->batch->batch_no ?? '-',
                 'size_set'      => $fp->sizeSet->name ?? '-',
                 'barcode'       => $fp->barcode,

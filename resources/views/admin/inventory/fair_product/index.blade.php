@@ -250,9 +250,9 @@
 
                 <div class="modal-body">
 
-                    {{-- ── 3-column filter row ── --}}
+                    {{-- ── 4-column filter row ── --}}
                     <div class="row mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3 mb-2">
                             <label class="small font-weight-bold text-muted mb-1">Design Number</label>
                             <div class="input-group input-group-sm">
                                 <input type="text"
@@ -268,7 +268,16 @@
                                 </datalist>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3 mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">Product (Series & Name)</label>
+                            <select id="modalProductName" class="form-control form-control-sm select2">
+                                <option value="">All Products</option>
+                                @foreach($productsList as $pl)
+                                    <option value="{{ $pl }}">{{ $pl }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-2">
                             <label class="small font-weight-bold text-muted mb-1">Size Set</label>
                             <select id="modalSizeSet" class="form-control form-control-sm select2">
                                 <option value="">All Size Sets</option>
@@ -277,7 +286,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3 mb-2">
                             <label class="small font-weight-bold text-muted mb-1">Sales Agent</label>
                             <select id="modalSalesAgent" class="form-control form-control-sm select2">
                                 <option value="">All Agents</option>
@@ -334,8 +343,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const designNo    = searchInput.value.trim();
         const sizeSetId   = document.getElementById('modalSizeSet').value;
         const salesAgentId= document.getElementById('modalSalesAgent').value;
+        const productName = document.getElementById('modalProductName').value;
 
-        if (!designNo && !sizeSetId && !salesAgentId) {
+        if (!designNo && !sizeSetId && !salesAgentId && !productName) {
             resultsDiv.innerHTML = '<div class="alert alert-warning py-2"><i class="fas fa-exclamation-triangle mr-1"></i> Please fill at least one filter.</div>';
             return;
         }
@@ -346,6 +356,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (designNo)     params.append('design_number',  designNo);
         if (sizeSetId)    params.append('size_set_id',    sizeSetId);
         if (salesAgentId) params.append('sales_agent_id', salesAgentId);
+        if (productName)  params.append('product_name',   productName);
 
         fetch(searchUrl + '?' + params.toString(), {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -362,6 +373,7 @@ document.addEventListener('DOMContentLoaded', function () {
             html += '<table class="table table-sm table-bordered table-hover mb-0">';
             html += '<thead class="thead-dark"><tr>';
             html += '<th class="py-2">#</th>';
+            html += '<th class="py-2">Product Name</th>';
             html += '<th class="py-2">Design No.</th>';
             html += '<th class="py-2">Size Set</th>';
             html += '<th class="py-2">Batch No.</th>';
@@ -372,11 +384,15 @@ document.addEventListener('DOMContentLoaded', function () {
             data.forEach(function(row, i) {
                 html += '<tr>';
                 html += '<td class="text-muted">' + (i + 1) + '</td>';
+                html += '<td>' + row.product_name + '</td>';
                 html += '<td><span class="badge badge-primary px-2 py-1">' + row.design_number + '</span></td>';
                 html += '<td><span class="badge badge-secondary px-2 py-1">' + row.size_set + '</span></td>';
                 html += '<td><code>' + row.batch_no + '</code></td>';
                 html += '<td>' + row.sales_agents + '</td>';
-                html += '<td><span class="badge badge-light border font-weight-bold" style="font-family:monospace;font-size:0.85rem">' + row.barcode + '</span></td>';
+                html += '<td>';
+                html += '<span class="badge badge-light border font-weight-bold mr-1" style="font-family:monospace;font-size:0.85rem">' + row.barcode + '</span>';
+                html += '<i class="far fa-copy text-primary copy-barcode" data-barcode="' + row.barcode + '" title="Copy Barcode" style="cursor: pointer;"></i>';
+                html += '</td>';
                 html += '</tr>';
             });
 
@@ -396,8 +412,9 @@ document.addEventListener('DOMContentLoaded', function () {
             searchInput.value = '';
             document.getElementById('modalSizeSet').value    = '';
             document.getElementById('modalSalesAgent').value = '';
+            document.getElementById('modalProductName').value = '';
             if (typeof $ !== 'undefined') {
-                $('#modalSizeSet, #modalSalesAgent').trigger('change'); // refresh select2
+                $('#modalSizeSet, #modalSalesAgent, #modalProductName').trigger('change'); // refresh select2
             }
             resultsDiv.innerHTML = placeholder;
         });
@@ -407,9 +424,21 @@ document.addEventListener('DOMContentLoaded', function () {
     $('#designSearchModal').on('hidden.bs.modal', function () {
         searchInput.value = '';
         if (typeof $ !== 'undefined') {
-            $('#modalSizeSet, #modalSalesAgent').val('').trigger('change');
+            $('#modalSizeSet, #modalSalesAgent, #modalProductName').val('').trigger('change');
         }
         resultsDiv.innerHTML = placeholder;
+    });
+
+    $(document).on('click', '.copy-barcode', function() {
+        const barcode = $(this).data('barcode');
+        navigator.clipboard.writeText(barcode).then(() => {
+            Toast.fire({
+                icon: 'success',
+                title: 'Barcode copied to clipboard!'
+            });
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+        });
     });
 
 });
