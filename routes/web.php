@@ -574,6 +574,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/{id}/dispatch-fabric', [AdminAgentOrderController::class, 'dispatchFabric'])->name('dispatch-fabric');
             Route::get('/export/pdf',   [AdminAgentOrderController::class, 'exportPdf'])->name('export-pdf');
             Route::get('/export/excel', [AdminAgentOrderController::class, 'exportExcel'])->name('export-excel');
+            Route::post('/update-item-location', [AdminAgentOrderController::class, 'updateItemLocation'])->name('update-item-location');
 
             // New Dispatch Session Routes
             Route::get('/dispatches', [AdminAgentOrderController::class, 'indexDispatches'])->name('dispatches.index');

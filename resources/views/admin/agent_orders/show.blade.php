@@ -330,10 +330,20 @@
                                                         </div>
                                                     </td>
                                                     <td class="text-center align-middle text-nowrap">
-                                                        <div class="small text-left d-inline-block">
-                                                            <div class="text-muted mb-1"><i class="fas fa-warehouse mr-1"></i>{{ $item->warehouse_name }}</div>
-                                                            <div class="text-muted"><i class="fas fa-layer-group mr-1"></i>{{ $item->rack_name }}</div>
-                                                        </div>
+                                                        @if(isset($item->available_locations) && count($item->available_locations) > 1)
+                                                            <select class="form-control form-control-sm location-select" data-item-id="{{ $item->id }}" style="min-width: 180px; display: inline-block;">
+                                                                @foreach($item->available_locations as $loc)
+                                                                    <option value="{{ $loc->rack_id }}" {{ $item->rack_name == $loc->rack_name && $item->warehouse_name == $loc->warehouse_name ? 'selected' : '' }}>
+                                                                        {{ $loc->warehouse_name }} - {{ $loc->rack_name }} ({{ $loc->boxes }} Box)
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        @else
+                                                            <div class="small text-left d-inline-block">
+                                                                <div class="text-muted mb-1"><i class="fas fa-warehouse mr-1"></i>{{ $item->warehouse_name }}</div>
+                                                                <div class="text-muted"><i class="fas fa-layer-group mr-1"></i>{{ $item->rack_name }}</div>
+                                                            </div>
+                                                        @endif
                                                     </td>
                                                     <td class="text-center font-weight-bold align-middle">{{ $item->total_qty }} pcs</td>
                                                     <td class="text-right align-middle text-muted">₹{{ number_format($item->selling_price, 2) }}</td>
@@ -362,4 +372,44 @@
             </div>
         </section>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selects = document.querySelectorAll('.location-select');
+        selects.forEach(select => {
+            select.addEventListener('change', function() {
+                const itemId = this.getAttribute('data-item-id');
+                const rackId = this.value;
+                this.disabled = true;
+
+                fetch("{{ route('admin.agent-orders.update-item-location') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                    },
+                    body: JSON.stringify({
+                        item_id: itemId,
+                        rack_id: rackId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        window.location.reload();
+                    } else {
+                        alert("Failed to update location.");
+                        this.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error updating location:", error);
+                    alert("An error occurred while updating the location.");
+                    this.disabled = false;
+                });
+            });
+        });
+    });
+    </script>
 @endsection

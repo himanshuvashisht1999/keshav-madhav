@@ -973,17 +973,42 @@ class AgentOrderController extends Controller
                 ->get();
 
             $items = $itemsRaw->map(function ($item) {
-                $inventoryInfo = DB::table('domestic_inventories')
-                    ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                    ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                $inventoryInfo = null;
+                if ($item->rack_id) {
+                    $inventoryInfo = DB::table('racks')
+                        ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                        ->where('racks.id', $item->rack_id)
+                        ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
+                        ->first();
+                }
+
+                if (!$inventoryInfo) {
+                    $inventoryInfo = DB::table('domestic_inventories')
+                        ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                        ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                        ->where('domestic_inventories.product_id', $item->product_id)
+                        ->where('domestic_inventories.color_id', $item->color_id)
+                        ->where('domestic_inventories.size_set_id', $item->size_set_id)
+                        ->where('domestic_inventories.total_boxes', '>', 0)
+                        ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
+                        ->first();
+                }
+
+                $availableLocations = DB::table('domestic_inventories')
+                    ->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                    ->join('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
                     ->where('domestic_inventories.product_id', $item->product_id)
                     ->where('domestic_inventories.color_id', $item->color_id)
                     ->where('domestic_inventories.size_set_id', $item->size_set_id)
                     ->where('domestic_inventories.total_boxes', '>', 0)
-                    ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
-                    ->first();
+                    ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name', 'domestic_inventories.total_boxes as boxes')
+                    ->get();
 
                 return (object) [
+                    'id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'color_id' => $item->color_id,
+                    'size_set_id' => $item->size_set_id,
                     'product_name' => $item->product_name,
                     'design_number' => $item->design_number,
                     'color_name' => $item->color_name,
@@ -1000,11 +1025,26 @@ class AgentOrderController extends Controller
                     'barcode' => $item->barcode,
                     'warehouse_name' => $inventoryInfo->warehouse_name ?? 'N/A',
                     'rack_name' => $inventoryInfo->rack_name ?? 'N/A',
+                    'available_locations' => $availableLocations,
                 ];
             });
         }
 
         return view('admin.agent_orders.show', compact('order', 'items'));
+    }
+
+    public function updateItemLocation(Request $request)
+    {
+        $request->validate([
+            'item_id' => 'required|integer',
+            'rack_id' => 'required|integer'
+        ]);
+
+        DB::table('agent_order_items')
+            ->where('id', $request->item_id)
+            ->update(['rack_id' => $request->rack_id]);
+
+        return response()->json(['success' => true, 'message' => 'Location updated successfully!']);
     }
 
     public function destroy($id)
