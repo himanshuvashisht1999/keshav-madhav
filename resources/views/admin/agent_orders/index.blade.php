@@ -66,6 +66,14 @@
                                     <option value="fabric" {{ request('sale_type') == 'fabric' ? 'selected' : '' }}>FABRIC (Roll)</option>
                                 </select>
                             </div>
+                            <div class="col-md mb-2">
+                                <label class="small text-muted font-weight-bold mb-1">From Date</label>
+                                <input type="date" name="from_date" class="form-control form-control-sm" value="{{ request('from_date') }}">
+                            </div>
+                            <div class="col-md mb-2">
+                                <label class="small text-muted font-weight-bold mb-1">To Date</label>
+                                <input type="date" name="to_date" class="form-control form-control-sm" value="{{ request('to_date') }}">
+                            </div>
                             <div class="col-md-auto mb-2 text-right d-flex">
                                 <button type="submit" class="btn btn-sm btn-primary px-3 shadow-sm mr-1">
                                     <i class="fas fa-filter"></i> APPLY
@@ -78,14 +86,72 @@
                     </div>
                 </div>
 
+                {{-- ══ TOTALS SUMMARY BAR ══ --}}
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm" style="border-radius:10px; border-left: 4px solid #6366f1 !important;">
+                            <div class="card-body py-3 px-4 d-flex align-items-center">
+                                <div class="mr-3" style="width:42px;height:42px;border-radius:10px;background:#ede9fe;display:flex;align-items:center;justify-content:center;">
+                                    <i class="fas fa-list-ol" style="color:#6366f1;font-size:1.1rem;"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Total Orders</div>
+                                    <div class="font-weight-bold" style="font-size:1.4rem;line-height:1.2;color:#1e1b4b;">{{ number_format($totals->total_orders) }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm" style="border-radius:10px; border-left: 4px solid #10b981 !important;">
+                            <div class="card-body py-3 px-4 d-flex align-items-center">
+                                <div class="mr-3" style="width:42px;height:42px;border-radius:10px;background:#d1fae5;display:flex;align-items:center;justify-content:center;">
+                                    <i class="fas fa-box-open" style="color:#10b981;font-size:1.1rem;"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Total Pieces</div>
+                                    <div class="font-weight-bold" style="font-size:1.4rem;line-height:1.2;color:#064e3b;">{{ number_format($totals->total_pieces) }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm" style="border-radius:10px; border-left: 4px solid #f59e0b !important;">
+                            <div class="card-body py-3 px-4 d-flex align-items-center">
+                                <div class="mr-3" style="width:42px;height:42px;border-radius:10px;background:#fef3c7;display:flex;align-items:center;justify-content:center;">
+                                    <i class="fas fa-rupee-sign" style="color:#f59e0b;font-size:1.1rem;"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Total Grand Total</div>
+                                    <div class="font-weight-bold" style="font-size:1.4rem;line-height:1.2;color:#78350f;">₹ {{ number_format($totals->total_grand_total, 2) }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <form id="dispatchForm" action="{{ route('admin.agent-orders.dispatch-selected') }}" method="POST">
                 @csrf
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 font-weight-bold">Order Records</h5>
-                        <button type="button" id="dispatchBtn" class="btn btn-success btn-sm px-4 shadow-sm" style="border-radius: 20px; display: none;" data-toggle="modal" data-target="#dispatchModal">
-                            <i class="fas fa-shipping-fast mr-1"></i> DISPATCH SELECTED (<span id="selectedCount">0</span>)
-                        </button>
+                        <div class="d-flex align-items-center">
+                            {{-- Download buttons — carry all current filters in query string --}}
+                            @php $qs = http_build_query(request()->except('page')); @endphp
+                            <a href="{{ route('admin.agent-orders.export-pdf') . ($qs ? '?' . $qs : '') }}"
+                               class="btn btn-sm btn-outline-danger px-3 shadow-sm mr-2"
+                               title="Download PDF"
+                               target="_blank">
+                                <i class="fas fa-file-pdf mr-1"></i> PDF
+                            </a>
+                            <a href="{{ route('admin.agent-orders.export-excel') . ($qs ? '?' . $qs : '') }}"
+                               class="btn btn-sm btn-outline-success px-3 shadow-sm mr-2"
+                               title="Download Excel">
+                                <i class="fas fa-file-excel mr-1"></i> Excel
+                            </a>
+                            <button type="button" id="dispatchBtn" class="btn btn-success btn-sm px-4 shadow-sm" style="border-radius: 20px; display: none;" data-toggle="modal" data-target="#dispatchModal">
+                                <i class="fas fa-shipping-fast mr-1"></i> DISPATCH SELECTED (<span id="selectedCount">0</span>)
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">

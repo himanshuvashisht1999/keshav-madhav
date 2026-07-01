@@ -20,10 +20,25 @@ class FairProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = FairBatch::withCount('products');
+        $query = FairBatch::withCount('products')
+            ->with(['products.sizeSet']);
 
         if ($request->filled('batch_no')) {
             $query->where('batch_no', 'like', '%' . $request->batch_no . '%');
+        }
+
+        if ($request->filled('design_number')) {
+            $designNo = $request->design_number;
+            $query->whereHas('products.product', function ($q) use ($designNo) {
+                $q->where('design_number', 'like', '%' . $designNo . '%');
+            });
+        }
+
+        if ($request->filled('size_set_id')) {
+            $sizeSetId = $request->size_set_id;
+            $query->whereHas('products', function ($q) use ($sizeSetId) {
+                $q->where('size_set_id', $sizeSetId);
+            });
         }
 
         if ($request->filled('sales_agent_ids')) {
@@ -46,8 +61,74 @@ class FairProductController extends Controller
 
         $batches = $query->orderBy('id', 'desc')->paginate(20);
         $salesAgents = \App\Models\SalesAgent::where('status', 1)->get();
-            
-        return view('admin.inventory.fair_product.index', compact('batches', 'salesAgents'));
+        $designNumbers = ProductionGoods::select('design_number')
+            ->distinct()
+            ->whereNotNull('design_number')
+            ->orderBy('design_number')
+            ->pluck('design_number');
+        $sizeSets = MasterSizeMeasurement::where('status', 1)->orderBy('name')->get();
+
+        return view('admin.inventory.fair_product.index', compact('batches', 'salesAgents', 'designNumbers', 'sizeSets'));
+    }
+
+    public function searchByDesign(Request $request)
+    {
+        $designNo    = trim($request->get('design_number', ''));
+        $sizeSetId   = $request->get('size_set_id');
+        $salesAgentId= $request->get('sales_agent_id');
+
+        if (!$designNo && !$sizeSetId && !$salesAgentId) {
+            return response()->json([]);
+        }
+
+        // Build query
+        $query = FairProduct::with([
+            'product',   // ProductionGoods → design_number
+            'batch',     // FairBatch → sales_agent_ids, batch_no
+            'sizeSet',   // MasterSizeMeasurement → name
+        ]);
+
+        if ($designNo) {
+            $query->whereHas('product', function ($q) use ($designNo) {
+                $q->where('design_number', 'like', '%' . $designNo . '%');
+            });
+        }
+
+        if ($sizeSetId) {
+            $query->where('size_set_id', $sizeSetId);
+        }
+
+        if ($salesAgentId) {
+            $query->whereHas('batch', function ($q) use ($salesAgentId) {
+                $q->whereJsonContains('sales_agent_ids', $salesAgentId)
+                  ->orWhereJsonContains('sales_agent_ids', (string) $salesAgentId)
+                  ->orWhereJsonContains('sales_agent_ids', (int) $salesAgentId);
+            });
+        }
+
+        $products = $query->get();
+
+        // Pre-load all agents once
+        $allAgents = \App\Models\SalesAgent::pluck('name', 'id');
+
+        $results = $products->map(function ($fp) use ($allAgents) {
+            $agentIds   = $fp->batch ? (is_array($fp->batch->sales_agent_ids) ? $fp->batch->sales_agent_ids : []) : [];
+            $agentNames = collect($agentIds)
+                ->map(fn($id) => $allAgents[$id] ?? null)
+                ->filter()
+                ->values()
+                ->implode(', ');
+
+            return [
+                'design_number' => $fp->product->design_number ?? '-',
+                'batch_no'      => $fp->batch->batch_no ?? '-',
+                'size_set'      => $fp->sizeSet->name ?? '-',
+                'barcode'       => $fp->barcode,
+                'sales_agents'  => $agentNames ?: 'N/A',
+            ];
+        });
+
+        return response()->json($results->values());
     }
 
     public function create()

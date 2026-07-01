@@ -572,6 +572,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/{id}/remove-scan', [AdminAgentOrderController::class, 'removeScan'])->name('remove-scan');
             Route::post('/{id}/dispatch', [AdminAgentOrderController::class, 'dispatchOrder'])->name('dispatch');
             Route::post('/{id}/dispatch-fabric', [AdminAgentOrderController::class, 'dispatchFabric'])->name('dispatch-fabric');
+            Route::get('/export/pdf',   [AdminAgentOrderController::class, 'exportPdf'])->name('export-pdf');
+            Route::get('/export/excel', [AdminAgentOrderController::class, 'exportExcel'])->name('export-excel');
 
             // New Dispatch Session Routes
             Route::get('/dispatches', [AdminAgentOrderController::class, 'indexDispatches'])->name('dispatches.index');
@@ -858,6 +860,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'index'])->name('index');
                 Route::get('/create', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'create'])->name('create');
                 Route::get('/get-products', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'getProducts'])->name('get-products');
+                Route::get('/search-by-design', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'searchByDesign'])->name('search-by-design');
                 Route::post('/store', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'store'])->name('store');
                 Route::get('/edit/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'edit'])->name('edit');
                 Route::get('/show/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'show'])->name('show');
@@ -867,6 +870,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::post('/download-prn-by-barcodes', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'downloadPrnByBarcodes'])->name('download-prn-by-barcodes');
                 Route::delete('/destroy/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'destroy'])->name('destroy');
             });
+
             Route::prefix('/purchase-history')->name('purchase_history.')->group(function () {
                 Route::get('/', [AdminInventoryController::class, 'purchaseHistory'])->name('index');
                 Route::get('/list', [AdminInventoryController::class, 'purchaseHistoryList'])->name('list');

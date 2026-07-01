@@ -105,7 +105,44 @@
         initSelect2($(this), { theme: 'bootstrap4' });
       });
       
-      // Prevent double form submission across admin/owner panels
+      // Prevent double form submission and double clicks across admin/owner panels
+      $(document).on('click', 'form button:not(.allow-multiple-submit), form input[type="submit"]:not(.allow-multiple-submit), form input[type="button"]:not(.allow-multiple-submit)', function (e) {
+        var $btn = $(this);
+        var $form = $btn.closest('form');
+
+        // Allow opt-out with class if needed
+        if ($form.hasClass('allow-multiple-submit')) {
+          return;
+        }
+
+        // HTML5 validation check: if not valid, let browser show errors and don't submit/disable
+        if ($form.length && $form[0].checkValidity && !$form[0].checkValidity()) {
+            return;
+        }
+
+        if ($btn.data('clicked') === true) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return false;
+        }
+
+        $btn.data('clicked', true);
+        var originalPointerEvents = $btn.css('pointer-events');
+        $btn.css('pointer-events', 'none');
+
+        // Defer disabling the button so that standard form post still registers the clicked button name/value
+        setTimeout(function() {
+          $btn.prop('disabled', true);
+        }, 10);
+
+        // Fallback to restore in case form submission is aborted or for AJAX/single-page forms
+        setTimeout(function() {
+          $btn.data('clicked', false);
+          $btn.prop('disabled', false);
+          $btn.css('pointer-events', originalPointerEvents || 'auto');
+        }, 5000);
+      });
+
       $(document).on('submit', 'form', function (e) {
         var $form = $(this);
 
@@ -126,18 +163,22 @@
 
         $form.data('submitted', true);
         
+        var $buttons = $form.find('button, input[type="submit"], input[type="button"]');
+        $buttons.css('pointer-events', 'none');
+
         // Defer disabling the button so we can check if another script prevented submission
         setTimeout(function() {
             if (e.isDefaultPrevented()) {
                 $form.data('submitted', false);
+                $buttons.css('pointer-events', 'auto');
             } else {
-                var $buttons = $form.find('button[type="submit"], input[type="submit"]');
                 $buttons.prop('disabled', true);
                 
                 // Auto-enable after 5 seconds as a fallback
                 setTimeout(function() {
                     $form.data('submitted', false);
                     $buttons.prop('disabled', false);
+                    $buttons.css('pointer-events', 'auto');
                 }, 5000);
             }
         }, 10);

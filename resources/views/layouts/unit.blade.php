@@ -529,6 +529,76 @@
                     text: '{{ $errors->first() }}'
                 });
             @endif
+
+            // Prevent double form submission in Unit portal
+            $(document).on('click', 'form button:not(.allow-multiple-submit), form input[type="submit"]:not(.allow-multiple-submit), form input[type="button"]:not(.allow-multiple-submit)', function (e) {
+                var $btn = $(this);
+                var $form = $btn.closest('form');
+
+                if ($form.hasClass('allow-multiple-submit')) {
+                    return;
+                }
+
+                if ($form.length && $form[0].checkValidity && !$form[0].checkValidity()) {
+                    return;
+                }
+
+                if ($btn.data('clicked') === true) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+
+                $btn.data('clicked', true);
+                var originalPointerEvents = $btn.css('pointer-events');
+                $btn.css('pointer-events', 'none');
+
+                setTimeout(function() {
+                    $btn.prop('disabled', true);
+                }, 10);
+
+                setTimeout(function() {
+                    $btn.data('clicked', false);
+                    $btn.prop('disabled', false);
+                    $btn.css('pointer-events', originalPointerEvents || 'auto');
+                }, 5000);
+            });
+
+            $(document).on('submit', 'form', function (e) {
+                var $form = $(this);
+
+                if ($form.hasClass('allow-multiple-submit')) {
+                    return;
+                }
+
+                if (this.checkValidity && !this.checkValidity()) {
+                    return;
+                }
+
+                if ($form.data('submitted') === true) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                $form.data('submitted', true);
+                var $buttons = $form.find('button, input[type="submit"], input[type="button"]');
+                $buttons.css('pointer-events', 'none');
+
+                setTimeout(function() {
+                    if (e.isDefaultPrevented()) {
+                        $form.data('submitted', false);
+                        $buttons.css('pointer-events', 'auto');
+                    } else {
+                        $buttons.prop('disabled', true);
+                        
+                        setTimeout(function() {
+                            $form.data('submitted', false);
+                            $buttons.prop('disabled', false);
+                            $buttons.css('pointer-events', 'auto');
+                        }, 5000);
+                    }
+                }, 10);
+            });
         });
     </script>
     @stack('scripts')

@@ -43,6 +43,9 @@
                     <small class="text-muted">Manage your grouped sample sets for customers.</small>
                 </div>
                 <div class="col-sm-6 text-right">
+                    <button type="button" class="btn btn-sm btn-info px-3 shadow-sm mr-2" data-toggle="modal" data-target="#designSearchModal">
+                        <i class="fas fa-search mr-1"></i> Search by Design No.
+                    </button>
                     <button type="button" class="btn btn-sm btn-dark px-3 shadow-sm mr-2" data-toggle="modal" data-target="#prnModal">
                         <i class="fas fa-barcode mr-1"></i> Generate PRN by Barcodes
                     </button>
@@ -62,6 +65,21 @@
         <div class="card shadow-sm border-0 mb-3 premium-card">
             <div class="card-body p-2">
                 <form action="{{ route('admin.inventory.fair-product.index') }}" method="GET" class="row align-items-end">
+                    <div class="col-md mb-2">
+                        <label class="small text-muted font-weight-bold mb-1">Design Number</label>
+                        <input type="text"
+                               name="design_number"
+                               class="form-control form-control-sm"
+                               value="{{ request('design_number') }}"
+                               placeholder="e.g. D-101"
+                               list="design-number-list"
+                               autocomplete="off">
+                        <datalist id="design-number-list">
+                            @foreach($designNumbers as $dn)
+                                <option value="{{ $dn }}">
+                            @endforeach
+                        </datalist>
+                    </div>
                     <div class="col-md mb-2">
                         <label class="small text-muted font-weight-bold mb-1">Batch No</label>
                         <input type="text" name="batch_no" class="form-control form-control-sm" value="{{ request('batch_no') }}" placeholder="FAIR-...">
@@ -213,5 +231,187 @@
             </div>
         </div>
     </div>
+
+    <!-- ═══════════════════════════════════════
+         DESIGN NUMBER SEARCH MODAL
+    ═══════════════════════════════════════ -->
+    <div class="modal fade" id="designSearchModal" tabindex="-1" role="dialog" aria-labelledby="designSearchModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+
+                <div class="modal-header border-bottom pb-3">
+                    <h5 class="modal-title font-weight-bold" id="designSearchModalLabel">
+                        <i class="fas fa-search mr-2 text-info"></i> Search Sample Sets
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+
+                    {{-- ── 3-column filter row ── --}}
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="small font-weight-bold text-muted mb-1">Design Number</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text"
+                                       id="designSearchInput"
+                                       class="form-control"
+                                       placeholder="e.g. D-101"
+                                       autocomplete="off"
+                                       list="modalDesignList">
+                                <datalist id="modalDesignList">
+                                    @foreach($designNumbers as $dn)
+                                        <option value="{{ $dn }}">
+                                    @endforeach
+                                </datalist>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small font-weight-bold text-muted mb-1">Size Set</label>
+                            <select id="modalSizeSet" class="form-control form-control-sm select2">
+                                <option value="">All Size Sets</option>
+                                @foreach($sizeSets as $ss)
+                                    <option value="{{ $ss->id }}">{{ $ss->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small font-weight-bold text-muted mb-1">Sales Agent</label>
+                            <select id="modalSalesAgent" class="form-control form-control-sm select2">
+                                <option value="">All Agents</option>
+                                @foreach($salesAgents as $agent)
+                                    <option value="{{ $agent->id }}">{{ $agent->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="text-right mb-3">
+                        <button class="btn btn-info px-4 btn-sm" type="button" id="designSearchBtn">
+                            <i class="fas fa-search mr-1"></i> Search
+                        </button>
+                        <button class="btn btn-outline-secondary px-3 btn-sm ml-1" type="button" id="designSearchReset">
+                            <i class="fas fa-undo mr-1"></i> Reset
+                        </button>
+                    </div>
+
+                    {{-- Results Area --}}
+                    <div id="designSearchResults">
+                        <div class="text-center text-muted py-4" id="designSearchPlaceholder">
+                            <i class="fas fa-search fa-2x mb-2 d-block"></i>
+                            Fill in any filter above and click Search
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const searchUrl   = '{{ route('admin.inventory.fair-product.search-by-design') }}';
+    const searchBtn   = document.getElementById('designSearchBtn');
+    const resetBtn    = document.getElementById('designSearchReset');
+    const searchInput = document.getElementById('designSearchInput');
+    const resultsDiv  = document.getElementById('designSearchResults');
+
+    const placeholder = '<div class="text-center text-muted py-4"><i class="fas fa-search fa-2x mb-2 d-block"></i>Fill in any filter above and click Search</div>';
+
+    function doSearch() {
+        const designNo    = searchInput.value.trim();
+        const sizeSetId   = document.getElementById('modalSizeSet').value;
+        const salesAgentId= document.getElementById('modalSalesAgent').value;
+
+        if (!designNo && !sizeSetId && !salesAgentId) {
+            resultsDiv.innerHTML = '<div class="alert alert-warning py-2"><i class="fas fa-exclamation-triangle mr-1"></i> Please fill at least one filter.</div>';
+            return;
+        }
+
+        resultsDiv.innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin mr-1"></i> Searching...</div>';
+
+        const params = new URLSearchParams();
+        if (designNo)     params.append('design_number',  designNo);
+        if (sizeSetId)    params.append('size_set_id',    sizeSetId);
+        if (salesAgentId) params.append('sales_agent_id', salesAgentId);
+
+        fetch(searchUrl + '?' + params.toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data || data.length === 0) {
+                resultsDiv.innerHTML = '<div class="alert alert-info py-2"><i class="fas fa-info-circle mr-1"></i> No results found for the selected filters.</div>';
+                return;
+            }
+
+            let html = '<div class="mb-2 text-muted small"><strong>' + data.length + '</strong> barcode(s) found</div>';
+            html += '<div class="table-responsive">';
+            html += '<table class="table table-sm table-bordered table-hover mb-0">';
+            html += '<thead class="thead-dark"><tr>';
+            html += '<th class="py-2">#</th>';
+            html += '<th class="py-2">Design No.</th>';
+            html += '<th class="py-2">Size Set</th>';
+            html += '<th class="py-2">Batch No.</th>';
+            html += '<th class="py-2">Sales Agent(s)</th>';
+            html += '<th class="py-2">Barcode</th>';
+            html += '</tr></thead><tbody>';
+
+            data.forEach(function(row, i) {
+                html += '<tr>';
+                html += '<td class="text-muted">' + (i + 1) + '</td>';
+                html += '<td><span class="badge badge-primary px-2 py-1">' + row.design_number + '</span></td>';
+                html += '<td><span class="badge badge-secondary px-2 py-1">' + row.size_set + '</span></td>';
+                html += '<td><code>' + row.batch_no + '</code></td>';
+                html += '<td>' + row.sales_agents + '</td>';
+                html += '<td><span class="badge badge-light border font-weight-bold" style="font-family:monospace;font-size:0.85rem">' + row.barcode + '</span></td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            resultsDiv.innerHTML = html;
+        })
+        .catch(() => {
+            resultsDiv.innerHTML = '<div class="alert alert-danger py-2">Error fetching results. Please try again.</div>';
+        });
+    }
+
+    searchBtn.addEventListener('click', doSearch);
+    searchInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(); });
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            searchInput.value = '';
+            document.getElementById('modalSizeSet').value    = '';
+            document.getElementById('modalSalesAgent').value = '';
+            if (typeof $ !== 'undefined') {
+                $('#modalSizeSet, #modalSalesAgent').trigger('change'); // refresh select2
+            }
+            resultsDiv.innerHTML = placeholder;
+        });
+    }
+
+    // Clear on modal close
+    $('#designSearchModal').on('hidden.bs.modal', function () {
+        searchInput.value = '';
+        if (typeof $ !== 'undefined') {
+            $('#modalSizeSet, #modalSalesAgent').val('').trigger('change');
+        }
+        resultsDiv.innerHTML = placeholder;
+    });
+
+});
+</script>
+@endpush

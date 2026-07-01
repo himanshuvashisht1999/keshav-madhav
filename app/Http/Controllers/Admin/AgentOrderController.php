@@ -15,6 +15,11 @@ use App\Models\Fabric;
 use App\Models\FabricReceiptDetail;
 use App\Models\AgentOrderReturn;
 use App\Models\AgentOrderReturnItem;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class AgentOrderController extends Controller
 {
@@ -705,6 +710,21 @@ class AgentOrderController extends Controller
             }
         }
 
+        if ($request->filled('from_date')) {
+            $query->whereDate('agent_orders.created_at', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('agent_orders.created_at', '<=', $request->to_date);
+        }
+
+        // ── Aggregate totals (across ALL filtered rows, not just current page) ──
+        $totalsQuery = clone $query;
+        $totals = $totalsQuery->select(
+            DB::raw('COALESCE(SUM(agent_orders.grand_total), 0) as total_grand_total'),
+            DB::raw('COALESCE(SUM(agent_orders.total_qty), 0)   as total_pieces'),
+            DB::raw('COUNT(agent_orders.id)                      as total_orders')
+        )->first();
+
         $orders = $query->orderBy('agent_orders.id', 'desc')
             ->paginate(20)
             ->appends($request->query());
@@ -723,7 +743,148 @@ class AgentOrderController extends Controller
         });
         $parties = $customers->concat($vendors_list)->sortBy('name');
 
-        return view('admin.agent_orders.index', compact('orders', 'agents', 'parties'));
+        return view('admin.agent_orders.index', compact('orders', 'agents', 'parties', 'totals'));
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+     * Shared helper: build filtered query for exports
+     * ───────────────────────────────────────────────────────────── */
+    private function buildOrdersQuery(Request $request)
+    {
+        $query = DB::table('agent_orders')
+            ->leftJoin('sales_agents',    'agent_orders.sales_agent_id',    '=', 'sales_agents.id')
+            ->leftJoin('master_customers','agent_orders.master_customer_id','=', 'master_customers.id')
+            ->leftJoin('vendors',         'agent_orders.master_vendor_id',  '=', 'vendors.id')
+            ->select(
+                'agent_orders.id',
+                'agent_orders.created_at',
+                'agent_orders.status',
+                'agent_orders.sale_type',
+                'agent_orders.grand_total',
+                'agent_orders.total_qty',
+                DB::raw('COALESCE(sales_agents.name, "Direct (No Agent)") as agent_name'),
+                DB::raw('COALESCE(master_customers.name, vendors.name)    as shop_name')
+            );
+
+        if ($request->filled('agent_id')) {
+            if ($request->agent_id === 'direct') {
+                $query->where(function ($q) {
+                    $q->whereNull('agent_orders.sales_agent_id')
+                      ->orWhere('agent_orders.sales_agent_id', 0);
+                });
+            } else {
+                $query->where('agent_orders.sales_agent_id', $request->agent_id);
+            }
+        }
+        if ($request->filled('party_id')) {
+            $parts = explode('_', $request->party_id);
+            if (count($parts) == 2) {
+                [$type, $pId] = $parts;
+                if ($type == 'vendor') $query->where('agent_orders.master_vendor_id',  $pId);
+                else                  $query->where('agent_orders.master_customer_id', $pId);
+            }
+        }
+        if ($request->filled('status'))    $query->where('agent_orders.status',    $request->status);
+        if ($request->filled('sale_type')) $query->where('agent_orders.sale_type', $request->sale_type);
+        if ($request->filled('payment_status')) {
+            if ($request->payment_status == 'paid') {
+                $query->whereRaw('(SELECT SUM(amount) FROM payments WHERE paymentable_id = agent_orders.id AND paymentable_type = "App\\\\Models\\\\AgentOrder") >= agent_orders.grand_total');
+            } elseif ($request->payment_status == 'unpaid') {
+                $query->whereRaw('(SELECT COALESCE(SUM(amount),0) FROM payments WHERE paymentable_id = agent_orders.id AND paymentable_type = "App\\\\Models\\\\AgentOrder") < agent_orders.grand_total');
+            }
+        }
+        if ($request->filled('from_date')) $query->whereDate('agent_orders.created_at', '>=', $request->from_date);
+        if ($request->filled('to_date'))   $query->whereDate('agent_orders.created_at', '<=', $request->to_date);
+
+        return $query->orderBy('agent_orders.id', 'desc');
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+     * Export → PDF
+     * ───────────────────────────────────────────────────────────── */
+    public function exportPdf(Request $request)
+    {
+        $rows   = $this->buildOrdersQuery($request)->get();
+        $totals = (object) [
+            'total_orders'      => $rows->count(),
+            'total_pieces'      => $rows->sum('total_qty'),
+            'total_grand_total' => $rows->sum('grand_total'),
+        ];
+        $filters = array_filter($request->only(['agent_id','party_id','status','sale_type','payment_status','from_date','to_date']));
+
+        $pdf = Pdf::loadView('admin.agent_orders.export_pdf', compact('rows', 'totals', 'filters'))
+            ->setPaper('A4', 'landscape');
+
+        $filename = 'Agent_Orders_' . now()->format('d-m-Y') . '.pdf';
+        return $pdf->download($filename);
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+     * Export → Excel
+     * ───────────────────────────────────────────────────────────── */
+    public function exportExcel(Request $request)
+    {
+        $rows = $this->buildOrdersQuery($request)->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Agent Orders');
+
+        // ── Header row ──
+        $headers = ['#', 'Order ID', 'Date', 'Agent', 'Shop / Party', 'Type', 'Sale Type', 'Total Pcs', 'Grand Total (₹)', 'Status'];
+        $cols    = range('A', 'J');
+        foreach ($headers as $i => $h) {
+            $cell = $cols[$i] . '1';
+            $sheet->setCellValue($cell, $h);
+            $sheet->getStyle($cell)->getFont()->setBold(true);
+            $sheet->getStyle($cell)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle($cell)->getFill()->setFillType(Fill::FILL_SOLID)
+                  ->getStartColor()->setRGB('1e293b');
+            $sheet->getStyle($cell)->getFont()->getColor()->setRGB('FFFFFF');
+        }
+
+        // ── Data rows ──
+        $row = 2;
+        foreach ($rows as $i => $o) {
+            $sheet->setCellValue('A' . $row, $i + 1);
+            $sheet->setCellValue('B' . $row, '#ORD-' . str_pad($o->id, 5, '0', STR_PAD_LEFT));
+            $sheet->setCellValue('C' . $row, \Carbon\Carbon::parse($o->created_at)->format('d M Y'));
+            $sheet->setCellValue('D' . $row, $o->agent_name);
+            $sheet->setCellValue('E' . $row, $o->shop_name);
+            $sheet->setCellValue('F' . $row, ucfirst($o->sale_type ?? 'item'));
+            $sheet->setCellValue('G' . $row, strtoupper($o->status ?? ''));
+            $sheet->setCellValue('H' . $row, $o->total_qty);
+            $sheet->setCellValue('I' . $row, $o->grand_total);
+            $sheet->setCellValue('J' . $row, ucfirst($o->status ?? ''));
+
+            // Zebra striping
+            if ($row % 2 === 0) {
+                $sheet->getStyle("A{$row}:J{$row}")->getFill()->setFillType(Fill::FILL_SOLID)
+                      ->getStartColor()->setRGB('f8fafc');
+            }
+            $row++;
+        }
+
+        // ── Totals row ──
+        $sheet->setCellValue('A' . $row, 'TOTAL');
+        $sheet->setCellValue('H' . $row, $rows->sum('total_qty'));
+        $sheet->setCellValue('I' . $row, $rows->sum('grand_total'));
+        $sheet->getStyle("A{$row}:J{$row}")->getFont()->setBold(true);
+        $sheet->getStyle("A{$row}:J{$row}")->getFill()->setFillType(Fill::FILL_SOLID)
+              ->getStartColor()->setRGB('fef9c3');
+
+        // ── Column widths & borders ──
+        foreach ($cols as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+        $sheet->getStyle("A1:J{$row}")->getBorders()->getAllBorders()
+              ->setBorderStyle(Border::BORDER_THIN);
+
+        $filename = 'Agent_Orders_' . now()->format('d-m-Y_H-i') . '.xlsx';
+        $path     = storage_path('app/public/' . $filename);
+        (new Xlsx($spreadsheet))->save($path);
+
+        return response()->download($path)->deleteFileAfterSend(true);
     }
 
     public function show($id)
