@@ -173,4 +173,45 @@ class StockTransferController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Transfer failed: ' . $e->getMessage()]);
         }
     }
+
+    public function scanBarcode(Request $request)
+    {
+        $request->validate([
+            'barcode'      => 'required|string',
+            'from_rack_id' => 'required|integer|exists:racks,id',
+        ]);
+
+        $barcode     = strtoupper(trim($request->barcode));
+        $fromRack    = Rack::with('storeroom')->findOrFail($request->from_rack_id);
+
+        // Look up matching inventory record at the given source rack
+        $inventory = DomesticInventory::with(['product', 'sizeSet', 'color', 'rack.storeroom'])
+            ->where('rack_id', $fromRack->id)
+            ->where('barcode', $barcode)
+            ->where('total_boxes', '>', 0)
+            ->first();
+
+        if (!$inventory) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Barcode \"{$barcode}\" not found in " .
+                             ($fromRack->storeroom->name ?? 'selected warehouse') .
+                             " / {$fromRack->name}. Please check the source location.",
+            ], 404);
+        }
+
+        return response()->json([
+            'status'        => 'ok',
+            'inventory_id'  => $inventory->id,
+            'barcode'       => $barcode,
+            'product_name'  => $inventory->product->name ?? $inventory->product_name ?? '-',
+            'design_number' => $inventory->product->design_number ?? $inventory->design_number ?? '-',
+            'color_name'    => $inventory->color->name ?? $inventory->color_name ?? '-',
+            'size_set_name' => $inventory->sizeSet->name ?? $inventory->size_set_name ?? '-',
+            'warehouse'     => $fromRack->storeroom->name ?? '-',
+            'rack'          => $fromRack->name,
+            'total_boxes'   => $inventory->total_boxes,
+        ]);
+    }
 }
+

@@ -797,6 +797,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::prefix('/stock-transfer')->name('stock_transfer.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Admin\Inventory\StockTransferController::class, 'index'])->name('index');
                 Route::get('/search', [\App\Http\Controllers\Admin\Inventory\StockTransferController::class, 'search'])->name('search');
+                Route::get('/scan-barcode', [\App\Http\Controllers\Admin\Inventory\StockTransferController::class, 'scanBarcode'])->name('scan_barcode');
                 Route::post('/transfer', [\App\Http\Controllers\Admin\Inventory\StockTransferController::class, 'transfer'])->name('transfer');
             });
 
