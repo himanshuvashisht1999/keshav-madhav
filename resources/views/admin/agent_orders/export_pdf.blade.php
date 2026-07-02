@@ -176,12 +176,15 @@
                     <td>{{ number_format($o->total_qty, $o->sale_type == 'fabric' ? 2 : 0) }}</td>
                     <td>{{ number_format($o->grand_total, 2) }}</td>
                     <td>
-                        @if($o->status == 'dispatched')
-                            <span class="badge-dispatched">DISPATCHED</span>
-                        @elseif($o->status == 'delayed')
+                        @php
+                            $isDelayed = ($o->status == 'delayed') || ($o->status == 'pending' && $o->expected_dispatch_date && $o->expected_dispatch_date < date('Y-m-d'));
+                        @endphp
+                        @if($isDelayed)
                             <span class="badge-delayed">DELAYED</span>
+                        @elseif($o->status == 'dispatched')
+                            <span class="badge-dispatched">DISPATCHED</span>
                         @else
-                            <span class="badge-pending">PENDING</span>
+                            <span class="badge-pending">{{ strtoupper($o->status) }}</span>
                         @endif
                     </td>
                     <td>{{ $o->expected_dispatch_date ? \Carbon\Carbon::parse($o->expected_dispatch_date)->format('d M Y') : '-' }}</td>

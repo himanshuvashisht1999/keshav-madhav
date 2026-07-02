@@ -893,7 +893,10 @@ class AgentOrderController extends Controller
             $sheet->setCellValue('G' . $row, ucfirst($o->sale_type ?? 'item'));
             $sheet->setCellValue('H' . $row, $o->total_qty);
             $sheet->setCellValue('I' . $row, $o->grand_total);
-            $sheet->setCellValue('J' . $row, strtoupper($o->status ?? ''));
+            
+            $isDelayed = ($o->status == 'delayed') || ($o->status == 'pending' && $o->expected_dispatch_date && $o->expected_dispatch_date < date('Y-m-d'));
+            $sheet->setCellValue('J' . $row, $isDelayed ? 'DELAYED' : strtoupper($o->status ?? ''));
+            
             $sheet->setCellValue('K' . $row, $o->expected_dispatch_date ? \Carbon\Carbon::parse($o->expected_dispatch_date)->format('d M Y') : '-');
 
             // Zebra striping
@@ -1696,6 +1699,7 @@ class AgentOrderController extends Controller
             ->where('agent_order_id', $id)
             ->select(
                 'agent_order_items.*',
+                'agent_order_items.rack_id as item_rack_id',
                 'master_design_patterns.name as db_pattern_name',
                 'master_product_fittings.name as db_fitting_name'
             )
@@ -1706,16 +1710,29 @@ class AgentOrderController extends Controller
         })->map(function ($group) {
             $first = $group->first();
 
-            // Find rack info separately to avoid multiplying the order items rows
-            $inventoryInfo = DB::table('domestic_inventories')
-                ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                ->where('domestic_inventories.product_id', $first->product_id)
-                ->where('domestic_inventories.color_id', $first->color_id)
-                ->where('domestic_inventories.size_set_id', $first->size_set_id)
-                ->where('domestic_inventories.total_boxes', '>', 0)
-                ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
-                ->first();
+            $itemRackId = $first->item_rack_id ?? null;
+            $inventoryInfo = null;
+
+            if ($itemRackId) {
+                $inventoryInfo = DB::table('racks')
+                    ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                    ->where('racks.id', $itemRackId)
+                    ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
+                    ->first();
+            }
+
+            if (!$inventoryInfo) {
+                // Find rack info separately to avoid multiplying the order items rows
+                $inventoryInfo = DB::table('domestic_inventories')
+                    ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                    ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                    ->where('domestic_inventories.product_id', $first->product_id)
+                    ->where('domestic_inventories.color_id', $first->color_id)
+                    ->where('domestic_inventories.size_set_id', $first->size_set_id)
+                    ->where('domestic_inventories.total_boxes', '>', 0)
+                    ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
+                    ->first();
+            }
 
             return (object) [
                 'product_name' => $first->product_name,
