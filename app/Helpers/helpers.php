@@ -363,6 +363,13 @@ function parseCompactBarcode($input)
         $f = (int) substr($input, 14, 2);
         return "D{$d}S{$s}C{$c}";
     }
+    // Compact barcode format (New 13-digit): 10 + D(5) + S(3) + C(3) = 13 digits
+    if (strlen($input) == 13 && str_starts_with($input, '10') && is_numeric($input)) {
+        $d = (int) substr($input, 2, 5);
+        $s = (int) substr($input, 7, 3);
+        $c = (int) substr($input, 10, 3);
+        return "D{$d}S{$s}C{$c}";
+    }
     // Compact barcode format (New): 10 + D(5) + S(2) + C(3) = 12 digits
     if (strlen($input) == 12 && str_starts_with($input, '10') && is_numeric($input)) {
         $d = (int) substr($input, 2, 5);

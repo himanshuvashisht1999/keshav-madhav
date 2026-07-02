@@ -182,14 +182,24 @@ class StockTransferController extends Controller
         ]);
 
         $barcode     = strtoupper(trim($request->barcode));
+        $barcode     = preg_replace('/[\x00-\x1F\x7F]/', '', $barcode);
+        $parsedBarcode = parseCompactBarcode($barcode);
         $fromRack    = Rack::with('storeroom')->findOrFail($request->from_rack_id);
 
         // Look up matching inventory record at the given source rack
-        $inventory = DomesticInventory::with(['product', 'sizeSet', 'color', 'rack.storeroom'])
+        $inventoryQuery = DomesticInventory::with(['product', 'sizeSet', 'color', 'rack.storeroom'])
             ->where('rack_id', $fromRack->id)
-            ->where('barcode', $barcode)
-            ->where('total_boxes', '>', 0)
-            ->first();
+            ->where('total_boxes', '>', 0);
+
+        if (preg_match('/^D(\d+)S(\d+)C(\d+)/', $parsedBarcode, $matches)) {
+            $inventoryQuery->where('product_id', $matches[1])
+                ->where('size_set_id', $matches[2])
+                ->where('color_id', $matches[3]);
+        } else {
+            $inventoryQuery->where('barcode', $parsedBarcode);
+        }
+
+        $inventory = $inventoryQuery->first();
 
         if (!$inventory) {
             return response()->json([
