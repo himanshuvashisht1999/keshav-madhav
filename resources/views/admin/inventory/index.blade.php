@@ -72,6 +72,12 @@
                                 <button id="reset_filters" class="btn btn-sm btn-secondary shadow-sm" title="Reset Filters">
                                     <i class="fas fa-undo"></i>
                                 </button>
+                                <a href="#" id="export_excel" class="btn btn-sm btn-success shadow-sm ml-1" title="Export Excel">
+                                    <i class="fas fa-file-excel"></i>
+                                </a>
+                                <a href="#" id="export_pdf" class="btn btn-sm btn-danger shadow-sm ml-1" title="Export PDF">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
                             </div>
                         </div>
 
@@ -544,6 +550,32 @@
             $('#reset_filters').on('click', function () {
                 $('#design_number, #mrp_filter, #min_boxes_filter, #min_order_filter').val('');
                 $('#size_set_filter, #product_filter, #color_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter, #stock_status_filter').val('').trigger('change');
+            });
+
+            // Export Excel & PDF
+            $('#export_excel, #export_pdf').on('click', function (e) {
+                e.preventDefault();
+                let type = $(this).attr('id') === 'export_excel' ? 'excel' : 'pdf';
+                let params = {
+                    type: type,
+                    design_number: $('#design_number').val(),
+                    product_id: $('#product_filter').val(),
+                    color_id: $('#color_filter').val(),
+                    size_set_id: $('#size_set_filter').val(),
+                    mrp: $('#mrp_filter').val(),
+                    min_total_boxes: $('#min_boxes_filter').val(),
+                    min_total_order: $('#min_order_filter').val(),
+                    stock_status: $('#stock_status_filter').val(),
+                    series_id: $('#series_filter').val(),
+                    fitting_id: $('#fitting_filter').val(),
+                    pattern_id: $('#pattern_filter').val(),
+                    brand_id: $('#brand_filter').val(),
+                    nature_id: $('#nature_filter').val(),
+                    fabric_type_id: $('#fabric_type_filter').val(),
+                };
+                
+                let url = "{{ route('admin.inventory.export') }}?" + $.param(params);
+                window.open(url, '_blank');
             });
 
             // Initialize select2 for Modal

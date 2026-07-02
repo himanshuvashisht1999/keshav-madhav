@@ -57,7 +57,8 @@ class ProductionGoodsController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
-        $response['sizes'] = $this->service->sizes();
+        $existing_size_ids = $response['data'] ? $response['data']->variants->pluck('master_size_measurement_id')->filter()->unique()->toArray() : [];
+        $response['sizes'] = $this->service->sizes($existing_size_ids);
         $response['fabrics'] = $this->service->fabrics();
         $response['product_types'] = $this->service->product_types();
         $response['garment_patterns'] = $this->service->garment_patterns();
@@ -72,7 +73,8 @@ class ProductionGoodsController extends Controller {
     }
     public function view(Request $request){
         $response['data'] = $this->service->edit($request);
-        $response['sizes'] = $this->service->sizes();
+        $existing_size_ids = $response['data'] ? $response['data']->variants->pluck('master_size_measurement_id')->filter()->unique()->toArray() : [];
+        $response['sizes'] = $this->service->sizes($existing_size_ids);
         $response['fabrics'] = $this->service->fabrics();
         $response['product_types'] = $this->service->product_types();
         $response['garment_patterns'] = $this->service->garment_patterns();

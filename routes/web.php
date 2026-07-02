@@ -768,6 +768,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('/inventory')->name('inventory.')->group(function () {
             Route::get('/index', [AdminInventoryController::class, 'index'])->name('index');
             Route::get('/list', [AdminInventoryController::class, 'indexList'])->name('list');
+            Route::get('/export', [AdminInventoryController::class, 'export'])->name('export');
             Route::post('/update-attributes', [AdminInventoryController::class, 'updateAttributes'])->name('update_attributes');
             Route::post('/delete-boxes', [AdminInventoryController::class, 'deleteBoxes'])->name('delete_boxes');
             Route::get('/show', [AdminInventoryController::class, 'show'])->name('show');

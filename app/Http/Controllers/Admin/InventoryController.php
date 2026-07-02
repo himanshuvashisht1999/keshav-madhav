@@ -221,6 +221,144 @@ class InventoryController extends Controller
         return Datatables::of($data)->addIndexColumn()->make(true);
     }
 
+    public function export(Request $request)
+    {
+        // Group by Product Name, Design Number, Size Set, MRP, Selling Price
+        $query = DomesticInventory::select(
+            'domestic_inventories.size_set_id',
+            'domestic_inventories.product_id',
+            'products.design_number',
+            'products.name_of_garment as product_name',
+            'series.name as series_name',
+            'sizes.name as size_set_name',
+            'fittings.name as fitting_name',
+            'patterns.name as pattern_name',
+            'variants.mrp as mrp',
+            DB::raw('SUM(domestic_inventories.total_boxes) as total_boxes'),
+            DB::raw('COALESCE(MAX(order_totals.total_qty), 0) as total_order')
+        )
+            ->leftJoin('production_goods as products', 'domestic_inventories.product_id', '=', 'products.id')
+            ->leftJoin('master_series as series', 'products.master_series_id', '=', 'series.id')
+            ->leftJoin('master_size_measurements as sizes', 'domestic_inventories.size_set_id', '=', 'sizes.id')
+            ->leftJoin('master_product_fittings as fittings', 'products.master_product_fitting_id', '=', 'fittings.id')
+            ->leftJoin('master_design_patterns as patterns', 'products.master_pattern_id', '=', 'patterns.id')
+            ->leftJoin('production_goods_variants as variants', function ($join) {
+                $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
+                    ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
+            })
+            ->leftJoin(DB::raw('(
+                SELECT aoi.design_number COLLATE utf8mb4_unicode_ci as design_number, 
+                       aoi.size_set_id, 
+                       SUM(aoi.box_qty) as total_qty
+                FROM agent_order_items aoi
+                JOIN agent_orders ao ON aoi.agent_order_id = ao.id
+                WHERE ao.status != "dispatched"
+                GROUP BY aoi.design_number, aoi.size_set_id
+            ) as order_totals'), function ($join) {
+                $join->on('products.design_number', '=', 'order_totals.design_number')
+                     ->on('domestic_inventories.size_set_id', '=', 'order_totals.size_set_id');
+            });
+
+        if ($request->has('min_total_boxes') && $request->min_total_boxes !== null) {
+            $query->having('total_boxes', '>=', $request->min_total_boxes);
+        }
+
+        if ($request->has('min_total_order') && $request->min_total_order !== null) {
+            $query->having('total_order', '>=', $request->min_total_order);
+        }
+
+        if ($request->has('stock_status') && !empty($request->stock_status)) {
+            if ($request->stock_status === 'shortage') {
+                $query->havingRaw('total_boxes < total_order');
+            } elseif ($request->stock_status === 'in_stock') {
+                $query->havingRaw('total_boxes >= total_order');
+            }
+        }
+
+        // Filter by Size Set
+        if ($request->has('size_set_id') && !empty($request->size_set_id)) {
+            $query->where('domestic_inventories.size_set_id', $request->size_set_id);
+        }
+
+        // Filter by Product
+        if ($request->has('product_id') && !empty($request->product_id)) {
+            $query->where('domestic_inventories.product_id', $request->product_id);
+        }
+
+        // Filter by Color
+        if ($request->has('color_id') && !empty($request->color_id)) {
+            $query->where('domestic_inventories.color_id', $request->color_id);
+        }
+
+        // Filter by Design Number
+        if ($request->has('design_number') && !empty($request->design_number)) {
+            $query->where('products.design_number', 'LIKE', '%' . $request->design_number . '%');
+        }
+
+        // Filter by MRP
+        if ($request->has('mrp') && !empty($request->mrp)) {
+            $query->where('variants.mrp', '>=', $request->mrp);
+        }
+
+        // Filter by Brand
+        if ($request->has('brand_id') && !empty($request->brand_id)) {
+            $query->where('products.brand_id', $request->brand_id);
+        }
+
+        // Filter by Series
+        if ($request->has('series_id') && !empty($request->series_id)) {
+            $query->where('products.master_series_id', $request->series_id);
+        }
+
+        // Filter by Fitting
+        if ($request->has('fitting_id') && !empty($request->fitting_id)) {
+            $query->where('products.master_product_fitting_id', $request->fitting_id);
+        }
+
+        // Filter by Pattern
+        if ($request->has('pattern_id') && !empty($request->pattern_id)) {
+            $query->where('products.master_pattern_id', $request->pattern_id);
+        }
+
+        // Filter by Product Nature
+        if ($request->has('nature_id') && !empty($request->nature_id)) {
+            $query->where('products.product_nature_id', $request->nature_id);
+        }
+
+        // Filter by Fabric Type
+        if ($request->has('fabric_type_id') && !empty($request->fabric_type_id)) {
+            $query->where('products.fabric_type_id', $request->fabric_type_id);
+        }
+
+        $query->groupBy(
+            'domestic_inventories.size_set_id',
+            'domestic_inventories.product_id',
+            'products.design_number',
+            'products.name_of_garment',
+            'series.name',
+            'sizes.name',
+            'fittings.name',
+            'patterns.name',
+            'variants.mrp'
+        )->orderBy('products.design_number', 'asc');
+
+        $data = $query->get();
+
+        if ($request->type === 'pdf') {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.inventory.export_pdf', compact('data'))
+                      ->setPaper('A4', 'landscape');
+            return $pdf->download('inventory-summary-' . now()->format('Y-m-d_H-i') . '.pdf');
+        }
+
+        return response()
+            ->view('admin.inventory.export_excel', [
+                'data' => $data,
+                'exportedAt' => now()
+            ])
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="inventory-summary-' . now()->format('Y-m-d_H-i') . '.xls"');
+    }
+
     public function show(Request $request)
     {
         $query = DomesticInventory::query()

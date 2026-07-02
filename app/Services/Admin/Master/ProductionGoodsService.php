@@ -706,10 +706,13 @@ class ProductionGoodsService
         $data = MasterColor::where('status', 1)->orderBy('sku', 'asc')->get();
         return $data;
     }
-    public function sizes()
+    public function sizes($include_ids = [])
     {
-        $data = MasterSizeMeasurement::whereIn('status', [1, 2])->orderBy('sku', 'asc')->get();
-        return $data;
+        $query = MasterSizeMeasurement::whereIn('status', [1, 2]);
+        if (!empty($include_ids)) {
+            $query->orWhereIn('id', $include_ids);
+        }
+        return $query->orderBy('sku', 'asc')->get();
     }
     public function designs()
     {
