@@ -152,6 +152,11 @@ class OrderDigitalizationService
                         throw new \Exception('Roll not found: ' . $request->roll_no_list[$key]);
                     }
 
+                    $expectedFabricIds = $order_product_set->assigned_fabrics->pluck('id')->toArray();
+                    if (!empty($expectedFabricIds) && !in_array($fabricReceiptDetail->fabric_id, $expectedFabricIds)) {
+                        throw new \Exception('Roll ' . $fabricReceiptDetail->roll_number . ' belongs to a different fabric than the order requires!');
+                    }
+
                     if ($fabricReceiptDetail->remaining_quantity < $request->meter_list[$key]) {
                         throw new \Exception('Insufficient meter for roll: ' . $request->roll_no_list[$key]);
                     }

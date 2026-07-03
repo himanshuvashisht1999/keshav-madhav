@@ -162,7 +162,17 @@
                                 </div>
                                 <div class="col-md-2 border-start ps-3">
                                     <div class="text-muted small text-uppercase">Fabric</div>
-                                    <div class="fw-semibold">{{ $lot->orderProductSet->fabric?->name ?? '-' }}</div>
+                                    @php
+                                        $actual_fabrics = collect();
+                                        $currentRolls = $rolls->where('order_lot_id', $lot->id);
+                                        foreach($currentRolls as $roll) {
+                                            if ($roll->fabricReceiptDetail && $roll->fabricReceiptDetail->fabric) {
+                                                $actual_fabrics->push($roll->fabricReceiptDetail->fabric->name);
+                                            }
+                                        }
+                                        $fabric_display = $actual_fabrics->unique()->implode(', ') ?: ($lot->orderProductSet->fabric?->name ?? '-');
+                                    @endphp
+                                    <div class="fw-semibold">{{ $fabric_display }}</div>
                                 </div>
                                 <div class="col-md-2 border-start ps-3">
                                     <div class="text-muted small text-uppercase">Color</div>
