@@ -1261,11 +1261,13 @@ class OrderController extends Controller
             return back()->with('error', 'Order not found.');
         }
 
+        $whatsappPhone = $order->shop_phone;
+
         if ($request->has('phone') && !empty($request->phone)) {
-            $order->shop_phone = $request->phone;
+            $whatsappPhone = $request->phone;
         }
 
-        if (empty($order->shop_phone)) {
+        if (empty($whatsappPhone)) {
             return back()->with('error', 'No phone number available for this party.');
         }
 
@@ -1351,10 +1353,10 @@ class OrderController extends Controller
 
         $msg = "Dear {$order->shop_name},\n\nYour Order #ORD-{$order->id} has been generated.\nPlease find your order sheet attached.\n\nThank you!";
 
-        $status = send_whatsapp_attachment($order->shop_phone, $msg, $physicalPath, $fileName);
+        $status = send_whatsapp_attachment($whatsappPhone, $msg, $physicalPath, $fileName);
 
         if ($status !== false) {
-            return back()->with('success', 'WhatsApp message sent to ' . $order->shop_phone . ' successfully.');
+            return back()->with('success', 'WhatsApp message sent to ' . $whatsappPhone . ' successfully.');
         } else {
             return back()->with('error', 'Failed to send WhatsApp message. Please check API credentials or phone number.');
         }
