@@ -122,10 +122,7 @@
 </head>
 <body>
 
-@foreach(['FROM STAGE COPY', 'TO STAGE COPY'] as $copyTitle)
-<div style="{{ !$loop->first ? 'page-break-before: always;' : '' }}">
 
-    <div class="copy-label">{{ $copyTitle }}</div>
 
     {{-- HEADER --}}
     <div class="page-header">
@@ -357,8 +354,6 @@
         </tr>
     </table>
 
-</div>
-@endforeach
 
 <div class="footer">Slip #{{ $slip->id }} &nbsp;·&nbsp; {{ now()->format('d M Y, h:i A') }}</div>
 
