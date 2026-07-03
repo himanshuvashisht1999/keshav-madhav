@@ -71,8 +71,7 @@ class FairProductController extends Controller
         $productsList = ProductionGoods::select(
             DB::raw('DISTINCT(TRIM(CONCAT(COALESCE((SELECT name FROM master_series WHERE id = production_goods.master_series_id), ""), " ", COALESCE(production_goods.name_of_garment, "")))) as full_name')
         )
-        ->whereNotNull('name_of_garment')
-        ->where('name_of_garment', '!=', '')
+        ->having('full_name', '!=', '')
         ->orderBy('full_name')
         ->pluck('full_name')
         ->filter()

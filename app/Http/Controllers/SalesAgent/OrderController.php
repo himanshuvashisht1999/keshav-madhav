@@ -235,7 +235,7 @@ class OrderController extends Controller
 
             $settings = \DB::table('settings')->first();
             
-            $allowGlobal = $settings && $settings->agent_app_allow_over_stock;
+            $allowGlobal = false;
             $allowSample = $settings && $settings->agent_app_allow_over_stock_sample;
             
             if (!$allowGlobal) {
@@ -732,7 +732,7 @@ class OrderController extends Controller
                     ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
 
                 $settings = \DB::table('settings')->first();
-                $allowGlobal = $settings && $settings->agent_app_allow_over_stock;
+                $allowGlobal = false;
                 $allowSample = $settings && $settings->agent_app_allow_over_stock_sample;
                 
                 if (!$allowGlobal) {
@@ -762,7 +762,7 @@ class OrderController extends Controller
                 ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
 
             $settings = \DB::table('settings')->first();
-            $allowGlobal = $settings && $settings->agent_app_allow_over_stock;
+            $allowGlobal = false;
             $allowSample = $settings && $settings->agent_app_allow_over_stock_sample;
             
             if (!$allowGlobal) {
