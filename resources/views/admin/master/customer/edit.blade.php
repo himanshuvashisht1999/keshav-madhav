@@ -211,7 +211,8 @@
                                 <!-- Shop Details Section -->
                                 @php
                                     // In edit, if this is a shop, 'data' is the shop. If it's an agent, shops are children.
-                                    $shop = $data->parent_id ? $data : $data->shops->first();
+                                    // If switching from 'direct' to 'agent', fallback to $data itself so fields are pre-filled.
+                                    $shop = $data->parent_id ? $data : ($data->shops->first() ?? $data);
                                 @endphp
                                 <div class="col-md-12" id="shop_details_section" style="display: {{ ($data->subtype == 'agent' || $data->parent_id) ? 'block' : 'none' }};">
                                     <hr>
