@@ -206,7 +206,7 @@ class AgentOrderController extends Controller
                 'master_product_fittings.name as fitting_name',
                 'master_design_patterns.name as pattern_name',
 
-                DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
+                DB::raw('SUM(domestic_inventories.total_boxes) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp')
@@ -227,7 +227,7 @@ class AgentOrderController extends Controller
             DB::raw($discount_col)
         )
             ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
-            ->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0')
+            ->havingRaw('SUM(domestic_inventories.total_boxes) > 0')
             ->orderBy('production_goods.design_number')
             ->paginate(20)
             ->appends($request->except('page'));
@@ -1276,7 +1276,7 @@ class AgentOrderController extends Controller
                 'master_colors.name as color_name',
                 'master_size_measurements.name as size_set_name',
 
-                DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
+                DB::raw('SUM(domestic_inventories.total_boxes) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
@@ -1292,7 +1292,7 @@ class AgentOrderController extends Controller
 
                 DB::raw($discount_col)
             )
-            ->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0 OR MAX(current_items.box_qty) > 0)')
+            ->havingRaw('(SUM(domestic_inventories.total_boxes) > 0 OR MAX(current_items.box_qty) > 0)')
             ->orderByRaw('current_order_qty DESC')
             ->orderBy('production_goods.design_number');
 
