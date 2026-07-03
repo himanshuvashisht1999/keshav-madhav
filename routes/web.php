@@ -827,6 +827,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/barcode-generator/generate-bulk', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateBulk'])->name('barcode-generator.generate-bulk');
             Route::post('/barcode-generator/generate-bulk-tspl', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateBulkTspl'])->name('barcode-generator.generate-bulk-tspl');
             Route::post('/barcode-generator/generate-by-barcodes', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateByBarcodes'])->name('barcode-generator.generate-by-barcodes');
+            Route::post('/barcode-generator/generate-by-location', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateByLocation'])->name('barcode-generator.generate-by-location');
+            Route::post('/barcode-generator/generate-by-location-tspl', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateByLocationTspl'])->name('barcode-generator.generate-by-location-tspl');
 
             Route::get('/get-products-by-series', [AdminInventoryController::class, 'getProductsBySeries'])->name('get_products_by_series');
             Route::get('/get-product-details', [AdminInventoryController::class, 'getProductDetails'])->name('get_product_details');
@@ -1751,6 +1753,7 @@ Route::get('/debug-stages', function () {
         'transactions' => \App\Models\OrderStageTransaction::latest()->take(5)->get()
     ];
 });
+
 
 
 

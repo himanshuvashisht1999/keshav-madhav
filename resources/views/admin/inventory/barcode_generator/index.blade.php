@@ -137,6 +137,48 @@
                     </div>
                 </div>
                 
+                                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="card card-default">
+                            <div class="card-header">
+                                <h3 class="card-title">Generate by Location (Warehouse & Rack)</h3>
+                            </div>
+                            <div class="card-body">
+                                <form id="form-location" target="_blank" class="allow-multiple-submit" method="POST">
+                                    @csrf
+                                    <div class="row">
+                                        <div class="col-md-5">
+                                            <div class="form-group">
+                                                <label>Warehouse (Storeroom) <span class="text-danger">*</span></label>
+                                                <select class="form-control select2 storeroom-select" name="storeroom_id" id="storeroom_id" required>
+                                                    <option value="">Select Warehouse</option>
+                                                    @foreach($storerooms as $storeroom)
+                                                        <option value="{{ $storeroom->id }}">{{ $storeroom->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <div class="form-group">
+                                                <label>Rack</label>
+                                                <select class="form-control select2 rack-select" name="rack_id" id="rack_id">
+                                                    <option value="">Select Rack (Optional)</option>
+                                                </select>
+                                                <small class="form-text text-muted">Leave empty to print all barcodes for this warehouse.</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end mb-3">
+                                            <div class="btn-group w-100">
+                                                <button type="submit" formaction="{{ route('admin.inventory.barcode-generator.generate-by-location-tspl') }}" class="btn btn-primary" title="Generate PRN"><i class="fas fa-print"></i> Generate PRN</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row mt-4">
                     <div class="col-md-12">
                         <div class="card card-default">
@@ -169,6 +211,22 @@
         $(document).ready(function () {
             // Store variants globally for the form
             let globalVariants = [];
+            
+            var allRacks = @json($racks);
+            
+            $('#storeroom_id').on('change', function() {
+                var storeroomId = $(this).val();
+                var rackSelect = $('#rack_id');
+                rackSelect.empty().append('<option value="">Select Rack (Optional)</option>');
+                
+                if (storeroomId) {
+                    var filteredRacks = allRacks.filter(function(r) { return r.storeroom_id == storeroomId; });
+                    filteredRacks.forEach(function(r) {
+                        rackSelect.append('<option value="' + r.id + '">' + r.name + '</option>');
+                    });
+                }
+                rackSelect.trigger('change.select2');
+            });
 
             // Function to initialize Select2
             function initSelect2(element) {
