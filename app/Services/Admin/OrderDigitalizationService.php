@@ -2035,7 +2035,7 @@ class OrderDigitalizationService
                         $others = StageMasterUnit::with(['masterStage', 'masterFabricWarehouse'])
                             ->where('master_stage_id', '!=', $to_stage_id)
                             ->where('status', 1)
-                            ->whereNotIn('master_stage_id', [11, 12, 13])
+                            ->whereNotIn('master_stage_id', [12, 13])
                             ->get();
                     }
     
