@@ -41,49 +41,50 @@ class BarcodeGeneratorController extends Controller
     public function generate(Request $request)
     {
         $request->validate([
-            'design_id' => 'required|exists:production_goods,id',
-
-            'color_ids' => 'required|array',
-            'color_ids.*' => 'required|exists:master_colors,id',
-            'size_set_ids' => 'required|array',
-            'size_set_ids.*' => 'required|exists:master_size_measurements,id',
-            'quantities' => 'required|array',
-            'quantities.*' => 'required|integer|min:1|max:500',
+            'designs' => 'required|array',
+            'designs.*.design_id' => 'required|exists:production_goods,id',
+            'designs.*.color_ids' => 'required|array',
+            'designs.*.color_ids.*' => 'required|exists:master_colors,id',
+            'designs.*.size_set_ids' => 'required|array',
+            'designs.*.size_set_ids.*' => 'required|exists:master_size_measurements,id',
+            'designs.*.quantities' => 'required|array',
+            'designs.*.quantities.*' => 'required|integer|min:1|max:500',
         ]);
-
-        $design = ProductionGoods::with('series')->find($request->design_id);
-        $pattern = $design->pattern;
-        $fitting = $design->fitting;
 
         $labels = [];
 
-        foreach ($request->color_ids as $key => $color_id) {
-            if (!$color_id)
-                continue;
-            $color = MasterColor::find($color_id);
-            $sizeSet = MasterSizeMeasurement::find($request->size_set_ids[$key]);
-            $quantity = $request->quantities[$key];
+        foreach ($request->designs as $designData) {
+            $design = ProductionGoods::with('series')->find($designData['design_id']);
+            $pattern = $design->pattern;
+            $fitting = $design->fitting;
 
-            $seriesName = $design->series->name ?? '';
-            $productName = $design->name_of_garment ?? '';
-            $fullProductName = $seriesName . ' ' . $productName;
+            foreach ($designData['color_ids'] as $key => $color_id) {
+                if (!$color_id) continue;
+                $color = MasterColor::find($color_id);
+                $sizeSet = MasterSizeMeasurement::find($designData['size_set_ids'][$key]);
+                $quantity = $designData['quantities'][$key];
 
-            // Generate a unique barcode string
-            $barcode = 'D' . $design->id . 'S' . $sizeSet->id . 'C' . $color->id;
+                $seriesName = $design->series->name ?? '';
+                $productName = $design->name_of_garment ?? '';
+                $fullProductName = $seriesName . ' ' . $productName;
 
-            for ($i = 0; $i < $quantity; $i++) {
-                $labels[] = (object) [
-                    'product_name' => $fullProductName,
-                    'fitting_name' => $fitting->name,
-                    'pattern_name' => $pattern->name,
-                    'size_group' => $sizeSet->name,
-                    'no_of_pcs' => $sizeSet->no_of_pcs,
-                    'color_name' => $color->name,
-                    'color_id' => $color->id,
-                    'design_number' => $design->design_number,
-                    'barcode' => $barcode,
-                    'qrcode' => $barcode,
-                ];
+                // Generate a unique barcode string
+                $barcode = 'D' . $design->id . 'S' . $sizeSet->id . 'C' . $color->id;
+
+                for ($i = 0; $i < $quantity; $i++) {
+                    $labels[] = (object) [
+                        'product_name' => $fullProductName,
+                        'fitting_name' => $fitting->name ?? '',
+                        'pattern_name' => $pattern->name ?? '',
+                        'size_group' => $sizeSet->name,
+                        'no_of_pcs' => $sizeSet->no_of_pcs,
+                        'color_name' => $color->name,
+                        'color_id' => $color->id,
+                        'design_number' => $design->design_number,
+                        'barcode' => $barcode,
+                        'qrcode' => $barcode,
+                    ];
+                }
             }
         }
 
@@ -164,30 +165,31 @@ class BarcodeGeneratorController extends Controller
     public function generateTspl(Request $request)
     {
         $request->validate([
-            'design_id' => 'required|exists:production_goods,id',
-
-            'color_ids' => 'required|array',
-            'color_ids.*' => 'required|exists:master_colors,id',
-            'size_set_ids' => 'required|array',
-            'size_set_ids.*' => 'required|exists:master_size_measurements,id',
-            'quantities' => 'required|array',
-            'quantities.*' => 'required|integer|min:1|max:500',
+            'designs' => 'required|array',
+            'designs.*.design_id' => 'required|exists:production_goods,id',
+            'designs.*.color_ids' => 'required|array',
+            'designs.*.color_ids.*' => 'required|exists:master_colors,id',
+            'designs.*.size_set_ids' => 'required|array',
+            'designs.*.size_set_ids.*' => 'required|exists:master_size_measurements,id',
+            'designs.*.quantities' => 'required|array',
+            'designs.*.quantities.*' => 'required|integer|min:1|max:500',
         ]);
 
         $barcodeList = [];
 
-        foreach ($request->color_ids as $key => $color_id) {
-            if (!$color_id)
-                continue;
+        foreach ($request->designs as $designData) {
+            foreach ($designData['color_ids'] as $key => $color_id) {
+                if (!$color_id) continue;
 
-            $barcode = 'D' . $request->design_id .
-                'S' . $request->size_set_ids[$key] .
-                'C' . $color_id;
+                $barcode = 'D' . $designData['design_id'] .
+                    'S' . $designData['size_set_ids'][$key] .
+                    'C' . $color_id;
 
-            $quantity = $request->quantities[$key];
+                $quantity = $designData['quantities'][$key];
 
-            for ($i = 0; $i < $quantity; $i++) {
-                $barcodeList[] = $barcode;
+                for ($i = 0; $i < $quantity; $i++) {
+                    $barcodeList[] = $barcode;
+                }
             }
         }
 

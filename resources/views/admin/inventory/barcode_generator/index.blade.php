@@ -46,88 +46,100 @@
                                         </div>
                                     @endif
 
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Design Number <span class="text-danger">*</span></label>
-                                                <select class="form-control select2 design-select" name="design_id" required>
-                                                    <option value="">Select Design Number</option>
-                                                    @foreach($designs as $design)
-                                                        <option value="{{ $design->id }}" {{ old('design_id') == $design->id ? 'selected' : '' }}>
-                                                            {{ ($design->series->name ?? '') . ' ' . $design->name_of_garment . ' (' . $design->design_number . ')' }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
+                                    <div id="designs-container">
+                                        <div class="design-block border p-3 mb-3 bg-light" data-index="0">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Design Number <span class="text-danger">*</span></label>
+                                                        <select class="form-control select2 design-select" name="designs[0][design_id]" required>
+                                                            <option value="">Select Design Number</option>
+                                                            @foreach($designs as $design)
+                                                                <option value="{{ $design->id }}" {{ old('designs.0.design_id') == $design->id ? 'selected' : '' }}>
+                                                                    {{ ($design->series->name ?? '') . ' ' . $design->name_of_garment . ' (' . $design->design_number . ')' }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Pattern <span class="text-danger">*</span></label>
+                                                        <select class="form-control select2 pattern-select" name="designs[0][pattern_id]" required>
+                                                            <option value="">Select Pattern</option>
+                                                            @foreach($patterns as $pattern)
+                                                                <option value="{{ $pattern->id }}">{{ $pattern->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Fitting <span class="text-danger">*</span></label>
+                                                        <select class="form-control select2 fitting-select" name="designs[0][fitting_id]" required>
+                                                            <option value="">Select Fitting</option>
+                                                            @foreach($fittings as $fitting)
+                                                                <option value="{{ $fitting->id }}">{{ $fitting->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Pattern <span class="text-danger">*</span></label>
-                                                <select class="form-control select2 pattern-select" name="pattern_id" required>
-                                                    <option value="">Select Pattern</option>
-                                                    @foreach($patterns as $pattern)
-                                                        <option value="{{ $pattern->id }}" {{ old('pattern_id') == $pattern->id ? 'selected' : '' }}>{{ $pattern->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label>Fitting <span class="text-danger">*</span></label>
-                                                <select class="form-control select2 fitting-select" name="fitting_id" required>
-                                                    <option value="">Select Fitting</option>
-                                                    @foreach($fittings as $fitting)
-                                                        <option value="{{ $fitting->id }}" {{ old('fitting_id') == $fitting->id ? 'selected' : '' }}>{{ $fitting->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
 
-                                    <hr>
-                                    <h5>Color and Size Selections</h5>
-                                    <div id="barcode-rows">
-                                        <div class="row barcode-row">
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label>Size Set <span class="text-danger">*</span></label>
-                                                    <select class="form-control select2 size-set-select" name="size_set_ids[]" required>
-                                                        <option value="">Select Size Set</option>
-                                                        @foreach($sizeSets as $set)
-                                                            <option value="{{ $set->id }}">{{ $set->name }}</option>
-                                                        @endforeach
-                                                    </select>
+                                            <hr>
+                                            <h5>Color and Size Selections</h5>
+                                            <div class="barcode-rows">
+                                                <div class="row barcode-row">
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label>Size Set <span class="text-danger">*</span></label>
+                                                            <select class="form-control select2 size-set-select" name="designs[0][size_set_ids][]" required>
+                                                                <option value="">Select Size Set</option>
+                                                                @foreach($sizeSets as $set)
+                                                                    <option value="{{ $set->id }}">{{ $set->name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label>Color <span class="text-danger">*</span></label>
+                                                            <select class="form-control select2 color-select" name="designs[0][color_ids][]" required>
+                                                                <option value="">Select Color</option>
+                                                                @foreach($colors as $color)
+                                                                    <option value="{{ $color->id }}">{{ $color->name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Quantity <span class="text-danger">*</span></label>
+                                                            <input type="number" class="form-control" name="designs[0][quantities][]" min="1" max="500" value="1" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-1">
+                                                        <div class="form-group">
+                                                            <label>&nbsp;</label>
+                                                            <button type="button" class="btn btn-danger btn-block remove-row"><i class="fas fa-trash"></i></button>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label>Color <span class="text-danger">*</span></label>
-                                                    <select class="form-control select2 color-select" name="color_ids[]" required>
-                                                        <option value="">Select Color</option>
-                                                        @foreach($colors as $color)
-                                                            <option value="{{ $color->id }}">{{ $color->name }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <label>Quantity <span class="text-danger">*</span></label>
-                                                    <input type="number" class="form-control" name="quantities[]" min="1" max="500" value="1" required>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-1">
-                                                <div class="form-group">
-                                                    <label>&nbsp;</label>
-                                                    <button type="button" class="btn btn-danger btn-block remove-row"><i class="fas fa-trash"></i></button>
-                                                </div>
-                                            </div>
+                                            <button type="button" class="btn btn-success btn-sm add-row">
+                                                <i class="fas fa-plus"></i> Add Another Color/Size
+                                            </button>
+                                            <button type="button" class="btn btn-danger btn-sm remove-design-block d-none float-right">
+                                                <i class="fas fa-trash"></i> Remove Design Block
+                                            </button>
                                         </div>
                                     </div>
-                                    <button type="button" class="btn btn-success btn-sm" id="add-row">
-                                        <i class="fas fa-plus"></i> Add Another Color/Size
-                                    </button>
+                                    <div class="mb-3">
+                                        <button type="button" class="btn btn-primary" id="add-design-block">
+                                            <i class="fas fa-plus"></i> Add Another Design Block
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="card-footer text-right">
                                     <button type="submit" class="btn btn-primary"><i class="fas fa-print"></i> Generate TSPL & Print</button>
@@ -209,8 +221,7 @@
     </div>
     <script>
         $(document).ready(function () {
-            // Store variants globally for the form
-            let globalVariants = [];
+
             
             var allRacks = @json($racks);
             
@@ -244,18 +255,19 @@
 
             // Handle Design Selection
             $(document).on('change', '.design-select', function() {
+                let block = $(this).closest('.design-block');
                 let productId = $(this).val();
-                let patternSelect = $('.pattern-select');
-                let fittingSelect = $('.fitting-select');
-                let sizeSelects = $('.size-set-select');
-                let colorSelects = $('.color-select');
+                let patternSelect = block.find('.pattern-select');
+                let fittingSelect = block.find('.fitting-select');
+                let sizeSelects = block.find('.size-set-select');
+                let colorSelects = block.find('.color-select');
                 
                 // Clear subsequent dropdowns
                 patternSelect.val('').trigger('change.select2');
                 fittingSelect.val('').trigger('change.select2');
                 sizeSelects.empty().append('<option value="">Select Size Set</option>').trigger('change.select2');
                 colorSelects.empty().append('<option value="">Select Color</option>').trigger('change.select2');
-                globalVariants = [];
+                block.data('variants', []);
 
                 if (productId) {
                     $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function(data) {
@@ -268,7 +280,7 @@
                                 fittingSelect.val(data.fitting_id).trigger('change.select2');
                             }
                             
-                            globalVariants = data.variants;
+                            block.data('variants', data.variants);
                             
                             sizeSelects.each(function() {
                                 let $this = $(this);
@@ -287,12 +299,14 @@
             $(document).on('change', '.size-set-select', function () {
                 let sizeSetId = $(this).val();
                 let row = $(this).closest('.barcode-row');
+                let block = $(this).closest('.design-block');
                 let colorSelect = row.find('.color-select');
+                let variants = block.data('variants') || [];
                 
                 colorSelect.empty().append('<option value="">Select Color</option>').trigger('change.select2');
 
-                if (sizeSetId && globalVariants.length > 0) {
-                    let variant = globalVariants.find(v => v.size_set_id == sizeSetId);
+                if (sizeSetId && variants.length > 0) {
+                    let variant = variants.find(v => v.size_set_id == sizeSetId);
                     if (variant) {
                         variant.colors.forEach(function(c) {
                             colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
@@ -302,15 +316,15 @@
                 }
             });
 
-            // Add new row logic
-            $('#add-row').click(function() {
-                var $firstRow = $('.barcode-row:first');
+            // Add new row logic inside a block
+            $(document).on('click', '.add-row', function() {
+                var block = $(this).closest('.design-block');
+                var index = block.attr('data-index');
+                var $firstRow = block.find('.barcode-row:first');
                 var newRow = $firstRow.clone();
                 
-                // Reset input quantities to 1
-                newRow.find('input[name="quantities[]"]').val(1);
+                newRow.find('input[type="number"]').val(1);
                 
-                // Deep clean up Select2 artifacts from the cloned row
                 newRow.find('.select2-container').remove();
                 var $selects = newRow.find('select');
                 
@@ -320,35 +334,89 @@
                     $(this).removeAttr('aria-hidden');
                     $(this).removeAttr('tabindex');
                     $(this).find('option').removeAttr('data-select2-id');
-                    $(this).val(''); // Reset selected value
-                    $(this).show(); // Ensure original select is visible for re-init
+                    $(this).val('');
+                    $(this).show();
                 });
 
-                $('#barcode-rows').append(newRow);
-                
-                // Clear color select of the new row initially
                 newRow.find('.color-select').empty().append('<option value="">Select Color</option>');
 
-                // Populate Size Set if globalVariants is already set
-                if (globalVariants.length > 0) {
+                let variants = block.data('variants') || [];
+                if (variants.length > 0) {
                     let sizeSelect = newRow.find('.size-set-select');
                     sizeSelect.empty().append('<option value="">Select Size Set</option>');
-                    globalVariants.forEach(function(v) {
+                    variants.forEach(function(v) {
                         sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
                     });
                 }
                 
-                // Re-initialize Select2 on the new row's selects
+                block.find('.barcode-rows').append(newRow);
+                
                 newRow.find('.select2').each(function() {
                     initSelect2($(this));
                 });
             });
 
             $(document).on('click', '.remove-row', function() {
-                if ($('.barcode-row').length > 1) {
+                var block = $(this).closest('.design-block');
+                if (block.find('.barcode-row').length > 1) {
                     $(this).closest('.barcode-row').remove();
                 } else {
                     alert('At least one row is required.');
+                }
+            });
+
+            let designIndex = 0;
+            $('#add-design-block').click(function() {
+                designIndex++;
+                var $firstBlock = $('.design-block:first');
+                var newBlock = $firstBlock.clone();
+                newBlock.attr('data-index', designIndex);
+                newBlock.data('variants', []);
+                
+                // Rename attributes
+                newBlock.find('select, input').each(function() {
+                    var name = $(this).attr('name');
+                    if (name) {
+                        name = name.replace(/designs\[0\]/, 'designs[' + designIndex + ']');
+                        $(this).attr('name', name);
+                    }
+                });
+                
+                // Keep only one barcode row
+                newBlock.find('.barcode-row').not(':first').remove();
+                
+                // Reset inputs
+                newBlock.find('input[type="number"]').val(1);
+                
+                // Clean Select2
+                newBlock.find('.select2-container').remove();
+                var $selects = newBlock.find('select');
+                
+                $selects.each(function() {
+                    $(this).removeClass('select2-hidden-accessible');
+                    $(this).removeAttr('data-select2-id');
+                    $(this).removeAttr('aria-hidden');
+                    $(this).removeAttr('tabindex');
+                    $(this).find('option').removeAttr('data-select2-id');
+                    $(this).val('');
+                    $(this).show();
+                });
+                
+                newBlock.find('.size-set-select').empty().append('<option value="">Select Size Set</option>');
+                newBlock.find('.color-select').empty().append('<option value="">Select Color</option>');
+                
+                newBlock.find('.remove-design-block').removeClass('d-none');
+
+                $('#designs-container').append(newBlock);
+                
+                newBlock.find('.select2').each(function() {
+                    initSelect2($(this));
+                });
+            });
+
+            $(document).on('click', '.remove-design-block', function() {
+                if ($('.design-block').length > 1) {
+                    $(this).closest('.design-block').remove();
                 }
             });
 
