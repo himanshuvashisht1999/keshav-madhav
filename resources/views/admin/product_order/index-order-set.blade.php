@@ -26,8 +26,14 @@
 
                     <div class="mb-2 d-flex justify-content-between align-items-center">
                         <div>
-                            <button type="button" id="bulkAssignBtn" class="btn btn-primary btn-sm">
-                                Assign Selected to Cutting Master
+                            <button class="btn btn-warning mr-2" id="bulkPoBtn">
+                                <i class="fas fa-file-invoice mr-1"></i> Bulk PO
+                            </button>
+                            <button class="btn btn-danger mr-2" id="bulkCmpoPdfBtn">
+                                <i class="fas fa-file-pdf mr-1"></i> Download Combined PDF
+                            </button>
+                            <button class="btn btn-primary" id="bulkAssignBtn">
+                                <i class="fas fa-check-double mr-1"></i> Assign Selected to Cutting Master
                             </button>
                             <a href="{{ route('admin.product_order.bulkPO', ['order_id' => $order_main_id]) }}" class="btn btn-outline-info btn-sm">
                                 Create PO
@@ -413,6 +419,21 @@ $(document).ready(function () {
         window.location.href = "{{ route('admin.product_order.bulkPO') }}?set_ids=" + idsStr;
     });
 
+    // Bulk CMPO PDF button
+    $('#bulkCmpoPdfBtn').on('click', function () {
+        const selectedIds = $('.row-select:checked').map(function () {
+            return $(this).val();
+        }).get();
+
+        if (selectedIds.length === 0) {
+            alert('Please select at least one set.');
+            return;
+        }
+
+        const idsStr = selectedIds.join(',');
+        window.open("{{ route('admin.product_order.bulkCmpoDownload') }}?set_ids=" + idsStr, '_blank');
+    });
+
     $(document).on('click', '.assign-btn', function () {
         $('#modal_order_set_id').val($(this).data('id'));
         $('#modal_order_set_ids').val('');
@@ -496,12 +517,22 @@ $(document).ready(function () {
 
     // Bulk assign button
     $('#bulkAssignBtn').on('click', function () {
+        let hasAssigned = false;
+        
         const selectedIds = $('.row-select:checked').map(function () {
+            if ($(this).data('assigned') === true || $(this).data('assigned') === 'true') {
+                hasAssigned = true;
+            }
             return $(this).val();
         }).get();
 
         if (selectedIds.length === 0) {
             alert('Please select at least one set.');
+            return;
+        }
+
+        if (hasAssigned) {
+            alert('One or more selected sets are already assigned. You cannot re-assign them.');
             return;
         }
 

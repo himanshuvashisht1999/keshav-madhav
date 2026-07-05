@@ -1605,8 +1605,8 @@ class ReportService
         }
 
         /* ---------------- ROLLS DATA ---------------- */
-        $rolls_data = FabricRollAssigning::with('fabricRollAssigningsDetail')->where('lot_no', $lot_no)
-            ->select('id', 'roll_no', 'meter')
+        $rolls_data = FabricRollAssigning::with(['fabricRollAssigningsDetail', 'fabricReceiptDetail.fabric'])->where('lot_no', $lot_no)
+            ->select('id', 'roll_no', 'meter', 'fabric_receipt_detail_id')
             ->get();
 
         /* ---------------- ALL SESSIONS DATA ---------------- */

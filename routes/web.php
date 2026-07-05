@@ -371,6 +371,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
             Route::get('/index-order-set', [AdminProductOrderController::class, 'indexOrderSet'])->name('indexOrderSet');
             Route::get('/indexListOrderSet', [AdminProductOrderController::class, 'indexListOrderSet'])->name('indexListOrderSet');
+            Route::get('/bulk-cmpo-download', [AdminProductOrderController::class, 'bulkCmpoDownload'])->name('bulkCmpoDownload');
             Route::get('/index-order-set-download', [AdminProductOrderController::class, 'indexOrderSetDownload'])->name('indexOrderSetDownload');
             Route::get('/view-cutting-slip', [AdminProductOrderController::class, 'viewCuttingSlip'])->name('viewCuttingSlip');
 

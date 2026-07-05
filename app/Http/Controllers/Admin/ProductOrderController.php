@@ -642,6 +642,32 @@ class ProductOrderController extends Controller
         return $pdf->download('CMPO-' . $request->id . '.pdf');
     }
 
+    public function bulkCmpoDownload(Request $request)
+    {
+        if (empty($request->set_ids)) {
+            return back()->withError('No sets selected.');
+        }
+
+        $ids = array_filter(explode(',', $request->set_ids));
+        
+        try {
+            $slip_data = $this->bulkBuildCmpoData($ids);
+        } catch (\Exception $e) {
+            return response("<script>alert('{$e->getMessage()}'); window.close();</script>");
+        }
+
+        $pdf = Pdf::loadView(
+            'admin.product_order.cmpo_slip',
+            [
+                'header' => $slip_data['cmpoHeader'],
+                'sizeData' => $slip_data['sizeData'],
+                'assignments' => $slip_data['assignments'],
+            ]
+        )->setPaper('a4', 'portrait');
+
+        return $pdf->download('Combined-CMPO-' . implode('-', $ids) . '.pdf');
+    }
+
     public function viewCuttingSlip(Request $request)
     {
         $slip_data = $this->buildCmpoData($request->id);
@@ -817,4 +843,107 @@ class ProductOrderController extends Controller
         ];
     }
 
+    private function bulkBuildCmpoData(array $ids): array
+    {
+        $sets = OrderProductSet::with([
+            'stage_master_unit.masterFabricWarehouse',
+            'fabric',
+            'master_design_pattern',
+            'orderMain.customer',
+            'colors',
+            'size_measurement',
+            'master_product_fitting',
+            'orderCuttingStages.cutting_master',
+            'printing_unit',
+        ])->whereIn('id', $ids)->get();
+
+        if ($sets->isEmpty()) {
+            return [];
+        }
+
+        $firstData = $sets->first();
+        $assignments = $firstData->orderCuttingStages;
+        $firstAssignment = $assignments->first();
+
+        // Check if all selected sets share the same assignment details
+        $firstCuttingMaster = $firstData->stage_master_unit_id ?? ($firstAssignment->cutting_master_id ?? null);
+        $firstFitting = $firstData->master_product_fitting_id ?? ($firstAssignment->master_fitting_id ?? null);
+        $firstPattern = $firstData->master_design_pattern_id ?? ($firstAssignment->master_pattern_id ?? null);
+
+        foreach ($sets as $set) {
+            $setAssignment = $set->orderCuttingStages->first();
+            $cuttingMaster = $set->stage_master_unit_id ?? ($setAssignment->cutting_master_id ?? null);
+            $fitting = $set->master_product_fitting_id ?? ($setAssignment->master_fitting_id ?? null);
+            $pattern = $set->master_design_pattern_id ?? ($setAssignment->master_pattern_id ?? null);
+
+            if ($cuttingMaster !== $firstCuttingMaster || $fitting !== $firstFitting || $pattern !== $firstPattern) {
+                throw new \Exception('You cannot download a combined PDF for sets that have different cutting assignments (e.g., different Cutting Masters, Fittings, or Patterns). Please select sets with identical assignment details.');
+            }
+        }
+
+        // Calculate total pieces
+        $totalPcs = $sets->sum('total_quantity');
+        
+        // Aggregate color and design arrays if they differ
+        $colors = $sets->pluck('colors.name')->unique()->filter()->implode(', ');
+        $designs = $sets->pluck('design_number')->unique()->filter()->implode(', ');
+        $sizesList = $sets->pluck('size_measurement.name')->unique()->filter()->implode(', ');
+
+        $cmpoHeader = [
+            'cmpo_id' => implode(', ', $ids),
+            'date' => $firstData->created_at->format('d-m-Y'),
+            'order_no' => $firstData->orderMain->sku ?? '-',
+            'customer' => $firstData->orderMain->customer->name ?? '-',
+            'design_no' => $designs ?? '-',
+            'color' => $colors ?? '-',
+            'fabric' => $firstData->fabric_names ?? ($firstAssignment->fabric_names ?? '-'),
+            'pattern' => $firstData->master_design_pattern->name ?? ($firstAssignment->pattern->name ?? '-'),
+            'warehouse_name' => $firstData->stage_master_unit->masterFabricWarehouse->cutting_master_name ?? ($firstAssignment->cutting_master->masterFabricWarehouse->cutting_master_name ?? '-'),
+            'cuttingMaster' => $firstData->stage_master_unit->name ?? ($firstAssignment->cutting_master->name ?? '-'),
+            'cuttingMasterAddress' => $firstData->stage_master_unit->masterFabricWarehouse->address ?? ($firstAssignment->cutting_master->masterFabricWarehouse->address ?? '-'),
+            'fitting' => $firstData->master_product_fitting?->name ?? ($firstAssignment->master_fitting?->name ?? '-'),
+            'remark' => $firstData->remark ?? ($firstAssignment->remarks ?? '-'),
+            'belt' => $firstAssignment->belt ?? '-',
+            'size_set' => $sizesList,
+            'pcs_in_set' => $sets->sum('no_of_pcs'),
+            'total_pcs' => $totalPcs,
+            'printing_unit_name' => $firstData->printing_unit ? $firstData->printing_unit->name : '-',
+        ];
+
+        $sizeData = [];
+
+        foreach ($sets as $data) {
+            $sizes = [$data->set_size];
+            if (!empty($data->size_measurement?->size_group)) {
+                $sizes = array_map('trim', explode(',', $data->size_measurement->size_group));
+            }
+
+            $totalInRatio = count($sizes);
+            $sizeCounts = array_count_values($sizes);
+
+            foreach ($sizeCounts as $size => $count) {
+                // Unique key for design+color+size to aggregate quantities if they overlap
+                $key = $data->design_number . '_' . $data->colors->name . '_' . $size;
+                
+                $pcs = $totalInRatio > 0 ? ($count * $data->total_quantity) / $totalInRatio : 0;
+                
+                if (isset($sizeData[$key])) {
+                    $sizeData[$key]['pcs'] += $pcs;
+                } else {
+                    $sizeData[$key] = [
+                        'design_no' => $data->design_number,
+                        'color' => $data->colors->name,
+                        'size' => $size,
+                        'pcs' => $pcs,
+                    ];
+                }
+            }
+        }
+
+        return [
+            'cmpoHeader' => $cmpoHeader,
+            'sizeData' => array_values($sizeData),
+            'assignments' => $assignments
+        ];
+    }
 }
