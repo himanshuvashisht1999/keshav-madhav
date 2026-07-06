@@ -1148,7 +1148,12 @@ class AgentOrderController extends Controller
                 $agent = DB::table('sales_agents')->where('id', $agent_id)->first();
             }
 
-            return view('admin.agent_orders.edit_fabric', compact('order', 'shop', 'agent', 'fabrics', 'existing_items', 'gst_percentage'));
+            $agents = DB::table('sales_agents')->select('id', 'name')->where('status', 1)->get();
+            $shops = DB::table('master_customers')->select('id', 'name')->where('status', 1)->get();
+            $vendors = DB::table('vendors')->select('id', 'name')->where('status', 1)->get();
+            $salesMen = \App\Models\SalesMan::where('status', 1)->get();
+
+            return view('admin.agent_orders.edit_fabric', compact('order', 'shop', 'agent', 'fabrics', 'existing_items', 'gst_percentage', 'agents', 'shops', 'vendors', 'salesMen'));
         }
 
         $designs = DomesticInventory::where('domestic_inventories.status', 1)
@@ -1364,7 +1369,12 @@ class AgentOrderController extends Controller
             ]);
         }
 
-        return view('admin.agent_orders.edit', compact('order', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'boxes', 'boxImages', 'selected_quantities', 'gst_percentage'));
+        $agents = DB::table('sales_agents')->select('id', 'name')->where('status', 1)->get();
+        $shops = DB::table('master_customers')->select('id', 'name')->where('status', 1)->get();
+        $vendors = DB::table('vendors')->select('id', 'name')->where('status', 1)->get();
+        $salesMen = \App\Models\SalesMan::where('status', 1)->get();
+
+        return view('admin.agent_orders.edit', compact('order', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'boxes', 'boxImages', 'selected_quantities', 'gst_percentage', 'agents', 'shops', 'vendors', 'salesMen'));
     }
 
     public function update(Request $request, $id)
@@ -1514,7 +1524,7 @@ class AgentOrderController extends Controller
 
         DB::beginTransaction();
         try {
-            $order->update([
+            $updateData = [
                 'total_qty' => $total_qty,
                 'total_amount' => $total_amount,
                 'discount_percentage' => $discount_percentage,
@@ -1530,7 +1540,20 @@ class AgentOrderController extends Controller
                 'transport' => $request->transport,
                 'remark' => $request->remark,
                 'updated_at' => now()
-            ]);
+            ];
+
+            if ($request->filled('party_type')) {
+                $updateData['party_type'] = $request->party_type;
+                if ($request->party_type === 'vendor') {
+                    $updateData['master_vendor_id'] = $request->master_vendor_id;
+                    $updateData['master_customer_id'] = null;
+                } else {
+                    $updateData['master_customer_id'] = $request->master_customer_id;
+                    $updateData['master_vendor_id'] = null;
+                }
+            }
+
+            $order->update($updateData);
 
             // DELETE EXISTING ITEMS
             if ($sale_type === 'fabric') {

@@ -22,6 +22,58 @@
 
         <section class="content pb-5 mb-5" style="padding-bottom: 150px !important;">
             <div class="container-fluid">
+                <!-- Order Basic Information -->
+                <div class="card shadow-sm border-0 mb-3 bg-white">
+                    <div class="card-header bg-white py-2">
+                        <h6 class="mb-0 text-dark font-weight-bold">Order Basic Information</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group mb-0">
+                                    <label class="text-muted small font-weight-bold text-uppercase">Party Type</label>
+                                    <div class="d-flex align-items-center mt-1">
+                                        <div class="custom-control custom-radio mr-4">
+                                            <input class="custom-control-input" type="radio" id="editTypeCustomer" name="party_type" value="customer" {{ $order->party_type == 'customer' ? 'checked' : '' }}>
+                                            <label for="editTypeCustomer" class="custom-control-label font-weight-normal">Customer</label>
+                                        </div>
+                                        <div class="custom-control custom-radio">
+                                            <input class="custom-control-input" type="radio" id="editTypeVendor" name="party_type" value="vendor" {{ $order->party_type == 'vendor' ? 'checked' : '' }}>
+                                            <label for="editTypeVendor" class="custom-control-label font-weight-normal">Vendor</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3" id="editCustomerWrapper" style="{{ $order->party_type == 'customer' ? '' : 'display:none;' }}">
+                                <div class="form-group mb-0">
+                                    <label class="text-muted small font-weight-bold text-uppercase">Select Customer</label>
+                                    <select id="editCustomerSelect" class="form-control form-control-sm select2">
+                                        <option value="">-- Choose Customer --</option>
+                                        @foreach($shops as $shop_item)
+                                            <option value="{{ $shop_item->id }}" {{ $order->master_customer_id == $shop_item->id ? 'selected' : '' }}>
+                                                {{ $shop_item->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3" id="editVendorWrapper" style="{{ $order->party_type == 'vendor' ? '' : 'display:none;' }}">
+                                <div class="form-group mb-0">
+                                    <label class="text-muted small font-weight-bold text-uppercase">Select Vendor</label>
+                                    <select id="editVendorSelect" class="form-control form-control-sm select2">
+                                        <option value="">-- Choose Vendor --</option>
+                                        @foreach($vendors as $vendor_item)
+                                            <option value="{{ $vendor_item->id }}" {{ $order->master_vendor_id == $vendor_item->id ? 'selected' : '' }}>
+                                                {{ $vendor_item->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Filters Section -->
                 <div class="card shadow-sm border-0 mb-3 bg-light">
                     <div class="card-body p-2">
@@ -559,7 +611,10 @@
                                 status: $('#orderStatus').val(),
                                 remark: $('#remark').val(),
                                 booking_station: $('#booking_station').val(),
-                                transport: $('#transport') .val()
+                                transport: $('#transport') .val(),
+                                party_type: $('input[name="party_type"]:checked').val(),
+                                master_customer_id: $('#editCustomerSelect').val(),
+                                master_vendor_id: $('#editVendorSelect').val()
                             },
                             success: function (response) {
                                 if (response.success) {
@@ -578,6 +633,18 @@
                         });
                     }
                 });
+            });
+
+            $('input[name="party_type"]').on('change', function() {
+                if ($(this).val() === 'customer') {
+                    $('#editCustomerWrapper').show();
+                    $('#editVendorWrapper').hide();
+                    $('#editVendorSelect').val('').trigger('change');
+                } else {
+                    $('#editCustomerWrapper').hide();
+                    $('#editVendorWrapper').show();
+                    $('#editCustomerSelect').val('').trigger('change');
+                }
             });
         });
     </script>
