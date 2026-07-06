@@ -1,0 +1,2 @@
+Product:  (ID: 274), Size Set: 32*40, Color in Inventory: D.BLUE -> ISSUE: Color not found in Product Variant Colors (Boxes in Inventory: 11)
+Product:  (ID: 275), Size Set: 32*40, Color in Inventory: GREY GROWN -> ISSUE: Color not found in Product Variant Colors (Boxes in Inventory: 0)
