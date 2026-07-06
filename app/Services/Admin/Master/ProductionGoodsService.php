@@ -459,7 +459,11 @@ class ProductionGoodsService
             ->whereNotIn('id', $keepItemIds)->get();
 
         foreach ($itemsToDelete as $it) {
-            if (!\App\Models\DomesticInventory::where('barcode', $it->barcode)->exists()) {
+            $hasInOrder = \App\Models\OrderProductsSet::where('production_goods_id', $productId)
+                ->where('color_id', $it->master_color_id)
+                ->exists();
+                
+            if (!\App\Models\DomesticInventory::where('barcode', $it->barcode)->exists() && !$hasInOrder) {
                 $it->delete();
             } else {
                 // If it has inventory, we can still delete it if there is at least one other item with the same barcode being kept
@@ -476,16 +480,20 @@ class ProductionGoodsService
             ->whereNotIn('id', $keepVariantIds)->get();
 
         foreach ($variantsToDelete as $vt) {
-            // Check if any item of this variant is in inventory
+            // Check if any item of this variant is in inventory or orders
             reset($vt->items);
-            $hasInInv = false;
+            $hasInInvOrOrder = false;
             foreach ($vt->items as $vItem) {
-                if (\App\Models\DomesticInventory::where('barcode', $vItem->barcode)->exists()) {
-                    $hasInInv = true;
+                $hasInOrder = \App\Models\OrderProductsSet::where('production_goods_id', $productId)
+                    ->where('color_id', $vItem->master_color_id)
+                    ->exists();
+                    
+                if (\App\Models\DomesticInventory::where('barcode', $vItem->barcode)->exists() || $hasInOrder) {
+                    $hasInInvOrOrder = true;
                     break;
                 }
             }
-            if (!$hasInInv) {
+            if (!$hasInInvOrOrder) {
                 $vt->delete();
             }
         }
