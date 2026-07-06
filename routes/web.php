@@ -123,6 +123,8 @@ Route::prefix('unit')->name('unit.')->middleware(['unit.remember'])->group(funct
     Route::get('/assignments', [\App\Http\Controllers\Unit\UnitAuthController::class, 'assignments'])->name('assignments');
     Route::get('/order-summary/{sku}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'orderSummary'])->name('order-summary');
     Route::get('/assignment-details/{type}/{id}', [App\Http\Controllers\Unit\UnitAuthController::class, 'showAssignmentDetails'])->name('assignments.details');
+    Route::get('/assignment-details/{type}/{id}/download', [App\Http\Controllers\Unit\UnitAuthController::class, 'downloadAssignmentDetailsPdf'])->name('assignments.download');
+    Route::get('/assignment-slip-details/{slip_id}', [App\Http\Controllers\Unit\UnitAuthController::class, 'showSlipDetails'])->name('assignments.slip_details');
     Route::post('/assignments/{type}/{id}/close', [\App\Http\Controllers\Unit\UnitAuthController::class, 'closeAssignment'])->name('assignments.close');
     Route::post('/assignments/{type}/{id}/reopen', [\App\Http\Controllers\Unit\UnitAuthController::class, 'reopenAssignment'])->name('assignments.reopen');
     Route::get('/download-slip/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'downloadSlip'])->name('download.slip');

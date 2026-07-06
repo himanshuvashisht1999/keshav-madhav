@@ -168,12 +168,43 @@ class UnitAuthController extends Controller
                 $save_data->lot_no = $request->lot_no;
             $save_data->save();
 
-            // Update Transaction Image if ID provided
-            if ($request->transaction_id && $request->transaction_type) {
-                $tx = null;
+            // Update Transaction Image if IDs provided
+            if ($request->transaction_ids) {
+                // If transaction_ids is provided as JSON array string
+                $txArray = is_string($request->transaction_ids) ? json_decode($request->transaction_ids, true) : $request->transaction_ids;
+                
+                if (is_array($txArray) && count($txArray) > 0) {
+                    foreach ($txArray as $txInfo) {
+                        $txId = $txInfo['id'] ?? null;
+                        $txType = $txInfo['type'] ?? null;
+                        
+                        if (!$txId || !$txType) continue;
+
+                        $tx = null;
+                        if ($txType === 'printing_to_stitching') {
+                            $tx = OrderPrintingToStichingTransaction::find($txId);
+                        } elseif ($txType === 'printing') {
+                            $tx = OrderPrintingStageTransaction::find($txId);
+                        } elseif ($txType === 'cutting') {
+                            $tx = OrderCuttingStage::find($txId);
+                        } else {
+                            $tx = OrderStageTransaction::find($txId);
+                        }
+
+                        if ($tx) {
+                            $tx->update([
+                                'image' => $slip_file,
+                                'production_slip_digitization_id' => $save_data->id // Link them
+                            ]);
+                        }
+                    }
+                }
+            } elseif ($request->transaction_id && $request->transaction_type) {
+                // Legacy fallback for single transaction
                 $txId = $request->transaction_id;
                 $txType = $request->transaction_type;
-
+                
+                $tx = null;
                 if ($txType === 'printing_to_stitching') {
                     $tx = OrderPrintingToStichingTransaction::find($txId);
                 } elseif ($txType === 'printing') {
@@ -899,7 +930,6 @@ class UnitAuthController extends Controller
         $canCloseTasks = $isCutting || $isPacking;
 
         $view = $request->get('view', 'open') === 'closed' ? 'closed' : 'open';
-        if (!$canCloseTasks) $view = 'open';
 
         $lotNo = $request->get('lot_no');
         $orderNo = $request->get('order_no');
@@ -933,23 +963,73 @@ class UnitAuthController extends Controller
                 $ass3Query->where(function($sq) use ($orderNo) { $sq->where('sku', 'like', '%' . $orderNo . '%')->orWhereHas('orderProduct.orderMain', function ($q) use ($orderNo) { $q->where('sku', 'like', '%' . $orderNo . '%'); }); });
             }
 
-            if ($isPacking && $canCloseTasks) {
+            if ($isPacking) {
                 if ($view === 'closed') {
                     $ass1Query->where('is_closed_for_unit', 1); $ass2Query->where('is_closed_for_unit', 1); $ass3Query->where('is_closed_for_unit', 1);
+                    $ass1 = $ass1Query->get()->map(function ($item) { $item->transaction_type = 'stage'; return $item; });
+                    $ass2 = $ass2Query->get()->map(function ($item) { $item->transaction_type = 'printing'; return $item; });
+                    $ass3 = $ass3Query->get()->map(function ($item) { $item->transaction_type = 'printing_to_stitching'; return $item; });
                 } else {
                     $ass1Query->where(function ($q) { $q->whereNull('is_closed_for_unit')->orWhere('is_closed_for_unit', 0); });
                     $ass2Query->where(function ($q) { $q->whereNull('is_closed_for_unit')->orWhere('is_closed_for_unit', 0); });
                     $ass3Query->where(function ($q) { $q->whereNull('is_closed_for_unit')->orWhere('is_closed_for_unit', 0); });
+                    $ass1 = $ass1Query->get()->map(function ($item) { $item->transaction_type = 'stage'; return $item; });
+                    $ass2 = $ass2Query->get()->map(function ($item) { $item->transaction_type = 'printing'; return $item; });
+                    $ass3 = $ass3Query->get()->map(function ($item) { $item->transaction_type = 'printing_to_stitching'; return $item; });
                 }
             } else {
-                $ass1Query->where('remaining_quantity', '>', 0)->whereNull('image');
-                $ass2Query->where('remaining_quantity', '>', 0)->whereNull('image');
-                $ass3Query->where('remaining_quantity', '>', 0)->whereNull('image');
+                // Non-cutting, non-packing stages (e.g., Washing, Stitching)
+                if ($view === 'closed') {
+                    $ass1Query->whereNotNull('image');
+                    $ass2Query->whereNotNull('image');
+                    $ass3Query->whereNotNull('image');
+                    $ass1 = $ass1Query->get()->map(function ($item) { $item->transaction_type = 'stage'; return $item; });
+                    $ass2 = $ass2Query->get()->map(function ($item) { $item->transaction_type = 'printing'; return $item; });
+                    $ass3 = $ass3Query->get()->map(function ($item) { $item->transaction_type = 'printing_to_stitching'; return $item; });
+                } else {
+                    // Fetch pending transactions first
+                    $pending1 = (clone $ass1Query)->where('remaining_quantity', '>', 0)->whereNull('image')->get();
+                    $pending2 = (clone $ass2Query)->where('remaining_quantity', '>', 0)->whereNull('image')->get();
+                    $pending3 = (clone $ass3Query)->where('remaining_quantity', '>', 0)->whereNull('image')->get();
+                    
+                    $slipIds = $pending1->pluck('production_slip_digitization_id')->merge($pending2->pluck('production_slip_digitization_id'))->merge($pending3->pluck('production_slip_digitization_id'))->unique()->filter();
+                    
+                    $directIds1 = $pending1->whereNull('production_slip_digitization_id')->pluck('id');
+                    $directIds2 = $pending2->whereNull('production_slip_digitization_id')->pluck('id');
+                    $directIds3 = $pending3->whereNull('production_slip_digitization_id')->pluck('id');
+                    
+                    if ($slipIds->isEmpty() && $directIds1->isEmpty()) {
+                        $ass1Query->whereRaw('1 = 0');
+                    } else {
+                        $ass1Query->where(function($q) use ($slipIds, $directIds1) {
+                            if ($slipIds->isNotEmpty()) $q->whereIn('production_slip_digitization_id', $slipIds);
+                            if ($directIds1->isNotEmpty()) $q->orWhereIn('id', $directIds1);
+                        });
+                    }
+                    
+                    if ($slipIds->isEmpty() && $directIds2->isEmpty()) {
+                        $ass2Query->whereRaw('1 = 0');
+                    } else {
+                        $ass2Query->where(function($q) use ($slipIds, $directIds2) {
+                            if ($slipIds->isNotEmpty()) $q->whereIn('production_slip_digitization_id', $slipIds);
+                            if ($directIds2->isNotEmpty()) $q->orWhereIn('id', $directIds2);
+                        });
+                    }
+                    
+                    if ($slipIds->isEmpty() && $directIds3->isEmpty()) {
+                        $ass3Query->whereRaw('1 = 0');
+                    } else {
+                        $ass3Query->where(function($q) use ($slipIds, $directIds3) {
+                            if ($slipIds->isNotEmpty()) $q->whereIn('production_slip_digitization_id', $slipIds);
+                            if ($directIds3->isNotEmpty()) $q->orWhereIn('id', $directIds3);
+                        });
+                    }
+                    
+                    $ass1 = $ass1Query->get()->map(function ($item) { $item->transaction_type = 'stage'; return $item; });
+                    $ass2 = $ass2Query->get()->map(function ($item) { $item->transaction_type = 'printing'; return $item; });
+                    $ass3 = $ass3Query->get()->map(function ($item) { $item->transaction_type = 'printing_to_stitching'; return $item; });
+                }
             }
-
-            $ass1 = $ass1Query->get()->map(function ($item) { $item->transaction_type = 'stage'; return $item; });
-            $ass2 = $ass2Query->get()->map(function ($item) { $item->transaction_type = 'printing'; return $item; });
-            $ass3 = $ass3Query->get()->map(function ($item) { $item->transaction_type = 'printing_to_stitching'; return $item; });
 
             $assignments = $ass1->merge($ass2)->merge($ass3)->sortByDesc('created_at');
         }
@@ -959,6 +1039,7 @@ class UnitAuthController extends Controller
                 $item->order_sku = $item->productSet->orderMain->sku ?? '-';
                 $item->customer_name = $item->productSet->orderMain?->customer->name ?? '-';
                 $item->lot_number = $item->lot_no ?? ($item->productSet->design_number ?? null);
+                $item->design_number = $item->productSet->design_number ?? null;
             } else {
                 $sku = $item->orderProduct->orderMain->sku ?? $item->sku ?? '-';
                 if ($sku === '-' || empty($sku)) $sku = $item->orderProduct?->orderProductSet?->orderMain?->sku ?? '-';
@@ -969,6 +1050,14 @@ class UnitAuthController extends Controller
                 $item->order_sku = $sku;
                 $item->customer_name = $item->orderProduct?->orderMain?->customer?->name ?? '-';
                 $item->lot_number = $item->lot_no;
+                
+                // Get design number
+                $designNo = $item->orderProduct?->orderProductSet?->design_number ?? null;
+                if (!$designNo && !empty($item->lot_no)) {
+                    $lRef = \App\Models\OrderLot::where('lot_no', $item->lot_no)->with('orderProductSet')->first();
+                    $designNo = $lRef->orderProductSet->design_number ?? null;
+                }
+                $item->design_number = $designNo;
             }
 
             // ✅ Fetch Timing Information
@@ -981,8 +1070,11 @@ class UnitAuthController extends Controller
             $grouped = $assignments->groupBy('order_sku');
             $groupLabel = 'Order';
         } else {
-            $grouped = $assignments->groupBy('lot_number');
-            $groupLabel = 'Lot';
+            // For non-cutting, we group by incoming Slip No
+            $groupedAssignments = $assignments->groupBy(function($item) {
+                return $item->production_slip_digitization_id ?? ('T' . $item->id);
+            });
+            return view('unit.assignments_simple', compact('groupedAssignments', 'unit', 'type', 'view', 'canCloseTasks', 'isCutting'));
         }
         
         $orderSku = $request->get('order_sku');
@@ -1187,6 +1279,58 @@ class UnitAuthController extends Controller
             default: return null;
         }
     }
+    public function showSlipDetails($slip_id)
+    {
+        if (!session()->has('unit_auth')) {
+            return redirect()->route('unit.login');
+        }
+
+        $unitAuth = session('unit_auth');
+        $unitId = $unitAuth['id'];
+        $unit = StageMasterUnit::find($unitId);
+        
+        $isDirectTx = str_starts_with($slip_id, 'T');
+        
+        $ass1Query = \App\Models\OrderStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster', 'orderProduct.orderMain.customer', 'orderProduct.orderProductSet.fabric', 'orderProduct.orderProductSet.colors', 'orderProduct.orderProductSet.master_design_pattern', 'orderProduct.orderProductSet.master_product_fitting', 'details']);
+        $ass2Query = \App\Models\OrderPrintingStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster', 'orderProduct.orderMain.customer', 'orderProduct.orderProductSet.fabric', 'orderProduct.orderProductSet.colors', 'orderProduct.orderProductSet.master_design_pattern', 'orderProduct.orderProductSet.master_product_fitting', 'details']);
+        $ass3Query = \App\Models\OrderPrintingToStichingTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster', 'orderProduct.orderMain.customer', 'orderProduct.orderProductSet.fabric', 'orderProduct.orderProductSet.colors', 'orderProduct.orderProductSet.master_design_pattern', 'orderProduct.orderProductSet.master_product_fitting', 'details']);
+        
+        if ($isDirectTx) {
+            $txId = str_replace('T', '', $slip_id);
+            $ass1Query->where('id', $txId)->whereNull('production_slip_digitization_id');
+            $ass2Query->where('id', $txId)->whereNull('production_slip_digitization_id');
+            $ass3Query->where('id', $txId)->whereNull('production_slip_digitization_id');
+        } else {
+            $ass1Query->where('production_slip_digitization_id', $slip_id);
+            $ass2Query->where('production_slip_digitization_id', $slip_id);
+            $ass3Query->where('production_slip_digitization_id', $slip_id);
+        }
+        
+        $ass1 = $ass1Query->get()->map(function ($item) { $item->transaction_type = 'stage'; return $item; });
+        $ass2 = $ass2Query->get()->map(function ($item) { $item->transaction_type = 'printing'; return $item; });
+        $ass3 = $ass3Query->get()->map(function ($item) { $item->transaction_type = 'printing_to_stitching'; return $item; });
+        
+        $transactions = $ass1->merge($ass2)->merge($ass3);
+        
+        if ($transactions->isEmpty()) {
+            abort(404, 'Slip assignments not found.');
+        }
+
+        $transactions->each(function($item) use ($unit) {
+            $item->lot_number = $item->lot_no;
+            $item->timing = \App\Models\OrderLotStageTiming::where('lot_no', $item->lot_number)
+                ->where('master_stage_id', $unit->master_stage_id)
+                ->first();
+        });
+
+        $previousSlip = null;
+        if (!$isDirectTx) {
+            $previousSlip = \App\Models\ProductionSlipDigitization::find($slip_id);
+        }
+
+        return view('unit.slip_details', compact('unit', 'transactions', 'slip_id', 'previousSlip'));
+    }
+
 
     public function showAssignmentDetails($type, $id)
     {
@@ -1227,8 +1371,8 @@ class UnitAuthController extends Controller
         } else {
             switch ($type) {
                 case 'stage': $transaction = \App\Models\OrderStageTransaction::where('id', $id)->where('sub_stage_id_to', $unitId)->with(['from_stage', 'productionSlipDigitization', 'getFromUnitMaster', 'orderProduct.orderMain.customer', 'orderProduct.orderProductSet.fabric', 'orderProduct.orderProductSet.colors', 'orderProduct.orderProductSet.master_design_pattern', 'orderProduct.orderProductSet.master_product_fitting', 'orderProduct.orderProductSet.order_cutting_stage.fabric', 'orderProduct.orderProductSet.order_cutting_stage.pattern', 'orderProduct.orderProductSet.order_cutting_stage.master_fitting'])->firstOrFail(); break;
-                case 'printing': $transaction = \App\Models\OrderPrintingStageTransaction::where('id', $id)->where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster', 'orderProduct.orderMain.customer', 'orderProduct.orderProductSet.fabric', 'orderProduct.orderProductSet.colors', 'orderProduct.orderProductSet.master_design_pattern', 'orderProduct.orderProductSet.master_product_fitting', 'orderProduct.orderProductSet.order_cutting_stage.fabric', 'orderProduct.orderProductSet.order_cutting_stage.pattern', 'orderProduct.orderProductSet.order_cutting_stage.master_fitting'])->firstOrFail(); break;
-                case 'printing_to_stitching': $transaction = \App\Models\OrderPrintingToStichingTransaction::where('id', $id)->where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster', 'orderProduct.orderMain.customer', 'orderProduct.orderProductSet.fabric', 'orderProduct.orderProductSet.colors', 'orderProduct.orderProductSet.master_design_pattern', 'orderProduct.orderProductSet.master_product_fitting', 'orderProduct.orderProductSet.order_cutting_stage.fabric', 'orderProduct.orderProductSet.order_cutting_stage.pattern', 'orderProduct.orderProductSet.order_cutting_stage.master_fitting'])->firstOrFail(); break;
+                case 'printing': $transaction = \App\Models\OrderPrintingStageTransaction::where('id', $id)->where('sub_stage_id_to', $unitId)->with(['from_stage', 'productionSlipDigitization', 'getFromUnitMaster', 'orderProduct.orderMain.customer', 'orderProduct.orderProductSet.fabric', 'orderProduct.orderProductSet.colors', 'orderProduct.orderProductSet.master_design_pattern', 'orderProduct.orderProductSet.master_product_fitting', 'orderProduct.orderProductSet.order_cutting_stage.fabric', 'orderProduct.orderProductSet.order_cutting_stage.pattern', 'orderProduct.orderProductSet.order_cutting_stage.master_fitting'])->firstOrFail(); break;
+                case 'printing_to_stitching': $transaction = \App\Models\OrderPrintingToStichingTransaction::where('id', $id)->where('sub_stage_id_to', $unitId)->with(['from_stage', 'productionSlipDigitization', 'getFromUnitMaster', 'orderProduct.orderMain.customer', 'orderProduct.orderProductSet.fabric', 'orderProduct.orderProductSet.colors', 'orderProduct.orderProductSet.master_design_pattern', 'orderProduct.orderProductSet.master_product_fitting', 'orderProduct.orderProductSet.order_cutting_stage.fabric', 'orderProduct.orderProductSet.order_cutting_stage.pattern', 'orderProduct.orderProductSet.order_cutting_stage.master_fitting'])->firstOrFail(); break;
                 case 'production': return $this->viewSlip('production', $id);
                 case 'fabric': return $this->viewSlip('fabric', $id);
                 default: abort(404, 'Invalid assignment type');
@@ -1285,6 +1429,96 @@ class UnitAuthController extends Controller
         }
         $nextStages = ($unit->master_stage_id == self::STAGE_CUTTING) ? \App\Models\MasterProductStage::whereIn('id', [self::STAGE_PRINTING, self::STAGE_STITCHING])->get() : [];
         return view('unit.assignment_details', [ 'header' => $header, 'sizeData' => $sizeData, 'transaction' => $transaction, 'type' => $type, 'unit' => $unit, 'nextStages' => $nextStages, 'isRework' => $isRework, 'encrypted_unit_id' => \Illuminate\Support\Facades\Crypt::encryptString($unitId) ]);
+    }
+    
+    public function downloadAssignmentDetailsPdf($type, $id)
+    {
+        if (!session()->has('unit_auth')) return redirect()->route('unit.login');
+        $unitAuth = session('unit_auth');
+        $unitId = $unitAuth['id'];
+        $unit = \App\Models\StageMasterUnit::with('masterFabricWarehouse')->find($unitId);
+        $transaction = null;
+        $orderProductSet = null;
+        $orderLot = null;
+        $sizeData = [];
+
+        if ($type === 'cutting') {
+            $stageAssignment = \App\Models\OrderCuttingStage::with(['productSet.stage_master_unit.masterFabricWarehouse', 'productSet.fabric', 'productSet.master_design_pattern', 'productSet.orderMain.customer', 'productSet.colors', 'productSet.size_measurement', 'productSet.master_product_fitting', 'cutting_master.masterFabricWarehouse'])->findOrFail($id);
+            $data = $stageAssignment->productSet;
+            $orderProductSet = $data;
+            $sizes = [];
+            if (!empty($data->size_measurement?->size_group)) $sizes = array_map('trim', explode(',', $data->size_measurement->size_group));
+            elseif (!empty($data->set_size)) $sizes = [$data->set_size];
+            $sizeSetRange = count($sizes) > 0 ? min($sizes) . '-' . max($sizes) : '-';
+            $totalPcsInSet = $data->size_measurement->no_of_pcs ?? count($sizes);
+            $header = [ 'id' => $stageAssignment->id, 'order_no' => $data->orderMain->sku ?? '-', 'date' => $data->created_at->format('d-m-Y'), 'customer' => $data->orderMain->customer->name ?? '-', 'design_no' => $data->design_number ?? '-', 'fabric' => $data->fabric_names ?? ($stageAssignment->fabric_names ?? '-'), 'color' => $data->colors->name ?? '-', 'pattern' => $data->master_design_pattern->name ?? ($stageAssignment->pattern->name ?? '-'), 'fitting' => $data->master_product_fitting?->name ?? ($stageAssignment->master_fitting?->name ?? '-'), 'warehouse' => $unit->masterFabricWarehouse->cutting_master_name ?? '-', 'unit_name' => $unit->name ?? '-', 'remark' => $stageAssignment->remarks ?? $data->remark ?? '-', 'belt' => $stageAssignment->belt ?? '-', 'total_pcs' => $stageAssignment->quantity ?? 0, 'lot_no' => 'Pending', 'size_set' => $sizeSetRange, 'pcs_in_set' => $totalPcsInSet ];
+            
+            $timing = \App\Models\OrderLotStageTiming::where('lot_no', $data->design_number)
+                ->where('master_stage_id', $unit->master_stage_id)
+                ->first();
+            
+            $header['start_date'] = $timing->start_date ?? $stageAssignment->start_date ?? null;
+            $header['end_date'] = $timing->end_date ?? $stageAssignment->end_date ?? null;
+            $header['complete_date'] = $timing->complete_date ?? $stageAssignment->complete_date ?? null;
+        } else {
+            switch ($type) {
+                case 'stage': $transaction = \App\Models\OrderStageTransaction::where('id', $id)->where('sub_stage_id_to', $unitId)->with(['from_stage', 'productionSlipDigitization', 'getFromUnitMaster', 'orderProduct.orderMain.customer', 'orderProduct.orderProductSet.fabric', 'orderProduct.orderProductSet.colors', 'orderProduct.orderProductSet.master_design_pattern', 'orderProduct.orderProductSet.master_product_fitting', 'orderProduct.orderProductSet.order_cutting_stage.fabric', 'orderProduct.orderProductSet.order_cutting_stage.pattern', 'orderProduct.orderProductSet.order_cutting_stage.master_fitting'])->firstOrFail(); break;
+                case 'printing': $transaction = \App\Models\OrderPrintingStageTransaction::where('id', $id)->where('sub_stage_id_to', $unitId)->with(['from_stage', 'productionSlipDigitization', 'getFromUnitMaster', 'orderProduct.orderMain.customer', 'orderProduct.orderProductSet.fabric', 'orderProduct.orderProductSet.colors', 'orderProduct.orderProductSet.master_design_pattern', 'orderProduct.orderProductSet.master_product_fitting', 'orderProduct.orderProductSet.order_cutting_stage.fabric', 'orderProduct.orderProductSet.order_cutting_stage.pattern', 'orderProduct.orderProductSet.order_cutting_stage.master_fitting'])->firstOrFail(); break;
+                case 'printing_to_stitching': $transaction = \App\Models\OrderPrintingToStichingTransaction::where('id', $id)->where('sub_stage_id_to', $unitId)->with(['from_stage', 'productionSlipDigitization', 'getFromUnitMaster', 'orderProduct.orderMain.customer', 'orderProduct.orderProductSet.fabric', 'orderProduct.orderProductSet.colors', 'orderProduct.orderProductSet.master_design_pattern', 'orderProduct.orderProductSet.master_product_fitting', 'orderProduct.orderProductSet.order_cutting_stage.fabric', 'orderProduct.orderProductSet.order_cutting_stage.pattern', 'orderProduct.orderProductSet.order_cutting_stage.master_fitting'])->firstOrFail(); break;
+                default: abort(404, 'Invalid assignment type');
+            }
+            if ($transaction && $transaction->orderProduct && $transaction->orderProduct->orderProductSet) $orderProductSet = $transaction->orderProduct->orderProductSet;
+            if (!$orderProductSet && $transaction && $transaction->lot_no) {
+                $orderLot = \App\Models\OrderLot::where('lot_no', $transaction->lot_no)->with(['orderProductSet.fabric', 'orderProductSet.colors', 'orderProductSet.master_design_pattern', 'orderProductSet.master_product_fitting', 'orderProductSet.orderMain.customer', 'orderMain.customer'])->first();
+                if ($orderLot && $orderLot->orderProductSet) $orderProductSet = $orderLot->orderProductSet;
+            }
+            $hOrderMain = $transaction->orderProduct->orderMain ?? $orderProductSet->orderMain ?? ($orderLot->orderMain ?? null);
+            $sizes = [];
+            if ($orderProductSet) {
+                if (!empty($orderProductSet->size_measurement?->size_group)) $sizes = array_map('trim', explode(',', $orderProductSet->size_measurement->size_group));
+                elseif (!empty($orderProductSet->set_size)) $sizes = [$orderProductSet->set_size];
+            }
+            $sizeSetRange = count($sizes) > 0 ? min($sizes) . '-' . max($sizes) : '-';
+            $totalPcsInSet = $orderProductSet->size_measurement->no_of_pcs ?? count($sizes);
+            $header = [
+                'id' => $id,
+                'order_no' => $hOrderMain->sku ?? '-',
+                'date' => $transaction->created_at->format('d-m-Y'),
+                'customer' => $hOrderMain->customer->name ?? '-',
+                'design_no' => $orderProductSet->design_number ?? '-',
+                'fabric' => $orderProductSet->fabric_names ?? ($orderProductSet->order_cutting_stage->fabric_names ?? '-'),
+                'color' => $orderProductSet->colors->name ?? '-',
+                'pattern' => $orderProductSet->master_design_pattern->name ?? ($orderProductSet->order_cutting_stage->pattern->name ?? '-'),
+                'fitting' => $orderProductSet->master_product_fitting?->name ?? ($orderProductSet->order_cutting_stage->master_fitting?->name ?? '-'),
+                'lot_no' => $transaction->lot_no,
+                'from_stage' => $transaction->from_stage->name ?? '-',
+                'sent_by' => $transaction->getFromUnitMaster->name ?? '-',
+                'total_pcs' => $transaction->remaining_quantity,
+                'remark' => $transaction->remarks ?? '-',
+                'size_set' => $sizeSetRange,
+                'pcs_in_set' => $totalPcsInSet,
+                'belt' => $orderProductSet->order_cutting_stage->belt ?? '-'
+            ];
+
+            $timing = \App\Models\OrderLotStageTiming::where('lot_no', $transaction->lot_no)
+                ->where('master_stage_id', $unit->master_stage_id)
+                ->first();
+            $header['start_date'] = $timing->start_date ?? $transaction->start_date ?? null;
+            $header['end_date'] = $timing->end_date ?? $transaction->end_date ?? null;
+            $header['complete_date'] = $timing->complete_date ?? $transaction->complete_date ?? null;
+            
+            if ($type === 'printing' && method_exists($transaction, 'printingDetails')) {
+                foreach ($transaction->printingDetails as $det) $sizeData[] = ['size' => $det->size, 'color' => $header['color'], 'pcs' => $det->quantity];
+            } elseif ($type === 'stage' || $type === 'printing_to_stitching') {
+                $details = ($type === 'stage') ? \App\Models\OrderStageTransactionDetail::where('order_stage_transaction_id', $id)->get() : \App\Models\OrderPrintingToStichingTransactionDetail::where('order_printing_to_stiching_transaction_id', $id)->get();
+                foreach ($details as $det) $sizeData[] = ['size' => $det->size, 'color' => $header['color'], 'pcs' => $det->quantity];
+            }
+            if (!empty($sizeData)) $header['total_pcs'] = array_sum(array_column($sizeData, 'pcs'));
+            elseif ($header['total_pcs'] == 0 && isset($transaction->quantity)) $header['total_pcs'] = $transaction->quantity;
+        }
+
+        $pdf = Pdf::loadView('unit.pdf.assignment_details_pdf', compact('header', 'transaction', 'type', 'unit'))->setPaper('A4', 'portrait');
+        return $pdf->download('Assignment_Details_CMPO_' . $header['id'] . '.pdf');
     }
 
     public function downloadSlip($slipId)
