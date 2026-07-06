@@ -207,7 +207,10 @@ class PackingService
             ->join('order_stage_transaction_details as det', 'tx.id', '=', 'det.order_stage_transaction_id')
             ->whereIn('tx.lot_no', $lots)
             ->where('tx.to_stage_id', 11) // Packing Stage
-            ->where('tx.sub_stage_id_to', $unit_id)
+            ->where(function($q) use ($unit_id) {
+                $q->where('tx.sub_stage_id_to', $unit_id)
+                  ->orWhereNull('tx.sub_stage_id_to');
+            })
             ->where('tx.type', '!=', 'damage')
             ->select('det.size', DB::raw('SUM(det.quantity) as total_incoming'))
             ->groupBy('det.size')
@@ -504,7 +507,10 @@ class PackingService
             $orderLots = OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
 
             $orderStageTransactions = OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
-                ->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                ->where(function($q) use ($slip_details) {
+                    $q->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                      ->orWhereNull('sub_stage_id_to');
+                })
                 ->whereIn('lot_no', $orderLots)
                 ->orderBy('id')
                 ->get();
@@ -638,7 +644,10 @@ class PackingService
             if ($packed_pcs > 0) {
                 $orderLots = OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
                 $orderStageTransactions = OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
-                    ->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                    ->where(function($q) use ($slip_details) {
+                        $q->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                          ->orWhereNull('sub_stage_id_to');
+                    })
                     ->whereIn('lot_no', $orderLots)->orderBy('id')->get();
 
                 $rem = $packed_pcs;
@@ -902,7 +911,10 @@ class PackingService
             if ($total_pcs > 0) {
                 $orderLots = OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
                 $orderStageTransactions = OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
-                    ->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                    ->where(function($q) use ($slip_details) {
+                        $q->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                          ->orWhereNull('sub_stage_id_to');
+                    })
                     ->whereIn('lot_no', $orderLots)->orderBy('id')->get();
 
                 $rem = $total_pcs;
@@ -1288,7 +1300,10 @@ class PackingService
                 // Find transactions where this qty was likely deducted from
                 // We add back to the 'remaining_quantity' of the source transactions
                 $transactions = OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
-                    ->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                    ->where(function($q) use ($slip_details) {
+                        $q->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                          ->orWhereNull('sub_stage_id_to');
+                    })
                     ->whereIn('lot_no', $orderLots)
                     ->orderBy('id', 'desc') // Return to latest transactions first (optional strategy)
                     ->get();
@@ -1378,7 +1393,10 @@ class PackingService
             $orderLots = \App\Models\OrderLot::where('order_main_id', $orderMainId)->pluck('lot_no')->toArray();
 
             $sourceTx = OrderStageTransaction::where('to_stage_id', 11) // Packing
-                ->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                ->where(function($q) use ($slipMain) {
+                    $q->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                      ->orWhereNull('sub_stage_id_to');
+                })
                 ->whereIn('lot_no', $orderLots)
                 ->orderBy('id', 'desc')
                 ->first();
@@ -1424,7 +1442,10 @@ class PackingService
                 // 5. DEDUCT from current unit's availability
                 // We do this by reducing the 'remaining_quantity' of incoming transactions 
                 $incomingTxs = OrderStageTransaction::where('to_stage_id', 11)
-                    ->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                    ->where(function($q) use ($slipMain) {
+                        $q->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                          ->orWhereNull('sub_stage_id_to');
+                    })
                     ->where('lot_no', $sourceTx->lot_no)
                     ->get();
 
@@ -1511,7 +1532,10 @@ class PackingService
 
                 // Find a source transaction that contains pieces for this specific SKU (or at least this Lot)
                 $sourceTx = OrderStageTransaction::where('to_stage_id', 11)
-                    ->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                    ->where(function($q) use ($slipMain) {
+                        $q->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                          ->orWhereNull('sub_stage_id_to');
+                    })
                     ->whereIn('lot_no', $orderLots)
                     ->where(function ($q) use ($set) {
                         $q->where('sku', $set->sku)->orWhereNull('sku');
@@ -1522,7 +1546,10 @@ class PackingService
                 if (!$sourceTx) {
                     // Fallback to ANY transaction for this lot if SKU mismatch (common in Domestic)
                     $sourceTx = OrderStageTransaction::where('to_stage_id', 11)
-                        ->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                        ->where(function($q) use ($slipMain) {
+                            $q->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                              ->orWhereNull('sub_stage_id_to');
+                        })
                         ->whereIn('lot_no', $orderLots)
                         ->orderBy('id', 'desc')
                         ->first();
@@ -1555,7 +1582,10 @@ class PackingService
                 // 3. DEDUCT from current unit (validation pool)
                 $incomingTxs = OrderStageTransaction::where('sku', $sourceTx->sku)
                     ->where('to_stage_id', 11)
-                    ->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                    ->where(function($q) use ($slipMain) {
+                        $q->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                          ->orWhereNull('sub_stage_id_to');
+                    })
                     ->get();
 
                 $rem = $qty;
@@ -1647,7 +1677,10 @@ class PackingService
             // 2. Revert Deduction from available transactions (for backend validation pool)
             $receivedTxs = \App\Models\OrderStageTransaction::where('sku', $outflow->orderMain->sku)
                 ->where('to_stage_id', 11) // In Packing
-                ->where('sub_stage_id_to', $unitId)
+                ->where(function($q) use ($unitId) {
+                    $q->where('sub_stage_id_to', $unitId)
+                      ->orWhereNull('sub_stage_id_to');
+                })
                 ->where('status', 1)
                 ->orderBy('id', 'desc')
                 ->get();
@@ -1683,7 +1716,10 @@ class PackingService
             // 1. Revert Deduction from Incoming Packing pool
             $sourceTxs = \App\Models\OrderStageTransaction::where('sku', $rework->sku)
                 ->where('to_stage_id', 11)
-                ->where('sub_stage_id_to', $rework->sub_stage_id)
+                ->where(function($q) use ($rework) {
+                    $q->where('sub_stage_id_to', $rework->sub_stage_id)
+                      ->orWhereNull('sub_stage_id_to');
+                })
                 ->orderBy('id', 'desc')
                 ->get();
 

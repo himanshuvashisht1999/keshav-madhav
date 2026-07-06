@@ -219,12 +219,14 @@ function getLotDetails($lot_id, $master_stage)
         $out1 = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
         $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
         $out3 = \App\Models\OrderPrintingStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
+        $out4 = \App\Models\OrderStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
         
         $outflowType2 = $out1->filter($isReverse)->sum('quantity') + 
                         $out2->filter($isReverse)->sum('quantity') + 
-                        $out3->filter($isReverse)->sum('quantity');
+                        $out3->filter($isReverse)->sum('quantity') +
+                        $out4->filter($isReverse)->sum('quantity');
                         
-        $outflowAll = $out1->sum('quantity') + $out2->sum('quantity') + $out3->sum('quantity');
+        $outflowAll = $out1->sum('quantity') + $out2->sum('quantity') + $out3->sum('quantity') + $out4->sum('quantity');
         
         $totalQuantity = max(0, $incomingType1 - $outflowType2);
         $remainingQuantity = max(0, $incomingAll - $outflowAll);

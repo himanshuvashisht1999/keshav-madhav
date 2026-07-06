@@ -2129,7 +2129,10 @@ class OrderDigitalizationService
 
             // Try Standard Transactions
             $standardTx = OrderStageTransaction::where('to_stage_id', $from_stage_id)
-                ->where('sub_stage_id_to', $stage_master_unit_from->id)
+                ->where(function($q) use ($stage_master_unit_from) {
+                    $q->where('sub_stage_id_to', $stage_master_unit_from->id)
+                      ->orWhereNull('sub_stage_id_to');
+                })
                 ->where('lot_no', $lot_no)
                 ->where('remaining_quantity', '>', 0)
                 ->orderBy('id', 'asc')
@@ -2149,7 +2152,10 @@ class OrderDigitalizationService
             // Check Printing specific (If still more to decrement)
             if ($remainingToDecrement > 0 && $from_stage_id == 1) {
                 $printingTx = OrderPrintingStageTransaction::where('to_stage_id', $from_stage_id)
-                    ->where('sub_stage_id_to', $stage_master_unit_from->id)
+                    ->where(function($q) use ($stage_master_unit_from) {
+                        $q->where('sub_stage_id_to', $stage_master_unit_from->id)
+                          ->orWhereNull('sub_stage_id_to');
+                    })
                     ->where('lot_no', $lot_no)
                     ->where('remaining_quantity', '>', 0)
                     ->orderBy('id', 'asc')
@@ -2170,7 +2176,10 @@ class OrderDigitalizationService
             // Check Transition specific (If still more to decrement)
             if ($remainingToDecrement > 0 && $from_stage_id == 4) {
                 $transitionTx = OrderPrintingToStichingTransaction::where('to_stage_id', $from_stage_id)
-                    ->where('sub_stage_id_to', $stage_master_unit_from->id)
+                    ->where(function($q) use ($stage_master_unit_from) {
+                        $q->where('sub_stage_id_to', $stage_master_unit_from->id)
+                          ->orWhereNull('sub_stage_id_to');
+                    })
                     ->where('lot_no', $lot_no)
                     ->where('remaining_quantity', '>', 0)
                     ->orderBy('id', 'asc')
