@@ -268,6 +268,9 @@
             </div>
             <div style="display: flex; align-items: center; gap: 15px;">
                 @yield('header_right')
+                <a href="{{ route('unit.lot.search') }}" style="color: white; font-size: 20px;" title="Track Lot">
+                    <i class="fas fa-search"></i>
+                </a>
                 <a href="{{ route('unit.logout') }}" style="color: white; font-size: 20px;">
                     <i class="fas fa-sign-out-alt"></i>
                 </a>

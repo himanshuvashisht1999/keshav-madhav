@@ -130,6 +130,8 @@ Route::prefix('unit')->name('unit.')->middleware(['unit.remember'])->group(funct
     Route::get('/download-slip/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'downloadSlip'])->name('download.slip');
     Route::get('/download-cmpo/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'downloadCmpo'])->name('download.cmpo');
     Route::post('/delete-slip/{type}/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'deleteSlip'])->name('delete.slip');
+    Route::get('/lot-search', [\App\Http\Controllers\Unit\UnitAuthController::class, 'lotSearch'])->name('lot.search');
+    Route::get('/lot-details', [\App\Http\Controllers\Unit\UnitAuthController::class, 'lotDetails'])->name('lot.details');
     Route::get('/logout', [\App\Http\Controllers\Unit\UnitAuthController::class, 'logout'])->name('logout');
 });
 
@@ -394,6 +396,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/issue-slip', [AdminProductOrderController::class, 'issueSlip'])->name('issueSlip');
             Route::get('/status-hover-data', [AdminProductOrderController::class, 'productStatusHoverData'])->name('statusHoverData');
 
+            Route::get('/lot-details', [UnitAuthController::class, 'lotDetails'])->name('lot.details');
             Route::post('/assign_to', [AdminProductOrderController::class, 'assign_to'])->name('assign_to');
             Route::post('/delete-assignment', [AdminProductOrderController::class, 'deleteAssignment'])->name('deleteAssignment');
             Route::post('/create-po', [AdminProductOrderController::class, 'createPO'])->name('createPO');

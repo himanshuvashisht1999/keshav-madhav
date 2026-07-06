@@ -1,6 +1,6 @@
 @extends('layouts.unit')
 
-@section('title', 'Assignments')
+@section('title', isset($isHistory) && $isHistory ? 'History' : 'Assignments')
 
 @push('styles')
     <style>
@@ -203,21 +203,41 @@
             </div>
         @endif
 
-        {{-- 
-        <div class="tabs-simple">
-            <a href="{{ route('unit.assignments', ['view' => 'open']) }}"
-                class="tab-item-simple {{ ($view ?? 'open') === 'open' ? 'active' : '' }}">
-                <i class="fas fa-folder-open mr-2"></i> Active Tasks
-            </a>
-            <a href="{{ route('unit.assignments', ['view' => 'closed']) }}"
-                class="tab-item-simple {{ ($view ?? 'open') === 'closed' ? 'active' : '' }}">
-                <i class="fas fa-archive mr-2"></i> Archived Tasks
-            </a>
-        </div>
-        --}}
+        {{-- Filters Section --}}
+        <div style="background: #ffffff; border-radius: 12px; padding: 16px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; gap: 16px; flex-wrap: wrap;">
+            
+            <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; display: block;">Search</label>
+                <input type="text" id="filter-lot" class="form-control" placeholder="Search Lot No..." style="width: 100%; border-radius: 8px; padding: 10px 14px; border: 1px solid #cbd5e1; font-size: 14px; background: #f8fafc;">
+            </div>
 
-        <div style="margin-bottom: 20px;">
-            <input type="text" id="filter-lot" class="form-control" placeholder="Search Lot No..." style="width: 100%; border-radius: 12px; padding: 12px 16px; border: 1px solid #cbd5e1; font-size: 14px; background: #ffffff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
+            @if(isset($isHistory) && $isHistory)
+                @php
+                    $activity = request('activity', 'received');
+                @endphp
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; display: block;">Type</label>
+                    <select class="form-control" onchange="window.location.href=this.value" style="width: 100%; border-radius: 8px; padding: 10px 14px; border: 1px solid #cbd5e1; font-size: 14px; background: #f8fafc; appearance: auto;">
+                        <option value="{{ route('unit.history', ['activity' => 'received']) }}" {{ $activity === 'received' ? 'selected' : '' }}>Received Tasks</option>
+                        <option value="{{ route('unit.history', ['activity' => 'sent']) }}" {{ $activity === 'sent' ? 'selected' : '' }}>Sent Tasks</option>
+                    </select>
+                </div>
+            @endif
+
+            <div style="flex: 1; min-width: 150px;">
+                <label style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; display: block;">From Stage</label>
+                <select id="filter-from-stage" class="form-control" style="width: 100%; border-radius: 8px; padding: 10px 14px; border: 1px solid #cbd5e1; font-size: 14px; background: #f8fafc; appearance: auto;">
+                    <option value="">All From Stages</option>
+                </select>
+            </div>
+
+            <div style="flex: 1; min-width: 150px;">
+                <label style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; display: block;">To Stage</label>
+                <select id="filter-to-stage" class="form-control" style="width: 100%; border-radius: 8px; padding: 10px 14px; border: 1px solid #cbd5e1; font-size: 14px; background: #f8fafc; appearance: auto;">
+                    <option value="">All To Stages</option>
+                </select>
+            </div>
+
         </div>
 
         <div class="row" id="assignments-container">
@@ -230,6 +250,9 @@
                     $totalPieces = 0;
                     $lots = [];
                     
+                    $fromStageName = $firstTask->from_stage->name ?? 'Admin Assignment';
+                    $toStageName = $firstTask->to_stage->name ?? 'Next Stage';
+
                     foreach($tasks as $task) {
                         $isCompleted = !empty($task->image) || $task->is_closed_for_unit == 1;
                         if (!$isCompleted) $allCompleted = false;
@@ -289,8 +312,11 @@
                         }
                     }
                 @endphp
-                <div class="col-12 col-md-6 col-lg-4 assignment-item" data-lot="{{ strtolower($lotString) }}" data-status="{{ strtolower($statusText) }}">
-                    <div class="task-card">
+                <div class="col-lg-4 col-md-6 mb-4 assignment-item" 
+                     data-lot="{{ strtolower(implode(',', array_unique($lots))) }}"
+                     data-from-stage="{{ strtolower($fromStageName) }}"
+                     data-to-stage="{{ strtolower($toStageName) }}">
+                    <div class="card-simple" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                         <!-- Row 1: Slip No and Total Pieces -->
                         <div class="task-header" style="align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 12px; margin-bottom: 12px;">
                             <div class="task-title" style="font-size: 18px; margin: 0;">Slip #{{ $cleanSlipNo }}</div>
@@ -304,12 +330,25 @@
                         @if(!$isCutting)
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                             <div>
-                                <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;"><i class="fas fa-layer-group mr-1"></i> From Stage</div>
-                                <div style="font-size: 13px; font-weight: 600; color: #1e293b;">{{ $tasks->first()->from_stage->name ?? '-' }}</div>
+                                <div style="flex: 1;">
+                                    <div class="info-label" style="font-size: 11px; color: #64748b; margin-bottom: 4px;">From Stage</div>
+                                    <div class="info-value" style="font-size: 13px; font-weight: 500; color: #0f172a;">
+                                        {{ $fromStageName }}
+                                    </div>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div class="info-label" style="font-size: 11px; color: #64748b; margin-bottom: 4px;">To Stage</div>
+                                    <div class="info-value" style="font-size: 13px; font-weight: 500; color: #0f172a;">
+                                        {{ $toStageName }}
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;"><i class="fas fa-user mr-1"></i> Sent By</div>
-                                <div style="font-size: 13px; font-weight: 600; color: #1e293b;">{{ $tasks->first()->getFromUnitMaster->name ?? '-' }}</div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div class="info-label" style="font-size: 11px; color: #64748b; margin-bottom: 4px;"><i class="fas fa-user mr-1"></i> Sent By</div>
+                                    <div style="font-size: 13px; font-weight: 600; color: #1e293b;">{{ $tasks->first()->getFromUnitMaster->name ?? '-' }}</div>
+                                </div>
                             </div>
                         </div>
                         @endif
@@ -403,17 +442,50 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         const filterLot = document.getElementById('filter-lot');
+        const filterFrom = document.getElementById('filter-from-stage');
+        const filterTo = document.getElementById('filter-to-stage');
         const items = document.querySelectorAll('.assignment-item');
+
+        // Populate dropdowns
+        let fromStages = new Set();
+        let toStages = new Set();
+
+        items.forEach(item => {
+            const f = item.getAttribute('data-from-stage');
+            const t = item.getAttribute('data-to-stage');
+            if (f) fromStages.add(f);
+            if (t) toStages.add(t);
+        });
+
+        fromStages.forEach(stage => {
+            let opt = document.createElement('option');
+            opt.value = stage;
+            opt.textContent = stage.charAt(0).toUpperCase() + stage.slice(1);
+            filterFrom.appendChild(opt);
+        });
+
+        toStages.forEach(stage => {
+            let opt = document.createElement('option');
+            opt.value = stage;
+            opt.textContent = stage.charAt(0).toUpperCase() + stage.slice(1);
+            filterTo.appendChild(opt);
+        });
 
         function filterAssignments() {
             const lotVal = filterLot.value.toLowerCase().trim();
+            const fromVal = filterFrom.value.toLowerCase();
+            const toVal = filterTo.value.toLowerCase();
 
             items.forEach(function(item) {
                 const itemLot = item.getAttribute('data-lot');
+                const itemFrom = item.getAttribute('data-from-stage');
+                const itemTo = item.getAttribute('data-to-stage');
 
                 const matchesLot = itemLot.includes(lotVal) || lotVal === '';
+                const matchesFrom = fromVal === '' || itemFrom === fromVal;
+                const matchesTo = toVal === '' || itemTo === toVal;
 
-                if (matchesLot) {
+                if (matchesLot && matchesFrom && matchesTo) {
                     item.style.display = '';
                 } else {
                     item.style.display = 'none';
@@ -422,6 +494,8 @@
         }
 
         filterLot.addEventListener('input', filterAssignments);
+        filterFrom.addEventListener('change', filterAssignments);
+        filterTo.addEventListener('change', filterAssignments);
     });
 </script>
 @endpush

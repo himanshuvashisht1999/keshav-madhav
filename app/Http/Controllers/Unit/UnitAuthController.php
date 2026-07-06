@@ -1594,4 +1594,29 @@ class UnitAuthController extends Controller
         $pdf = Pdf::loadView('admin.product_order.cmpo_slip', [ 'header' => $cmpoHeader, 'sizeData' => $sizeData, ])->setPaper('a4', 'portrait');
         return $pdf->download('CMPO-' . $id . '.pdf');
     }
+
+    public function lotSearch(Request $request)
+    {
+        if (!session()->has('unit_auth')) return redirect()->route('unit.login');
+        return view('unit.lot_search');
+    }
+
+    public function lotDetails(Request $request)
+    {
+        if (!session()->has('unit_auth')) return redirect()->route('unit.login');
+
+        if (!$request->filled('lot_no')) {
+            return redirect()->route('unit.lot.search')->with('error', 'Please enter a Lot Number.');
+        }
+
+        $service = app(\App\Services\Admin\ReportService::class);
+        $response['data'] = $service->lotDetails($request->lot_no);
+
+        if (empty($response['data'])) {
+            return redirect()->route('unit.lot.search')->with('error', 'Lot not found or has been completely deleted.');
+        }
+
+        $response['master_stages'] = $service->master_stages();
+        return view('unit.lot_details', $response);
+    }
 }
