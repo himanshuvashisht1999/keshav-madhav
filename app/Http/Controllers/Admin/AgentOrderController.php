@@ -2716,6 +2716,10 @@ class AgentOrderController extends Controller
             ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
             ->where('agent_order_items.agent_order_dispatch_id', $id);
 
+        if ($brandId) {
+            $query->where('production_goods.brand_id', $brandId);
+        }
+
         $fabricItems = DB::table('agent_order_fabric_items')
             ->join('fabrics', 'agent_order_fabric_items.fabric_id', '=', 'fabrics.id')
             ->join('fabric_receipt_details', 'agent_order_fabric_items.fabric_receipt_detail_id', '=', 'fabric_receipt_details.id')
@@ -2871,6 +2875,10 @@ class AgentOrderController extends Controller
             ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
             ->where('agent_order_items.agent_order_dispatch_id', $id);
 
+        if ($brandId) {
+            $query->where('production_goods.brand_id', $brandId);
+        }
+
         $fabricItems = DB::table('agent_order_fabric_items')
             ->join('fabrics', 'agent_order_fabric_items.fabric_id', '=', 'fabrics.id')
             ->join('fabric_receipt_details', 'agent_order_fabric_items.fabric_receipt_detail_id', '=', 'fabric_receipt_details.id')
@@ -2946,6 +2954,10 @@ class AgentOrderController extends Controller
         $query = DB::table('agent_order_items')
             ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
             ->where('agent_order_items.agent_order_dispatch_id', $id);
+
+        if ($brandId) {
+            $query->where('production_goods.brand_id', $brandId);
+        }
 
         $fabricItems = DB::table('agent_order_fabric_items')
             ->join('fabrics', 'agent_order_fabric_items.fabric_id', '=', 'fabrics.id')
@@ -3053,6 +3065,10 @@ class AgentOrderController extends Controller
         $query = DB::table('agent_order_items')
             ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
             ->where('agent_order_items.agent_order_dispatch_id', $id);
+
+        if ($brandId) {
+            $query->where('production_goods.brand_id', $brandId);
+        }
 
         $fabricItems = DB::table('agent_order_fabric_items')
             ->join('fabrics', 'agent_order_fabric_items.fabric_id', '=', 'fabrics.id')

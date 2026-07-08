@@ -611,6 +611,21 @@
                     }
                 });
             });
+            // Brand selection for print/download buttons
+            $('#brandSelect').on('change', function() {
+                let brandId = $(this).val();
+                let params = brandId !== 'actual' ? '?brand_id=' + brandId : '';
+
+                let packingSlipBase = "{{ route('admin.agent-orders.dispatches.download-packing-slip', $dispatch->id) }}";
+                let waPackingSlipBase = "{{ route('admin.agent-orders.dispatches.send-whatsapp-packing-slip', $dispatch->id) }}";
+                let invoiceBase = "{{ route('admin.agent-orders.dispatches.download-invoice', $dispatch->id) }}";
+                let waInvoiceBase = "{{ route('admin.agent-orders.dispatches.send-whatsapp-invoice', $dispatch->id) }}";
+
+                $('#packingSlipBtn').attr('href', packingSlipBase + params);
+                $('#waPackingSlipBtn').attr('href', waPackingSlipBase + params);
+                $('#invoiceBtn').attr('href', invoiceBase + params);
+                $('#waInvoiceBtn').attr('href', waInvoiceBase + params);
+            });
         });
     </script>
 @endpush
