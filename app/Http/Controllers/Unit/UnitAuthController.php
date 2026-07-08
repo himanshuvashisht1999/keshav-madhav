@@ -1092,7 +1092,7 @@ class UnitAuthController extends Controller
                     $sizes = [];
                     if (!empty($data->size_measurement?->size_group)) $sizes = array_map('trim', explode(',', $data->size_measurement->size_group));
                     elseif (!empty($data->set_size)) $sizes = [$data->set_size];
-                    $sizeSetRange = count($sizes) > 0 ? min($sizes) . '-' . max($sizes) : '-';
+                    $sizeSetRange = $data->size_measurement?->name ?? (count($sizes) > 0 ? min($sizes) . '*' . max($sizes) : '-');
                     $totalPcsInSet = $data->size_measurement->no_of_pcs ?? count($sizes);
                     
                     $header = [ 'id' => $stageAssignment->id, 'order_no' => $data->orderMain->sku ?? '-', 'date' => $data->created_at->format('d-m-Y'), 'customer' => $data->orderMain->customer->name ?? '-', 'design_no' => $data->design_number ?? '-', 'fabric' => $data->fabric_names ?? ($stageAssignment->fabric_names ?? '-'), 'color' => $data->colors->name ?? '-', 'pattern' => $data->master_design_pattern->name ?? ($stageAssignment->pattern->name ?? '-'), 'fitting' => $data->master_product_fitting?->name ?? ($stageAssignment->master_fitting?->name ?? '-'), 'warehouse' => $unit->masterFabricWarehouse->cutting_master_name ?? '-', 'unit_name' => $unit->name ?? '-', 'remark' => $stageAssignment->remarks ?? $data->remark ?? '-', 'belt' => $stageAssignment->belt ?? '-', 'total_pcs' => $stageAssignment->quantity ?? 0, 'lot_no' => 'Pending', 'size_set' => $sizeSetRange, 'pcs_in_set' => $totalPcsInSet ];
@@ -1353,7 +1353,7 @@ class UnitAuthController extends Controller
             $sizes = [];
             if (!empty($data->size_measurement?->size_group)) $sizes = array_map('trim', explode(',', $data->size_measurement->size_group));
             elseif (!empty($data->set_size)) $sizes = [$data->set_size];
-            $sizeSetRange = count($sizes) > 0 ? min($sizes) . '-' . max($sizes) : '-';
+            $sizeSetRange = $data->size_measurement?->name ?? (count($sizes) > 0 ? min($sizes) . '*' . max($sizes) : '-');
             $totalPcsInSet = $data->size_measurement->no_of_pcs ?? count($sizes);
             $header = [ 'id' => $stageAssignment->id, 'order_no' => $data->orderMain->sku ?? '-', 'date' => $data->created_at->format('d-m-Y'), 'customer' => $data->orderMain->customer->name ?? '-', 'design_no' => $data->design_number ?? '-', 'fabric' => $data->fabric_names ?? ($stageAssignment->fabric_names ?? '-'), 'color' => $data->colors->name ?? '-', 'pattern' => $data->master_design_pattern->name ?? ($stageAssignment->pattern->name ?? '-'), 'fitting' => $data->master_product_fitting?->name ?? ($stageAssignment->master_fitting?->name ?? '-'), 'warehouse' => $unit->masterFabricWarehouse->cutting_master_name ?? '-', 'unit_name' => $unit->name ?? '-', 'remark' => $stageAssignment->remarks ?? $data->remark ?? '-', 'belt' => $stageAssignment->belt ?? '-', 'total_pcs' => $stageAssignment->quantity ?? 0, 'lot_no' => 'Pending', 'size_set' => $sizeSetRange, 'pcs_in_set' => $totalPcsInSet ];
             
@@ -1389,7 +1389,7 @@ class UnitAuthController extends Controller
                 elseif (!empty($orderProductSet->set_size)) $sizes = [$orderProductSet->set_size];
             }
             $isRework = ($transaction && isset($transaction->type) && $transaction->type === 'rework');
-            $sizeSetRange = count($sizes) > 0 ? min($sizes) . '-' . max($sizes) : '-';
+            $sizeSetRange = $orderProductSet->size_measurement?->name ?? (count($sizes) > 0 ? min($sizes) . '*' . max($sizes) : '-');
             $totalPcsInSet = $orderProductSet->size_measurement->no_of_pcs ?? count($sizes);
             $header = [
                 'id' => $id,
