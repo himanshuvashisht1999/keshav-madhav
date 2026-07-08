@@ -111,4 +111,28 @@ class AgentOrder extends Model
     {
         return $this->belongsToMany(AgentOrderDispatch::class, 'agent_order_dispatch_items', 'agent_order_id', 'agent_order_dispatch_id');
     }
+    public function syncDispatchStatus()
+    {
+        if (strtolower($this->sale_type) === 'fabric') {
+            $total = $this->fabricItems()->count();
+            $dispatched = $this->fabricItems()->whereNotNull('dispatched_at')->count();
+        } else {
+            $total = $this->items()->count();
+            $dispatched = $this->items()->whereNotNull('dispatched_at')->count();
+        }
+
+        if ($total == 0) {
+            // If no items, fallback
+            $this->status = 'pending';
+        } else if ($dispatched == $total) {
+            $this->status = 'dispatched';
+        } else if ($dispatched > 0) {
+            $this->status = 'partially_dispatched';
+        } else {
+            if ($this->status != 'delayed') {
+                $this->status = 'pending';
+            }
+        }
+        $this->save();
+    }
 }

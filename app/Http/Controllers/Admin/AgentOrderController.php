@@ -1578,6 +1578,7 @@ class AgentOrderController extends Controller
                 }
             }
 
+            $order->syncDispatchStatus();
             DB::commit();
             return response()->json([
                 'success' => true,

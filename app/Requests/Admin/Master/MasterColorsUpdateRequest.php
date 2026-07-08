@@ -21,7 +21,7 @@ class MasterColorsUpdateRequest extends FormRequest{
     public function rules(Request $request){
         // dd($this);
         return [
-            'name' => 'required',
+            'name' => 'required|unique:master_colors,name,' . $request->id,
             'sku'    => 'nullable',
             'status' =>'required',
         ];
