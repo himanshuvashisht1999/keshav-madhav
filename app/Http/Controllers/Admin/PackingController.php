@@ -257,11 +257,23 @@ class PackingController extends Controller
         $storerooms = \App\Models\Storeroom::with('racks')->where('status', 1)->get();
 
         $orderSizeSetIds = $order ? $order->OrderProductSets->pluck('set_size')->unique()->toArray() : [];
+        $availableProductIds = [];
+        if ($order) {
+            foreach ($order_sets as $set) {
+                if ($set->production_goods_id) {
+                    $availableProductIds[] = $set->production_goods_id;
+                }
+            }
+            $availableProductIds = array_unique($availableProductIds);
+        }
 
         $domestic_masters = [
             'products' => \App\Models\ProductionGoods::with('series')
                 ->where('status', 1)
-                ->when(!empty($orderSizeSetIds), function ($query) use ($orderSizeSetIds) {
+                ->when($order, function ($query) use ($availableProductIds) {
+                    $query->whereIn('id', $availableProductIds);
+                })
+                ->when(!$order && !empty($orderSizeSetIds), function ($query) use ($orderSizeSetIds) {
                     $query->whereHas('variants', function ($q) use ($orderSizeSetIds) {
                         $q->whereIn('master_size_measurement_id', $orderSizeSetIds);
                     });
@@ -779,12 +791,19 @@ class PackingController extends Controller
                 }
             }
 
-            // 2. Adjust Domestic Inventory linked to this box
-            if ($box->domesticInventory) {
-                if ($box->domesticInventory->total_boxes > 1) {
-                    $box->domesticInventory->decrement('total_boxes');
+            $rackId = $box->carton ? $box->carton->rack_id : null;
+
+            // 2. Adjust Domestic Inventory linked to this box specifically for its rack
+            $inventory = clone $box; // Ensure we don't mess up variable scopes
+            $domesticInv = \App\Models\DomesticInventory::where('barcode', $box->barcode)
+                ->where('rack_id', $rackId)
+                ->first();
+
+            if ($domesticInv) {
+                if ($domesticInv->total_boxes > 1) {
+                    $domesticInv->decrement('total_boxes');
                 } else {
-                    $box->domesticInventory->delete();
+                    $domesticInv->delete();
                 }
             }
 
@@ -1353,7 +1372,7 @@ class PackingController extends Controller
                     $inventoryResult->increment('total_boxes');
                 } else {
                     \App\Models\DomesticInventory::create([
-                        // 'order_main_id' => $order_id,
+                        'order_main_id' => $order_id,
                         'packing_main_id' => $main->id,
                         'packing_carton_id' => $carton->id,
                         'packing_box_id' => $box->id,

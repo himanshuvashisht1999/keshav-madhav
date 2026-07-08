@@ -150,16 +150,20 @@
                         </h4>
 
                     </div>
-                    @if($order)
-                        <div class="col-md-2 text-right">
+                    <div class="col-md-4 text-right d-flex justify-content-end align-items-center" style="gap: 10px;">
+                        @if($slip && $slip->slip_file)
+                            <a href="{{ asset('assets/production_slips/' . $slip->slip_file) }}"
+                                target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-image mr-1"></i> View Slip Photo
+                            </a>
+                        @endif
+                        @if($order)
                             <a id="fileLink" href="{{asset('/assets/products/' . $order->corporate_order_file)}}"
                                 target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
                                 <i class="fas fa-file-alt mr-1"></i> Sales Order File
                             </a>
-                        </div>
-                    @endif
-                    <div class="col-md-2 text-right">
-                        <a href="" id="fileLink" target="_blank" rel="noopener noreferrer"
+                        @endif
+                        <a href="" id="fileLink_hidden" target="_blank" rel="noopener noreferrer"
                             class="btn btn-outline-primary btn-sm d-none">
                             <i class="fas fa-file-alt mr-1"></i> Sales Order File
                         </a>
@@ -3641,6 +3645,64 @@
                     $color.prop('disabled', false).trigger('change');
                 });
 
+                function updateDomBoxMax() {
+                    let designId = $('#dom_design').val();
+                    let sizeSetId = $('#dom_size_set').val();
+                    let colorId = $('#dom_color').val();
+
+                    if (!designId || !sizeSetId || !colorId) return;
+
+                    let selectedSet = ORDER_SETS.find(s => 
+                        s.production_goods_id == designId && 
+                        s.set_size == sizeSetId && 
+                        s.color_id == colorId
+                    );
+
+                    let maxAvailable = 0;
+                    if (selectedSet) {
+                        let minSets = null;
+                        ORDER_ITEMS.forEach(item => {
+                            if (item.order_products_set_id == selectedSet.id) {
+                                let avl = parseInt(item.unit_available_qty) || 0;
+                                let perSet = parseFloat(item.qty_per_set) || 1;
+                                let canPick = Math.floor(avl / perSet);
+                                if (minSets === null || canPick < minSets) minSets = canPick;
+                            }
+                        });
+                        maxAvailable = minSets ?? 0;
+                    }
+
+                    // Subtract already planned
+                    let alreadyPlannedBoxes = 0;
+                    if (typeof domesticBoxesPlan !== 'undefined') {
+                        domesticBoxesPlan.forEach(box => {
+                            if (box.raw_data.product_id == designId &&
+                                box.raw_data.size_set_id == sizeSetId &&
+                                box.raw_data.color_id == colorId) {
+                                alreadyPlannedBoxes++;
+                            }
+                        });
+                    }
+
+                    let leftToPack = Math.max(0, maxAvailable - alreadyPlannedBoxes);
+                    
+                    let $boxCount = $('#dom_box_count');
+                    $boxCount.attr('max', leftToPack);
+                    
+                    if (parseInt($boxCount.val()) > leftToPack) {
+                        $boxCount.val(leftToPack > 0 ? leftToPack : '');
+                    }
+                }
+
+                $(document).on('change', '#dom_color', updateDomBoxMax);
+                $(document).on('input', '#dom_box_count', function() {
+                    let max = parseInt($(this).attr('max'));
+                    if (!isNaN(max) && parseInt($(this).val()) > max) {
+                        $(this).val(max);
+                        toastr.warning(`Maximum available boxes for this selection is ${max}`);
+                    }
+                });
+
                 $('#btnSaveDomesticBox').on('click', function () {
                     let data = {
                         product_id: $('#dom_design').val(),
@@ -3665,6 +3727,44 @@
                     }
 
                     let boxCount = parseInt($('#dom_box_count').val()) || 1;
+
+                    // Validate against max available full boxes
+                    let selectedSet = ORDER_SETS.find(s => 
+                        s.production_goods_id == data.product_id && 
+                        s.set_size == data.size_set_id && 
+                        s.color_id == data.color_id
+                    );
+
+                    let maxAvailable = 0;
+                    if (selectedSet) {
+                        let minSets = null;
+                        ORDER_ITEMS.forEach(item => {
+                            if (item.order_products_set_id == selectedSet.id) {
+                                let avl = parseInt(item.unit_available_qty) || 0;
+                                let perSet = parseFloat(item.qty_per_set) || 1;
+                                let canPick = Math.floor(avl / perSet);
+                                if (minSets === null || canPick < minSets) minSets = canPick;
+                            }
+                        });
+                        maxAvailable = minSets ?? 0;
+                    }
+
+                    // Count already planned boxes for this configuration
+                    let alreadyPlannedBoxes = 0;
+                    domesticBoxesPlan.forEach(box => {
+                        if (box.raw_data.product_id == data.product_id &&
+                            box.raw_data.size_set_id == data.size_set_id &&
+                            box.raw_data.color_id == data.color_id) {
+                            alreadyPlannedBoxes++;
+                        }
+                    });
+
+                    if ((boxCount + alreadyPlannedBoxes) > maxAvailable) {
+                        let leftToPack = Math.max(0, maxAvailable - alreadyPlannedBoxes);
+                        toastr.error(`You can only pack ${leftToPack} more box(es). You already have ${alreadyPlannedBoxes} box(es) in the plan.`);
+                        $('#dom_box_count').val(leftToPack > 0 ? leftToPack : 1);
+                        return;
+                    }
 
                     for (let i = 0; i < boxCount; i++) {
                         domesticBoxesPlan.push({

@@ -95,7 +95,8 @@
                                 <table class="table table-striped table-hover mb-0">
                                     <thead class="bg-light contrast-text">
                                         <tr>
-                                            <th class="pl-4 py-3">Rack</th>
+                                            <th class="pl-4 py-3">Warehouse</th>
+                                            <th class="py-3">Rack</th>
                                             <th class="py-3">Barcode</th>
                                             <th class="py-3">Color</th>
                                             <th class="py-3">Pcs/Box</th>
@@ -108,6 +109,13 @@
                                         @foreach($items as $item)
                                             <tr class="item-row" data-color="{{ $item->color_name ?? 'N/A' }}">
                                                 <td class="pl-4 py-3">
+                                                    @if($item->rack && $item->rack->storeroom)
+                                                        <span class="badge badge-secondary">{{ $item->rack->storeroom->name }}</span>
+                                                    @else
+                                                        <span class="text-muted">Unassigned</span>
+                                                    @endif
+                                                </td>
+                                                <td class="py-3">
                                                     @if($item->rack)
                                                         <span class="badge badge-info">{{ $item->rack->name }}</span>
                                                     @else

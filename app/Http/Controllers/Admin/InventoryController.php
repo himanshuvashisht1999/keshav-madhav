@@ -407,7 +407,7 @@ class InventoryController extends Controller
             $query->where('domestic_inventories.color_id', $request->color_id);
 
 
-        $items = $query->get();
+        $items = $query->with('rack.storeroom')->get();
         $group_info = $items->first();
 
         if (!$group_info) {
