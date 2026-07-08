@@ -203,7 +203,7 @@
             <div class="card-title" style="margin-bottom: 0; font-size: 16px; font-weight: 800; color: #1f2937; display: flex; align-items: center; gap: 10px;">
                 <i class="fas fa-info-circle mr-2"></i> Slip Summary
             </div>
-            <a href="{{ route('unit.download.slip', str_replace('T', '', $slip_id)) }}" style="background: #4f46e5; color: white; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+            <a href="{{ route('unit.download.slip', str_replace('T', '', $slip_id)) }}" target="_blank" download="slip_{{ $slip_id }}.pdf" style="background: #4f46e5; color: white; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
                 <i class="fas fa-download"></i> Download PDF
             </a>
         </div>

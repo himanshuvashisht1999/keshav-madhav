@@ -9,7 +9,7 @@
 @endsection
 
 @section('header_right')
-    <a href="{{ route('unit.assignments.download', ['type' => $type, 'id' => $header['id'] ?? $transaction->id]) }}" style="color: white; font-size: 20px;">
+    <a href="{{ route('unit.assignments.download', ['type' => $type, 'id' => $header['id'] ?? $transaction->id]) }}" target="_blank" download="Assignment_{{ $header['id'] ?? $transaction->id }}.pdf" style="color: white; font-size: 20px;">
         <i class="fas fa-file-download"></i>
     </a>
 @endsection
