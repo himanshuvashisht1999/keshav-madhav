@@ -70,6 +70,10 @@ class OrderDigitalizationService
                 throw new \Exception('Production slip not found');
             }
             $lotNos = array_unique($request->lot_no_list ?? []);
+            
+            if (empty($lotNos) && $request->lot_no) {
+                $lotNos[] = $request->lot_no;
+            }
 
             foreach ($lotNos as $lotNo) {
                 $exists = OrderLot::where('lot_no', $lotNo)
@@ -129,7 +133,10 @@ class OrderDigitalizationService
                     $save_data_main = new FabricRollAssigning;
                     $save_data_main->sku = '';
                     $save_data_main->lot_no = $lot_no;
-                    $save_data_main->order_lot_id = $save_lot->id;
+                    
+                    $orderLot = OrderLot::where('lot_no', $lot_no)->first();
+                    $save_data_main->order_lot_id = $orderLot->id ?? null;
+                    
                     $save_data_main->production_slip_digitization_id = $request->production_slip_digitization_id;
                     $save_data_main->order_products_set_id = $request->design_id;
                     $save_data_main->order_no = $order_product_set->orderMain?->sku;
@@ -215,6 +222,72 @@ class OrderDigitalizationService
                                 $cs->save();
                                 $remainingToDecrement -= $decrement;
                             }
+                        }
+                    }
+                }
+            } else if ($request->lot_no) {
+                // Handle 0 rolls case
+                $save_data_main = new FabricRollAssigning;
+                $save_data_main->sku = '';
+                $save_data_main->lot_no = $request->lot_no;
+                
+                $orderLot = OrderLot::where('lot_no', $request->lot_no)->first();
+                $save_data_main->order_lot_id = $orderLot->id ?? null;
+                
+                $save_data_main->production_slip_digitization_id = $request->production_slip_digitization_id;
+                $save_data_main->order_products_set_id = $request->design_id;
+                $save_data_main->order_no = $order_product_set->orderMain?->sku;
+                $save_data_main->stage_master_unit_id = $slip->stage_master_unit_id;
+                $save_data_main->fabric_receipt_detail_id = null;
+                $save_data_main->roll_no = null;
+                $save_data_main->meter = 0;
+                $save_data_main->slip_create_date_time = $request->slip_create_date_time ?? NULL;
+                $save_data_main->status = 1;
+                $save_data_main->save();
+                
+                if ($request->main_size_details) {
+                    $sizeArray = json_decode($request->main_size_details, true);
+                    if (is_array($sizeArray)) {
+                        $totalQtyCut = 0;
+                        foreach ($sizeArray as $sizeItem) {
+                            $totalQtyCut += $sizeItem['qty'];
+
+                            // Create Detail Record
+                            $detail = new \App\Models\FabricRollAssigningsDetail();
+                            $detail->production_fabric_roll_assigning_id = $save_data_main->id;
+                            $detail->order_product_set_detail_id = $sizeItem['detail_id'];
+                            $detail->size = $sizeItem['size'];
+                            $detail->quantity = $sizeItem['qty'];
+                            $detail->status = 1;
+                            $detail->save();
+
+                            // Update OrderProductSetDetail
+                            if ($sizeItem['detail_id']) {
+                                $setDetail = \App\Models\OrderProductSetDetail::find($sizeItem['detail_id']);
+                                if ($setDetail) {
+                                    $setDetail->remaining_lot_allocated -= $sizeItem['qty'];
+                                    $setDetail->save();
+                                }
+                            }
+                        }
+
+                        // Update OrderCuttingStage Remaining Quantity (Handle Split Assignments)
+                        $remainingToDecrement = $totalQtyCut;
+                        $cuttingStages = OrderCuttingStage::where('set_product_id', $request->design_id)
+                            ->where('to_assign_id', $slip->stage_master_unit_id)
+                            ->where('remaining_quantity', '>', 0)
+                            ->orderBy('created_at', 'asc')
+                            ->get();
+
+                        foreach ($cuttingStages as $cs) {
+                            if ($remainingToDecrement <= 0)
+                                break;
+
+                            $decrement = min($cs->remaining_quantity, $remainingToDecrement);
+                            $cs->remaining_quantity -= $decrement;
+                            $cs->save();
+
+                            $remainingToDecrement -= $decrement;
                         }
                     }
                 }
@@ -1718,7 +1791,7 @@ class OrderDigitalizationService
                     }
                 }
             }
-
+            
             // Create Transaction with Details (Cutting -> Printing)
             // Stage 3 is Cutting. Stage 1 is Printing.
             $this->createTransactionWithDetails($request->lot_no, 3, 1, $slip->id, $fab_roll_assigning->order_products_set_id, $slip->stage_master_unit_id, $request->to_stage_unit_id, $fab_roll_assigning->id, $request->production_datetime, $request->sizes);

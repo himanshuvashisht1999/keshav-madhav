@@ -268,13 +268,14 @@
                                                 <!-- <input type="text" id="lot_no" class="lot-input" placeholder="Enter Lot Number"
                                                                                                                                                             inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                                                                                                                                             required> -->
-                                                <input type="text" id="lot_no" class="lot-input" placeholder="Enter Lot Number"
+                                                <input type="text" id="lot_no" name="lot_no" class="lot-input" placeholder="Enter Lot Number"
                                                     required>
                                             </div>
                                             <small class="text-danger" id="err_lot_no"></small>
 
                                             {{-- CUTTING MASTER --}}
                                             <input type="hidden" name="to_master_unit" value="">
+                                            <input type="hidden" name="main_size_details" id="main_size_details" value="">
 
 
                                             {{-- ADD ROLL --}}
@@ -309,12 +310,11 @@
                                                 <div class="row">
                                                     <div class="col-md-6">
                                                         <label>Total Rolls *</label>
-                                                        <input type="number" id="total_rolls" class="form-control" required>
+                                                        <input type="number" id="total_rolls" name="total_rolls" class="form-control" min="0" value="0" required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label>Total Meter *</label>
-                                                        <input type="number" id="total_meter" class="form-control" step="any"
-                                                            required>
+                                                        <input type="number" id="total_meter" name="total_meter" class="form-control" step="any" min="0" value="0" required>
                                                         <small class="text-danger" id="err_total_meter"></small>
                                                     </div>
                                                 </div>
@@ -750,6 +750,7 @@
                 $('.size-json').each(function () {
                     $(this).val(sizeJson);
                 });
+                $('#main_size_details').val(sizeJson);
 
             });
 
@@ -973,7 +974,7 @@
                 let container = $('#roll_rows');
                 container.empty();
 
-                if (total <= 0) return;
+                if (total < 0) return;
 
                 // ✅ SAFETY CHECK: rolls must exist
                 if ($('#roll_no option').length < 1) {
