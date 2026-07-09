@@ -304,7 +304,7 @@
                                         <div class="col-md-3"><strong>Date:</strong> <span class="small">{{ \Carbon\Carbon::parse($printing->production_datetime)->format('d M Y') }}</span></div>
                                         <div class="col-md-5"><strong>Transfer:</strong> 
                                             <span class="text-primary fw-bold">{{ $printing->to_stage?->name }}</span> 
-                                            @if($printing->getToUnitMaster)
+                                            @if($printing->getToUnitMaster && !empty(trim($printing->getToUnitMaster->name)))
                                                 <span class="text-muted small">({{ $printing->getToUnitMaster->name }})</span>
                                             @endif
                                         </div>
@@ -410,7 +410,7 @@
                                         <div class="col-md-3"><strong>Date:</strong> <span class="small">{{ \Carbon\Carbon::parse($transaction->production_datetime)->format('d M Y') }}</span></div>
                                         <div class="col-md-5"><strong>Transfer:</strong> 
                                             <span class="text-warning fw-bold">{{ $transaction->to_stage?->name }}</span> 
-                                            @if($transaction->getToUnitMaster)
+                                            @if($transaction->getToUnitMaster && !empty(trim($transaction->getToUnitMaster->name)))
                                                 <span class="text-muted small">({{ $transaction->getToUnitMaster->name }})</span>
                                             @endif
                                         </div>
