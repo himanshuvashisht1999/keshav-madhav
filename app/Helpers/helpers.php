@@ -1024,6 +1024,39 @@ if (!function_exists('deleteProductionSession')) {
                 }
             }
 
+            // --- Auto-fix "Mark as Final" bug for sources ---
+            // If a session was closed via "Mark as Final", it zeros the remaining_quantity.
+            // Upon deletion, we must ensure leaf nodes are fully restored so they don't get stuck.
+            if (isset($session) && isset($session->lot_no)) {
+                $checkSources = \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)->get();
+                foreach ($checkSources as $tx) {
+                    if ($tx->remaining_quantity != $tx->quantity) {
+                        $hasChild = \App\Models\OrderStageTransaction::where('lot_no', $tx->lot_no)
+                            ->where('from_stage_id', $tx->to_stage_id)
+                            ->where('sub_stage_id', $tx->sub_stage_id_to)
+                            ->exists();
+                        $hasOutflow = \App\Models\ProductionOutflowInventory::where('lot_no', $tx->lot_no)
+                            ->where('responsible_unit_id', $tx->sub_stage_id_to)
+                            ->exists();
+                        $hasPacking = \Illuminate\Support\Facades\DB::table('packing_items as pi')
+                            ->join('packing_mains as pm', 'pi.packing_main_id', '=', 'pm.id')
+                            ->join('production_slip_digitization as psd', 'pm.slip_id', '=', 'psd.id')
+                            ->where('pm.order_main_id', function($q) use ($tx) {
+                                $q->select('order_main_id')->from('order_lots')->where('lot_no', $tx->lot_no)->limit(1);
+                            })
+                            ->where('psd.stage_master_unit_id', $tx->sub_stage_id_to)
+                            ->exists();
+                            
+                        if (!$hasChild && !$hasOutflow && !$hasPacking) {
+                            $tx->remaining_quantity = $tx->quantity;
+                            $tx->is_closed_for_unit = 0;
+                            $tx->status = 1;
+                            $tx->save();
+                        }
+                    }
+                }
+            }
+            // ------------------------------------------------
             \Illuminate\Support\Facades\DB::commit();
             return ['status' => 'success', 'message' => 'Session deleted and quantities restored successfully.'];
         } catch (\Exception $e) {
