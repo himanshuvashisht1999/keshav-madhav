@@ -839,6 +839,7 @@ class ProductOrderService
                     $cuttingStage->order_main_id = $data->order_main_id;
                     $cuttingStage->set_product_id = $data->id;
                     $cuttingStage->to_assign_id = $request->master_cutting_id; // StageMasterUnit ID
+                    $cuttingStage->warehouse_id = $request->warehouse_id;
                     $cuttingStage->fabric_id = $fabricId ?? null;
                     $cuttingStage->master_fitting_id = $request->master_fitting_id;
                     $cuttingStage->master_pattern_id = $request->master_pattern_id;
@@ -1481,6 +1482,7 @@ class ProductOrderService
                 $cuttingStage->order_main_id = $save_data_main->id;
                 $cuttingStage->set_product_id = $save_orderProductSet->id;
                 $cuttingStage->to_assign_id = $request->master_cutting_id;
+                $cuttingStage->warehouse_id = $request->warehouse_id;
                 $cuttingStage->fabric_id = $fabricId ?? null;
                 $cuttingStage->master_fitting_id = $request->master_fitting_id;
                 $cuttingStage->master_pattern_id = $request->master_pattern_id;

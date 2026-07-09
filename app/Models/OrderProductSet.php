@@ -74,10 +74,17 @@ class OrderProductSet extends Model
             $fabricIds = array_unique($fabricIds);
         }
 
-        if (empty($fabricIds))
+        if (empty($fabricIds)) {
             return collect();
+        }
 
-        return \App\Models\Fabric::whereIn('id', $fabricIds)->with('receiptDetails')->get();
+        $warehouseId = $this->cutting_warehouse_id ?? null;
+
+        return \App\Models\Fabric::whereIn('id', $fabricIds)->with(['receiptDetails' => function($q) use ($warehouseId) {
+            if ($warehouseId) {
+                $q->where('master_fabric_warehouse_id', $warehouseId);
+            }
+        }])->get();
     }
     public function cuttingStages()
     {

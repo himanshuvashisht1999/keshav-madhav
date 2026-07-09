@@ -1400,9 +1400,13 @@ class OrderDigitalizationService
         /** Attach fallback data correctly */
         foreach ($main_orders as $order) {
             foreach ($order->OrderProductSets as $set) {
-                // FALLBACK: Populate design info from assignments if primary fields are null (happens in partial assignment)
                 if ($set->orderCuttingStages->isNotEmpty()) {
                     $firstOsc = $set->orderCuttingStages->first();
+                    
+                    if ($firstOsc->warehouse_id) {
+                        $set->cutting_warehouse_id = $firstOsc->warehouse_id;
+                    }
+
                     if (!$set->fabric_id && $firstOsc->fabric) {
                         $set->setRelation('fabric', $firstOsc->fabric);
                     }
