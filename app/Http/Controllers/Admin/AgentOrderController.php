@@ -1720,12 +1720,15 @@ class AgentOrderController extends Controller
             ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
             ->leftJoin('master_design_patterns', 'production_goods.master_pattern_id', '=', 'master_design_patterns.id')
             ->leftJoin('master_product_fittings', 'production_goods.master_product_fitting_id', '=', 'master_product_fittings.id')
+            ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
             ->where('agent_order_id', $id)
             ->select(
                 'agent_order_items.*',
                 'agent_order_items.rack_id as item_rack_id',
                 'master_design_patterns.name as db_pattern_name',
-                'master_product_fittings.name as db_fitting_name'
+                'master_product_fittings.name as db_fitting_name',
+                'production_goods.name_of_garment',
+                'master_series.name as series_name'
             )
             ->get();
 
@@ -1760,6 +1763,8 @@ class AgentOrderController extends Controller
 
             return (object) [
                 'product_name' => $first->product_name,
+                'series_name' => $first->series_name ?? '',
+                'name_of_garment' => $first->name_of_garment ?? '',
                 'design_number' => $first->design_number,
                 'color_name' => $first->color_name,
                 'color_id' => $first->color_id,

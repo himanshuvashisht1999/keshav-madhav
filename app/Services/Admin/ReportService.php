@@ -508,7 +508,7 @@ class ReportService
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            $agentUsagesQuery = \App\Models\AgentOrderFabricItem::with(['order.party', 'roll'])
+            $agentUsagesQuery = \App\Models\AgentOrderFabricItem::with(['order.vendor', 'order.shop', 'roll'])
                 ->where('fabric_id', $fabricId)
                 ->whereNotNull('agent_order_dispatch_id');
 
@@ -536,7 +536,7 @@ class ReportService
             }
 
             foreach ($agentUsages as $a) {
-                $partyName = $a->order?->party?->name ?? 'Unknown';
+                $partyName = $a->order?->shop_name ?? 'Unknown';
                 $unifiedUsages->push((object) [
                     'id' => $a->id,
                     'created_at' => $a->created_at,
@@ -744,7 +744,7 @@ class ReportService
             ];
         }
 
-        $agentUsagesQuery = \App\Models\AgentOrderFabricItem::with(['order.party', 'roll'])
+        $agentUsagesQuery = \App\Models\AgentOrderFabricItem::with(['order.vendor', 'order.shop', 'roll'])
             ->where('fabric_id', $fabricId)
             ->whereNotNull('agent_order_dispatch_id');
 
@@ -757,7 +757,7 @@ class ReportService
         $agentUsages = $agentUsagesQuery->get();
 
         foreach ($agentUsages as $a) {
-            $partyName = $a->order?->party?->name ?? '-';
+            $partyName = $a->order?->shop_name ?? '-';
             $refList = [
                 'Agent Order ID: ' . $a->agent_order_id,
                 'Party: ' . $partyName,

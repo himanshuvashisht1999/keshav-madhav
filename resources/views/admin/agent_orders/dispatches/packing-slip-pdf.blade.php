@@ -120,7 +120,7 @@
                     <tr>
                         <td class="text-center" style="border-bottom: 0.5px solid #eee;">{{ $index + 1 }}.</td>
                         <td style="border-bottom: 0.5px solid #eee; text-transform: uppercase;">
-                            <strong>{{ $item->product_name }} {{ $item->design_number }} {{ $item->size_set_name }} 
+                            <strong>{{ $item->product_name }} {{ $item->size_set_name }} 
                             <!-- {{ $item->color_name }} -->
                             </strong>
                         </td>
