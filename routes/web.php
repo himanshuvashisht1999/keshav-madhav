@@ -590,6 +590,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/dispatches/{id}/packing-slip', [AdminAgentOrderController::class, 'downloadDispatchPackingSlip'])->name('dispatches.download-packing-slip');
             Route::get('/dispatches/{id}/send-whatsapp-packing-slip', [AdminAgentOrderController::class, 'sendWhatsappDispatchPackingSlip'])->name('dispatches.send-whatsapp-packing-slip');
             Route::post('/dispatches/{id}/update-invoice', [AdminAgentOrderController::class, 'updateDispatchInvoice'])->name('dispatches.update-invoice');
+            Route::post('/dispatches/{id}/update-items', [AdminAgentOrderController::class, 'updateDispatchItems'])->name('dispatches.update-items');
             Route::get('/dispatches/{id}/delete', [AdminAgentOrderController::class, 'destroyDispatch'])->name('dispatches.destroy');
             Route::post('/dispatch-selected', [AdminAgentOrderController::class, 'dispatchSelected'])->name('dispatch-selected');
 

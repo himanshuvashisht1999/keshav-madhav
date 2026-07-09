@@ -194,6 +194,10 @@
                         <button type="button" class="btn btn-action bg-white border text-warning" data-toggle="modal" data-target="#editInvoiceModal" title="Edit Invoice">
                             <i class="fas fa-edit"></i> <span class="d-none d-xl-inline">Edit Invoice</span>
                         </button>
+
+                        <button type="button" class="btn btn-action bg-white border text-primary" data-toggle="modal" data-target="#editItemsModal" title="Edit Items Prices">
+                            <i class="fas fa-tags"></i> <span class="d-none d-xl-inline">Edit Items</span>
+                        </button>
                         
                         <a href="{{ route('admin.agent-orders.dispatches.return.create', $dispatch->id) }}" class="btn btn-action bg-white border text-danger" title="Sales Return">
                             <i class="fas fa-undo"></i> <span class="d-none d-xl-inline">Sales Return</span>
@@ -280,6 +284,94 @@
                         <div class="modal-footer bg-white border-top-0 px-4 pb-4">
                             <button type="button" class="btn btn-action bg-white border text-muted" data-dismiss="modal">Cancel</button>
                             <button type="submit" class="btn btn-action bg-warning text-dark font-weight-bold">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Items Modal -->
+        <div class="modal fade" id="editItemsModal" tabindex="-1" role="dialog" aria-labelledby="editItemsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+                <div class="modal-content shadow-lg border-0" style="border-radius: 16px;">
+                    <div class="modal-header bg-white border-bottom-0" style="padding: 1.5rem 1.5rem 0.5rem;">
+                        <h5 class="modal-title font-weight-bold text-dark" id="editItemsModalLabel">
+                            <i class="fas fa-tags text-primary mr-2"></i> Update Items Price / Discount
+                        </h5>
+                        <button type="button" class="close text-muted" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form id="editItemsForm">
+                        @csrf
+                        <div class="modal-body px-4 pb-4" style="max-height: 60vh; overflow-y: auto;">
+                            <div class="row mb-3 align-items-end">
+                                @php
+                                    $uniqueBrands = $groupedItems->unique('brand_id');
+                                @endphp
+                                @foreach($uniqueBrands as $brand)
+                                    @php
+                                        $firstItemOfBrand = $groupedItems->where('brand_id', $brand->brand_id)->first();
+                                        $brandDiscount = 0;
+                                        if($firstItemOfBrand && $firstItemOfBrand->mrp > 0) {
+                                            $brandDiscount = (($firstItemOfBrand->mrp - $firstItemOfBrand->selling_price) / $firstItemOfBrand->mrp) * 100;
+                                        }
+                                    @endphp
+                                    <div class="col-md-auto mb-2">
+                                        <label class="font-weight-bold mb-1" style="font-size: 0.85rem;">{{ $brand->brand_name }} Discount % :</label>
+                                        <div class="input-group" style="width: 180px;">
+                                            <input type="number" step="any" class="form-control brand-discount-input" data-brand="{{ $brand->brand_id }}" placeholder="e.g. 10" value="{{ round($brandDiscount, 2) }}">
+                                            <div class="input-group-append">
+                                                <button class="btn btn-outline-primary apply-brand-discount-btn" data-brand="{{ $brand->brand_id }}" type="button">Apply</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <small class="text-muted d-block mb-3 border-bottom pb-2">Apply a discount to instantly update all items belonging to that brand.</small>
+                            <table class="table table-bordered text-center align-middle" id="editItemsTable">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Design #</th>
+                                        <th>Color</th>
+                                        <th>Size Set</th>
+                                        <th>Qty</th>
+                                        <th>MRP</th>
+                                        <th style="width: 150px;">Discount (%)</th>
+                                        <th style="width: 150px;">Sale Price (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($groupedItems as $index => $item)
+                                        <tr class="item-edit-row" data-brand="{{ $item->brand_id }}">
+                                            <td class="align-middle font-weight-bold">{{ $item->design_number }}</td>
+                                            <td class="align-middle">{{ $item->color_name }}</td>
+                                            <td class="align-middle">{{ $item->size_set_name ?? 'N/A' }}</td>
+                                            <td class="align-middle font-weight-bold">{{ $item->total_qty }}</td>
+                                            <td class="align-middle text-muted item-mrp" data-mrp="{{ $item->mrp }}">₹{{ number_format($item->mrp, 2) }}</td>
+                                            <td class="align-middle">
+                                                @php
+                                                    $calculatedDiscount = $item->mrp > 0 ? (($item->mrp - $item->selling_price) / $item->mrp) * 100 : 0;
+                                                @endphp
+                                                <input type="number" step="any" class="form-control text-center item-discount" value="{{ round($calculatedDiscount, 2) }}">
+                                            </td>
+                                            <td class="align-middle">
+                                                <input type="hidden" name="items[{{ $index }}][product_id]" value="{{ $item->product_id }}">
+                                                <input type="hidden" name="items[{{ $index }}][color_id]" value="{{ $item->color_id }}">
+                                                <input type="hidden" name="items[{{ $index }}][size_set_id]" value="{{ $item->size_set_id }}">
+                                                <input type="number" step="0.01" class="form-control text-center item-sale-price" name="items[{{ $index }}][selling_price]" value="{{ $item->selling_price }}" required>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                            <div class="alert alert-info border-0 mt-3 mb-0">
+                                <i class="fas fa-info-circle"></i> Updating the prices here will automatically recalculate the dispatch total, GST, and the party balance.
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-white border-top-0 px-4 pb-4">
+                            <button type="button" class="btn btn-action bg-white border text-muted" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-action bg-primary text-white font-weight-bold">Update Prices</button>
                         </div>
                     </form>
                 </div>
@@ -611,6 +703,78 @@
                     }
                 });
             });
+
+            // Edit Items Modal Submission
+            $('#editItemsForm').on('submit', function(e) {
+                e.preventDefault();
+                const btn = $(this).find('button[type="submit"]');
+                const originalHtml = btn.html();
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> UPDATING PRICES...');
+
+                $.ajax({
+                    url: "{{ route('admin.agent-orders.dispatches.update-items', $dispatch->id) }}",
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            toastr.success(response.message);
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            toastr.error(response.message);
+                            btn.prop('disabled', false).html(originalHtml);
+                        }
+                    },
+                    error: function(xhr) {
+                        let msg = 'Something went wrong. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        toastr.error(msg);
+                        btn.prop('disabled', false).html(originalHtml);
+                    }
+                });
+            });
+
+            // Handle Item Discount calculation
+            $('.item-discount').on('input', function() {
+                let row = $(this).closest('.item-edit-row');
+                let mrp = parseFloat(row.find('.item-mrp').data('mrp')) || 0;
+                let discount = parseFloat($(this).val()) || 0;
+                let salePrice = mrp - (mrp * (discount / 100));
+                row.find('.item-sale-price').val(salePrice.toFixed(2));
+            });
+
+            // Handle Item Sale Price calculation back to Discount
+            $('.item-sale-price').on('input', function() {
+                let row = $(this).closest('.item-edit-row');
+                let mrp = parseFloat(row.find('.item-mrp').data('mrp')) || 0;
+                let salePrice = parseFloat($(this).val()) || 0;
+                if(mrp > 0) {
+                    let discount = ((mrp - salePrice) / mrp) * 100;
+                    row.find('.item-discount').val(discount.toFixed(2));
+                }
+            });
+
+            // Handle Brand-wise Discount Apply
+            $('.apply-brand-discount-btn').on('click', function() {
+                let brandId = $(this).data('brand');
+                let discountInput = $('.brand-discount-input[data-brand="' + brandId + '"]').val();
+                let globalDiscount = parseFloat(discountInput);
+                
+                if(isNaN(globalDiscount)) return;
+                
+                $('.item-edit-row[data-brand="' + brandId + '"]').each(function() {
+                    let mrp = parseFloat($(this).find('.item-mrp').data('mrp')) || 0;
+                    if(mrp > 0) {
+                        $(this).find('.item-discount').val(globalDiscount);
+                        let salePrice = mrp - (mrp * (globalDiscount / 100));
+                        $(this).find('.item-sale-price').val(salePrice.toFixed(2));
+                    }
+                });
+            });
+
             // Brand selection for print/download buttons
             $('#brandSelect').on('change', function() {
                 let brandId = $(this).val();

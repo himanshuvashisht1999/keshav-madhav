@@ -2498,7 +2498,10 @@ class AgentOrderController extends Controller
         $dispatch = \App\Models\AgentOrderDispatch::with(['shop', 'vendor', 'agent', 'orders.items'])->findOrFail($id);
 
         $items = DB::table('agent_order_items')
+            ->leftJoin('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
+            ->leftJoin('brands', 'production_goods.brand_id', '=', 'brands.id')
             ->where('agent_order_dispatch_id', '=', $id)
+            ->select('agent_order_items.*', 'brands.name as brand_name', 'brands.id as brand_id')
             ->get();
 
         $groupedItems = $items->groupBy(function ($item) {
@@ -2506,6 +2509,12 @@ class AgentOrderController extends Controller
         })->map(function ($group) {
             $first = $group->first();
             return (object) [
+                'group_key' => $first->product_id . '_' . $first->color_id . '_' . $first->size_set_id,
+                'product_id' => $first->product_id,
+                'color_id' => $first->color_id,
+                'size_set_id' => $first->size_set_id,
+                'brand_id' => $first->brand_id ?? 'unknown',
+                'brand_name' => $first->brand_name ?? 'Unknown Brand',
                 'product_name' => $first->product_name,
                 'design_number' => $first->design_number,
                 'color_name' => $first->color_name,
@@ -2802,6 +2811,80 @@ class AgentOrderController extends Controller
             'brandId'
         ));
         return $pdf->download('Dispatch_Invoice_' . $dispatch->id . '.pdf');
+    }
+
+    public function updateDispatchItems(Request $request, $id)
+    {
+        $dispatch = \App\Models\AgentOrderDispatch::findOrFail($id);
+        $items = $request->input('items', []);
+
+        DB::beginTransaction();
+        try {
+            $oldGrandTotal = $dispatch->grand_total;
+            
+            // Loop through submitted items to update prices
+            foreach ($items as $itemData) {
+                if (isset($itemData['product_id'], $itemData['color_id'], $itemData['size_set_id'], $itemData['selling_price'])) {
+                    DB::table('agent_order_items')
+                        ->where('agent_order_dispatch_id', $id)
+                        ->where('product_id', $itemData['product_id'])
+                        ->where('color_id', $itemData['color_id'])
+                        ->where('size_set_id', $itemData['size_set_id'])
+                        ->update(['selling_price' => $itemData['selling_price']]);
+                }
+            }
+
+            // Recalculate Subtotal
+            $dispatchItems = DB::table('agent_order_items')->where('agent_order_dispatch_id', $id)->get();
+            $newTotalAmount = $dispatchItems->sum(function ($item) {
+                return $item->quantity * $item->selling_price;
+            });
+            
+            // Recalculate Fabric Subtotal if any
+            $fabricItems = DB::table('agent_order_fabric_items')->where('agent_order_dispatch_id', $id)->get();
+            $newTotalAmount += $fabricItems->sum(function ($item) {
+                return $item->meter * $item->selling_price;
+            });
+
+            $taxable_amount = $newTotalAmount - ($dispatch->discount_amount ?? 0);
+            $gst_amount = $taxable_amount * (($dispatch->gst_percentage ?? 0) / 100);
+            $grandTotal = $taxable_amount + $gst_amount + ($dispatch->other_charges ?? 0);
+
+            $dispatch->update([
+                'total_amount' => $newTotalAmount,
+                'gst_amount' => $gst_amount,
+                'grand_total' => $grandTotal,
+            ]);
+
+            // Adjust Party Balance
+            if ($dispatch->party_type === 'vendor') {
+                $vendor = \App\Models\Vendor::find($dispatch->master_vendor_id);
+                if ($vendor) {
+                    $vendor->balance = $vendor->balance + $oldGrandTotal - $grandTotal;
+                    $vendor->save();
+                }
+            } else {
+                $shop = \App\Models\MasterCustomer::find($dispatch->master_customer_id);
+                if ($shop) {
+                    $shop->balance = $shop->balance + $oldGrandTotal - $grandTotal;
+                    $shop->save();
+                }
+            }
+
+            // Also recalculate AgentOrder total_amount for all related orders
+            $orderIds = $dispatchItems->pluck('agent_order_id')->merge($fabricItems->pluck('agent_order_id'))->unique();
+            foreach ($orderIds as $orderId) {
+                $orderTotal = DB::table('agent_order_items')->where('agent_order_id', $orderId)->sum(DB::raw('quantity * selling_price'));
+                $orderTotal += DB::table('agent_order_fabric_items')->where('agent_order_id', $orderId)->sum(DB::raw('meter * selling_price'));
+                \App\Models\AgentOrder::where('id', $orderId)->update(['total_amount' => $orderTotal]);
+            }
+
+            DB::commit();
+            return response()->json(['status' => 'success', 'message' => 'Items updated successfully']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        }
     }
 
     public function updateDispatchInvoice(Request $request, $id)
