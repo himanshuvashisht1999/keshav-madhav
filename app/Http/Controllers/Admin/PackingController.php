@@ -89,18 +89,20 @@ class PackingController extends Controller
         } else {
             $packed_quantities = $this->service->getPackedQuantitiesForOrder($order->id);
             $unit_available = $this->service->getAvailableQuantitiesAtUnit($order->id, $slip->stage_master_unit_id);
+            $unit_incoming = $this->service->getIncomingQuantitiesAtUnit($order->id, $slip->stage_master_unit_id);
 
             // Logic to prepare sets (duplicated from JSON method for initial load)
-            $order_sets = $order->OrderProductSets->map(function ($set) use ($packed_quantities, $unit_available) {
+            $order_sets = $order->OrderProductSets->map(function ($set) use ($packed_quantities, $unit_available, $unit_incoming) {
                 $set_total_qty = $set->set_quantity > 0 ? $set->set_quantity : 1;
                 $min_packed_sets = null;
-                $details = $set->product_set_details->map(function ($detail) use ($packed_quantities, $set_total_qty, $set, $unit_available) {
+                $details = $set->product_set_details->map(function ($detail) use ($packed_quantities, $set_total_qty, $set, $unit_available, $unit_incoming) {
                     $item = $detail->toArray();
                     $item['packed_qty'] = $packed_quantities[$detail->id] ?? 0;
                     $item['qty_per_set'] = $detail->total_quantity / $set_total_qty;
                     $item['design_number'] = $set->design_number;
                     $item['color_name'] = $set->colors ? $set->colors->name : 'N/A';
                     $item['unit_available_qty'] = $unit_available[$detail->id] ?? 0;
+                    $item['unit_incoming_qty'] = $unit_incoming[$detail->id] ?? 0;
                     $item['product_id'] = $set->production_goods_id;
                     return (object) $item;
                 });
@@ -115,7 +117,11 @@ class PackingController extends Controller
                 $set->setAttribute('packed_sets', $min_packed_sets ?? 0);
                 $set->setAttribute('details_data', $details);
                 return $set;
-            });
+            })->filter(function($set) {
+                return $set->details_data->contains(function($detail) {
+                    return $detail->unit_incoming_qty > 0;
+                });
+            })->values();
         }
 
         $storerooms = \App\Models\Storeroom::with('racks')->where('status', 1)->get();
@@ -226,17 +232,19 @@ class PackingController extends Controller
         if ($order) {
             $packed_quantities = $this->service->getPackedQuantitiesForOrder($order->id);
             $unit_available = $this->service->getAvailableQuantitiesAtUnit($order->id, $slip->stage_master_unit_id);
+            $unit_incoming = $this->service->getIncomingQuantitiesAtUnit($order->id, $slip->stage_master_unit_id);
 
-            $order_sets = $order->OrderProductSets->map(function ($set) use ($packed_quantities, $unit_available) {
+            $order_sets = $order->OrderProductSets->map(function ($set) use ($packed_quantities, $unit_available, $unit_incoming) {
                 $set_total_qty = $set->set_quantity > 0 ? $set->set_quantity : 1;
                 $min_packed_sets = null;
-                $details = $set->product_set_details->map(function ($detail) use ($packed_quantities, $set_total_qty, $set, $unit_available) {
+                $details = $set->product_set_details->map(function ($detail) use ($packed_quantities, $set_total_qty, $set, $unit_available, $unit_incoming) {
                     $item = $detail->toArray();
                     $item['packed_qty'] = $packed_quantities[$detail->id] ?? 0;
                     $item['qty_per_set'] = $detail->total_quantity / $set_total_qty;
                     $item['design_number'] = $set->design_number;
                     $item['color_name'] = $set->colors ? $set->colors->name : 'N/A';
                     $item['unit_available_qty'] = $unit_available[$detail->id] ?? 0;
+                    $item['unit_incoming_qty'] = $unit_incoming[$detail->id] ?? 0;
                     $item['product_id'] = $set->production_goods_id;
                     return (object) $item;
                 });
@@ -251,7 +259,11 @@ class PackingController extends Controller
                 $set->setAttribute('details_data', $details);
                 $set->setAttribute('packed_sets', $min_packed_sets ?? 0);
                 return $set;
-            });
+            })->filter(function($set) {
+                return $set->details_data->contains(function($detail) {
+                    return $detail->unit_incoming_qty > 0;
+                });
+            })->values();
         }
 
         $storerooms = \App\Models\Storeroom::with('racks')->where('status', 1)->get();

@@ -271,6 +271,38 @@ class PackingService
         return $available;
     }
 
+    public function getIncomingQuantitiesAtUnit($order_id, $unit_id)
+    {
+        $lots = \App\Models\OrderLot::where('order_main_id', $order_id)->pluck('lot_no')->toArray();
+        if (empty($lots)) return [];
+
+        $incoming = DB::table('order_stage_transactions as tx')
+            ->join('order_stage_transaction_details as det', 'tx.id', '=', 'det.order_stage_transaction_id')
+            ->whereIn('tx.lot_no', $lots)
+            ->where('tx.to_stage_id', 11) // Packing Stage
+            ->where(function($q) use ($unit_id) {
+                $q->where('tx.sub_stage_id_to', $unit_id)
+                  ->orWhereNull('tx.sub_stage_id_to');
+            })
+            ->where('tx.type', '!=', 'damage')
+            ->select('det.size', DB::raw('SUM(det.quantity) as total_incoming'))
+            ->groupBy('det.size')
+            ->pluck('total_incoming', 'det.size')
+            ->toArray();
+
+        $incoming_mapped = [];
+        $details = \App\Models\OrderProductSetDetail::join('order_products_sets as ops', 'order_products_set_details.order_products_set_id', '=', 'ops.id')
+            ->where('ops.order_main_id', $order_id)
+            ->select('order_products_set_details.*')
+            ->get();
+
+        foreach ($details as $detail) {
+            $incoming_mapped[$detail->id] = (int) ($incoming[$detail->size] ?? 0);
+        }
+
+        return $incoming_mapped;
+    }
+
     public function bulkSaveCarton($data)
     {
         DB::beginTransaction();
