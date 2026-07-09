@@ -669,6 +669,7 @@ class OrderDigitalizationService
             unset($unit_data);
             //dd($results_units);
             $unit_master_data = [];
+            $others_data = [];
             $from_stage = [];
             if ($results_units) {
                 foreach ($results_units as $unit_data) {
@@ -684,22 +685,33 @@ class OrderDigitalizationService
                             'id' => $unit_data['id'],
                             'master_stage_id' => $unit_data['master_stage_id'],
                             'name' => $unit_data['name'],
-                            'master_stage_name' => $unit_data['master_stage']['name'],
+                            'master_stage_name' => $unit_data['master_stage']['name'] ?? '',
 
                         ];
+                    } else {
+                        if ($to_stage_id == 11 || !in_array($unit_data['master_stage_id'], [12, 13])) {
+                            $others_data[] = [
+                                'id' => $unit_data['id'],
+                                'master_stage_id' => $unit_data['master_stage_id'],
+                                'name' => $unit_data['name'],
+                                'master_stage_name' => $unit_data['master_stage']['name'] ?? '',
+                            ];
+                        }
                     }
+                    
                     if ($results['stage_master_unit_id'] == $unit_data['id']) {
                         $from_stage = [
                             'id' => $unit_data['id'],
                             'master_stage_id' => $unit_data['master_stage_id'],
                             'name' => $unit_data['name'],
-                            'master_stage_name' => $unit_data['master_stage']['name'],
-                            'warehouse_id' => $results->getUnitMaster->masterFabricWarehouse->id,
-                            'warehouse' => $results->getUnitMaster->masterFabricWarehouse->cutting_master_name,
-                            'address' => $results->getUnitMaster->masterFabricWarehouse->address,
+                            'master_stage_name' => $unit_data['master_stage']['name'] ?? '',
+                            'warehouse_id' => $results->getUnitMaster->masterFabricWarehouse->id ?? 0,
+                            'warehouse' => $results->getUnitMaster->masterFabricWarehouse->cutting_master_name ?? '',
+                            'address' => $results->getUnitMaster->masterFabricWarehouse->address ?? '',
                         ];
                     }
                 }
+                $unit_master_data = array_merge($unit_master_data, $others_data);
             }
             $last_production_datetime = null;
             $maxId = 0;
@@ -722,8 +734,13 @@ class OrderDigitalizationService
                 \App\Models\OrderGodamStageTransaction::where('production_slip_digitization_id', $results->id)->orderBy('id', 'desc')->first(),
             ])->filter()->sortByDesc('created_at')->first();
 
+            $last_to_stage_id = null;
+            $last_movement_type = 1;
+
             if ($latestTx) {
                 $last_production_datetime = $latestTx->production_datetime;
+                $last_to_stage_id = $latestTx->sub_stage_id_to ?? null;
+                $last_movement_type = $latestTx->type ?? 1;
             }
 
             $data = [
@@ -733,7 +750,9 @@ class OrderDigitalizationService
                 'unit_master_data' => $unit_master_data,
                 'date_time' => $results->created_at,
                 'status' => $results->status,
-                'last_production_datetime' => $last_production_datetime
+                'last_production_datetime' => $last_production_datetime,
+                'last_to_stage_id' => $last_to_stage_id,
+                'last_movement_type' => $last_movement_type
             ];
         }
 
@@ -1062,9 +1081,35 @@ class OrderDigitalizationService
             }
         }
 
-
-
-
+        if ($results) {
+            $latestTx = collect([
+                \App\Models\OrderStageTransaction::where('production_slip_digitization_id', $results->id)->orderBy('id', 'desc')->first(),
+                \App\Models\OrderPrintingStageTransaction::where('production_slip_digitization_id', $results->id)->orderBy('id', 'desc')->first(),
+                \App\Models\OrderPrintingToStichingTransaction::where('production_slip_digitization_id', $results->id)->orderBy('id', 'desc')->first(),
+                \App\Models\OrderGodamStageTransaction::where('production_slip_digitization_id', $results->id)->orderBy('id', 'desc')->first(),
+            ])->filter()->sortByDesc('created_at')->first();
+            
+            $results->save_type = null;
+            $results->last_to_stage_unit_id = null;
+            
+            if ($latestTx) {
+                // If it's a stitching transaction, save_type = 3
+                // If printing, save_type = 2
+                // Wait, how do we distinguish? 
+                // Let's use the model type or the table name, or from_stage_id / to_stage_id.
+                // If they did "Send to Stitching", it goes to stage 4.
+                // If they did "Send to Printing", it goes to stage 1.
+                if ($latestTx instanceof \App\Models\OrderStageTransaction && $latestTx->to_stage_id == 4) {
+                    $results->save_type = 3; // Stitching
+                    $results->last_to_stage_unit_id = $latestTx->sub_stage_id_to ?? null;
+                } elseif ($latestTx instanceof \App\Models\OrderPrintingStageTransaction || $latestTx->to_stage_id == 1) {
+                    $results->save_type = 2; // Printing
+                    $results->last_to_stage_unit_id = $latestTx->sub_stage_id_to ?? null;
+                } else {
+                    $results->save_type = 1; // Rolls allot? Or we can check if it's OrderLot... wait, rolls allot might not create these transactions?
+                }
+            }
+        }
 
         return $results;
     }

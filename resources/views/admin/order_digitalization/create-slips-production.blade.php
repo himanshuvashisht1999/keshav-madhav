@@ -120,12 +120,12 @@
                                         <div class="col-md-12 mb-3">
                                             <label class="d-block">Movement Type</label>
                                             <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
-                                                <label class="btn btn-outline-primary active w-50">
-                                                    <input type="radio" name="movement_type" value="1" id="type_regular" autocomplete="off" checked> 
+                                                <label class="btn btn-outline-primary w-50 {{ (!isset($slip_data['last_movement_type']) || $slip_data['last_movement_type'] == 1) ? 'active' : '' }}">
+                                                    <input type="radio" name="movement_type" value="1" id="type_regular" autocomplete="off" {{ (!isset($slip_data['last_movement_type']) || $slip_data['last_movement_type'] == 1) ? 'checked' : '' }}> 
                                                     <i class="fas fa-arrow-right mr-1"></i> Regular
                                                 </label>
-                                                <label class="btn btn-outline-danger w-50">
-                                                    <input type="radio" name="movement_type" value="2" id="type_damage" autocomplete="off"> 
+                                                <label class="btn btn-outline-danger w-50 {{ (isset($slip_data['last_movement_type']) && $slip_data['last_movement_type'] == 2) ? 'active' : '' }}">
+                                                    <input type="radio" name="movement_type" value="2" id="type_damage" autocomplete="off" {{ (isset($slip_data['last_movement_type']) && $slip_data['last_movement_type'] == 2) ? 'checked' : '' }}> 
                                                     <i class="fas fa-undo mr-1"></i> Damage (Return)
                                                 </label>
                                             </div>
@@ -143,7 +143,7 @@
                                             <label>To Stage</label>
                                             <select name="to_stage_id" class="form-control select2" id="to_stage_id" required>
                                                 @foreach($slip_data['unit_master_data'] as $unit)
-                                                    <option value="{{ $unit['id'] }}">{{ $unit['name'] }} ({{ $unit['master_stage_name'] }})</option>
+                                                    <option value="{{ $unit['id'] }}" {{ (isset($slip_data['last_to_stage_id']) && $slip_data['last_to_stage_id'] == $unit['id']) ? 'selected' : '' }}>{{ $unit['name'] }} ({{ $unit['master_stage_name'] }})</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -329,12 +329,14 @@ $(function(){
 
     function updateToStage(units) {
         let $toStage = $('#to_stage_id');
+        let currentVal = $toStage.val() || "{{ $slip_data['last_to_stage_id'] ?? '' }}";
         $toStage.empty();
 
         if (units && units.length > 0) {
             $.each(units, function (index, unit) {
+                let selected = (unit.id == currentVal) ? 'selected' : '';
                 $toStage.append(`
-                    <option value="${unit.id}">
+                    <option value="${unit.id}" ${selected}>
                         ${unit.name} (${unit.master_stage_name})
                     </option>
                 `);

@@ -85,7 +85,6 @@
                     <th>Supplier</th>
                     <th>PO / Shipment</th>
                     <th>Roll No</th>
-                    <th class="text-right">Price</th>
                     <th class="text-right">Recv Qty</th>
                     <th class="text-right">Rem Qty</th>
                 </tr>
@@ -100,7 +99,6 @@
                     <td>{{ $row->fabric_receipt->vendor->name ?? '-' }}</td>
                     <td>{{ $row->purchase_order?->sku ?? '-' }} / {{ $row->shipment_number ?? '-' }}</td>
                     <td>{{ $row->roll_number }}</td>
-                    <td class="text-right">{{ number_format($row->price_per_meter, 2) }}</td>
                     <td class="text-right font-bold">{{ number_format($row->meter, 2) }}</td>
                     <td class="text-right font-bold">{{ number_format($row->remaining_quantity, 2) }}</td>
                 </tr>

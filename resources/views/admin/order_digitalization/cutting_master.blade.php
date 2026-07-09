@@ -407,7 +407,7 @@
                                                     <option value="">Select Stitching Unit</option>
                                                     @if(isset($stitching_units))
                                                         @foreach($stitching_units as $unit)
-                                                            <option value="{{ $unit->id }}">{{ $unit->name }} ({{ $unit->masterFabricWarehouse->cutting_master_name ?? 'Unknown Warehouse' }})</option>
+                                                            <option value="{{ $unit->id }}" {{ (isset($cutting_slip->last_to_stage_unit_id) && $cutting_slip->last_to_stage_unit_id == $unit->id) ? 'selected' : '' }}>{{ $unit->name }} ({{ $unit->masterFabricWarehouse->cutting_master_name ?? 'Unknown Warehouse' }})</option>
                                                         @endforeach
                                                     @endif
                                                 </select>
@@ -485,7 +485,7 @@
                                                     <option value="">Select Printing Unit</option>
                                                     @if(isset($printing_units))
                                                         @foreach($printing_units as $unit)
-                                                            <option value="{{ $unit->id }}">{{ $unit->name }} ({{ $unit->masterFabricWarehouse->cutting_master_name ?? 'Unknown Warehouse' }})</option>
+                                                            <option value="{{ $unit->id }}" {{ (isset($cutting_slip->last_to_stage_unit_id) && $cutting_slip->last_to_stage_unit_id == $unit->id) ? 'selected' : '' }}>{{ $unit->name }} ({{ $unit->masterFabricWarehouse->cutting_master_name ?? 'Unknown Warehouse' }})</option>
                                                         @endforeach
                                                     @endif
                                                 </select>
