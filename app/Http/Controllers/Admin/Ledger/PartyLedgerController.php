@@ -33,7 +33,8 @@ class PartyLedgerController extends Controller
                     ->map(function ($v) {
                         $v->party_type = 'sales_agent';
                         $v->master_id_val = 'sales_agent';
-                        $v->balance = $v->shops()->sum('balance');
+                        $ledgerData = $this->getLedgerData(new Request(), 'sales_agent', $v->id);
+                        $v->balance = $ledgerData['party']->balance ?? 0;
                         return $v;
                     });
                 $parties = $parties->concat($items);
@@ -55,6 +56,8 @@ class PartyLedgerController extends Controller
                                 $v->party_type = strtolower($master->name);
                                 $v->master_id_val = $master->id;
                                 if (!isset($v->name) && isset($v->bank_name)) $v->name = $v->bank_name;
+                                $ledgerData = $this->getLedgerData(new Request(), $v->party_type, $v->id);
+                                $v->balance = $ledgerData['party']->balance ?? 0;
                                 return $v;
                             });
                         $parties = $parties->concat($items);
@@ -80,6 +83,8 @@ class PartyLedgerController extends Controller
                             $v->party_type = strtolower($master->name);
                             $v->master_id_val = $master->id;
                             if (!isset($v->name) && isset($v->bank_name)) $v->name = $v->bank_name;
+                            $ledgerData = $this->getLedgerData(new Request(), $v->party_type, $v->id);
+                            $v->balance = $ledgerData['party']->balance ?? 0;
                             return $v;
                         });
                     $parties = $parties->concat($items);
@@ -96,7 +101,8 @@ class PartyLedgerController extends Controller
                 ->map(function ($v) {
                     $v->party_type = 'sales_agent';
                     $v->master_id_val = 'sales_agent';
-                    $v->balance = $v->shops()->sum('balance');
+                    $ledgerData = $this->getLedgerData(new Request(), 'sales_agent', $v->id);
+                    $v->balance = $ledgerData['party']->balance ?? 0;
                     return $v;
                 });
             $parties = $parties->concat($agentItems);
