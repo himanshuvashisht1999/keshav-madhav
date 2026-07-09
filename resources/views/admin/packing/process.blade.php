@@ -150,15 +150,19 @@
                         </h4>
 
                     </div>
-                    @if($order)
-                        <div class="col-md-2 text-right">
+                    <div class="col-md-4 text-right d-flex justify-content-end align-items-center" style="gap: 10px;">
+                        @if($slip && $slip->slip_file)
+                            <a href="{{ asset('assets/production_slips/' . $slip->slip_file) }}"
+                                target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-image mr-1"></i> View Slip Photo
+                            </a>
+                        @endif
+                        @if($order)
                             <a id="fileLink" href="{{asset('/assets/products/' . $order->corporate_order_file)}}"
                                 target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
                                 <i class="fas fa-file-alt mr-1"></i> Sales Order File
                             </a>
-                        </div>
-                    @endif
-                    <div class="col-md-2 text-right">
+                        @endif
                         <a href="" id="fileLink" target="_blank" rel="noopener noreferrer"
                             class="btn btn-outline-primary btn-sm d-none">
                             <i class="fas fa-file-alt mr-1"></i> Sales Order File
