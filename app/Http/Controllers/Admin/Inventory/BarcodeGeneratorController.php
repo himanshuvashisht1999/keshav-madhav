@@ -210,15 +210,21 @@ class BarcodeGeneratorController extends Controller
     public function generateBulkTspl(Request $request)
     {
         $ids = $request->ids;
-        if (empty($ids))
+        $printData = $request->print_data;
+
+        if (empty($ids) && empty($printData))
             return back()->withError('No inventory IDs provided.');
+
+        if (!empty($printData)) {
+            $ids = array_keys($printData);
+        }
 
         $items = \App\Models\DomesticInventory::whereIn('id', $ids)->get();
         $barcodeList = [];
 
         foreach ($items as $item) {
             // As per updated user request: "if 5 boxes then 5 barcode"
-            $boxes = (int) $item->total_boxes;
+            $boxes = (!empty($printData) && isset($printData[$item->id])) ? (int) $printData[$item->id] : (int) $item->total_boxes;
 
             for ($i = 0; $i < $boxes; $i++) {
                 if ($item->barcode) {

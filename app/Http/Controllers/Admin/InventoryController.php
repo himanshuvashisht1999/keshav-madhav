@@ -497,6 +497,7 @@ class InventoryController extends Controller
         DB::beginTransaction();
         try {
             $inventoryIds = [];
+            $printData = [];
 
             // Initial counters for carton and box numbering
             $currentCartonNo = (int) DomesticInventory::max('carton_no') ?? 0;
@@ -617,6 +618,10 @@ class InventoryController extends Controller
                 ]);
 
                 $inventoryIds[] = $inventory->id;
+                $printData[] = [
+                    'id' => $inventory->id,
+                    'qty' => $item['total_boxes']
+                ];
 
                 // Support legacy PackingCarton/PackingBox for secondary tracking if needed
                 for ($i = 0; $i < $item['total_boxes']; $i++) {
@@ -658,7 +663,8 @@ class InventoryController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Stock added successfully. Generating barcodes...',
-                    'ids' => $inventoryIds
+                    'ids' => $inventoryIds,
+                    'print_data' => $printData
                 ]);
             }
             return redirect()->route('admin.inventory.index')->with('success', 'Stock added successfully.');

@@ -1372,13 +1372,23 @@
                                 value: "{{ csrf_token() }}"
                             }));
 
-                            response.ids.forEach(id => {
-                                pdfForm.append($('<input>', {
-                                    type: 'hidden',
-                                    name: 'ids[]',
-                                    value: id
-                                }));
-                            });
+                            if (response.print_data) {
+                                response.print_data.forEach(data => {
+                                    pdfForm.append($('<input>', {
+                                        type: 'hidden',
+                                        name: 'print_data[' + data.id + ']',
+                                        value: data.qty
+                                    }));
+                                });
+                            } else if (response.ids) {
+                                response.ids.forEach(id => {
+                                    pdfForm.append($('<input>', {
+                                        type: 'hidden',
+                                        name: 'ids[]',
+                                        value: id
+                                    }));
+                                });
+                            }
 
                             $('body').append(pdfForm);
                             pdfForm.submit();
