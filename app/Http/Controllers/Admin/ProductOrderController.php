@@ -247,6 +247,30 @@ class ProductOrderController extends Controller
         }
     }
 
+    public function getFabricsByWarehouse(Request $request)
+    {
+        $warehouse_id = $request->warehouse_id;
+        
+        if (empty($warehouse_id)) {
+            // If no warehouse selected, return all fabrics with global remaining quantity
+            $fabrics = \App\Models\Fabric::where('status', 1)
+                ->withSum('receiptDetails', 'remaining_quantity')
+                ->get(['id', 'name']);
+            return response()->json($fabrics);
+        }
+
+        $fabrics = \App\Models\Fabric::whereHas('receiptDetails', function($q) use ($warehouse_id) {
+            $q->where('master_fabric_warehouse_id', $warehouse_id)
+              ->where('remaining_quantity', '>', 0);
+        })
+        ->withSum(['receiptDetails' => function($q) use ($warehouse_id) {
+            $q->where('master_fabric_warehouse_id', $warehouse_id);
+        }], 'remaining_quantity')
+        ->get(['id', 'name']);
+
+        return response()->json($fabrics);
+    }
+
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);

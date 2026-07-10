@@ -102,11 +102,6 @@
                                                 <label>Fabric</label>
                                                 <select name="fabric_id" id="fabric_id" class="form-control select2">
                                                     <option value="">Select Fabric</option>
-                                                    @foreach($fabrics as $fabric)
-                                                        <option value="{{ $fabric->id }}">{{ $fabric->name }}
-                                                            ({{ ($fabric->receipt_details_sum_remaining_quantity ?? 0) }} meter)
-                                                        </option>
-                                                    @endforeach
                                                 </select>
                                             </div>
                                         </div>
@@ -335,6 +330,34 @@
             }
 
             cuttingSelect.trigger('change.select2');
+
+            // Fetch fabrics based on warehouse
+            let fabricSelect = $('#fabric_id');
+            fabricSelect.empty().append('<option value="">Loading Fabrics...</option>');
+            fabricSelect.trigger('change.select2');
+            
+            $.ajax({
+                url: "{{ route('admin.product_order.getFabricsByWarehouse') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    warehouse_id: warehouse_id
+                },
+                success: function (res) {
+                    fabricSelect.empty().append('<option value="">Select Fabric</option>');
+                    res.forEach(fabric => {
+                        let remaining = fabric.receipt_details_sum_remaining_quantity || 0;
+                        fabricSelect.append(
+                            `<option value="${fabric.id}">${fabric.name} (${remaining} meter)</option>`
+                        );
+                    });
+                    fabricSelect.trigger('change.select2');
+                },
+                error: function () {
+                    fabricSelect.empty().append('<option value="">Select Fabric</option>');
+                    fabricSelect.trigger('change.select2');
+                }
+            });
         }
 
         function printingWarehouseChange() {

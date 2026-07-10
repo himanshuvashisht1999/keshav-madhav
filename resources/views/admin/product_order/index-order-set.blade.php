@@ -164,9 +164,7 @@
                     <div class="form-group">
                         <label>Fabric</label>
                         <select id="fabric_id" name="fabric_id[]" class="form-control select2" multiple required>
-                            @foreach($fabrics as $fabric)
-                                <option value="{{ $fabric->id }}">{{ $fabric->name }} ({{ ($fabric->receipt_details_sum_remaining_quantity ?? 0) }} meter)</option>
-                            @endforeach
+                            <!-- Fabrics will be populated via AJAX -->
                         </select>
                     </div>
 
@@ -571,6 +569,34 @@ function warehouseChange(warehouse_id) {
     }
 
     cuttingSelect.trigger('change.select2');
+
+    // Fetch fabrics based on warehouse
+    let fabricSelect = $('#fabric_id');
+    fabricSelect.empty().append('<option value="">Loading Fabrics...</option>');
+    fabricSelect.trigger('change.select2');
+    
+    $.ajax({
+        url: "{{ route('admin.product_order.getFabricsByWarehouse') }}",
+        type: "POST",
+        data: {
+            _token: "{{ csrf_token() }}",
+            warehouse_id: warehouse_id
+        },
+        success: function (res) {
+            fabricSelect.empty();
+            res.forEach(fabric => {
+                let remaining = fabric.receipt_details_sum_remaining_quantity || 0;
+                fabricSelect.append(
+                    `<option value="${fabric.id}">${fabric.name} (${remaining} meter)</option>`
+                );
+            });
+            fabricSelect.trigger('change.select2');
+        },
+        error: function () {
+            fabricSelect.empty();
+            fabricSelect.trigger('change.select2');
+        }
+    });
 
     // Make sure all printing units are loaded (not warehouse specific)
     printingWarehouseChange();

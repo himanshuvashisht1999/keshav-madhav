@@ -1,26 +1,10 @@
 <?php
-require __DIR__.'/vendor/autoload.php';
-$app = require_once __DIR__.'/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
-
-$slip_id = 88;
-$ctrl = app(\App\Http\Controllers\Admin\PackingController::class);
-$svc = app(\App\Services\Admin\PackingService::class);
-
-$slip = $svc->getSlipDetails($slip_id);
-echo "Order Main ID: " . $slip->orderMain?->id . "\n";
-$packing = $svc->getPackingMainWithStructure($slip_id);
-$order = null;
-if ($packing && $packing->order_main_id) {
-    $order = \App\Models\OrderMain::find($packing->order_main_id);
-} else if ($slip->sku) {
-    $order = $svc->getOrderDetails($slip->sku);
-}
-
-if ($order) {
-    $avail = $svc->getAvailableQuantitiesAtUnit($order->id, $slip->stage_master_unit_id);
-    print_r($avail);
-} else {
-    echo "No Order found.\n";
-}
+$fabricId = 105;
+$warehouseId = 1;
+$rollIds = App\Models\FabricReceiptDetail::where('fabric_id', $fabricId)->where('master_fabric_warehouse_id', $warehouseId)->pluck('id');
+$usagesSum = App\Models\FabricRollAssigning::whereIn('fabric_receipt_detail_id', $rollIds)->sum('meter');
+$agentUsagesSum = App\Models\AgentOrderFabricItem::whereHas('roll', function ($q) use ($warehouseId) {
+    $q->where('master_fabric_warehouse_id', $warehouseId);
+})->where('fabric_id', $fabricId)->whereNotNull('agent_order_dispatch_id')->sum('meter');
+$receiptSumIssued = App\Models\FabricReceiptDetail::where('fabric_id', $fabricId)->where('master_fabric_warehouse_id', $warehouseId)->sum(\DB::raw('meter - remaining_quantity'));
+dump(['internal_usages' => (float)$usagesSum, 'agent_usages' => (float)$agentUsagesSum, 'total_usages' => (float)$usagesSum + (float)$agentUsagesSum, 'receipts_sum_issued' => (float)$receiptSumIssued]);

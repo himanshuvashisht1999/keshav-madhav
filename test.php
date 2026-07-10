@@ -1,9 +1,1 @@
-<?php
-require __DIR__.'/vendor/autoload.php';
-$app = require_once __DIR__.'/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
-
-$o = App\Models\OrderMain::where('sku', 'SNA/08/07/2026/287')->first();
-$p = App\Models\OrderProductSet::where('order_main_id', $o->id)->with('size_measurement')->first();
-echo json_encode($p->toArray(), JSON_PRETTY_PRINT);
+<?php \=105; \=1; \=App\Models\FabricReceiptDetail::where('fabric_id', \)->where('master_fabric_warehouse_id', \)->pluck('id'); \=App\Models\FabricRollAssigning::whereIn('fabric_receipt_detail_id', \)->sum('meter'); \=App\Models\AgentOrderFabricItem::whereHas('roll', function (\) use (\) { \->where('master_fabric_warehouse_id', \); })->where('fabric_id', \)->whereNotNull('agent_order_dispatch_id')->sum('meter'); \=App\Models\FabricReceiptDetail::where('fabric_id', \)->where('master_fabric_warehouse_id', \)->sum(\DB::raw('meter - remaining_quantity')); dump(['internal_usages'=>\, 'agent_usages'=>\, 'total_usages'=>\+\, 'receipts_sum_issued'=>\]);

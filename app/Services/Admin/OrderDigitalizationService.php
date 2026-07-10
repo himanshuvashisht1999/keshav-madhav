@@ -1397,9 +1397,17 @@ class OrderDigitalizationService
             ->get()
             ->groupBy('order_products_set_id');
 
+        $stage_master_unit = \App\Models\StageMasterUnit::find($stage_master_unit_id);
+        $cuttingMasterWarehouseId = $stage_master_unit ? $stage_master_unit->master_fabric_warehouse_id : null;
+
         /** Attach fallback data correctly */
         foreach ($main_orders as $order) {
             foreach ($order->OrderProductSets as $set) {
+                
+                if ($cuttingMasterWarehouseId) {
+                    $set->cutting_warehouse_id = $cuttingMasterWarehouseId;
+                }
+
                 if ($set->orderCuttingStages->isNotEmpty()) {
                     $firstOsc = $set->orderCuttingStages->first();
                     

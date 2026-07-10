@@ -49,9 +49,10 @@ class CheckFabricLedger extends Command
                 $this->info("  -> Cutting Master ({$assignment->stageMasterUnit->name}) Warehouse: {$cuttingWarehouseId}");
                 $this->info("  -> Selected Roll ({$assignment->fabricReceiptDetail->roll_number}) Warehouse: {$rollWarehouseId}");
                 
-                // Check if a roll with the SAME roll_number exists in the correct warehouse
+                // Check if a roll with the SAME roll_number and SAME fabric_id exists in the correct warehouse
                 $alternativeRolls = FabricReceiptDetail::where('roll_number', $assignment->roll_no ?? $assignment->fabricReceiptDetail->roll_number)
                     ->where('master_fabric_warehouse_id', $cuttingWarehouseId)
+                    ->where('fabric_id', $assignment->fabricReceiptDetail->fabric_id)
                     ->get();
                 
                 if ($alternativeRolls->isNotEmpty()) {

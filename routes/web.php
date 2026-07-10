@@ -417,6 +417,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
             // Route::get('/fabric_combined_receipt',[AdminProductOrderController::class,'fabric_combined_receipt'])->name('fabric_combined_receipt');
             Route::post('/getCuttingUnit', [AdminProductOrderController::class, 'getCuttingUnit'])->name('getCuttingUnit');
+            Route::post('/get-fabrics-by-warehouse', [AdminProductOrderController::class, 'getFabricsByWarehouse'])->name('getFabricsByWarehouse');
         });
 
         Route::prefix('/packing')->name('packing.')->group(function () {
