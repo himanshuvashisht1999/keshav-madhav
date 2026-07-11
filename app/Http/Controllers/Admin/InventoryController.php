@@ -790,6 +790,7 @@ class InventoryController extends Controller
                 $isSameAttributes = (
                     $item->product_id == $request->new_product_id &&
                     $item->size_set_id == $request->new_size_set_id &&
+                    $item->color_id == $request->new_color_id &&
                     $item->rack_id == $new_rack_id
                 );
 
@@ -804,6 +805,7 @@ class InventoryController extends Controller
                 // 1. Update/Create NEW DomesticInventory row
                 $new_item = DomesticInventory::where('product_id', $request->new_product_id)
                     ->where('size_set_id', $request->new_size_set_id)
+                    ->where('color_id', $request->new_color_id)
                     ->where('rack_id', $new_rack_id)
                     ->where('id', '!=', $item->id) // CRITICAL: Don't find yourself!
                     // ->where(function ($q) {
