@@ -47,6 +47,10 @@
                                     <th>Total Items:</th>
                                     <td>{{ $transfer->items->count() }} Rolls</td>
                                 </tr>
+                                <tr>
+                                    <th>Total Meterage:</th>
+                                    <td>{{ $transfer->items->sum('meter') }} mtr</td>
+                                </tr>
                             </table>
                             @if($transfer->remarks)
                                 <div class="mt-3">

@@ -102,7 +102,7 @@ class FabricTransferController extends Controller
 
     public function historyList(Request $request)
     {
-        $query = FabricTransfer::with(['fromWarehouse', 'toWarehouse', 'user'])->latest();
+        $query = FabricTransfer::with(['fromWarehouse', 'toWarehouse', 'user', 'items.fabric'])->latest();
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -111,6 +111,16 @@ class FabricTransferController extends Controller
             })
             ->addColumn('to_warehouse', function($row) {
                 return $row->toWarehouse->cutting_master_name ?? 'N/A';
+            })
+            ->addColumn('fabric_details', function($row) {
+                $fabrics = $row->items->pluck('fabric.name')->filter()->unique()->toArray();
+                return implode(', ', $fabrics) ?: 'N/A';
+            })
+            ->addColumn('total_rolls', function($row) {
+                return $row->items->count();
+            })
+            ->addColumn('total_qty', function($row) {
+                return $row->items->sum('meter');
             })
             ->addColumn('action', function($row) {
                 return '<a href="' . route('admin.inventory.fabric_transfer.show', $row->id) . '" class="btn btn-xs btn-primary"><i class="fas fa-eye"></i> View</a>';

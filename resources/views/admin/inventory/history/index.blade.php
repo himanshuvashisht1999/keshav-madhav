@@ -64,6 +64,7 @@
                                         <th width="10%" class="py-3 text-center">Movement</th>
                                         <!-- <th width="8%" class="py-3">User</th> -->
                                         <th width="8%" class="py-3">Date</th>
+                                        <th width="5%" class="py-3 text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>

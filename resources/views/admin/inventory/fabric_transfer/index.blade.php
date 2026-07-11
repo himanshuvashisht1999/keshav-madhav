@@ -91,14 +91,14 @@
                                             <tr>
                                                 <th width="50">#</th>
                                                 <th>Roll No</th>
-                                                <th>Batch</th>
+                                                <!-- <th>Batch</th> -->
                                                 <th>Remaining Qty (Mtr)</th>
                                                 <th>Current Location</th>
                                             </tr>
                                         </thead>
                                         <tbody id="rollsBody">
                                             <tr>
-                                                <td colspan="5" class="text-center py-5 text-muted">
+                                                <td colspan="4" class="text-center py-5 text-muted">
                                                     <i class="fas fa-arrow-left fa-2x mb-2 d-block"></i>
                                                     Please select Warehouse and Fabric to load rolls
                                                 </td>
@@ -131,7 +131,7 @@ $(document).ready(function() {
     $('#from_warehouse').change(function() {
         let whId = $(this).val();
         $('#fabric_id').val('').trigger('change').prop('disabled', true);
-        $('#rollsBody').html('<tr><td colspan="5" class="text-center py-5 text-muted">Loading fabrics...</td></tr>');
+        $('#rollsBody').html('<tr><td colspan="4" class="text-center py-5 text-muted">Loading fabrics...</td></tr>');
         
         if (whId) {
             $.get("{{ route('admin.inventory.fabric_transfer.get-fabrics') }}", {warehouse_id: whId}, function(data) {
@@ -140,10 +140,10 @@ $(document).ready(function() {
                     options += `<option value="${fabric.id}">${fabric.name}</option>`;
                 });
                 $('#fabric_id').html(options).prop('disabled', false);
-                $('#rollsBody').html('<tr><td colspan="5" class="text-center py-5 text-muted">Please select a fabric</td></tr>');
+                $('#rollsBody').html('<tr><td colspan="4" class="text-center py-5 text-muted">Please select a fabric</td></tr>');
             });
         } else {
-            $('#rollsBody').html('<tr><td colspan="5" class="text-center py-5 text-muted">Please select a warehouse</td></tr>');
+            $('#rollsBody').html('<tr><td colspan="4" class="text-center py-5 text-muted">Please select a warehouse</td></tr>');
         }
     });
 
@@ -152,7 +152,7 @@ $(document).ready(function() {
         let whId = $('#from_warehouse').val();
         
         if (fabricIds && fabricIds.length > 0 && whId) {
-            $('#rollsBody').html('<tr><td colspan="5" class="text-center py-5 text-muted">Loading rolls...</td></tr>');
+            $('#rollsBody').html('<tr><td colspan="4" class="text-center py-5 text-muted">Loading rolls...</td></tr>');
             $.get("{{ route('admin.inventory.fabric_transfer.get-rolls') }}", {warehouse_id: whId, fabric_ids: fabricIds}, function(data) {
                 let rows = '';
                 if (data.length > 0) {
@@ -169,7 +169,7 @@ $(document).ready(function() {
                                     <span class="badge badge-info">${roll.roll_number}</span>
                                     <div class="small text-muted">${roll.fabric ? roll.fabric.name : 'Unknown Fabric'}</div>
                                 </td>
-                                <td>${roll.batch_no || 'N/A'}</td>
+                                <!-- <td>${roll.batch_no || 'N/A'}</td> -->
                                 <td><strong>${roll.remaining_quantity}</strong> mtr</td>
                                 <td><small class="text-muted"><i class="fas fa-map-marker-alt"></i> ${$('#from_warehouse option:selected').text()}</small></td>
                             </tr>
@@ -177,13 +177,13 @@ $(document).ready(function() {
                     });
                     $('#submitBtn').prop('disabled', false);
                 } else {
-                    rows = '<tr><td colspan="5" class="text-center py-5 text-warning">No rolls available for selected fabrics</td></tr>';
+                    rows = '<tr><td colspan="4" class="text-center py-5 text-warning">No rolls available for selected fabrics</td></tr>';
                     $('#submitBtn').prop('disabled', true);
                 }
                 $('#rollsBody').html(rows);
             });
         } else {
-            $('#rollsBody').html('<tr><td colspan="5" class="text-center py-5 text-muted">Please select one or more fabrics</td></tr>');
+            $('#rollsBody').html('<tr><td colspan="4" class="text-center py-5 text-muted">Please select one or more fabrics</td></tr>');
             $('#submitBtn').prop('disabled', true);
         }
     });

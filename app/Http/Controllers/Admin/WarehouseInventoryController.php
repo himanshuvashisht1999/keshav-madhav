@@ -159,7 +159,7 @@ class WarehouseInventoryController extends Controller
             ->with('total_pcs', $totalPcs)
             ->addIndexColumn()
             ->addColumn('product_name', function ($row) {
-                return $row->product->name_of_garment ?? 'N/A';
+                return trim(($row->product->series->name ?? '') . ' ' . ($row->product->name_of_garment ?? 'N/A'));
             })
             ->addColumn('design_number', function ($row) {
                 return $row->product->design_number ?? 'N/A';

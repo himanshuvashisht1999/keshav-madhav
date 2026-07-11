@@ -853,6 +853,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::prefix('/attribute-history')->name('attribute-history.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'attributeHistoryIndex'])->name('index');
                 Route::get('/list', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'attributeHistoryList'])->name('list');
+                Route::get('/show/{id}', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'attributeHistoryShow'])->name('show');
             });
 
             // Sample Product Routes

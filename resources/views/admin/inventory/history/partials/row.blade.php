@@ -64,4 +64,7 @@
         <div class="small font-weight-bold text-dark">{{ $row->created_at->format('d-m-Y') }}</div>
         <div class="text-muted small">{{ $row->created_at->format('H:i') }}</div>
     </td>
+    <td class="text-center">
+        <a href="{{ route('admin.inventory.attribute-history.show', $row->id) }}" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i></a>
+    </td>
 </tr>

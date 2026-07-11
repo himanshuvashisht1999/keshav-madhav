@@ -42,7 +42,7 @@
                 @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td>{{ $row->product->name_of_garment ?? 'N/A' }}</td>
+                    <td>{{ trim(($row->product->series->name ?? '') . ' ' . ($row->product->name_of_garment ?? 'N/A')) }}</td>
                     <td>{{ $row->product->design_number ?? 'N/A' }}</td>
                     <td>{{ $row->sizeSet->name ?? 'N/A' }}</td>
                     <td>

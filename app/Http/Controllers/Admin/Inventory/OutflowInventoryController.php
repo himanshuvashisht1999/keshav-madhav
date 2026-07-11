@@ -197,7 +197,27 @@ class OutflowInventoryController extends Controller
             ->editColumn('box_quantity', function ($row) {
                 return '<span class="badge badge-light border px-2 py-1 font-weight-bold" style="font-size: 0.9rem;">' . $row->box_quantity . ' Boxes</span>';
             })
-            ->rawColumns(['user_name', 'type_label', 'old_details', 'new_details', 'box_quantity'])
+            ->addColumn('action', function($row) {
+                return '<a href="' . route('admin.inventory.attribute-history.show', $row->id) . '" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i> View</a>';
+            })
+            ->rawColumns(['user_name', 'type_label', 'old_details', 'new_details', 'box_quantity', 'action'])
             ->make(true);
+    }
+
+    public function attributeHistoryShow($id)
+    {
+        $history = \App\Models\DomesticInventoryHistory::with([
+            'user',
+            'oldProduct',
+            'newProduct',
+            'oldColor',
+            'newColor',
+            'oldSizeSet',
+            'newSizeSet',
+            'oldRack.storeroom',
+            'newRack.storeroom'
+        ])->findOrFail($id);
+
+        return view('admin.inventory.history.show', compact('history'));
     }
 }

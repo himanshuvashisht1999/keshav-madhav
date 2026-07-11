@@ -27,10 +27,13 @@
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Transfer No</th>
+                                    <!-- <th>Transfer No</th> -->
                                     <th>Date</th>
                                     <th>From Warehouse</th>
                                     <th>To Warehouse</th>
+                                    <th>Fabric Name</th>
+                                    <th>Total Rolls</th>
+                                    <th>Total Meters</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -52,10 +55,13 @@ $(function() {
         ajax: "{{ route('admin.inventory.fabric_transfer.history-list') }}",
         columns: [
             {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-            {data: 'transfer_no', name: 'transfer_no'},
+            // {data: 'transfer_no', name: 'transfer_no'},
             {data: 'transfer_date', name: 'transfer_date'},
             {data: 'from_warehouse', name: 'from_warehouse'},
             {data: 'to_warehouse', name: 'to_warehouse'},
+            {data: 'fabric_details', name: 'fabric_details', orderable: false, searchable: false},
+            {data: 'total_rolls', name: 'total_rolls', searchable: false},
+            {data: 'total_qty', name: 'total_qty', searchable: false},
             {data: 'action', name: 'action', orderable: false, searchable: false},
         ],
         order: [[2, 'desc']]
