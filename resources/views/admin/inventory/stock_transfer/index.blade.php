@@ -410,15 +410,16 @@
         // ============================== BARCODE SCAN MODE ==============================
         let scannedItems = {}, scanRowCount = 0;
 
-        function loadRacks(storeName, rackName, whichWh) {
+        function loadRacks(storeName, rackName, isFromRack = false) {
             let wh = $(storeName).val(), rack = $(rackName);
             rack.html('<option value="">Select Rack</option>');
+            if (isFromRack && wh) rack.append('<option value="all">All Racks</option>');
             if (wh) $.get('{{ url("admin/inventory/warehouse-stock/racks") }}/' + wh, function(d) { $.each(d, function(i, r) { rack.append('<option value="'+r.id+'">'+r.name+'</option>'); }); });
             updateSummary();
         }
 
-        $('#scan_from_storeroom').on('change', function() { loadRacks('#scan_from_storeroom', '#scan_from_rack'); });
-        $('#scan_to_storeroom').on('change', function() { loadRacks('#scan_to_storeroom', '#scan_to_rack'); });
+        $('#scan_from_storeroom').on('change', function() { loadRacks('#scan_from_storeroom', '#scan_from_rack', true); });
+        $('#scan_to_storeroom').on('change', function() { loadRacks('#scan_to_storeroom', '#scan_to_rack', false); });
         $('#scan_from_rack, #scan_to_rack').on('change', updateSummary);
 
         function updateSummary() {
@@ -449,7 +450,7 @@
             $.ajax({
                 url: "{{ route('admin.inventory.stock_transfer.scan_barcode') }}",
                 type: "GET",
-                data: { barcode: barcode, from_rack_id: $('#scan_from_rack').val() },
+                data: { barcode: barcode, from_storeroom_id: $('#scan_from_storeroom').val(), from_rack_id: $('#scan_from_rack').val() },
                 success: function(res) {
                     $('#scan-spinner').hide();
                     $('#btn_scan_manual').prop('disabled', false);

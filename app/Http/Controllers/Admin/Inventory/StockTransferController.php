@@ -177,19 +177,26 @@ class StockTransferController extends Controller
     public function scanBarcode(Request $request)
     {
         $request->validate([
-            'barcode'      => 'required|string',
-            'from_rack_id' => 'required|integer|exists:racks,id',
+            'barcode'           => 'required|string',
+            'from_storeroom_id' => 'required|integer|exists:storerooms,id',
+            'from_rack_id'      => 'required',
         ]);
 
         $barcode     = strtoupper(trim($request->barcode));
         $barcode     = preg_replace('/[\x00-\x1F\x7F]/', '', $barcode);
         $parsedBarcode = parseCompactBarcode($barcode);
-        $fromRack    = Rack::with('storeroom')->findOrFail($request->from_rack_id);
 
-        // Look up matching inventory record at the given source rack
         $inventoryQuery = DomesticInventory::with(['product', 'sizeSet', 'color', 'rack.storeroom'])
-            ->where('rack_id', $fromRack->id)
             ->where('total_boxes', '>', 0);
+
+        if ($request->from_rack_id !== 'all') {
+            $fromRack = Rack::with('storeroom')->findOrFail($request->from_rack_id);
+            $inventoryQuery->where('rack_id', $fromRack->id);
+        } else {
+            $inventoryQuery->whereHas('rack', function($q) use ($request) {
+                $q->where('storeroom_id', $request->from_storeroom_id);
+            });
+        }
 
         if (preg_match('/^D(\d+)S(\d+)C(\d+)/', $parsedBarcode, $matches)) {
             $inventoryQuery->where('product_id', $matches[1])
@@ -202,11 +209,16 @@ class StockTransferController extends Controller
         $inventory = $inventoryQuery->first();
 
         if (!$inventory) {
+            $locationStr = '';
+            if ($request->from_rack_id !== 'all') {
+                $locationStr = ($fromRack->storeroom->name ?? 'selected warehouse') . " / {$fromRack->name}";
+            } else {
+                $storeroom = \App\Models\Storeroom::find($request->from_storeroom_id);
+                $locationStr = ($storeroom->name ?? 'selected warehouse') . ' (All Racks)';
+            }
             return response()->json([
                 'status'  => 'error',
-                'message' => "Barcode \"{$barcode}\" not found in " .
-                             ($fromRack->storeroom->name ?? 'selected warehouse') .
-                             " / {$fromRack->name}. Please check the source location.",
+                'message' => "Barcode \"{$barcode}\" not found in " . $locationStr . ". Please check the source location.",
             ], 404);
         }
 
@@ -218,8 +230,8 @@ class StockTransferController extends Controller
             'design_number' => $inventory->product->design_number ?? $inventory->design_number ?? '-',
             'color_name'    => $inventory->color->name ?? $inventory->color_name ?? '-',
             'size_set_name' => $inventory->sizeSet->name ?? $inventory->size_set_name ?? '-',
-            'warehouse'     => $fromRack->storeroom->name ?? '-',
-            'rack'          => $fromRack->name,
+            'warehouse'     => $inventory->rack->storeroom->name ?? '-',
+            'rack'          => $inventory->rack->name ?? '-',
             'total_boxes'   => $inventory->total_boxes,
         ]);
     }
