@@ -66,5 +66,18 @@
     </td>
     <td class="text-center">
         <a href="{{ route('admin.inventory.attribute-history.show', $row->id) }}" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i></a>
+        @if (in_array($row->type, ['attribute_change', 'stock_consume', 'creation']) && $row->new_product_id)
+            @php
+                $current_inventory = \App\Models\DomesticInventory::where('product_id', $row->new_product_id)
+                    ->where('size_set_id', $row->new_size_set_id)
+                    ->where('color_id', $row->new_color_id)
+                    ->where('rack_id', $row->new_rack_id)
+                    ->first();
+                $isEditable = $current_inventory && $current_inventory->total_boxes >= $row->box_quantity;
+            @endphp
+            @if($isEditable)
+                <a href="{{ route('admin.inventory.attribute-history.edit', $row->id) }}" class="btn btn-sm btn-warning ml-1"><i class="fas fa-edit"></i></a>
+            @endif
+        @endif
     </td>
 </tr>

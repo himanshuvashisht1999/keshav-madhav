@@ -220,4 +220,158 @@ class OutflowInventoryController extends Controller
 
         return view('admin.inventory.history.show', compact('history'));
     }
+    public function attributeHistoryEdit($id)
+    {
+        $history = \App\Models\DomesticInventoryHistory::with([
+            'oldProduct.series',
+            'newProduct.series',
+            'oldColor',
+            'newColor',
+            'oldSizeSet',
+            'newSizeSet',
+            'oldRack.storeroom',
+            'newRack.storeroom'
+        ])->findOrFail($id);
+
+        if (!in_array($history->type, ['attribute_change', 'stock_consume', 'creation']) || !$history->new_product_id) {
+            return redirect()->route('admin.inventory.attribute-history.index')->withError('This record cannot be edited.');
+        }
+
+        // Check if items are still available
+        $current_inventory = \App\Models\DomesticInventory::where('product_id', $history->new_product_id)
+            ->where('size_set_id', $history->new_size_set_id)
+            ->where('color_id', $history->new_color_id)
+            ->where('rack_id', $history->new_rack_id)
+            ->first();
+
+        if (!$current_inventory || $current_inventory->total_boxes < $history->box_quantity) {
+            return redirect()->route('admin.inventory.attribute-history.show', $id)
+                ->with('error', 'Cannot edit this record because the items have already been dispatched or moved.');
+        }
+
+        $series = \App\Models\MasterSeries::all();
+        $products = \App\Models\ProductionGoods::with('series')->get();
+        $size_sets = \App\Models\MasterSizeMeasurement::all();
+        $colors = \App\Models\MasterColor::all();
+        $storerooms = \App\Models\Storeroom::where('status', '1')->get();
+
+        return view('admin.inventory.history.edit', compact('history', 'series', 'products', 'size_sets', 'colors', 'storerooms'));
+    }
+
+    public function attributeHistoryUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'new_product_id' => 'required',
+            'new_size_set_id' => 'required',
+            'new_color_id' => 'required',
+            'new_storeroom_id' => 'required',
+            'new_rack_id' => 'required',
+        ]);
+
+        $history = \App\Models\DomesticInventoryHistory::findOrFail($id);
+
+        if (!in_array($history->type, ['attribute_change', 'stock_consume', 'creation']) || !$history->new_product_id) {
+            return response()->json(['success' => false, 'message' => 'This record cannot be edited.']);
+        }
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            // 1. Verify items still exist in NEW attributes
+            $current_inventory = \App\Models\DomesticInventory::where('product_id', $history->new_product_id)
+                ->where('size_set_id', $history->new_size_set_id)
+                ->where('color_id', $history->new_color_id)
+                ->where('rack_id', $history->new_rack_id)
+                ->first();
+
+            if (!$current_inventory || $current_inventory->total_boxes < $history->box_quantity) {
+                return response()->json(['success' => false, 'message' => 'Cannot edit this record because the items have already been dispatched or moved.']);
+            }
+
+            $take = $history->box_quantity;
+
+            // Generate barcodes
+            $old_barcode = 'D' . $history->new_product_id . 'S' . $history->new_size_set_id . 'C' . $history->new_color_id;
+            $new_barcode = 'D' . $request->new_product_id . 'S' . $request->new_size_set_id . 'C' . $request->new_color_id;
+
+            // If attributes are exactly the same, do nothing
+            $isSameAttributes = (
+                $history->new_product_id == $request->new_product_id &&
+                $history->new_size_set_id == $request->new_size_set_id &&
+                $history->new_color_id == $request->new_color_id &&
+                $history->new_rack_id == $request->new_rack_id
+            );
+
+            if ($isSameAttributes) {
+                return response()->json(['success' => true, 'message' => 'No changes made.']);
+            }
+
+            // 2. Add boxes to the newly requested attributes
+            $new_item = \App\Models\DomesticInventory::where('product_id', $request->new_product_id)
+                ->where('size_set_id', $request->new_size_set_id)
+                ->where('color_id', $request->new_color_id)
+                ->where('rack_id', $request->new_rack_id)
+                ->first();
+
+            if ($new_item) {
+                $new_item->total_boxes += $take;
+                $new_item->save();
+            } else {
+                $new_item = $current_inventory->replicate();
+                $new_item->product_id = $request->new_product_id;
+                $new_item->size_set_id = $request->new_size_set_id;
+                $new_item->color_id = $request->new_color_id;
+                $new_item->rack_id = $request->new_rack_id;
+                $new_item->total_boxes = $take;
+                $new_item->barcode = $new_barcode;
+                $new_item->qrcode = $new_barcode;
+                $new_item->save();
+            }
+
+            // 3. Remove boxes from the current inventory (the "old" new attributes)
+            $current_inventory->total_boxes -= $take;
+            if ($current_inventory->total_boxes <= 0) {
+                $current_inventory->delete();
+            } else {
+                $current_inventory->save();
+            }
+
+            // 4. Update the actual individual PackingBox records
+            $assignedBoxNos = \Illuminate\Support\Facades\DB::table('agent_order_items')
+                ->whereNotNull('box_no')
+                ->pluck('box_no');
+
+            $boxesToUpdateIds = \Illuminate\Support\Facades\DB::table('packing_boxes')
+                ->where('barcode', $old_barcode)
+                ->whereNotIn('box_no', $assignedBoxNos)
+                ->limit($take)
+                ->pluck('id');
+
+            if ($boxesToUpdateIds->isNotEmpty()) {
+                \Illuminate\Support\Facades\DB::table('packing_boxes')
+                    ->whereIn('id', $boxesToUpdateIds)
+                    ->update(['barcode' => $new_barcode]);
+            }
+
+            // 5. Update the History Record
+            $history->new_product_id = $request->new_product_id;
+            $history->new_size_set_id = $request->new_size_set_id;
+            $history->new_color_id = $request->new_color_id;
+            $history->new_rack_id = $request->new_rack_id;
+            $history->save();
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully updated the attribute history.'
+            ]);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating attributes: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

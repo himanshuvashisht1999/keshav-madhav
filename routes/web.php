@@ -854,6 +854,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'attributeHistoryIndex'])->name('index');
                 Route::get('/list', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'attributeHistoryList'])->name('list');
                 Route::get('/show/{id}', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'attributeHistoryShow'])->name('show');
+                Route::get('/edit/{id}', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'attributeHistoryEdit'])->name('edit');
+                Route::post('/update/{id}', [\App\Http\Controllers\Admin\Inventory\OutflowInventoryController::class, 'attributeHistoryUpdate'])->name('update');
             });
 
             // Sample Product Routes

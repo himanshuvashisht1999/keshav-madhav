@@ -10,6 +10,21 @@
                     <h1>Attribute History Details</h1>
                 </div>
                 <div class="col-sm-6 text-right">
+                    @if (in_array($history->type, ['attribute_change', 'stock_consume', 'creation']) && $history->new_product_id)
+                        @php
+                            $current_inventory = \App\Models\DomesticInventory::where('product_id', $history->new_product_id)
+                                ->where('size_set_id', $history->new_size_set_id)
+                                ->where('color_id', $history->new_color_id)
+                                ->where('rack_id', $history->new_rack_id)
+                                ->first();
+                            $isEditable = $current_inventory && $current_inventory->total_boxes >= $history->box_quantity;
+                        @endphp
+                        @if($isEditable)
+                            <a href="{{ route('admin.inventory.attribute-history.edit', $history->id) }}" class="btn btn-warning mr-2">
+                                <i class="fas fa-edit"></i> Edit Attributes
+                            </a>
+                        @endif
+                    @endif
                     <a href="{{ route('admin.inventory.attribute-history.index') }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> Back to History
                     </a>
