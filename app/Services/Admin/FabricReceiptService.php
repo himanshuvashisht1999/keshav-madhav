@@ -607,8 +607,14 @@ class FabricReceiptService
                 $detail->fabric_id = $fab_data->id;
                 $detail->roll_number = $single_data['roll_no'];
                 $detail->price_per_meter = $single_data['price'];
-                $detail->meter = $single_data['meter'];
-                $detail->remaining_quantity = $single_data['meter'];
+                if ($detail->exists) {
+                    $used_quantity = $detail->meter - $detail->remaining_quantity;
+                    $detail->meter = $single_data['meter'];
+                    $detail->remaining_quantity = max(0, $detail->meter - $used_quantity);
+                } else {
+                    $detail->meter = $single_data['meter'];
+                    $detail->remaining_quantity = $single_data['meter'];
+                }
                 $detail->master_fabric_warehouse_id = $request->master_fabric_warehouse_id;
                 $detail->shipment_number = $shipment_id;
                 $detail->status = 1;
