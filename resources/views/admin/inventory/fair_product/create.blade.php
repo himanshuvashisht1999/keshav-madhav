@@ -318,6 +318,18 @@
                                 <div id="hidden-inputs"></div>
                             </form>
 
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-4">
+                                    <label class="x-small font-weight-bold text-uppercase text-muted mb-1">Filter by Brand</label>
+                                    <select id="modal_brand_filter" class="form-control select2-modal">
+                                        <option value="">All Brands</option>
+                                        @foreach($brands as $brand)
+                                            <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            
                             <div class="table-responsive mt-4 border rounded">
                                 <table class="table table-bordered table-hover bg-white mb-0" id="selected-table">
                                     <thead class="thead-light">
@@ -378,7 +390,8 @@
                 @foreach($existingItems as $item)
                     productDetails['{{ $item["productId"] }}'] = {
                         designNo: '{{ $item["designNo"] }}',
-                        garment: '{!! addslashes($item["garment"]) !!}'
+                        garment: '{!! addslashes($item["garment"]) !!}',
+                        brand_id: '{{ $item["brand_id"] ?? "" }}'
                     };
                     sizeDetails['{{ $item["sizeId"] }}'] = { name: '{{ $item["sizeName"] }}' };
                 @endforeach
@@ -461,7 +474,8 @@
 
                             productDetails[product.id] = {
                                 designNo: product.design_number,
-                                garment: fullName
+                                garment: fullName,
+                                brand_id: product.brand_id
                             };
 
                             let sizeHtml = '';
@@ -620,14 +634,24 @@
                 $('#hidden-inputs').html(hiddenHtml);
             }
 
+            $('#modal_brand_filter').on('change', function() {
+                renderSelectedList();
+            });
+
             function renderSelectedList() {
                 let html = '';
                 let count = 0;
+                let filterBrand = $('#modal_brand_filter').val();
 
                 Object.keys(selectedItems).forEach(key => {
                     let item = selectedItems[key];
                     let p = productDetails[item.productId];
                     let s = sizeDetails[item.sizeId];
+                    
+                    if (filterBrand && p.brand_id != filterBrand) {
+                        return; // Skip if it doesn't match the selected brand
+                    }
+                    
                     count++;
 
                     html += `

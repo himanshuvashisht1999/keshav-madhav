@@ -130,7 +130,7 @@
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>
-                            <strong>{{ trim($item->series_name . ' ' . $item->name_of_garment) ?: $item->product_name }} {{ $item->design_number }}</strong><br>
+                            <strong>{{ trim(($item->series_name ?? '') . ' ' . ($item->name_of_garment ?? '')) ?: ($item->product_name ?? '') }} {{ $item->design_number ?? '' }}</strong><br>
                             <small>Color: {{ $item->color_name }} ({{ $item->color_id }}) @if($withWarehouse) | Barcode: {{ $item->barcode }} @endif</small>
                         </td>
                         @if($withWarehouse)

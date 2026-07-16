@@ -203,7 +203,8 @@ class FairProductController extends Controller
                 'mrp' => $variant->mrp ?? 0,
                 'designNo' => $p->product->design_number,
                 'garment' => $fullName,
-                'sizeName' => $p->sizeSet->name
+                'sizeName' => $p->sizeSet->name,
+                'brand_id' => $p->product->brand_id
             ];
         });
 
