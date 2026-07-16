@@ -138,6 +138,7 @@
                                         <th>Customer</th>
                                         <th>Design No</th>
                                         <th>Order Date</th>
+                                        <th>Expected Delivery</th>
                                         <th class="text-center">Status</th>
                                         <th class="text-center">Action</th>
                                     </tr>
@@ -243,6 +244,10 @@
                     {
                         data: 'created_at',
                         name: 'created_at'
+                    },
+                    {
+                        data: 'expected_delivery_date',
+                        name: 'expected_delivery_date'
                     },
                     {
                         data: 'status',

@@ -36,6 +36,9 @@ class OrderSummaryReportService
             ->editColumn('created_at', function ($row) {
                 return date('d M, Y', strtotime($row->created_at));
             })
+            ->addColumn('expected_delivery_date', function ($row) {
+                return $row->expected_delivery_date ? date('d M, Y', strtotime($row->expected_delivery_date)) : '-';
+            })
             ->addColumn('customer_name', function ($row) {
                 return $row->customer->name ?? 'N/A';
             })
