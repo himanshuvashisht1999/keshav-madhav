@@ -2010,6 +2010,8 @@ class ReportService
 
             $allTransactions = $results1->merge($results2)->merge($results3);
 
+            $groupedAssignments = [];
+
             foreach ($allTransactions as $item) {
                 $t_stage_id = $item->to_stage_id;
 
@@ -2017,14 +2019,13 @@ class ReportService
                 $item->design_number = $orderLot?->orderProductSet?->design_number ?? '-';
                 $item->sku = $orderLot?->orderProductSet?->orderMain?->sku ?? '-';
 
-
                 // Fetch Unified Timing
                 $timing = \App\Models\OrderLotStageTiming::where('lot_no', $item->lot_no)
                     ->where('master_stage_id', $t_stage_id)
                     ->first();
 
                 $column_namevar = 'stage_id_' . $t_stage_id;
-                $timeTracking = OrderStageWiseTimeTracking::where('lot_no', $item->lot_no)->first();
+                $timeTracking = \App\Models\OrderStageWiseTimeTracking::where('lot_no', $item->lot_no)->first();
                 $eta = $timing?->end_date ?? ($item->end_date ?? ($timeTracking && isset($timeTracking->$column_namevar) ? \Carbon\Carbon::parse($timeTracking->$column_namevar) : null));
 
                 $assignedQty = $item->quantity;
@@ -2068,8 +2069,15 @@ class ReportService
                 $item->estimated_time = $eta ? \Carbon\Carbon::parse($eta) : null;
                 $item->assigned_qty = $assignedQty;
                 $item->pending_qty = $pendingQty;
-                $assignments[] = $item;
+
+                $groupKey = $item->lot_no . '_' . $t_stage_id . '_' . $item->sub_stage_id_to;
+                if (!isset($groupedAssignments[$groupKey])) {
+                    $groupedAssignments[$groupKey] = $item;
+                } else {
+                    $groupedAssignments[$groupKey]->assigned_qty += $assignedQty;
+                }
             }
+            $assignments = array_values($groupedAssignments);
             $assignments = collect($assignments)->sortBy('id')->values();
         } else {
             $type = 'none';
