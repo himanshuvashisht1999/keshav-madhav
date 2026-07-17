@@ -1882,8 +1882,11 @@ class ReportService
             foreach ($records as $item) {
                 $eta = $item->end_date;
                 $assignedQty = $item->quantity;
-                $pendingQty = (int) $item->remaining_quantity;
-                $isClosed = $item->is_closed_for_unit == 1;
+                
+                $d = getLotDetails($item->productSet->design_number ?? $lotNo, 3);
+                $pendingQty = $d ? (int) $d['remaining_quantity'] : (int) $item->remaining_quantity;
+                
+                $isClosed = ($item->is_closed_for_unit == 1) && ($pendingQty <= 0);
 
                 // Status Logic
                 if ($isClosed || $pendingQty <= 0) {
@@ -2025,8 +2028,11 @@ class ReportService
                 $eta = $timing?->end_date ?? ($item->end_date ?? ($timeTracking && isset($timeTracking->$column_namevar) ? \Carbon\Carbon::parse($timeTracking->$column_namevar) : null));
 
                 $assignedQty = $item->quantity;
-                $pendingQty = (int) $item->remaining_quantity;
-                $isClosed = $item->is_closed_for_unit == 1;
+                
+                $lotData = getLotDetails($item->lot_no, $t_stage_id);
+                $pendingQty = $lotData ? (int) $lotData['remaining_quantity'] : (int) $item->remaining_quantity;
+                
+                $isClosed = ($item->is_closed_for_unit == 1) && ($pendingQty <= 0);
 
                 // Status Logic
                 if ($isClosed || $pendingQty <= 0) {
