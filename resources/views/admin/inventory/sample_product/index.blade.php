@@ -45,6 +45,29 @@
             </a>
         </div>
 
+        <div class="premium-card mb-4">
+            <div class="card-body">
+                <form action="{{ route('admin.inventory.sample-product.index') }}" method="GET" class="row align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label text-muted small text-uppercase font-weight-bold">Batch No</label>
+                        <input type="text" name="batch_no" class="form-control" placeholder="Search batch no..." value="{{ request('batch_no') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted small text-uppercase font-weight-bold">Date From</label>
+                        <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted small text-uppercase font-weight-bold">Date To</label>
+                        <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary px-4"><i class="fas fa-search mr-2"></i> Filter</button>
+                        <a href="{{ route('admin.inventory.sample-product.index') }}" class="btn btn-outline-secondary ml-2">Clear</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div class="premium-card">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">

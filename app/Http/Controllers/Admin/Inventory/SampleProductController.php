@@ -17,11 +17,24 @@ use Illuminate\Support\Facades\DB;
 
 class SampleProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $batches = \App\Models\SampleBatch::withCount('products')
-            ->orderBy('id', 'desc')
-            ->paginate(20);
+        $query = \App\Models\SampleBatch::withCount('products')
+            ->orderBy('id', 'desc');
+
+        if ($request->has('batch_no') && $request->batch_no) {
+            $query->where('batch_no', 'like', '%' . $request->batch_no . '%');
+        }
+
+        if ($request->has('date_from') && $request->date_from) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->has('date_to') && $request->date_to) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $batches = $query->paginate(20)->withQueryString();
             
         return view('admin.inventory.sample_product.index', compact('batches'));
     }
