@@ -1747,6 +1747,10 @@ class ReportService
         } elseif (!is_array($unitIdsReq)) {
             $unitIdsReq = [];
         }
+        
+        $lotNo = $request->get('lot_no');
+        $orderNo = $request->get('order_no');
+        $designNo = $request->get('design_no');
 
         if ($productionStatus) {
             $type = 'other';
@@ -1771,6 +1775,18 @@ class ReportService
             }
             if ($request->filled('end_date')) {
                 $query->whereDate('created_at', '<=', $request->end_date);
+            }
+            
+            if ($orderNo) {
+                $query->whereHas('orderMain', function ($q) use ($orderNo) {
+                    $q->where('sku', 'like', '%' . $orderNo . '%');
+                });
+            }
+            
+            if ($designNo) {
+                $query->whereHas('orderProductSet', function ($q) use ($designNo) {
+                    $q->where('design_number', 'like', '%' . $designNo . '%');
+                });
             }
 
             if (!empty($unitIdsReq)) {
@@ -1826,7 +1842,6 @@ class ReportService
         }
 
         $lotNo = $request->get('lot_no');
-        $orderNo = $request->get('order_no');
 
         $isCutting = $stageId == 3;
         $isPacking = $stageId == 11;
@@ -1866,8 +1881,12 @@ class ReportService
             }
 
             if ($lotNo) {
-                $query->whereHas('productSet', function ($q) use ($lotNo) {
-                    $q->where('design_number', 'like', '%' . $lotNo . '%');
+                $query->where('lot_no', 'like', '%' . $lotNo . '%');
+            }
+
+            if ($designNo) {
+                $query->whereHas('productSet', function ($q) use ($designNo) {
+                    $q->where('design_number', 'like', '%' . $designNo . '%');
                 });
             }
 
@@ -1884,7 +1903,10 @@ class ReportService
                 $assignedQty = $item->quantity;
                 $pendingQty = min((int) $item->remaining_quantity, (int) $item->quantity);
                 
-                $isClosed = ($item->is_closed_for_unit == 1) && ($pendingQty <= 0);
+                $isClosed = ($item->is_closed_for_unit == 1);
+                if ($isClosed) {
+                    $pendingQty = 0;
+                }
 
                 // Status Logic
                 if ($isClosed || $pendingQty <= 0) {
@@ -1982,6 +2004,17 @@ class ReportService
                 $ass3Query->where($orderFilter);
             }
 
+            if ($designNo) {
+                $designFilter = function ($q) use ($designNo) {
+                    $q->whereHas('orderProduct.orderProductSet', function ($sq) use ($designNo) {
+                        $sq->where('design_number', 'like', '%' . $designNo . '%');
+                    });
+                };
+                $ass1Query->where($designFilter);
+                $ass2Query->where($designFilter);
+                $ass3Query->where($designFilter);
+            }
+
             if ($request->filled('start_date')) {
                 $ass1Query->whereDate('created_at', '>=', $request->start_date);
                 $ass2Query->whereDate('created_at', '>=', $request->start_date);
@@ -2029,7 +2062,10 @@ class ReportService
                 $assignedQty = $item->quantity;
                 $pendingQty = min((int) $item->remaining_quantity, (int) $item->quantity);
                 
-                $isClosed = ($item->is_closed_for_unit == 1) && ($pendingQty <= 0);
+                $isClosed = ($item->is_closed_for_unit == 1);
+                if ($isClosed) {
+                    $pendingQty = 0;
+                }
 
                 // Status Logic
                 if ($isClosed || $pendingQty <= 0) {

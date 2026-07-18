@@ -101,9 +101,21 @@
                                 </div>
 
                                 <div class="col-md-2">
+                                    <label class="fw-bold">Order No</label>
+                                    <input type="text" name="order_no" value="{{ request('order_no') }}" class="form-control"
+                                        placeholder="Search Order No">
+                                </div>
+
+                                <div class="col-md-2">
                                     <label class="fw-bold">Lot No</label>
                                     <input type="text" name="lot_no" value="{{ request('lot_no') }}" class="form-control"
                                         placeholder="Search Lot No">
+                                </div>
+
+                                <div class="col-md-2">
+                                    <label class="fw-bold">Design No</label>
+                                    <input type="text" name="design_no" value="{{ request('design_no') }}" class="form-control"
+                                        placeholder="Search Design No">
                                 </div>
 
                                 <div class="col-md-2">
