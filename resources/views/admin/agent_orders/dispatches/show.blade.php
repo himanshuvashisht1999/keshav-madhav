@@ -345,7 +345,7 @@
                                     @foreach($groupedItems as $index => $item)
                                         <tr class="item-edit-row" data-brand="{{ $item->brand_id }}">
                                             <td class="align-middle font-weight-bold">{{ $item->design_number }}</td>
-                                            <td class="align-middle">{{ $item->color_name }}</td>
+                                            <td class="align-middle">{{ $item->color_name }} ({{ $item->color_id }})</td>
                                             <td class="align-middle">{{ $item->size_set_name ?? 'N/A' }}</td>
                                             <td class="align-middle font-weight-bold">{{ $item->total_qty }}</td>
                                             <td class="align-middle text-muted item-mrp" data-mrp="{{ $item->mrp }}">₹{{ number_format($item->mrp, 2) }}</td>
@@ -557,7 +557,7 @@
                                             <tr>
                                                 <td class="font-weight-bold text-dark">{{ $item->design_number }}</td>
                                                 <td>{{ $item->product_name }}</td>
-                                                <td>{{ $item->color_name }}</td>
+                                                <td>{{ $item->color_name }} ({{ $item->color_id }})</td>
                                                 <td>{{ $item->size_set_name ?? 'N/A' }}</td>
                                                 <td class="text-center"><span class="badge badge-light border px-3 py-1"
                                                         style="font-size: 13px;">{{ number_format($item->box_qty, 0) }}</span></td>

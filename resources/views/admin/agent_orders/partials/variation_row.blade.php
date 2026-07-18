@@ -24,7 +24,7 @@
         <div class="text-dark font-weight-bold">{{ $variation->design_number }}</div>
         <div class="text-primary small font-weight-500">{{ trim(($variation->series_name ?? '') . ' ' . $variation->name_of_garment) }}</div>
         <div class="text-muted small"><i class="fas fa-palette mr-1"></i>
-            {{ $variation->color_name }}</div>
+            {{ str_replace(' ('.$variation->color_id.')', '', $variation->color_name) }} ({{ $variation->color_id }})</div>
     </td>
     <td>
         <span class="badge badge-outline-secondary px-2 py-1">{{ $variation->size_set_name }}</span>

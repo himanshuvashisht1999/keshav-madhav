@@ -1306,7 +1306,7 @@ class ReportService
                                 'design_number' => $order_product_sets['design_number'],
                                 'set_size' => $order_product_sets['size_measurement']['set_size'],
                                 'size_group' => $order_product_sets['size_measurement']['size_group'],
-                                'color' => $order_product_sets['colors']['name'],
+                                'color' => isset($order_product_sets['colors']) ? $order_product_sets['colors']['name'] . ' (' . $order_product_sets['colors']['id'] . ')' : '',
                                 'no_of_pcs' => $order_product_sets['no_of_pcs'],
                                 'set_quantity' => $val['set_quantity'],
                             ];
@@ -1882,9 +1882,7 @@ class ReportService
             foreach ($records as $item) {
                 $eta = $item->end_date;
                 $assignedQty = $item->quantity;
-                
-                $d = getLotDetails($item->productSet->design_number ?? $lotNo, 3);
-                $pendingQty = $d ? (int) $d['remaining_quantity'] : (int) $item->remaining_quantity;
+                $pendingQty = min((int) $item->remaining_quantity, (int) $item->quantity);
                 
                 $isClosed = ($item->is_closed_for_unit == 1) && ($pendingQty <= 0);
 
@@ -2029,9 +2027,7 @@ class ReportService
                 $eta = $timing?->end_date ?? ($item->end_date ?? ($timeTracking && isset($timeTracking->$column_namevar) ? \Carbon\Carbon::parse($timeTracking->$column_namevar) : null));
 
                 $assignedQty = $item->quantity;
-                
-                $lotData = getLotDetails($item->lot_no, $t_stage_id);
-                $pendingQty = $lotData ? (int) $lotData['remaining_quantity'] : (int) $item->remaining_quantity;
+                $pendingQty = min((int) $item->remaining_quantity, (int) $item->quantity);
                 
                 $isClosed = ($item->is_closed_for_unit == 1) && ($pendingQty <= 0);
 
@@ -2067,14 +2063,15 @@ class ReportService
                     ? ($timing?->complete_date ? \Carbon\Carbon::parse($timing->complete_date) : ($item->complete_date ? \Carbon\Carbon::parse($item->complete_date) : $item->updated_at))
                     : null;
                 $item->estimated_time = $eta ? \Carbon\Carbon::parse($eta) : null;
-                $item->assigned_qty = $assignedQty;
-                $item->pending_qty = $pendingQty;
 
                 $groupKey = $item->lot_no . '_' . $t_stage_id . '_' . $item->sub_stage_id_to;
                 if (!isset($groupedAssignments[$groupKey])) {
+                    $item->assigned_qty = $assignedQty;
+                    $item->pending_qty = $pendingQty;
                     $groupedAssignments[$groupKey] = $item;
                 } else {
                     $groupedAssignments[$groupKey]->assigned_qty += $assignedQty;
+                    $groupedAssignments[$groupKey]->pending_qty += $pendingQty;
                 }
             }
             $assignments = array_values($groupedAssignments);

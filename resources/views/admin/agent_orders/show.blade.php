@@ -322,7 +322,7 @@
                                                         <strong class="text-dark">{{ $item->product_name }}</strong>
                                                         <div class="text-muted mt-1" style="font-size: 12px; line-height: 1.4;">
                                                             <span class="mr-2"><i class="fas fa-hashtag mr-1"></i>{{ $item->design_number }}</span>
-                                                            <span class="mr-2"><i class="fas fa-palette mr-1"></i>{{ $item->color_name }}</span>
+                                                            <span class="mr-2"><i class="fas fa-palette mr-1"></i>{{ $item->color_name }} ({{ $item->color_id }})</span>
                                                             <span class="mr-2"><i class="fas fa-ruler-combined mr-1"></i>{{ $item->size_set_name }}</span>
                                                             @if($item->barcode) <span class="mr-2"><i class="fas fa-barcode mr-1"></i>{{ $item->barcode }}</span> @endif
                                                             @if(isset($item->fitting_name) && $item->fitting_name) <span class="mr-2"><strong>Fit:</strong> {{ $item->fitting_name }}</span> @endif

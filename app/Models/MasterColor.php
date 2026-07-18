@@ -20,5 +20,4 @@ class MasterColor extends Model
         'created_at',
         'updated_at'
     ];
-    
 }

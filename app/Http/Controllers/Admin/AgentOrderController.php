@@ -85,7 +85,8 @@ class AgentOrderController extends Controller
             ->pluck('full_name');
 
         $colors = \App\Models\MasterColor::where('status', 1)
-            ->distinct()->pluck('name');
+            ->select(DB::raw("CONCAT(name, ' (', id, ')') as full_name"))
+            ->distinct()->pluck('full_name');
 
         $size_sets = \App\Models\MasterSizeMeasurement::where('status', 1)
             ->distinct()->pluck('name');
@@ -170,7 +171,7 @@ class AgentOrderController extends Controller
             $query->where(DB::raw('TRIM(CONCAT(COALESCE(master_series.name, ""), " ", production_goods.name_of_garment))'), $request->product_name);
         }
         if ($request->filled('color_name')) {
-            $query->where('master_colors.name', $request->color_name);
+            $query->whereRaw("CONCAT(master_colors.name, ' (', master_colors.id, ')') = ?", [$request->color_name]);
         }
         if ($request->filled('size_set_name')) {
             $query->where('master_size_measurements.name', $request->size_set_name);
@@ -201,7 +202,7 @@ class AgentOrderController extends Controller
                 'production_goods.design_number',
                 'production_goods.name_of_garment',
                 'master_series.name as series_name',
-                'master_colors.name as color_name',
+                DB::raw("CONCAT(master_colors.name, ' (', master_colors.id, ')') as color_name"),
                 'master_size_measurements.name as size_set_name',
                 'master_product_fittings.name as fitting_name',
                 'master_design_patterns.name as pattern_name',
@@ -219,6 +220,7 @@ class AgentOrderController extends Controller
             'production_goods.design_number',
             'production_goods.name_of_garment',
             'master_series.name',
+            'master_colors.id',
             'master_colors.name',
             'master_size_measurements.name',
             'master_product_fittings.name',

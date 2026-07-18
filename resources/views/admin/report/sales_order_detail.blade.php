@@ -55,7 +55,7 @@
             <div>
                 <h5 class="m-0">Design No: <strong>{{ $set->design_number }}</strong></h5>
                 <small class="text-muted">
-                    Color: {{ $set->colors->name ?? '-' }} | 
+                    Color: {{ isset($set->colors) ? $set->colors->name . ' (' . $set->colors->id . ')' : '-' }} | 
                     Size Group: {{ $set->size_measurement->size_group ?? '-' }} |
                     Total Order Qty: {{ $set->total_quantity }} pcs
                 </small>
