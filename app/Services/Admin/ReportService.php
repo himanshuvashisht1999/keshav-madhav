@@ -1994,10 +1994,10 @@ class ReportService
 
             if ($orderNo) {
                 $orderFilter = function ($q) use ($orderNo) {
-                    $q->where('sku', 'like', '%' . $orderNo . '%')
-                        ->orWhereHas('orderProduct.orderMain', function ($sq) use ($orderNo) {
-                            $sq->where('sku', 'like', '%' . $orderNo . '%');
-                        });
+                    $lotNos = \App\Models\OrderLot::whereHas('orderMain', function ($sq) use ($orderNo) {
+                        $sq->where('sku', 'like', '%' . $orderNo . '%');
+                    })->pluck('lot_no')->toArray();
+                    $q->whereIn('lot_no', $lotNos);
                 };
                 $ass1Query->where($orderFilter);
                 $ass2Query->where($orderFilter);
@@ -2006,9 +2006,10 @@ class ReportService
 
             if ($designNo) {
                 $designFilter = function ($q) use ($designNo) {
-                    $q->whereHas('orderProduct.orderProductSet', function ($sq) use ($designNo) {
+                    $lotNos = \App\Models\OrderLot::whereHas('orderProductSet', function ($sq) use ($designNo) {
                         $sq->where('design_number', 'like', '%' . $designNo . '%');
-                    });
+                    })->pluck('lot_no')->toArray();
+                    $q->whereIn('lot_no', $lotNos);
                 };
                 $ass1Query->where($designFilter);
                 $ass2Query->where($designFilter);
