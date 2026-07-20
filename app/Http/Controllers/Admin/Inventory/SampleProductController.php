@@ -167,7 +167,12 @@ class SampleProductController extends Controller
             $product->color_stock = $stockQuery->select('color_id', \DB::raw('SUM(total_boxes) as total_boxes'))
                 ->with('color')
                 ->groupBy('color_id')
-                ->get();
+                ->get()
+                ->filter(function($stock) use ($request) {
+                    if ($request->qty_from && $stock->total_boxes < $request->qty_from) return false;
+                    if ($request->qty_to && $stock->total_boxes > $request->qty_to) return false;
+                    return true;
+                })->values();
 
             $sizeQuery = DomesticInventory::where('product_id', $product->id)->where('quantity', '>', 0);
             if ($request->size_set_id) {
@@ -199,14 +204,18 @@ class SampleProductController extends Controller
                     ->with('color')
                     ->groupBy('color_id')
                     ->get()
+                    ->filter(function($s) use ($request) {
+                        if ($request->qty_from && $s->total_boxes < $request->qty_from) return false;
+                        if ($request->qty_to && $s->total_boxes > $request->qty_to) return false;
+                        return true;
+                    })
                     ->map(fn($s) => ['color_name' => $s->color->name ?? 'N/A', 'total_boxes' => $s->total_boxes])
                     ->values();
                 $allSizesColorStock[(string) $sz['id']] = $szStock;
             }
             $product->setAttribute('all_sizes_color_stock', $allSizesColorStock);
 
-            $totalBoxes = $product->color_stock->sum('total_boxes');
-            return $product->available_sizes->count() > 0 && $totalBoxes > 0;
+            return $product->available_sizes->count() > 0 && $product->color_stock->count() > 0;
         })->values();
 
         return response()->json($products);

@@ -166,6 +166,14 @@
                                 <label class="font-weight-bold x-small text-uppercase text-muted mb-1">MRP To</label>
                                 <input type="number" id="mrp_to" class="form-control" placeholder="Max MRP">
                             </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Qty From (Boxes)</label>
+                                <input type="number" id="qty_from" class="form-control" placeholder="Min Qty">
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Qty To (Boxes)</label>
+                                <input type="number" id="qty_to" class="form-control" placeholder="Max Qty">
+                            </div>
                         </div>
                         <div class="text-right mt-2">
                             <button type="button" id="btn-reset-filters" class="btn btn-secondary px-4 btn-sm mr-2">
@@ -267,6 +275,8 @@
                 $('#size_set_id').val('').trigger('change');
                 $('#mrp_from').val('');
                 $('#mrp_to').val('');
+                $('#qty_from').val('');
+                $('#qty_to').val('');
                 $('#product-container').html('<div class="col-12 text-center py-5 text-muted bg-white rounded border"><i class="fas fa-box-open fa-3x mb-3"></i><p>Use filters to find products</p></div>');
             });
 
@@ -279,8 +289,10 @@
                 let size_set_id = $('#size_set_id').val();
                 let mrp_from = $('#mrp_from').val();
                 let mrp_to = $('#mrp_to').val();
+                let qty_from = $('#qty_from').val();
+                let qty_to = $('#qty_to').val();
 
-                if (!brand_id && !fitting_id && !pattern_id && !series_id && !design_number && !size_set_id && !mrp_from && !mrp_to) {
+                if (!brand_id && !fitting_id && !pattern_id && !series_id && !design_number && !size_set_id && !mrp_from && !mrp_to && !qty_from && !qty_to) {
                     toastr.error('Please select at least one filter');
                     return;
                 }
@@ -298,7 +310,9 @@
                         design_number: design_number,
                         size_set_id: size_set_id,
                         mrp_from: mrp_from,
-                        mrp_to: mrp_to
+                        mrp_to: mrp_to,
+                        qty_from: qty_from,
+                        qty_to: qty_to
                     },
                     success: function (response) {
                         if (response.length === 0) {
