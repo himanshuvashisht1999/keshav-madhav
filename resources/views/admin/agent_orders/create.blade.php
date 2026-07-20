@@ -558,8 +558,8 @@
             let cart = new Map();
             const storageKey = 'admin_order_cart_{{ $agent->id }}_{{ $shop->id }}';
             
-            // Sync with session storage to handle pagination
-            const saved = sessionStorage.getItem(storageKey);
+            // Sync with local storage to handle pagination and app restarts
+            const saved = localStorage.getItem(storageKey);
             if (saved) {
                 const data = JSON.parse(saved);
                 Object.keys(data).forEach(key => cart.set(key, data[key]));
@@ -720,7 +720,7 @@
                 // Persistence
                 const storageObj = {};
                 cart.forEach((val, key) => { if (val.qty > 0) storageObj[key] = val; });
-                sessionStorage.setItem(storageKey, JSON.stringify(storageObj));
+                localStorage.setItem(storageKey, JSON.stringify(storageObj));
             }
 
             $(document).on('change', '.box-qty-input', function() {
@@ -831,7 +831,7 @@
                             },
                             success: function(response) {
                                 if (response.success) {
-                                    sessionStorage.removeItem(storageKey);
+                                    localStorage.removeItem(storageKey);
                                     Swal.fire('Success!', response.message, 'success').then(() => {
                                         window.location.href = response.redirect_url;
                                     });
