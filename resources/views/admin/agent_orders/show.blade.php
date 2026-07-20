@@ -397,7 +397,7 @@
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
-                        window.location.reload();
+                        this.disabled = false;
                     } else {
                         alert("Failed to update location.");
                         this.disabled = false;

@@ -1904,12 +1904,9 @@ class ReportService
                 $pendingQty = min((int) $item->remaining_quantity, (int) $item->quantity);
                 
                 $isClosed = ($item->is_closed_for_unit == 1);
-                if ($isClosed) {
-                    $pendingQty = 0;
-                }
 
                 // Status Logic
-                if ($isClosed || $pendingQty <= 0) {
+                if ($pendingQty <= 0) {
                     $item->status_text = 'Done';
                     $item->status_class = 'success';
                     $endTime = $item->complete_date ?? $item->updated_at;
@@ -2064,12 +2061,9 @@ class ReportService
                 $pendingQty = min((int) $item->remaining_quantity, (int) $item->quantity);
                 
                 $isClosed = ($item->is_closed_for_unit == 1);
-                if ($isClosed) {
-                    $pendingQty = 0;
-                }
 
                 // Status Logic
-                if ($isClosed || $pendingQty <= 0) {
+                if ($pendingQty <= 0) {
                     $item->status_text = 'Done';
                     $item->status_class = 'success';
                     $endTime = $timing?->complete_date ?? ($item->complete_date ?? $item->updated_at);
