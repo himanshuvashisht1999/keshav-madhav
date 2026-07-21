@@ -231,13 +231,21 @@ class OrderController extends Controller
                 'master_product_fittings.name',
                 'master_design_patterns.name',
                 DB::raw($discount_col)
-            )
-                ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
+            );
+            
+            if (!$request->has('cart_keys') || !is_array($request->cart_keys)) {
+                $boxes->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
+            }
 
             $settings = \DB::table('settings')->first();
             
             $allowGlobal = false;
             $allowSample = $settings && $settings->agent_app_allow_over_stock_sample;
+            
+            // If requesting specific cart keys, bypass stock filters and increase pagination limit
+            if ($request->has('cart_keys') && is_array($request->cart_keys)) {
+                $allowGlobal = true; 
+            }
             
             if (!$allowGlobal) {
                 if ($allowSample && $isSampleSet) {
@@ -247,8 +255,10 @@ class OrderController extends Controller
                 }
             }
 
+            $perPage = ($request->has('cart_keys') && is_array($request->cart_keys)) ? 500 : 50;
+
             $boxes = $query->orderBy('production_goods.design_number')
-                ->paginate(50)
+                ->paginate($perPage)
                 ->appends($request->except('page'));
         }
 
