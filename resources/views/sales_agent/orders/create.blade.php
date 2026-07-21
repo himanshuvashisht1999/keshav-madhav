@@ -4,15 +4,14 @@
     <div class="content-wrapper bg-light" style="min-height: 100vh; padding-bottom: 180px;">
         <!-- Header App Bar -->
         <div class="bg-white shadow-sm sticky-top" style="z-index: 1040;">
-            <div class="container-fluid py-2 px-3">
+            <div class="container-fluid py-1 px-3">
                 <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-0 font-weight-bold text-dark" style="font-size: 1.1rem;">{{ $shop->name }}</h5>
-                        <small class="text-muted"><i class="fas fa-user-tie mr-1"></i> {{ $agent->name }}</small>
+                    <div style="max-width: 50%;">
+                        <h5 class="mb-0 font-weight-bold text-dark text-truncate" style="font-size: 1.1rem; max-width: 100%;">{{ $shop->name }}</h5>
                     </div>
                     <div class="d-flex align-items-center">
                         <button class="btn btn-primary btn-sm rounded-circle mr-2 shadow-sm" id="btnScanQR"
-                            style="width: 40px; height: 40px;">
+                            style="width: 36px; height: 36px;">
                             <i class="fas fa-qrcode"></i>
                         </button>
                         <button class="btn btn-light btn-sm rounded-circle mr-2" id="toggleFilters"
@@ -29,10 +28,10 @@
 
             <!-- Order-Level Settings and Filters -->
             <form method="GET" action="{{ route('agent.orders.create', ['shop_id' => $shop->id, 'party_type' => $party_type]) }}" id="filterForm" class="allow-multiple-submit">
-                <div class="container-fluid pt-3 px-3">
-                    <div class="custom-control custom-switch border p-2 rounded bg-white shadow-sm" style="border-radius: 10px !important;">
+                <div class="container-fluid pt-2 px-3 pb-2">
+                    <div class="custom-control custom-switch border p-1 rounded bg-white shadow-sm d-flex align-items-center" style="border-radius: 10px !important;">
                         <input type="checkbox" class="custom-control-input" id="sampleSetToggle" name="sample_set" value="1" {{ $isSampleSet ? 'checked' : '' }} onchange="this.form.submit()">
-                        <label class="custom-control-label font-weight-bold ml-2 pt-1 text-primary" for="sampleSetToggle" style="cursor:pointer; user-select: none;">Use Sample Set Pricing</label>
+                        <label class="custom-control-label font-weight-bold ml-2 pt-0 text-primary mb-0" for="sampleSetToggle" style="cursor:pointer; user-select: none;">Use Sample Set Pricing</label>
                     </div>
                 </div>
 
@@ -175,11 +174,11 @@
     <!-- Compact App Summary Bar -->
     <div class="fixed-bottom bg-white shadow-lg border-top animate__animated animate__slideInUp" id="summaryBar"
         style="z-index: 1050; display: none; bottom: 60px; border-radius: 20px 20px 0 0;">
-        <div class="p-3">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="container-fluid py-2">
+            <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
                     <div class="bg-primary-soft rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center"
-                        style="width: 45px; height: 45px;">
+                        style="width: 40px; height: 40px;">
                         <i class="fas fa-shopping-cart text-primary"></i>
                     </div>
                     <div>
@@ -190,12 +189,10 @@
                         <small class="text-muted"><span id="selectedCount">0</span> Boxes Selected</small>
                     </div>
                 </div>
+                <button type="button" class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" id="btnNextSummary" style="width: 42px; height: 42px; border-radius: 50%;">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
             </div>
-            <button type="button"
-                class="btn btn-primary btn-block btn-lg py-3 rounded-xl font-weight-bold shadow-lg" id="btnNextSummary"
-                style="border-radius: 12px; font-size: 1.1rem;">
-                Next <i class="fas fa-arrow-right ml-2"></i>
-            </button>
         </div>
     </div>
 

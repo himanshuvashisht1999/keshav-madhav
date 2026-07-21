@@ -1,13 +1,12 @@
 @extends('sales_agent.layouts.app', ['title' => 'Order Details'])
 
 @section('content')
-    <div class="container">
-        <div class="mb-4">
+    <div class="container pt-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
             <a href="{{ route('agent.orders.index') }}" class="text-muted small text-decoration-none">
                 <i class="fas fa-arrow-left mr-1"></i> Back to History
             </a>
-            <h2 class="font-weight-bold h4 mt-2">Order Details</h2>
-            <p class="text-muted small">Reference: #ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</p>
+            <span class="badge badge-light border text-muted px-2 py-1">#ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</span>
         </div>
 
         <!-- ORDER INFO CARD -->
@@ -21,11 +20,11 @@
                     @if(Auth::guard('sales_agent')->user()->see_price)
                         <p class="small mb-1 opacity-75">Grand Total</p>
                         <h3 class="font-weight-bold mb-0">₹{{ number_format($order->grand_total, 2) }}</h3>
-                        <div class="d-flex justify-content-end mt-2">
-                            <div class="dropdown mr-2">
-                                <button class="btn btn-sm btn-success dropdown-toggle rounded-pill px-4 font-weight-bold shadow-sm" 
+                        <div class="d-flex flex-wrap justify-content-end mt-2">
+                            <div class="dropdown mr-2 mb-1">
+                                <button class="btn btn-sm btn-success dropdown-toggle rounded-pill px-3 font-weight-bold shadow-sm text-nowrap" 
                                     type="button" id="whatsappOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="background-color: #25D366; border-color: #25D366;">
-                                    <i class="fab fa-whatsapp mr-1"></i> WhatsApp PDF
+                                    <i class="fab fa-whatsapp"></i> WA PDF
                                 </button>
                                 <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="whatsappOrderDropdown">
                                     <a class="dropdown-item py-2" href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=1" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
@@ -39,10 +38,10 @@
                                     </a>
                                 </div>
                             </div>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-success dropdown-toggle rounded-pill px-4 font-weight-bold shadow-sm" 
+                            <div class="dropdown mb-1">
+                                <button class="btn btn-sm btn-light dropdown-toggle rounded-pill px-3 font-weight-bold shadow-sm text-nowrap" 
                                     type="button" id="downloadOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="fas fa-file-pdf mr-1"></i> Order Sheet
+                                    <i class="fas fa-file-pdf text-danger"></i> PDF
                                 </button>
                                 <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="downloadOrderDropdown">
                                     <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=1">
@@ -60,14 +59,14 @@
                     @else
                         <p class="small mb-1 opacity-75">Items</p>
                         <h3 class="font-weight-bold mb-0">{{ $order->total_qty }} pcs</h3>
-                        <div class="d-flex justify-content-end mt-2">
+                        <div class="d-flex justify-content-end flex-wrap mt-2">
                             <a href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=0"
-                                class="btn btn-sm btn-success rounded-pill px-4 font-weight-bold shadow-sm mr-2" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
-                                <i class="fab fa-whatsapp mr-1"></i> WhatsApp PDF
+                                class="btn btn-sm btn-success rounded-pill px-3 font-weight-bold shadow-sm mr-2 mb-1 text-nowrap" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
+                                <i class="fab fa-whatsapp"></i> WA PDF
                             </a>
                             <a href="{{ route('agent.orders.download-order', $order->id) }}?see_price=0"
-                                class="btn btn-sm btn-success rounded-pill px-4 font-weight-bold shadow-sm">
-                                <i class="fas fa-file-pdf mr-1"></i> Order Sheet
+                                class="btn btn-sm btn-light rounded-pill px-3 font-weight-bold shadow-sm mb-1 text-nowrap">
+                                <i class="fas fa-file-pdf text-danger"></i> PDF
                             </a>
                         </div>
                     @endif
