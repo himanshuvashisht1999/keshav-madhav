@@ -490,7 +490,10 @@
                                     let colorHtml = '';
                                     if (size.colors && size.colors.length > 0) {
                                         colorHtml = `<div class="colors-drawer mt-2 pt-2 border-top" style="${isChecked ? '' : 'display:none;'}">
-                                            <p class="text-muted mb-2 font-weight-bold" style="font-size: 10px; letter-spacing: 0.5px;">AVAILABLE COLORS</p>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <p class="text-muted mb-0 font-weight-bold" style="font-size: 10px; letter-spacing: 0.5px;">AVAILABLE COLORS</p>
+                                                <button type="button" class="btn btn-sm btn-link text-primary p-0 btn-select-all-colors font-weight-bold" data-key="${key}" style="font-size: 10px; text-decoration: none;">Select All</button>
+                                            </div>
                                             <div class="d-flex flex-wrap" style="gap: 6px;">`;
                                         size.colors.forEach(color => {
                                             let isColorChecked = selectedColors.includes(color.id);
@@ -608,6 +611,45 @@
                     pill.removeClass('active');
                     pill.find('.badge').addClass('text-muted border').removeClass('text-primary');
                 }
+                renderHiddenInputsOnly();
+            });
+
+            $(document).on('click', '.btn-select-all-colors', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                let key = $(this).data('key');
+                if (!selectedItems[key]) return;
+                
+                let drawer = $(this).closest('.colors-drawer');
+                let checkboxes = drawer.find('.color-checkbox');
+                let isAllChecked = checkboxes.length === checkboxes.filter(':checked').length;
+                
+                checkboxes.each(function() {
+                    let pill = $(this).closest('.color-pill-premium');
+                    let colorId = parseInt($(this).val());
+                    
+                    if (!selectedItems[key].colorIds) {
+                        selectedItems[key].colorIds = [];
+                    }
+                    
+                    if (!isAllChecked) {
+                        // Select all
+                        $(this).prop('checked', true);
+                        if (!selectedItems[key].colorIds.includes(colorId)) {
+                            selectedItems[key].colorIds.push(colorId);
+                        }
+                        pill.addClass('active');
+                        pill.find('.badge').removeClass('text-muted border').addClass('text-primary');
+                    } else {
+                        // Unselect all
+                        $(this).prop('checked', false);
+                        selectedItems[key].colorIds = selectedItems[key].colorIds.filter(id => id !== colorId);
+                        pill.removeClass('active');
+                        pill.find('.badge').addClass('text-muted border').removeClass('text-primary');
+                    }
+                });
+                
+                $(this).text(!isAllChecked ? 'Unselect All' : 'Select All');
                 renderHiddenInputsOnly();
             });
 
