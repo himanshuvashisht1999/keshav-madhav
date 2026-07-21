@@ -79,9 +79,8 @@ class AgentOrderController extends Controller
 
         $product_names = \App\Models\ProductionGoods::where('production_goods.status', 1)
             ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
-            ->whereNotNull('production_goods.name_of_garment')
-            ->where('production_goods.name_of_garment', '!=', '')
-            ->select(DB::raw('DISTINCT(TRIM(CONCAT(COALESCE(master_series.name, " "), " ", production_goods.name_of_garment))) as full_name'))
+            ->whereRaw('TRIM(CONCAT(COALESCE(master_series.name, ""), " ", COALESCE(production_goods.name_of_garment, ""))) != ""')
+            ->select(DB::raw('DISTINCT(TRIM(CONCAT(COALESCE(master_series.name, ""), " ", COALESCE(production_goods.name_of_garment, "")))) as full_name'))
             ->pluck('full_name');
 
         $colors = \App\Models\MasterColor::where('status', 1)
@@ -168,7 +167,7 @@ class AgentOrderController extends Controller
             $query->where('production_goods.design_number', $request->design_number);
         }
         if ($request->filled('product_name')) {
-            $query->where(DB::raw('TRIM(CONCAT(COALESCE(master_series.name, ""), " ", production_goods.name_of_garment))'), $request->product_name);
+            $query->where(DB::raw('TRIM(CONCAT(COALESCE(master_series.name, ""), " ", COALESCE(production_goods.name_of_garment, "")))'), $request->product_name);
         }
         if ($request->filled('color_name')) {
             $query->whereRaw("CONCAT(master_colors.name, ' (', master_colors.id, ')') = ?", [$request->color_name]);
@@ -1177,7 +1176,8 @@ class AgentOrderController extends Controller
             ->where(function ($q) {
                 $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
             })
-            ->select(DB::raw('DISTINCT(TRIM(CONCAT(COALESCE(master_series.name, ""), " ", production_goods.name_of_garment))) as full_name'))
+            ->whereRaw('TRIM(CONCAT(COALESCE(master_series.name, ""), " ", COALESCE(production_goods.name_of_garment, ""))) != ""')
+            ->select(DB::raw('DISTINCT(TRIM(CONCAT(COALESCE(master_series.name, ""), " ", COALESCE(production_goods.name_of_garment, "")))) as full_name'))
             ->pluck('full_name');
 
         $colors = DomesticInventory::where('domestic_inventories.status', 1)
@@ -1262,7 +1262,7 @@ class AgentOrderController extends Controller
             $query->where('production_goods.design_number', $request->design_number);
         }
         if ($request->filled('product_name')) {
-            $query->where(DB::raw('TRIM(CONCAT(COALESCE(master_series.name, ""), " ", production_goods.name_of_garment))'), $request->product_name);
+            $query->where(DB::raw('TRIM(CONCAT(COALESCE(master_series.name, ""), " ", COALESCE(production_goods.name_of_garment, "")))'), $request->product_name);
         }
         if ($request->filled('color_name')) {
             $query->where('master_colors.name', $request->color_name);
