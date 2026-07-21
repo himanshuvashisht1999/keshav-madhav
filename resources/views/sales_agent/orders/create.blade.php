@@ -587,7 +587,9 @@
                     success: function(res) {
                         Swal.close();
                         if (res.success) {
-                            showColorSelection(res);
+                            setTimeout(() => {
+                                showColorSelection(res);
+                            }, 400);
                         } else {
                             Swal.fire('Error', res.message, 'error');
                         }
@@ -780,8 +782,8 @@
                 });
             });
 
-            // Load from session storage
-            const saved = sessionStorage.getItem(storageKey);
+            // Load from local storage
+            const saved = localStorage.getItem(storageKey);
             let hasCartItems = false;
             
             if (saved) {
@@ -987,7 +989,7 @@
 
                 const storageObj = {};
                 cart.forEach((val, key) => { if (val.qty > 0) storageObj[key] = val; });
-                sessionStorage.setItem(storageKey, JSON.stringify(storageObj));
+                localStorage.setItem(storageKey, JSON.stringify(storageObj));
             }
 
             $('#gstAmountInput').on('input', function() {
@@ -1086,7 +1088,7 @@
                             },
                             success: function (response) {
                                 if (response.success) {
-                                    sessionStorage.removeItem(storageKey);
+                                    localStorage.removeItem(storageKey);
                                     Swal.fire('Ordered!', 'Your order has been placed successfully.', 'success').then(() => {
                                         window.location.href = response.redirect_url;
                                     });
