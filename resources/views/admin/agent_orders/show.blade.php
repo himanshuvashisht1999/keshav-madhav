@@ -29,6 +29,9 @@
                                 <a class="dropdown-item py-2" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=0&with_warehouse=1">
                                     <i class="fas fa-warehouse text-secondary mr-2"></i> Without Price & Wh. Details
                                 </a>
+                                <a class="dropdown-item py-2" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=0&with_warehouse=1&only_pending=1">
+                                    <i class="fas fa-clock text-warning mr-2"></i> Only Pending (No Price, Wh. Details)
+                                </a>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item py-2" href="{{ route('admin.agent-orders.download-order', $order->id) }}?see_price=2">
                                     <i class="fas fa-file-invoice text-info mr-2"></i> Unit Price Only

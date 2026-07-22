@@ -1731,8 +1731,13 @@ class AgentOrderController extends Controller
             ->leftJoin('master_design_patterns', 'production_goods.master_pattern_id', '=', 'master_design_patterns.id')
             ->leftJoin('master_product_fittings', 'production_goods.master_product_fitting_id', '=', 'master_product_fittings.id')
             ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
-            ->where('agent_order_id', $id)
-            ->select(
+            ->where('agent_order_id', $id);
+            
+        if ($request->get('only_pending') == 1) {
+            $itemsRaw->whereNull('agent_order_items.agent_order_dispatch_id');
+        }
+
+        $itemsRaw = $itemsRaw->select(
                 'agent_order_items.*',
                 'agent_order_items.rack_id as item_rack_id',
                 'master_design_patterns.name as db_pattern_name',
