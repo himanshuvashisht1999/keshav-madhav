@@ -201,6 +201,31 @@
                             
                         window.location.href = url;
                     }
+                },
+                {
+                    text: 'Download Excel',
+                    className: 'btn-datatable bg-success',
+                    action: function (e, dt, node, config) {
+                        var name = $('#name').val() || '';
+                        var phone = $('#phone').val() || '';
+                        var agent_ids = $('#agent_ids').val() || [];
+                        var type = $('#type').val() || '';
+                        var status = $('#status').val() || '';
+                        var start_date = $('#start_date').val() || '';
+                        var end_date = $('#end_date').val() || '';
+                        
+                        var agentIdsParams = agent_ids.map(id => 'agent_ids[]=' + encodeURIComponent(id)).join('&');
+                        var url = "{{ route('admin.master.customer.downloadExcel') }}?" + 
+                            "name=" + encodeURIComponent(name) + 
+                            "&phone=" + encodeURIComponent(phone) + 
+                            (agentIdsParams ? "&" + agentIdsParams : "") +
+                            "&type=" + encodeURIComponent(type) + 
+                            "&status=" + encodeURIComponent(status) +
+                            "&start_date=" + encodeURIComponent(start_date) +
+                            "&end_date=" + encodeURIComponent(end_date);
+                            
+                        window.location.href = url;
+                    }
                 }
             ]
         });

@@ -28,6 +28,9 @@ class CustomerController extends Controller {
     public function downloadPdf(Request $request){
         return $this->service->downloadPdf($request);
     }
+    public function downloadExcel(Request $request){
+        return $this->service->downloadExcel($request);
+    }
     public function create(){
         $response['items'] = $this->service->items();
         return view('admin.master.customer.create',$response);

@@ -107,7 +107,6 @@ class CustomerService
         $dispatches = \App\Models\AgentOrderDispatch::whereIn('master_customer_id', $customerIds)
             ->where('party_type', 'customer')
             ->where('status', 'dispatched')
-            ->whereDate('dispatch_date', '>=', $queryStartDate)
             ->get();
         foreach ($dispatches as $d) {
             $date = $d->dispatch_date;
@@ -115,17 +114,16 @@ class CustomerService
             $id = $d->master_customer_id;
             
             $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
-            if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+            if ($startDate && $txDate < $startDate) {
                 $balances[$id]['opening_debit'] += $amount;
             }
-            if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
+            if (!$endDate || $txDate <= $endDate) {
                 $balances[$id]['closing_debit'] += $amount;
             }
         }
 
         // B. OrderDispatch (Debit)
         $orderDispatches = \App\Models\OrderDispatch::whereIn('customer_id', $customerIds)
-            ->whereDate('dispatch_date', '>=', $queryStartDate)
             ->get();
         foreach ($orderDispatches as $od) {
             $date = $od->dispatch_date;
@@ -133,10 +131,10 @@ class CustomerService
             $id = $od->customer_id;
             
             $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
-            if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+            if ($startDate && $txDate < $startDate) {
                 $balances[$id]['opening_debit'] += $amount;
             }
-            if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
+            if (!$endDate || $txDate <= $endDate) {
                 $balances[$id]['closing_debit'] += $amount;
             }
         }
@@ -145,7 +143,6 @@ class CustomerService
         $returns = \App\Models\AgentOrderReturn::whereHas('dispatch', function($q) use ($customerIds) {
             $q->whereIn('master_customer_id', $customerIds)->where('party_type', 'customer');
         })->with('dispatch')
-          ->whereDate('return_date', '>=', $queryStartDate)
           ->get();
         foreach ($returns as $r) {
             if (!$r->dispatch) continue;
@@ -154,10 +151,10 @@ class CustomerService
             $id = $r->dispatch->master_customer_id;
             
             $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
-            if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+            if ($startDate && $txDate < $startDate) {
                 $balances[$id]['opening_credit'] += $amount;
             }
-            if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
+            if (!$endDate || $txDate <= $endDate) {
                 $balances[$id]['closing_credit'] += $amount;
             }
         }
@@ -169,7 +166,6 @@ class CustomerService
                 $q->where('paymentable_type', '!=', \App\Models\JournalVoucher::class)
                   ->orWhereNull('paymentable_type');
             })
-            ->whereDate('payment_date', '>=', $queryStartDate)
             ->get();
         foreach ($payments as $p) {
             $date = $p->payment_date;
@@ -179,17 +175,17 @@ class CustomerService
             $isCredit = in_array($p->payment_type, ['received', 'credit']);
             $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
             if ($isCredit) {
-                if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+                if ($startDate && $txDate < $startDate) {
                     $balances[$id]['opening_credit'] += $amount;
                 }
-                if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
+                if (!$endDate || $txDate <= $endDate) {
                     $balances[$id]['closing_credit'] += $amount;
                 }
             } else {
-                if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+                if ($startDate && $txDate < $startDate) {
                     $balances[$id]['opening_debit'] += $amount;
                 }
-                if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
+                if (!$endDate || $txDate <= $endDate) {
                     $balances[$id]['closing_debit'] += $amount;
                 }
             }
@@ -197,7 +193,6 @@ class CustomerService
 
         // E. DomesticInventoryPurchase (Credit)
         $purchases = \App\Models\DomesticInventoryPurchase::whereIn('customer_id', $customerIds)
-            ->whereDate('created_at', '>=', $queryStartDate)
             ->get();
         foreach ($purchases as $ip) {
             $date = $ip->created_at;
@@ -205,10 +200,10 @@ class CustomerService
             $id = $ip->customer_id;
             
             $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
-            if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+            if ($startDate && $txDate < $startDate) {
                 $balances[$id]['opening_credit'] += $amount;
             }
-            if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
+            if (!$endDate || $txDate <= $endDate) {
                 $balances[$id]['closing_credit'] += $amount;
             }
         }
@@ -218,9 +213,6 @@ class CustomerService
             $vouchers = \App\Models\JournalVoucherItem::with('voucher')
                 ->whereIn('master_type', $jvMasterIds)
                 ->whereIn('master_id', $customerIds)
-                ->whereHas('voucher', function($q) use ($queryStartDate) {
-                    $q->whereDate('date', '>=', $queryStartDate);
-                })
                 ->get();
             foreach ($vouchers as $v) {
                 if (!$v->voucher) continue;
@@ -231,17 +223,17 @@ class CustomerService
                 $isCredit = strtolower($v->type) === 'credit';
                 $txDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
                 if ($isCredit) {
-                    if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+                    if ($startDate && $txDate < $startDate) {
                         $balances[$id]['opening_credit'] += $amount;
                     }
-                    if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
+                    if (!$endDate || $txDate <= $endDate) {
                         $balances[$id]['closing_credit'] += $amount;
                     }
                 } else {
-                    if ($txDate >= $opFyStartDate && (!$startDate || $txDate < $startDate)) {
+                    if ($startDate && $txDate < $startDate) {
                         $balances[$id]['opening_debit'] += $amount;
                     }
-                    if ($txDate >= $clFyStartDate && (!$endDate || $txDate <= $endDate)) {
+                    if (!$endDate || $txDate <= $endDate) {
                         $balances[$id]['closing_debit'] += $amount;
                     }
                 }
@@ -311,6 +303,109 @@ class CustomerService
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.master.customer.pdf', compact('customers', 'startDate', 'endDate', 'hasDateFilter', 'calculatedBalances'));
         return $pdf->download('customers.pdf');
     }
+
+    public function downloadExcel(Request $request)
+    {
+        $query = MasterCustomer::with(['currentOpeningBalance', 'agent'])->where('status', '!=', 3);
+        
+        $name = $request->get('name');
+        $phone = $request->get('phone');
+        $agent_ids = $request->get('agent_ids', []);
+        $type = $request->get('type');
+        $status = $request->get('status');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $hasDateFilter = !empty($startDate) || !empty($endDate);
+
+        if (!empty($name)) {
+            $query->where('name', 'like', '%' . $name . '%');
+        }
+        if (!empty($phone)) {
+            $query->where('phone', 'like', '%' . $phone . '%');
+        }
+        if (!empty($agent_ids)) {
+            $query->whereIn('sales_agent_id', $agent_ids);
+        }
+        if (!empty($type)) {
+            $query->where('type', $type);
+        }
+        if ($status !== null && $status !== '') {
+            $query->where('status', $status);
+        }
+
+        $customers = $query->orderBy('id', 'asc')->get();
+
+        $calculatedBalances = [];
+        $customerIds = $customers->pluck('id')->toArray();
+        if (!empty($customerIds)) {
+            if ($hasDateFilter) {
+                $calculatedBalances = $this->calculateCustomerBalances($customerIds, $startDate, $endDate);
+            } else {
+                $calculatedBalances = $this->calculateCustomerBalances($customerIds, null, null);
+            }
+        }
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=customers.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = ['ID', 'Name', 'Phone', 'Agent Name', 'Type', 'Opening Balance', 'Balance', 'Status'];
+
+        $callback = function() use($customers, $columns, $calculatedBalances, $hasDateFilter) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($customers as $customer) {
+                $openingBalance = '0.00';
+                $balance = '0.00';
+                
+                if ($hasDateFilter && isset($calculatedBalances[$customer->id])) {
+                    $opBal = $calculatedBalances[$customer->id]['opening_balance'];
+                    $label = ($opBal >= 0) ? 'Cr' : 'Dr';
+                    $openingBalance = number_format(abs($opBal), 2) . ' (' . $label . ')';
+                } else if ($customer->currentOpeningBalance) {
+                    $opBal = $customer->currentOpeningBalance->amount;
+                    $label = $customer->currentOpeningBalance->balance_type;
+                    $openingBalance = number_format($opBal, 2) . ' (' . $label . ')';
+                }
+                
+                if (isset($calculatedBalances[$customer->id])) {
+                    $bal = $calculatedBalances[$customer->id]['closing_balance'];
+                    $label = ($bal >= 0) ? 'Cr' : 'Dr';
+                    $balance = number_format(abs($bal), 2) . ' (' . $label . ')';
+                } else {
+                    $bal = $customer->balance;
+                    $label = ($bal >= 0) ? 'Cr' : 'Dr';
+                    $balance = number_format(abs($bal), 2) . ' (' . $label . ')';
+                }
+
+                $status = '';
+                if ($customer->status == 1) $status = 'Active';
+                elseif ($customer->status == 0) $status = 'Inactive';
+                else $status = 'Deleted';
+
+                fputcsv($file, [
+                    $customer->id,
+                    $customer->name,
+                    $customer->phone,
+                    $customer->agent ? $customer->agent->name : 'N/A',
+                    ucfirst($customer->type) . ($customer->subtype ? ' - '.ucfirst($customer->subtype) : ''),
+                    $openingBalance,
+                    $balance,
+                    $status
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
 
     public function store(Request $request)
     {

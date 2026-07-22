@@ -55,27 +55,20 @@ class CustomerDataTable  {
 
         if ($hasDateFilter) {
             $customerIds = (clone $queue)->pluck('id')->toArray();
-            $calculatedBalances = app(\App\Services\Admin\Master\CustomerService::class)->calculateCustomerBalances($customerIds, $startDate, $endDate);
-            foreach ($calculatedBalances as $cb) {
-                $totalOpeningBalance += $cb['opening_balance'];
-                $totalCurrentBalance += $cb['closing_balance'];
+            if (!empty($customerIds)) {
+                $calculatedBalances = app(\App\Services\Admin\Master\CustomerService::class)->calculateCustomerBalances($customerIds, $startDate, $endDate);
+                foreach ($calculatedBalances as $cb) {
+                    $totalOpeningBalance += $cb['opening_balance'];
+                    $totalCurrentBalance += $cb['closing_balance'];
+                }
             }
         } else {
-            $filteredCustomers = (clone $queue)->get();
-            $totalCurrentBalance = $filteredCustomers->sum('balance');
-            
-            $customerIds = $filteredCustomers->pluck('id')->toArray();
+            $customerIds = (clone $queue)->pluck('id')->toArray();
             if (!empty($customerIds)) {
-                $opBalances = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
-                    ->whereIn('master_id', $customerIds)
-                    ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
-                    ->get();
-                foreach ($opBalances as $ob) {
-                    $amt = (float) $ob->amount;
-                    if (strtolower(trim($ob->balance_type)) === 'debit') {
-                        $amt = -$amt;
-                    }
-                    $totalOpeningBalance += $amt;
+                $calculatedBalances = app(\App\Services\Admin\Master\CustomerService::class)->calculateCustomerBalances($customerIds, null, null);
+                foreach ($calculatedBalances as $cb) {
+                    $totalOpeningBalance += $cb['opening_balance'];
+                    $totalCurrentBalance += $cb['closing_balance'];
                 }
             }
         }
@@ -99,7 +92,7 @@ class CustomerDataTable  {
             })
             
             ->editColumn('balance', function ($queue) use ($hasDateFilter, $calculatedBalances) {
-                if ($hasDateFilter && isset($calculatedBalances[$queue->id])) {
+                if (isset($calculatedBalances[$queue->id])) {
                     $balance = $calculatedBalances[$queue->id]['closing_balance'];
                 } else {
                     $balance = $queue->balance;

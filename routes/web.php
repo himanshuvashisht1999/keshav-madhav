@@ -1187,6 +1187,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/index', [AdminCustomerController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminCustomerController::class, 'indexList'])->name('indexList');
             Route::get('/downloadPdf', [AdminCustomerController::class, 'downloadPdf'])->name('downloadPdf');
+            Route::get('/downloadExcel', [AdminCustomerController::class, 'downloadExcel'])->name('downloadExcel');
             Route::get('/create', [AdminCustomerController::class, 'create'])->name('create');
             Route::post('/store', [AdminCustomerController::class, 'store'])->name('store');
             Route::get('/edit', [AdminCustomerController::class, 'edit'])->name('edit');
