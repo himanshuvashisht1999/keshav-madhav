@@ -161,8 +161,10 @@ class FairProductController extends Controller
         $sizeSets = MasterSizeMeasurement::where('status', 1)->get();
         $designNumbers = ProductionGoods::select('design_number')->distinct()->pluck('design_number');
         $salesAgents = \App\Models\SalesAgent::where('status', 1)->get();
+        $productNatures = \App\Models\ProductNature::where('status', 1)->get();
+        $fabricTypes = \App\Models\FabricType::where('status', 1)->get();
         
-        return view('admin.inventory.fair_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'salesAgents'));
+        return view('admin.inventory.fair_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'salesAgents', 'productNatures', 'fabricTypes'));
     }
 
     public function edit($id)
@@ -175,6 +177,8 @@ class FairProductController extends Controller
         $sizeSets = MasterSizeMeasurement::where('status', 1)->get();
         $designNumbers = ProductionGoods::select('design_number')->distinct()->pluck('design_number');
         $salesAgents = \App\Models\SalesAgent::where('status', 1)->get();
+        $productNatures = \App\Models\ProductNature::where('status', 1)->get();
+        $fabricTypes = \App\Models\FabricType::where('status', 1)->get();
 
         // Prepare existing items for JS
         $existingItems = $batch->products->map(function($p) {
@@ -208,7 +212,7 @@ class FairProductController extends Controller
             ];
         });
 
-        return view('admin.inventory.fair_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'batch', 'existingItems', 'salesAgents'));
+        return view('admin.inventory.fair_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'batch', 'existingItems', 'salesAgents', 'productNatures', 'fabricTypes'));
     }
 
     public function show($id)
@@ -286,6 +290,8 @@ class FairProductController extends Controller
         if ($request->pattern_id) $query->where('master_pattern_id', $request->pattern_id);
         if ($request->series_id) $query->where('master_series_id', $request->series_id);
         if ($request->design_number) $query->where('design_number', $request->design_number);
+        if ($request->product_nature_id) $query->where('product_nature_id', $request->product_nature_id);
+        if ($request->fabric_type_id) $query->where('fabric_type_id', $request->fabric_type_id);
 
         if ($request->size_set_id) {
             $query->whereHas('inventory', function($q) use ($request) {

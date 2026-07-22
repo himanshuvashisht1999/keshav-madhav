@@ -236,6 +236,24 @@
                             </div>
                         </div>
                         <div class="row">
+                            <div class="col-md-2 mb-2">
+                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Product Nature</label>
+                                <select id="product_nature_id" class="form-control select2">
+                                    <option value="">Nature</option>
+                                    @foreach($productNatures as $nature)
+                                        <option value="{{ $nature->id }}">{{ $nature->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Fabric Type</label>
+                                <select id="fabric_type_id" class="form-control select2">
+                                    <option value="">Fabric</option>
+                                    @foreach($fabricTypes as $type)
+                                        <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <div class="col-md-3 mb-2">
                                 <label class="font-weight-bold x-small text-uppercase text-muted mb-1">MRP From</label>
                                 <input type="number" id="mrp_from" class="form-control" placeholder="Min MRP">
@@ -422,6 +440,8 @@
                 $('#series_id').val('').trigger('change');
                 $('#design_number').val('').trigger('change');
                 $('#size_set_id').val('').trigger('change');
+                $('#product_nature_id').val('').trigger('change');
+                $('#fabric_type_id').val('').trigger('change');
                 $('#mrp_from').val('');
                 $('#mrp_to').val('');
                 $('#product-container').html('<div class="col-12 text-center py-5 text-muted bg-white rounded border"><i class="fas fa-box-open fa-3x mb-3"></i><p>Use filters to find products</p></div>');
@@ -434,10 +454,12 @@
                 let series_id = $('#series_id').val();
                 let design_number = $('#design_number').val();
                 let size_set_id = $('#size_set_id').val();
+                let product_nature_id = $('#product_nature_id').val();
+                let fabric_type_id = $('#fabric_type_id').val();
                 let mrp_from = $('#mrp_from').val();
                 let mrp_to = $('#mrp_to').val();
 
-                if (!brand_id && !fitting_id && !pattern_id && !series_id && !design_number && !size_set_id && !mrp_from && !mrp_to) {
+                if (!brand_id && !fitting_id && !pattern_id && !series_id && !design_number && !size_set_id && !product_nature_id && !fabric_type_id && !mrp_from && !mrp_to) {
                     toastr.error('Please select at least one filter');
                     return;
                 }
@@ -454,6 +476,8 @@
                         series_id: series_id,
                         design_number: design_number,
                         size_set_id: size_set_id,
+                        product_nature_id: product_nature_id,
+                        fabric_type_id: fabric_type_id,
                         mrp_from: mrp_from,
                         mrp_to: mrp_to
                     },
