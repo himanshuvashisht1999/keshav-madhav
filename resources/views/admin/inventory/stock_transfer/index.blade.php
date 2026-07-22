@@ -290,9 +290,13 @@
                                             <div class="small text-muted font-weight-bold mb-1 text-uppercase">To</div>
                                             <div id="summary-to" class="font-weight-bold text-dark" style="font-size:0.9rem;">— not selected —</div>
                                         </div>
-                                        <div class="mb-4 p-3 rounded text-center" style="background:#fefce8; border:1px solid #fef08a;">
+                                        <div class="mb-3 p-3 rounded text-center" style="background:#fefce8; border:1px solid #fef08a;">
                                             <div class="small text-muted font-weight-bold mb-1">Total Scanned Items</div>
                                             <div id="summary-total" class="h2 mb-0 font-weight-bold" style="color:#b45309;">0</div>
+                                        </div>
+                                        <div class="mb-4 p-3 rounded text-center" style="background:#e0e7ff; border:1px solid #c7d2fe;">
+                                            <div class="small text-muted font-weight-bold mb-1">Total Boxes to Transfer</div>
+                                            <div id="summary-boxes" class="h2 mb-0 font-weight-bold" style="color:#4338ca;">0</div>
                                         </div>
                                         <hr>
                                         <button id="btn-perform-scan-transfer" class="btn btn-success btn-block py-2 font-weight-bold shadow-sm">
@@ -431,6 +435,12 @@
             $('#summary-to').text($('#scan_to_rack').val() ? twh + ' / ' + trk : '— not selected —');
             $('#summary-total').text(Object.keys(scannedItems).length);
             $('#scanned-count').text(Object.keys(scannedItems).length);
+
+            let totalBoxes = 0;
+            $.each(scannedItems, function(invId, item) {
+                totalBoxes += parseInt(item.qty) || 0;
+            });
+            $('#summary-boxes').text(totalBoxes);
         }
 
         $('#barcode_input').on('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doScan(); } });
@@ -544,6 +554,7 @@
             }
 
             if (scannedItems[invId]) scannedItems[invId].qty = val;
+            updateSummary();
         });
 
         $(document).on('click', '.btn-remove-scan', function() {
