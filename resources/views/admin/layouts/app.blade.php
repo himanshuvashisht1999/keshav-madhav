@@ -19,8 +19,16 @@
 	@include('admin.common.footer-js')
     @yield('scripts')
     @stack('scripts')
+    <script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' || event.keyCode === 27) {
+                event.preventDefault();
+                event.stopPropagation();
+                window.location.href = 'javascript:history.back()';
+            }
+        }, true);
+    </script>
 </body>
-
 
 </html>
 
