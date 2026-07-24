@@ -658,14 +658,18 @@ class ReportController extends Controller
 
     public function designWipApiLotDetails(Request $request)
     {
+        if (str_starts_with($request->lot_no, 'UNASSIGNED_')) {
+            $html = '<div style="text-align: center; color: #6b7280; font-size: 13px; margin-top: 40px;"><i class="fas fa-info-circle" style="font-size: 32px; color: #d1d5db; margin-bottom: 12px; display:block;"></i>This represents the unassigned quantity for the design.<br>It has not been cut into a production lot yet.</div>';
+            return response()->json(['status' => true, 'html' => $html]);
+        }
+
         $response['data'] = $this->service->lotDetails($request->lot_no);
         $response['master_stages'] = $this->service->master_stages();
 
-        if (empty($response['data']) || empty($response['data']['lots_data'])) {
-            return response()->json(['status' => false, 'message' => 'No data found for this lot']);
+        if (!$response['data']) {
+            return response()->json(['status' => false, 'message' => 'Lot details not found']);
         }
-
-        $html = view('admin.report.partials.lot_details_content', $response)->render();
+        $html = view('admin.report.partials.design_wip_lot_details', $response)->render();
         return response()->json(['status' => true, 'html' => $html]);
     }
 

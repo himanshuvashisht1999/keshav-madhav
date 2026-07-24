@@ -1601,7 +1601,27 @@ class ReportService
             ->get();
 
         if ($lots_data->isEmpty()) {
-            return null;
+            $cuttingStage = \App\Models\OrderCuttingStage::with([
+                'orderProductSet.orderMain.customer',
+                'orderProductSet.size_measurement',
+                'orderProductSet.colors',
+                'orderProductSet.master_product_fitting',
+                'orderProductSet.master_design_pattern',
+                'orderProductSet.fabric'
+            ])->where('lot_no', $lot_no)->first();
+            
+            if ($cuttingStage && $cuttingStage->orderProductSet) {
+                $lots_data = collect([
+                    (object)[
+                        'lot_no' => $lot_no,
+                        'order_products_set_id' => $cuttingStage->set_product_id,
+                        'production_slip_digitization_id' => null,
+                        'orderProductSet' => $cuttingStage->orderProductSet
+                    ]
+                ]);
+            } else {
+                return null;
+            }
         }
 
         /* ---------------- ROLLS DATA ---------------- */
@@ -2178,7 +2198,16 @@ class ReportService
         $query = \App\Models\OrderProductSet::query();
 
         if ($request->filled('design_no')) {
-            $query->where('design_number', 'like', '%' . $request->design_no . '%');
+            $search = $request->design_no;
+            $query->where(function($q) use ($search) {
+                $q->where('design_number', 'like', '%' . $search . '%')
+                  ->orWhereHas('product', function($q2) use ($search) {
+                      $q2->where('name_of_garment', 'like', '%' . $search . '%')
+                         ->orWhereHas('series', function($q3) use ($search) {
+                             $q3->where('name', 'like', '%' . $search . '%');
+                         });
+                  });
+            });
         }
 
         $designs = clone $query;
@@ -2199,12 +2228,22 @@ class ReportService
                 $productName = trim($series . ' ' . $garment);
             }
 
-            // Calculate lot count
+            // Calculate lot count and total actual pieces
             $setIds = $sets->get($dno)->pluck('id')->toArray();
             $lots1 = \App\Models\OrderLot::whereIn('order_products_set_id', $setIds)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
-            $lots2 = \App\Models\OrderCuttingStage::whereIn('set_product_id', $setIds)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
-            $allLots = array_unique(array_merge($lots1, $lots2));
+            $allLots = array_unique($lots1);
             $unassigned = $sets->get($dno)->sum('remain_total_quantity');
+            
+            $actualTotalQty = $unassigned;
+            foreach ($allLots as $lot) {
+                $assignings = \App\Models\FabricRollAssigning::where('lot_no', $lot)->pluck('id');
+                $q = \App\Models\FabricRollAssigningsDetail::whereIn('production_fabric_roll_assigning_id', $assignings)->sum('quantity');
+                if ($q == 0) {
+                    $q = \App\Models\OrderCuttingStage::where('lot_no', $lot)->sum('quantity');
+                }
+                $actualTotalQty += $q;
+            }
+
             if ($unassigned > 0 || empty($allLots)) {
                 $allLots[] = $dno;
             }
@@ -2215,7 +2254,7 @@ class ReportService
                 'design_no' => $dno,
                 'product_name' => $productName,
                 'lot_count' => $lotCount,
-                'total_qty' => $sets->get($dno)->sum('total_quantity')
+                'total_qty' => $actualTotalQty
             ];
         }
 
@@ -2232,16 +2271,12 @@ class ReportService
 
         // Lots from OrderLot
         $lots1 = \App\Models\OrderLot::whereIn('order_products_set_id', $setIds)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
-        
-        // Lots from OrderCuttingStage
-        $lots2 = \App\Models\OrderCuttingStage::whereIn('set_product_id', $setIds)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
-
-        $allLots = array_unique(array_merge($lots1, $lots2));
+        $allLots = array_unique($lots1);
 
         // If there is still unassigned quantity in OrderProductSet, or no lots at all, add the design number itself as a generic lot
         $unassigned = \App\Models\OrderProductSet::where('design_number', $designNo)->sum('remain_total_quantity');
         if ($unassigned > 0 || empty($allLots)) {
-            $allLots[] = $designNo;
+            $allLots[] = 'UNASSIGNED_' . $designNo;
         }
 
         $allLots = array_unique($allLots);
@@ -2249,12 +2284,13 @@ class ReportService
         $result = [];
         foreach ($allLots as $lot) {
             $qty = 0;
-            if ($lot == $designNo) {
+            if (str_starts_with($lot, 'UNASSIGNED_')) {
                 $qty = $unassigned;
             } else {
-                $qty = \App\Models\OrderCuttingStage::where('lot_no', $lot)->sum('quantity');
+                $assignings = \App\Models\FabricRollAssigning::where('lot_no', $lot)->pluck('id');
+                $qty = \App\Models\FabricRollAssigningsDetail::whereIn('production_fabric_roll_assigning_id', $assignings)->sum('quantity');
                 if ($qty == 0) {
-                    $qty = \App\Models\OrderStageTransaction::where('lot_no', $lot)->sum('quantity');
+                    $qty = \App\Models\OrderCuttingStage::where('lot_no', $lot)->sum('quantity');
                 }
             }
 

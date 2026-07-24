@@ -2,63 +2,63 @@
 
 @section('content')
 <style>
-    /* CSS Variables for Premium Theme */
+    /* ENTERPRISE ERP DESIGN (SAP / ZOHO STYLE) */
     :root {
-        --bg-color: #f3f4f6;
-        --card-bg: #ffffff;
-        --border-color: #e5e7eb;
-        --text-main: #1f2937;
-        --text-muted: #6b7280;
-        --primary: #4f46e5;
-        --primary-hover: #4338ca;
-        --secondary: #ec4899;
-        --success: #10b981;
-        --warning: #f59e0b;
-        --info: #3b82f6;
-        
-        --panel-gap: 20px;
+        --erp-bg: #f5f6f8;
+        --erp-panel-bg: #ffffff;
+        --erp-border: #d1d5db;
+        --erp-primary: #0f62fe;
+        --erp-primary-light: #e0e8ff;
+        --erp-text-main: #111827;
+        --erp-text-muted: #6b7280;
+        --erp-active-bg: #f4f8ff;
+        --erp-radius: 4px;
+        --font-base: 13px;
     }
 
-    .content-wrapper {
-        background-color: var(--bg-color);
-        min-height: calc(100vh - 57px);
-        padding: 20px;
-        font-family: 'Inter', 'Segoe UI', sans-serif;
+    body {
+        background-color: var(--erp-bg);
+        font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
     }
 
-    /* Layout */
     .spa-container {
         display: flex;
-        gap: var(--panel-gap);
-        height: calc(100vh - 120px);
-        align-items: stretch;
+        height: calc(100vh - 60px);
+        width: 100%;
+        background: var(--erp-bg);
+        overflow: hidden;
+        gap: 8px;
+        padding: 8px;
+        box-sizing: border-box;
     }
 
-    /* Common Panel Styles */
     .spa-panel {
-        background: var(--card-bg);
-        border-radius: 16px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        background: var(--erp-panel-bg);
+        border: 1px solid var(--erp-border);
+        border-radius: var(--erp-radius);
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        border: 1px solid var(--border-color);
-        transition: all 0.3s ease;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
 
+    .panel-designs { flex: 0 0 280px; }
+    .panel-lots { flex: 0 0 260px; }
+    .panel-details { flex: 1; }
+
     .spa-panel-header {
-        padding: 20px;
-        border-bottom: 1px solid var(--border-color);
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
-        z-index: 10;
+        padding: 12px 16px;
+        background: #f9fafb;
+        border-bottom: 1px solid var(--erp-border);
     }
 
     .spa-panel-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--text-main);
         margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--erp-text-main);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -67,274 +67,116 @@
     .spa-panel-body {
         flex: 1;
         overflow-y: auto;
-        padding: 10px;
-        background: #f9fafb;
-    }
-
-    /* Scrollbar styling */
-    .spa-panel-body::-webkit-scrollbar {
-        width: 6px;
-    }
-    .spa-panel-body::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    .spa-panel-body::-webkit-scrollbar-thumb {
-        background: #d1d5db;
-        border-radius: 10px;
-    }
-
-    /* Panels Sizing */
-    .panel-designs { flex: 0 0 300px; }
-    .panel-lots { flex: 0 0 250px; }
-    .panel-details { flex: 1; }
-
-    /* Filter Inputs */
-    .spa-search-box {
-        margin-top: 15px;
-        position: relative;
-    }
-    .spa-search-box input, .spa-search-box select {
-        width: 100%;
-        padding: 10px 15px 10px 35px;
-        border-radius: 10px;
-        border: 1px solid var(--border-color);
-        background: #f9fafb;
-        font-size: 0.9rem;
-        transition: all 0.2s;
-        margin-bottom: 10px;
-    }
-    .spa-search-box input:focus, .spa-search-box select:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        padding: 12px;
         background: #fff;
     }
-    .spa-search-box i {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        color: #9ca3af;
-    }
 
-    /* List Items */
+    .spa-search-box { position: relative; margin-bottom: 12px; }
+    .spa-search-box input {
+        width: 100%;
+        padding: 8px 10px 8px 30px;
+        border: 1px solid var(--erp-border);
+        border-radius: var(--erp-radius);
+        font-size: var(--font-base);
+        outline: none;
+        transition: border-color 0.15s;
+    }
+    .spa-search-box input:focus { border-color: var(--erp-primary); box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.1); }
+    .spa-search-box i { position: absolute; left: 10px; top: 10px; color: var(--erp-text-muted); font-size: 12px; }
+    .spa-search-box button {
+        background: var(--erp-primary);
+        color: #fff;
+        border: none;
+        border-radius: var(--erp-radius);
+        font-size: var(--font-base);
+        font-weight: 600;
+        padding: 6px;
+        margin-top: 8px;
+        cursor: pointer;
+        width: 100%;
+    }
+    .spa-search-box button:hover { background: #0050e6; }
+
     .list-item {
         background: #fff;
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 10px;
+        padding: 10px 12px;
+        border-radius: var(--erp-radius);
+        margin-bottom: 8px;
+        border: 1px solid #e5e7eb;
         cursor: pointer;
-        border: 1px solid transparent;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        transition: all 0.2s;
-        position: relative;
-        overflow: hidden;
-    }
-    .list-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        border-color: #e5e7eb;
-    }
-    .list-item.active {
-        background: var(--primary);
-        color: white;
-        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
-    }
-    
-    .list-item-title {
-        font-weight: 700;
-        font-size: 1rem;
-        margin-bottom: 4px;
-        color: var(--text-main);
-    }
-    .list-item.active .list-item-title {
-        color: white;
-    }
-    .list-item-meta {
-        font-size: 0.8rem;
-        color: var(--text-muted);
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-    .list-item.active .list-item-meta {
-        color: rgba(255,255,255,0.8);
-    }
-
-    .badge-soft {
-        background: #f3f4f6;
-        color: #4b5563;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-    .list-item.active .badge-soft {
-        background: rgba(255,255,255,0.2);
-        color: #fff;
-    }
-
-    .qty-badge {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: #eef2ff;
-        color: var(--primary);
-        font-weight: 800;
-        padding: 4px 8px;
-        border-radius: 8px;
-        font-size: 0.8rem;
-    }
-    .list-item.active .qty-badge {
-        background: rgba(255,255,255,0.2);
-        color: white;
-    }
-
-    /* Lots List */
-    .lot-item {
-        padding: 15px;
-        background: #fff;
-        border-radius: 12px;
-        margin-bottom: 10px;
-        cursor: pointer;
-        font-weight: 600;
-        color: var(--text-main);
         display: flex;
         align-items: center;
-        gap: 12px;
-        transition: all 0.2s;
-        border: 1px solid transparent;
+        transition: all 0.15s ease;
+        position: relative;
     }
-    .lot-item:hover {
-        background: #f8fafc;
-        border-color: #e2e8f0;
+    .list-item:hover { background: #f9fafb; border-color: #d1d5db; }
+    .list-item.active { background: var(--erp-active-bg); border-color: var(--erp-primary-light); border-left: 4px solid var(--erp-primary); }
+    .list-item-title { font-size: 13px; font-weight: 600; color: var(--erp-text-main); margin: 0; }
+    
+    .qty-badge {
+        font-size: 12px;
+        font-weight: 700;
+        background: #f3f4f6;
+        color: #374151;
+        padding: 2px 8px;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
     }
-    .lot-item.active {
-        border-color: var(--secondary);
-        background: #fdf2f8;
-        color: var(--secondary);
+    .list-item.active .qty-badge { background: #fff; border-color: var(--erp-primary-light); color: var(--erp-primary); }
+
+    .lot-item {
+        background: #fff;
+        padding: 10px 12px;
+        border-radius: var(--erp-radius);
+        margin-bottom: 8px;
+        border: 1px solid #e5e7eb;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        transition: all 0.15s ease;
     }
+    .lot-item:hover { background: #f9fafb; }
+    .lot-item.active { background: var(--erp-active-bg); border-color: var(--erp-primary-light); border-left: 4px solid var(--erp-primary); }
+    
     .lot-icon {
-        width: 30px;
-        height: 30px;
-        border-radius: 8px;
-        background: #f1f5f9;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        background: #f3f4f6;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #64748b;
+        margin-right: 10px;
+        color: var(--erp-text-muted);
+        font-size: 11px;
     }
-    .lot-item.active .lot-icon {
-        background: var(--secondary);
-        color: white;
-    }
+    .lot-item.active .lot-icon { background: var(--erp-primary-light); color: var(--erp-primary); }
 
-    /* Details Panel */
     .details-placeholder {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         height: 100%;
-        color: #9ca3af;
+        color: var(--erp-text-muted);
         text-align: center;
+        font-size: 13px;
     }
-    .details-placeholder i {
-        font-size: 3rem;
-        margin-bottom: 15px;
-        opacity: 0.5;
-    }
+    .details-placeholder i { font-size: 2.5rem; margin-bottom: 12px; color: #d1d5db; }
 
-    .details-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 15px;
-        padding: 10px;
-    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-    .stage-card {
-        background: #fff;
-        border-radius: 16px;
-        padding: 20px;
-        border: 1px solid #e5e7eb;
-        position: relative;
-        overflow: hidden;
-        transition: transform 0.2s;
-    }
-    .stage-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.04);
-    }
+    .loader { border: 2px solid #f3f3f3; border-top: 2px solid var(--erp-primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 20px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    .stage-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-    }
-    .stage-card.stage-primary::before { background: var(--primary); }
-    .stage-card.stage-warning::before { background: var(--warning); }
-    .stage-card.stage-info::before { background: var(--info); }
-    .stage-card.stage-secondary::before { background: var(--secondary); }
-    .stage-card.stage-dark::before { background: #1e293b; }
-    .stage-card.stage-success::before { background: var(--success); }
+    .panel-details .content-wrapper { min-height: auto !important; padding: 0 !important; background: transparent !important; }
+    .panel-details .content { padding: 0 !important; }
+    .panel-details .container-fluid { padding-left: 0; padding-right: 0; }
 
-    .stage-title {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 800;
-        color: #64748b;
-        margin-bottom: 5px;
-    }
-    .stage-location {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--text-main);
-        margin-bottom: 15px;
-    }
-    .stage-qty {
-        font-size: 2rem;
-        font-weight: 900;
-    }
-    
-    .stage-card.stage-primary .stage-qty { color: var(--primary); }
-    .stage-card.stage-warning .stage-qty { color: var(--warning); }
-    .stage-card.stage-info .stage-qty { color: var(--info); }
-    .stage-card.stage-secondary .stage-qty { color: var(--secondary); }
-    .stage-card.stage-dark .stage-qty { color: #1e293b; }
-    .stage-card.stage-success .stage-qty { color: var(--success); }
-
-    /* Loader */
-    .loader {
-        border: 3px solid #f3f3f3;
-        border-radius: 50%;
-        border-top: 3px solid var(--primary);
-        width: 24px;
-        height: 24px;
-        animation: spin 1s linear infinite;
-        margin: 20px auto;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    /* Right panel detailed adjustments */
-    .panel-details .content-wrapper {
-        min-height: auto !important;
-        padding: 0 !important;
-        background: transparent !important;
-    }
-    .panel-details .content {
-        padding: 0 !important;
-    }
-    .panel-details .container-fluid {
-        padding-left: 0;
-        padding-right: 0;
-    }
-
-</style>
+    </style>
 
 <div class="content-wrapper">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -357,11 +199,7 @@
                 </h3>
                 <div class="spa-search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="filter_design" placeholder="Search Design No...">
-
-                    <button class="btn btn-block btn-sm mt-2" style="background: #eef2ff; color: var(--primary); font-weight: 700; border-radius: 8px;" onclick="loadDesigns()">
-                        Apply Filters
-                    </button>
+                    <input type="text" id="filter_design" placeholder="Search Design or Product...">
                 </div>
             </div>
             <div class="spa-panel-body" id="designs_list">
@@ -464,11 +302,28 @@
                         html = '<div class="text-center text-muted mt-4" style="font-weight: 600;">No designs found.</div>';
                     } else {
                         res.data.forEach(function(item) {
+                            let productName = item.product_name ? item.product_name.trim() : '';
+                            if (productName === item.design_no.toString().trim()) { productName = 'Base Design'; }
+                            
                             html += `
-                                <div class="list-item" onclick="selectDesign('${item.design_no}', this)">
-                                    <div class="list-item-title">${item.product_name} ${item.design_no}</div>
-                                    <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500; margin-top: 4px;">Lots: <strong style="color: var(--primary);">${item.lot_count}</strong></div>
-                                    <div class="qty-badge">${item.total_qty}</div>
+                                <div class="list-item" onclick="selectDesign('${item.design_no}', this)" style="justify-content: space-between;">
+                                    <div style="display: flex; gap: 10px; align-items: center; flex: 1; min-width: 0;">
+                                        <div style="width: 32px; height: 32px; border-radius: 4px; background: var(--erp-primary-light); color: var(--erp-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="fas fa-tshirt" style="font-size: 14px;"></i>
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="font-size: 13px; font-weight: 700; color: var(--erp-text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.design_no}</div>
+                                            <div style="font-size: 10px; font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">${productName}</div>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; margin-left: 10px;">
+                                        <div style="font-size: 10px; font-weight: 700; color: #b45309; background: #fef3c7; padding: 2px 6px; border-radius: 4px;">
+                                            <i class="fas fa-layer-group" style="margin-right: 3px;"></i>${item.lot_count} Lots
+                                        </div>
+                                        <div style="font-size: 11px; font-weight: 700; color: var(--erp-primary); background: var(--erp-primary-light); padding: 2px 6px; border-radius: 4px;">
+                                            ${item.total_qty} Pcs
+                                        </div>
+                                    </div>
                                 </div>
                             `;
                         });
@@ -514,15 +369,17 @@
                     } else {
                         res.data.forEach(function(item) {
                             let lotStr = item.lot_no;
-                            let isBase = (lotStr === designNo);
+                            let isBase = lotStr.startsWith('UNASSIGNED_');
+                            let displayLot = isBase ? 'Unassigned Pieces' : lotStr;
+                            
                             html += `
-                                <div class="lot-item" onclick="selectLot('${item.lot_no}', this)">
+                                <div class="lot-item" onclick="selectLot('${item.lot_no}', '${displayLot}', this)">
                                     <div class="lot-icon">
                                         <i class="fas ${isBase ? 'fa-box' : 'fa-layer-group'}"></i>
                                     </div>
                                     <div style="flex: 1;">
-                                        <div style="font-size: 0.95rem; font-weight: 700;">${item.lot_no}</div>
-                                        ${isBase ? '<div style="font-size: 0.7rem; color: #9ca3af;">Base Design Lot</div>' : ''}
+                                        <div style="font-size: 0.95rem; font-weight: 700;">${displayLot}</div>
+                                        ${isBase ? '<div style="font-size: 0.7rem; color: #9ca3af;">Pending to cut</div>' : ''}
                                     </div>
                                     <div class="qty-badge" style="background: #eef2ff; color: var(--primary); padding: 4px 10px;">${item.qty}</div>
                                 </div>
@@ -543,12 +400,13 @@
         });
     }
 
-    function selectLot(lotNo, element) {
+    function selectLot(lotNo, displayLot, element) {
         $('.lot-item').removeClass('active');
-        $(element).addClass('active');
+        if(element) {
+            $(element).addClass('active');
+        }
         activeLot = lotNo;
-        
-        $('#details_subtitle').html(`Viewing WIP details for Lot: <span class="badge badge-secondary" style="font-size: 0.9rem;">${lotNo}</span>`);
+        $('#details_subtitle').html(`Viewing WIP details for: <strong style="background: #e5e7eb; color: #374151; padding: 2px 6px; border-radius: 4px;">${displayLot}</strong>`);
         loadLotDetails(lotNo, activeDesign);
     }
 
@@ -579,3 +437,7 @@
 
 </script>
 @endsection
+
+
+
+
