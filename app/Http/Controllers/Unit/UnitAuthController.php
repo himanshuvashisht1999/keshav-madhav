@@ -1085,7 +1085,7 @@ class UnitAuthController extends Controller
             if ($isCutting) {
                 $allDetails = [];
                 foreach ($assignments as $assignment) {
-                    $stageAssignment = \App\Models\OrderCuttingStage::with(['productSet.stage_master_unit.masterFabricWarehouse', 'productSet.fabric', 'productSet.master_design_pattern', 'productSet.orderMain.customer', 'productSet.colors', 'productSet.size_measurement', 'productSet.master_product_fitting', 'cutting_master.masterFabricWarehouse'])->find($assignment->id);
+                    $stageAssignment = \App\Models\OrderCuttingStage::with(['productSet.stage_master_unit.masterFabricWarehouse', 'productSet.fabric', 'productSet.master_design_pattern', 'productSet.orderMain.customer', 'productSet.colors', 'productSet.size_measurement', 'productSet.master_product_fitting', 'cutting_master.masterFabricWarehouse', 'productSet.printing_unit'])->find($assignment->id);
                     if (!$stageAssignment) continue;
 
                     $data = $stageAssignment->productSet;
@@ -1095,7 +1095,7 @@ class UnitAuthController extends Controller
                     $sizeSetRange = $data->size_measurement?->name ?? (count($sizes) > 0 ? min($sizes) . '*' . max($sizes) : '-');
                     $totalPcsInSet = $data->size_measurement->no_of_pcs ?? count($sizes);
                     
-                    $header = [ 'id' => $stageAssignment->id, 'order_no' => $data->orderMain->sku ?? '-', 'date' => $data->created_at->format('d-m-Y'), 'customer' => $data->orderMain->customer->name ?? '-', 'design_no' => $data->design_number ?? '-', 'fabric' => $data->fabric_names ?? ($stageAssignment->fabric_names ?? '-'), 'color' => $data->colors->name ?? '-', 'pattern' => $data->master_design_pattern->name ?? ($stageAssignment->pattern->name ?? '-'), 'fitting' => $data->master_product_fitting?->name ?? ($stageAssignment->master_fitting?->name ?? '-'), 'warehouse' => $unit->masterFabricWarehouse->cutting_master_name ?? '-', 'unit_name' => $unit->name ?? '-', 'remark' => $stageAssignment->remarks ?? $data->remark ?? '-', 'belt' => $stageAssignment->belt ?? '-', 'total_pcs' => $stageAssignment->quantity ?? 0, 'lot_no' => 'Pending', 'size_set' => $sizeSetRange, 'pcs_in_set' => $totalPcsInSet ];
+                    $header = [ 'id' => $stageAssignment->id, 'order_no' => $data->orderMain->sku ?? '-', 'date' => $data->created_at->format('d-m-Y'), 'customer' => $data->orderMain->customer->name ?? '-', 'design_no' => $data->design_number ?? '-', 'fabric' => $data->fabric_names ?? ($stageAssignment->fabric_names ?? '-'), 'color' => $data->colors->name ?? '-', 'pattern' => $data->master_design_pattern->name ?? ($stageAssignment->pattern->name ?? '-'), 'fitting' => $data->master_product_fitting?->name ?? ($stageAssignment->master_fitting?->name ?? '-'), 'warehouse' => $unit->masterFabricWarehouse->cutting_master_name ?? '-', 'unit_name' => $unit->name ?? '-', 'remark' => $stageAssignment->remarks ?? $data->remark ?? '-', 'belt' => $stageAssignment->belt ?? '-', 'total_pcs' => $stageAssignment->quantity ?? 0, 'lot_no' => 'Pending', 'size_set' => $sizeSetRange, 'pcs_in_set' => $totalPcsInSet, 'printing_required' => $data->is_printing ? 'Yes' : 'No', 'printing_unit' => $data->printing_unit ? $data->printing_unit->name : '-' ];
                     
                     $timing = \App\Models\OrderLotStageTiming::where('lot_no', $data->design_number)
                         ->where('master_stage_id', $unit->master_stage_id)

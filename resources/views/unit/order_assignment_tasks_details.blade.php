@@ -261,6 +261,15 @@
                         <span class="info-label">Belt</span>
                         <span class="info-value">{{ $header['belt'] }}</span>
                     </div>
+                    <div class="info-item info-full">
+                        <span class="info-label">Printing Req. / Unit</span>
+                        <span class="info-value">
+                            {{ $header['printing_required'] ?? 'No' }} 
+                            @if(isset($header['printing_required']) && $header['printing_required'] == 'Yes') 
+                                - {{ $header['printing_unit'] ?? '-' }}
+                            @endif
+                        </span>
+                    </div>
                 </div>
 
                 @if(isset($header['start_date']) || isset($header['end_date']))
