@@ -2203,9 +2203,13 @@ class ReportService
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $customers = $query->orderBy('name')->get(['id', 'name']);
+        $customers = $query->orderBy('name')->paginate(20, ['id', 'name']);
         
-        return ['status' => true, 'data' => $customers];
+        return [
+            'status' => true, 
+            'data' => $customers->items(), 
+            'has_more' => $customers->hasMorePages()
+        ];
     }
 
     public function designWipApiOrders(Request $request)
@@ -2224,9 +2228,13 @@ class ReportService
             });
         }
 
-        $orders = $query->orderBy('id', 'desc')->get(['id', 'sku', 'po_number']);
+        $orders = $query->orderBy('id', 'desc')->paginate(20, ['id', 'sku', 'po_number']);
         
-        return ['status' => true, 'data' => $orders];
+        return [
+            'status' => true, 
+            'data' => $orders->items(), 
+            'has_more' => $orders->hasMorePages()
+        ];
     }
 
     public function designWipApiDesigns(Request $request)
@@ -2255,7 +2263,8 @@ class ReportService
         }
 
         $designs = clone $query;
-        $uniqueDesigns = $designs->select('design_number')->distinct()->pluck('design_number');
+        $paginator = $designs->select('design_number')->distinct()->paginate(20, ['design_number']);
+        $uniqueDesigns = $paginator->pluck('design_number');
 
         $setsQuery = clone $query;
         $sets = $setsQuery->with('product.series')->whereIn('design_number', $uniqueDesigns)->get()->groupBy('design_number');
@@ -2302,35 +2311,70 @@ class ReportService
             ];
         }
 
-        return ['status' => true, 'data' => $result];
+        return [
+            'status' => true, 
+            'data' => $result,
+            'has_more' => $paginator->hasMorePages()
+        ];
     }
 
     public function designWipApiLots(Request $request)
     {
         $designNo = $request->design_no;
-        if (!$designNo) return ['status' => false, 'message' => 'Design No required'];
+        $search = $request->filled('search') ? strtolower($request->search) : null;
+        
+        $allLots = [];
+        $unassigned = 0;
 
-        // Get all set_product_ids for this design_number
-        $setQuery = \App\Models\OrderProductSet::where('design_number', $designNo);
-        if ($request->filled('order_id')) {
-            $setQuery->where('order_main_id', $request->order_id);
+        if ($designNo) {
+            // Get all set_product_ids for this design_number
+            $setQuery = \App\Models\OrderProductSet::where('design_number', $designNo);
+            if ($request->filled('order_id')) {
+                $setQuery->where('order_main_id', $request->order_id);
+            }
+            $setIds = $setQuery->pluck('id')->toArray();
+
+            // Lots from OrderLot
+            $lots1 = \App\Models\OrderLot::whereIn('order_products_set_id', $setIds)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
+            $allLots = array_unique($lots1);
+
+            // If there is still unassigned quantity in OrderProductSet, or no lots at all, add the design number itself as a generic lot
+            $unassigned = \App\Models\OrderProductSet::where('design_number', $designNo)->sum('remain_total_quantity');
+            if ($unassigned > 0 || empty($allLots)) {
+                $allLots[] = 'UNASSIGNED_' . $designNo;
+            }
+            
+            if ($search) {
+                $allLots = array_filter($allLots, function($lot) use ($search) {
+                    return str_contains(strtolower($lot), $search);
+                });
+            }
+        } else {
+            // Global lot search
+            $lotQuery = \App\Models\OrderLot::whereNotNull('lot_no')
+                                            ->where('lot_no', 'like', '%' . $request->search . '%');
+            if ($request->filled('order_id')) {
+                $lotQuery->where('order_main_id', $request->order_id);
+            } elseif ($request->filled('customer_id')) {
+                $lotQuery->whereHas('orderMain', function($q) use ($request) {
+                    $q->where('master_customer_id', $request->customer_id);
+                });
+            }
+            $allLots = $lotQuery->pluck('lot_no')->toArray();
         }
-        $setIds = $setQuery->pluck('id')->toArray();
 
-        // Lots from OrderLot
-        $lots1 = \App\Models\OrderLot::whereIn('order_products_set_id', $setIds)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
-        $allLots = array_unique($lots1);
-
-        // If there is still unassigned quantity in OrderProductSet, or no lots at all, add the design number itself as a generic lot
-        $unassigned = \App\Models\OrderProductSet::where('design_number', $designNo)->sum('remain_total_quantity');
-        if ($unassigned > 0 || empty($allLots)) {
-            $allLots[] = 'UNASSIGNED_' . $designNo;
-        }
-
-        $allLots = array_unique($allLots);
+        $allLots = array_values(array_unique($allLots));
+        
+        $perPage = 20;
+        $page = $request->input('page', 1);
+        $total = count($allLots);
+        $offset = ($page - 1) * $perPage;
+        
+        $pagedLots = array_slice($allLots, $offset, $perPage);
+        $hasMore = ($offset + $perPage) < $total;
         
         $result = [];
-        foreach ($allLots as $lot) {
+        foreach ($pagedLots as $lot) {
             $qty = 0;
             if (str_starts_with($lot, 'UNASSIGNED_')) {
                 $qty = $unassigned;
@@ -2348,7 +2392,11 @@ class ReportService
             ];
         }
 
-        return ['status' => true, 'data' => $result];
+        return [
+            'status' => true, 
+            'data' => $result,
+            'has_more' => $hasMore
+        ];
     }
 
     public function designWipApiLotDetails(Request $request)

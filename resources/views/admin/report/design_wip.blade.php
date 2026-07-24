@@ -197,8 +197,9 @@
         <!-- 0a. Customers Panel -->
         <div class="spa-panel panel-customers">
             <div class="spa-panel-header">
-                <h3 class="spa-panel-title">
-                    <i class="fas fa-users"></i> Customers
+                <h3 class="spa-panel-title" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span><i class="fas fa-users"></i> Customers</span>
+                    <button onclick="clearAllFilters()" class="btn btn-sm btn-light" style="padding: 2px 8px; font-size: 11px; font-weight: 600; color: #dc2626; background: #fee2e2; border: none; border-radius: 4px;">Clear All</button>
                 </h3>
                 <div class="spa-search-box">
                     <i class="fas fa-search"></i>
@@ -248,8 +249,9 @@
                 <h3 class="spa-panel-title">
                     <i class="fas fa-layer-group"></i> Lots
                 </h3>
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">
-                    Select a design to view its lots
+                <div class="spa-search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="filter_lot" placeholder="Search Lot No...">
                 </div>
             </div>
             <div class="spa-panel-body" id="lots_list">
@@ -297,6 +299,35 @@
     let activeDesign = null;
     let activeLot = null;
 
+    let customerPage = 1;
+    let hasMoreCustomers = true;
+    let isCustomerLoading = false;
+
+    let orderPage = 1;
+    let hasMoreOrders = true;
+    let isOrderLoading = false;
+
+    let designPage = 1;
+    let hasMoreDesigns = true;
+    let isDesignLoading = false;
+
+    let lotPage = 1;
+    let hasMoreLots = true;
+    let isLotLoading = false;
+
+    function clearAllFilters() {
+        $('#filter_customer, #filter_order, #filter_design, #filter_lot').val('');
+        activeCustomer = null;
+        activeOrder = null;
+        activeDesign = null;
+        activeLot = null;
+        
+        loadCustomers();
+        loadOrders();
+        loadDesigns();
+        // loadDesigns already calls resetDetails() which will call loadLots()
+    }
+
     $(document).ready(function() {
         loadCustomers();
         loadOrders();
@@ -319,19 +350,78 @@
             clearTimeout(typingTimerDesign);
             typingTimerDesign = setTimeout(loadDesigns, 500);
         });
+
+        let typingTimerLot;
+        $('#filter_lot').on('keyup', function () {
+            clearTimeout(typingTimerLot);
+            typingTimerLot = setTimeout(function() {
+                loadLots(activeDesign);
+            }, 500);
+        });
+
+        // Scroll listeners
+        $('#customers_list').on('scroll', function() {
+            if($(this).scrollTop() + $(this).innerHeight() >= this.scrollHeight - 20) {
+                if(hasMoreCustomers && !isCustomerLoading) {
+                    customerPage++;
+                    loadCustomers(true);
+                }
+            }
+        });
+        
+        $('#orders_list').on('scroll', function() {
+            if($(this).scrollTop() + $(this).innerHeight() >= this.scrollHeight - 20) {
+                if(hasMoreOrders && !isOrderLoading) {
+                    orderPage++;
+                    loadOrders(true);
+                }
+            }
+        });
+
+        $('#designs_list').on('scroll', function() {
+            if($(this).scrollTop() + $(this).innerHeight() >= this.scrollHeight - 20) {
+                if(hasMoreDesigns && !isDesignLoading) {
+                    designPage++;
+                    loadDesigns(true);
+                }
+            }
+        });
+
+        $('#lots_list').on('scroll', function() {
+            if($(this).scrollTop() + $(this).innerHeight() >= this.scrollHeight - 20) {
+                if(hasMoreLots && !isLotLoading) {
+                    lotPage++;
+                    loadLots(activeDesign, true);
+                }
+            }
+        });
     });
 
-    function loadCustomers() {
-        $('#customers_list').html('<div class="loader"></div>');
+    function loadCustomers(append = false) {
+        if(!append) {
+            customerPage = 1;
+            hasMoreCustomers = true;
+            $('#customers_list').html('<div class="loader"></div>');
+        } else {
+            $('#customers_list').append('<div class="loader-append" style="text-align: center; padding: 10px;"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>');
+        }
+        
+        isCustomerLoading = true;
         $.ajax({
             url: "{{ route('admin.reports.design-wip.api.customers') }}",
             type: "GET",
-            data: { search: $('#filter_customer').val() },
+            data: { 
+                search: $('#filter_customer').val(),
+                page: customerPage
+            },
             success: function(res) {
+                $('.loader-append').remove();
                 if(res.status) {
+                    hasMoreCustomers = res.has_more;
                     let html = '';
-                    if(res.data.length === 0) {
+                    if(res.data.length === 0 && !append) {
                         html = '<div class="text-center text-muted mt-4" style="font-weight: 600;">No customers found.</div>';
+                        $('#customers_list').html(html);
                     } else {
                         res.data.forEach(function(item) {
                             let isActive = (activeCustomer == item.id) ? 'active' : '';
@@ -348,9 +438,16 @@
                                 </div>
                             `;
                         });
+                        if (append) {
+                            $('#customers_list').append(html);
+                        } else {
+                            $('#customers_list').html(html);
+                        }
                     }
-                    $('#customers_list').html(html);
                 }
+            },
+            complete: function() {
+                isCustomerLoading = false;
             }
         });
     }
@@ -374,20 +471,32 @@
         resetDetails();
     }
 
-    function loadOrders() {
-        $('#orders_list').html('<div class="loader"></div>');
+    function loadOrders(append = false) {
+        if(!append) {
+            orderPage = 1;
+            hasMoreOrders = true;
+            $('#orders_list').html('<div class="loader"></div>');
+        } else {
+            $('#orders_list').append('<div class="loader-append" style="text-align: center; padding: 10px;"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>');
+        }
+        
+        isOrderLoading = true;
         $.ajax({
             url: "{{ route('admin.reports.design-wip.api.orders') }}",
             type: "GET",
             data: { 
                 search: $('#filter_order').val(),
-                customer_id: activeCustomer 
+                customer_id: activeCustomer,
+                page: orderPage
             },
             success: function(res) {
+                $('.loader-append').remove();
                 if(res.status) {
+                    hasMoreOrders = res.has_more;
                     let html = '';
-                    if(res.data.length === 0) {
+                    if(res.data.length === 0 && !append) {
                         html = '<div class="text-center text-muted mt-4" style="font-weight: 600;">No orders found.</div>';
+                        $('#orders_list').html(html);
                     } else {
                         res.data.forEach(function(item) {
                             let isActive = (activeOrder == item.id) ? 'active' : '';
@@ -405,9 +514,16 @@
                                 </div>
                             `;
                         });
+                        if (append) {
+                            $('#orders_list').append(html);
+                        } else {
+                            $('#orders_list').html(html);
+                        }
                     }
-                    $('#orders_list').html(html);
                 }
+            },
+            complete: function() {
+                isOrderLoading = false;
             }
         });
     }
@@ -428,12 +544,7 @@
     }
 
     function resetDetails() {
-        $('#lots_list').html(`
-            <div class="details-placeholder">
-                <i class="fas fa-hand-pointer"></i>
-                <p>Select a design<br>from the left panel.</p>
-            </div>
-        `);
+        loadLots(activeDesign);
         $('#details_list').html(`
             <div class="details-placeholder">
                 <i class="fas fa-project-diagram"></i>
@@ -443,25 +554,36 @@
         $('#details_subtitle').text('Select a lot to view its current stage breakdown');
     }
 
-    function loadDesigns() {
-        $('#designs_list').html('<div class="loader"></div>');
-        resetDetails();
+    function loadDesigns(append = false) {
+        if(!append) {
+            designPage = 1;
+            hasMoreDesigns = true;
+            $('#designs_list').html('<div class="loader"></div>');
+            resetDetails();
+        } else {
+            $('#designs_list').append('<div class="loader-append" style="text-align: center; padding: 10px;"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>');
+        }
 
         let data = {
             design_no: $('#filter_design').val(),
             customer_id: activeCustomer,
-            order_id: activeOrder
+            order_id: activeOrder,
+            page: designPage
         };
-
+        
+        isDesignLoading = true;
         $.ajax({
             url: "{{ route('admin.reports.design-wip.api.designs') }}",
             type: "GET",
             data: data,
             success: function(res) {
+                $('.loader-append').remove();
                 if(res.status) {
+                    hasMoreDesigns = res.has_more;
                     let html = '';
-                    if(res.data.length === 0) {
+                    if(res.data.length === 0 && !append) {
                         html = '<div class="text-center text-muted mt-4" style="font-weight: 600;">No designs found.</div>';
+                        $('#designs_list').html(html);
                     } else {
                         res.data.forEach(function(item) {
                             let productName = item.product_name ? item.product_name.trim() : '';
@@ -489,12 +611,20 @@
                                 </div>
                             `;
                         });
+                        if (append) {
+                            $('#designs_list').append(html);
+                        } else {
+                            $('#designs_list').html(html);
+                        }
                     }
-                    $('#designs_list').html(html);
                 }
             },
             error: function() {
-                $('#designs_list').html('<div class="text-danger text-center mt-3">Error loading designs.</div>');
+                $('.loader-append').remove();
+                if(!append) $('#designs_list').html('<div class="text-danger text-center mt-3">Error loading designs.</div>');
+            },
+            complete: function() {
+                isDesignLoading = false;
             }
         });
     }
@@ -516,21 +646,34 @@
         loadLots(designNo);
     }
 
-    function loadLots(designNo) {
-        $('#lots_list').html('<div class="loader"></div>');
+    function loadLots(designNo, append = false) {
+        if(!append) {
+            lotPage = 1;
+            hasMoreLots = true;
+            $('#lots_list').html('<div class="loader"></div>');
+        } else {
+            $('#lots_list').append('<div class="loader-append" style="text-align: center; padding: 10px;"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>');
+        }
         
+        isLotLoading = true;
         $.ajax({
             url: "{{ route('admin.reports.design-wip.api.lots') }}",
             type: "GET",
             data: { 
                 design_no: designNo,
-                order_id: activeOrder
+                order_id: activeOrder,
+                customer_id: activeCustomer,
+                search: $('#filter_lot').val(),
+                page: lotPage
             },
             success: function(res) {
+                $('.loader-append').remove();
                 if(res.status) {
+                    hasMoreLots = res.has_more;
                     let html = '';
-                    if(res.data.length === 0) {
+                    if(res.data.length === 0 && !append) {
                         html = '<div class="text-center text-muted mt-4" style="font-weight: 600;">No lots found.</div>';
+                        $('#lots_list').html(html);
                     } else {
                         res.data.forEach(function(item) {
                             let lotStr = item.lot_no;
@@ -550,17 +693,24 @@
                                 </div>
                             `;
                         });
-                    }
-                    $('#lots_list').html(html);
-                    
-                    // If only 1 lot, auto-click it
-                    if(res.data.length === 1) {
-                        $('.lot-item').first().trigger('click');
+                        if (append) {
+                            $('#lots_list').append(html);
+                        } else {
+                            $('#lots_list').html(html);
+                            // If only 1 lot on initial load, auto-click it
+                            if(res.data.length === 1) {
+                                $('.lot-item').first().trigger('click');
+                            }
+                        }
                     }
                 }
             },
             error: function() {
-                $('#lots_list').html('<div class="text-danger text-center mt-3">Error loading lots.</div>');
+                $('.loader-append').remove();
+                if(!append) $('#lots_list').html('<div class="text-danger text-center mt-3">Error loading lots.</div>');
+            },
+            complete: function() {
+                isLotLoading = false;
             }
         });
     }
