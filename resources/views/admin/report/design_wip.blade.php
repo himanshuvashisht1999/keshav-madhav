@@ -179,7 +179,7 @@
     </style>
 
 <div class="content-wrapper">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <!-- <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 style="font-weight: 800; color: #1e293b; margin: 0;">
             <i class="fas fa-chart-pie mr-2" style="color: var(--primary);"></i> Design WIP Dashboard
         </h2>
@@ -188,7 +188,7 @@
                 <i class="fas fa-sync-alt mr-1"></i> Refresh Data
             </button>
         </div>
-    </div>
+    </div> -->
 
     <div class="spa-container">
         <!-- 1. Designs Panel -->
