@@ -2193,9 +2193,53 @@ class ReportService
         }
     }
 
+    public function designWipApiCustomers(Request $request)
+    {
+        $query = \App\Models\MasterCustomer::whereHas('orders', function($q) {
+            $q->whereHas('OrderProductSets');
+        });
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        $customers = $query->orderBy('name')->get(['id', 'name']);
+        
+        return ['status' => true, 'data' => $customers];
+    }
+
+    public function designWipApiOrders(Request $request)
+    {
+        $query = \App\Models\OrderMain::whereHas('OrderProductSets');
+
+        if ($request->filled('customer_id')) {
+            $query->where('master_customer_id', $request->customer_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('sku', 'like', '%' . $search . '%')
+                  ->orWhere('po_number', 'like', '%' . $search . '%');
+            });
+        }
+
+        $orders = $query->orderBy('id', 'desc')->get(['id', 'sku', 'po_number']);
+        
+        return ['status' => true, 'data' => $orders];
+    }
+
     public function designWipApiDesigns(Request $request)
     {
         $query = \App\Models\OrderProductSet::query();
+
+        if ($request->filled('order_id')) {
+            $query->where('order_main_id', $request->order_id);
+        } elseif ($request->filled('customer_id')) {
+            $query->whereHas('orderMain', function($q) use ($request) {
+                $q->where('master_customer_id', $request->customer_id);
+            });
+        }
 
         if ($request->filled('design_no')) {
             $search = $request->design_no;
@@ -2267,7 +2311,11 @@ class ReportService
         if (!$designNo) return ['status' => false, 'message' => 'Design No required'];
 
         // Get all set_product_ids for this design_number
-        $setIds = \App\Models\OrderProductSet::where('design_number', $designNo)->pluck('id')->toArray();
+        $setQuery = \App\Models\OrderProductSet::where('design_number', $designNo);
+        if ($request->filled('order_id')) {
+            $setQuery->where('order_main_id', $request->order_id);
+        }
+        $setIds = $setQuery->pluck('id')->toArray();
 
         // Lots from OrderLot
         $lots1 = \App\Models\OrderLot::whereIn('order_products_set_id', $setIds)->whereNotNull('lot_no')->pluck('lot_no')->toArray();

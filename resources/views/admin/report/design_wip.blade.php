@@ -26,7 +26,8 @@
         height: calc(100vh - 60px);
         width: 100%;
         background: var(--erp-bg);
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: hidden;
         gap: 8px;
         padding: 8px;
         box-sizing: border-box;
@@ -42,9 +43,11 @@
         box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
 
-    .panel-designs { flex: 0 0 280px; }
-    .panel-lots { flex: 0 0 260px; }
-    .panel-details { flex: 1; }
+    .panel-customers { flex: 0 0 240px; }
+    .panel-orders { flex: 0 0 240px; }
+    .panel-designs { flex: 0 0 240px; }
+    .panel-lots { flex: 0 0 240px; }
+    .panel-details { flex: 1 0 400px; min-width: 400px; }
 
     .spa-panel-header {
         padding: 12px 16px;
@@ -191,6 +194,38 @@
     </div> -->
 
     <div class="spa-container">
+        <!-- 0a. Customers Panel -->
+        <div class="spa-panel panel-customers">
+            <div class="spa-panel-header">
+                <h3 class="spa-panel-title">
+                    <i class="fas fa-users"></i> Customers
+                </h3>
+                <div class="spa-search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="filter_customer" placeholder="Search Customer...">
+                </div>
+            </div>
+            <div class="spa-panel-body" id="customers_list">
+                <div class="loader"></div>
+            </div>
+        </div>
+
+        <!-- 0b. Orders Panel -->
+        <div class="spa-panel panel-orders">
+            <div class="spa-panel-header">
+                <h3 class="spa-panel-title">
+                    <i class="fas fa-file-invoice"></i> Orders
+                </h3>
+                <div class="spa-search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="filter_order" placeholder="Search Order SKU/PO...">
+                </div>
+            </div>
+            <div class="spa-panel-body" id="orders_list">
+                <div class="loader"></div>
+            </div>
+        </div>
+
         <!-- 1. Designs Panel -->
         <div class="spa-panel panel-designs">
             <div class="spa-panel-header">
@@ -257,22 +292,142 @@
 
 @section('scripts')
 <script>
+    let activeCustomer = null;
+    let activeOrder = null;
     let activeDesign = null;
     let activeLot = null;
 
     $(document).ready(function() {
+        loadCustomers();
+        loadOrders();
         loadDesigns();
         
-        // Instant search on typing for design number
-        let typingTimer;
+        let typingTimerCustomer;
+        $('#filter_customer').on('keyup', function () {
+            clearTimeout(typingTimerCustomer);
+            typingTimerCustomer = setTimeout(loadCustomers, 500);
+        });
+
+        let typingTimerOrder;
+        $('#filter_order').on('keyup', function () {
+            clearTimeout(typingTimerOrder);
+            typingTimerOrder = setTimeout(loadOrders, 500);
+        });
+
+        let typingTimerDesign;
         $('#filter_design').on('keyup', function () {
-            clearTimeout(typingTimer);
-            typingTimer = setTimeout(loadDesigns, 500);
+            clearTimeout(typingTimerDesign);
+            typingTimerDesign = setTimeout(loadDesigns, 500);
         });
     });
 
-    function loadDesigns() {
-        $('#designs_list').html('<div class="loader"></div>');
+    function loadCustomers() {
+        $('#customers_list').html('<div class="loader"></div>');
+        $.ajax({
+            url: "{{ route('admin.reports.design-wip.api.customers') }}",
+            type: "GET",
+            data: { search: $('#filter_customer').val() },
+            success: function(res) {
+                if(res.status) {
+                    let html = '';
+                    if(res.data.length === 0) {
+                        html = '<div class="text-center text-muted mt-4" style="font-weight: 600;">No customers found.</div>';
+                    } else {
+                        res.data.forEach(function(item) {
+                            let isActive = (activeCustomer == item.id) ? 'active' : '';
+                            html += `
+                                <div class="list-item ${isActive}" onclick="selectCustomer('${item.id}', this)" style="justify-content: space-between;">
+                                    <div style="display: flex; gap: 10px; align-items: center; flex: 1; min-width: 0;">
+                                        <div style="width: 32px; height: 32px; border-radius: 4px; background: #fef3c7; color: #b45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="font-size: 13px; font-weight: 700; color: var(--erp-text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+                    $('#customers_list').html(html);
+                }
+            }
+        });
+    }
+
+    function selectCustomer(id, element) {
+        if(activeCustomer == id) {
+            // Deselect
+            activeCustomer = null;
+            $('.panel-customers .list-item').removeClass('active');
+        } else {
+            $('.panel-customers .list-item').removeClass('active');
+            $(element).addClass('active');
+            activeCustomer = id;
+        }
+        
+        // Reset children
+        activeOrder = null;
+        activeDesign = null;
+        loadOrders();
+        loadDesigns();
+        resetDetails();
+    }
+
+    function loadOrders() {
+        $('#orders_list').html('<div class="loader"></div>');
+        $.ajax({
+            url: "{{ route('admin.reports.design-wip.api.orders') }}",
+            type: "GET",
+            data: { 
+                search: $('#filter_order').val(),
+                customer_id: activeCustomer 
+            },
+            success: function(res) {
+                if(res.status) {
+                    let html = '';
+                    if(res.data.length === 0) {
+                        html = '<div class="text-center text-muted mt-4" style="font-weight: 600;">No orders found.</div>';
+                    } else {
+                        res.data.forEach(function(item) {
+                            let isActive = (activeOrder == item.id) ? 'active' : '';
+                            html += `
+                                <div class="list-item ${isActive}" onclick="selectOrder('${item.id}', this)" style="justify-content: space-between;">
+                                    <div style="display: flex; gap: 10px; align-items: center; flex: 1; min-width: 0;">
+                                        <div style="width: 32px; height: 32px; border-radius: 4px; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="fas fa-file-invoice"></i>
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="font-size: 13px; font-weight: 700; color: var(--erp-text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.sku}</div>
+                                            <div style="font-size: 10px; font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase;">PO: ${item.po_number || 'N/A'}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+                    $('#orders_list').html(html);
+                }
+            }
+        });
+    }
+
+    function selectOrder(id, element) {
+        if(activeOrder == id) {
+            activeOrder = null;
+            $('.panel-orders .list-item').removeClass('active');
+        } else {
+            $('.panel-orders .list-item').removeClass('active');
+            $(element).addClass('active');
+            activeOrder = id;
+        }
+        
+        activeDesign = null;
+        loadDesigns();
+        resetDetails();
+    }
+
+    function resetDetails() {
         $('#lots_list').html(`
             <div class="details-placeholder">
                 <i class="fas fa-hand-pointer"></i>
@@ -286,9 +441,16 @@
             </div>
         `);
         $('#details_subtitle').text('Select a lot to view its current stage breakdown');
+    }
+
+    function loadDesigns() {
+        $('#designs_list').html('<div class="loader"></div>');
+        resetDetails();
 
         let data = {
-            design_no: $('#filter_design').val()
+            design_no: $('#filter_design').val(),
+            customer_id: activeCustomer,
+            order_id: activeOrder
         };
 
         $.ajax({
@@ -360,7 +522,10 @@
         $.ajax({
             url: "{{ route('admin.reports.design-wip.api.lots') }}",
             type: "GET",
-            data: { design_no: designNo },
+            data: { 
+                design_no: designNo,
+                order_id: activeOrder
+            },
             success: function(res) {
                 if(res.status) {
                     let html = '';
@@ -437,6 +602,8 @@
 
 </script>
 @endsection
+
+
 
 
 

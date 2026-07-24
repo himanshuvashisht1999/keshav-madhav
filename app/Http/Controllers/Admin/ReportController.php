@@ -644,6 +644,18 @@ class ReportController extends Controller
         return view('admin.report.design_wip', $response);
     }
 
+    public function designWipApiCustomers(Request $request)
+    {
+        $response = $this->service->designWipApiCustomers($request);
+        return response()->json($response);
+    }
+
+    public function designWipApiOrders(Request $request)
+    {
+        $response = $this->service->designWipApiOrders($request);
+        return response()->json($response);
+    }
+
     public function designWipApiDesigns(Request $request)
     {
         $response = $this->service->designWipApiDesigns($request);
