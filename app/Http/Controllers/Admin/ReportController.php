@@ -637,8 +637,36 @@ class ReportController extends Controller
 
     public function designWip(Request $request)
     {
-        $response = $this->service->designWip($request);
+        $response['colors'] = \App\Models\MasterColor::where('status', 1)->get();
+        $response['patterns'] = \App\Models\MasterDesignPattern::where('status', 1)->get();
+        $response['fittings'] = \App\Models\MasterProductFitting::where('status', 1)->get();
+        $response['stages'] = ['Cutting', 'Printing', 'Stitching', 'Washing', 'Checking', 'Finishing', 'Ironing', 'Packing', 'Inventory'];
         return view('admin.report.design_wip', $response);
+    }
+
+    public function designWipApiDesigns(Request $request)
+    {
+        $response = $this->service->designWipApiDesigns($request);
+        return response()->json($response);
+    }
+
+    public function designWipApiLots(Request $request)
+    {
+        $response = $this->service->designWipApiLots($request);
+        return response()->json($response);
+    }
+
+    public function designWipApiLotDetails(Request $request)
+    {
+        $response['data'] = $this->service->lotDetails($request->lot_no);
+        $response['master_stages'] = $this->service->master_stages();
+
+        if (empty($response['data']) || empty($response['data']['lots_data'])) {
+            return response()->json(['status' => false, 'message' => 'No data found for this lot']);
+        }
+
+        $html = view('admin.report.partials.lot_details_content', $response)->render();
+        return response()->json(['status' => true, 'html' => $html]);
     }
 
     public function fabricReturn(Request $request)

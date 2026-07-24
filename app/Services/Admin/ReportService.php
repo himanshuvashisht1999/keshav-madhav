@@ -2173,7 +2173,200 @@ class ReportService
         }
     }
 
+    public function designWipApiDesigns(Request $request)
+    {
+        $query = \App\Models\OrderProductSet::query();
+
+        if ($request->filled('design_no')) {
+            $query->where('design_number', 'like', '%' . $request->design_no . '%');
+        }
+
+        $designs = clone $query;
+        $uniqueDesigns = $designs->select('design_number')->distinct()->pluck('design_number');
+
+        $setsQuery = clone $query;
+        $sets = $setsQuery->with('product.series')->whereIn('design_number', $uniqueDesigns)->get()->groupBy('design_number');
+
+        $result = [];
+        foreach ($uniqueDesigns as $dno) {
+            if (!$sets->has($dno)) continue;
+            
+            $firstSet = $sets->get($dno)->first();
+            $productName = '';
+            if ($firstSet && $firstSet->product) {
+                $series = $firstSet->product->series->name ?? '';
+                $garment = $firstSet->product->name_of_garment ?? '';
+                $productName = trim($series . ' ' . $garment);
+            }
+
+            // Calculate lot count
+            $setIds = $sets->get($dno)->pluck('id')->toArray();
+            $lots1 = \App\Models\OrderLot::whereIn('order_products_set_id', $setIds)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
+            $lots2 = \App\Models\OrderCuttingStage::whereIn('set_product_id', $setIds)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
+            $allLots = array_unique(array_merge($lots1, $lots2));
+            $unassigned = $sets->get($dno)->sum('remain_total_quantity');
+            if ($unassigned > 0 || empty($allLots)) {
+                $allLots[] = $dno;
+            }
+            $allLots = array_unique($allLots);
+            $lotCount = count($allLots);
+
+            $result[] = [
+                'design_no' => $dno,
+                'product_name' => $productName,
+                'lot_count' => $lotCount,
+                'total_qty' => $sets->get($dno)->sum('total_quantity')
+            ];
+        }
+
+        return ['status' => true, 'data' => $result];
+    }
+
+    public function designWipApiLots(Request $request)
+    {
+        $designNo = $request->design_no;
+        if (!$designNo) return ['status' => false, 'message' => 'Design No required'];
+
+        // Get all set_product_ids for this design_number
+        $setIds = \App\Models\OrderProductSet::where('design_number', $designNo)->pluck('id')->toArray();
+
+        // Lots from OrderLot
+        $lots1 = \App\Models\OrderLot::whereIn('order_products_set_id', $setIds)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
+        
+        // Lots from OrderCuttingStage
+        $lots2 = \App\Models\OrderCuttingStage::whereIn('set_product_id', $setIds)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
+
+        $allLots = array_unique(array_merge($lots1, $lots2));
+
+        // If there is still unassigned quantity in OrderProductSet, or no lots at all, add the design number itself as a generic lot
+        $unassigned = \App\Models\OrderProductSet::where('design_number', $designNo)->sum('remain_total_quantity');
+        if ($unassigned > 0 || empty($allLots)) {
+            $allLots[] = $designNo;
+        }
+
+        $allLots = array_unique($allLots);
+        
+        $result = [];
+        foreach ($allLots as $lot) {
+            $qty = 0;
+            if ($lot == $designNo) {
+                $qty = $unassigned;
+            } else {
+                $qty = \App\Models\OrderCuttingStage::where('lot_no', $lot)->sum('quantity');
+                if ($qty == 0) {
+                    $qty = \App\Models\OrderStageTransaction::where('lot_no', $lot)->sum('quantity');
+                }
+            }
+
+            $result[] = [
+                'lot_no' => $lot,
+                'qty' => $qty
+            ];
+        }
+
+        return ['status' => true, 'data' => $result];
+    }
+
+    public function designWipApiLotDetails(Request $request)
+    {
+        $lotNo = $request->lot_no;
+        $designNo = $request->design_no;
+        
+        if (!$lotNo) return ['status' => false, 'message' => 'Lot No required'];
+
+        $reportData = [];
+
+        // 1. Pending Cutting
+        if ($lotNo === $designNo) {
+            $sets = \App\Models\OrderProductSet::with('stage_master_unit')->where('design_number', $designNo)->get();
+            $unassigned = $sets->sum('remain_total_quantity');
+            if ($unassigned > 0) {
+                $groupedCutting = $sets->where('remain_total_quantity', '>', 0)->groupBy('stage_master_unit_id');
+                foreach ($groupedCutting as $unitId => $unitSets) {
+                    $qty = $unitSets->sum('remain_total_quantity');
+                    $unitName = $unitSets->first()->stage_master_unit->name ?? 'Unknown Unit';
+                    $reportData[] = [
+                        'stage' => 'Pending Cutting Assignment',
+                        'location' => $unitName,
+                        'quantity' => $qty,
+                        'color_class' => 'primary'
+                    ];
+                }
+            }
+        }
+
+        // 2. Cutting Tasks
+        $cuttingTasks = \App\Models\OrderCuttingStage::with(['cutting_master'])->where('lot_no', $lotNo)->where('remaining_quantity', '>', 0)->get();
+        foreach ($cuttingTasks as $ct) {
+            $reportData[] = [
+                'stage' => 'Cutting',
+                'location' => $ct->cutting_master->name ?? 'Unknown Unit',
+                'quantity' => $ct->remaining_quantity,
+                'color_class' => 'warning'
+            ];
+        }
+
+        // 3. Stage Transactions
+        $stageTransactions = \App\Models\OrderStageTransaction::with(['to_stage', 'getToUnitMaster'])
+            ->where('lot_no', $lotNo)->where('remaining_quantity', '>', 0)->get();
+        
+        foreach ($stageTransactions as $st) {
+            $stageName = $st->to_stage->name ?? 'Unknown Stage';
+            $unitName = $st->getToUnitMaster->name ?? 'Unknown Unit';
+            $reportData[] = [
+                'stage' => $stageName,
+                'location' => $unitName,
+                'quantity' => $st->remaining_quantity,
+                'color_class' => 'info'
+            ];
+        }
+
+        // 4. Printing Transactions
+        $printingTx = \App\Models\OrderPrintingStageTransaction::with(['to_stage', 'getToUnitMaster'])
+            ->where('lot_no', $lotNo)->where('remaining_quantity', '>', 0)->get();
+        foreach ($printingTx as $pt) {
+            $stageName = $pt->to_stage->name ?? 'Unknown Stage';
+            $unitName = $pt->getToUnitMaster->name ?? 'Unknown Unit';
+            $reportData[] = [
+                'stage' => $stageName,
+                'location' => $unitName,
+                'quantity' => $pt->remaining_quantity,
+                'color_class' => 'secondary'
+            ];
+        }
+
+        // 5. Print -> Stitch Transactions
+        $psTx = \App\Models\OrderPrintingToStichingTransaction::with(['to_stage', 'getToUnitMaster'])
+            ->where('lot_no', $lotNo)->where('remaining_quantity', '>', 0)->get();
+        foreach ($psTx as $pst) {
+            $stageName = $pst->to_stage->name ?? 'Unknown Stage';
+            $unitName = $pst->getToUnitMaster->name ?? 'Unknown Unit';
+            $reportData[] = [
+                'stage' => $stageName,
+                'location' => $unitName,
+                'quantity' => $pst->remaining_quantity,
+                'color_class' => 'dark'
+            ];
+        }
+        
+        // 6. Godam / Inventory
+        $godamTx = \App\Models\OrderGodamStageTransaction::where('lot_no', $lotNo)->where('remaining_quantity', '>', 0)->get();
+        foreach ($godamTx as $gt) {
+            $reportData[] = [
+                'stage' => 'Inventory',
+                'location' => 'Main Warehouse',
+                'quantity' => $gt->remaining_quantity,
+                'color_class' => 'success'
+            ];
+        }
+
+        // If filtering by stage in UI, we can do it in Javascript.
+
+        return ['status' => true, 'data' => $reportData];
+    }
+
     public function designWip(Request $request)
+
     {
         $designNo = $request->get('design_no');
         $colorId = $request->get('color_id');

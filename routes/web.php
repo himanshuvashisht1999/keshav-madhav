@@ -1368,6 +1368,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/unit-assignments/{type}/{id}/reopen', [AdminReportController::class, 'reopenUnitAssignment'])->name('unit-assignments.reopen');
 
             Route::get('/design-wip', [AdminReportController::class, 'designWip'])->name('design-wip');
+            Route::get('/design-wip/api/designs', [AdminReportController::class, 'designWipApiDesigns'])->name('design-wip.api.designs');
+            Route::get('/design-wip/api/lots', [AdminReportController::class, 'designWipApiLots'])->name('design-wip.api.lots');
+            Route::get('/design-wip/api/lot-details', [AdminReportController::class, 'designWipApiLotDetails'])->name('design-wip.api.lot-details');
             
             Route::get('/sales-man-report', [AdminReportController::class, 'salesManReport'])->name('salesManReport');
             Route::get('/sales-man-report/{id}', [AdminReportController::class, 'salesManReportDetail'])->name('salesManReportDetail');
