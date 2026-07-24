@@ -41,7 +41,7 @@ class UploadedSlipsController extends Controller
             'orderPrintingToStichingTransaction.to_stage',
             'orderPrintingToStichingTransaction.getToUnitMaster',
             'packingMain',
-            'fabricRollAssignings'
+            'fabricRollAssignings.fabricRollAssigningsDetail'
         ])
             ->orderBy('id', 'desc')
             ->where('status', '!=', 3);

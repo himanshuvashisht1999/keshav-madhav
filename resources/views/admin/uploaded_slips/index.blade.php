@@ -122,7 +122,25 @@
 
                                         @if($distinctLots->isNotEmpty())
                                             @foreach($distinctLots as $lot)
-                                                <span class="badge badge-info shadow-sm mb-1">#{{ $lot }}</span><br>
+                                                @php
+                                                    $lotQty = 0;
+                                                    
+                                                    // Gather quantities from various transactions
+                                                    $lotQty += $slip->orderPrintingStageTransaction->where('lot_no', $lot)->sum('quantity');
+                                                    $lotQty += $slip->orderStageTransaction->where('lot_no', $lot)->sum('quantity');
+                                                    $lotQty += $slip->orderPrintingToStichingTransaction->where('lot_no', $lot)->sum('quantity');
+                                                    $lotQty += $slip->orderGodamStageTransaction->where('lot_no', $lot)->sum('quantity');
+                                                    
+                                                    // Calculate from rolls if no transaction quantity (i.e. Cutting stage)
+                                                    if ($lotQty == 0 && $slip->fabricRollAssignings) {
+                                                        foreach($slip->fabricRollAssignings->where('lot_no', $lot) as $roll) {
+                                                            if ($roll->fabricRollAssigningsDetail) {
+                                                                $lotQty += $roll->fabricRollAssigningsDetail->sum('quantity');
+                                                            }
+                                                        }
+                                                    }
+                                                @endphp
+                                                <span class="badge badge-info shadow-sm mb-1">#{{ $lot }} @if($lotQty > 0) ({{ $lotQty }}) @endif</span><br>
                                             @endforeach
                                         @else
                                             <span class="text-muted">-</span>
