@@ -45,7 +45,7 @@
 
     .panel-customers { flex: 0 0 240px; }
     .panel-orders { flex: 0 0 240px; }
-    .panel-designs { flex: 0 0 240px; }
+    .panel-designs { flex: 0 0 320px; }
     .panel-lots { flex: 0 0 240px; }
     .panel-details { flex: 1 0 400px; min-width: 400px; }
 
@@ -590,14 +590,20 @@
                             if (productName === item.design_no.toString().trim()) { productName = 'Base Design'; }
                             
                             html += `
-                                <div class="list-item" onclick="selectDesign('${item.design_no}', this)" style="justify-content: space-between;">
+                                <div class="list-item" onclick="selectDesign('${item.set_id}', this)" style="justify-content: space-between;">
                                     <div style="display: flex; gap: 10px; align-items: center; flex: 1; min-width: 0;">
                                         <div style="width: 32px; height: 32px; border-radius: 4px; background: var(--erp-primary-light); color: var(--erp-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                             <i class="fas fa-tshirt" style="font-size: 14px;"></i>
                                         </div>
                                         <div style="flex: 1; min-width: 0;">
-                                            <div style="font-size: 13px; font-weight: 700; color: var(--erp-text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.design_no}</div>
-                                            <div style="font-size: 10px; font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">${productName}</div>
+                                            <div style="font-size: 13px; font-weight: 700; color: var(--erp-text-main); white-space: normal; word-break: break-word;">${item.design_no}</div>
+                                            <div style="font-size: 10px; font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; white-space: normal; margin-top: 2px;">${productName}</div>
+                                            <div style="font-size: 10px; font-weight: 600; color: #6b7280; margin-top: 4px; white-space: normal; word-break: break-word; line-height: 1.3;">
+                                                <span style="color: #4b5563;">Sizes:</span> ${item.sizes || '-'}
+                                            </div>
+                                            <div style="font-size: 10px; font-weight: 600; color: #6b7280; margin-top: 2px; white-space: normal; word-break: break-word; line-height: 1.3;">
+                                                <span style="color: #4b5563;">Colors:</span> ${item.colors || '-'}
+                                            </div>
                                         </div>
                                     </div>
                                     <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; margin-left: 10px;">
@@ -629,10 +635,12 @@
         });
     }
 
-    function selectDesign(designNo, element) {
+    let activeSetId = null;
+
+    function selectDesign(setId, element) {
         $('.list-item').removeClass('active');
         $(element).addClass('active');
-        activeDesign = designNo;
+        activeSetId = setId;
         
         // Reset details
         $('#details_list').html(`
@@ -643,10 +651,10 @@
         `);
         $('#details_subtitle').text('Select a lot to view its current stage breakdown');
 
-        loadLots(designNo);
+        loadLots(setId);
     }
 
-    function loadLots(designNo, append = false) {
+    function loadLots(setId, append = false) {
         if(!append) {
             lotPage = 1;
             hasMoreLots = true;
@@ -660,7 +668,7 @@
             url: "{{ route('admin.reports.design-wip.api.lots') }}",
             type: "GET",
             data: { 
-                design_no: designNo,
+                set_id: setId,
                 order_id: activeOrder,
                 customer_id: activeCustomer,
                 search: $('#filter_lot').val(),
@@ -687,7 +695,10 @@
                                     </div>
                                     <div style="flex: 1;">
                                         <div style="font-size: 0.95rem; font-weight: 700;">${displayLot}</div>
-                                        ${isBase ? '<div style="font-size: 0.7rem; color: #9ca3af;">Pending to cut</div>' : ''}
+                                        ${isBase ? '<div style="font-size: 0.7rem; color: #9ca3af;">Pending to cut</div>' : 
+                                        `<div style="font-size: 0.7rem; color: #6b7280; margin-top: 2px;"><i class="fas fa-cut" style="color: #9ca3af; margin-right: 4px;"></i>${item.cutting_master || '-'}</div>
+                                         <div style="font-size: 0.7rem; color: #6b7280; margin-top: 1px;"><i class="far fa-calendar-alt" style="color: #9ca3af; margin-right: 4px;"></i>Assign: ${item.assign_date || '-'}</div>`
+                                        }
                                     </div>
                                     <div class="qty-badge" style="background: #eef2ff; color: var(--primary); padding: 4px 10px;">${item.qty}</div>
                                 </div>
@@ -721,17 +732,31 @@
             $(element).addClass('active');
         }
         activeLot = lotNo;
-        $('#details_subtitle').html(`Viewing WIP details for: <strong style="background: #e5e7eb; color: #374151; padding: 2px 6px; border-radius: 4px;">${displayLot}</strong>`);
-        loadLotDetails(lotNo, activeDesign);
+        let subtitleHtml = `
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <span>Viewing WIP details for: <strong style="background: #e5e7eb; color: #374151; padding: 2px 6px; border-radius: 4px;">${displayLot}</strong></span>
+        `;
+        
+        if (!lotNo.startsWith('UNASSIGNED_')) {
+            subtitleHtml += `
+                <a href="{{ url('admin/report/lots/lot-details') }}/${lotNo}" target="_blank" style="color: var(--erp-primary); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 4px; font-size: 11px; background: var(--erp-primary-light); padding: 4px 8px; border-radius: 4px;">
+                    <i class="fas fa-external-link-alt"></i> Full Details
+                </a>
+            `;
+        }
+        subtitleHtml += `</div>`;
+        
+        $('#details_subtitle').html(subtitleHtml);
+        loadLotDetails(lotNo, activeSetId);
     }
 
-    function loadLotDetails(lotNo, designNo) {
+    function loadLotDetails(lotNo, setId) {
         $('#details_list').html('<div class="loader"></div>');
         
         $.ajax({
             url: "{{ route('admin.reports.design-wip.api.lot-details') }}",
             type: "GET",
-            data: { lot_no: lotNo, design_no: designNo },
+            data: { lot_no: lotNo, set_id: setId },
             success: function(res) {
                 if(res.status) {
                     $('#details_list').html(res.html);

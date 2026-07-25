@@ -2239,7 +2239,7 @@ class ReportService
 
     public function designWipApiDesigns(Request $request)
     {
-        $query = \App\Models\OrderProductSet::query();
+        $query = \App\Models\OrderProductSet::with('product.series', 'size_measurement', 'colors');
 
         if ($request->filled('order_id')) {
             $query->where('order_main_id', $request->order_id);
@@ -2262,30 +2262,21 @@ class ReportService
             });
         }
 
-        $designs = clone $query;
-        $paginator = $designs->select('design_number')->distinct()->paginate(20, ['design_number']);
-        $uniqueDesigns = $paginator->pluck('design_number');
-
-        $setsQuery = clone $query;
-        $sets = $setsQuery->with('product.series')->whereIn('design_number', $uniqueDesigns)->get()->groupBy('design_number');
+        $paginator = $query->paginate(20);
 
         $result = [];
-        foreach ($uniqueDesigns as $dno) {
-            if (!$sets->has($dno)) continue;
-            
-            $firstSet = $sets->get($dno)->first();
+        foreach ($paginator as $set) {
             $productName = '';
-            if ($firstSet && $firstSet->product) {
-                $series = $firstSet->product->series->name ?? '';
-                $garment = $firstSet->product->name_of_garment ?? '';
+            if ($set->product) {
+                $series = $set->product->series->name ?? '';
+                $garment = $set->product->name_of_garment ?? '';
                 $productName = trim($series . ' ' . $garment);
             }
 
-            // Calculate lot count and total actual pieces
-            $setIds = $sets->get($dno)->pluck('id')->toArray();
-            $lots1 = \App\Models\OrderLot::whereIn('order_products_set_id', $setIds)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
+            // Calculate lot count and total actual pieces for this set
+            $lots1 = \App\Models\OrderLot::where('order_products_set_id', $set->id)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
             $allLots = array_unique($lots1);
-            $unassigned = $sets->get($dno)->sum('remain_total_quantity');
+            $unassigned = $set->remain_total_quantity;
             
             $actualTotalQty = $unassigned;
             foreach ($allLots as $lot) {
@@ -2298,16 +2289,22 @@ class ReportService
             }
 
             if ($unassigned > 0 || empty($allLots)) {
-                $allLots[] = $dno;
+                $allLots[] = 'UNASSIGNED_' . $set->id;
             }
             $allLots = array_unique($allLots);
             $lotCount = count($allLots);
 
+            $sizes = $set->size_set_name !== 'N/A' ? $set->size_set_name : '-';
+            $colors = $set->color_name !== 'N/A' ? $set->color_name : '-';
+
             $result[] = [
-                'design_no' => $dno,
+                'set_id' => $set->id,
+                'design_no' => $set->design_number,
                 'product_name' => $productName,
                 'lot_count' => $lotCount,
-                'total_qty' => $actualTotalQty
+                'total_qty' => $actualTotalQty,
+                'sizes' => $sizes,
+                'colors' => $colors
             ];
         }
 
@@ -2320,34 +2317,29 @@ class ReportService
 
     public function designWipApiLots(Request $request)
     {
-        $designNo = $request->design_no;
+        $setId = $request->set_id;
         $search = $request->filled('search') ? strtolower($request->search) : null;
         
         $allLots = [];
         $unassigned = 0;
 
-        if ($designNo) {
-            // Get all set_product_ids for this design_number
-            $setQuery = \App\Models\OrderProductSet::where('design_number', $designNo);
-            if ($request->filled('order_id')) {
-                $setQuery->where('order_main_id', $request->order_id);
-            }
-            $setIds = $setQuery->pluck('id')->toArray();
+        if ($setId) {
+            $set = \App\Models\OrderProductSet::find($setId);
+            if ($set) {
+                // Lots from OrderLot for this specific set
+                $lots1 = \App\Models\OrderLot::where('order_products_set_id', $setId)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
+                $allLots = array_unique($lots1);
 
-            // Lots from OrderLot
-            $lots1 = \App\Models\OrderLot::whereIn('order_products_set_id', $setIds)->whereNotNull('lot_no')->pluck('lot_no')->toArray();
-            $allLots = array_unique($lots1);
-
-            // If there is still unassigned quantity in OrderProductSet, or no lots at all, add the design number itself as a generic lot
-            $unassigned = \App\Models\OrderProductSet::where('design_number', $designNo)->sum('remain_total_quantity');
-            if ($unassigned > 0 || empty($allLots)) {
-                $allLots[] = 'UNASSIGNED_' . $designNo;
-            }
-            
-            if ($search) {
-                $allLots = array_filter($allLots, function($lot) use ($search) {
-                    return str_contains(strtolower($lot), $search);
-                });
+                $unassigned = $set->remain_total_quantity;
+                if ($unassigned > 0 || empty($allLots)) {
+                    $allLots[] = 'UNASSIGNED_' . $setId;
+                }
+                
+                if ($search) {
+                    $allLots = array_filter($allLots, function($lot) use ($search) {
+                        return str_contains(strtolower($lot), $search);
+                    });
+                }
             }
         } else {
             // Global lot search
@@ -2386,9 +2378,31 @@ class ReportService
                 }
             }
 
+            $cuttingMaster = '-';
+            $assignDate = '-';
+            if (!str_starts_with($lot, 'UNASSIGNED_')) {
+                $fabricRollAssigning = \App\Models\FabricRollAssigning::with('productionSlipDigitization.getUnitMaster')->where('lot_no', $lot)->first();
+                if ($fabricRollAssigning && $fabricRollAssigning->productionSlipDigitization && $fabricRollAssigning->productionSlipDigitization->getUnitMaster) {
+                    $cuttingMaster = $fabricRollAssigning->productionSlipDigitization->getUnitMaster->name;
+                    $assignDate = \Carbon\Carbon::parse($fabricRollAssigning->productionSlipDigitization->created_at)->format('d M y');
+                } else {
+                    $cuttingDetails = getLotDetails($lot, 3);
+                    if ($cuttingDetails && !empty($cuttingDetails['unit_name'])) {
+                        $cuttingMaster = $cuttingDetails['unit_name'];
+                        if (!empty($cuttingDetails['start_date'])) {
+                            $assignDate = \Carbon\Carbon::parse($cuttingDetails['start_date'])->format('d M y');
+                        } elseif (!empty($cuttingDetails['time_allocation'])) {
+                            $assignDate = \Carbon\Carbon::parse($cuttingDetails['time_allocation'])->format('d M y');
+                        }
+                    }
+                }
+            }
+
             $result[] = [
                 'lot_no' => $lot,
-                'qty' => $qty
+                'qty' => $qty,
+                'cutting_master' => $cuttingMaster,
+                'assign_date' => $assignDate
             ];
         }
 
