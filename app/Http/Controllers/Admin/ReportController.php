@@ -640,7 +640,7 @@ class ReportController extends Controller
         $response['colors'] = \App\Models\MasterColor::where('status', 1)->get();
         $response['patterns'] = \App\Models\MasterDesignPattern::where('status', 1)->get();
         $response['fittings'] = \App\Models\MasterProductFitting::where('status', 1)->get();
-        $response['stages'] = ['Cutting', 'Printing', 'Stitching', 'Washing', 'Checking', 'Finishing', 'Ironing', 'Packing', 'Inventory'];
+        $response['stages'] = \App\Models\MasterProductStage::where('status', 1)->pluck('name')->toArray();
         return view('admin.report.design_wip', $response);
     }
 
@@ -736,5 +736,60 @@ class ReportController extends Controller
         $orders = $ordersQuery->latest('order_date')->get();
 
         return view('admin.report.sales_man_detail', compact('salesMan', 'orders'));
+    }
+
+    public function wipComplete(Request $request)
+    {
+        $customers = \App\Models\MasterCustomer::where('status', 1)->get();
+        $selectedCustomer = $request->customer_id;
+        
+        $data = [];
+        $master_stages = $this->service->master_stages();
+
+        if ($selectedCustomer) {
+            $orders = \App\Models\OrderMain::where('master_customer_id', $selectedCustomer)
+                ->with([
+                    'OrderProductSets' => function($q) {
+                        $q->has('orderLots');
+                    },
+                    'OrderProductSets.orderLots'
+                ])
+                ->latest()
+                ->get();
+
+            foreach ($orders as $order) {
+                foreach ($order->OrderProductSets as $set) {
+                    foreach ($set->orderLots as $lot) {
+                        $quantity = \App\Models\FabricRollAssigning::where('lot_no', $lot->lot_no)
+                            ->withSum('fabricRollAssigningsDetail as total', 'quantity')
+                            ->get()
+                            ->sum('total');
+
+                        $details = $this->service->lotDetails($lot->lot_no);
+                        if ($details) {
+                            $data[] = [
+                                'order' => $order,
+                                'set' => $set,
+                                'lot' => $lot,
+                                'lot_quantity' => $quantity,
+                                'details' => $details
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($request->has('export')) {
+            return response()
+                ->view('admin.report.wip_complete_export', compact('data', 'master_stages'))
+                ->header('Content-Type', 'application/vnd.ms-excel')
+                ->header(
+                    'Content-Disposition',
+                    'attachment; filename="wip-complete-report-' . now()->format('d-m-Y_H-i') . '.xls"'
+                );
+        }
+
+        return view('admin.report.wip_complete', compact('customers', 'selectedCustomer', 'data', 'master_stages'));
     }
 }

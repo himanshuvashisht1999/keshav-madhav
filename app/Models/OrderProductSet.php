@@ -172,4 +172,9 @@ class OrderProductSet extends Model
     {
         return $this->hasMany(FabricRollAssigning::class, 'order_products_set_id');
     }
+
+    public function orderLots()
+    {
+        return $this->hasMany(OrderLot::class, 'order_products_set_id');
+    }
 }

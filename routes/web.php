@@ -1279,6 +1279,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/', [\App\Http\Controllers\Admin\Report\AgentLedgerReportController::class, 'index'])->name('index');
                 Route::get('/{id}', [\App\Http\Controllers\Admin\Report\AgentLedgerReportController::class, 'show'])->name('show');
             });
+
+            // WIP Complete Report
+            Route::get('/wip-complete', [AdminReportController::class, 'wipComplete'])->name('wip-complete');
         });
 
         // Ledger Reports

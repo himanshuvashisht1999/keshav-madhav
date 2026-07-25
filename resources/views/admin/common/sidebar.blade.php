@@ -786,6 +786,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                         <p>Design WIP</p>
                                     </a>
                                 </li>
+                                
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.report.wip-complete') }}"
+                                        class="{{ str_contains(strtolower($page_url), 'admin/report/wip-complete') ? 'nav-link active' : 'nav-link' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>WIP Complete Report</p>
+                                    </a>
+                                </li>
 
                                 <li class="nav-item">
                                     <a href="{{ route('admin.report.agent-ledger.index') }}"
