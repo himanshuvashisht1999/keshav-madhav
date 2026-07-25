@@ -57,6 +57,7 @@
         border: 1px solid var(--erp-border);
         padding: 8px 12px;
         text-align: left;
+        white-space: nowrap;
     }
 
     .erp-table th {
@@ -244,7 +245,7 @@
                                                     @php
                                                         $d = getLotDetails($row['lot']->lot_no, $stage->id);
                                                     @endphp
-                                                    <td style="font-size: 11px;">
+                                                    <td style="font-size: 11px; min-width: 160px; vertical-align: top;">
                                                         @if($d && $d['time_allocation'])
                                                             <div style="font-weight: 600; color: #111827; margin-bottom: 2px;">
                                                                 In: <span style="color: #2563eb">{{ $d['quantity'] }}</span> | 
