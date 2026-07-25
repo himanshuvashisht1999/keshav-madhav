@@ -64,6 +64,10 @@
         font-weight: 600;
         color: #475569;
         white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
     .erp-table tbody tr:hover {
@@ -132,27 +136,60 @@
     <section class="content">
         <div class="container-fluid">
             <div class="erp-container" style="min-height: auto; padding: 0;">
-                <div class="erp-card">
-                    <div class="erp-card-header">
-                        WIP Complete Report
+                <div class="erp-card" id="filter-card">
+                    <div class="erp-card-header" style="cursor: pointer;" onclick="$('#filter-form-body').slideToggle();">
+                        <span><i class="fas fa-filter"></i> WIP Complete Report Filters</span>
+                        <i class="fas fa-chevron-down" style="color: #9ca3af; font-size: 14px;"></i>
                     </div>
-                    <div class="erp-card-body">
+                    <div class="erp-card-body" id="filter-form-body">
                         <form action="{{ route('admin.report.wip-complete') }}" method="GET">
-                            <div class="form-group">
-                                <label style="font-weight: 600;">Select Customer:</label>
-                                <select name="customer_id" class="form-control select2" onchange="this.form.submit()">
-                                    <option value="">-- Select Customer --</option>
-                                    @foreach($customers as $customer)
-                                        <option value="{{ $customer->id }}" {{ $selectedCustomer == $customer->id ? 'selected' : '' }}>
-                                            {{ $customer->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                            <div class="row align-items-end" style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 0;">
+                                <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+                                    <label style="font-weight: 600;">Select Customer:</label>
+                                    <select name="customer_id" class="form-control select2" onchange="this.form.submit()">
+                                        <option value="">-- Select Customer --</option>
+                                        @foreach($customers as $customer)
+                                            <option value="{{ $customer->id }}" {{ $selectedCustomer == $customer->id ? 'selected' : '' }}>
+                                                {{ $customer->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
 
-                                @if($selectedCustomer && !empty($data))
-                                    <a href="{{ route('admin.report.wip-complete', ['customer_id' => $selectedCustomer, 'export' => 1]) }}" class="btn-success" style="margin-left: auto;">
-                                        <i class="fas fa-file-excel"></i> Export to Excel
-                                    </a>
+                                @if($selectedCustomer)
+                                    <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                                        <label style="font-weight: 600;">Select Orders:</label>
+                                        <select name="order_ids[]" class="form-control select2" multiple data-placeholder="-- All Orders --">
+                                            @foreach($availableOrders as $id => $sku)
+                                                <option value="{{ $id }}" {{ in_array($id, $selectedOrders) ? 'selected' : '' }}>{{ $sku }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                                        <label style="font-weight: 600;">Select Lots:</label>
+                                        <select name="lot_nos[]" class="form-control select2" multiple data-placeholder="-- All Lots --">
+                                            @foreach($availableLots as $no => $no2)
+                                                <option value="{{ $no }}" {{ in_array($no, $selectedLots) ? 'selected' : '' }}>{{ $no }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group" style="display: flex; gap: 8px; margin-bottom: 0; align-items: flex-end;">
+                                        <button type="submit" class="btn btn-primary" style="height: 38px;">
+                                            <i class="fas fa-filter"></i> Filter
+                                        </button>
+                                        
+                                        @if(!empty($data))
+                                            @php
+                                                $exportParams = request()->all();
+                                                $exportParams['export'] = 1;
+                                            @endphp
+                                            <a href="{{ route('admin.report.wip-complete', $exportParams) }}" class="btn-success btn" style="height: 38px; display: inline-flex; align-items: center;">
+                                                <i class="fas fa-file-excel"></i> &nbsp;Export
+                                            </a>
+                                        @endif
+                                    </div>
                                 @endif
                             </div>
                         </form>
@@ -164,7 +201,7 @@
                         <div class="erp-card-header">
                             Customer Data (Orders, Designs, Lots)
                         </div>
-                        <div class="erp-card-body" style="padding: 0; overflow-x: auto;">
+                        <div class="erp-card-body auto-scroll-table" style="padding: 0; overflow-x: auto; max-height: calc(100vh - 150px); overflow-y: auto; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
                             @if(empty($data))
                                 <div style="padding: 24px; text-align: center; color: #6b7280;">
                                     No lots found for this customer.
@@ -214,8 +251,13 @@
                                                                 Out: <span style="color: #16a34a">{{ $d['quantity'] - $d['remaining_quantity'] }}</span>
                                                             </div>
                                                             <div style="font-size: 10px; color: #d97706; font-weight: 600; margin-bottom: 4px;">WIP: {{ $d['remaining_quantity'] }}</div>
-                                                            <div style="color: #6b7280; font-size: 10px;">Assign: {{ \Carbon\Carbon::parse($d['time_allocation'])->format('d M y') }}</div>
-                                                            <div style="color: #6b7280; font-size: 10px;">Comp: {{ $d['completed_time'] ? \Carbon\Carbon::parse($d['completed_time'])->format('d M y') : '-' }}</div>
+                                                            <div style="color: #6b7280; font-size: 10px;">Unit: <span style="font-weight: 600; color: #374151;">{{ $d['unit_name'] ?? '-' }}</span></div>
+                                                            <div style="color: #6b7280; font-size: 10px;">Start: {{ $d['start_date'] ? \Carbon\Carbon::parse($d['start_date'])->format('d M y') : '-' }}</div>
+                                                            @php
+                                                                $rem = (int)$d['remaining_quantity'];
+                                                                $compDate = $d['completed_time'] ? \Carbon\Carbon::parse($d['completed_time']) : null;
+                                                            @endphp
+                                                            <div style="color: #6b7280; font-size: 10px;">Comp: {{ ($rem == 0 && $compDate) ? $compDate->format('d M y') : '-' }}</div>
                                                         @else
                                                             <span style="color: #9ca3af;">-</span>
                                                         @endif
@@ -240,10 +282,22 @@
     $(document).ready(function() {
         if ($.fn.select2) {
             $('.select2').select2({
-                placeholder: "-- Select Customer --",
                 allowClear: true
             });
         }
+
+        // Auto-hide filters on table scroll down
+        let isScrollingDown = false;
+        $('.auto-scroll-table').on('scroll', function() {
+            let scrollTop = $(this).scrollTop();
+            if (scrollTop > 80 && !isScrollingDown) {
+                $('#filter-form-body').slideUp(200);
+                isScrollingDown = true;
+            } else if (scrollTop < 20 && isScrollingDown) {
+                $('#filter-form-body').slideDown(200);
+                isScrollingDown = false;
+            }
+        });
     });
 </script>
 @endsection

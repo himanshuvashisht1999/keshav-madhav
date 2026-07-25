@@ -44,8 +44,13 @@
                         @if($d && $d['time_allocation'])
                             In: {{ $d['quantity'] }} | Out: {{ $d['quantity'] - $d['remaining_quantity'] }}
                             WIP: {{ $d['remaining_quantity'] }}
-                            Assigned: {{ \Carbon\Carbon::parse($d['time_allocation'])->format('d M y') }}
-                            Completed: {{ $d['completed_time'] ? \Carbon\Carbon::parse($d['completed_time'])->format('d M y') : '-' }}
+                            Unit: {{ $d['unit_name'] ?? '-' }}
+                            Start: {{ $d['start_date'] ? \Carbon\Carbon::parse($d['start_date'])->format('d M y') : '-' }}
+                            @php
+                                $rem = (int)$d['remaining_quantity'];
+                                $compDate = $d['completed_time'] ? \Carbon\Carbon::parse($d['completed_time']) : null;
+                            @endphp
+                            Completed: {{ ($rem == 0 && $compDate) ? $compDate->format('d M y') : '-' }}
                         @else
                             -
                         @endif

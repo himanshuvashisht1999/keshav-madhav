@@ -746,8 +746,13 @@ class ReportController extends Controller
         $data = [];
         $master_stages = $this->service->master_stages();
 
+        $availableOrders = [];
+        $availableLots = [];
+        $selectedOrders = $request->order_ids ?? [];
+        $selectedLots = $request->lot_nos ?? [];
+
         if ($selectedCustomer) {
-            $orders = \App\Models\OrderMain::where('master_customer_id', $selectedCustomer)
+            $baseOrders = \App\Models\OrderMain::where('master_customer_id', $selectedCustomer)
                 ->with([
                     'OrderProductSets' => function($q) {
                         $q->has('orderLots');
@@ -757,9 +762,25 @@ class ReportController extends Controller
                 ->latest()
                 ->get();
 
-            foreach ($orders as $order) {
+            // Build available options
+            foreach ($baseOrders as $order) {
+                if ($order->OrderProductSets->isEmpty()) continue;
+                $availableOrders[$order->id] = $order->sku;
                 foreach ($order->OrderProductSets as $set) {
                     foreach ($set->orderLots as $lot) {
+                        $availableLots[$lot->lot_no] = $lot->lot_no;
+                    }
+                }
+            }
+
+            // Process data with filters
+            foreach ($baseOrders as $order) {
+                if (!empty($selectedOrders) && !in_array($order->id, $selectedOrders)) continue;
+
+                foreach ($order->OrderProductSets as $set) {
+                    foreach ($set->orderLots as $lot) {
+                        if (!empty($selectedLots) && !in_array($lot->lot_no, $selectedLots)) continue;
+
                         $quantity = \App\Models\FabricRollAssigning::where('lot_no', $lot->lot_no)
                             ->withSum('fabricRollAssigningsDetail as total', 'quantity')
                             ->get()
@@ -790,6 +811,15 @@ class ReportController extends Controller
                 );
         }
 
-        return view('admin.report.wip_complete', compact('customers', 'selectedCustomer', 'data', 'master_stages'));
+        return view('admin.report.wip_complete', compact(
+            'customers', 
+            'selectedCustomer', 
+            'data', 
+            'master_stages',
+            'availableOrders',
+            'availableLots',
+            'selectedOrders',
+            'selectedLots'
+        ));
     }
 }
