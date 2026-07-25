@@ -638,7 +638,7 @@
     let activeSetId = null;
 
     function selectDesign(setId, element) {
-        $('.list-item').removeClass('active');
+        $('#designs_list .list-item').removeClass('active');
         $(element).addClass('active');
         activeSetId = setId;
         
