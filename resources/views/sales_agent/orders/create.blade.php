@@ -328,7 +328,7 @@
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body bg-white pt-2">
+                <div class="modal-body bg-white pt-2" style="overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; max-height: calc(100vh - 150px);">
                     <div id="scanProductHeader" class="mb-3 p-3 bg-light rounded-lg">
                         <h6 id="scanProductName" class="font-weight-bold text-dark mb-1">Product Name</h6>
                         <div class="d-flex justify-content-between align-items-center">
