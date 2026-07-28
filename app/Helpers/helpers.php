@@ -293,12 +293,26 @@ function getLotDetails($lot_id, $master_stage)
 
 function getLastCurrentStage($lot_no)
 {
-    $latestStageTiming = \App\Models\OrderLotStageTiming::with('stage')
-        ->where('lot_no', $lot_no)
-        ->orderBy('id', 'desc')
-        ->first();
+    $latestTx = \App\Models\OrderStageTransaction::with('to_stage')->where('lot_no', $lot_no)->orderBy('id', 'desc')->first();
+    $latestGodam = \App\Models\OrderGodamStageTransaction::with('to_stage')->where('lot_no', $lot_no)->orderBy('id', 'desc')->first();
+    $latestPrint = \App\Models\OrderPrintingStageTransaction::with('to_stage')->where('lot_no', $lot_no)->orderBy('id', 'desc')->first();
+    $latestPrintStitch = \App\Models\OrderPrintingToStichingTransaction::with('to_stage')->where('lot_no', $lot_no)->orderBy('id', 'desc')->first();
 
-    return $latestStageTiming ? ($latestStageTiming->stage->name ?? 'N/A') : 'N/A';
+    $all = collect([$latestTx, $latestGodam, $latestPrint, $latestPrintStitch])->filter();
+
+    if ($all->isNotEmpty()) {
+        $latest = $all->sortByDesc('created_at')->first();
+        if ($latest && $latest->to_stage) {
+            return $latest->to_stage->name;
+        }
+    }
+
+    $lot = \App\Models\OrderLot::where('lot_no', $lot_no)->first();
+    if ($lot) {
+        return 'Cutting';
+    }
+
+    return 'N/A';
 }
 
 
