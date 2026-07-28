@@ -19,7 +19,7 @@
                 <th>Total Boxes</th>
                 <th>Total Quantity (Pcs)</th>
                 @if(isset($withPrice) && $withPrice)
-                <th>Unit Price</th>
+                <th>MRP</th>
                 <th>Total Price</th>
                 @endif
             </tr>

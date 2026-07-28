@@ -39,6 +39,9 @@
                         <a href="{{ route('admin.report.stock.export', request()->query()) }}" class="btn btn-sm btn-success me-1">
                             <i class="fas fa-file-excel"></i> Export
                         </a>
+                        <a href="{{ route('admin.report.stock.export_with_rate', request()->query()) }}" class="btn btn-sm btn-success me-1">
+                            <i class="fas fa-file-excel"></i> Export (With Rate)
+                        </a>
                         <a href="{{ route('admin.report.stock.pdf', request()->query()) }}" class="btn btn-sm btn-danger" target="_blank">
                             <i class="fas fa-file-pdf"></i> PDF
                         </a>

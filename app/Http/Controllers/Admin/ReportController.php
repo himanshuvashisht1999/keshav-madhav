@@ -264,6 +264,44 @@ class ReportController extends Controller
                 'attachment; filename="' . $filenamePrefix . '-' . now()->format('d-m-Y_H-i') . '.xls"'
             );
     }
+    
+    public function stockExportWithRate(Request $request)
+    {
+        $query = \App\Models\FabricReceiptDetail::with(['fabric'])
+            ->where('remaining_quantity', '>', 0)
+            ->when($request->filled('warehouse_id'), function ($q) use ($request) {
+                $q->where('master_fabric_warehouse_id', $request->warehouse_id);
+            })
+            ->when($request->filled('fabric_id'), function ($q) use ($request) {
+                $q->where('fabric_id', $request->fabric_id);
+            })
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $q->whereHas('fabric', function($fq) use ($request) {
+                    $fq->where('name', 'LIKE', '%' . $request->search . '%')
+                       ->orWhere('sku', 'LIKE', '%' . $request->search . '%');
+                });
+            })
+            ->select([
+                'fabric_id',
+                'price_per_meter',
+                \DB::raw('SUM(remaining_quantity) as total_remaining')
+            ])
+            ->groupBy('fabric_id', 'price_per_meter')
+            ->having('total_remaining', '>', 0);
+            
+        $data = $query->get();
+
+        return response()
+            ->view('admin.report.stock_export_with_rate', [
+                'data' => $data,
+                'exportedAt' => now()
+            ])
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header(
+                'Content-Disposition',
+                'attachment; filename="fabric-stock-with-rate-' . now()->format('d-m-Y_H-i') . '.xls"'
+            );
+    }
 
 
     public function stockPdf(Request $request)
