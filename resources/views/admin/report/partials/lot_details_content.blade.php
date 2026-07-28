@@ -350,12 +350,13 @@
                                 $remaining = (int) $d['remaining_quantity'];
                                 $total = (int) $d['quantity'];
 
+                                if ($total === 0)
+                                    continue;
+
                                 $eta = Carbon::parse($d['time_allocation']);
                                 $completed = $d['completed_time'] ? Carbon::parse($d['completed_time']) : null;
 
-                                if ($total === 0)
-                                    $status = 'not_started';
-                                elseif ($remaining === 0)
+                                if ($remaining === 0)
                                     $status = ($completed && $completed->gt($eta)) ? 'delayed' : 'completed';
                                 elseif (now()->gt($eta))
                                     $status = 'delayed';
