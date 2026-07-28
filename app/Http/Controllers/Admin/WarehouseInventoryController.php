@@ -194,15 +194,18 @@ class WarehouseInventoryController extends Controller
             return $pdf->download('warehouse-stock-' . now()->format('Y-m-d_H-i') . '.pdf');
         }
 
+        $withPrice = $request->type === 'excel_price';
+
         return response()
             ->view('admin.inventory.warehouse_stock.export_excel', [
                 'data' => $data,
-                'exportedAt' => now()
+                'exportedAt' => now(),
+                'withPrice' => $withPrice
             ])
             ->header('Content-Type', 'application/vnd.ms-excel')
             ->header(
                 'Content-Disposition',
-                'attachment; filename="warehouse-stock-' . now()->format('Y-m-d_H-i') . '.xls"'
+                'attachment; filename="warehouse-stock-' . ($withPrice ? 'with-price-' : '') . now()->format('Y-m-d_H-i') . '.xls"'
             );
     }
 

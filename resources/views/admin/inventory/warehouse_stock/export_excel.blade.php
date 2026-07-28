@@ -18,18 +18,32 @@
                 <th>Location (Warehouse / Rack)</th>
                 <th>Total Boxes</th>
                 <th>Total Quantity (Pcs)</th>
+                @if(isset($withPrice) && $withPrice)
+                <th>Unit Price</th>
+                <th>Total Price</th>
+                @endif
             </tr>
         </thead>
         <tbody>
             @php 
                 $grandTotalBoxes = 0;
                 $grandTotalQty = 0;
+                $grandTotalPrice = 0;
             @endphp
             @forelse($data as $index => $row)
                 @php
                     $qty = $row->total_boxes * $row->quantity;
                     $grandTotalBoxes += $row->total_boxes;
                     $grandTotalQty += $qty;
+                    
+                    if (isset($withPrice) && $withPrice) {
+                        $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $row->product_id)
+                            ->where('master_size_measurement_id', $row->size_set_id)
+                            ->first();
+                        $unitPrice = $variant ? (float)$variant->mrp : 0;
+                        $totalPrice = $unitPrice * $qty;
+                        $grandTotalPrice += $totalPrice;
+                    }
                 @endphp
                 <tr>
                     <td>{{ $index + 1 }}</td>
@@ -41,10 +55,14 @@
                     </td>
                     <td>{{ $row->total_boxes }}</td>
                     <td>{{ $qty }}</td>
+                    @if(isset($withPrice) && $withPrice)
+                    <td>{{ $unitPrice }}</td>
+                    <td>{{ $totalPrice }}</td>
+                    @endif
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7">No inventory found</td>
+                    <td colspan="{{ (isset($withPrice) && $withPrice) ? '9' : '7' }}">No inventory found</td>
                 </tr>
             @endforelse
         </tbody>
@@ -53,6 +71,10 @@
                 <th colspan="5" style="text-align:right">Grand Total:</th>
                 <th>{{ $grandTotalBoxes }}</th>
                 <th>{{ $grandTotalQty }}</th>
+                @if(isset($withPrice) && $withPrice)
+                <th></th>
+                <th>{{ $grandTotalPrice }}</th>
+                @endif
             </tr>
         </tfoot>
     </table>

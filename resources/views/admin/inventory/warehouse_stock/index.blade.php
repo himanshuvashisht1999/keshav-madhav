@@ -46,6 +46,7 @@
                             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="exportDropdown">
                                 <a class="dropdown-item" href="#" id="export_pdf"><i class="fas fa-file-pdf text-danger mr-2"></i> Download PDF</a>
                                 <a class="dropdown-item" href="#" id="export_excel"><i class="fas fa-file-excel text-success mr-2"></i> Download Excel</a>
+                                <a class="dropdown-item" href="#" id="export_excel_price"><i class="fas fa-file-excel text-success mr-2"></i> Download Excel (With Price)</a>
                             </div>
                         </div>
                         <a href="{{ route('admin.inventory.warehouse_stock.history') }}" class="btn btn-outline-primary shadow-sm">
@@ -403,6 +404,11 @@
             $('#export_excel').on('click', function(e) {
                 e.preventDefault();
                 window.location.href = getExportUrl('excel');
+            });
+
+            $('#export_excel_price').on('click', function(e) {
+                e.preventDefault();
+                window.location.href = getExportUrl('excel_price');
             });
         });
     </script>
