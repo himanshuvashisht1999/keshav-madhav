@@ -185,7 +185,19 @@
                                 <td><strong>{{ $item->productSet->design_number ?? 'N/A' }}</strong></td>
                                 <td class="text-left" style="text-align: left !important;">
                                     <small>
-                                        <b>Color:</b> {{ $item->productSet->colors->name ?? 'N/A' }} | <b>Size:</b> {{ $item->productSet->size_set_name ?? 'N/A' }}<br>
+                                        @php
+                                            $ratioStr = '-';
+                                            if(!empty($item->productSet->size_measurement->size_group)) {
+                                                $sizes = array_map('trim', explode(',', $item->productSet->size_measurement->size_group));
+                                                $counts = array_count_values($sizes);
+                                                $parts = [];
+                                                foreach($counts as $s => $c) {
+                                                    $parts[] = $s . ':' . $c;
+                                                }
+                                                $ratioStr = implode(', ', $parts);
+                                            }
+                                        @endphp
+                                        <b>Color:</b> {{ $item->productSet->colors->name ?? 'N/A' }} | <b>Size:</b> {{ $item->productSet->size_set_name ?? 'N/A' }} | <b>Ratio:</b> {{ $ratioStr }}<br>
                                         <b>Fabric:</b> {{ $item->fabric_names }}<br>
                                         <b>Pattern:</b> {{ $item->pattern->name ?? '-' }} | <b>Fitting:</b> {{ $item->master_fitting->name ?? '-' }}<br>
                                         <b>Belt:</b> {{ $item->belt ?? '-' }}

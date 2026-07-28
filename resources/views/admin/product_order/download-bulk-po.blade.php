@@ -99,7 +99,19 @@
                         <td class="text-center"><span class="design-no">{{ $item->productSet->design_number ?? 'N/A' }}</span></td>
                         <td class="text-left">
                             <span class="item-details">
-                                <b>Color:</b> {{ $item->productSet->colors->name ?? 'N/A' }} | <b>Size:</b> {{ $item->productSet->size_set_name ?? 'N/A' }}<br>
+                                @php
+                                    $ratioStr = '-';
+                                    if(!empty($item->productSet->size_measurement->size_group)) {
+                                        $sizes = array_map('trim', explode(',', $item->productSet->size_measurement->size_group));
+                                        $counts = array_count_values($sizes);
+                                        $parts = [];
+                                        foreach($counts as $s => $c) {
+                                            $parts[] = $s . ':' . $c;
+                                        }
+                                        $ratioStr = implode(', ', $parts);
+                                    }
+                                @endphp
+                                <b>Color:</b> {{ $item->productSet->colors->name ?? 'N/A' }} | <b>Size:</b> {{ $item->productSet->size_set_name ?? 'N/A' }} | <b>Ratio:</b> {{ $ratioStr }}<br>
                                 <b>Fabric:</b> {{ $item->fabric_names }} | <b>Pattern:</b> {{ $item->pattern->name ?? '-' }}<br>
                                 <b>Fitting:</b> {{ $item->master_fitting->name ?? '-' }} | <b>Belt:</b> {{ $item->belt ?? '-' }}
                                 @if($item->remarks)
