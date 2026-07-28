@@ -156,9 +156,10 @@
             <tr>
                 <th style="width:6%;">#</th>
                 <th style="width:34%;">Design No</th>
-                <th style="width:20%;">Color</th>
-                <th style="width:20%;">Size</th>
-                <th style="width:20%;">Total PCS</th>
+                <th style="width:15%;">Color</th>
+                <th style="width:15%;">Size</th>
+                <th style="width:15%;">Ratio</th>
+                <th style="width:15%;">Total PCS</th>
             </tr>
         </thead>
 
@@ -169,6 +170,7 @@
                     <td>{{ $row['design_no'] }} ({{ $header['fitting'] }})</td>
                     <td>{{ $row['color'] }}</td>
                     <td>{{ $row['size'] }}</td>
+                    <td>{{ $row['ratio'] ?? '-' }}</td>
                     <td>{{ number_format($row['pcs'], 0) }}</td>
                 </tr>
             @endforeach
@@ -177,6 +179,7 @@
         <tfoot>
             <tr>
                 <th colspan="4" style="text-align:right;">Grand Total</th>
+                <th>{{ number_format(array_sum(array_column($sizeData, 'ratio')), 0) }}</th>
                 <th>{{ number_format($header['total_pcs'] ?? array_sum(array_column($sizeData, 'pcs')), 0) }}</th>
             </tr>
         </tfoot>

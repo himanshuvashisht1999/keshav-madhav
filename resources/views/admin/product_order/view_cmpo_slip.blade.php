@@ -142,6 +142,7 @@
                         <th>Design No</th>
                         <th>Color</th>
                         <th>Size</th>
+                        <th>Ratio</th>
                         <th>QTY (Per Size)</th>
                     </tr>
                 </thead>
@@ -156,6 +157,7 @@
                             <td>{{ $row['design_no'] }}</td>
                             <td>{{ $row['color'] }}</td>
                             <td>{{ $row['size'] }}</td>
+                            <td>{{ $row['ratio'] ?? '-' }}</td>
                             <td>{{ number_format($row['pcs'], 0) }}</td>
                         </tr>
                     @endforeach
@@ -163,6 +165,7 @@
                 <tfoot>
                     <tr>
                         <th colspan="4" style="text-align:right;">Total</th>
+                        <th>{{ number_format(array_sum(array_column($sizeData, 'ratio')), 0) }}</th>
                         <th>{{ number_format($totalHeaderPcs, 0) }}</th>
                     </tr>
                 </tfoot>

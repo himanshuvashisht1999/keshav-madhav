@@ -856,6 +856,7 @@ class ProductOrderController extends Controller
                 'design_no' => $data->design_number,
                 'color' => $data->colors->name,
                 'size' => $size,
+                'ratio' => $count,
                 'pcs' => $totalInRatio > 0 ? ($count * $data->total_quantity) / $totalInRatio : 0,
             ];
         }
@@ -953,11 +954,13 @@ class ProductOrderController extends Controller
                 
                 if (isset($sizeData[$key])) {
                     $sizeData[$key]['pcs'] += $pcs;
+                    $sizeData[$key]['ratio'] += $count;
                 } else {
                     $sizeData[$key] = [
                         'design_no' => $data->design_number,
                         'color' => $data->colors->name,
                         'size' => $size,
+                        'ratio' => $count,
                         'pcs' => $pcs,
                     ];
                 }
