@@ -2078,8 +2078,24 @@ class ReportService
                 $eta = $timing?->end_date ?? ($item->end_date ?? ($timeTracking && isset($timeTracking->$column_namevar) ? \Carbon\Carbon::parse($timeTracking->$column_namevar) : null));
 
                 $assignedQty = $item->quantity;
-                $pendingQty = min((int) $item->remaining_quantity, (int) $item->quantity);
                 
+                // Dynamic pending quantity calculation for the unit
+                $in1 = \App\Models\OrderStageTransaction::where('lot_no', $item->lot_no)->where('to_stage_id', $t_stage_id)->where('sub_stage_id_to', $item->sub_stage_id_to)->sum('quantity');
+                $in2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $item->lot_no)->where('to_stage_id', $t_stage_id)->where('sub_stage_id_to', $item->sub_stage_id_to)->sum('quantity');
+                $in3 = \App\Models\OrderPrintingStageTransaction::where('lot_no', $item->lot_no)->where('to_stage_id', $t_stage_id)->where('sub_stage_id_to', $item->sub_stage_id_to)->sum('quantity');
+                $in4 = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $item->lot_no)->where('to_stage_id', $t_stage_id)->where('sub_stage_id_to', $item->sub_stage_id_to)->sum('quantity');
+                
+                $incomingAll = $in1 + $in2 + $in3 + $in4;
+                
+                $out1 = \App\Models\OrderStageTransaction::where('lot_no', $item->lot_no)->where('from_stage_id', $t_stage_id)->where('sub_stage_id', $item->sub_stage_id_to)->sum('quantity');
+                $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $item->lot_no)->where('from_stage_id', $t_stage_id)->where('sub_stage_id', $item->sub_stage_id_to)->sum('quantity');
+                $out3 = \App\Models\OrderPrintingStageTransaction::where('lot_no', $item->lot_no)->where('from_stage_id', $t_stage_id)->where('sub_stage_id', $item->sub_stage_id_to)->sum('quantity');
+                $out4 = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $item->lot_no)->where('from_stage_id', $t_stage_id)->where('sub_stage_id', $item->sub_stage_id_to)->sum('quantity');
+                
+                $outflowAll = $out1 + $out2 + $out3 + $out4;
+                
+                $pendingQty = max(0, $incomingAll - $outflowAll);
+
                 $isClosed = ($item->is_closed_for_unit == 1);
 
                 // Status Logic
@@ -2122,7 +2138,7 @@ class ReportService
                     $groupedAssignments[$groupKey] = $item;
                 } else {
                     $groupedAssignments[$groupKey]->assigned_qty += $assignedQty;
-                    $groupedAssignments[$groupKey]->pending_qty += $pendingQty;
+                    $groupedAssignments[$groupKey]->pending_qty = $pendingQty;
                 }
             }
             $assignments = array_values($groupedAssignments);
