@@ -609,6 +609,15 @@ class FabricReceiptService
                 $detail->price_per_meter = $single_data['price'];
                 if ($detail->exists) {
                     $used_quantity = $detail->meter - $detail->remaining_quantity;
+                    
+                    if ($used_quantity > 0 && $detail->meter != $single_data['meter']) {
+                        throw new \Exception("Cannot edit meter for roll '{$single_data['roll_no']}' because it has already been used in production.");
+                    }
+
+                    if ($single_data['meter'] < $used_quantity) {
+                        throw new \Exception("Cannot reduce meter for roll '{$single_data['roll_no']}' below its already used quantity ({$used_quantity}).");
+                    }
+
                     $detail->meter = $single_data['meter'];
                     $detail->remaining_quantity = max(0, $detail->meter - $used_quantity);
                 } else {

@@ -1,0 +1,1 @@
+<?php require " vendor/autoload.php\; \ = require_once \bootstrap/app.php\; \ = \->make(Illuminate\Contracts\Console\Kernel::class); \->bootstrap(); \ = DB::select(\SHOW TABLE STATUS WHERE Name =  fabric_roll_assigning OR Name =  fabric_receipt_details\); echo json_encode(\);
