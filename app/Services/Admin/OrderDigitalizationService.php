@@ -995,6 +995,10 @@ class OrderDigitalizationService
                 $part->delete();
             }
 
+            if ($slip->to_stage_id == 4 && $lotNos->isNotEmpty()) {
+                \App\Models\OrderLot::whereIn('lot_no', $lotNos)->update(['is_stitching' => 0]);
+            }
+
             // Finally, mark slip as deleted (status 3)
             $slip->update(['status' => 3]);
 
