@@ -1755,6 +1755,13 @@ class ReportService
         return $data;
     }
 
+    public function stockPending(Request $request)
+    {
+        // Re-use the unit assignments logic but we can customize if needed later
+        // The view will handle displaying only the required columns.
+        return $this->unitAssignments($request);
+    }
+
     public function unitAssignments(Request $request)
     {
         $assignments = [];
@@ -1820,6 +1827,7 @@ class ReportService
             foreach ($records as $item) {
                 $item->transaction_type = 'cutting_lot';
                 $item->design_number = $item->orderProductSet->design_number ?? '-';
+                $item->size_set_name = $item->orderProductSet->size_set_name ?? '-';
                 $item->stage_master_unit = $item->orderProductSet->order_cutting_stage->cutting_master ?? null;
 
                 $rolls = \App\Models\FabricRollAssigning::where('order_lot_id', $item->id)->with('fabricRollAssigningsDetail')->get();
@@ -1960,6 +1968,7 @@ class ReportService
 
                 // Map for View
                 $item->design_number = $item->productSet->design_number ?? '-';
+                $item->size_set_name = $item->productSet->size_set_name ?? '-';
                 $item->stage_master_unit = $item->cutting_master;
                 $item->start_time = $item->start_date ? \Carbon\Carbon::parse($item->start_date) : $item->created_at;
                 $item->end_time = ($isClosed || $pendingQty <= 0)
@@ -2074,6 +2083,7 @@ class ReportService
 
                 $orderLot = \App\Models\OrderLot::with('orderProductSet.orderMain')->where('lot_no', $item->lot_no)->first();
                 $item->design_number = $orderLot?->orderProductSet?->design_number ?? '-';
+                $item->size_set_name = $orderLot?->orderProductSet?->size_set_name ?? '-';
                 $item->sku = $orderLot?->orderProductSet?->orderMain?->sku ?? '-';
 
                 // Fetch Unified Timing

@@ -657,12 +657,45 @@ class ReportController extends Controller
         $response = $this->service->unitAssignments($request);
 
         return response()
-            ->view('admin.report.unit_assignments_export', $response)
+            ->view('admin.report.unit_assignments_export', [
+                'assignments' => $response['assignments'],
+                'exportedAt' => now()
+            ])
             ->header('Content-Type', 'application/vnd.ms-excel')
             ->header(
                 'Content-Disposition',
                 'attachment; filename="unit-assignments-report-' . now()->format('d-m-Y_H-i') . '.xls"'
             );
+    }
+
+    public function stockPending(Request $request)
+    {
+        $response = $this->service->stockPending($request);
+        return view('admin.report.stock_pending', $response);
+    }
+
+    public function stockPendingExport(Request $request)
+    {
+        $response = $this->service->stockPending($request);
+
+        return response()
+            ->view('admin.report.stock_pending_export', [
+                'assignments' => $response['assignments'],
+                'exportedAt' => now()
+            ])
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header(
+                'Content-Disposition',
+                'attachment; filename="stock-pending-report-' . now()->format('d-m-Y_H-i') . '.xls"'
+            );
+    }
+
+    public function stockPendingPdf(Request $request)
+    {
+        $response = $this->service->stockPending($request);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.report.pdf.stock_pending', $response);
+        $pdf->setPaper('a4', 'landscape');
+        return $pdf->download('stock-pending-' . date('YmdHis') . '.pdf');
     }
 
     public function unitAssignmentsPdf(Request $request)

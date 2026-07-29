@@ -780,6 +780,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                 </li>
 
                                 <li class="nav-item">
+                                    <a href="{{ route('admin.reports.stock-pending') }}"
+                                        class="{{ str_contains(strtolower($page_url), 'admin/reports/stock-pending') ? 'nav-link active' : 'nav-link' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Stage Wise Pending Stock</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
                                     <a href="{{ route('admin.reports.design-wip') }}"
                                         class="{{ str_contains(strtolower($page_url), 'admin/reports/design-wip') ? 'nav-link active' : 'nav-link' }}">
                                         <i class="far fa-circle nav-icon"></i>
