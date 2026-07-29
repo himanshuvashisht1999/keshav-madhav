@@ -1893,7 +1893,7 @@ class ReportService
         $type = 'other';
 
         if (!$stageId && !$hasFilters && !$request->get('is_pagination')) {
-            $type = 'none';
+            // Allow All Stages to load data
         } elseif ($request->get('is_pagination') && \Illuminate\Support\Facades\Cache::has('stock_pending_data_' . md5(json_encode($request->except(['page', 'is_pagination', '_']))))) {
             $cached = \Illuminate\Support\Facades\Cache::get('stock_pending_data_' . md5(json_encode($request->except(['page', 'is_pagination', '_']))));
             $assignments = $cached['assignments'];
@@ -2085,6 +2085,47 @@ class ReportService
             $allTransactions = $results1->merge($results2)->merge($results3);
 
             $groupedAssignments = [];
+            
+            $lotNos = $allTransactions->pluck('lot_no')->unique()->toArray();
+            
+            // Fetch bulk sums for incoming
+            $in1Sums = \App\Models\OrderStageTransaction::whereIn('lot_no', $lotNos)
+                ->selectRaw('lot_no, to_stage_id, sub_stage_id_to, SUM(quantity) as sum_qty')->groupBy('lot_no', 'to_stage_id', 'sub_stage_id_to')
+                ->get()->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->sub_stage_id_to => $i->sum_qty]; })->toArray();
+            $in2Sums = \App\Models\OrderGodamStageTransaction::whereIn('lot_no', $lotNos)
+                ->selectRaw('lot_no, to_stage_id, sub_stage_id_to, SUM(quantity) as sum_qty')->groupBy('lot_no', 'to_stage_id', 'sub_stage_id_to')
+                ->get()->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->sub_stage_id_to => $i->sum_qty]; })->toArray();
+            $in3Sums = \App\Models\OrderPrintingStageTransaction::whereIn('lot_no', $lotNos)
+                ->selectRaw('lot_no, to_stage_id, sub_stage_id_to, SUM(quantity) as sum_qty')->groupBy('lot_no', 'to_stage_id', 'sub_stage_id_to')
+                ->get()->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->sub_stage_id_to => $i->sum_qty]; })->toArray();
+            $in4Sums = \App\Models\OrderPrintingToStichingTransaction::whereIn('lot_no', $lotNos)
+                ->selectRaw('lot_no, to_stage_id, sub_stage_id_to, SUM(quantity) as sum_qty')->groupBy('lot_no', 'to_stage_id', 'sub_stage_id_to')
+                ->get()->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->sub_stage_id_to => $i->sum_qty]; })->toArray();
+
+            // Fetch bulk sums for outflow
+            $out1Sums = \App\Models\OrderStageTransaction::whereIn('lot_no', $lotNos)
+                ->selectRaw('lot_no, from_stage_id, sub_stage_id, SUM(quantity) as sum_qty')->groupBy('lot_no', 'from_stage_id', 'sub_stage_id')
+                ->get()->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->sub_stage_id => $i->sum_qty]; })->toArray();
+            $out2Sums = \App\Models\OrderGodamStageTransaction::whereIn('lot_no', $lotNos)
+                ->selectRaw('lot_no, from_stage_id, sub_stage_id, SUM(quantity) as sum_qty')->groupBy('lot_no', 'from_stage_id', 'sub_stage_id')
+                ->get()->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->sub_stage_id => $i->sum_qty]; })->toArray();
+            $out3Sums = \App\Models\OrderPrintingStageTransaction::whereIn('lot_no', $lotNos)
+                ->selectRaw('lot_no, from_stage_id, sub_stage_id, SUM(quantity) as sum_qty')->groupBy('lot_no', 'from_stage_id', 'sub_stage_id')
+                ->get()->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->sub_stage_id => $i->sum_qty]; })->toArray();
+            $out4Sums = \App\Models\OrderPrintingToStichingTransaction::whereIn('lot_no', $lotNos)
+                ->selectRaw('lot_no, from_stage_id, sub_stage_id, SUM(quantity) as sum_qty')->groupBy('lot_no', 'from_stage_id', 'sub_stage_id')
+                ->get()->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->sub_stage_id => $i->sum_qty]; })->toArray();
+
+            $orderLots = \App\Models\OrderLot::with('orderProductSet.orderMain')
+                ->whereIn('lot_no', $lotNos)->get()->keyBy('lot_no');
+                
+            $timings = \App\Models\OrderLotStageTiming::whereIn('lot_no', $lotNos)
+                ->get()->groupBy('lot_no');
+                
+            $timeTrackings = \App\Models\OrderStageWiseTimeTracking::whereIn('lot_no', $lotNos)
+                ->get()->keyBy('lot_no');
+                
+            $stageMasterUnits = \App\Models\StageMasterUnit::all()->keyBy('id');
 
             foreach ($allTransactions as $item) {
                 $item->to_stage_name = $item->to_stage->name ?? 'Unknown';
@@ -2093,35 +2134,39 @@ class ReportService
                 }
                 
                 $t_stage_id = $item->to_stage_id;
+                
+                $item->stage_master_unit = $stageMasterUnits[$item->sub_stage_id_to] ?? null;
 
-                $orderLot = \App\Models\OrderLot::with('orderProductSet.orderMain')->where('lot_no', $item->lot_no)->first();
+                $orderLot = $orderLots[$item->lot_no] ?? null;
                 $item->design_number = $orderLot?->orderProductSet?->design_number ?? '-';
                 $item->size_set_name = $orderLot?->orderProductSet?->size_set_name ?? '-';
                 $item->sku = $orderLot?->orderProductSet?->orderMain?->sku ?? '-';
 
                 // Fetch Unified Timing
-                $timing = \App\Models\OrderLotStageTiming::where('lot_no', $item->lot_no)
-                    ->where('master_stage_id', $t_stage_id)
-                    ->first();
+                $lotTimings = $timings[$item->lot_no] ?? collect();
+                $timing = $lotTimings->firstWhere('master_stage_id', $t_stage_id);
 
                 $column_namevar = 'stage_id_' . $t_stage_id;
-                $timeTracking = \App\Models\OrderStageWiseTimeTracking::where('lot_no', $item->lot_no)->first();
+                $timeTracking = $timeTrackings[$item->lot_no] ?? null;
                 $eta = $timing?->end_date ?? ($item->end_date ?? ($timeTracking && isset($timeTracking->$column_namevar) ? \Carbon\Carbon::parse($timeTracking->$column_namevar) : null));
 
                 $assignedQty = $item->quantity;
                 
                 // Dynamic pending quantity calculation for the unit
-                $in1 = \App\Models\OrderStageTransaction::where('lot_no', $item->lot_no)->where('to_stage_id', $t_stage_id)->where('sub_stage_id_to', $item->sub_stage_id_to)->sum('quantity');
-                $in2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $item->lot_no)->where('to_stage_id', $t_stage_id)->where('sub_stage_id_to', $item->sub_stage_id_to)->sum('quantity');
-                $in3 = \App\Models\OrderPrintingStageTransaction::where('lot_no', $item->lot_no)->where('to_stage_id', $t_stage_id)->where('sub_stage_id_to', $item->sub_stage_id_to)->sum('quantity');
-                $in4 = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $item->lot_no)->where('to_stage_id', $t_stage_id)->where('sub_stage_id_to', $item->sub_stage_id_to)->sum('quantity');
+                $inKey = $item->lot_no . '_' . $item->sub_stage_id_to;
+                $outKey = $item->lot_no . '_' . $item->sub_stage_id_to;
+
+                $in1 = $in1Sums[$inKey] ?? 0;
+                $in2 = $in2Sums[$inKey] ?? 0;
+                $in3 = $in3Sums[$inKey] ?? 0;
                 
-                $incomingAll = $in1 + $in2 + $in3 + $in4;
+                // Exclude in4 from incoming to prevent double counting per user instructions
+                $incomingAll = $in1 + $in2 + $in3;
                 
-                $out1 = \App\Models\OrderStageTransaction::where('lot_no', $item->lot_no)->where('from_stage_id', $t_stage_id)->where('sub_stage_id', $item->sub_stage_id_to)->sum('quantity');
-                $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $item->lot_no)->where('from_stage_id', $t_stage_id)->where('sub_stage_id', $item->sub_stage_id_to)->sum('quantity');
-                $out3 = \App\Models\OrderPrintingStageTransaction::where('lot_no', $item->lot_no)->where('from_stage_id', $t_stage_id)->where('sub_stage_id', $item->sub_stage_id_to)->sum('quantity');
-                $out4 = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $item->lot_no)->where('from_stage_id', $t_stage_id)->where('sub_stage_id', $item->sub_stage_id_to)->sum('quantity');
+                $out1 = $out1Sums[$outKey] ?? 0;
+                $out2 = $out2Sums[$outKey] ?? 0;
+                $out3 = $out3Sums[$outKey] ?? 0;
+                $out4 = $out4Sums[$outKey] ?? 0;
                 
                 $outflowAll = $out1 + $out2 + $out3 + $out4;
                 

@@ -271,6 +271,7 @@
                                                 <th>Unit Person</th>
                                                 @if(!$productionStatus)
                                                     <th>From Stage</th>
+                                                    <th>Current Stage</th>
                                                 @endif
                                                 <th>Lot No</th>
                                                 <th>Design No</th>
@@ -317,6 +318,7 @@
                                                     </td>
                                                     @if(!$productionStatus)
                                                         <td>{{ $item->from_stage->name ?? $item->fromStage->name ?? '-' }}</td>
+                                                        <td>{{ $item->to_stage_name ?? $item->to_stage->name ?? $item->toStage->name ?? '-' }}</td>
                                                     @endif
                                                     <td>{{ $item->lot_no ?? 'Pending' }}</td>
                                                     <td>{{ $item->design_number ?? '-' }}</td>
@@ -369,7 +371,7 @@
                                         </tbody>
                                         <tfoot>
                                             <tr class="bg-light font-weight-bold">
-                                                <td colspan="{{ $productionStatus ? 3 : 5 }}" class="text-right">Grand Total:</td>
+                                                <td colspan="{{ $productionStatus ? 3 : 6 }}" class="text-right">Grand Total:</td>
                                                 <td>{{ number_format($totalAssignedOther) }} Pcs</td>
                                                 <td>{{ number_format($totalPendingOther) }} Pcs</td>
                                                 <td colspan="4"></td>
