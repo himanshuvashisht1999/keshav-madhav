@@ -1,0 +1,1 @@
+<?php require 'vendor/autoload.php'; \ = require_once 'bootstrap/app.php'; \ = \->make(Illuminate\Contracts\Console\Kernel::class); \->bootstrap(); \ = \App\Models\MasterProductStage::whereIn('name', ['Cutting', 'Printing', 'Embroidery', 'Printing & Embroidery'])->pluck('id')->toArray(); echo implode(',', \);

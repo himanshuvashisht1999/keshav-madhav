@@ -68,9 +68,11 @@
                                         onchange="this.form.submit()">
                                         <option value="">All Stages</option>
                                         @foreach($stages as $stage)
+                                            @if(!in_array(strtolower(trim($stage->name)), ['cutting', 'printing & embroidery', 'printing', 'embroidery']))
                                             <option value="{{ $stage->id }}" {{ request('stage_id') == $stage->id ? 'selected' : '' }}>
                                                 {{ $stage->name }}
                                             </option>
+                                            @endif
                                         @endforeach
                                     </select>
                                 </div>
@@ -108,6 +110,9 @@
                 {{-- TABLE --}}
                 <div class="card report-card">
                     <div class="card-body">
+                        <div class="d-flex justify-content-end align-items-center mb-3">
+                            <h4 class="mb-0 text-primary font-weight-bold">Grand Total: {{ number_format($totalPending) }} Pcs</h4>
+                        </div>
                         <div class="table-responsive">
 
                             @if($assignments->isEmpty())
@@ -120,45 +125,26 @@
                                     <thead>
                                         <tr>
                                             <th>Stage</th>
+                                            <th>Unit Person Name</th>
                                             <th>Lot No</th>
                                             <th>Design No</th>
                                             <th>Size Set</th>
                                             <th>Pending Quantity</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        @php 
-                                            $totalPending = 0;
-                                        @endphp
-                                        @foreach($assignments as $item)
-                                            @php 
-                                                $qty = $item->pending_qty ?? $item->quantity ?? 0;
-                                                $totalPending += $qty;
-                                                $stageName = $item->to_stage->name ?? $item->from_stage->name ?? 'Cutting';
-                                                $lotNo = $item->lot_no ?? ($item->productSet->lot_no ?? '-');
-                                                if($type == 'cutting') {
-                                                    $stageName = 'Cutting';
-                                                    $lotNo = $item->lot_no ?? '-';
-                                                }
-                                            @endphp
-                                            <tr>
-                                                <td>{{ $stageName }}</td>
-                                                <td>
-                                                    {{ $lotNo }}
-                                                </td>
-                                                <td>{{ $item->design_number ?? '-' }}</td>
-                                                <td>{{ $item->size_set_name ?? '-' }}</td>
-                                                <td>{{ number_format($qty) }} Pcs</td>
-                                            </tr>
-                                        @endforeach
+                                    <tbody id="table-body">
+                                        @include('admin.report.partials.stock_pending_rows')
                                     </tbody>
-                                    <tfoot>
-                                        <tr class="bg-light font-weight-bold">
-                                            <td colspan="4" class="text-right">Grand Total:</td>
-                                            <td>{{ number_format($totalPending) }} Pcs</td>
-                                        </tr>
-                                    </tfoot>
                                 </table>
+                                
+                                <div id="scroll-sentry" style="height: 10px;"></div>
+
+                                <div id="loading-spinner" class="text-center p-3" style="display: none;">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                    <div class="mt-2 text-muted small">Loading more records...</div>
+                                </div>
 
                             @endif
                         </div>
@@ -169,3 +155,56 @@
     </div>
 
 @endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        let page = 1;
+        let isLoading = false;
+        let hasMore = {{ $assignments->hasMorePages() ? 'true' : 'false' }};
+
+        // Use IntersectionObserver which works regardless of which container is scrolling
+        let observer = new IntersectionObserver(function(entries) {
+            if (entries[0].isIntersecting) {
+                if (!isLoading && hasMore) {
+                    loadMoreData();
+                }
+            }
+        }, {
+            rootMargin: '100px'
+        });
+
+        const sentry = document.getElementById('scroll-sentry');
+        if (sentry) {
+            observer.observe(sentry);
+        }
+
+        function loadMoreData() {
+            isLoading = true;
+            page++;
+            $('#loading-spinner').show();
+            
+            let url = new URL(window.location.href);
+            url.searchParams.set('page', page);
+
+            $.ajax({
+                url: url.href,
+                type: 'GET',
+                success: function(response) {
+                    $('#loading-spinner').hide();
+                    if (response.trim() === '') {
+                        hasMore = false;
+                    } else {
+                        $('#table-body').append(response);
+                    }
+                    isLoading = false;
+                },
+                error: function(xhr) {
+                    $('#loading-spinner').hide();
+                    isLoading = false;
+                }
+            });
+        }
+    });
+</script>
+@endpush

@@ -1892,11 +1892,16 @@ class ReportService
         $hasFilters = $lotNo || $orderNo || $designNo || $request->filled('start_date') || $request->filled('end_date') || !empty($unitIdsReq);
         $type = 'other';
 
-        if (!$stageId && !$hasFilters) {
+        if (!$stageId && !$hasFilters && !$request->get('is_pagination')) {
             $type = 'none';
+        } elseif ($request->get('is_pagination') && \Illuminate\Support\Facades\Cache::has('stock_pending_data_' . md5(json_encode($request->except(['page', 'is_pagination', '_']))))) {
+            $cached = \Illuminate\Support\Facades\Cache::get('stock_pending_data_' . md5(json_encode($request->except(['page', 'is_pagination', '_']))));
+            $assignments = $cached['assignments'];
+            $type = $cached['type'];
         } else {
-            if (!$stageId || $stageId == 3) {
-                if ($stageId == 3) $type = 'cutting';
+            // When All Stages is selected, we exclude Cutting (stage 3), Printing (4), and Embroidery (5) etc.
+            if ($stageId == 3) {
+                $type = 'cutting';
 
             $query = \App\Models\OrderCuttingStage::with(['orderMain.customer', 'productSet.fabric', 'productSet.colors', 'productSet.master_design_pattern', 'cutting_master'])
                 ->where('is_po', 0)
@@ -1980,7 +1985,7 @@ class ReportService
 
                 $assignments[] = $item;
             }
-        } // Close if (!$stageId || $stageId == 3)
+        } // Close if ($stageId == 3)
 
         if (!$stageId || $stageId != 3) {
 
@@ -2007,6 +2012,9 @@ class ReportService
             $stageFilter = function ($q) use ($stageId) {
                 if ($stageId) {
                     $q->where('to_stage_id', $stageId);
+                } else {
+                    $excludedStages = \App\Models\MasterProductStage::whereIn('name', ['Cutting', 'Printing', 'Embroidery', 'Printing & Embroidery'])->pluck('id')->toArray();
+                    $q->whereNotIn('to_stage_id', $excludedStages);
                 }
             };
 
@@ -2079,6 +2087,11 @@ class ReportService
             $groupedAssignments = [];
 
             foreach ($allTransactions as $item) {
+                $item->to_stage_name = $item->to_stage->name ?? 'Unknown';
+                if ($stageId && $item->to_stage_name != \App\Models\MasterProductStage::find($stageId)->name) {
+                    continue;
+                }
+                
                 $t_stage_id = $item->to_stage_id;
 
                 $orderLot = \App\Models\OrderLot::with('orderProductSet.orderMain')->where('lot_no', $item->lot_no)->first();
@@ -2162,6 +2175,14 @@ class ReportService
             $assignmentsOther = collect(array_values($groupedAssignments))->sortBy('id')->values()->all();
             $assignments = array_merge($assignments, $assignmentsOther);
         } // Close if (!$stageId || $stageId != 3)
+        
+        if ($request->get('is_pagination') && !isset($cached)) {
+            \Illuminate\Support\Facades\Cache::put('stock_pending_data_' . md5(json_encode($request->except(['page', 'is_pagination', '_']))), [
+                'assignments' => $assignments,
+                'type' => $type
+            ], 300);
+        }
+
         } // Close else {
 
         $stages = \App\Models\MasterProductStage::where('status', 1)->orderBy('sequence', 'asc')->get();
@@ -2170,10 +2191,31 @@ class ReportService
         if ($stageId) {
             $unitsQuery->where('master_stage_id', $stageId);
         }
-        $units = $unitsQuery->get()->unique('name');
+        $units = $unitsQuery->get();
+        
+        $totalPending = 0;
+        foreach ($assignments as $item) {
+            $qty = $item->pending_qty ?? $item->quantity ?? 0;
+            $totalPending += $qty;
+        }
+
+        $assignmentsCollection = collect($assignments)->sortBy('id')->values();
+
+        if ($request->get('is_pagination')) {
+            $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+            $perPage = 20;
+            $assignmentsCollection = new \Illuminate\Pagination\LengthAwarePaginator(
+                $assignmentsCollection->forPage($page, $perPage),
+                $assignmentsCollection->count(),
+                $perPage,
+                $page,
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+            );
+        }
 
         return [
-            'assignments' => collect($assignments)->sortBy('id')->values(),
+            'assignments' => $assignmentsCollection,
+            'totalPending' => $totalPending,
             'type' => $type,
             'view' => $view,
             'canCloseTasks' => $canCloseTasks,

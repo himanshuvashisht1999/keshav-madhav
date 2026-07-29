@@ -2,6 +2,7 @@
     <thead>
         <tr>
             <th>Stage</th>
+            <th>Unit Person Name</th>
             <th>Lot No</th>
             <th>Design No</th>
             <th>Size Set</th>
@@ -22,9 +23,11 @@
                     $stageName = 'Cutting';
                     $lotNo = $item->lot_no ?? '-';
                 }
+                $unitPersonName = $item->getToUnitMaster->name ?? $item->stage_master_unit->name ?? '-';
             @endphp
             <tr>
                 <td>{{ $stageName }}</td>
+                <td>{{ $unitPersonName }}</td>
                 <td>{{ $lotNo }}</td>
                 <td>{{ $item->design_number ?? '-' }}</td>
                 <td>{{ $item->size_set_name ?? '-' }}</td>
@@ -34,7 +37,7 @@
     </tbody>
     <tfoot>
         <tr>
-            <td colspan="4">Grand Total:</td>
+            <td colspan="5">Grand Total:</td>
             <td>{{ $totalPending }}</td>
         </tr>
     </tfoot>

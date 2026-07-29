@@ -670,7 +670,13 @@ class ReportController extends Controller
 
     public function stockPending(Request $request)
     {
+        $request->merge(['is_pagination' => true]);
         $response = $this->service->stockPending($request);
+        
+        if ($request->ajax()) {
+            return view('admin.report.partials.stock_pending_rows', $response);
+        }
+        
         return view('admin.report.stock_pending', $response);
     }
 
