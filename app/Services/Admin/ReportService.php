@@ -1857,7 +1857,7 @@ class ReportService
 
         $stageId = $request->get('stage_id');
         $view = $request->get('view', 'open');
-        if (!in_array($view, ['open', 'closed', 'delayed'])) {
+        if (!in_array($view, ['open', 'closed', 'delayed', 'all'])) {
             $view = 'open';
         }
 
@@ -1881,8 +1881,14 @@ class ReportService
             $unitIds = array_unique($unitIds);
         }
 
-        if ($stageId == 3) {
-            $type = 'cutting';
+        $hasFilters = $lotNo || $orderNo || $designNo || $request->filled('start_date') || $request->filled('end_date') || !empty($unitIdsReq);
+        $type = 'other';
+
+        if (!$stageId && !$hasFilters) {
+            $type = 'none';
+        } else {
+            if (!$stageId || $stageId == 3) {
+                if ($stageId == 3) $type = 'cutting';
 
             $query = \App\Models\OrderCuttingStage::with(['orderMain.customer', 'productSet.fabric', 'productSet.colors', 'productSet.master_design_pattern', 'cutting_master'])
                 ->where('is_po', 0)
@@ -1965,9 +1971,9 @@ class ReportService
 
                 $assignments[] = $item;
             }
+        } // Close if (!$stageId || $stageId == 3)
 
-        } elseif ($stageId) {
-            $type = 'other';
+        if (!$stageId || $stageId != 3) {
 
             if ($stageId == 13) {
                 $ass1Query = \App\Models\OrderGodamStageTransaction::with(['from_stage', 'to_stage', 'getFromUnitMaster', 'getToUnitMaster']);
@@ -1990,7 +1996,9 @@ class ReportService
             }
 
             $stageFilter = function ($q) use ($stageId) {
-                $q->where('to_stage_id', $stageId);
+                if ($stageId) {
+                    $q->where('to_stage_id', $stageId);
+                }
             };
 
             if (!empty($unitIds)) {
@@ -2141,11 +2149,10 @@ class ReportService
                     $groupedAssignments[$groupKey]->pending_qty = $pendingQty;
                 }
             }
-            $assignments = array_values($groupedAssignments);
-            $assignments = collect($assignments)->sortBy('id')->values();
-        } else {
-            $type = 'none';
-        }
+            $assignmentsOther = collect(array_values($groupedAssignments))->sortBy('id')->values()->all();
+            $assignments = array_merge($assignments, $assignmentsOther);
+        } // Close if (!$stageId || $stageId != 3)
+        } // Close else {
 
         $stages = \App\Models\MasterProductStage::where('status', 1)->orderBy('sequence', 'asc')->get();
         // Return only unit persons for the selected stage, or all if none

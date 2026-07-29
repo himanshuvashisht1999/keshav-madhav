@@ -94,6 +94,7 @@
                                 <div class="col-md-2">
                                     <label class="fw-bold">Status View</label>
                                     <select name="view" class="form-control select2" onchange="this.form.submit()">
+                                        <option value="all" {{ request('view', 'open') == 'all' ? 'selected' : '' }}>All Tasks</option>
                                         <option value="open" {{ request('view', 'open') == 'open' ? 'selected' : '' }}>Pending Tasks</option>
                                         <option value="closed" {{ request('view', 'open') == 'closed' ? 'selected' : '' }}>Done Tasks</option>
                                         <option value="delayed" {{ request('view', 'open') == 'delayed' ? 'selected' : '' }}>Delayed Tasks</option>
