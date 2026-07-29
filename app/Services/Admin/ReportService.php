@@ -1892,9 +1892,7 @@ class ReportService
         $hasFilters = $lotNo || $orderNo || $designNo || $request->filled('start_date') || $request->filled('end_date') || !empty($unitIdsReq);
         $type = 'other';
 
-        if (!$stageId && !$hasFilters && !$request->get('is_pagination')) {
-            // Allow All Stages to load data
-        } elseif ($request->get('is_pagination') && \Illuminate\Support\Facades\Cache::has('stock_pending_data_' . md5(json_encode($request->except(['page', 'is_pagination', '_']))))) {
+        if ($request->get('is_pagination') && \Illuminate\Support\Facades\Cache::has('stock_pending_data_' . md5(json_encode($request->except(['page', 'is_pagination', '_']))))) {
             $cached = \Illuminate\Support\Facades\Cache::get('stock_pending_data_' . md5(json_encode($request->except(['page', 'is_pagination', '_']))));
             $assignments = $cached['assignments'];
             $type = $cached['type'];

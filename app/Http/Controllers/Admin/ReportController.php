@@ -682,6 +682,7 @@ class ReportController extends Controller
 
     public function stockPendingExport(Request $request)
     {
+        $request->merge(['is_pagination' => false]);
         $response = $this->service->stockPending($request);
 
         return response()
@@ -698,6 +699,7 @@ class ReportController extends Controller
 
     public function stockPendingPdf(Request $request)
     {
+        $request->merge(['is_pagination' => false]);
         $response = $this->service->stockPending($request);
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.report.pdf.stock_pending', $response);
         $pdf->setPaper('a4', 'landscape');

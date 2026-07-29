@@ -93,10 +93,10 @@
                                         </a>
                                     </div>
                                     <div class="d-flex gap-2">
-                                        <a href="{{ route('admin.reports.stock-pending.export', request()->query()) }}" class="btn btn-success" title="Export Excel">
+                                        <a href="{{ route('admin.reports.stock-pending.export', request()->except('is_pagination')) }}" class="btn btn-success" title="Export Excel">
                                             <i class="fas fa-file-excel mr-1"></i>Export Excel
                                         </a>
-                                        <a href="{{ route('admin.reports.stock-pending.pdf', request()->query()) }}" class="btn btn-danger" title="Export PDF">
+                                        <a href="{{ route('admin.reports.stock-pending.pdf', request()->except('is_pagination')) }}" class="btn btn-danger" title="Export PDF">
                                             <i class="fas fa-file-pdf mr-1"></i>Export PDF
                                         </a>
                                     </div>

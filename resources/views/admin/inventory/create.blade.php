@@ -371,15 +371,36 @@
                                         </div>
                                         <div class="col-md-6 d-flex align-items-end justify-content-end">
                                             <div class="mr-4 text-right">
-                                                <label class="label-premium text-success d-block mb-0">Total Available
-                                                    Stock</label>
+                                                <label class="label-premium text-success d-block mb-0">TOTAL AVAILABLE PIECES</label>
+                                                <div class="consume-available-pieces-display font-weight-bold text-success"
+                                                    style="font-size: 1.5rem; line-height: 1;">-</div>
+                                            </div>
+                                            <div class="mr-4 text-right">
+                                                <label class="label-premium text-success d-block mb-0">AVAILABLE BOXES</label>
                                                 <div class="consume-available-display font-weight-bold text-success"
+                                                    style="font-size: 1.5rem; line-height: 1;">-</div>
+                                            </div>
+                                            <div class="mr-4 text-right">
+                                                <label class="label-premium text-primary d-block mb-0">BOXES TO TRANSFER</label>
+                                                <input type="number" class="form-control form-control-premium text-primary font-weight-bold consume-transfer-boxes-input text-right" style="font-size: 1.3rem; height: auto; padding: 2px 5px; width: 100px; margin-left: auto;" min="1" placeholder="Boxes">
+                                            </div>
+                                            <div class="mr-4 text-right">
+                                                <label class="label-premium text-primary d-block mb-0">SOURCE PIECES</label>
+                                                <div class="consume-source-pieces-display font-weight-bold text-primary"
+                                                    style="font-size: 1.5rem; line-height: 1;">-</div>
+                                                <input type="hidden" class="consume-source-pcs-hidden">
+                                            </div>
+                                            <div class="mr-2 text-right">
+                                                <label class="label-premium text-info d-block mb-0">GENERATED PIECES</label>
+                                                <div class="consume-transfer-pieces-display font-weight-bold text-info"
                                                     style="font-size: 1.5rem; line-height: 1;">-</div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
+                                <div class="targets-container">
+                                    <div class="target-row-wrapper pb-3 mb-3 border-bottom" data-target-idx="0">
                                 <!-- Row 1: Primary Details -->
                                 <div class="row">
                                     <div class="col-md-3 input-group-premium">
@@ -460,7 +481,7 @@
 
                                 <!-- Row 2: Secondary Details -->
                                 <div class="row">
-                                    <div class="col-md-3 input-group-premium">
+                                    <div class="col-md-2 input-group-premium">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Size Set *</label>
     <div class="action-links">
@@ -473,7 +494,7 @@
                                             <option value="">Select Size Set</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-3 input-group-premium">
+                                    <div class="col-md-2 input-group-premium">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Color *</label>
     <div class="action-links">
@@ -499,13 +520,30 @@
                                             placeholder="Pcs/Box" readonly required>
                                     </div>
                                     <div class="col-md-2 input-group-premium">
+                                        <label class="label-premium">Total Pieces</label>
+                                        <input type="number" class="form-control form-control-premium bg-light total-pieces-input" placeholder="Total Pcs" readonly>
+                                    </div>
+                                    <div class="col-md-2 input-group-premium">
                                         <label class="label-premium">MRP *</label>
                                         <input type="number" name="products[0][mrp]"
                                             class="form-control form-control-premium mrp-input bg-light" placeholder="Price"
                                             step="0.01" min="0" readonly required>
                                     </div>
+                                    </div>
                                 </div>
-
+                                <div class="text-right mt-1 mb-2">
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-target" style="display: none;">
+                                        <i class="fas fa-trash"></i> Remove Target
+                                    </button>
+                                </div>
+                                </div>
+                                    </div>
+                                </div>
+                                <div class="text-right mt-2 mb-3 pr-3">
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-add-target">
+                                        <i class="fas fa-plus"></i> Add More Target
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -666,13 +704,32 @@
                                                     </div>
                                                     <div class="col-md-6 d-flex align-items-end justify-content-end">
                                                         <div class="mr-4 text-right">
-                                                            <label class="label-premium text-success d-block mb-0">Total Available Stock</label>
+                                                            <label class="label-premium text-success d-block mb-0">TOTAL AVAILABLE PIECES</label>
+                                                            <div class="consume-available-pieces-display font-weight-bold text-success" style="font-size: 1.5rem; line-height: 1;">-</div>
+                                                        </div>
+                                                        <div class="mr-4 text-right">
+                                                            <label class="label-premium text-success d-block mb-0">AVAILABLE BOXES</label>
                                                             <div class="consume-available-display font-weight-bold text-success" style="font-size: 1.5rem; line-height: 1;">-</div>
+                                                        </div>
+                                                        <div class="mr-4 text-right">
+                                                            <label class="label-premium text-primary d-block mb-0">BOXES TO TRANSFER</label>
+                                                            <input type="number" class="form-control form-control-premium text-primary font-weight-bold consume-transfer-boxes-input text-right" style="font-size: 1.3rem; height: auto; padding: 2px 5px; width: 100px; margin-left: auto;" min="1" placeholder="Boxes">
+                                                        </div>
+                                                        <div class="mr-4 text-right">
+                                                            <label class="label-premium text-primary d-block mb-0">SOURCE PIECES</label>
+                                                            <div class="consume-source-pieces-display font-weight-bold text-primary" style="font-size: 1.5rem; line-height: 1;">-</div>
+                                                            <input type="hidden" class="consume-source-pcs-hidden">
+                                                        </div>
+                                                        <div class="mr-2 text-right">
+                                                            <label class="label-premium text-info d-block mb-0">GENERATED PIECES</label>
+                                                            <div class="consume-transfer-pieces-display font-weight-bold text-info" style="font-size: 1.5rem; line-height: 1;">-</div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
 
+                                            <div class="targets-container">
+                                                <div class="target-row-wrapper pb-3 mb-3 border-bottom" data-target-idx="${idx}">
                                             <div class="row">
                                                 <div class="col-md-3 input-group-premium">
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -742,7 +799,7 @@
                                                 </div>
                                             </div>
                                             <div class="row">
-                                                <div class="col-md-3 input-group-premium">
+                                                <div class="col-md-2 input-group-premium">
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Size Set *</label>
     <div class="action-links">
@@ -754,7 +811,7 @@
                                                         <option value="">Select Size Set</option>
                                                     </select>
                                                 </div>
-                                                <div class="col-md-3 input-group-premium">
+                                                <div class="col-md-2 input-group-premium">
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
     <label class="label-premium mb-0">Color *</label>
     <div class="action-links">
@@ -772,12 +829,28 @@
                                                 </div>
                                                 <div class="col-md-2 input-group-premium">
                                                     <label class="label-premium">Pcs / Box</label>
-                                                    <input type="number" name="products[${idx}][pieces_per_box]" class="form-control form-control-premium bg-light" placeholder="Pcs/Box" readonly required>
+                                                    <input type="number" name="products[${idx}][pieces_per_box]" class="form-control form-control-premium bg-light pcs-per-box-input" placeholder="Pcs/Box" readonly required>
+                                                </div>
+                                                <div class="col-md-2 input-group-premium">
+                                                    <label class="label-premium">Total Pieces</label>
+                                                    <input type="number" class="form-control form-control-premium bg-light total-pieces-input" placeholder="Total Pcs" readonly>
                                                 </div>
                                                 <div class="col-md-2 input-group-premium">
                                                     <label class="label-premium">MRP *</label>
                                                     <input type="number" name="products[${idx}][mrp]" class="form-control form-control-premium mrp-input bg-light" placeholder="Price" step="0.01" min="0" readonly required>
                                                 </div>
+                                                </div>
+                                            </div>
+                                            <div class="text-right mt-1 mb-2">
+                                                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-target" style="display: none;">
+                                                    <i class="fas fa-trash"></i> Remove Target
+                                                </button>
+                                            </div>
+                                            </div>
+                                            <div class="text-right mt-2 mb-3 pr-3">
+                                                <button type="button" class="btn btn-sm btn-outline-primary btn-add-target">
+                                                    <i class="fas fa-plus"></i> Add More Target
+                                                </button>
                                             </div>
 
                                         </div>
@@ -856,8 +929,13 @@
                     }
                     card.find('.consume-source-id').val(values.consume_source_id || '');
                     card.find('.consume-available-display').text(values.consume_available || '-');
+                    card.find('.consume-available-pieces-display').text(values.consume_available_pieces || '-');
+                    card.find('.consume-transfer-boxes-input').val(values.consume_transfer_boxes || '');
+                    card.find('.consume-source-pieces-display').text(values.consume_source_pieces || '-');
+                    card.find('.consume-source-pcs-hidden').val(values.consume_source_pcs || '');
                     if (values.consume_available) {
                         card.find('.total-boxes-input').attr('max', values.consume_available);
+                        card.find('.consume-transfer-boxes-input').attr('max', values.consume_available);
                     }
                 }
 
@@ -884,10 +962,18 @@
 
                 // 5. Populate dropdowns and set values
                 if (values.variants) {
+                    let sourceSizes = values.consume_source_size_group ? values.consume_source_size_group.split(',').map(s => s.trim()) : [];
                     let sizeSelect = card.find('.size-set-select');
                     sizeSelect.empty().append('<option value="">Select Size Set</option>');
                     values.variants.forEach(function (v) {
-                        sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                        let variantSizes = v.size_group ? v.size_group.split(',').map(s => s.trim()) : [];
+                        let isSubset = true;
+                        if (sourceSizes.length > 0 && variantSizes.length > 0) {
+                            isSubset = variantSizes.every(size => sourceSizes.includes(size));
+                        }
+                        if (isSubset || $('#sourceType').val() !== 'consume') {
+                            sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                        }
                     });
                     sizeSelect.val(values.size_set_id).trigger('change.select2');
 
@@ -930,6 +1016,7 @@
                 // Set Numeric Inputs
                 if (values.total_boxes) card.find('.total-boxes-input').val(values.total_boxes);
                 if (values.pieces_per_box) card.find('input[name*="pieces_per_box"]').val(values.pieces_per_box);
+                if (values.total_pieces) card.find('.total-pieces-input').val(values.total_pieces);
                 if (values.mrp) card.find('.mrp-input').val(values.mrp);
 
                 isPopulating = false;
@@ -956,6 +1043,7 @@
                     color_name: sourceCard.find('.color-select option:selected').text(),
                     total_boxes: sourceCard.find('.total-boxes-input').val(),
                     pieces_per_box: sourceCard.find('input[name*="pieces_per_box"]').val(),
+                    total_pieces: sourceCard.find('.total-pieces-input').val(),
                     mrp: sourceCard.find('.mrp-input').val(),
                     variants: sourceCard.data('variants'),
 
@@ -974,7 +1062,12 @@
                     consume_color_id: sourceCard.find('.consume-color-select').val(),
                     consume_color_name: sourceCard.find('.consume-color-select option:selected').text(),
                     consume_source_id: sourceCard.find('.consume-source-id').val(),
-                    consume_available: sourceCard.find('.consume-available-display').text()
+                    consume_available: sourceCard.find('.consume-available-display').text(),
+                    consume_available_pieces: sourceCard.find('.consume-available-pieces-display').text(),
+                    consume_source_size_group: sourceCard.data('source_size_group'),
+                    consume_transfer_boxes: sourceCard.find('.consume-transfer-boxes-input').val(),
+                    consume_source_pieces: sourceCard.find('.consume-source-pieces-display').text(),
+                    consume_source_pcs: sourceCard.find('.consume-source-pcs-hidden').val()
                 };
                 addItem(values);
                 toastr.info('Item duplicated. You can now modify specific fields.');
@@ -1001,18 +1094,19 @@
                 if (isPopulating) return;
                 let productId = $(this).val();
                 let card = $(this).closest('.inventory-item-card');
-                let patternSelect = card.find('.pattern-select');
-                let fittingSelect = card.find('.fitting-select');
-                let sizeSelect = card.find('.size-set-select');
-                let colorSelect = card.find('.color-select');
+                let wrapper = $(this).closest('.target-row-wrapper');
+                let patternSelect = wrapper.find('.pattern-select');
+                let fittingSelect = wrapper.find('.fitting-select');
+                let sizeSelect = wrapper.find('.size-set-select');
+                let colorSelect = wrapper.find('.color-select');
 
                 // Clear subsequent dropdowns
                 patternSelect.empty().append('<option value="">Pattern</option>').trigger('change.select2');
                 fittingSelect.empty().append('<option value="">Fitting</option>').trigger('change.select2');
                 sizeSelect.empty().append('<option value="">Select Size Set</option>').trigger('change.select2');
                 colorSelect.empty().append('<option value="">Color</option>').trigger('change.select2');
-                card.find('input[name*="pieces_per_box"]').val('');
-                card.find('.mrp-input').val('');
+                wrapper.find('input[name*="pieces_per_box"]').val('');
+                wrapper.find('.mrp-input').val('');
 
                 if (productId) {
                     $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function (data) {
@@ -1026,10 +1120,19 @@
                             }
 
                             card.data('variants', data.variants);
+                            let sourceSizeGroup = card.data('source_size_group');
+                            let sourceSizes = sourceSizeGroup ? sourceSizeGroup.split(',').map(s => s.trim()) : [];
 
                             sizeSelect.empty().append('<option value="">Select Size Set</option>');
                             data.variants.forEach(function (v) {
-                                sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                                let variantSizes = v.size_group ? v.size_group.split(',').map(s => s.trim()) : [];
+                                let isSubset = true;
+                                if (sourceSizes.length > 0 && variantSizes.length > 0) {
+                                    isSubset = variantSizes.every(size => sourceSizes.includes(size));
+                                }
+                                if (isSubset || $('#sourceType').val() !== 'consume') {
+                                    sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                                }
                             });
                             sizeSelect.trigger('change.select2');
                         }
@@ -1041,22 +1144,27 @@
                 if (isPopulating) return;
                 let sizeSetId = $(this).val();
                 let card = $(this).closest('.inventory-item-card');
+                let wrapper = $(this).closest('.target-row-wrapper');
                 let variants = card.data('variants') || [];
-                let colorSelect = card.find('.color-select');
+                let colorSelect = wrapper.find('.color-select');
 
                 // Clear color when size changes
                 colorSelect.empty().append('<option value="">Color</option>').trigger('change.select2');
-                card.find('input[name*="pieces_per_box"]').val('');
-                card.find('.mrp-input').val('');
+                wrapper.find('input[name*="pieces_per_box"]').val('');
+                wrapper.find('.mrp-input').val('');
 
                 if (sizeSetId) {
                     $.get("{{ url('admin/inventory/get-size-set-info') }}/" + sizeSetId, function (data) {
-                        card.find('input[name*="pieces_per_box"]').val(data.no_of_pcs);
+                        wrapper.find('.pcs-per-box-input').val(data.no_of_pcs);
+                        let boxes = parseInt(wrapper.find('.total-boxes-input').val()) || 0;
+                        let pcs = parseInt(data.no_of_pcs) || 0;
+                        wrapper.find('.total-pieces-input').val(boxes * pcs);
+                        validateStockAvailability(card);
                     });
 
                     let variant = variants.find(v => v.size_set_id == sizeSetId);
                     if (variant) {
-                        card.find('.mrp-input').val(variant.mrp);
+                        wrapper.find('.mrp-input').val(variant.mrp);
                         variant.colors.forEach(function (c) {
                             colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
                         });
@@ -1068,8 +1176,8 @@
             $(document).on('change', '.warehouse-select', function () {
                 if (isPopulating) return;
                 let warehouseId = $(this).val();
-                let card = $(this).closest('.inventory-item-card');
-                let rackSelect = card.find('.rack-select');
+                let wrapper = $(this).closest('.target-row-wrapper');
+                let rackSelect = wrapper.find('.rack-select');
 
                 rackSelect.empty().append('<option value="">Rack</option>');
                 if (warehouseId) {
@@ -1089,8 +1197,33 @@
 
 
 
-            $(document).on('input', '.total-boxes-input', function () {
-                validateStockAvailability($(this).closest('.inventory-item-card'));
+            $(document).on('input', '.total-boxes-input, .pcs-per-box-input', function () {
+                let wrapper = $(this).closest('.target-row-wrapper');
+                let boxes = parseInt(wrapper.find('.total-boxes-input').val()) || 0;
+                let pcs = parseInt(wrapper.find('.pcs-per-box-input').val()) || 0;
+                wrapper.find('.total-pieces-input').val(boxes * pcs);
+
+                let card = $(this).closest('.inventory-item-card');
+                validateStockAvailability(card);
+            });
+
+            $(document).on('input', '.consume-transfer-boxes-input', function () {
+                let card = $(this).closest('.inventory-item-card');
+                let val = $(this).val();
+                let sourceId = card.find('.consume-source-id').val();
+                
+                // Sync to all cards with same sourceId
+                if (sourceId) {
+                    $('.inventory-item-card').each(function() {
+                        if ($(this).find('.consume-source-id').val() === sourceId) {
+                            $(this).find('.consume-transfer-boxes-input').val(val);
+                            let pcs = parseInt($(this).find('.consume-source-pcs-hidden').val()) || 0;
+                            let b = parseInt(val) || 0;
+                            $(this).find('.consume-source-pieces-display').text(b * pcs);
+                        }
+                    });
+                }
+                validateStockAvailability(card);
             });
 
             function validateStockAvailability(currentCard) {
@@ -1099,31 +1232,41 @@
                 let sourceId = currentCard.find('.consume-source-id').val();
                 if (!sourceId) return;
 
-                let available = parseInt(currentCard.find('.consume-available-display').text()) || 0;
-                let totalConsumed = 0;
+                let availablePieces = parseInt(currentCard.find('.consume-available-pieces-display').text()) || 0;
+                let availableBoxes = parseInt(currentCard.find('.consume-available-display').text()) || 0;
+                let transferBoxes = parseInt(currentCard.find('.consume-transfer-boxes-input').val()) || 0;
+                
+                if (transferBoxes > availableBoxes) {
+                    toastr.error(`Transfer boxes (${transferBoxes}) exceeds available boxes (${availableBoxes})`);
+                    transferBoxes = availableBoxes;
+                    $('.inventory-item-card').each(function() {
+                        if ($(this).find('.consume-source-id').val() === sourceId) {
+                            $(this).find('.consume-transfer-boxes-input').val(transferBoxes);
+                            let pcs = parseInt($(this).find('.consume-source-pcs-hidden').val()) || 0;
+                            $(this).find('.consume-source-pieces-display').text(transferBoxes * pcs);
+                        }
+                    });
+                }
+
+                let totalConsumedPieces = 0;
 
                 // Sum up all cards using this same source
                 $('.inventory-item-card').each(function () {
                     if ($(this).find('.consume-source-id').val() === sourceId) {
-                        totalConsumed += parseInt($(this).find('.total-boxes-input').val()) || 0;
+                        $(this).find('.target-row-wrapper').each(function() {
+                            let b = parseInt($(this).find('.total-boxes-input').val()) || 0;
+                            let p = parseInt($(this).find('.pcs-per-box-input').val()) || 0;
+                            totalConsumedPieces += (b * p);
+                        });
                     }
                 });
 
-                if (totalConsumed > available) {
-                    toastr.error(`Total consumption (${totalConsumed}) exceeds available stock (${available}) for this source.`);
-
-                    // Calculate how much was already used by OTHER cards
-                    let consumedByOthers = 0;
-                    $('.inventory-item-card').not(currentCard).each(function () {
-                        if ($(this).find('.consume-source-id').val() === sourceId) {
-                            consumedByOthers += parseInt($(this).find('.total-boxes-input').val()) || 0;
-                        }
-                    });
-
-                    let remaining = Math.max(0, available - consumedByOthers);
-                    currentCard.find('.total-boxes-input').val(remaining);
-                    calculateGlobalTotal();
-                }
+                // Update Generated Pieces display across all synced cards
+                $('.inventory-item-card').each(function () {
+                    if ($(this).find('.consume-source-id').val() === sourceId) {
+                        $(this).find('.consume-transfer-pieces-display').text(totalConsumedPieces);
+                    }
+                });
             }
 
             $(document).on('change', '.consume-warehouse-select', function () {
@@ -1229,7 +1372,10 @@
                         if (data.success) {
                             card.find('.consume-source-id').val(data.inventory_id);
                             card.find('.consume-available-display').text(data.total_boxes);
+                            card.find('.consume-available-pieces-display').text(data.total_pieces);
+                            card.find('.consume-source-pcs-hidden').val(data.pieces_per_box);
                             card.find('.total-boxes-input').attr('max', data.total_boxes);
+                            card.find('.consume-transfer-boxes-input').attr('max', data.total_boxes);
 
                             // Auto-fill primary card fields with immediate option injection to avoid race conditions
                             card.find('.design-select').val(productId).trigger('change.select2');
@@ -1265,12 +1411,23 @@
 
                             // Store variants data for the primary card
                             card.data('variants', data.variants);
+                            card.data('source_size_group', data.source_size_group);
+
+                            // Filter variants based on source size group if we are consuming
+                            let sourceSizes = data.source_size_group ? data.source_size_group.split(',').map(s => s.trim()) : [];
 
                             // Populate all available size sets first if not already there
                             if (sizeSelect.find('option').length <= 1) {
                                 sizeSelect.empty().append('<option value="">Select Size Set</option>');
                                 data.variants.forEach(function (v) {
-                                    sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                                    let variantSizes = v.size_group ? v.size_group.split(',').map(s => s.trim()) : [];
+                                    let isSubset = true;
+                                    if (sourceSizes.length > 0 && variantSizes.length > 0) {
+                                        isSubset = variantSizes.every(size => sourceSizes.includes(size));
+                                    }
+                                    if (isSubset || $('#sourceType').val() !== 'consume') {
+                                        sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                                    }
                                 });
                             }
                             sizeSelect.val(sizeSetId).trigger('change.select2');
@@ -1287,8 +1444,12 @@
                             }
                             colorSelect.val(colorId).trigger('change.select2');
 
-                            card.find('input[name*="total_boxes"]').val(data.total_boxes);
-                            card.find('input[name*="pieces_per_box"]').val(data.pieces_per_box);
+                            let boxesVal = data.total_boxes;
+                            let pcsPerBox = data.pieces_per_box;
+                            card.find('input[name*="total_boxes"]').val(boxesVal);
+                            card.find('input[name*="pieces_per_box"]').val(pcsPerBox);
+                            card.find('.total-pieces-input').val(boxesVal * pcsPerBox);
+                            
                             card.find('.mrp-input').val(data.mrp);
 
                             toastr.success('Existing stock details applied.');
@@ -1301,7 +1462,14 @@
                     });
                 } else {
                     card.find('.consume-available-display').text('-');
+                    card.find('.consume-available-pieces-display').text('-');
+                    card.find('.consume-transfer-pieces-display').text('-');
+                    card.find('.consume-source-pieces-display').text('-');
+                    card.find('.consume-transfer-boxes-input').val('');
+                    card.find('.consume-source-pcs-hidden').val('');
                     card.find('.total-boxes-input').removeAttr('max');
+                    card.find('.consume-transfer-boxes-input').removeAttr('max');
+                    card.find('.total-pieces-input').val('');
                     card.find('.consume-source-id').val('');
                 }
             });
@@ -1318,12 +1486,13 @@
                 let subTotal = 0;
 
                 $('.inventory-item-card').each(function () {
-                    let card = $(this);
-                    let totalBoxes = parseFloat(card.find('.total-boxes-input').val()) || 0;
-                    let pcsPerBox = parseFloat(card.find('.pcs-per-box-input').val()) || 0;
-                    let rate = parseFloat(card.find('.purchase-rate-input').val()) || 0;
+                    $(this).find('.target-row-wrapper').each(function() {
+                        let totalBoxes = parseFloat($(this).find('.total-boxes-input').val()) || 0;
+                        let pcsPerBox = parseFloat($(this).find('.pcs-per-box-input').val()) || 0;
+                        let rate = parseFloat($(this).find('.purchase-rate-input').val()) || 0;
 
-                    subTotal += (totalBoxes * pcsPerBox * rate);
+                        subTotal += (totalBoxes * pcsPerBox * rate);
+                    });
                 });
 
                 $('#global_sub_total').val(subTotal.toFixed(2));
@@ -1348,6 +1517,45 @@
 
             $('#addStockForm').on('submit', function (e) {
                 e.preventDefault();
+                
+                // Ensure all targets inherit their card's consume_source_id
+                $('.inventory-item-card').each(function() {
+                    let sourceId = $(this).find('.consume-source-id').first().val();
+                    if(sourceId) {
+                        $(this).find('.target-row-wrapper').each(function() {
+                            let tIdx = $(this).attr('data-target-idx');
+                            if($(this).find('.hidden-injected-source').length === 0) {
+                                $(this).append(`<input type="hidden" name="products[${tIdx}][consume_source_id]" value="${sourceId}" class="hidden-injected-source">`);
+                            } else {
+                                $(this).find('.hidden-injected-source').val(sourceId).attr('name', `products[${tIdx}][consume_source_id]`);
+                            }
+                        });
+                    }
+                });
+                
+                if ($('#sourceType').val() === 'consume') {
+                    let hasMismatch = false;
+                    let processedSources = [];
+                    
+                    $('.inventory-item-card').each(function() {
+                        let sourceId = $(this).find('.consume-source-id').val();
+                        if (sourceId && !processedSources.includes(sourceId)) {
+                            processedSources.push(sourceId);
+                            let targetPieces = parseInt($(this).find('.consume-source-pieces-display').text()) || 0;
+                            let generatedPieces = parseInt($(this).find('.consume-transfer-pieces-display').text()) || 0;
+                            
+                            if (targetPieces !== generatedPieces || targetPieces === 0) {
+                                hasMismatch = true;
+                                toastr.error(`Mismatch for source! Source pieces to transfer is ${targetPieces}, but generated pieces is ${generatedPieces}. They must perfectly match.`);
+                            }
+                        }
+                    });
+                    
+                    if (hasMismatch) {
+                        return false; // Stop submission
+                    }
+                }
+
                 let form = $(this);
                 let btn = form.find('button[type="submit"]');
                 let originalHtml = btn.html();
@@ -1549,6 +1757,63 @@
                     toastr.error(error);
                 });
             });
+            
+
+            // Handle + Add More Target within a card
+            $(document).on('click', '.btn-add-target', function() {
+                let card = $(this).closest('.inventory-item-card');
+                let container = card.find('.targets-container');
+                let firstWrapper = container.find('.target-row-wrapper').first();
+                
+                // Clone the first wrapper
+                let clone = firstWrapper.clone();
+                
+                // Increment global item count to ensure unique input names
+                itemCount++;
+                let newIdx = itemCount;
+                clone.attr('data-target-idx', newIdx);
+                
+                // Update names of all inputs/selects inside the clone to use the new index
+                clone.find('[name]').each(function() {
+                    let name = $(this).attr('name');
+                    // Replace products[0][field] or products[idx][field] with products[newIdx][field]
+                    if (name) {
+                        let newName = name.replace(/products\[\d+\]/, 'products[' + newIdx + ']');
+                        $(this).attr('name', newName);
+                    }
+                });
+                
+                // Remove existing select2 containers in clone and reset classes
+                clone.find('.select2-container').remove();
+                clone.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').removeAttr('aria-hidden').removeAttr('tabindex');
+                clone.find('option').removeAttr('data-select2-id');
+                
+                // Clear input values
+                clone.find('input').val('');
+                clone.find('select').val('');
+                
+                // Initialize Select2 on the clone
+                initSelect2(clone);
+                
+                // Show the remove button on the clone
+                clone.find('.btn-remove-target').show();
+                
+                // Append clone to container
+                container.append(clone);
+                
+                // Re-validate stock on change (if the new inputs change, we want to recalculate)
+                // But wait, they are just added, so we don't need to recalculate yet since total pieces is 0.
+            });
+            
+            // Handle Remove Target within a card
+            $(document).on('click', '.btn-remove-target', function() {
+                let wrapper = $(this).closest('.target-row-wrapper');
+                let card = wrapper.closest('.inventory-item-card');
+                wrapper.remove();
+                validateStockAvailability(card);
+                calculateGlobalTotal();
+            });
+            
         });
     </script>
 @endsection

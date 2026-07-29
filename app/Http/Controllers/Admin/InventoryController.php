@@ -539,21 +539,46 @@ class InventoryController extends Controller
                 ]);
             }
 
+            // Pre-calculate and deduct consumed sources
+            $consumedSources = [];
+            foreach ($request->products as $item) {
+                if (isset($item['consume_source_id']) && !empty($item['consume_source_id'])) {
+                    $sourceId = $item['consume_source_id'];
+                    if (!isset($consumedSources[$sourceId])) {
+                        $consumedSources[$sourceId] = [
+                            'model' => DomesticInventory::find($sourceId),
+                            'total_pieces_consumed' => 0
+                        ];
+                    }
+                    $consumedSources[$sourceId]['total_pieces_consumed'] += ($item['total_boxes'] * $item['pieces_per_box']);
+                }
+            }
+
+            // Deduct source boxes
+            foreach ($consumedSources as $sourceId => $data) {
+                $source = $data['model'];
+                if ($source) {
+                    $sourceQuantity = $source->quantity > 0 ? $source->quantity : 1;
+                    $boxesToDeduct = ceil($data['total_pieces_consumed'] / $sourceQuantity);
+                    
+                    if ($source->total_boxes < $boxesToDeduct) {
+                        throw new \Exception("Insufficient stock in source for Design: " . $source->barcode . " (Needed: $boxesToDeduct, Available: {$source->total_boxes})");
+                    }
+                    
+                    $source->total_boxes -= $boxesToDeduct;
+                    if ($source->total_boxes <= 0) {
+                        $source->delete();
+                    } else {
+                        $source->save();
+                    }
+                }
+            }
+
             foreach ($request->products as $item) {
                 // Handle Consumption Logic
                 if (isset($item['consume_source_id']) && !empty($item['consume_source_id'])) {
-                    $source = DomesticInventory::find($item['consume_source_id']);
+                    $source = $consumedSources[$item['consume_source_id']]['model'] ?? null;
                     if ($source) {
-                        if ($source->total_boxes < $item['total_boxes']) {
-                            throw new \Exception("Insufficient stock in source for Design: " . $source->barcode);
-                        }
-                        $source->total_boxes -= $item['total_boxes'];
-                        if ($source->total_boxes <= 0) {
-                            $source->delete();
-                        } else {
-                            $source->save();
-                        }
-
                         // Add history for consumption
                         \App\Models\DomesticInventoryHistory::create([
                             'user_id' => auth()->id(),
@@ -599,23 +624,25 @@ class InventoryController extends Controller
                     ]);
                 }
 
-                // Log History for stock addition
-                \App\Models\DomesticInventoryHistory::create([
-                    'user_id' => auth()->id(),
-                    'purchase_id' => $purchase ? $purchase->id : null,
-                    'vendor_id' => ($source_type == 'vendor') ? $vendor_id : null,
-                    'customer_id' => ($source_type == 'customer') ? $customer_id : null,
-                    'new_product_id' => $item['product_id'],
-                    'new_size_set_id' => $item['size_set_id'],
-                    'new_color_id' => $item['color_id'],
+                if ($source_type !== 'consume') {
+                    // Log History for stock addition
+                    \App\Models\DomesticInventoryHistory::create([
+                        'user_id' => auth()->id(),
+                        'purchase_id' => $purchase ? $purchase->id : null,
+                        'vendor_id' => ($source_type == 'vendor') ? $vendor_id : null,
+                        'customer_id' => ($source_type == 'customer') ? $customer_id : null,
+                        'new_product_id' => $item['product_id'],
+                        'new_size_set_id' => $item['size_set_id'],
+                        'new_color_id' => $item['color_id'],
 
-                    'new_rack_id' => $item['rack_id'] ?? null,
-                    'box_quantity' => $item['total_boxes'],
-                    'pieces_per_box' => $item['pieces_per_box'],
-                    'mrp' => $item['mrp'] ?? 0,
-                    'purchase_rate' => $item['purchase_rate'] ?? 0,
-                    'type' => ($source_type == 'sample' ? 'sample' : 'creation')
-                ]);
+                        'new_rack_id' => $item['rack_id'] ?? null,
+                        'box_quantity' => $item['total_boxes'],
+                        'pieces_per_box' => $item['pieces_per_box'],
+                        'mrp' => $item['mrp'] ?? 0,
+                        'purchase_rate' => $item['purchase_rate'] ?? 0,
+                        'type' => ($source_type == 'sample' ? 'sample' : 'creation')
+                    ]);
+                }
 
                 $inventoryIds[] = $inventory->id;
                 $printData[] = [
@@ -919,6 +946,7 @@ class InventoryController extends Controller
             $variants[] = [
                 'size_set_id' => $variant->master_size_measurement_id,
                 'size_set_name' => $variant->sizeSet->name ?? 'Unknown',
+                'size_group' => $variant->sizeSet->size_group ?? '',
                 'mrp' => $variant->mrp,
                 'colors' => $colors
             ];
@@ -1050,7 +1078,8 @@ class InventoryController extends Controller
 
         $inventory = $query->select(
             'domestic_inventories.*',
-            DB::raw('SUM(domestic_inventories.total_boxes) as aggregate_boxes')
+            DB::raw('SUM(domestic_inventories.total_boxes) as aggregate_boxes'),
+            DB::raw('SUM(domestic_inventories.total_boxes * domestic_inventories.quantity) as aggregate_pieces')
         )->groupBy(
                 'domestic_inventories.product_id',
                 'domestic_inventories.size_set_id',
@@ -1083,6 +1112,7 @@ class InventoryController extends Controller
                     $variants[] = [
                         'size_set_id' => $variant->master_size_measurement_id,
                         'size_set_name' => $variant->sizeSet->name ?? 'Unknown',
+                        'size_group' => $variant->sizeSet->size_group ?? '',
                         'mrp' => $variant->mrp,
                         'colors' => $colors
                     ];
@@ -1090,9 +1120,11 @@ class InventoryController extends Controller
             }
 
             $mrp = 0;
+            $source_size_group = '';
             foreach ($variants as $v) {
                 if ($v['size_set_id'] == $request->size_set_id) {
                     $mrp = $v['mrp'];
+                    $source_size_group = $v['size_group'];
                     break;
                 }
             }
@@ -1101,8 +1133,10 @@ class InventoryController extends Controller
                 'success' => true,
                 'inventory_id' => $inventory->id,
                 'total_boxes' => $inventory->aggregate_boxes,
+                'total_pieces' => $inventory->aggregate_pieces,
                 'pieces_per_box' => $inventory->quantity,
                 'mrp' => $mrp,
+                'source_size_group' => $source_size_group,
                 'variants' => $variants,
                 'all_colors' => $all_colors
             ]);
