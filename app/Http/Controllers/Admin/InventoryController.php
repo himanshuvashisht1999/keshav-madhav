@@ -376,15 +376,17 @@ class InventoryController extends Controller
                 SELECT aoi.design_number COLLATE utf8mb4_unicode_ci as design_number, 
                        aoi.size_set_id, 
                        aoi.color_id,
+                       aoi.rack_id,
                        SUM(aoi.box_qty) as color_total_order
                 FROM agent_order_items aoi
                 JOIN agent_orders ao ON aoi.agent_order_id = ao.id
                 WHERE ao.status != "dispatched"
-                GROUP BY aoi.design_number, aoi.size_set_id, aoi.color_id
+                GROUP BY aoi.design_number, aoi.size_set_id, aoi.color_id, aoi.rack_id
             ) as color_order_totals'), function ($join) {
                 $join->on('products.design_number', '=', 'color_order_totals.design_number')
                      ->on('domestic_inventories.size_set_id', '=', 'color_order_totals.size_set_id')
-                     ->on('domestic_inventories.color_id', '=', 'color_order_totals.color_id');
+                     ->on('domestic_inventories.color_id', '=', 'color_order_totals.color_id')
+                     ->on('domestic_inventories.rack_id', '=', 'color_order_totals.rack_id');
             })
             ->select(
                 'domestic_inventories.*',

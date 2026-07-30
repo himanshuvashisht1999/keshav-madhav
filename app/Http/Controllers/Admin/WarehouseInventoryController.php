@@ -104,20 +104,35 @@ class WarehouseInventoryController extends Controller
         }
         
         if ($request->has('min_boxes') && $request->min_boxes !== null && $request->min_boxes !== '') {
-            $query->havingRaw('SUM(total_boxes) >= ?', [$request->min_boxes]);
+            $query->havingRaw('SUM(domestic_inventories.total_boxes) - MAX(COALESCE(order_totals.total_ordered_boxes, 0)) >= ?', [$request->min_boxes]);
         }
 
         if ($request->has('max_boxes') && $request->max_boxes !== null && $request->max_boxes !== '') {
-            $query->havingRaw('SUM(total_boxes) <= ?', [$request->max_boxes]);
+            $query->havingRaw('SUM(domestic_inventories.total_boxes) - MAX(COALESCE(order_totals.total_ordered_boxes, 0)) <= ?', [$request->max_boxes]);
         }
 
+        $query->leftJoin(DB::raw('(
+            SELECT aoi.product_id, 
+                   aoi.size_set_id, 
+                   aoi.rack_id,
+                   SUM(aoi.box_qty) as total_ordered_boxes
+            FROM agent_order_items aoi
+            JOIN agent_orders ao ON aoi.agent_order_id = ao.id
+            WHERE ao.status != "dispatched"
+            GROUP BY aoi.product_id, aoi.size_set_id, aoi.rack_id
+        ) as order_totals'), function ($join) {
+            $join->on('domestic_inventories.product_id', '=', 'order_totals.product_id')
+                 ->on('domestic_inventories.size_set_id', '=', 'order_totals.size_set_id')
+                 ->on('domestic_inventories.rack_id', '=', 'order_totals.rack_id');
+        });
+
         $query->select(
-            'product_id', 
-            'size_set_id', 
-            'rack_id',
-            DB::raw('SUM(total_boxes) as total_boxes'),
-            DB::raw('MAX(quantity) as quantity') // Assuming pieces per box is the same, use MAX
-        )->groupBy('product_id', 'size_set_id', 'rack_id');
+            'domestic_inventories.product_id', 
+            'domestic_inventories.size_set_id', 
+            'domestic_inventories.rack_id',
+            DB::raw('SUM(domestic_inventories.total_boxes) - MAX(COALESCE(order_totals.total_ordered_boxes, 0)) as total_boxes'),
+            DB::raw('MAX(domestic_inventories.quantity) as quantity') // Assuming pieces per box is the same, use MAX
+        )->groupBy('domestic_inventories.product_id', 'domestic_inventories.size_set_id', 'domestic_inventories.rack_id');
 
         return $query;
     }
@@ -218,22 +233,38 @@ class WarehouseInventoryController extends Controller
         $query = DomesticInventory::with(['product.series', 'sizeSet', 'color', 'rack.storeroom', 'carton', 'box']);
         
         if ($product_id) {
-            $query->where('product_id', $product_id);
+            $query->where('domestic_inventories.product_id', $product_id);
         } else {
-            $query->whereNull('product_id');
+            $query->whereNull('domestic_inventories.product_id');
         }
 
         if ($size_set_id) {
-            $query->where('size_set_id', $size_set_id);
+            $query->where('domestic_inventories.size_set_id', $size_set_id);
         } else {
-            $query->whereNull('size_set_id');
+            $query->whereNull('domestic_inventories.size_set_id');
         }
 
         if ($rack_id) {
-            $query->where('rack_id', $rack_id);
+            $query->where('domestic_inventories.rack_id', $rack_id);
         } else {
-            $query->whereNull('rack_id');
+            $query->whereNull('domestic_inventories.rack_id');
         }
+
+        $query->leftJoin(DB::raw('(
+            SELECT aoi.barcode, aoi.rack_id, SUM(aoi.box_qty) as color_total_ordered
+            FROM agent_order_items aoi
+            JOIN agent_orders ao ON aoi.agent_order_id = ao.id
+            WHERE ao.status != "dispatched"
+            GROUP BY aoi.barcode, aoi.rack_id
+        ) as order_totals'), function ($join) {
+            $join->on('domestic_inventories.barcode', '=', 'order_totals.barcode')
+                 ->on('domestic_inventories.rack_id', '=', 'order_totals.rack_id');
+        });
+
+        $query->select(
+            'domestic_inventories.*',
+            DB::raw('domestic_inventories.total_boxes - COALESCE(order_totals.color_total_ordered, 0) as total_boxes')
+        );
 
         $items = $query->get();
             

@@ -12,6 +12,7 @@ class AgentOrderItem extends Model
     protected $fillable = [
         'agent_order_id',
         'agent_order_dispatch_id',
+        'rack_id',
         'packing_box_id',
         'box_no',
         'carton_no',

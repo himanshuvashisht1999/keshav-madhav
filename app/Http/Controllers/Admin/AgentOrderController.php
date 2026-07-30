@@ -432,7 +432,24 @@ class AgentOrderController extends Controller
 
                 $total_pcs = $var['qty'] * $pcs_per_box;
 
+                $max_stock_rack = \App\Models\DomesticInventory::where('barcode', $barcode)
+                    ->where('total_boxes', '>', 0)
+                    ->orderBy('total_boxes', 'desc')
+                    ->first();
+                if (!$max_stock_rack) {
+                    $max_stock_rack = \App\Models\DomesticInventory::where('barcode', $barcode)
+                        ->orderBy('total_boxes', 'desc')
+                        ->first();
+                }
+                if (!$max_stock_rack) {
+                    $max_stock_rack = \App\Models\DomesticInventory::where('product_id', $var['product_id'])
+                        ->orderBy('total_boxes', 'desc')
+                        ->first();
+                }
+                $rack_id = $max_stock_rack ? $max_stock_rack->rack_id : null;
+
                 $items_to_create[] = [
+                    'rack_id' => $rack_id,
                     'product_id' => $var['product_id'],
                     'color_id' => $var['color_id'],
                     'size_set_id' => $var['size_set_id'],
@@ -1503,7 +1520,24 @@ class AgentOrderController extends Controller
 
                 $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'];
 
+                $max_stock_rack = \App\Models\DomesticInventory::where('barcode', $barcode)
+                    ->where('total_boxes', '>', 0)
+                    ->orderBy('total_boxes', 'desc')
+                    ->first();
+                if (!$max_stock_rack) {
+                    $max_stock_rack = \App\Models\DomesticInventory::where('barcode', $barcode)
+                        ->orderBy('total_boxes', 'desc')
+                        ->first();
+                }
+                if (!$max_stock_rack) {
+                    $max_stock_rack = \App\Models\DomesticInventory::where('product_id', $var['product_id'])
+                        ->orderBy('total_boxes', 'desc')
+                        ->first();
+                }
+                $rack_id = $max_stock_rack ? $max_stock_rack->rack_id : null;
+
                 $items_to_create[] = [
+                    'rack_id' => $rack_id,
                     'product_id' => $var['product_id'],
                     'color_id' => $var['color_id'],
                     'size_set_id' => $var['size_set_id'],
