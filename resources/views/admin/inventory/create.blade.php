@@ -529,23 +529,21 @@
                                             class="form-control form-control-premium mrp-input bg-light" placeholder="Price"
                                             step="0.01" min="0" readonly required>
                                     </div>
-                                    </div>
                                 </div>
                                 <div class="text-right mt-1 mb-2">
                                     <button type="button" class="btn btn-sm btn-outline-danger btn-remove-target" style="display: none;">
                                         <i class="fas fa-trash"></i> Remove Target
                                     </button>
                                 </div>
-                                </div>
-                                    </div>
-                                </div>
-                                <div class="text-right mt-2 mb-3 pr-3">
-                                    <button type="button" class="btn btn-sm btn-outline-primary btn-add-target">
-                                        <i class="fas fa-plus"></i> Add More Target
-                                    </button>
-                                </div>
                             </div>
                         </div>
+                        <div class="text-right mt-2 mb-3 pr-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary btn-add-target" style="display: none;">
+                                <i class="fas fa-plus"></i> Add More Target
+                            </button>
+                        </div>
+                    </div>
+                </div>
                     </div>
 
 
@@ -610,17 +608,22 @@
 
             initSelect2($('.content-wrapper'));
 
-            // Initial trigger for source type
-            $('#sourceType').trigger('change');
-
+            // Handle Source Type change
             $('#sourceType').on('change', function () {
                 let type = $(this).val();
+
                 if (type === 'consume') {
-                    $('.consume-selection-row').slideDown();
+                    $('.consume-selection-row').show();
+                    $('.consume-selection-row').find('select').attr('required', true);
+                    $('.consume-transfer-boxes-input').attr('required', true);
+                    $('.btn-add-target').show();
                 } else {
-                    $('.consume-selection-row').slideUp();
-                    $('.consume-source-id').val('');
+                    $('.consume-selection-row').hide();
+                    $('.consume-selection-row').find('select').removeAttr('required');
+                    $('.consume-transfer-boxes-input').removeAttr('required');
+                    $('.btn-add-target').hide();
                 }
+                $('.consume-source-id').val('');
             });
 
             const itemLabel = "Stock Generate";
@@ -847,8 +850,9 @@
                                                 </button>
                                             </div>
                                             </div>
+                                            </div>
                                             <div class="text-right mt-2 mb-3 pr-3">
-                                                <button type="button" class="btn btn-sm btn-outline-primary btn-add-target">
+                                                <button type="button" class="btn btn-sm btn-outline-primary btn-add-target" style="display: none;">
                                                     <i class="fas fa-plus"></i> Add More Target
                                                 </button>
                                             </div>
@@ -934,7 +938,6 @@
                     card.find('.consume-source-pieces-display').text(values.consume_source_pieces || '-');
                     card.find('.consume-source-pcs-hidden').val(values.consume_source_pcs || '');
                     if (values.consume_available) {
-                        card.find('.total-boxes-input').attr('max', values.consume_available);
                         card.find('.consume-transfer-boxes-input').attr('max', values.consume_available);
                     }
                 }
@@ -1374,7 +1377,6 @@
                             card.find('.consume-available-display').text(data.total_boxes);
                             card.find('.consume-available-pieces-display').text(data.total_pieces);
                             card.find('.consume-source-pcs-hidden').val(data.pieces_per_box);
-                            card.find('.total-boxes-input').attr('max', data.total_boxes);
                             card.find('.consume-transfer-boxes-input').attr('max', data.total_boxes);
 
                             // Auto-fill primary card fields with immediate option injection to avoid race conditions
@@ -1467,7 +1469,6 @@
                     card.find('.consume-source-pieces-display').text('-');
                     card.find('.consume-transfer-boxes-input').val('');
                     card.find('.consume-source-pcs-hidden').val('');
-                    card.find('.total-boxes-input').removeAttr('max');
                     card.find('.consume-transfer-boxes-input').removeAttr('max');
                     card.find('.total-pieces-input').val('');
                     card.find('.consume-source-id').val('');
