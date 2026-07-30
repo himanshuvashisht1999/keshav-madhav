@@ -111,7 +111,19 @@ class SampleProductController extends Controller
 
         $products = $query->get();
 
-        $products = $products->filter(function($product) use ($request) {
+        $productIds = $products->pluck('id')->toArray();
+        $allocatedBoxes = collect();
+        if (!empty($productIds)) {
+            $allocatedBoxes = \DB::table('agent_order_items')
+                ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+                ->where('agent_orders.status', 'pending')
+                ->whereIn('product_id', $productIds)
+                ->select('product_id', 'color_id', 'size_set_id', \DB::raw('SUM(box_qty) as total_allocated'))
+                ->groupBy('product_id', 'color_id', 'size_set_id')
+                ->get();
+        }
+
+        $products = $products->filter(function($product) use ($request, $allocatedBoxes) {
             // Find specific variant for requested size set if provided
             $specificVariant = null;
             if ($request->size_set_id) {
@@ -168,7 +180,15 @@ class SampleProductController extends Controller
                 ->with('color')
                 ->groupBy('color_id')
                 ->get()
+                ->map(function($stock) use ($product, $allocatedBoxes) {
+                    $allocs = $allocatedBoxes->where('product_id', $product->id)
+                                             ->where('color_id', $stock->color_id);
+                    $totalAllocated = $allocs->sum('total_allocated');
+                    $stock->total_boxes -= $totalAllocated;
+                    return $stock;
+                })
                 ->filter(function($stock) use ($request) {
+                    if ($stock->total_boxes <= 0) return false;
                     if ($request->qty_from && $stock->total_boxes < $request->qty_from) return false;
                     if ($request->qty_to && $stock->total_boxes > $request->qty_to) return false;
                     return true;
@@ -204,7 +224,18 @@ class SampleProductController extends Controller
                     ->with('color')
                     ->groupBy('color_id')
                     ->get()
+                    ->map(function($s) use ($product, $sz, $allocatedBoxes) {
+                        $allocated = $allocatedBoxes->where('product_id', $product->id)
+                                                    ->where('size_set_id', $sz['id'])
+                                                    ->where('color_id', $s->color_id)
+                                                    ->first();
+                        if ($allocated) {
+                            $s->total_boxes -= $allocated->total_allocated;
+                        }
+                        return $s;
+                    })
                     ->filter(function($s) use ($request) {
+                        if ($s->total_boxes <= 0) return false;
                         if ($request->qty_from && $s->total_boxes < $request->qty_from) return false;
                         if ($request->qty_to && $s->total_boxes > $request->qty_to) return false;
                         return true;
@@ -214,6 +245,10 @@ class SampleProductController extends Controller
                 $allSizesColorStock[(string) $sz['id']] = $szStock;
             }
             $product->setAttribute('all_sizes_color_stock', $allSizesColorStock);
+
+            $product->available_sizes = $product->available_sizes->filter(function($sz) use ($allSizesColorStock) {
+                return isset($allSizesColorStock[(string) $sz['id']]) && count($allSizesColorStock[(string) $sz['id']]) > 0;
+            })->values();
 
             return $product->available_sizes->count() > 0 && $product->color_stock->count() > 0;
         })->values();

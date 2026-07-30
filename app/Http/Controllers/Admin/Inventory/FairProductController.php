@@ -309,7 +309,19 @@ class FairProductController extends Controller
 
         $products = $query->get();
 
-        $products = $products->filter(function($product) use ($request) {
+        $productIds = $products->pluck('id')->toArray();
+        $allocatedBoxes = collect();
+        if (!empty($productIds)) {
+            $allocatedBoxes = \DB::table('agent_order_items')
+                ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+                ->where('agent_orders.status', 'pending')
+                ->whereIn('product_id', $productIds)
+                ->select('product_id', 'color_id', 'size_set_id', \DB::raw('SUM(box_qty) as total_allocated'))
+                ->groupBy('product_id', 'color_id', 'size_set_id')
+                ->get();
+        }
+
+        $products = $products->filter(function($product) use ($request, $allocatedBoxes) {
             // Find specific variant for requested size set if provided
             $specificVariant = null;
             if ($request->size_set_id) {
@@ -375,21 +387,36 @@ class FairProductController extends Controller
             $product->available_sizes = $sizeQuery->with(['sizeSet', 'color'])
                 ->get()
                 ->groupBy('size_set_id')
-                ->map(function($inventories, $sizeSetId) use ($product) {
+                ->map(function($inventories, $sizeSetId) use ($product, $allocatedBoxes) {
                     $firstInv = $inventories->first();
                     $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $product->id)
                         ->where('master_size_measurement_id', $sizeSetId)
                         ->first();
                     
-                    $colors = $inventories->groupBy('color_id')->map(function($colorInvs) {
+                    $colors = $inventories->groupBy('color_id')->map(function($colorInvs) use ($product, $sizeSetId, $allocatedBoxes) {
                         $firstColorInv = $colorInvs->first();
                         if (!$firstColorInv->color) return null;
+                        
+                        $totalBoxes = $colorInvs->sum('total_boxes');
+                        
+                        $allocated = $allocatedBoxes->where('product_id', $product->id)
+                                                    ->where('size_set_id', $sizeSetId)
+                                                    ->where('color_id', $firstColorInv->color->id)
+                                                    ->first();
+                        if ($allocated) {
+                            $totalBoxes -= $allocated->total_allocated;
+                        }
+                        
+                        if ($totalBoxes <= 0) return null;
+
                         return [
                             'id' => $firstColorInv->color->id,
                             'name' => $firstColorInv->color->name,
-                            'total_boxes' => $colorInvs->sum('total_boxes'),
+                            'total_boxes' => $totalBoxes,
                         ];
                     })->filter()->values()->toArray();
+
+                    if (empty($colors)) return null;
 
                     return [
                         'id' => $sizeSetId,
@@ -398,10 +425,10 @@ class FairProductController extends Controller
                         'colors' => $colors
                     ];
                 })
+                ->filter()
                 ->values();
             
-            $totalBoxes = $product->color_stock->sum('total_boxes');
-            return $product->available_sizes->count() > 0 && $totalBoxes > 0;
+            return $product->available_sizes->count() > 0;
         })->values();
 
         return response()->json($products);
