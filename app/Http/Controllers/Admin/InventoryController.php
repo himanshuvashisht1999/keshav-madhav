@@ -64,6 +64,13 @@ class InventoryController extends Controller
     public function indexList(Request $request)
     {
         // Group by Product Name, Design Number, Size Set, MRP, Selling Price
+        // Build order totals dynamically to inject color filter if present
+        $colorFilter = '';
+        if ($request->has('color_id') && !empty($request->color_id)) {
+            $color_id = (int) $request->color_id;
+            $colorFilter = " AND aoi.color_id = {$color_id}";
+        }
+
         $query = DomesticInventory::select(
             'domestic_inventories.size_set_id',
             'domestic_inventories.product_id',
@@ -86,16 +93,16 @@ class InventoryController extends Controller
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
             })
-            ->leftJoin(DB::raw('(
-                SELECT aoi.design_number COLLATE utf8mb4_unicode_ci as design_number, 
+            ->leftJoin(DB::raw("(
+                SELECT aoi.product_id, 
                        aoi.size_set_id, 
                        SUM(aoi.box_qty) as total_qty
                 FROM agent_order_items aoi
                 JOIN agent_orders ao ON aoi.agent_order_id = ao.id
-                WHERE ao.status != "dispatched"
-                GROUP BY aoi.design_number, aoi.size_set_id
-            ) as order_totals'), function ($join) {
-                $join->on('products.design_number', '=', 'order_totals.design_number')
+                WHERE ao.status != 'dispatched' $colorFilter
+                GROUP BY aoi.product_id, aoi.size_set_id
+            ) as order_totals"), function ($join) {
+                $join->on('domestic_inventories.product_id', '=', 'order_totals.product_id')
                      ->on('domestic_inventories.size_set_id', '=', 'order_totals.size_set_id');
             });
 
@@ -184,13 +191,15 @@ class InventoryController extends Controller
 
         if ($request->has('load_more')) {
             $perPage = 20;
-            $results = $query->paginate($perPage);
-
+            
+            // Calculate grand totals BEFORE pagination mutates the query
             $grand_totals = null;
-            if ($results->currentPage() == 1) {
-                $sql = $query->toSql();
+            $page = $request->get('page', 1);
+            if ($page == 1) {
+                $totalsQuery = clone $query;
+                $sql = $totalsQuery->toSql();
                 $totals = DB::table(DB::raw("($sql) as sub"))
-                    ->mergeBindings($query->getQuery())
+                    ->mergeBindings($totalsQuery->getQuery())
                     ->selectRaw('SUM(total_boxes) as sum_total_boxes, SUM(total_order) as sum_total_order')
                     ->first();
                     
@@ -199,6 +208,8 @@ class InventoryController extends Controller
                     'orders' => (int)($totals->sum_total_order ?? 0)
                 ];
             }
+
+            $results = $query->paginate($perPage);
 
             $html = '';
             $start = ($results->currentPage() - 1) * $perPage + 1;
