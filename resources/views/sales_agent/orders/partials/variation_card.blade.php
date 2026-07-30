@@ -48,6 +48,8 @@
                     $canOverstock = true;
                 } elseif ($settings->agent_app_allow_over_stock_sample && isset($variation->is_sample_product) && $variation->is_sample_product) {
                     $canOverstock = true;
+                } elseif (isset($variation->is_advance_sample) && $variation->is_advance_sample) {
+                    $canOverstock = true;
                 }
             }
         @endphp

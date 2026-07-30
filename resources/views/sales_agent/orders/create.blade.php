@@ -631,7 +631,7 @@
                                 <button class="btn-q btn-minus-global text-primary">-</button>
                                 <input type="number" class="box-qty-global-input text-primary font-weight-bold" 
                                     min="0"
-                                    max="${maxGlobalQty}"
+                                    ${(data.is_advance_sample || allowOverStock) ? '' : `max="${maxGlobalQty}"`}
                                     value="0">
                                 <button class="btn-q btn-plus-global text-primary">+</button>
                             </div>
@@ -651,7 +651,7 @@
                             <div class="card-body p-3 d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="font-weight-bold text-dark mb-0">${color.name}</h6>
-                                    ${showStock ? `<small class="text-muted">${color.available_boxes} Boxes available</small>` : ''}
+                                            ${showStock && !data.is_advance_sample ? `<small class="text-muted">${color.available_boxes} Boxes available</small>` : (data.is_advance_sample ? '<small class="text-success font-weight-bold">Advance Sample (Unlimited)</small>' : '')}
                                 </div>
                                 <div class="quantity-control-app d-flex align-items-center p-1">
                                     <button class="btn-q btn-minus-scan" data-key="${vKey}">-</button>
@@ -661,7 +661,7 @@
                                         data-size-set-id="${data.product.size_set_id}"
                                         data-pcs="${color.pcs_per_box}"
                                         data-price="${data.product.unit_price}"
-                                        max="${color.available_boxes}"
+                                        ${(data.is_advance_sample || allowOverStock) ? '' : `max="${color.available_boxes}"`}
                                         value="${currentQty}">
                                     <button class="btn-q btn-plus-scan" data-key="${vKey}">+</button>
                                 </div>
@@ -678,7 +678,7 @@
                 const input = $(this).closest('.quantity-control-app').find('.box-qty-scan-input');
                 const max = parseInt(input.attr('max'));
                 let val = parseInt(input.val()) || 0;
-                if (allowOverStock || val < max) {
+                if (allowOverStock || isNaN(max) || val < max) {
                     val++;
                     input.val(val).trigger('change');
                 }
@@ -1060,8 +1060,9 @@
 
             $(document).on('click', '.btn-plus', function () {
                 const input = $(this).closest('.variation-card').find('.box-qty-input');
+                const max = parseInt(input.attr('max'));
                 const current = parseInt(input.val()) || 0;
-                if (allowOverStock || current < parseInt(input.attr('max'))) input.val(current + 1).trigger('change');
+                if (allowOverStock || isNaN(max) || current < max) input.val(current + 1).trigger('change');
             });
 
             $(document).on('click', '.btn-minus', function () {

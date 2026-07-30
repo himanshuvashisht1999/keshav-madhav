@@ -110,6 +110,10 @@ class OrderController extends Controller
                 ->where('sales_agent_brand_discounts.sales_agent_id', '=', $agent_id);
         });
 
+        // Join storerooms to check for advance sample
+        $query->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id');
+
         $isSampleSet = $request->query('sample_set') == '1';
 
         if ($isSampleSet) {
@@ -182,7 +186,8 @@ class OrderController extends Controller
                 DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
-                DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp')
+                DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
+                DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample')
             );
 
         if ($isSampleSet) {
@@ -249,9 +254,9 @@ class OrderController extends Controller
             
             if (!$allowGlobal) {
                 if ($allowSample && $isSampleSet) {
-                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL)');
+                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL) OR (SUM(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)');
                 } else {
-                    $query->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0');
+                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (SUM(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)');
                 }
             }
 
@@ -613,6 +618,10 @@ class OrderController extends Controller
                  ->where('sales_agent_brand_discounts.sales_agent_id', '=', $agent_id);
         });
 
+        // Join storerooms to check for advance sample
+        $query->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id');
+
         if ($request->has('product_name')) {
             $isSampleSet = $request->input('sample_set') == '1';
         } else {
@@ -685,6 +694,8 @@ class OrderController extends Controller
             'domestic_inventories.color_id',
             'domestic_inventories.size_set_id',
             'production_goods.design_number',
+            'production_goods.name_of_garment',
+            'master_series.name as series_name',
             'master_colors.name as color_name',
             'master_size_measurements.name as size_set_name',
             'master_product_fittings.name as fitting_name',
@@ -692,7 +703,8 @@ class OrderController extends Controller
             DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
             DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
             DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
-            DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp')
+            DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
+            DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample')
         );
 
         if ($isSampleSet) {
@@ -712,7 +724,7 @@ class OrderController extends Controller
                       $request->filled('product_nature_id') ||
                       $request->filled('fabric_type_id');
 
-        if (!$hasFilters && !$request->has('load_more') && !$request->has('page')) {
+        if (!$hasFilters && !$request->has('load_more') && !$request->has('page') && !$request->has('cart_keys')) {
             $existingItemVariations = AgentOrderItem::where('agent_order_id', $id)
                 ->select('product_id', 'color_id', 'size_set_id')
                 ->get();
@@ -735,6 +747,8 @@ class OrderController extends Controller
                     'domestic_inventories.color_id', 
                     'domestic_inventories.size_set_id', 
                     'production_goods.design_number', 
+                    'production_goods.name_of_garment',
+                    'master_series.name',
                     'master_colors.name', 
                     'master_size_measurements.name',
                     'master_product_fittings.name',
@@ -744,14 +758,14 @@ class OrderController extends Controller
                     ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
 
                 $settings = \DB::table('settings')->first();
-                $allowGlobal = false;
+                $allowGlobal = true; // Always allow existing items to show regardless of current stock
                 $allowSample = $settings && $settings->agent_app_allow_over_stock_sample;
                 
                 if (!$allowGlobal) {
                     if ($allowSample && $isSampleSet) {
-                        $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL)');
+                        $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL) OR (SUM(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)');
                     } else {
-                        $query->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0');
+                        $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (SUM(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)');
                     }
                 }
 
@@ -760,11 +774,28 @@ class OrderController extends Controller
                     ->appends($request->except('page'));
             }
         } else {
+            if ($request->has('cart_keys') && is_array($request->cart_keys)) {
+                $query->where(function ($q) use ($request) {
+                    foreach ($request->cart_keys as $keyStr) {
+                        $parts = explode('_', $keyStr);
+                        if (count($parts) == 3) {
+                            $q->orWhere(function ($sq) use ($parts) {
+                                $sq->where('domestic_inventories.product_id', $parts[0])
+                                   ->where('domestic_inventories.color_id', $parts[1])
+                                   ->where('domestic_inventories.size_set_id', $parts[2]);
+                            });
+                        }
+                    }
+                });
+            }
+
             $boxes = $query->groupBy(
                 'domestic_inventories.product_id', 
                 'domestic_inventories.color_id', 
                 'domestic_inventories.size_set_id', 
                 'production_goods.design_number', 
+                'production_goods.name_of_garment',
+                'master_series.name',
                 'master_colors.name', 
                 'master_size_measurements.name',
                 'master_product_fittings.name',
@@ -777,16 +808,22 @@ class OrderController extends Controller
             $allowGlobal = false;
             $allowSample = $settings && $settings->agent_app_allow_over_stock_sample;
             
+            if ($request->has('cart_keys') && is_array($request->cart_keys)) {
+                $allowGlobal = true; 
+            }
+
             if (!$allowGlobal) {
                 if ($allowSample && $isSampleSet) {
-                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL)');
+                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL) OR (SUM(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)');
                 } else {
-                    $query->havingRaw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0');
+                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (SUM(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)');
                 }
             }
 
+            $perPage = ($request->has('cart_keys') && is_array($request->cart_keys)) ? 500 : 50;
+            
             $boxes = $query->orderBy('production_goods.design_number')
-                ->paginate(50)
+                ->paginate($perPage)
                 ->appends($request->except('page'));
         }
 
@@ -817,10 +854,7 @@ class OrderController extends Controller
         $settings = \DB::table('settings')->first();
         $allowOverStock = $settings && $settings->agent_app_allow_over_stock;
 
-        $filteredCollection = $boxes->getCollection()->filter(function ($variation) use ($allowOverStock) {
-            return $allowOverStock || $variation->available_boxes > 0;
-        })->values();
-        $boxes->setCollection($filteredCollection);
+
 
         if ($request->ajax() && $request->has('load_more')) {
             $html = "";
@@ -1437,6 +1471,13 @@ class OrderController extends Controller
                         $main_image = $variant->image;
                     }
 
+                    $isAdvanceSample = \DB::table('domestic_inventories')
+                        ->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                        ->join('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                        ->where('domestic_inventories.product_id', $productId)
+                        ->where('storerooms.name', 'ADVANCE SAMPLE')
+                        ->exists();
+
                     $allocQuery = \DB::table('agent_order_items')
                         ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
                         ->where('agent_orders.status', 'pending')
@@ -1452,8 +1493,12 @@ class OrderController extends Controller
                         ->pluck('total_allocated', 'color_id');
 
                     foreach ($availableColors as $color) {
-                        $allocated = $allocations->get($color->id) ?? 0;
-                        $color->available_boxes = max(0, $color->available_boxes - $allocated);
+                        if ($isAdvanceSample) {
+                            $color->available_boxes = 99999;
+                        } else {
+                            $allocated = $allocations->get($color->id) ?? 0;
+                            $color->available_boxes = max(0, $color->available_boxes - $allocated);
+                        }
 
                         $cImg = DB::table('production_goods_variant_colors')
                             ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
@@ -1469,6 +1514,7 @@ class OrderController extends Controller
 
                     return response()->json([
                         'success' => true,
+                        'is_advance_sample' => $isAdvanceSample,
                         'product' => [
                             'id' => $product->id,
                             'name' => trim(($product->series->name ?? '') . ' ' . $product->name_of_garment),
@@ -1564,6 +1610,13 @@ class OrderController extends Controller
                     $main_image = $variant->image;
                 }
 
+                $isAdvanceSample = \DB::table('domestic_inventories')
+                    ->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                    ->join('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                    ->where('domestic_inventories.product_id', $productId)
+                    ->where('storerooms.name', 'ADVANCE SAMPLE')
+                    ->exists();
+
                 $allocQuery = \DB::table('agent_order_items')
                     ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
                     ->where('agent_orders.status', 'pending')
@@ -1579,8 +1632,12 @@ class OrderController extends Controller
                     ->pluck('total_allocated', 'color_id');
 
                 foreach ($availableColors as $color) {
-                    $allocated = $allocations->get($color->id) ?? 0;
-                    $color->available_boxes = max(0, $color->available_boxes - $allocated);
+                    if ($isAdvanceSample) {
+                        $color->available_boxes = 99999;
+                    } else {
+                        $allocated = $allocations->get($color->id) ?? 0;
+                        $color->available_boxes = max(0, $color->available_boxes - $allocated);
+                    }
 
                     $cImg = DB::table('production_goods_variant_colors')
                         ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
@@ -1596,6 +1653,7 @@ class OrderController extends Controller
 
                 return response()->json([
                     'success' => true,
+                    'is_advance_sample' => $isAdvanceSample,
                     'product' => [
                         'id' => $product->id,
                         'name' => trim(($product->series->name ?? '') . ' ' . $product->name_of_garment),
