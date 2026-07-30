@@ -1437,7 +1437,24 @@ class OrderController extends Controller
                         $main_image = $variant->image;
                     }
 
+                    $allocQuery = \DB::table('agent_order_items')
+                        ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+                        ->where('agent_orders.status', 'pending')
+                        ->where('agent_order_items.product_id', $productId)
+                        ->where('agent_order_items.size_set_id', $sizeSetId);
+                    
+                    if ($request->filled('order_id')) {
+                        $allocQuery->where('agent_orders.id', '!=', $request->order_id);
+                    }
+                    
+                    $allocations = $allocQuery->select('color_id', \DB::raw('SUM(box_qty) as total_allocated'))
+                        ->groupBy('color_id')
+                        ->pluck('total_allocated', 'color_id');
+
                     foreach ($availableColors as $color) {
+                        $allocated = $allocations->get($color->id) ?? 0;
+                        $color->available_boxes = max(0, $color->available_boxes - $allocated);
+
                         $cImg = DB::table('production_goods_variant_colors')
                             ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
                             ->where('production_goods_variants.production_goods_id', $productId)
@@ -1547,7 +1564,24 @@ class OrderController extends Controller
                     $main_image = $variant->image;
                 }
 
+                $allocQuery = \DB::table('agent_order_items')
+                    ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+                    ->where('agent_orders.status', 'pending')
+                    ->where('agent_order_items.product_id', $productId)
+                    ->where('agent_order_items.size_set_id', $sizeSetId);
+                
+                if ($request->filled('order_id')) {
+                    $allocQuery->where('agent_orders.id', '!=', $request->order_id);
+                }
+                
+                $allocations = $allocQuery->select('color_id', \DB::raw('SUM(box_qty) as total_allocated'))
+                    ->groupBy('color_id')
+                    ->pluck('total_allocated', 'color_id');
+
                 foreach ($availableColors as $color) {
+                    $allocated = $allocations->get($color->id) ?? 0;
+                    $color->available_boxes = max(0, $color->available_boxes - $allocated);
+
                     $cImg = DB::table('production_goods_variant_colors')
                         ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
                         ->where('production_goods_variants.production_goods_id', $productId)

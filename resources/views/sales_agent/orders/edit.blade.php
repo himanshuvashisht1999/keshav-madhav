@@ -463,7 +463,10 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
     <script>
-        let allowOverStock = {{ isset($settings) && $settings->agent_app_allow_over_stock ? 'true' : 'false' }};
+        let isSampleSet = {{ isset($isSampleSet) && $isSampleSet ? 'true' : 'false' }};
+        let allowOverStockNormal = {{ isset($settings) && $settings->agent_app_allow_over_stock ? 'true' : 'false' }};
+        let allowOverStockSample = {{ isset($settings) && $settings->agent_app_allow_over_stock_sample ? 'true' : 'false' }};
+        let allowOverStock = isSampleSet ? allowOverStockSample : allowOverStockNormal;
         let showStock = {{ !isset($settings) || $settings->agent_app_show_stock ? 'true' : 'false' }};
         $(document).ready(function () {
 
@@ -592,7 +595,7 @@
 
                 $.ajax({
                     url: "{{ route('agent.orders.get-variation-by-barcode') }}",
-                    data: { barcode: barcode },
+                    data: { barcode: barcode, order_id: '{{ $order->id }}' },
                     success: function(res) {
                         Swal.close();
                         if (res.success) {
@@ -616,6 +619,13 @@
                 const list = $('#colorSelectionList');
                 list.empty();
 
+                let maxGlobalQty = 0;
+                data.colors.forEach(color => {
+                    if (parseInt(color.available_boxes) > maxGlobalQty) {
+                        maxGlobalQty = parseInt(color.available_boxes);
+                    }
+                });
+
                 const globalHtml = `
                     <div class="card border-primary shadow-sm mb-3 rounded-lg overflow-hidden" style="background-color: #f8faff;">
                         ${data.product.image ? `<div style="background-color: #f8f9fa; text-align: center; border-bottom: 1px solid #dee2e6;"><img src="${data.product.image}" class="zoom-image" style="max-height: 250px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer;"></div>` : `<div class="bg-light d-flex align-items-center justify-content-center" style="height: 150px; border-bottom: 1px solid #dee2e6;"><i class="fas fa-image fa-3x text-muted opacity-25"></i></div>`}
@@ -628,6 +638,7 @@
                                 <button class="btn-q btn-minus-global text-primary">-</button>
                                 <input type="number" class="box-qty-global-input text-primary font-weight-bold" 
                                     min="0"
+                                    max="${maxGlobalQty}"
                                     value="0">
                                 <button class="btn-q btn-plus-global text-primary">+</button>
                             </div>
@@ -758,8 +769,11 @@
             $(document).on('click', '.btn-plus-global', function() {
                 const input = $(this).siblings('.box-qty-global-input');
                 let val = parseInt(input.val()) || 0;
-                val++;
-                input.val(val).trigger('change');
+                const max = parseInt(input.attr('max'));
+                if (allowOverStock || isNaN(max) || val < max) {
+                    val++;
+                    input.val(val).trigger('change');
+                }
             });
 
             $(document).on('click', '.btn-minus-global', function() {
@@ -776,6 +790,14 @@
                 if (globalQty < 0) {
                     globalQty = 0;
                     $(this).val(0);
+                }
+
+                if (!allowOverStock) {
+                    const max = parseInt($(this).attr('max'));
+                    if (!isNaN(max) && globalQty > max) {
+                        globalQty = max;
+                        $(this).val(globalQty);
+                    }
                 }
 
                 $('#colorSelectionList .box-qty-scan-input').each(function() {
