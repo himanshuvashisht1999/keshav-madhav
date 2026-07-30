@@ -459,7 +459,7 @@ class ProductionGoodsService
             ->whereNotIn('id', $keepItemIds)->get();
 
         foreach ($itemsToDelete as $it) {
-            $hasInOrder = \App\Models\OrderProductsSet::where('production_goods_id', $productId)
+            $hasInOrder = \App\Models\OrderProductSet::where('production_goods_id', $productId)
                 ->where('color_id', $it->master_color_id)
                 ->exists();
                 
@@ -484,7 +484,7 @@ class ProductionGoodsService
             reset($vt->items);
             $hasInInvOrOrder = false;
             foreach ($vt->items as $vItem) {
-                $hasInOrder = \App\Models\OrderProductsSet::where('production_goods_id', $productId)
+                $hasInOrder = \App\Models\OrderProductSet::where('production_goods_id', $productId)
                     ->where('color_id', $vItem->master_color_id)
                     ->exists();
                     
