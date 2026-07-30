@@ -121,6 +121,8 @@ class AgentOrderController extends Controller
             ->leftJoin('master_design_patterns', 'production_goods.master_pattern_id', '=', 'master_design_patterns.id')
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
+            ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
 
             ->leftJoinSub($prices, 'ip', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
@@ -209,7 +211,8 @@ class AgentOrderController extends Controller
                 DB::raw('(SUM(domestic_inventories.total_boxes) - MAX(COALESCE(alloc.total_allocated, 0))) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
-                DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp')
+                DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
+                DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample')
             );
 
         $boxes = $query->groupBy(
@@ -228,7 +231,7 @@ class AgentOrderController extends Controller
             DB::raw($discount_col)
         )
             ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
-            ->havingRaw('SUM(domestic_inventories.total_boxes) > MAX(COALESCE(alloc.total_allocated, 0))')
+            ->havingRaw('(SUM(domestic_inventories.total_boxes) > MAX(COALESCE(alloc.total_allocated, 0))) OR (MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)')
             ->orderBy('production_goods.design_number')
             ->paginate(20)
             ->appends($request->except('page'));
@@ -1214,6 +1217,8 @@ class AgentOrderController extends Controller
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
             ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
+            ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
             ->leftJoinSub($prices, 'ip', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
                     ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
@@ -1308,6 +1313,7 @@ class AgentOrderController extends Controller
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
+                DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample'),
                 DB::raw('MAX(current_items.box_qty) as current_order_qty')
             )
             ->groupBy(
@@ -1320,7 +1326,7 @@ class AgentOrderController extends Controller
 
                 DB::raw($discount_col)
             )
-            ->havingRaw('(SUM(domestic_inventories.total_boxes) > MAX(COALESCE(alloc.total_allocated, 0)) OR MAX(current_items.box_qty) > 0)')
+            ->havingRaw('(SUM(domestic_inventories.total_boxes) > MAX(COALESCE(alloc.total_allocated, 0)) OR MAX(current_items.box_qty) > 0) OR (MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)')
             ->orderByRaw('current_order_qty DESC')
             ->orderBy('production_goods.design_number');
 

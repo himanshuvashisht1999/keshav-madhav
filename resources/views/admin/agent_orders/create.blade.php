@@ -777,8 +777,9 @@
 
             $(document).on('click', '.btn-plus', function() {
                 const input = $(this).closest('.quantity-control').find('.box-qty-input');
+                const max = parseInt(input.attr('max'));
                 const current = parseInt(input.val()) || 0;
-                if (current < parseInt(input.attr('max'))) input.val(current + 1).trigger('change');
+                if (isNaN(max) || current < max) input.val(current + 1).trigger('change');
             });
 
             $(document).on('click', '.btn-minus', function() {

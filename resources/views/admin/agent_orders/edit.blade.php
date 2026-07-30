@@ -596,7 +596,7 @@
                 const input = $(this).closest('.quantity-control').find('.box-qty-input');
                 const current = parseInt(input.val()) || 0;
                 const max = parseInt(input.attr('max'));
-                if (current < max) input.val(current + 1).trigger('change');
+                if (isNaN(max) || current < max) input.val(current + 1).trigger('change');
             });
 
             $(document).on('click', '.btn-minus', function () {
