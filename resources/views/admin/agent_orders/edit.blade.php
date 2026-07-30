@@ -96,7 +96,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-2 col-6 mb-1">
+                                <div class="col-md-3 col-6 mb-1">
                                     <label class="small font-weight-bold text-muted mb-0">Product Name</label>
                                     <select name="product_name" class="form-control form-control-sm select2">
                                         <option value="">All Products</option>
@@ -118,7 +118,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-2 col-6 mb-1">
+                                <div class="col-md-3 col-6 mb-1">
                                     <label class="small font-weight-bold text-muted mb-0">Size Set</label>
                                     <select name="size_set_name" class="form-control form-control-sm select2">
                                         <option value="">All Sets</option>
@@ -129,11 +129,55 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-2 col-12 mb-1 text-right">
-                                    <button type="submit" class="btn btn-primary btn-sm px-3 mr-1 shadow-sm">
+                                <div class="col-md-2 col-6 mb-1">
+                                    <label class="small font-weight-bold text-muted mb-0">Pattern</label>
+                                    <select name="pattern_id" class="form-control form-control-sm select2">
+                                        <option value="">All Patterns</option>
+                                        @foreach($patterns as $id => $name)
+                                            <option value="{{ $id }}" {{ request('pattern_id') == $id ? 'selected' : '' }}>
+                                                {{ $name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2 col-6 mb-1">
+                                    <label class="small font-weight-bold text-muted mb-0">Fitting</label>
+                                    <select name="fitting_id" class="form-control form-control-sm select2">
+                                        <option value="">All Fittings</option>
+                                        @foreach($fittings as $id => $name)
+                                            <option value="{{ $id }}" {{ request('fitting_id') == $id ? 'selected' : '' }}>
+                                                {{ $name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2 col-6 mb-1">
+                                    <label class="small font-weight-bold text-muted mb-0">Product Nature</label>
+                                    <select name="product_nature_id" class="form-control form-control-sm select2">
+                                        <option value="">All Natures</option>
+                                        @foreach($product_natures as $id => $name)
+                                            <option value="{{ $id }}" {{ request('product_nature_id') == $id ? 'selected' : '' }}>
+                                                {{ $name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2 col-6 mb-1">
+                                    <label class="small font-weight-bold text-muted mb-0">Fabric Type</label>
+                                    <select name="fabric_type_id" class="form-control form-control-sm select2">
+                                        <option value="">All Fabrics</option>
+                                        @foreach($fabric_types as $id => $name)
+                                            <option value="{{ $id }}" {{ request('fabric_type_id') == $id ? 'selected' : '' }}>
+                                                {{ $name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4 col-12 mb-1 text-right mt-3">
+                                    <button type="submit" class="btn btn-primary btn-sm px-4 mr-2 shadow-sm">
                                         <i class="fas fa-search mr-1"></i> Filter
                                     </button>
-                                    <button type="button" id="btn-reset-filters" class="btn btn-secondary btn-sm px-2 shadow-sm">
+                                    <button type="button" id="btn-reset-filters" class="btn btn-secondary btn-sm px-3 shadow-sm">
                                         <i class="fas fa-undo"></i>
                                     </button>
                                 </div>

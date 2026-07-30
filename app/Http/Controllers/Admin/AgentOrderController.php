@@ -1165,27 +1165,28 @@ class AgentOrderController extends Controller
             return view('admin.agent_orders.edit_fabric', compact('order', 'shop', 'agent', 'fabrics', 'existing_items', 'gst_percentage', 'agents', 'shops', 'vendors', 'salesMen'));
         }
 
-        $designs = DomesticInventory::where('domestic_inventories.status', 1)
-            ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
+        $designs = \App\Models\ProductionGoods::where('status', 1)
+            ->whereNotNull('design_number')
+            ->where('design_number', '!=', '')
+            ->distinct()->pluck('design_number');
 
-            ->distinct()->pluck('production_goods.design_number');
-
-        $product_names = DomesticInventory::where('domestic_inventories.status', 1)
-            ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
+        $product_names = \App\Models\ProductionGoods::where('production_goods.status', 1)
             ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
-            ->where(function ($q) {
-                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            })
             ->whereRaw('TRIM(CONCAT(COALESCE(master_series.name, ""), " ", COALESCE(production_goods.name_of_garment, ""))) != ""')
             ->select(DB::raw('DISTINCT(TRIM(CONCAT(COALESCE(master_series.name, ""), " ", COALESCE(production_goods.name_of_garment, "")))) as full_name'))
             ->pluck('full_name');
 
-        $colors = DomesticInventory::where('domestic_inventories.status', 1)
-            ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
-            ->whereNotNull('box_no')->distinct()->pluck('master_colors.name');
-        $size_sets = DomesticInventory::where('domestic_inventories.status', 1)
-            ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
-            ->whereNotNull('box_no')->distinct()->pluck('master_size_measurements.name');
+        $colors = \App\Models\MasterColor::where('status', 1)
+            ->select(DB::raw("CONCAT(name, ' (', id, ')') as full_name"))
+            ->distinct()->pluck('full_name');
+
+        $size_sets = \App\Models\MasterSizeMeasurement::where('status', 1)
+            ->distinct()->pluck('name');
+
+        $patterns = \App\Models\MasterDesignPattern::where('status', 1)->pluck('name', 'id');
+        $fittings = \App\Models\MasterProductFitting::where('status', 1)->pluck('name', 'id');
+        $product_natures = \App\Models\ProductNature::pluck('name', 'id');
+        $fabric_types = \App\Models\FabricType::pluck('name', 'id');
 
         // Build Query for All Boxes
         $prices = DB::table('production_goods_variants')
@@ -1269,6 +1270,18 @@ class AgentOrderController extends Controller
         }
         if ($request->filled('size_set_name')) {
             $query->where('master_size_measurements.name', $request->size_set_name);
+        }
+        if ($request->filled('pattern_id')) {
+            $query->where('production_goods.master_pattern_id', $request->pattern_id);
+        }
+        if ($request->filled('fitting_id')) {
+            $query->where('production_goods.master_product_fitting_id', $request->fitting_id);
+        }
+        if ($request->filled('product_nature_id')) {
+            $query->where('production_goods.product_nature_id', $request->product_nature_id);
+        }
+        if ($request->filled('fabric_type_id')) {
+            $query->where('production_goods.fabric_type_id', $request->fabric_type_id);
         }
         $boxes = $query->leftJoinSub($allocated, 'alloc', function ($join) {
             $join->on('domestic_inventories.product_id', '=', 'alloc.product_id')
@@ -1384,7 +1397,7 @@ class AgentOrderController extends Controller
         $vendors = DB::table('vendors')->select('id', 'name')->where('status', 1)->get();
         $salesMen = \App\Models\SalesMan::where('status', 1)->get();
 
-        return view('admin.agent_orders.edit', compact('order', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'boxes', 'boxImages', 'selected_quantities', 'gst_percentage', 'agents', 'shops', 'vendors', 'salesMen'));
+        return view('admin.agent_orders.edit', compact('order', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'patterns', 'fittings', 'product_natures', 'fabric_types', 'boxes', 'boxImages', 'selected_quantities', 'gst_percentage', 'agents', 'shops', 'vendors', 'salesMen'));
     }
 
     public function update(Request $request, $id)
