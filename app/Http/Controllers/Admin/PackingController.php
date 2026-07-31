@@ -38,6 +38,21 @@ class PackingController extends Controller
         return view('admin.packing.view', compact('session'));
     }
 
+    public function clearOrder(Request $request, $slip_id)
+    {
+        $packing = \App\Models\PackingMain::where('slip_id', $slip_id)->first();
+        if ($packing) {
+            // Check if cartons exist
+            $cartonCount = \App\Models\PackingCarton::where('packing_main_id', $packing->id)->count();
+            if ($cartonCount > 0) {
+                return redirect()->back()->with('error', 'Cannot change order. Cartons have already been created for this packing session.');
+            }
+            $packing->order_main_id = null;
+            $packing->save();
+        }
+        return redirect()->route('admin.packing.process', ['id' => $slip_id])->with('success', 'Order selection cleared successfully.');
+    }
+
     public function process(Request $request, $slip_id)
     {
         $slip = $this->service->getSlipDetails($slip_id);

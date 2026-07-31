@@ -426,6 +426,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/index', [AdminPackingController::class, 'index'])->name('index');
             Route::get('/process/{id}', [AdminPackingController::class, 'process'])->name('process');
             Route::get('/process-domestic/{id}', [AdminPackingController::class, 'processDomestic'])->name('processDomestic');
+            Route::post('/clear-order/{slip_id}', [AdminPackingController::class, 'clearOrder'])->name('clearOrder');
             Route::post('/finalize', [AdminPackingController::class, 'finalize'])->name('finalize');
             Route::get('/download-slip-barcode/{id}', [AdminPackingController::class, 'downloadSlipBarcodeTxt'])->name('downloadSlipBarcode');
             Route::post('/box/save', [AdminPackingController::class, 'saveBox'])->name('saveBox');

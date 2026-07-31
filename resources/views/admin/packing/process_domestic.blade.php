@@ -158,6 +158,12 @@
                             </a>
                         @endif
                         @if($order)
+                            <form action="{{ route('admin.packing.clearOrder', $slip->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to change the selected order? This is only possible if no cartons have been created.');">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-warning btn-sm">
+                                    <i class="fas fa-exchange-alt mr-1"></i> Change Order
+                                </button>
+                            </form>
                             <a id="fileLink" href="{{asset('/assets/products/' . $order->corporate_order_file)}}"
                                 target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
                                 <i class="fas fa-file-alt mr-1"></i> Sales Order File
