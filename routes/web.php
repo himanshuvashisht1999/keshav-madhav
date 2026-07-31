@@ -119,6 +119,7 @@ Route::prefix('unit')->name('unit.')->middleware(['unit.remember'])->group(funct
     Route::get('/dashboard', [\App\Http\Controllers\Unit\UnitAuthController::class, 'dashboard'])->name('dashboard');
     Route::post('/submit', [\App\Http\Controllers\Unit\UnitAuthController::class, 'submitSlip'])->name('submit');
     Route::get('/history', [\App\Http\Controllers\Unit\UnitAuthController::class, 'history'])->name('history');
+    Route::get('/pending-tasks', [\App\Http\Controllers\Unit\UnitAuthController::class, 'pendingTasks'])->name('pending-tasks');
     Route::get('/view/{type}/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'viewSlip'])->name('view.slip');
     Route::get('/assignments', [\App\Http\Controllers\Unit\UnitAuthController::class, 'assignments'])->name('assignments');
     Route::get('/order-summary/{sku}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'orderSummary'])->name('order-summary');

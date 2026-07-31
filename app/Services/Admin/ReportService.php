@@ -1795,7 +1795,7 @@ class ReportService
             }
 
             if ($request->filled('lot_no')) {
-                $query->where('lot_no', 'like', '%' . $request->lot_no . '%');
+                $query->where('lot_no', $request->lot_no);
             }
             if ($request->filled('start_date')) {
                 $query->whereDate('created_at', '>=', $request->start_date);
@@ -1806,13 +1806,13 @@ class ReportService
             
             if ($orderNo) {
                 $query->whereHas('orderMain', function ($q) use ($orderNo) {
-                    $q->where('sku', 'like', '%' . $orderNo . '%');
+                    $q->where('sku', $orderNo);
                 });
             }
             
             if ($designNo) {
                 $query->whereHas('orderProductSet', function ($q) use ($designNo) {
-                    $q->where('design_number', 'like', '%' . $designNo . '%');
+                    $q->where('design_number', $designNo);
                 });
             }
 
@@ -1918,18 +1918,18 @@ class ReportService
             }
 
             if ($lotNo) {
-                $query->where('lot_no', 'like', '%' . $lotNo . '%');
+                $query->where('lot_no', $lotNo);
             }
 
             if ($designNo) {
                 $query->whereHas('productSet', function ($q) use ($designNo) {
-                    $q->where('design_number', 'like', '%' . $designNo . '%');
+                    $q->where('design_number', $designNo);
                 });
             }
 
             if ($orderNo) {
                 $query->whereHas('orderMain', function ($q) use ($orderNo) {
-                    $q->where('sku', 'like', '%' . $orderNo . '%');
+                    $q->where('sku', $orderNo);
                 });
             }
 
@@ -2027,15 +2027,15 @@ class ReportService
             }
 
             if ($lotNo) {
-                $ass1Query->where('lot_no', 'like', '%' . $lotNo . '%');
-                $ass2Query->where('lot_no', 'like', '%' . $lotNo . '%');
-                $ass3Query->where('lot_no', 'like', '%' . $lotNo . '%');
+                $ass1Query->where('lot_no', $lotNo);
+                $ass2Query->where('lot_no', $lotNo);
+                $ass3Query->where('lot_no', $lotNo);
             }
 
             if ($orderNo) {
                 $orderFilter = function ($q) use ($orderNo) {
                     $lotNos = \App\Models\OrderLot::whereHas('orderMain', function ($sq) use ($orderNo) {
-                        $sq->where('sku', 'like', '%' . $orderNo . '%');
+                        $sq->where('sku', $orderNo);
                     })->pluck('lot_no')->toArray();
                     $q->whereIn('lot_no', $lotNos);
                 };
@@ -2047,7 +2047,7 @@ class ReportService
             if ($designNo) {
                 $designFilter = function ($q) use ($designNo) {
                     $lotNos = \App\Models\OrderLot::whereHas('orderProductSet', function ($sq) use ($designNo) {
-                        $sq->where('design_number', 'like', '%' . $designNo . '%');
+                        $sq->where('design_number', $designNo);
                     })->pluck('lot_no')->toArray();
                     $q->whereIn('lot_no', $lotNos);
                 };
