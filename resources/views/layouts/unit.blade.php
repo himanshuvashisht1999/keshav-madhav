@@ -294,6 +294,12 @@
             <i class="fas fa-clipboard-list"></i>
             <span>Tasks</span>
         </a>
+        @if((session('unit_auth')['stage_id'] ?? 0) != 3)
+        <a href="{{ route('unit.pending-tasks') }}" class="nav-item {{ request()->routeIs('unit.pending-tasks') ? 'active' : '' }}">
+            <i class="fas fa-tasks"></i>
+            <span>Pending</span>
+        </a>
+        @endif
         <a href="javascript:void(0)" class="nav-item open-upload-modal"
             data-type="{{ (session('unit_auth')['stage_id'] ?? 0) == 3 ? '1' : '2' }}" data-product-set-id=""
             data-transaction-id="" data-transaction-type="production">

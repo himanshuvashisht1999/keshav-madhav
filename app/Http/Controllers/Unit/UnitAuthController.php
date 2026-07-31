@@ -1619,4 +1619,91 @@ class UnitAuthController extends Controller
         $response['master_stages'] = $service->master_stages();
         return view('unit.lot_details', $response);
     }
+
+    public function pendingTasks(Request $request)
+    {
+        if (!session()->has('unit_auth')) {
+            return redirect()->route('unit.login');
+        }
+
+        $unitAuth = session('unit_auth');
+        $unitId = $unitAuth['id'];
+        $unit = \App\Models\StageMasterUnit::find($unitId);
+        
+        $lotNo = $request->get('lot_no');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $isDelayed = $request->get('is_delayed');
+
+        $ass1Query = \App\Models\OrderStageTransaction::where('sub_stage_id_to', $unitId);
+        $ass2Query = \App\Models\OrderPrintingStageTransaction::where('sub_stage_id_to', $unitId);
+        $ass3Query = \App\Models\OrderPrintingToStichingTransaction::where('sub_stage_id_to', $unitId);
+        $ass4Query = \App\Models\OrderGodamStageTransaction::where('sub_stage_id_to', $unitId);
+
+        if ($lotNo) {
+            $ass1Query->where('lot_no', $lotNo);
+            $ass2Query->where('lot_no', $lotNo);
+            $ass3Query->where('lot_no', $lotNo);
+            $ass4Query->where('lot_no', $lotNo);
+        }
+
+        if ($startDate) {
+            $ass1Query->whereDate('created_at', '>=', $startDate);
+            $ass2Query->whereDate('created_at', '>=', $startDate);
+            $ass3Query->whereDate('created_at', '>=', $startDate);
+            $ass4Query->whereDate('created_at', '>=', $startDate);
+        }
+
+        $ass1 = $ass1Query->get()->map(function($i) { $i->source = 'cutting'; return $i; });
+        $ass2 = $ass2Query->get()->map(function($i) { $i->source = 'printing'; return $i; });
+        $ass3 = $ass3Query->get()->map(function($i) { $i->source = 'printing_to_stitching'; return $i; });
+        $ass4 = $ass4Query->get()->map(function($i) { $i->source = 'godam'; return $i; });
+
+        $all = collect()->concat($ass1)->concat($ass2)->concat($ass3)->concat($ass4);
+        
+        $lotNos = $all->pluck('lot_no')->unique()->toArray();
+        $masterStageId = $unit->master_stage_id ?? 0;
+        $timings = \App\Models\OrderLotStageTiming::whereIn('lot_no', $lotNos)->where('master_stage_id', $masterStageId)->get();
+
+        $grouped = $all->groupBy('lot_no')->map(function ($items, $lot_no) use ($timings) {
+            $firstItem = $items->first();
+            $timing = $timings->where('lot_no', $lot_no)->first();
+            
+            $assignedDate = $firstItem->created_at;
+            $estimatedDate = $timing?->end_date ? \Carbon\Carbon::parse($timing->end_date) : ($firstItem->end_date ? \Carbon\Carbon::parse($firstItem->end_date) : null);
+            
+            $isTaskDelayed = false;
+            if ($estimatedDate && now()->gt($estimatedDate)) {
+                $isTaskDelayed = true;
+            }
+            
+            // Fix double counting by only considering 'cutting' source if it exists, as requested by user.
+            $cuttingItems = $items->where('source', 'cutting');
+            if ($cuttingItems->count() > 0) {
+                $itemsToSum = $cuttingItems;
+            } else {
+                $itemsToSum = $items;
+            }
+            
+            return [
+                'lot_no' => $lot_no,
+                'total_assigned' => $itemsToSum->sum('quantity'),
+                'total_pending' => $itemsToSum->sum('remaining_quantity'),
+                'assigned_date' => $assignedDate,
+                'estimated_date' => $estimatedDate,
+                'is_delayed' => $isTaskDelayed
+            ];
+        })->filter(function($item) use ($isDelayed, $endDate) {
+            if ($item['total_pending'] <= 0) return false;
+            if ($isDelayed && !$item['is_delayed']) return false;
+            if ($endDate && $item['estimated_date']) {
+                if (\Carbon\Carbon::parse($item['estimated_date'])->format('Y-m-d') > \Carbon\Carbon::parse($endDate)->format('Y-m-d')) {
+                    return false;
+                }
+            }
+            return true;
+        })->values();
+
+        return view('unit.pending_tasks', compact('grouped'));
+    }
 }
