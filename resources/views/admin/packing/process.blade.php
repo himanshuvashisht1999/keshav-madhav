@@ -1212,7 +1212,7 @@
                 renderPlannerInventory();
 
                 // Populate Range Design dropdown
-                let uniqueDesigns = [...new Set(ORDER_SETS.map(s => s.design_number))];
+                let uniqueDesigns = [...new Set(UNIT_LOTS.map(l => l.design_number))];
                 let $rangeDesign = $('#rangeDesign');
                 $rangeDesign.html('<option value="">Select</option>');
                 uniqueDesigns.forEach(d => {
@@ -1375,33 +1375,18 @@
             function renderPlannerInventory() {
                 let $list = $('#plannerInventoryList');
                 $list.html('');
-                if (ORDER_SETS && ORDER_SETS.length > 0) {
-                    $list.append('<div class="mb-3"><strong class="small text-dark font-weight-bold">SETS</strong></div>');
-                    ORDER_SETS.forEach((set, idx) => {
-                        let minSets = null;
-                        let hasDetails = false;
-                        ORDER_ITEMS.forEach(item => {
-                            if (item.order_products_set_id == set.id) {
-                                hasDetails = true;
-                                let avl = parseInt(item.unit_available_qty) || 0;
-                                let perSet = parseFloat(item.qty_per_set) || 1;
-                                let canMake = Math.floor(avl / perSet);
-                                if (minSets === null || canMake < minSets) {
-                                    minSets = canMake;
-                                }
-                            }
-                        });
-                        let setsCount = hasDetails ? (minSets ?? 0) : 0;
-                        $list.append(`<div class="mb-2 pl-2 border-left border-primary"><small class="d-block text-truncate font-weight-bold" title="${set.design_number}">${set.design_number} (${set.size_set_name || 'N/A'})</small><span class="badge badge-light border text-primary small">Full Boxes: ${setsCount}</span></div>`);
+                if (UNIT_LOTS && UNIT_LOTS.length > 0) {
+                    $list.append('<div class="mb-3"><strong class="small text-dark font-weight-bold">LOTS</strong></div>');
+                    UNIT_LOTS.forEach(lot => {
+                        $list.append(`<div class="mb-2 pl-2 border-left border-info">
+                            <small class="d-block text-truncate font-weight-bold" title="${lot.design_number}">Lot ${lot.lot_no} (#${lot.design_number}) [${lot.size_set_name || 'N/A'}]</small>
+                            <span class="badge badge-light border text-info small">Qty: ${lot.quantity}</span>
+                            <span class="badge badge-light border text-muted small ml-1">Rem: ${lot.remaining_quantity}</span>
+                        </div>`);
                     });
+                } else {
+                    $list.append('<div class="text-muted small">No lots available for packing at this unit.</div>');
                 }
-                $list.append('<div class="mt-3 mb-3"><strong class="small text-dark font-weight-bold">LOOSE</strong></div>');
-                ORDER_ITEMS.forEach(item => {
-                    let avl = parseInt(item.unit_available_qty) || 0;
-                    if (avl > 0) {
-                        $list.append(`<div class="mb-2 pl-2 border-left border-success"><small class="d-block text-truncate">${item.size} (${item.design_number})</small><span class="badge badge-light border text-success small">Avl: ${avl}</span></div>`);
-                    }
-                });
             }
 
             function addPlannerRow(data = null) {
@@ -1412,7 +1397,7 @@
                 });
                 let nextCartonNo = data ? data.carton_no : (highest > 0 ? highest + 1 : '');
 
-                let uniqueDesigns = [...new Set(ORDER_SETS.map(s => s.design_number))];
+                let uniqueDesigns = [...new Set(UNIT_LOTS.map(l => l.design_number))];
 
                 let html = `
                                             <tr class="planner-row">
@@ -1623,10 +1608,14 @@
 
                 let $domDesign = $('#domDesign');
                 $domDesign.html('<option value="">Select Design</option>');
+                let validDesigns = UNIT_LOTS ? UNIT_LOTS.map(l => l.design_number) : [];
+
                 DOMESTIC_MASTERS.products.forEach(p => {
+                    let dNum = p.design_number || 'N/A';
+                    if (!validDesigns.includes(dNum)) return;
+
                     let series = p.series ? p.series.name : '';
                     let garment = p.name_of_garment || '';
-                    let dNum = p.design_number || 'N/A';
                     let dLabel = `${dNum} (${series} ${garment})`;
 
                     $domDesign.append(`<option value="${p.id}" data-design="${dNum}">${dLabel}</option>`);
@@ -1851,7 +1840,11 @@
                 $list.html('<p class="small text-muted">Calculating...</p>');
 
                 let html = '';
+                let validDesigns = UNIT_LOTS ? UNIT_LOTS.map(l => l.design_number) : [];
+
                 ORDER_SETS.forEach(set => {
+                    if (!validDesigns.includes(set.design_number)) return;
+
                     let minSets = null;
                     let hasDetails = false;
                     let sizeDetailsHtml = '';
@@ -2254,6 +2247,7 @@
                                     <div>
                                         <span class="badge bg-dark mr-1">Lot ${lot.lot_no}</span>
                                         <strong class="text-primary">#${lot.design_number}</strong>
+                                        <span class="badge badge-light border text-secondary small ml-1">[${lot.size_set_name || 'N/A'}]</span>
                                     </div>
                                     <div>
                                         <span class="badge bg-info shadow-sm p-2" style="font-size: 13px;">
@@ -3023,9 +3017,13 @@
                 // 1. Populate Items List
                 let $list = $('#reworkItemsList');
                 $list.empty();
+                
+                let validDesigns = UNIT_LOTS ? UNIT_LOTS.map(l => l.design_number) : [];
 
                 if (ORDER_ITEMS && ORDER_ITEMS.length > 0) {
                     ORDER_ITEMS.forEach(item => {
+                        if (!validDesigns.includes(item.design_number)) return;
+                        
                         let avl = item.unit_available_qty || 0;
                         if (avl > 0) {
                             $list.append(`
@@ -3415,8 +3413,13 @@
                 // 2. Populate Items
                 let $list = $('#debitItemsList');
                 $list.empty();
+                
+                let validDesigns = UNIT_LOTS ? UNIT_LOTS.map(l => l.design_number) : [];
+
                 if (ORDER_ITEMS && ORDER_ITEMS.length > 0) {
                     ORDER_ITEMS.forEach(item => {
+                        if (!validDesigns.includes(item.design_number)) return;
+
                         let avl = item.unit_available_qty || 0;
                         if (avl > 0) {
                             $list.append(`
@@ -3591,8 +3594,12 @@
                 let $list = $('#samplingItemsList');
                 $list.empty();
 
+                let validDesigns = UNIT_LOTS ? UNIT_LOTS.map(l => l.design_number) : [];
+
                 if (ORDER_ITEMS && ORDER_ITEMS.length > 0) {
                     ORDER_ITEMS.forEach(item => {
+                        if (!validDesigns.includes(item.design_number)) return;
+
                         let avl = item.unit_available_qty || 0;
                         if (avl > 0) {
                             $list.append(`
@@ -3701,8 +3708,12 @@
                 let $list = $('#deadStockItemsList');
                 $list.empty();
 
+                let validDesigns = UNIT_LOTS ? UNIT_LOTS.map(l => l.design_number) : [];
+
                 if (ORDER_ITEMS && ORDER_ITEMS.length > 0) {
                     ORDER_ITEMS.forEach(item => {
+                        if (!validDesigns.includes(item.design_number)) return;
+
                         let avl = item.unit_available_qty || 0;
                         if (avl > 0) {
                             $list.append(`

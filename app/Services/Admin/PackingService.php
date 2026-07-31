@@ -163,6 +163,9 @@ class PackingService
                 'packing_date' => now(),
                 'status' => 0 // Draft
             ]);
+        } elseif (!$packing->order_main_id && $order_id) {
+            $packing->order_main_id = $order_id;
+            $packing->save();
         }
         return $packing;
     }
