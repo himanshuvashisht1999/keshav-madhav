@@ -827,8 +827,10 @@ class ReportController extends Controller
 
         $availableOrders = [];
         $availableLots = [];
+        $availableDesigns = [];
         $selectedOrders = $request->order_ids ?? [];
         $selectedLots = $request->lot_nos ?? [];
+        $selectedDesigns = $request->design_nos ?? [];
 
         if ($selectedCustomer) {
             $baseOrders = \App\Models\OrderMain::where('master_customer_id', $selectedCustomer)
@@ -846,6 +848,9 @@ class ReportController extends Controller
                 if ($order->OrderProductSets->isEmpty()) continue;
                 $availableOrders[$order->id] = $order->sku;
                 foreach ($order->OrderProductSets as $set) {
+                    if (!empty($set->design_number)) {
+                        $availableDesigns[$set->design_number] = $set->design_number;
+                    }
                     foreach ($set->orderLots as $lot) {
                         $availableLots[$lot->lot_no] = $lot->lot_no;
                     }
@@ -857,6 +862,8 @@ class ReportController extends Controller
                 if (!empty($selectedOrders) && !in_array($order->id, $selectedOrders)) continue;
 
                 foreach ($order->OrderProductSets as $set) {
+                    if (!empty($selectedDesigns) && !in_array($set->design_number, $selectedDesigns)) continue;
+
                     foreach ($set->orderLots as $lot) {
                         if (!empty($selectedLots) && !in_array($lot->lot_no, $selectedLots)) continue;
 
@@ -897,8 +904,10 @@ class ReportController extends Controller
             'master_stages',
             'availableOrders',
             'availableLots',
+            'availableDesigns',
             'selectedOrders',
-            'selectedLots'
+            'selectedLots',
+            'selectedDesigns'
         ));
     }
 }

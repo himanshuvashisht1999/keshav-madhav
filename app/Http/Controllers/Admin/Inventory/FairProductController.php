@@ -379,6 +379,8 @@ class FairProductController extends Controller
                 ->groupBy('color_id')
                 ->get();
 
+            $sampleRackIds = \App\Models\Storeroom::where('name', 'like', '%sample%')->with('racks')->get()->pluck('racks')->flatten()->pluck('id')->toArray();
+
             $sizeQuery = DomesticInventory::where('product_id', $product->id)->where('quantity', '>', 0);
             if ($request->size_set_id) {
                 $sizeQuery->where('size_set_id', $request->size_set_id);
@@ -387,16 +389,17 @@ class FairProductController extends Controller
             $product->available_sizes = $sizeQuery->with(['sizeSet', 'color'])
                 ->get()
                 ->groupBy('size_set_id')
-                ->map(function($inventories, $sizeSetId) use ($product, $allocatedBoxes) {
+                ->map(function($inventories, $sizeSetId) use ($product, $allocatedBoxes, $sampleRackIds) {
                     $firstInv = $inventories->first();
                     $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $product->id)
                         ->where('master_size_measurement_id', $sizeSetId)
                         ->first();
                     
-                    $colors = $inventories->groupBy('color_id')->map(function($colorInvs) use ($product, $sizeSetId, $allocatedBoxes) {
+                    $colors = $inventories->groupBy('color_id')->map(function($colorInvs) use ($product, $sizeSetId, $allocatedBoxes, $sampleRackIds) {
                         $firstColorInv = $colorInvs->first();
                         if (!$firstColorInv->color) return null;
                         
+                        $isSample = $colorInvs->whereIn('rack_id', $sampleRackIds)->isNotEmpty();
                         $totalBoxes = $colorInvs->sum('total_boxes');
                         
                         $allocated = $allocatedBoxes->where('product_id', $product->id)
@@ -407,12 +410,13 @@ class FairProductController extends Controller
                             $totalBoxes -= $allocated->total_allocated;
                         }
                         
-                        if ($totalBoxes <= 0) return null;
+                        // If not in sample warehouse, strictly enforce stock > 0
+                        if ($totalBoxes <= 0 && !$isSample) return null;
 
                         return [
                             'id' => $firstColorInv->color->id,
                             'name' => $firstColorInv->color->name,
-                            'total_boxes' => $totalBoxes,
+                            'total_boxes' => $isSample ? '-' : $totalBoxes,
                         ];
                     })->filter()->values()->toArray();
 

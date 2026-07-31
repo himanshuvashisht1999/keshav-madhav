@@ -168,6 +168,15 @@
                                     </div>
 
                                     <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                                        <label style="font-weight: 600;">Select Designs:</label>
+                                        <select name="design_nos[]" class="form-control select2" multiple data-placeholder="-- All Designs --">
+                                            @foreach($availableDesigns as $no => $no2)
+                                                <option value="{{ $no }}" {{ in_array($no, $selectedDesigns) ? 'selected' : '' }}>{{ $no }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
                                         <label style="font-weight: 600;">Select Lots:</label>
                                         <select name="lot_nos[]" class="form-control select2" multiple data-placeholder="-- All Lots --">
                                             @foreach($availableLots as $no => $no2)
