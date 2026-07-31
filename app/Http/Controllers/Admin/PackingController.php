@@ -139,6 +139,23 @@ class PackingController extends Controller
             })->values();
         }
 
+        $unit_lots = [];
+        if ($order) {
+            $unit_lots = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
+                ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
+                ->where('order_stage_transactions.to_stage_id', 11)
+                ->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
+                ->where('order_lots.order_main_id', $order->id)
+                ->select(
+                    'order_stage_transactions.lot_no',
+                    'order_products_sets.design_number',
+                    'order_stage_transactions.quantity',
+                    'order_stage_transactions.remaining_quantity'
+                )
+                ->get();
+        }
+
         $storerooms = \App\Models\Storeroom::with('racks')->where('status', 1)->get();
 
         $outflows = collect();
@@ -199,7 +216,7 @@ class PackingController extends Controller
         ];
         $order_type = strtolower(trim($order->order_type ?? ''));
 
-        return view('admin.packing.process', compact('slip', 'order', 'packing', 'storerooms', 'active_orders', 'packed_quantities', 'order_sets', 'unit_available', 'outflows', 'reworks', 'domestic_masters'));
+        return view('admin.packing.process', compact('slip', 'order', 'packing', 'storerooms', 'active_orders', 'packed_quantities', 'order_sets', 'unit_available', 'outflows', 'reworks', 'domestic_masters', 'unit_lots'));
     }
 
     public function processDomestic(Request $request, $slip_id)
@@ -1035,12 +1052,30 @@ class PackingController extends Controller
             return $set;
         });
 
+        $unit_lots = [];
+        if ($unit_id) {
+            $unit_lots = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
+                ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
+                ->where('order_stage_transactions.to_stage_id', 11)
+                ->where('order_stage_transactions.sub_stage_id_to', $unit_id)
+                ->where('order_lots.order_main_id', $id)
+                ->select(
+                    'order_stage_transactions.lot_no',
+                    'order_products_sets.design_number',
+                    'order_stage_transactions.quantity',
+                    'order_stage_transactions.remaining_quantity'
+                )
+                ->get();
+        }
+
         return response()->json([
             'status' => 'success',
             'order' => $order,
             'items' => $items,
             'sets' => $sets,
             'unit_available' => $unit_available,
+            'unit_lots' => $unit_lots,
             'packing' => \App\Models\PackingMain::where('order_main_id', $id)
                 ->where('slip_id', $request->slip_id)
                 ->with([

@@ -1204,6 +1204,7 @@
             const ALL_STOREROOMS = @json($storerooms);
             let ORDER_TYPE = "{{ strtolower($order->order_type ?? '') }}";
             const DOMESTIC_MASTERS = @json($domestic_masters ?? []);
+            let UNIT_LOTS = @json($unit_lots ?? []);
 
             // --- CORPORATE MULTI-CARTON PLANNER ---
             function openMultiCartonPlanner() {
@@ -1971,6 +1972,7 @@
                         ORDER_ID = orderId;
                         ORDER_ITEMS = response.items || [];
                         ORDER_SETS = response.sets || [];
+                        UNIT_LOTS = response.unit_lots || [];
                         ORDER_TYPE = (response.order && response.order.order_type) ? response.order.order_type.toLowerCase() : "";
 
                         // Update UI mode
@@ -2202,25 +2204,7 @@
                         let colorName = set.color_name || 'N/A';
                         let sizeSetTitle = set.size_set_name || '';
 
-                        html += `
-                                                        <li class="list-group-item bg-light border-bottom-0 pb-1">
-                                                            <div class="d-flex justify-content-between align-items-center">
-                                                                <div>
-                                                                    <strong class="text-dark">#${set.design_number}</strong>
-                                                                    <span class="badge badge-light border text-muted small ml-1 px-2">${colorName}</span>
-                                                                    <small class="text-secondary ml-1">[${sizeSetTitle}]</small>
-                                                                </div>
-                                                                <div>
-                                                                    <span class="badge ${unitAvailableSets > 0 ? 'bg-primary' : 'bg-warning'} shadow-sm p-2" style="border-radius: 8px;">
-                                                                        <i class="fas fa-boxes mr-1"></i> Full Sets: ${unitAvailableSets}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                            <div class="mt-1 d-flex justify-content-between align-items-center">
-                                                                <small class="text-muted">Set #${index + 1} (Target: ${set.set_quantity})</small>
-                                                                <span class="badge bg-secondary-light border text-dark font-weight-normal small px-2">Total Rem: ${remainingSets}</span>
-                                                            </div>
-                                                        </li>`;
+                        // html += removed to simplify left panel display
 
                         // Details
                         if (set.details_data || set.details) {
@@ -2232,13 +2216,7 @@
                                 let availableAtUnit = parseInt(item.unit_available_qty) || 0;
                                 let badgeClass = availableAtUnit === 0 ? 'bg-warning' : 'bg-info';
 
-                                html += `<li class="list-group-item d-flex justify-content-between align-items-center ps-4 py-1">
-                                                                    <small class="text-dark">Size: <strong>${item.size}</strong> <span class="text-muted ml-1">(${set.design_number})</span></small>
-                                                                    <span>
-                                                                        <small class="text-muted mr-2">Total Rem: ${remaining}</small>
-                                                                        <span class="badge ${badgeClass} badge-pill px-2">At Unit: ${availableAtUnit}</span> 
-                                                                    </span>
-                                                                </li>`;
+                                // html += removed to simplify left panel display
                             });
                         }
                         // console.log(set);
@@ -2266,23 +2244,31 @@
                     acc[set.id] = set;
                     return acc;
                 }, {});
-                // Fallback for flat items if no sets (Legacy)
-                if ((!ORDER_SETS || ORDER_SETS.length === 0) && ORDER_ITEMS.length > 0) {
-                    ORDER_ITEMS.forEach(item => {
-                        let packed = parseInt(item.packed_qty) || 0;
-                        let total = parseInt(item.total_quantity);
-                        let remaining = total - packed;
-                        let badgeClass = remaining === 0 ? 'bg-success' : 'bg-primary';
 
-                        html += `<li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                                                                                                                                                                        Size: ${item.size}
-                                                                                                                                                                                                                        <span class="badge ${badgeClass} badge-pill">${remaining} / ${total}</span>
-                                                                                                                                                                                                                    </li>`;
+                // --- NEW SIMPLE LEFT PANEL: SHOW LOTS ---
+                if (UNIT_LOTS && UNIT_LOTS.length > 0) {
+                    UNIT_LOTS.forEach(lot => {
+                        html += `
+                            <li class="list-group-item bg-light pb-2 pt-2 mb-2" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div>
+                                        <span class="badge bg-dark mr-1">Lot ${lot.lot_no}</span>
+                                        <strong class="text-primary">#${lot.design_number}</strong>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-info shadow-sm p-2" style="font-size: 13px;">
+                                            Qty: ${lot.quantity}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">Available at unit</small>
+                                    <span class="badge bg-secondary-light border text-dark font-weight-normal small px-2">Rem: ${lot.remaining_quantity}</span>
+                                </div>
+                            </li>`;
                     });
-                }
-
-                if (html === '') {
-                    html = '<li class="list-group-item text-muted text-center">No items found.</li>';
+                } else {
+                    html = '<li class="list-group-item text-muted text-center">No lots available for packing at this unit.</li>';
                 }
 
                 $('#available-items-list').html(html);
