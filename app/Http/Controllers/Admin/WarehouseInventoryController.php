@@ -46,11 +46,11 @@ class WarehouseInventoryController extends Controller
         }
 
         if ($request->has('rack_id') && !empty($request->rack_id)) {
-            $query->where('rack_id', $request->rack_id);
+            $query->where('domestic_inventories.rack_id', $request->rack_id);
         }
 
         if ($request->has('size_set_id') && !empty($request->size_set_id)) {
-            $query->where('size_set_id', $request->size_set_id);
+            $query->where('domestic_inventories.size_set_id', $request->size_set_id);
         }
 
         if ($request->has('design_filter') && !empty($request->design_filter)) {
@@ -60,11 +60,11 @@ class WarehouseInventoryController extends Controller
         }
 
         if ($request->has('product_id') && !empty($request->product_id)) {
-            $query->where('product_id', $request->product_id);
+            $query->where('domestic_inventories.product_id', $request->product_id);
         }
 
         if ($request->has('color_id') && !empty($request->color_id)) {
-            $query->where('color_id', $request->color_id);
+            $query->where('domestic_inventories.color_id', $request->color_id);
         }
 
         if ($request->has('series_id') && !empty($request->series_id)) {
