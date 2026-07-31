@@ -2886,6 +2886,202 @@ class AgentOrderController extends Controller
         return $pdf->download('Dispatch_Invoice_' . $dispatch->id . '.pdf');
     }
 
+    public function downloadDispatchRetailInvoice(Request $request, $id)
+    {
+        $dispatch = \App\Models\AgentOrderDispatch::with(['shop', 'vendor', 'agent'])->findOrFail($id);
+        $settings = DB::table('settings')->first();
+
+        $brandId = $request->get('brand_id');
+        $type = $request->get('type');
+
+        $query = DB::table('agent_order_items')
+            ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
+            ->where('agent_order_items.agent_order_dispatch_id', $id);
+
+        if ($brandId) {
+            $query->where('production_goods.brand_id', $brandId);
+        }
+
+        $items = $query->select('agent_order_items.*', 'production_goods.brand_id')->get();
+
+        $selectedBrand = $brandId ? \App\Models\Brand::find($brandId) : null;
+
+        $filteredSubtotal = 0;
+        $uniqueBrandIds = [];
+        foreach ($items as $item) {
+            $filteredSubtotal += ($item->quantity * $item->selling_price);
+            if ($item->brand_id) {
+                $uniqueBrandIds[$item->brand_id] = true;
+            }
+        }
+        $brandCount = count($uniqueBrandIds);
+
+        $gstPercent = $dispatch->gst_percentage ?? 5;
+        $discountAmt = 0;
+
+        if (!$brandId) {
+            $filteredSubtotal = $dispatch->total_amount;
+            $discountAmt = $dispatch->discount_amount ?? 0;
+            $filteredGst = $dispatch->gst_amount;
+            $filteredGrandTotal = $dispatch->grand_total;
+        } else {
+            $filteredGst = $filteredSubtotal * ($gstPercent / 100);
+            $filteredGrandTotal = $filteredSubtotal + $filteredGst;
+        }
+
+        $groupedItems = $items->groupBy(function ($item) {
+            return $item->product_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
+        })->map(function ($group) {
+            $first = $group->first();
+            $colors = $group->pluck('color_name')->unique()->filter(function($c){ return !empty(trim($c)); })->implode(', ');
+            return (object) [
+                'product_name' => $first->product_name,
+                'design_number' => $first->design_number,
+                'color_name' => $colors,
+                'size_set_name' => $first->size_set_name,
+                'mrp' => $first->mrp,
+                'selling_price' => $first->selling_price,
+                'total_qty' => $group->sum('quantity'),
+                'box_count' => $group->sum('box_qty'),
+            ];
+        })->values();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.dispatches.retail-invoice-pdf', compact(
+            'dispatch',
+            'groupedItems',
+            'settings',
+            'selectedBrand',
+            'type',
+            'filteredSubtotal',
+            'filteredGst',
+            'filteredGrandTotal',
+            'brandCount',
+            'discountAmt',
+            'brandId'
+        ));
+        return $pdf->download('Dispatch_Retail_Invoice_' . $dispatch->id . '.pdf');
+    }
+
+    public function downloadDispatchRetailInvoiceExcel(Request $request, $id)
+    {
+        $dispatch = \App\Models\AgentOrderDispatch::with(['shop', 'vendor', 'agent'])->findOrFail($id);
+        
+        $brandId = $request->get('brand_id');
+        $query = DB::table('agent_order_items')
+            ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
+            ->where('agent_order_items.agent_order_dispatch_id', $id);
+
+        if ($brandId) {
+            $query->where('production_goods.brand_id', $brandId);
+        }
+
+        $items = $query->select('agent_order_items.*', 'production_goods.brand_id')->get();
+
+        $filteredSubtotal = 0;
+        foreach ($items as $item) {
+            $filteredSubtotal += ($item->quantity * $item->selling_price);
+        }
+
+        $gstPercent = $dispatch->gst_percentage ?? 5;
+        $discountAmt = 0;
+
+        if (!$brandId) {
+            $filteredSubtotal = $dispatch->total_amount;
+            $discountAmt = $dispatch->discount_amount ?? 0;
+            $filteredGst = $dispatch->gst_amount;
+            $filteredGrandTotal = $dispatch->grand_total;
+        } else {
+            $filteredGst = $filteredSubtotal * ($gstPercent / 100);
+            $filteredGrandTotal = $filteredSubtotal + $filteredGst;
+        }
+
+        $groupedItems = $items->groupBy(function ($item) {
+            return $item->product_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
+        })->map(function ($group) {
+            $first = $group->first();
+            $colors = $group->pluck('color_name')->unique()->filter(function($c){ return !empty(trim($c)); })->implode(', ');
+            return (object) [
+                'product_name' => $first->product_name,
+                'design_number' => $first->design_number,
+                'color_name' => $colors,
+                'size_set_name' => $first->size_set_name,
+                'mrp' => $first->mrp,
+                'selling_price' => $first->selling_price,
+                'total_qty' => $group->sum('quantity'),
+                'box_count' => $group->sum('box_qty'),
+            ];
+        })->values();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Retail Invoice');
+
+        $headers = ['S.N.', 'Description of Goods', 'PCs Qty.', 'BoX Qty.', 'Unit', 'MRP', 'Disc.', 'Price', 'Total Amount'];
+        $cols    = range('A', 'I');
+        foreach ($headers as $i => $h) {
+            $cell = $cols[$i] . '1';
+            $sheet->setCellValue($cell, $h);
+            $sheet->getStyle($cell)->getFont()->setBold(true);
+            $sheet->getStyle($cell)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        }
+
+        $row = 2;
+        $tP = 0;
+        $tB = 0;
+        foreach ($groupedItems as $index => $item) {
+            $disc = ($item->mrp > 0 && $item->mrp > $item->selling_price) ? ($item->mrp - $item->selling_price) : '-';
+            
+            $sheet->setCellValue('A' . $row, $index + 1);
+            $sheet->setCellValue('B' . $row, strtoupper($item->product_name . ' ' . $item->size_set_name));
+            $sheet->setCellValue('C' . $row, $item->total_qty);
+            $sheet->setCellValue('D' . $row, $item->box_count);
+            $sheet->setCellValue('E' . $row, 'BOX');
+            $sheet->setCellValue('F' . $row, $item->mrp);
+            $sheet->setCellValue('G' . $row, $disc);
+            $sheet->setCellValue('H' . $row, $item->selling_price);
+            $sheet->setCellValue('I' . $row, $item->total_qty * $item->selling_price);
+            
+            $tP += $item->total_qty;
+            $tB += $item->box_count;
+            $row++;
+        }
+
+        $sheet->setCellValue('C' . $row, $tP . ' Pcs');
+        $sheet->setCellValue('D' . $row, $tB . ' Box');
+        $sheet->setCellValue('I' . $row, $filteredSubtotal);
+        $sheet->getStyle('A' . $row . ':I' . $row)->getFont()->setBold(true);
+        $row++;
+
+        if ($discountAmt > 0) {
+            $sheet->setCellValue('H' . $row, 'Extra Discount');
+            $sheet->setCellValue('I' . $row, '-' . $discountAmt);
+            $row++;
+        }
+
+        $sheet->setCellValue('H' . $row, 'GST');
+        $sheet->setCellValue('I' . $row, $filteredGst);
+        $row++;
+
+        if ($dispatch->other_charges > 0 && !$brandId) {
+            $sheet->setCellValue('H' . $row, 'Other Charges');
+            $sheet->setCellValue('I' . $row, $dispatch->other_charges);
+            $row++;
+        }
+
+        $sheet->setCellValue('H' . $row, 'Grand Total');
+        $sheet->setCellValue('I' . $row, $filteredGrandTotal);
+        $sheet->getStyle('H' . $row . ':I' . $row)->getFont()->setBold(true);
+
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'Dispatch_Retail_Invoice_' . $dispatch->id . '.xlsx';
+        
+        $tempFile = tempnam(sys_get_temp_dir(), 'excel');
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
+    }
+
+
     public function updateDispatchItems(Request $request, $id)
     {
         $dispatch = \App\Models\AgentOrderDispatch::findOrFail($id);

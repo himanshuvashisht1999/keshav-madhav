@@ -589,6 +589,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/dispatches', [AdminAgentOrderController::class, 'indexDispatches'])->name('dispatches.index');
             Route::get('/dispatches/{id}', [AdminAgentOrderController::class, 'dispatchShow'])->name('dispatches.show');
             Route::get('/dispatches/{id}/invoice', [AdminAgentOrderController::class, 'downloadDispatchInvoice'])->name('dispatches.download-invoice');
+            Route::get('/dispatches/{id}/retail-invoice', [AdminAgentOrderController::class, 'downloadDispatchRetailInvoice'])->name('dispatches.download-retail-invoice');
+            Route::get('/dispatches/{id}/retail-invoice-excel', [AdminAgentOrderController::class, 'downloadDispatchRetailInvoiceExcel'])->name('dispatches.download-retail-invoice-excel');
             Route::get('/dispatches/{id}/send-whatsapp-invoice', [AdminAgentOrderController::class, 'sendWhatsappDispatchInvoice'])->name('dispatches.send-whatsapp-invoice');
             Route::get('/dispatches/{id}/packing-slip', [AdminAgentOrderController::class, 'downloadDispatchPackingSlip'])->name('dispatches.download-packing-slip');
             Route::get('/dispatches/{id}/send-whatsapp-packing-slip', [AdminAgentOrderController::class, 'sendWhatsappDispatchPackingSlip'])->name('dispatches.send-whatsapp-packing-slip');
