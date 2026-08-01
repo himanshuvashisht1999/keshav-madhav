@@ -1016,7 +1016,7 @@ class AgentOrderController extends Controller
                         ->where('domestic_inventories.size_set_id', $item->size_set_id)
                         ->where('domestic_inventories.total_boxes', '>', 0)
                         ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name')
-                        ->orderByRaw("CASE WHEN LOWER(storerooms.name) LIKE '%sample%' THEN 1 ELSE 0 END")
+                        ->orderByRaw("CASE WHEN LOWER(storerooms.name) = 'advance sample' THEN 1 ELSE 0 END")
                         ->first();
                         
                     if ($inventoryInfo && isset($inventoryInfo->rack_id)) {
@@ -1034,7 +1034,7 @@ class AgentOrderController extends Controller
                     ->where('domestic_inventories.size_set_id', $item->size_set_id)
                     ->where('domestic_inventories.total_boxes', '>', 0)
                     ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name', 'domestic_inventories.total_boxes as boxes')
-                    ->orderByRaw("CASE WHEN LOWER(storerooms.name) LIKE '%sample%' THEN 1 ELSE 0 END")
+                    ->orderByRaw("CASE WHEN LOWER(storerooms.name) = 'advance sample' THEN 1 ELSE 0 END")
                     ->get();
 
                 return (object) [

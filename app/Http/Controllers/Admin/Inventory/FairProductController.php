@@ -379,7 +379,7 @@ class FairProductController extends Controller
                 ->groupBy('color_id')
                 ->get();
 
-            $sampleRackIds = \App\Models\Storeroom::where('name', 'like', '%sample%')->with('racks')->get()->pluck('racks')->flatten()->pluck('id')->toArray();
+            $sampleRackIds = \App\Models\Storeroom::where('name', 'ADVANCE SAMPLE')->with('racks')->get()->pluck('racks')->flatten()->pluck('id')->toArray();
 
             $sizeQuery = DomesticInventory::where('product_id', $product->id)->where('quantity', '>', 0);
             if ($request->size_set_id) {
