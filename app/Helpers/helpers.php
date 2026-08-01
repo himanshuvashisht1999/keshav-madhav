@@ -547,7 +547,7 @@ function generateFairBulkTspl($samples)
             ->where('master_size_measurement_id', $sample->size_set_id)
             ->first();
         $mrp = $variant->mrp ?? 0;
-        $final_price = $mrp - ($mrp * ($sample->discount_percent / 100));
+        $final_price = ceil($mrp - ($mrp * ($sample->discount_percent / 100)));
 
         $count = $sample->barcode_count ?? 1;
         for ($i = 0; $i < $count; $i++) {

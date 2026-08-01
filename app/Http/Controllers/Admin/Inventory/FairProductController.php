@@ -226,7 +226,7 @@ class FairProductController extends Controller
                 ->first();
             
             $mrp = $variant->mrp ?? 0;
-            $sample->final_price = $mrp - ($mrp * ($sample->discount_percent / 100));
+            $sample->final_price = ceil($mrp - ($mrp * ($sample->discount_percent / 100)));
 
             // Image selection priority: Specific Variant -> Specific Variant's color -> Any Variant -> Any Variant's color -> Main Image
             $displayImage = null;
@@ -563,7 +563,7 @@ class FairProductController extends Controller
                 ->first();
             
             $mrp = $variant->mrp ?? 0;
-            $sample->final_price = $mrp - ($mrp * ($sample->discount_percent / 100));
+            $sample->final_price = ceil($mrp - ($mrp * ($sample->discount_percent / 100)));
 
             // Image selection priority: Specific Variant -> Specific Variant's color -> Any Variant -> Any Variant's color -> Main Image
             $displayImage = null;
@@ -679,7 +679,7 @@ class FairProductController extends Controller
 
         // Calculate WSP (Net Price)
         $mrp = $variant->mrp ?? 0;
-        $sample->final_price = $mrp - ($mrp * ($sample->discount_percent / 100));
+        $sample->final_price = ceil($mrp - ($mrp * ($sample->discount_percent / 100)));
 
         return view('admin.inventory.fair_product.color_chart', compact('sample', 'variant'));
     }

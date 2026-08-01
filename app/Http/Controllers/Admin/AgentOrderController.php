@@ -210,7 +210,7 @@ class AgentOrderController extends Controller
 
                 DB::raw('(SUM(domestic_inventories.total_boxes) - MAX(COALESCE(alloc.total_allocated, 0))) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
-                DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
+                DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
                 DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample')
             );
@@ -410,6 +410,7 @@ class AgentOrderController extends Controller
                 $mrp = $variant->mrp ?? 0;
 
                 $selling_price = isset($var['unit_price']) ? (float) $var['unit_price'] : ($mrp - ($mrp * $brand_discount / 100));
+                $selling_price = ceil($selling_price);
 
                 $seriesName = ($product->series) ? $product->series->name : '';
                 $product_name = trim($seriesName . ' ' . $product->name_of_garment);
@@ -494,7 +495,7 @@ class AgentOrderController extends Controller
             $gst_amount = $taxable_amount * ($gst_percentage / 100);
         }
 
-        $grand_total = $taxable_amount + $gst_amount + $other_charges;
+        $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
 
         $status = strtolower($order_type) === 'direct' ? 'dispatched' : ($request->status ?? 'pending');
         DB::beginTransaction();
@@ -1328,7 +1329,7 @@ class AgentOrderController extends Controller
 
                 DB::raw('(SUM(domestic_inventories.total_boxes) - MAX(COALESCE(alloc.total_allocated, 0))) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
-                DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
+                DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
                 DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample'),
                 DB::raw('MAX(current_items.box_qty) as current_order_qty')
@@ -1504,6 +1505,7 @@ class AgentOrderController extends Controller
 
                 $mrp = $variant->mrp ?? 0;
                 $selling_price = isset($var['unit_price']) ? (float) $var['unit_price'] : ($mrp - ($mrp * $brand_discount / 100));
+                $selling_price = ceil($selling_price);
                 $seriesName = ($product->series) ? $product->series->name : '';
                 $product_name = trim($seriesName . ' ' . $product->name_of_garment);
 
@@ -1581,7 +1583,7 @@ class AgentOrderController extends Controller
             $gst_amount = $taxable_amount * ($gst_percentage / 100);
         }
 
-        $grand_total = $taxable_amount + $gst_amount + $other_charges;
+        $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
 
         $expected_dispatch_date = $request->expected_dispatch_date ?: $order->expected_dispatch_date;
 
@@ -2486,7 +2488,7 @@ class AgentOrderController extends Controller
 
             $dispatch->total_amount = $subtotal;
             $dispatch->gst_amount = $gst;
-            $dispatch->grand_total = $subtotal + $gst;
+            $dispatch->grand_total = ceil($subtotal + $gst);
             $dispatch->save();
 
             // Update Party Balance (Decrease on dispatch)
@@ -2758,7 +2760,7 @@ class AgentOrderController extends Controller
 
             $taxable_amount = $finalSubtotal - $discount_amount;
             $gst_amount = $taxable_amount * ($gst_percentage / 100);
-            $grand_total = $taxable_amount + $gst_amount + $other_charges;
+            $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
 
             $dispatch->update([
                 'total_amount' => $finalSubtotal,
@@ -3661,7 +3663,7 @@ class AgentOrderController extends Controller
             $discount_amount = ($total_amount * $discount_percentage / 100);
             $taxable_amount = $total_amount - $discount_amount;
             $gst_amount = $taxable_amount * ($gst_percentage / 100);
-            $grand_total = $taxable_amount + $gst_amount + $other_charges;
+            $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
 
             $return = AgentOrderReturn::create([
                 'agent_order_dispatch_id' => $id,
@@ -3963,7 +3965,7 @@ class AgentOrderController extends Controller
             $discount_amount = ($total_amount * $discount_percentage / 100);
             $taxable_amount = $total_amount - $discount_amount;
             $gst_amount = $taxable_amount * ($gst_percentage / 100);
-            $grand_total = $taxable_amount + $gst_amount + $other_charges;
+            $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
 
             $return->update([
                 'return_date' => $request->return_date ?? date('Y-m-d'),

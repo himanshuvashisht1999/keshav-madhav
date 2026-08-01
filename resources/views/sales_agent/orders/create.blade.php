@@ -983,7 +983,7 @@
 
                 let gstAmount = parseFloat($('#gstAmountInput').val()) || 0;
 
-                const grandTotal = taxableAmount + gstAmount + otherCharges;
+                const grandTotal = Math.ceil(taxableAmount + gstAmount + otherCharges);
 
                 $('#selectedCount').text(totalBoxes);
                 $('#subTotalAmount').text(subTotal.toFixed(2));

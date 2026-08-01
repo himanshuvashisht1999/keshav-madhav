@@ -536,7 +536,7 @@
                     }
                 }
 
-                const grandTotal = taxableAmount + gstAmount + otherCharges;
+                const grandTotal = Math.ceil(taxableAmount + gstAmount + otherCharges);
 
                 $('#totalRollsHeader').text(rollCount + ' Rolls Added');
                 $('#subTotalAmount').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));

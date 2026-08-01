@@ -370,7 +370,7 @@
             }
 
             const otherCharges = parseFloat($('#otherCharges').val()) || 0;
-            const grandTotal = taxableAmt + gstAmt + otherCharges;
+            const grandTotal = Math.ceil(taxableAmt + gstAmt + otherCharges);
 
             $('#subTotal').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
             $('#discountAmount').text(discountAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 }));

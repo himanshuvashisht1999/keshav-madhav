@@ -118,7 +118,7 @@ class SalesOrderController extends Controller
 
                 DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
-                DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
+                DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp')
             );
 
@@ -175,6 +175,7 @@ class SalesOrderController extends Controller
 
             $mrp = $variant->mrp ?? 0;
             $unit_price = (float) ($var['unit_price'] ?? $mrp);
+            $unit_price = ceil($unit_price);
             $pcs_per_box = (float) ($var['pcs_per_box'] ?? ($sizeSet->total_pieces ?? 0));
             $total_pcs = $var['qty'] * $pcs_per_box;
 
@@ -211,7 +212,7 @@ class SalesOrderController extends Controller
         $discount_amount = ($total_amount * $discount_percentage / 100);
         $taxable_amount = $total_amount - $discount_amount;
         $gst_amount = $taxable_amount * ($gst_percentage / 100);
-        $grand_total = $taxable_amount + $gst_amount;
+        $grand_total = ceil($taxable_amount + $gst_amount);
 
         DB::beginTransaction();
         try {

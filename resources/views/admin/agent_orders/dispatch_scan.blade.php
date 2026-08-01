@@ -670,7 +670,7 @@
                     $('#modal_gst_amount_input').val(gstAmount.toFixed(2));
                 }
 
-                const grandTotal = taxableAmount + gstAmount + otherCharges;
+                const grandTotal = Math.ceil(taxableAmount + gstAmount + otherCharges);
                 $('#modal_grand_total_display').text('₹' + grandTotal.toLocaleString('en-IN', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2

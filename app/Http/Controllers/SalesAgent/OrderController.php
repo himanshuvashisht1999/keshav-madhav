@@ -185,7 +185,7 @@ class OrderController extends Controller
                 'master_design_patterns.name as pattern_name',
                 DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
-                DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
+                DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
                 DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample')
             );
@@ -371,6 +371,7 @@ class OrderController extends Controller
             $mrp = $variant->mrp ?? 0;
 
             $selling_price = isset($var['unit_price']) ? (float) $var['unit_price'] : ($mrp - ($mrp * $brand_discount / 100));
+            $selling_price = ceil($selling_price);
 
             $seriesName = ($product->series) ? $product->series->name : '';
             $product_name = trim($seriesName . ' ' . $product->name_of_garment);
@@ -454,7 +455,7 @@ class OrderController extends Controller
             $gst_amount = $taxable_amount * ($gst_percentage / 100);
         }
 
-        $grand_total = $taxable_amount + $gst_amount + $other_charges;
+        $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
 
         $status = $order_type === 'direct' ? 'dispatched' : 'pending';
 
@@ -719,7 +720,7 @@ class OrderController extends Controller
             'master_design_patterns.name as pattern_name',
             DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
             DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
-            DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
+            DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
             DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
             DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample')
         );
@@ -903,7 +904,7 @@ class OrderController extends Controller
                 'domestic_inventories.size_set_id',
                 DB::raw('MAX(current_items.box_qty) as current_order_qty'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
-                DB::raw('(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price')
+                DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price')
             )
             ->groupBy(
                 'domestic_inventories.product_id',
@@ -987,6 +988,7 @@ class OrderController extends Controller
             
             // Use unit_price from front-end if available, else calculate
             $selling_price = isset($var['unit_price']) ? (float)$var['unit_price'] : ($mrp - ($mrp * $brand_discount / 100));
+            $selling_price = ceil($selling_price);
             
             $seriesName = ($product->series) ? $product->series->name : '';
             $product_name = trim($seriesName . ' ' . $product->name_of_garment);
@@ -1077,7 +1079,7 @@ class OrderController extends Controller
             $gst_amount = $taxable_amount * ($gst_percentage / 100);
         }
 
-        $grand_total = $taxable_amount + $gst_amount + $other_charges;
+        $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
 
         DB::beginTransaction();
         try {
