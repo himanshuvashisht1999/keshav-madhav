@@ -61,6 +61,10 @@ class UploadedSlipsController extends Controller
             $query->whereDate('created_at', $request->date);
         }
 
+        if ($request->filled('bill_number')) {
+            $query->where('bill_number', 'like', '%' . $request->bill_number . '%');
+        }
+
         if ($request->filled('stage_master_unit_id')) {
             $query->where('stage_master_unit_id', $request->stage_master_unit_id);
         }

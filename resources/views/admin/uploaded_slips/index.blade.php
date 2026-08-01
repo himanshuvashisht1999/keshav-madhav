@@ -21,6 +21,10 @@
                                 <input type="text" name="lot_no" class="form-control form-control-sm" placeholder="Search Lot..." value="{{ request('lot_no') }}">
                             </div>
                             <div class="col-md mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">Bill No</label>
+                                <input type="text" name="bill_number" class="form-control form-control-sm" placeholder="Search Bill..." value="{{ request('bill_number') }}">
+                            </div>
+                            <div class="col-md mb-2">
                                 <label class="small font-weight-bold text-muted mb-1">From Stage</label>
                                 <select name="from_stage_id" class="form-control select2 form-control-sm">
                                     <option value="">-- All Stages --</option>
