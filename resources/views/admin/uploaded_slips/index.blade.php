@@ -121,6 +121,7 @@
                                             $distinctLots = $allLots->unique()->filter();
                                         @endphp
 
+                                        @php $totalSlipQty = 0; @endphp
                                         @if($distinctLots->isNotEmpty())
                                             @foreach($distinctLots as $lot)
                                                 @php
@@ -140,6 +141,7 @@
                                                             }
                                                         }
                                                     }
+                                                    $totalSlipQty += $lotQty;
                                                 @endphp
                                                 <span class="badge badge-info shadow-sm mb-1">#{{ $lot }} @if($lotQty > 0) ({{ $lotQty }}) @endif</span><br>
                                             @endforeach
@@ -148,7 +150,12 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge badge-light shadow-sm">{{ $slip->bill_number ?? '-' }}</span>
+                                        <span class="badge badge-light shadow-sm">
+                                            {{ $slip->bill_number ?? '-' }}
+                                            @if(isset($totalSlipQty) && $totalSlipQty > 0)
+                                                ({{ $totalSlipQty }})
+                                            @endif
+                                        </span>
                                     </td>
                                     <td>
                                         @if($slip->toStage)
