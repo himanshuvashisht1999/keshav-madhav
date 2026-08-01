@@ -1784,34 +1784,5 @@ Route::get('/debug-stages', function () {
 });
 
 
-Route::get('/fix-remaining-quantities', function () {
-    // Fetch all fabric receipt rolls
-    $rolls = \App\Models\FabricReceiptDetail::all();
-    $fixedCount = 0;
-    
-    foreach($rolls as $roll) {
-        // 1. Calculate internal usages
-        $internal = \App\Models\FabricRollAssigning::where('fabric_receipt_detail_id', $roll->id)
-            ->sum('meter');
-            
-        // 2. Calculate agent order usages (only those that are dispatched)
-        $agent = \App\Models\AgentOrderFabricItem::where('fabric_receipt_detail_id', $roll->id)
-            ->whereNotNull('agent_order_dispatch_id')
-            ->sum('meter');
-            
-        // 3. Calculate what the remaining quantity SHOULD be
-        $expected = $roll->meter - $internal - $agent;
-        
-        // 4. If the database is out of sync, fix it
-        if (abs($roll->remaining_quantity - $expected) > 0.01) {
-            $roll->remaining_quantity = $expected;
-            $roll->save();
-            $fixedCount++;
-        }
-    }
-    
-    return "Database sync complete! Successfully fixed {$fixedCount} fabric rolls.";
-});
-
 
 
