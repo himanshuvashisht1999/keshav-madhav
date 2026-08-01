@@ -111,7 +111,10 @@
                                                 @endif
                                             </select>
                                         </div>
-                                        
+                                        <div class="col-md-12 mt-2 mb-2">
+                                            <label>Bill Number (Optional)</label>
+                                            <input type="text" name="bill_number" class="form-control" placeholder="Enter Bill Number">
+                                        </div>
                                     </div>
                                    
 

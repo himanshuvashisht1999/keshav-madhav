@@ -120,7 +120,7 @@
                     <th width="8%" class="text-center">BoX Qty.</th>
                     <th width="8%" class="text-center">Unit</th>
                     <th width="10%" class="text-right">MRP</th>
-                    <th width="8%" class="text-right">Disc.</th>
+                    <th width="8%" class="text-right">Disc. %</th>
                     <th width="10%" class="text-right">Price</th>
                     <th width="13%" class="text-right">Total Amount</th>
                 </tr>
@@ -137,7 +137,7 @@
                         <td class="text-right">{{ number_format($item->mrp, 2) }}</td>
                         <td class="text-right">
                             @if($item->mrp > 0 && $item->mrp > $item->selling_price)
-                                {{ number_format($item->mrp - $item->selling_price, 2) }}
+                                {{ number_format((($item->mrp - $item->selling_price) / $item->mrp) * 100, 2) }}%
                             @else
                                 -
                             @endif

@@ -90,6 +90,7 @@
                                     <th>From Stage</th>
                                     <th>Unit</th>
                                     <th>Lot No</th>
+                                    <th>Bill No</th>
                                     <th>To Stage</th>
                                     <th>ID</th>
 
@@ -145,6 +146,9 @@
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-light shadow-sm">{{ $slip->bill_number ?? '-' }}</span>
                                     </td>
                                     <td>
                                         @if($slip->toStage)

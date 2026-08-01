@@ -177,6 +177,16 @@
                             </strong> 
                             <span class="mx-2 text-light-gray">|</span>
                             Agent: <strong class="text-dark">{{ $dispatch->agent->name ?? 'Direct' }}</strong>
+                            
+                            @if($dispatch->company_id)
+                                <span class="mx-2 text-light-gray">|</span>
+                                Company: <strong class="text-dark">{{ $dispatch->company->name ?? 'N/A' }}</strong>
+                            @endif
+
+                            @if($dispatch->bill_no)
+                                <span class="mx-2 text-light-gray">|</span>
+                                Bill No: <strong class="text-dark">{{ $dispatch->bill_no }}</strong>
+                            @endif
                         </p>
                     </div>
                     <div class="col-md-7 text-md-right mt-3 mt-md-0 d-flex flex-wrap align-items-center justify-content-md-end" style="gap: 0.5rem;">
@@ -253,6 +263,19 @@
                             <div class="form-group mb-3">
                                 <label class="stat-label">Dispatch Date</label>
                                 <input type="datetime-local" class="form-control" style="border-radius: 10px; height: 44px;" id="dispatch_date" name="dispatch_date" value="{{ date('Y-m-d\TH:i', strtotime($dispatch->dispatch_date)) }}" required>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="stat-label">Company</label>
+                                <select class="form-control" style="border-radius: 10px; height: 44px;" id="company_id" name="company_id">
+                                    <option value="">Select Company</option>
+                                    @foreach($companies as $company)
+                                        <option value="{{ $company->id }}" {{ $dispatch->company_id == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="stat-label">Bill Number</label>
+                                <input type="text" class="form-control" style="border-radius: 10px; height: 44px;" id="bill_no" name="bill_no" value="{{ $dispatch->bill_no }}" placeholder="Enter Bill Number">
                             </div>
                             <div class="form-group mb-3">
                                 <label class="stat-label">Subtotal Amount (Pcs * Price)</label>

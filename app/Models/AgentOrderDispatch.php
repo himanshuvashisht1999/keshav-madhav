@@ -25,6 +25,8 @@ class AgentOrderDispatch extends Model
         'grand_total',
         'status',
         'remark',
+        'company_id',
+        'bill_no',
         'created_by'
     ];
 
@@ -53,6 +55,11 @@ class AgentOrderDispatch extends Model
     public function dispatchItems()
     {
         return $this->hasMany(AgentOrderDispatchItem::class, 'agent_order_dispatch_id');
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     public function shop()

@@ -273,6 +273,11 @@
                                             </div>
                                             <small class="text-danger" id="err_lot_no"></small>
 
+                                            <div class="card p-2 mt-3 border">
+                                                <label>Bill Number (Optional)</label>
+                                                <input type="text" name="bill_number" id="bill_number" class="form-control" placeholder="Enter Bill Number">
+                                            </div>
+
                                             {{-- CUTTING MASTER --}}
                                             <input type="hidden" name="to_master_unit" value="">
                                             <input type="hidden" name="main_size_details" id="main_size_details" value="">
@@ -424,6 +429,11 @@
                                                 </select>
                                             </div>
 
+                                            <div class="form-group border p-2 mt-2">
+                                                <label class="font-weight-bold">Bill Number (Optional)</label>
+                                                <input type="text" name="bill_number" class="form-control" placeholder="Enter Bill Number">
+                                            </div>
+
                                             {{-- Lot Details Display --}}
                                             <div id="stitching_lot_details" class="lot-details-container" style="display:none;">
                                             </div>
@@ -500,6 +510,11 @@
                                                         <option value="{{ $lot_no }}">{{ $lot_no }}</option>
                                                     @endforeach
                                                 </select>
+                                            </div>
+
+                                            <div class="form-group border p-2 mt-2">
+                                                <label class="font-weight-bold">Bill Number (Optional)</label>
+                                                <input type="text" name="bill_number" class="form-control" placeholder="Enter Bill Number">
                                             </div>
 
                                             {{-- Lot Details Display --}}

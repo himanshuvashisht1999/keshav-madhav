@@ -2256,8 +2256,9 @@ class AgentOrderController extends Controller
             ->where('agent_order_id', $id)
             ->whereNull('dispatched_at')
             ->sum(DB::raw('scanned_quantity * selling_price'));
+        $companies = \App\Models\Company::where('status', 1)->get();
 
-        return view('admin.agent_orders.dispatch_scan', compact('order', 'groupedItems', 'scannedBoxes', 'scannedTotal'));
+        return view('admin.agent_orders.dispatch_scan', compact('order', 'groupedItems', 'scannedBoxes', 'scannedTotal', 'companies'));
     }
 
     public function processScan(Request $request, $id)
@@ -2547,6 +2548,10 @@ class AgentOrderController extends Controller
             $query->whereDate('dispatch_date', '<=', $request->to_date);
         }
 
+        if ($request->filled('bill_no')) {
+            $query->where('bill_no', 'like', '%' . $request->bill_no . '%');
+        }
+
         if ($request->filled('dispatch_type')) {
             $dispatchType = $request->dispatch_type;
             $query->whereHas('orders', function ($q) use ($dispatchType) {
@@ -2612,8 +2617,9 @@ class AgentOrderController extends Controller
             ->get();
 
         $isFabric = $dispatch->orders->contains('sale_type', 'fabric') || $fabricItems->isNotEmpty();
+        $companies = \App\Models\Company::where('status', 1)->get();
 
-        return view('admin.agent_orders.dispatches.show', compact('dispatch', 'groupedItems', 'fabricItems', 'isFabric'));
+        return view('admin.agent_orders.dispatches.show', compact('dispatch', 'groupedItems', 'fabricItems', 'isFabric', 'companies'));
     }
 
     public function dispatchSelected(Request $request)
@@ -2663,6 +2669,7 @@ class AgentOrderController extends Controller
                 'created_by' => Auth::id(),
                 'dispatch_date' => $request->dispatch_date ? date('Y-m-d H:i:s', strtotime($request->dispatch_date)) : now(),
                 'remark' => $request->remark,
+                'company_id' => $request->company_id,
             ]);
 
             $calculatedSubtotal = 0;
@@ -3016,7 +3023,7 @@ class AgentOrderController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Retail Invoice');
 
-        $headers = ['S.N.', 'Description of Goods', 'PCs Qty.', 'BoX Qty.', 'Unit', 'MRP', 'Disc.', 'Price', 'Total Amount'];
+        $headers = ['S.N.', 'Description of Goods', 'PCs Qty.', 'BoX Qty.', 'Unit', 'MRP', 'Disc. %', 'Price', 'Total Amount'];
         $cols    = range('A', 'I');
         foreach ($headers as $i => $h) {
             $cell = $cols[$i] . '1';
@@ -3029,7 +3036,7 @@ class AgentOrderController extends Controller
         $tP = 0;
         $tB = 0;
         foreach ($groupedItems as $index => $item) {
-            $disc = ($item->mrp > 0 && $item->mrp > $item->selling_price) ? ($item->mrp - $item->selling_price) : '-';
+            $disc = ($item->mrp > 0 && $item->mrp > $item->selling_price) ? round((($item->mrp - $item->selling_price) / $item->mrp) * 100, 2) . '%' : '-';
             
             $sheet->setCellValue('A' . $row, $index + 1);
             $sheet->setCellValue('B' . $row, strtoupper($item->product_name . ' ' . $item->size_set_name));
@@ -3163,6 +3170,8 @@ class AgentOrderController extends Controller
             'discount_amount' => 'nullable|numeric|min:0',
             'gst_percentage' => 'nullable|numeric|min:0|max:100',
             'other_charges' => 'nullable|numeric|min:0',
+            'company_id' => 'nullable|integer',
+            'bill_no' => 'nullable|string',
         ]);
 
         $dispatch = \App\Models\AgentOrderDispatch::findOrFail($id);
@@ -3189,6 +3198,8 @@ class AgentOrderController extends Controller
                 'other_charges' => $other_charges,
                 'grand_total' => $grandTotal,
                 'remark' => $request->remark,
+                'company_id' => $request->company_id,
+                'bill_no' => $request->bill_no,
             ]);
 
             // Adjust Party Balance (Decrease model)

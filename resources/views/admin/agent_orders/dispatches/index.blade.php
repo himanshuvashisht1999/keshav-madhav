@@ -69,6 +69,10 @@
                                 <input type="date" name="to_date" class="form-control form-control-sm" value="{{ request('to_date') }}">
                             </div>
                             <div class="col-md-2 mb-1">
+                                <label class="small text-muted mb-0">Bill No</label>
+                                <input type="text" name="bill_no" class="form-control form-control-sm" value="{{ request('bill_no') }}" placeholder="Enter Bill No">
+                            </div>
+                            <div class="col-md-2 mb-1">
                                 <button type="submit" class="btn btn-primary btn-sm btn-block shadow-sm">
                                     <i class="fas fa-filter mr-1"></i> APPLY
                                 </button>
@@ -86,6 +90,7 @@
                                     <th class="font-weight-normal">Party Name</th>
                                     <th class="font-weight-normal">Agent</th>
                                     <th class="font-weight-normal">Grand Total</th>
+                                    <th class="font-weight-normal">Bill No</th>
                                     <th class="font-weight-normal">Date</th>
                                     <th class="font-weight-normal">Remark</th>
                                     <th class="font-weight-normal text-right">Actions</th>
@@ -104,7 +109,7 @@
                                         </td>
                                         <td><span class="badge badge-info">{{ $dispatch->agent->name ?? 'Direct' }}</span></td>
                                         <td><span class="text-primary">₹{{ number_format($dispatch->grand_total, 2) }}</span></td>
-                                        {{-- <td>₹{{ number_format($dispatch->other_charges ?? 0, 2) }}</td> --}}
+                                        <td>{{ $dispatch->bill_no ?? '-' }}</td>
                                         <td>{{ $dispatch->dispatch_date ? date('d M Y', strtotime($dispatch->dispatch_date)) : 'N/A' }}</td>
                                         <td><small class="text-muted">{{ Str::limit($dispatch->remark, 30) }}</small></td>
                                         <td class="text-right">
@@ -116,7 +121,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center py-5 text-muted">No dispatch records found.</td>
+                                        <td colspan="8" class="text-center py-5 text-muted">No dispatch records found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

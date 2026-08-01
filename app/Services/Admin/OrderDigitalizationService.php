@@ -339,7 +339,8 @@ class OrderDigitalizationService
 
             $slipUpdate = [
                 'save_type' => 1,
-                'lot_no' => $lotNos[0] ?? null
+                'lot_no' => $lotNos[0] ?? null,
+                'bill_number' => $request->bill_number
             ];
 
             // Only set status to 1 if user explicitly marks it as final
@@ -451,6 +452,7 @@ class OrderDigitalizationService
 
             $slip->update([
                 'lot_no' => $request->lot_no,
+                'bill_number' => $request->bill_number,
                 'status' => 1
             ]);
 
@@ -1673,7 +1675,8 @@ class OrderDigitalizationService
             // Update slip status based on is_final flag
             $slipUpdate = [
                 'lot_no' => $request->lot_no,
-                'to_stage_id' => $request->to_stage_id ?? 4
+                'to_stage_id' => $request->to_stage_id ?? 4,
+                'bill_number' => $request->bill_number
             ];
 
             if ($request->is_final == 1) {
@@ -1764,7 +1767,8 @@ class OrderDigitalizationService
             $slipUpdate = [
                 'lot_no' => $request->lot_no,
                 'save_type' => 2,
-                'to_stage_id' => $request->to_stage_id ?? 1
+                'to_stage_id' => $request->to_stage_id ?? 1,
+                'bill_number' => $request->bill_number
             ];
 
             if ($request->is_final == 1) {
@@ -2471,7 +2475,8 @@ class OrderDigitalizationService
             $slipUpdate = [
                 'lot_no' => $lot_no,
                 'type' => $movement_type,
-                'to_stage_id' => $to_stage_id
+                'to_stage_id' => $to_stage_id,
+                'bill_number' => $request->bill_number
             ];
 
             if ($request->is_final == 1) {

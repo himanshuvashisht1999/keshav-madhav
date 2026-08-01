@@ -20,6 +20,7 @@ class ProductionSlipDigitization extends Model
         'to_stage_id',
         'stage_master_unit_id',
         'lot_no',
+        'bill_number',
         'save_type',
         'slip_file',
         'order_product_set_id',

@@ -203,6 +203,20 @@
                             </div>
                         </div>
                         <div class="form-group mb-3">
+                            <label class="font-weight-bold text-muted small text-uppercase">Company</label>
+                            <div class="input-group shadow-sm">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-building text-info"></i></span>
+                                </div>
+                                <select class="form-control border-left-0" id="company_id" name="company_id">
+                                    <option value="">Select Company</option>
+                                    @foreach($companies as $company)
+                                        <option value="{{ $company->id }}">{{ $company->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
                             <label class="font-weight-bold text-muted small text-uppercase">Subtotal Amount</label>
                             <div class="input-group shadow-sm">
                                 <div class="input-group-prepend">
