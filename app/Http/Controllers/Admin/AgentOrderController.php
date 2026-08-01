@@ -1103,10 +1103,10 @@ class AgentOrderController extends Controller
         DB::beginTransaction();
         try {
             if ($order->sale_type === 'fabric') {
-                // foreach ($order->fabricItems as $item) {
-                //     FabricReceiptDetail::where('id', $item->fabric_receipt_detail_id)
-                //         ->increment('remaining_quantity', $item->meter);
-                // }
+                foreach ($order->fabricItems as $item) {
+                    FabricReceiptDetail::where('id', $item->fabric_receipt_detail_id)
+                        ->increment('remaining_quantity', $item->meter);
+                }
                 $order->fabricItems()->delete();
             } else {
                 // foreach ($order->items as $item) {
@@ -4080,7 +4080,8 @@ class AgentOrderController extends Controller
             foreach ($fabricItems as $fItem) {
                 $roll = \App\Models\FabricReceiptDetail::find($fItem->fabric_receipt_detail_id);
                 if ($roll) {
-                    $roll->increment('remaining_quantity', $fItem->meter);
+                    // DO NOT INCREMENT HERE! Pending orders should still reserve their stock.
+                    // $roll->increment('remaining_quantity', $fItem->meter);
                 }
 
                 DB::table('agent_order_fabric_items')->where('id', $fItem->id)->update([

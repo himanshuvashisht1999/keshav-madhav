@@ -509,8 +509,7 @@ class ReportService
                 ->get();
 
             $agentUsagesQuery = \App\Models\AgentOrderFabricItem::with(['order.vendor', 'order.shop', 'roll'])
-                ->where('fabric_id', $fabricId)
-                ->whereNotNull('agent_order_dispatch_id');
+                ->where('fabric_id', $fabricId);
 
             if ($warehouseId) {
                 $agentUsagesQuery->whereHas('roll', function ($q) use ($warehouseId) {
@@ -555,8 +554,11 @@ class ReportService
             // Sort by created_at desc
             $unifiedUsages = $unifiedUsages->sortByDesc('created_at')->values();
 
+            $totalsQuery = clone $rollQuery;
             $totals = (object) [
-                'sum_issued' => $unifiedUsages->sum('meter')
+                'sum_received' => $totalsQuery->sum('meter'),
+                'sum_remaining' => $totalsQuery->sum('remaining_quantity'),
+                'sum_issued' => $totalsQuery->sum(\DB::raw('meter - remaining_quantity'))
             ];
 
             if ($request->has('is_export')) {
