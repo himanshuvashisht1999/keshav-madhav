@@ -2968,7 +2968,7 @@ class AgentOrderController extends Controller
             'discountAmt',
             'brandId'
         ));
-        return $pdf->download('Dispatch_Retail_Invoice_' . $dispatch->id . '.pdf');
+        return $pdf->download('Dispatch_Busy_Invoice_' . $dispatch->id . '.pdf');
     }
 
     public function downloadDispatchRetailInvoiceExcel(Request $request, $id)
@@ -3082,7 +3082,7 @@ class AgentOrderController extends Controller
         $sheet->getStyle('H' . $row . ':I' . $row)->getFont()->setBold(true);
 
         $writer = new Xlsx($spreadsheet);
-        $fileName = 'Dispatch_Retail_Invoice_' . $dispatch->id . '.xlsx';
+        $fileName = 'Dispatch_Busy_Invoice_' . $dispatch->id . '.xlsx';
         
         $tempFile = tempnam(sys_get_temp_dir(), 'excel');
         $writer->save($tempFile);

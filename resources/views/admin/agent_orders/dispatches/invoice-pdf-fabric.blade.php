@@ -82,6 +82,18 @@
                             <td style="padding: 2px 0; border:none; font-weight:bold;">AG/DISTRIBUTOR</td>
                             <td style="padding: 2px 0; border:none;">: {{ $dispatch->agent->name ?? 'N/A' }}</td>
                         </tr>
+                        @if($dispatch->company)
+                        <tr>
+                            <td style="padding: 2px 0; border:none; font-weight:bold;">Company</td>
+                            <td style="padding: 2px 0; border:none;">: {{ $dispatch->company->name }}</td>
+                        </tr>
+                        @endif
+                        @if($dispatch->bill_no)
+                        <tr>
+                            <td style="padding: 2px 0; border:none; font-weight:bold;">Bill No</td>
+                            <td style="padding: 2px 0; border:none;">: {{ $dispatch->bill_no }}</td>
+                        </tr>
+                        @endif
                     </table>
                 </td>
             </tr>

@@ -61,7 +61,10 @@
         }
         
         $leftLogo = $showSurgical ? $surgicalLogo : ($showSnapkid ? $snapkidLogo : $snapkidLogo);
-        $rightLogo = ($showSurgical && $showSnapkid) ? $snapkidLogo : "";
+        $rightLogo = (isset($type) && $type == 'actual') ? $snapkidLogo : (($showSurgical && $showSnapkid) ? $snapkidLogo : "");
+        if ($leftLogo == $rightLogo) {
+            $rightLogo = "";
+        }
         
         $brandTitle = "SNAPKID";
         if($showSurgical && $showSnapkid) $brandTitle = "SNAPKID";
@@ -80,7 +83,7 @@
             <div class="estimate-title">INVOICE</div>
             <div class="company-name">{{ $brandTitle }}</div>
             <div style="font-size: 10px;">{{ $settings->address ?? 'TRONIKA CITY GHAZIABAD-201102' }}</div>
-            <!-- @if($rightLogo) <img src="{{ $rightLogo }}" class="logo-img" style="right: 15px;"> @endif -->
+            @if($rightLogo) <img src="{{ $rightLogo }}" class="logo-img" style="right: 15px;"> @endif
         </div>
 
         <table class="info-table">
@@ -106,6 +109,18 @@
                             <td style="padding: 2px 0; border:none; font-weight:bold;">AG/DISTRIBUTOR</td>
                             <td style="padding: 2px 0; border:none;">: {{ $dispatch->agent->name ?? 'N/A' }}</td>
                         </tr>
+                        @if($dispatch->company)
+                        <tr>
+                            <td style="padding: 2px 0; border:none; font-weight:bold;">Company</td>
+                            <td style="padding: 2px 0; border:none;">: {{ $dispatch->company->name }}</td>
+                        </tr>
+                        @endif
+                        @if($dispatch->bill_no)
+                        <tr>
+                            <td style="padding: 2px 0; border:none; font-weight:bold;">Bill No</td>
+                            <td style="padding: 2px 0; border:none;">: {{ $dispatch->bill_no }}</td>
+                        </tr>
+                        @endif
                     </table>
                 </td>
             </tr>

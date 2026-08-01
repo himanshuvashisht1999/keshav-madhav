@@ -230,11 +230,11 @@
                         </a>
 
                         <a href="{{ route('admin.agent-orders.dispatches.download-retail-invoice', $dispatch->id) }}" id="retailInvoiceBtn" class="btn btn-action bg-secondary text-white">
-                            <i class="fas fa-file-invoice-dollar"></i> Retail Invoice
+                            <i class="fas fa-file-invoice-dollar"></i> Busy Invoice
                         </a>
 
                         <a href="{{ route('admin.agent-orders.dispatches.download-retail-invoice-excel', $dispatch->id) }}" id="retailInvoiceExcelBtn" class="btn btn-action bg-success text-white">
-                            <i class="fas fa-file-excel"></i> Retail Excel
+                            <i class="fas fa-file-excel"></i> Busy Excel
                         </a>
 
                         <a href="{{ route('admin.agent-orders.dispatches.send-whatsapp-invoice', $dispatch->id) }}" id="waInvoiceBtn" class="btn btn-action text-white" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $dispatch->shop->phone ?? $dispatch->vendor->phone ?? '' }}'); if(phone) { window.location.href = this.href + (this.href.includes('?') ? '&' : '?') + 'phone=' + encodeURIComponent(phone); }">
@@ -809,17 +809,21 @@
             // Brand selection for print/download buttons
             $('#brandSelect').on('change', function() {
                 let brandId = $(this).val();
-                let params = brandId !== 'actual' ? '?brand_id=' + brandId : '';
+                let params = brandId !== 'actual' ? '?brand_id=' + brandId : '?type=actual';
 
                 let packingSlipBase = "{{ route('admin.agent-orders.dispatches.download-packing-slip', $dispatch->id) }}";
                 let waPackingSlipBase = "{{ route('admin.agent-orders.dispatches.send-whatsapp-packing-slip', $dispatch->id) }}";
                 let invoiceBase = "{{ route('admin.agent-orders.dispatches.download-invoice', $dispatch->id) }}";
                 let waInvoiceBase = "{{ route('admin.agent-orders.dispatches.send-whatsapp-invoice', $dispatch->id) }}";
+                let retailInvoiceBase = "{{ route('admin.agent-orders.dispatches.download-retail-invoice', $dispatch->id) }}";
+                let retailExcelBase = "{{ route('admin.agent-orders.dispatches.download-retail-invoice-excel', $dispatch->id) }}";
 
                 $('#packingSlipBtn').attr('href', packingSlipBase + params);
                 $('#waPackingSlipBtn').attr('href', waPackingSlipBase + params);
                 $('#invoiceBtn').attr('href', invoiceBase + params);
                 $('#waInvoiceBtn').attr('href', waInvoiceBase + params);
+                $('#retailInvoiceBtn').attr('href', retailInvoiceBase + params);
+                $('#retailInvoiceExcelBtn').attr('href', retailExcelBase + params);
             });
         });
     </script>
