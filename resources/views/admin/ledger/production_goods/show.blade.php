@@ -11,6 +11,7 @@
                     </div>
                     <div class="col-sm-6">
                         <div class="float-sm-right text-right text-end">
+                            <a href="{{ route('admin.ledger.production-goods.export-pdf', ['id' => $good->id] + request()->query()) }}" class="btn btn-primary btn-sm"><i class="mdi mdi-download"></i> Download PDF</a>
                             <a href="{{ route('admin.ledger.production-goods.index') }}" class="btn btn-secondary btn-sm"><i class="mdi mdi-arrow-left"></i> Back to List</a>
                         </div>
                     </div>

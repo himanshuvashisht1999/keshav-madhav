@@ -52,6 +52,20 @@ class ProductionGoodsLedgerController extends Controller
 
     public function show(Request $request, $id)
     {
+        $data = $this->getLedgerData($request, $id);
+        return view('admin.ledger.production_goods.show', $data);
+    }
+
+    public function exportPdf(Request $request, $id)
+    {
+        $data = $this->getLedgerData($request, $id);
+        $pdf = \PDF::loadView('admin.ledger.production_goods.pdf', $data);
+        $name = 'Production_Goods_Ledger_' . $data['good']->design_number . '_' . date('Y-m-d') . '.pdf';
+        return $pdf->download($name);
+    }
+
+    private function getLedgerData(Request $request, $id)
+    {
         $good = ProductionGoods::with('series')->findOrFail($id);
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
@@ -159,6 +173,6 @@ class ProductionGoodsLedgerController extends Controller
             $tx->running_balance = $balance;
         }
 
-        return view('admin.ledger.production_goods.show', compact('good', 'transactions', 'startDate', 'endDate', 'openingBalanceAmount'));
+        return compact('good', 'transactions', 'startDate', 'endDate', 'openingBalanceAmount');
     }
 }

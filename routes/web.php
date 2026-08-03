@@ -1299,6 +1299,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::prefix('/production-goods')->name('production-goods.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\ProductionGoodsLedgerController::class, 'index'])->name('index');
                 Route::get('/show/{id}', [App\Http\Controllers\Admin\Ledger\ProductionGoodsLedgerController::class, 'show'])->name('show');
+                Route::get('/export-pdf/{id}', [App\Http\Controllers\Admin\Ledger\ProductionGoodsLedgerController::class, 'exportPdf'])->name('export-pdf');
             });
             Route::prefix('/lot')->name('lot.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\LotLedgerController::class, 'index'])->name('index');
