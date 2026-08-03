@@ -1054,6 +1054,7 @@ class AgentOrderController extends Controller
                     'total_qty' => $item->quantity, // Total pieces
                     'box_count' => $item->box_qty ?: 1, // Total boxes
                     'scanned_box_qty' => (int) ($item->scanned_box_qty ?? 0),
+                    'remark' => $item->remark,
                     'status' => $item->dispatched_at ? 'Dispatched' : (($item->scanned_box_qty >= $item->box_qty && $item->box_qty > 0) ? 'Scanned' : ($item->scanned_box_qty > 0 ? 'Partial' : 'Pending')),
                     'box_nos' => $item->box_no ? [$item->box_no] : [],
                     'barcode' => $item->barcode,

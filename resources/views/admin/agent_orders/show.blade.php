@@ -309,6 +309,7 @@
                                                 <th class="text-center">Total Qty</th>
                                                 <th class="text-right">Price</th>
                                                 <th class="text-right">Total</th>
+                                                <th class="text-center">Remark</th>
                                                 <th class="text-right">Status</th>
                                             </tr>
                                         </thead>
@@ -352,6 +353,13 @@
                                                     <td class="text-right align-middle text-muted">₹{{ number_format($item->selling_price, 2) }}</td>
                                                     <td class="text-right font-weight-bold text-primary align-middle">
                                                         ₹{{ number_format($item->total_qty * $item->selling_price, 2) }}</td>
+                                                    <td class="text-center align-middle">
+                                                        @if(!empty($item->remark))
+                                                            <span class="badge badge-light border text-dark px-2 py-1" style="font-size:11px; white-space:normal; max-width:150px; display:inline-block;">{{ $item->remark }}</span>
+                                                        @else
+                                                            <span class="text-muted small">—</span>
+                                                        @endif
+                                                    </td>
                                                     <td class="text-right align-middle">
                                                         @if($item->status == 'Dispatched')
                                                             <span class="badge badge-success px-2 py-1"><i

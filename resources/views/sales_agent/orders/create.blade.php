@@ -667,6 +667,11 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="mb-3 px-1">
+                            <label class="font-weight-bold text-muted small mb-1">Remark for ${sizeSet.size_set_name}</label>
+                            <input type="text" class="form-control form-control-sm size-set-remark-input" data-size-set="${sizeSet.size_set_id}" placeholder="Enter remark (optional)">
+                        </div>
                     `;
 
                     // Colors for this Size Set
@@ -743,14 +748,17 @@
                 $(this).val(qty);
 
                 if (qty > 0) {
-                    cart.set(key, {
+                    let item = cart.get(key) || {
                         product_id: $(this).data('product-id'),
                         color_id: $(this).data('color-id'),
                         size_set_id: $(this).data('size-set-id'),
-                        qty: qty,
                         pcs_per_box: parseFloat($(this).data('pcs')),
-                        unit_price: parseFloat($(this).data('price'))
-                    });
+                        unit_price: parseFloat($(this).data('price')),
+                        remark: $('.size-set-remark-input[data-size-set="'+$(this).data('size-set-id')+'"]').val() || ''
+                    };
+                    item.qty = qty;
+                    item.remark = $('.size-set-remark-input[data-size-set="'+$(this).data('size-set-id')+'"]').val() || item.remark || '';
+                    cart.set(key, item);
 
                     // Append to DOM if not exists
                     if ($('.variation-card[data-key="' + key + '"]').length === 0) {
@@ -849,6 +857,22 @@
                         $(this).val(targetQty).trigger('change');
                     }
                 });
+            });
+
+            $(document).on('change', '.size-set-remark-input', function() {
+                const sizeSetId = $(this).data('size-set');
+                const remark = $(this).val();
+                cart.forEach((item, key) => {
+                    if (item.size_set_id == sizeSetId) {
+                        item.remark = remark;
+                        cart.set(key, item);
+                    }
+                });
+                
+                // Update localStorage right away
+                const cartData = {};
+                cart.forEach((v, k) => { if (v.qty > 0) cartData[k] = v; });
+                localStorage.setItem(storageKey, JSON.stringify(cartData));
             });
 
             // Load from local storage
@@ -1076,14 +1100,16 @@
                 if (!allowOverStock && qty > max) { qty = max; $(this).val(qty); }
 
                 if (qty > 0) {
-                    cart.set(key, {
+                    let item = cart.get(key) || {
                         product_id: card.data('product-id'),
                         color_id: card.data('color-id'),
                         size_set_id: card.data('size-set-id'),
-                        qty: qty,
                         pcs_per_box: parseFloat(card.data('pcs')),
-                        unit_price: parseFloat(card.data('price'))
-                    });
+                        unit_price: parseFloat(card.data('price')),
+                        remark: ''
+                    };
+                    item.qty = qty;
+                    cart.set(key, item);
                     // Move the PREVIOUSLY edited card to the top when selecting a new product
                     const row = card.closest('.variation-row-container');
                     

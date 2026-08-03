@@ -430,6 +430,7 @@ class OrderController extends Controller
                 'scanned_box_qty' => $order_type === 'direct' ? $var['qty'] : 0,
                 'scanned_quantity' => $order_type === 'direct' ? $total_pcs : 0,
                 'dispatched_at' => $order_type === 'direct' ? now() : null,
+                'remark' => $var['remark'] ?? null,
             ];
             $total_qty += $total_pcs;
             $total_amount += ($total_pcs * $selling_price);
@@ -1054,6 +1055,7 @@ class OrderController extends Controller
                 'selling_price' => $selling_price,
                 'barcode' => $barcode,
                 'packing_box_id' => null,
+                'remark' => $var['remark'] ?? null,
             ];
             $total_qty += $total_pcs;
             $total_amount += ($total_pcs * $selling_price);
