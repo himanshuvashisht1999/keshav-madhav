@@ -987,6 +987,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/get-next-product-name', [AdminProductionGoodsController::class, 'getNextProductName'])->name('get-next-product-name');
             Route::get('/check-design-number', [AdminProductionGoodsController::class, 'checkDesignNumber'])->name('check-design-number');
             Route::get('/export', [AdminProductionGoodsController::class, 'export'])->name('export');
+            Route::get('/busy-master-excel', [AdminProductionGoodsController::class, 'busyMasterExcel'])->name('busy-master-excel');
             Route::get('/pdf', [AdminProductionGoodsController::class, 'pdf'])->name('pdf');
         });
 

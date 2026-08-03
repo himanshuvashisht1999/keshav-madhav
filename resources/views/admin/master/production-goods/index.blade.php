@@ -146,6 +146,22 @@
                     }
                 },
                 {
+                    text: 'Busy Master Excel',
+                    className: 'btn-datatable',
+                    action: function (e, dt, node, config) {
+                        var params = $.param({
+                            name_of_garment: $('#name_of_garment').val(),
+                            design_number: $('#design_number').val(),
+                            brand_name: $('#brand_name').val(),
+                            fitting_name: $('#fitting_name').val(),
+                            pattern_name: $('#pattern_name').val(),
+                            nature_name: $('#nature_name').val(),
+                            fabric_type_name: $('#fabric_type_name').val(),
+                        });
+                        window.location.href = "{{ route('admin.master.production-goods.busy-master-excel') }}?" + params;
+                    }
+                },
+                {
                     text: 'Export PDF',
                     className: 'btn-datatable',
                     action: function (e, dt, node, config) {

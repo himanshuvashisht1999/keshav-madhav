@@ -171,8 +171,11 @@
                 </tr>
 
                 @if(isset($discountAmt) && $discountAmt > 0)
+                @php
+                    $discountPct = ($filteredSubtotal > 0) ? ($discountAmt / $filteredSubtotal) * 100 : 0;
+                @endphp
                 <tr class="summary-row">
-                    <td colspan="6" class="text-right">Extra Discount</td>
+                    <td colspan="6" class="text-right">Extra Discount ({{ round($discountPct, 2) }}%)</td>
                     <td class="text-right">- {{ number_format($discountAmt, 2) }}</td>
                 </tr>
                 @endif

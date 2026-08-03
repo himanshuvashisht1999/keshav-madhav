@@ -137,4 +137,57 @@ class ProductionGoodsController extends Controller {
         return $pdf->download('product-master-report-' . now()->format('d-m-Y_H-i') . '.pdf');
     }
 
+    public function busyMasterExcel(Request $request)
+    {
+        $data = $this->service->exportData($request);
+        $data->load('variants.sizeSet');
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Busy Master');
+
+        $headers = ['Design Number', 'Item Name', 'MRP'];
+        foreach ($headers as $i => $h) {
+            $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1) . '1';
+            $sheet->setCellValue($cell, $h);
+            $sheet->getStyle($cell)->getFont()->setBold(true);
+            $sheet->getStyle($cell)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        }
+
+        $row = 2;
+        foreach ($data as $product) {
+            $seriesName = $product->series ? $product->series->name : '';
+            $garmentName = $product->name_of_garment;
+            $designNumber = $product->design_number;
+            
+            if ($product->variants->count() > 0) {
+                foreach ($product->variants as $variant) {
+                    $sizeName = $variant->sizeSet ? $variant->sizeSet->name : '';
+                    $itemName = trim($seriesName . ' ' . $garmentName . ' ' . $sizeName);
+                    
+                    $sheet->setCellValue('A' . $row, $designNumber);
+                    $sheet->setCellValue('B' . $row, strtoupper($itemName));
+                    $sheet->setCellValue('C' . $row, $variant->mrp);
+                    $row++;
+                }
+            } else {
+                $sizeName = $product->size ? $product->size->name : '';
+                $itemName = trim($seriesName . ' ' . $garmentName . ' ' . $sizeName);
+                
+                $sheet->setCellValue('A' . $row, $designNumber);
+                $sheet->setCellValue('B' . $row, strtoupper($itemName));
+                $sheet->setCellValue('C' . $row, '');
+                $row++;
+            }
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $fileName = 'Busy_Master_Excel_' . now()->format('d-m-Y_H-i') . '.xlsx';
+        
+        $tempFile = tempnam(sys_get_temp_dir(), 'excel');
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
+    }
+
 }

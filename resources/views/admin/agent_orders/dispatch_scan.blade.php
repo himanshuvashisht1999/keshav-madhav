@@ -6,7 +6,20 @@
             <div class="container-fluid">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h1 class="m-0 font-weight-bold text-dark">Dispatch Scanning</h1>
+                        <h1 class="m-0 font-weight-bold text-dark">
+                            Dispatch Scanning
+                            @php
+                                $totalRequiredBoxes = 0;
+                                $totalScannedBoxes = 0;
+                                foreach($groupedItems as $group) {
+                                    $totalRequiredBoxes += $group['required'];
+                                    $totalScannedBoxes += $group['scanned'];
+                                }
+                            @endphp
+                            <span class="badge badge-info ml-2" style="font-size: 0.45em; vertical-align: middle;" id="header_scanned_count">
+                                Scanned: <span id="header_scanned_val">{{ $totalScannedBoxes }}</span> / <span id="header_required_val">{{ $totalRequiredBoxes }}</span> Boxes
+                            </span>
+                        </h1>
                         <p class="text-muted mb-0">Order #ORD-{{ $order->id }} | {{ $order->shop_name }}</p>
                     </div>
                     <div class="d-flex align-items-center">
@@ -225,13 +238,28 @@
                                 <input type="number" step="0.01" class="form-control border-left-0" id="modal_total_amount" name="total_amount" value="{{ $scannedTotal }}" required>
                             </div>
                         </div>
-                        <div class="form-group mb-3">
-                            <label class="font-weight-bold text-muted small text-uppercase">Extra Discount</label>
-                            <div class="input-group shadow-sm">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-minus-circle text-danger"></i></span>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="font-weight-bold text-muted small text-uppercase">Extra Discount %</label>
+                                    <div class="input-group shadow-sm">
+                                        <input type="number" step="any" class="form-control" id="modal_discount_percentage" name="discount_percentage" value="0">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text bg-white"><i class="fas fa-percentage text-secondary"></i></span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <input type="number" step="0.01" class="form-control border-left-0" id="modal_discount_amount" name="discount_amount" value="0">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="font-weight-bold text-muted small text-uppercase">Extra Discount Amt</label>
+                                    <div class="input-group shadow-sm">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text bg-white border-right-0"><i class="fas fa-minus-circle text-danger"></i></span>
+                                        </div>
+                                        <input type="number" step="0.01" class="form-control border-left-0" id="modal_discount_amount" name="discount_amount" value="0">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="form-group mb-3">
@@ -468,6 +496,17 @@
                 });
             });
 
+            function updateHeaderTotalScanned() {
+                let totalScanned = 0;
+                $('.variation-row').each(function() {
+                    const countSpan = $(this).find('td:eq(2) span[id^="count_"]');
+                    if (countSpan.length) {
+                        totalScanned += parseInt(countSpan.text()) || 0;
+                    }
+                });
+                $('#header_scanned_val').text(totalScanned);
+            }
+
             function updateUI(key, response) {
                 const countSpan = $(`#count_${key}`);
                 const progressBar = $(`#progress_bar_${key}`);
@@ -484,10 +523,12 @@
 
                 if (current >= total) {
                     progressBar.removeClass('bg-primary pulse').addClass('bg-success');
-                    statusIcon.html('<i class="fas fa-check-circle text-success fa-lg"></i>');
+                    statusIcon.html('<i class="fas fa-check-circle text-success fa-lg animate__animated animate__bounceIn"></i>');
                     row.addClass('bg-light-success');
                 } else {
-                    progressBar.addClass('pulse');
+                    progressBar.removeClass('bg-success').addClass('bg-primary pulse');
+                    statusIcon.html('<i class="fas fa-clock text-warning fa-lg"></i>');
+                    row.removeClass('bg-light-success');
                 }
 
                 // Update OR Append to history
@@ -528,6 +569,8 @@
                     $('#dispatchBtn').prop('disabled', response.scanned_total <= 0);
                     if (typeof calculateDispatch === 'function') calculateDispatch('default');
                 }
+
+                updateHeaderTotalScanned();
             }
 
             function revertUI(key, boxNo, response) {
@@ -574,6 +617,8 @@
                     $('#dispatchBtn').prop('disabled', response.scanned_total <= 0);
                     if (typeof calculateDispatch === 'function') calculateDispatch('default');
                 }
+
+                updateHeaderTotalScanned();
             }
 
             function setLoadingStatus(barcode) {
@@ -648,7 +693,24 @@
             // Modal Calculation Logic
             function calculateDispatch(source) {
                 const totalAmount = parseFloat($('#modal_total_amount').val()) || 0;
-                const discountAmount = parseFloat($('#modal_discount_amount').val()) || 0;
+                let discountAmount = parseFloat($('#modal_discount_amount').val()) || 0;
+                let discountPercentage = parseFloat($('#modal_discount_percentage').val()) || 0;
+
+                if (source === 'discount_percentage') {
+                    discountAmount = totalAmount * (discountPercentage / 100);
+                    $('#modal_discount_amount').val(discountAmount.toFixed(2));
+                } else if (source === 'discount_amount' || source === 'total_amount' || source === 'default') {
+                    if (totalAmount > 0) {
+                        discountPercentage = (discountAmount / totalAmount) * 100;
+                        $('#modal_discount_percentage').val(discountPercentage.toFixed(6));
+                    } else {
+                        $('#modal_discount_percentage').val(0);
+                    }
+                }
+                
+                // Refresh discountAmount in case it was modified
+                discountAmount = parseFloat($('#modal_discount_amount').val()) || 0;
+
                 const otherCharges = parseFloat($('#modal_other_charges').val()) || 0;
                 const taxableAmount = totalAmount - discountAmount;
 
@@ -677,9 +739,11 @@
                 }));
             }
 
+            $('#modal_discount_percentage').on('input', function() { calculateDispatch('discount_percentage'); });
+            $('#modal_discount_amount').on('input', function() { calculateDispatch('discount_amount'); });
             $('#modal_gst_percentage').on('input', function() { calculateDispatch('percentage'); });
             $('#modal_gst_amount_input').on('input', function() { calculateDispatch('amount'); });
-            $('#modal_total_amount, #modal_discount_amount, #modal_other_charges').on('input', function() { calculateDispatch('default'); });
+            $('#modal_total_amount, #modal_other_charges').on('input', function() { calculateDispatch('default'); });
 
             $('#dispatchModal').on('show.bs.modal', function() {
                 calculateDispatch('default');

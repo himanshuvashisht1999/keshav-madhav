@@ -281,9 +281,22 @@
                                 <label class="stat-label">Subtotal Amount (Pcs * Price)</label>
                                 <input type="number" step="0.01" class="form-control" style="border-radius: 10px; height: 44px;" id="total_amount" name="total_amount" value="{{ $dispatch->total_amount }}" required>
                             </div>
-                            <div class="form-group mb-3">
-                                <label class="stat-label">Extra Discount</label>
-                                <input type="number" step="0.01" class="form-control" style="border-radius: 10px; height: 44px;" id="discount_amount" name="discount_amount" value="{{ $dispatch->discount_amount ?? 0 }}">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="stat-label">Extra Discount %</label>
+                                        @php
+                                            $discPct = ($dispatch->total_amount > 0 && $dispatch->discount_amount > 0) ? ($dispatch->discount_amount / $dispatch->total_amount * 100) : 0;
+                                        @endphp
+                                        <input type="number" step="any" class="form-control" style="border-radius: 10px; height: 44px;" id="discount_percentage" name="discount_percentage" value="{{ round($discPct, 6) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label class="stat-label">Extra Discount Amount</label>
+                                        <input type="number" step="0.01" class="form-control" style="border-radius: 10px; height: 44px;" id="discount_amount" name="discount_amount" value="{{ $dispatch->discount_amount ?? 0 }}">
+                                    </div>
+                                </div>
                             </div>
                             <div class="form-group mb-3">
                                 <label class="stat-label">Other Charges</label>
@@ -336,7 +349,7 @@
                     <form id="editItemsForm">
                         @csrf
                         <div class="modal-body px-4 pb-4" style="max-height: 60vh; overflow-y: auto;">
-                            <div class="row mb-3 align-items-end">
+                            <div class="row mb-3">
                                 @php
                                     $uniqueBrands = $groupedItems->unique('brand_id');
                                 @endphp
@@ -348,12 +361,12 @@
                                             $brandDiscount = (($firstItemOfBrand->mrp - $firstItemOfBrand->selling_price) / $firstItemOfBrand->mrp) * 100;
                                         }
                                     @endphp
-                                    <div class="col-md-auto mb-2">
-                                        <label class="font-weight-bold mb-1" style="font-size: 0.85rem;">{{ $brand->brand_name }} Discount % :</label>
-                                        <div class="input-group" style="width: 180px;">
-                                            <input type="number" step="any" class="form-control brand-discount-input" data-brand="{{ $brand->brand_id }}" placeholder="e.g. 10" value="{{ round($brandDiscount, 2) }}">
+                                    <div class="col-md-3">
+                                        <label class="stat-label">{{ $brand->brand->name ?? 'Brand' }} Discount %</label>
+                                        <div class="input-group">
+                                            <input type="number" step="any" class="form-control brand-discount-input" style="border-radius: 10px 0 0 10px; height: 40px;" data-brand="{{ $brand->brand_id }}" value="{{ round($brandDiscount, 2) }}">
                                             <div class="input-group-append">
-                                                <button class="btn btn-outline-primary apply-brand-discount-btn" data-brand="{{ $brand->brand_id }}" type="button">Apply</button>
+                                                <button type="button" class="btn btn-primary apply-brand-discount" style="border-radius: 0 10px 10px 0; height: 40px;" data-brand="{{ $brand->brand_id }}">Apply</button>
                                             </div>
                                         </div>
                                     </div>
@@ -665,17 +678,34 @@
             // Invoice Modal Calculations
             function calculateInvoice(source) {
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
-                const discountAmount = parseFloat($('#discount_amount').val()) || 0;
+                let discountAmount = parseFloat($('#discount_amount').val()) || 0;
+                let discountPercentage = parseFloat($('#discount_percentage').val()) || 0;
+
+                if (source === 'discount_percentage') {
+                    discountAmount = totalAmount * (discountPercentage / 100);
+                    $('#discount_amount').val(discountAmount.toFixed(2));
+                } else if (source === 'discount_amount' || source === 'total_amount') {
+                    if (totalAmount > 0) {
+                        discountPercentage = (discountAmount / totalAmount) * 100;
+                        $('#discount_percentage').val(discountPercentage.toFixed(6));
+                    } else {
+                        $('#discount_percentage').val(0);
+                    }
+                }
+                
+                // Refresh discountAmount in case it was modified
+                discountAmount = parseFloat($('#discount_amount').val()) || 0;
+
                 const otherCharges = parseFloat($('#other_charges').val()) || 0;
                 const taxableAmount = totalAmount - discountAmount;
 
                 let gstPercentage = parseFloat($('#gst_percentage').val()) || 0;
                 let gstAmount = parseFloat($('#gst_amount_input').val()) || 0;
 
-                if (source === 'percentage') {
+                if (source === 'gst_percentage') {
                     gstAmount = taxableAmount * (gstPercentage / 100);
                     $('#gst_amount_input').val(gstAmount.toFixed(2));
-                } else if (source === 'amount') {
+                } else if (source === 'gst_amount') {
                     if (taxableAmount > 0) {
                         gstPercentage = (gstAmount / taxableAmount) * 100;
                         $('#gst_percentage').val(gstPercentage.toFixed(6));
@@ -695,15 +725,27 @@
                 }));
             }
 
+            $('#discount_percentage').on('input', function() {
+                calculateInvoice('discount_percentage');
+            });
+
+            $('#discount_amount').on('input', function() {
+                calculateInvoice('discount_amount');
+            });
+
             $('#gst_percentage').on('input', function() {
-                calculateInvoice('percentage');
+                calculateInvoice('gst_percentage');
             });
 
             $('#gst_amount_input').on('input', function() {
-                calculateInvoice('amount');
+                calculateInvoice('gst_amount');
             });
 
-            $('#total_amount, #discount_amount, #other_charges').on('input', function() {
+            $('#total_amount').on('input', function() {
+                calculateInvoice('total_amount');
+            });
+
+            $('#other_charges').on('input', function() {
                 calculateInvoice('default');
             });
 

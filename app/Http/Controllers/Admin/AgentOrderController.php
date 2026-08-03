@@ -3035,8 +3035,8 @@ class AgentOrderController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Retail Invoice');
 
-        $headers = ['S.N.', 'Description of Goods', 'PCs Qty.', 'BoX Qty.', 'Unit', 'MRP', 'Disc. %', 'Price', 'Total Amount'];
-        $cols    = range('A', 'I');
+        $headers = ['S.N.', 'Description of Goods', 'PCs Qty.', 'Unit', 'Price', 'Total Amount'];
+        $cols    = range('A', 'F');
         foreach ($headers as $i => $h) {
             $cell = $cols[$i] . '1';
             $sheet->setCellValue($cell, $h);
@@ -3046,50 +3046,43 @@ class AgentOrderController extends Controller
 
         $row = 2;
         $tP = 0;
-        $tB = 0;
         foreach ($groupedItems as $index => $item) {
-            $disc = ($item->mrp > 0 && $item->mrp > $item->selling_price) ? round((($item->mrp - $item->selling_price) / $item->mrp) * 100, 2) . '%' : '-';
-            
             $sheet->setCellValue('A' . $row, $index + 1);
             $sheet->setCellValue('B' . $row, strtoupper($item->product_name . ' ' . $item->size_set_name));
             $sheet->setCellValue('C' . $row, $item->total_qty);
-            $sheet->setCellValue('D' . $row, $item->box_count);
-            $sheet->setCellValue('E' . $row, 'BOX');
-            $sheet->setCellValue('F' . $row, $item->mrp);
-            $sheet->setCellValue('G' . $row, $disc);
-            $sheet->setCellValue('H' . $row, $item->selling_price);
-            $sheet->setCellValue('I' . $row, $item->total_qty * $item->selling_price);
+            $sheet->setCellValue('D' . $row, 'Pcs.');
+            $sheet->setCellValue('E' . $row, $item->selling_price);
+            $sheet->setCellValue('F' . $row, $item->total_qty * $item->selling_price);
             
             $tP += $item->total_qty;
-            $tB += $item->box_count;
             $row++;
         }
 
         $sheet->setCellValue('C' . $row, $tP . ' Pcs');
-        $sheet->setCellValue('D' . $row, $tB . ' Box');
-        $sheet->setCellValue('I' . $row, $filteredSubtotal);
-        $sheet->getStyle('A' . $row . ':I' . $row)->getFont()->setBold(true);
+        $sheet->setCellValue('F' . $row, $filteredSubtotal);
+        $sheet->getStyle('A' . $row . ':F' . $row)->getFont()->setBold(true);
         $row++;
 
         if ($discountAmt > 0) {
-            $sheet->setCellValue('H' . $row, 'Extra Discount');
-            $sheet->setCellValue('I' . $row, '-' . $discountAmt);
+            $discountPct = ($filteredSubtotal > 0) ? ($discountAmt / $filteredSubtotal) * 100 : 0;
+            $sheet->setCellValue('E' . $row, 'Extra Discount (' . round($discountPct, 2) . '%)');
+            $sheet->setCellValue('F' . $row, '-' . $discountAmt);
             $row++;
         }
 
-        $sheet->setCellValue('H' . $row, 'GST');
-        $sheet->setCellValue('I' . $row, $filteredGst);
+        $sheet->setCellValue('E' . $row, 'GST');
+        $sheet->setCellValue('F' . $row, $filteredGst);
         $row++;
 
         if ($dispatch->other_charges > 0 && !$brandId) {
-            $sheet->setCellValue('H' . $row, 'Other Charges');
-            $sheet->setCellValue('I' . $row, $dispatch->other_charges);
+            $sheet->setCellValue('E' . $row, 'Other Charges');
+            $sheet->setCellValue('F' . $row, $dispatch->other_charges);
             $row++;
         }
 
-        $sheet->setCellValue('H' . $row, 'Grand Total');
-        $sheet->setCellValue('I' . $row, $filteredGrandTotal);
-        $sheet->getStyle('H' . $row . ':I' . $row)->getFont()->setBold(true);
+        $sheet->setCellValue('E' . $row, 'Grand Total');
+        $sheet->setCellValue('F' . $row, $filteredGrandTotal);
+        $sheet->getStyle('E' . $row . ':F' . $row)->getFont()->setBold(true);
 
         $writer = new Xlsx($spreadsheet);
         $fileName = 'Dispatch_Busy_Invoice_' . $dispatch->id . '.xlsx';
