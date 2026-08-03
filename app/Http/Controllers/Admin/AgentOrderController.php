@@ -1612,9 +1612,19 @@ class AgentOrderController extends Controller
                 if ($request->party_type === 'vendor') {
                     $updateData['master_vendor_id'] = $request->master_vendor_id;
                     $updateData['master_customer_id'] = null;
+                    
+                    $vendor = \App\Models\Vendor::find($request->master_vendor_id);
+                    if ($vendor && $vendor->agent_id) {
+                        $updateData['sales_agent_id'] = $vendor->agent_id;
+                    }
                 } else {
                     $updateData['master_customer_id'] = $request->master_customer_id;
                     $updateData['master_vendor_id'] = null;
+                    
+                    $customer = \App\Models\MasterCustomer::find($request->master_customer_id);
+                    if ($customer && $customer->sales_agent_id) {
+                        $updateData['sales_agent_id'] = $customer->sales_agent_id;
+                    }
                 }
             }
 
