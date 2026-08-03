@@ -2874,13 +2874,13 @@ class AgentOrderController extends Controller
         }
 
         $groupedItems = $items->groupBy(function ($item) {
-            return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
+            return $item->product_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
         })->map(function ($group) {
             $first = $group->first();
             return (object) [
                 'product_name' => $first->product_name,
                 'design_number' => $first->design_number,
-                'color_name' => $first->color_name,
+                'color_name' => '', // Blank out color as requested
                 'size_set_name' => $first->size_set_name,
                 'mrp' => $first->mrp,
                 'selling_price' => $first->selling_price,
