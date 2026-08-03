@@ -215,9 +215,17 @@
                                             } else {
                                                 $actionRoute = route('admin.order_digitalization.create-slips-production', ['slip_id' => $slip->id]);
                                             }
+                                            
+                                            $totalSessions = $slip->orderLots->count() + 
+                                                            $slip->orderStageTransaction->count() + 
+                                                            $slip->orderPrintingStageTransaction->count() + 
+                                                            $slip->orderPrintingToStichingTransaction->count() +
+                                                            $slip->orderGodamStageTransaction->count() +
+                                                            $slip->fabricRollAssignings->count() +
+                                                            ($slip->packingMain ? 1 : 0);
                                         @endphp
                                         
-                                        @if($slip->status == 1)
+                                        @if($slip->status == 1 || $totalSessions > 0)
                                             <a href="{{ route('admin.uploaded-slips.show', $slip->id) }}" class="btn btn-outline-success btn-sm shadow-sm mr-1" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
@@ -237,16 +245,6 @@
                                                 </button>
                                             </form>
                                         @endif
-
-                                        @php
-                                            $totalSessions = $slip->orderLots->count() + 
-                                                            $slip->orderStageTransaction->count() + 
-                                                            $slip->orderPrintingStageTransaction->count() + 
-                                                            $slip->orderPrintingToStichingTransaction->count() +
-                                                            $slip->orderGodamStageTransaction->count() +
-                                                            $slip->fabricRollAssignings->count() +
-                                                            ($slip->packingMain ? 1 : 0);
-                                        @endphp
 
                                         @if($totalSessions == 0)
                                             <form action="{{ route('admin.uploaded-slips.destroy', $slip->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this slip?');" style="display:inline-block;">

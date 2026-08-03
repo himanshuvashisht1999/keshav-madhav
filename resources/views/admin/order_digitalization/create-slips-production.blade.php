@@ -52,6 +52,9 @@
             <div class="row">
                 <div class="col-12 text-right">
                     @if(!empty($slip_data))
+                        <a href="{{ route('admin.uploaded-slips.show', $slip_data['id']) }}" target="_blank" class="btn btn-info mr-2">
+                            <i class="fas fa-eye"></i> View Slip Details
+                        </a>
                         <!-- <form action="{{ route('admin.order_digitalization.skip') }}" method="POST" class="d-inline">
                             @csrf
                             <input type="hidden" name="production_slip_digitization_id" value="{{ $slip_data['id'] }}">
@@ -113,7 +116,7 @@
                                         </div>
                                         <div class="col-md-12 mt-2 mb-2">
                                             <label>Bill Number (Optional)</label>
-                                            <input type="text" name="bill_number" class="form-control" placeholder="Enter Bill Number">
+                                            <input type="text" name="bill_number" class="form-control" placeholder="Enter Bill Number" value="{{ old('bill_number', $slip_data['bill_number'] ?? '') }}">
                                         </div>
                                     </div>
                                    

@@ -827,7 +827,8 @@ class OrderDigitalizationService
                 'status' => $results->status,
                 'last_production_datetime' => $last_production_datetime,
                 'last_to_stage_id' => $last_to_stage_id,
-                'last_movement_type' => $last_movement_type
+                'last_movement_type' => $last_movement_type,
+                'bill_number' => $results->bill_number ?? ''
             ];
         }
 
