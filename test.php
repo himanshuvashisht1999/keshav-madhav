@@ -1,1 +1,12 @@
-<?php \=105; \=1; \=App\Models\FabricReceiptDetail::where('fabric_id', \)->where('master_fabric_warehouse_id', \)->pluck('id'); \=App\Models\FabricRollAssigning::whereIn('fabric_receipt_detail_id', \)->sum('meter'); \=App\Models\AgentOrderFabricItem::whereHas('roll', function (\) use (\) { \->where('master_fabric_warehouse_id', \); })->where('fabric_id', \)->whereNotNull('agent_order_dispatch_id')->sum('meter'); \=App\Models\FabricReceiptDetail::where('fabric_id', \)->where('master_fabric_warehouse_id', \)->sum(\DB::raw('meter - remaining_quantity')); dump(['internal_usages'=>\, 'agent_usages'=>\, 'total_usages'=>\+\, 'receipts_sum_issued'=>\]);
+<?php
+require 'vendor/autoload.php';
+$app = require_once 'bootstrap/app.php';
+$app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+
+$count = \App\Models\DomesticInventoryHistory::where('old_product_id', 706)->count();
+echo "Count for old_product_id=706: " . $count . PHP_EOL;
+
+$histories = \App\Models\DomesticInventoryHistory::where('old_product_id', 706)->orWhere('new_product_id', 706)->get();
+foreach ($histories as $history) {
+    echo "ID: {$history->id}, Type: {$history->type}, Old: {$history->old_product_id}, New: {$history->new_product_id}\n";
+}

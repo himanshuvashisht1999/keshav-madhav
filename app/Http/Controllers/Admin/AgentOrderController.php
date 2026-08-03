@@ -2574,13 +2574,18 @@ class AgentOrderController extends Controller
             });
         }
 
+        if ($request->filled('agent_id')) {
+            $query->where('sales_agent_id', $request->agent_id);
+        }
+
         $totalGrandTotal = $query->sum('grand_total');
 
         $dispatches = $query->paginate(20);
         $shops = DB::table('master_customers')->select('id', 'name')->get();
         $vendors = DB::table('vendors')->select('id', 'name')->get();
+        $agents = \App\Models\SalesAgent::select('id', 'name')->get();
 
-        return view('admin.agent_orders.dispatches.index', compact('dispatches', 'shops', 'vendors', 'totalGrandTotal'));
+        return view('admin.agent_orders.dispatches.index', compact('dispatches', 'shops', 'vendors', 'agents', 'totalGrandTotal'));
     }
 
     public function dispatchShow($id)

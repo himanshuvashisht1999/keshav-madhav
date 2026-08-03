@@ -53,6 +53,17 @@
                                 </select>
                             </div>
                             <div class="col-md-2 mb-1">
+                                <label class="small text-muted mb-0">Filter by Agent</label>
+                                <select name="agent_id" class="form-control form-control-sm select2">
+                                    <option value="">All Agents</option>
+                                    @foreach($agents as $agent)
+                                        <option value="{{ $agent->id }}" {{ request('agent_id') == $agent->id ? 'selected' : '' }}>
+                                            {{ $agent->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-1">
                                 <label class="small text-muted mb-0">Dispatch Type</label>
                                 <select name="dispatch_type" class="form-control form-control-sm">
                                     <option value="">All Types</option>

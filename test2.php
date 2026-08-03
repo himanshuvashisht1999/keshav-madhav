@@ -1,23 +1,16 @@
 <?php
 require 'vendor/autoload.php';
-$app = require_once __DIR__.'/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
+$app = require_once 'bootstrap/app.php';
+$app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
-$dispatch = \App\Models\AgentOrderDispatch::with('orders')->find(55);
-if($dispatch) {
-    echo "Dispatch 55 Orders Sale Types:\n";
-    foreach($dispatch->orders as $order) {
-        echo "Order ID: {$order->id}, Sale Type: {$order->sale_type}, Order Type: {$order->order_type}\n";
-    }
-} else {
-    echo "Dispatch 55 not found\n";
+$goods = \App\Models\ProductionGoods::find(706);
+echo "Good ID: {$goods->id}, Name: {$goods->name_of_garment}, Design: {$goods->design_number}\n";
+
+$orderItems = \Illuminate\Support\Facades\DB::table('agent_order_items')->where('product_id', 706)->get();
+echo "Order items: " . count($orderItems) . "\n";
+foreach($orderItems as $item) {
+    echo "Order ID: {$item->agent_order_id}, Qty: {$item->quantity}, Scanned: {$item->scanned_quantity}, Dispatched: {$item->dispatched_at}\n";
 }
 
-$dispatch = \App\Models\AgentOrderDispatch::with('orders')->find(54);
-if($dispatch) {
-    echo "Dispatch 54 Orders Sale Types:\n";
-    foreach($dispatch->orders as $order) {
-        echo "Order ID: {$order->id}, Sale Type: {$order->sale_type}, Order Type: {$order->order_type}\n";
-    }
-}
+$historyCount = \App\Models\DomesticInventoryHistory::where('old_product_id', 706)->orWhere('new_product_id', 706)->count();
+echo "Total history: {$historyCount}\n";

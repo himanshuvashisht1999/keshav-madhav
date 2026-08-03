@@ -26,31 +26,25 @@ class ProductionGoodsLedgerController extends Controller
             ->withQueryString();
 
         foreach ($goods as $good) {
-            // Inward: From DomesticInventoryHistory where type is 'creation' or 'attribute_change' (new_product_id)
-            $good->total_inward = DomesticInventoryHistory::where(function($q) use ($good) {
-                    $q->where('type', 'creation')
-                      ->where('new_product_id', $good->id);
-                })
-                ->orWhere(function($q) use ($good) {
-                    $q->where('type', 'attribute_change')
-                      ->where('new_product_id', $good->id);
-                })
+            // Inward: From DomesticInventoryHistory where new_product_id = good->id
+            $good->total_inward = DomesticInventoryHistory::where('new_product_id', $good->id)
+                ->where('type', '!=', 'transfer')
                 ->sum('box_quantity');
 
-            // Current Balance: From current DomesticInventory
-            $good->current_balance = DomesticInventory::where('product_id', $good->id)
-                ->sum('total_boxes');
-
-            // Total Outward: From DomesticInventoryHistory where type is 'stock_consume', 'deletion', or 'attribute_change' (old_product_id)
-            $good->total_outward = DomesticInventoryHistory::where(function($q) use ($good) {
-                    $q->whereIn('type', ['stock_consume', 'deletion'])
-                      ->where('old_product_id', $good->id);
-                })
-                ->orWhere(function($q) use ($good) {
-                    $q->where('type', 'attribute_change')
-                      ->where('old_product_id', $good->id);
-                })
+            // Total Outward: From DomesticInventoryHistory where old_product_id = good->id (excluding transfer and stock_consume)
+            $historyOutward = DomesticInventoryHistory::where('old_product_id', $good->id)
+                ->whereNotIn('type', ['transfer', 'stock_consume'])
                 ->sum('box_quantity');
+
+            // Outward from orders (whether dispatched or not)
+            $orderOutward = DB::table('agent_order_items')
+                ->where('product_id', $good->id)
+                ->sum('box_qty');
+
+            $good->total_outward = $historyOutward + $orderOutward;
+
+            // Current Balance mathematically based on Ledger
+            $good->current_balance = $good->total_inward - $good->total_outward;
         }
 
         return view('admin.ledger.production_goods.index', compact('goods', 'search'));
@@ -62,9 +56,12 @@ class ProductionGoodsLedgerController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        // Fetch all related history records
-        $histories = DomesticInventoryHistory::where('old_product_id', $id)
-            ->orWhere('new_product_id', $id)
+        // Fetch all related history records (excluding transfer and stock_consume)
+        $histories = DomesticInventoryHistory::where(function($q) use ($id) {
+                $q->where('old_product_id', $id)
+                  ->orWhere('new_product_id', $id);
+            })
+            ->whereNotIn('type', ['transfer', 'stock_consume'])
             ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
             ->orderBy('created_at', 'asc')
@@ -74,47 +71,82 @@ class ProductionGoodsLedgerController extends Controller
 
         foreach ($histories as $history) {
             // Inward logic
-            if ($history->new_product_id == $id && in_array($history->type, ['creation', 'attribute_change'])) {
+            if ($history->new_product_id == $id) {
+                $particulars = 'Inward / ' . ucfirst(str_replace('_', ' ', $history->type));
+                if ($history->type === 'creation') $particulars = 'Production / Stock In';
+                if ($history->type === 'attribute_change') $particulars = 'Attribute Change (In)';
+                if ($history->type === 'Edit (Restored)') $particulars = 'Stock Restored';
+
                 $transactions->push((object)[
                     'date' => $history->created_at,
                     'type' => 'Inward',
-                    'particulars' => $history->type === 'creation' ? 'Production / Stock In' : 'Attribute Change (In)',
+                    'particulars' => $particulars,
                     'inward' => (int)$history->box_quantity,
                     'outward' => 0,
-                    'remarks' => $history->remarks
+                    'remarks' => $history->remarks ?: 'View Details',
+                    'link' => route('admin.inventory.attribute-history.show', $history->id)
                 ]);
             }
-            // Outward logic
-            if ($history->old_product_id == $id && in_array($history->type, ['stock_consume', 'deletion', 'attribute_change'])) {
-                $particulars = 'Outward / Stock Consume';
+            // Outward logic (excluding stock_consume as it is now covered by orders)
+            if ($history->old_product_id == $id) {
+                $particulars = 'Outward / ' . ucfirst(str_replace('_', ' ', $history->type));
                 if ($history->type === 'deletion') $particulars = 'Stock Deletion';
                 if ($history->type === 'attribute_change') $particulars = 'Attribute Change (Out)';
 
-                // If it's stock_consume, it might be related to an order. We don't have direct linking in history, 
-                // but we label it based on type.
                 $transactions->push((object)[
                     'date' => $history->created_at,
                     'type' => 'Outward',
                     'particulars' => $particulars,
                     'inward' => 0,
                     'outward' => (int)$history->box_quantity,
-                    'remarks' => $history->remarks
+                    'remarks' => $history->remarks ?: 'View Details',
+                    'link' => route('admin.inventory.attribute-history.show', $history->id)
                 ]);
             }
+        }
+
+        // Fetch Order Items as Outward, grouped by order to prevent duplicate rows
+        $orderItems = DB::table('agent_order_items')
+            ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+            ->where('agent_order_items.product_id', $id)
+            ->when($startDate, fn($q) => $q->whereDate('agent_order_items.created_at', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('agent_order_items.created_at', '<=', $endDate))
+            ->select(
+                DB::raw('MIN(agent_order_items.created_at) as date'),
+                DB::raw('SUM(agent_order_items.box_qty) as outward'),
+                'agent_orders.id as remarks'
+            )
+            ->groupBy('agent_orders.id')
+            ->get();
+
+        foreach ($orderItems as $order) {
+            $transactions->push((object)[
+                'date' => $order->date,
+                'type' => 'Outward',
+                'particulars' => 'Order Added',
+                'inward' => 0,
+                'outward' => (int)$order->outward,
+                'remarks' => 'Order No: ' . $order->remarks,
+                'link' => route('admin.agent-orders.show', $order->remarks)
+            ]);
         }
 
         // Calculate Opening Balance
         $openingBalanceAmount = 0;
         if ($startDate) {
-            $inwardBefore = DomesticInventoryHistory::where(function($q) use ($id) {
-                    $q->where('new_product_id', $id)
-                      ->whereIn('type', ['creation', 'attribute_change']);
-                })->whereDate('created_at', '<', $startDate)->sum('box_quantity');
+            $inwardBefore = DomesticInventoryHistory::where('new_product_id', $id)
+                ->whereNotIn('type', ['transfer', 'stock_consume'])
+                ->whereDate('created_at', '<', $startDate)->sum('box_quantity');
 
-            $outwardBefore = DomesticInventoryHistory::where(function($q) use ($id) {
-                    $q->where('old_product_id', $id)
-                      ->whereIn('type', ['stock_consume', 'deletion', 'attribute_change']);
-                })->whereDate('created_at', '<', $startDate)->sum('box_quantity');
+            $historyOutwardBefore = DomesticInventoryHistory::where('old_product_id', $id)
+                ->whereNotIn('type', ['transfer', 'stock_consume'])
+                ->whereDate('created_at', '<', $startDate)->sum('box_quantity');
+
+            $orderOutwardBefore = DB::table('agent_order_items')
+                ->where('product_id', $id)
+                ->whereDate('created_at', '<', $startDate)->sum('box_qty');
+
+            $outwardBefore = $historyOutwardBefore + $orderOutwardBefore;
 
             $openingBalanceAmount = $inwardBefore - $outwardBefore;
         }

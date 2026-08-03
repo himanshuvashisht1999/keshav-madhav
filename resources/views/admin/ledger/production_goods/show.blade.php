@@ -75,7 +75,13 @@
                                                 @endif
                                             </td>
                                             <td>{{ $tx->particulars }}</td>
-                                            <td>{{ $tx->remarks ?? '-' }}</td>
+                                            <td>
+                                                @if(isset($tx->link) && $tx->link)
+                                                    <a href="{{ $tx->link }}" target="_blank">{{ $tx->remarks ?? '-' }}</a>
+                                                @else
+                                                    {{ $tx->remarks ?? '-' }}
+                                                @endif
+                                            </td>
                                             <td class="text-end text-success">{{ $tx->inward > 0 ? number_format($tx->inward, 0) : '-' }}</td>
                                             <td class="text-end text-danger">{{ $tx->outward > 0 ? number_format($tx->outward, 0) : '-' }}</td>
                                             <td class="text-end fw-bold text-primary">{{ number_format($tx->running_balance, 0) }}</td>
