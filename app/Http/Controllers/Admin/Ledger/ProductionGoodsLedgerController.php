@@ -14,8 +14,14 @@ class ProductionGoodsLedgerController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search');
+        $warehouseIds = $request->query('warehouse_ids', []);
+        
+        $hasUnassigned = in_array('unassigned', $warehouseIds);
+        $filteredWarehouseIds = array_filter($warehouseIds, fn($id) => $id !== 'unassigned');
 
-        $goods = ProductionGoods::with('series')
+        $warehouses = \App\Models\Storeroom::where('status', 1)->get();
+
+        $goods = ProductionGoods::with(['series', 'variants.sizeSet'])
             ->where('status', 1)
             ->when($search, function ($q) use ($search) {
                 $q->where('name_of_garment', 'LIKE', "%$search%")
@@ -26,66 +32,257 @@ class ProductionGoodsLedgerController extends Controller
             ->withQueryString();
 
         foreach ($goods as $good) {
-            // Inward: From DomesticInventoryHistory where new_product_id = good->id
-            $good->total_inward = DomesticInventoryHistory::where('new_product_id', $good->id)
-                ->where('type', '!=', 'transfer')
-                ->sum('box_quantity');
+            foreach ($good->variants as $variant) {
+                // Inward: From DomesticInventoryHistory where new_product_id = good->id and new_size_set_id = variant size set
+                $inwardQuery = DB::table('domestic_inventory_histories')
+                    ->where('new_product_id', $good->id)
+                    ->where('new_size_set_id', $variant->master_size_measurement_id)
+                    ->where('type', '!=', 'transfer');
+                
+                if (!empty($warehouseIds)) {
+                    $inwardQuery->leftJoin('racks', 'domestic_inventory_histories.new_rack_id', '=', 'racks.id')
+                        ->where(function($q) use ($filteredWarehouseIds, $hasUnassigned) {
+                            if (!empty($filteredWarehouseIds)) {
+                                $q->whereIn('domestic_inventory_histories.new_warehouse_id', $filteredWarehouseIds)
+                                  ->orWhereIn('racks.storeroom_id', $filteredWarehouseIds);
+                            }
+                            if ($hasUnassigned) {
+                                $q->orWhere(function($sub) {
+                                    $sub->whereNull('domestic_inventory_histories.new_warehouse_id')
+                                        ->whereNull('racks.storeroom_id');
+                                });
+                            }
+                        });
+                }
+                
+                $variant->total_inward = $inwardQuery->sum('box_quantity');
 
-            // Total Outward: From DomesticInventoryHistory where old_product_id = good->id (excluding transfer and stock_consume)
-            $historyOutward = DomesticInventoryHistory::where('old_product_id', $good->id)
-                ->whereNotIn('type', ['transfer', 'stock_consume'])
-                ->sum('box_quantity');
+                // Total Outward: From DomesticInventoryHistory where old_product_id = good->id (excluding transfer and stock_consume)
+                $outwardHistoryQuery = DB::table('domestic_inventory_histories')
+                    ->where('old_product_id', $good->id)
+                    ->where('old_size_set_id', $variant->master_size_measurement_id)
+                    ->whereNotIn('type', ['transfer', 'stock_consume']);
+                    
+                if (!empty($warehouseIds)) {
+                    $outwardHistoryQuery->leftJoin('racks', 'domestic_inventory_histories.old_rack_id', '=', 'racks.id')
+                        ->where(function($q) use ($filteredWarehouseIds, $hasUnassigned) {
+                            if (!empty($filteredWarehouseIds)) {
+                                $q->whereIn('domestic_inventory_histories.old_warehouse_id', $filteredWarehouseIds)
+                                  ->orWhereIn('racks.storeroom_id', $filteredWarehouseIds);
+                            }
+                            if ($hasUnassigned) {
+                                $q->orWhere(function($sub) {
+                                    $sub->whereNull('domestic_inventory_histories.old_warehouse_id')
+                                        ->whereNull('racks.storeroom_id');
+                                });
+                            }
+                        });
+                }
+                
+                $historyOutward = $outwardHistoryQuery->sum('box_quantity');
 
-            // Outward from orders (whether dispatched or not)
-            $orderOutward = DB::table('agent_order_items')
-                ->where('product_id', $good->id)
-                ->sum('box_qty');
+                // Outward from orders (whether dispatched or not)
+                $orderQuery = DB::table('agent_order_items')
+                    ->where('agent_order_items.product_id', $good->id)
+                    ->where('agent_order_items.size_set_id', $variant->master_size_measurement_id);
+                    
+                if (!empty($warehouseIds)) {
+                    $orderQuery->leftJoin('racks', 'agent_order_items.rack_id', '=', 'racks.id')
+                               ->where(function($q) use ($filteredWarehouseIds, $hasUnassigned) {
+                                   if (!empty($filteredWarehouseIds)) {
+                                       $q->whereIn('racks.storeroom_id', $filteredWarehouseIds);
+                                   }
+                                   if ($hasUnassigned) {
+                                       $q->orWhereNull('racks.storeroom_id');
+                                   }
+                               });
+                }
+                
+                $orderOutward = $orderQuery->sum('agent_order_items.box_qty');
 
-            $good->total_outward = $historyOutward + $orderOutward;
+                $variant->total_outward = $historyOutward + $orderOutward;
 
-            // Current Balance mathematically based on Ledger
-            $good->current_balance = $good->total_inward - $good->total_outward;
+                // Current Balance mathematically based on Ledger
+                $variant->current_balance = $variant->total_inward - $variant->total_outward;
+            }
         }
 
-        return view('admin.ledger.production_goods.index', compact('goods', 'search'));
+        // --- Overall Totals Calculation ---
+        $inwardTotalQuery = DB::table('domestic_inventory_histories')
+            ->join('production_goods', 'domestic_inventory_histories.new_product_id', '=', 'production_goods.id')
+            ->where('production_goods.status', 1)
+            ->where('domestic_inventory_histories.type', '!=', 'transfer');
+            
+        if ($search) {
+            $inwardTotalQuery->where(function($q) use ($search) {
+                $q->where('production_goods.name_of_garment', 'LIKE', "%$search%")
+                  ->orWhere('production_goods.design_number', 'LIKE', "%$search%");
+            });
+        }
+        
+        if (!empty($warehouseIds)) {
+            $inwardTotalQuery->leftJoin('racks', 'domestic_inventory_histories.new_rack_id', '=', 'racks.id')
+                ->where(function($q) use ($filteredWarehouseIds, $hasUnassigned) {
+                    if (!empty($filteredWarehouseIds)) {
+                        $q->whereIn('domestic_inventory_histories.new_warehouse_id', $filteredWarehouseIds)
+                          ->orWhereIn('racks.storeroom_id', $filteredWarehouseIds);
+                    }
+                    if ($hasUnassigned) {
+                        $q->orWhere(function($sub) {
+                            $sub->whereNull('domestic_inventory_histories.new_warehouse_id')
+                                ->whereNull('racks.storeroom_id');
+                        });
+                    }
+                });
+        }
+        $totalInwardOverall = $inwardTotalQuery->sum('domestic_inventory_histories.box_quantity');
+
+        $outwardHistoryTotalQuery = DB::table('domestic_inventory_histories')
+            ->join('production_goods', 'domestic_inventory_histories.old_product_id', '=', 'production_goods.id')
+            ->where('production_goods.status', 1)
+            ->whereNotIn('domestic_inventory_histories.type', ['transfer', 'stock_consume']);
+            
+        if ($search) {
+            $outwardHistoryTotalQuery->where(function($q) use ($search) {
+                $q->where('production_goods.name_of_garment', 'LIKE', "%$search%")
+                  ->orWhere('production_goods.design_number', 'LIKE', "%$search%");
+            });
+        }
+        
+        if (!empty($warehouseIds)) {
+            $outwardHistoryTotalQuery->leftJoin('racks', 'domestic_inventory_histories.old_rack_id', '=', 'racks.id')
+                ->where(function($q) use ($filteredWarehouseIds, $hasUnassigned) {
+                    if (!empty($filteredWarehouseIds)) {
+                        $q->whereIn('domestic_inventory_histories.old_warehouse_id', $filteredWarehouseIds)
+                          ->orWhereIn('racks.storeroom_id', $filteredWarehouseIds);
+                    }
+                    if ($hasUnassigned) {
+                        $q->orWhere(function($sub) {
+                            $sub->whereNull('domestic_inventory_histories.old_warehouse_id')
+                                ->whereNull('racks.storeroom_id');
+                        });
+                    }
+                });
+        }
+        $totalOutwardHistoryOverall = $outwardHistoryTotalQuery->sum('domestic_inventory_histories.box_quantity');
+
+        $orderTotalQuery = DB::table('agent_order_items')
+            ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
+            ->where('production_goods.status', 1);
+            
+        if ($search) {
+            $orderTotalQuery->where(function($q) use ($search) {
+                $q->where('production_goods.name_of_garment', 'LIKE', "%$search%")
+                  ->orWhere('production_goods.design_number', 'LIKE', "%$search%");
+            });
+        }
+        
+        if (!empty($warehouseIds)) {
+            $orderTotalQuery->leftJoin('racks', 'agent_order_items.rack_id', '=', 'racks.id')
+                ->where(function($q) use ($filteredWarehouseIds, $hasUnassigned) {
+                    if (!empty($filteredWarehouseIds)) {
+                        $q->whereIn('racks.storeroom_id', $filteredWarehouseIds);
+                    }
+                    if ($hasUnassigned) {
+                        $q->orWhereNull('racks.storeroom_id');
+                    }
+                });
+        }
+        $totalOutwardOrderOverall = $orderTotalQuery->sum('agent_order_items.box_qty');
+        
+        $totalOutwardOverall = $totalOutwardHistoryOverall + $totalOutwardOrderOverall;
+        $totalBalanceOverall = $totalInwardOverall - $totalOutwardOverall;
+
+        return view('admin.ledger.production_goods.index', compact(
+            'goods', 'search', 'warehouses', 'warehouseIds',
+            'totalInwardOverall', 'totalOutwardOverall', 'totalBalanceOverall'
+        ));
     }
 
-    public function show(Request $request, $id)
+    public function show(Request $request, $id, $size_set_id)
     {
-        $data = $this->getLedgerData($request, $id);
+        $data = $this->getLedgerData($request, $id, $size_set_id);
         return view('admin.ledger.production_goods.show', $data);
     }
 
-    public function exportPdf(Request $request, $id)
+    public function exportPdf(Request $request, $id, $size_set_id)
     {
-        $data = $this->getLedgerData($request, $id);
+        $data = $this->getLedgerData($request, $id, $size_set_id);
         $pdf = \PDF::loadView('admin.ledger.production_goods.pdf', $data);
-        $name = 'Production_Goods_Ledger_' . $data['good']->design_number . '_' . date('Y-m-d') . '.pdf';
+        $name = 'Production_Goods_Ledger_' . $data['good']->design_number . '_' . $data['sizeSet']->name . '_' . date('Y-m-d') . '.pdf';
         return $pdf->download($name);
     }
 
-    private function getLedgerData(Request $request, $id)
+    private function getLedgerData(Request $request, $id, $size_set_id)
     {
         $good = ProductionGoods::with('series')->findOrFail($id);
+        $sizeSet = \App\Models\MasterSizeMeasurement::findOrFail($size_set_id);
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
+        $warehouseIds = $request->query('warehouse_ids', []);
+        
+        $hasUnassigned = in_array('unassigned', $warehouseIds);
+        $filteredWarehouseIds = array_filter($warehouseIds, fn($id) => $id !== 'unassigned');
 
         // Fetch all related history records (excluding transfer and stock_consume)
-        $histories = DomesticInventoryHistory::where(function($q) use ($id) {
-                $q->where('old_product_id', $id)
-                  ->orWhere('new_product_id', $id);
+        $histories = DomesticInventoryHistory::select('domestic_inventory_histories.*')
+            ->leftJoin('racks as new_rack', 'domestic_inventory_histories.new_rack_id', '=', 'new_rack.id')
+            ->leftJoin('racks as old_rack', 'domestic_inventory_histories.old_rack_id', '=', 'old_rack.id')
+            ->where(function($q) use ($id, $size_set_id, $warehouseIds, $filteredWarehouseIds, $hasUnassigned) {
+                $q->where(function($q1) use ($id, $size_set_id, $warehouseIds, $filteredWarehouseIds, $hasUnassigned) {
+                    $q1->where('domestic_inventory_histories.old_product_id', $id)
+                       ->where('domestic_inventory_histories.old_size_set_id', $size_set_id);
+                    if (!empty($warehouseIds)) {
+                        $q1->where(function($q1a) use ($filteredWarehouseIds, $hasUnassigned) {
+                            if (!empty($filteredWarehouseIds)) {
+                                $q1a->whereIn('domestic_inventory_histories.old_warehouse_id', $filteredWarehouseIds)
+                                    ->orWhereIn('old_rack.storeroom_id', $filteredWarehouseIds);
+                            }
+                            if ($hasUnassigned) {
+                                $q1a->orWhere(function($sub) {
+                                    $sub->whereNull('domestic_inventory_histories.old_warehouse_id')
+                                        ->whereNull('old_rack.storeroom_id');
+                                });
+                            }
+                        });
+                    }
+                })
+                ->orWhere(function($q2) use ($id, $size_set_id, $warehouseIds, $filteredWarehouseIds, $hasUnassigned) {
+                    $q2->where('domestic_inventory_histories.new_product_id', $id)
+                       ->where('domestic_inventory_histories.new_size_set_id', $size_set_id);
+                    if (!empty($warehouseIds)) {
+                        $q2->where(function($q2a) use ($filteredWarehouseIds, $hasUnassigned) {
+                            if (!empty($filteredWarehouseIds)) {
+                                $q2a->whereIn('domestic_inventory_histories.new_warehouse_id', $filteredWarehouseIds)
+                                    ->orWhereIn('new_rack.storeroom_id', $filteredWarehouseIds);
+                            }
+                            if ($hasUnassigned) {
+                                $q2a->orWhere(function($sub) {
+                                    $sub->whereNull('domestic_inventory_histories.new_warehouse_id')
+                                        ->whereNull('new_rack.storeroom_id');
+                                });
+                            }
+                        });
+                    }
+                });
             })
-            ->whereNotIn('type', ['transfer', 'stock_consume'])
-            ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
-            ->orderBy('created_at', 'asc')
+            ->whereNotIn('domestic_inventory_histories.type', ['transfer', 'stock_consume'])
+            ->when($startDate, fn($q) => $q->whereDate('domestic_inventory_histories.created_at', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('domestic_inventory_histories.created_at', '<=', $endDate))
+            ->orderBy('domestic_inventory_histories.created_at', 'asc')
+            ->with(['newRack', 'oldRack'])
             ->get();
 
         $transactions = collect();
 
         foreach ($histories as $history) {
+            $actualNewWarehouseId = $history->new_warehouse_id ?? $history->newRack?->storeroom_id ?? null;
             // Inward logic
-            if ($history->new_product_id == $id) {
+            $matchesWarehouseInward = empty($warehouseIds) || 
+                                      ($hasUnassigned && is_null($actualNewWarehouseId)) || 
+                                      (!empty($filteredWarehouseIds) && in_array($actualNewWarehouseId, $filteredWarehouseIds));
+                                      
+            if ($history->new_product_id == $id && $history->new_size_set_id == $size_set_id && $matchesWarehouseInward) {
                 $particulars = 'Inward / ' . ucfirst(str_replace('_', ' ', $history->type));
                 if ($history->type === 'creation') $particulars = 'Production / Stock In';
                 if ($history->type === 'attribute_change') $particulars = 'Attribute Change (In)';
@@ -101,8 +298,14 @@ class ProductionGoodsLedgerController extends Controller
                     'link' => route('admin.inventory.attribute-history.show', $history->id)
                 ]);
             }
+            
+            $actualOldWarehouseId = $history->old_warehouse_id ?? $history->oldRack?->storeroom_id ?? null;
             // Outward logic (excluding stock_consume as it is now covered by orders)
-            if ($history->old_product_id == $id) {
+            $matchesWarehouseOutward = empty($warehouseIds) || 
+                                       ($hasUnassigned && is_null($actualOldWarehouseId)) || 
+                                       (!empty($filteredWarehouseIds) && in_array($actualOldWarehouseId, $filteredWarehouseIds));
+                                       
+            if ($history->old_product_id == $id && $history->old_size_set_id == $size_set_id && $matchesWarehouseOutward) {
                 $particulars = 'Outward / ' . ucfirst(str_replace('_', ' ', $history->type));
                 if ($history->type === 'deletion') $particulars = 'Stock Deletion';
                 if ($history->type === 'attribute_change') $particulars = 'Attribute Change (Out)';
@@ -120,10 +323,20 @@ class ProductionGoodsLedgerController extends Controller
         }
 
         // Fetch Order Items as Outward, grouped by order to prevent duplicate rows
-        $orderItems = DB::table('agent_order_items')
+        $orderQuery = DB::table('agent_order_items')
             ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
             ->where('agent_order_items.product_id', $id)
-            ->when($startDate, fn($q) => $q->whereDate('agent_order_items.created_at', '>=', $startDate))
+            ->where('agent_order_items.size_set_id', $size_set_id);
+            
+        if (!empty($warehouseIds)) {
+            $orderQuery->leftJoin('racks', 'agent_order_items.rack_id', '=', 'racks.id')
+                       ->where(function($q) use ($filteredWarehouseIds, $hasUnassigned) {
+                           if (!empty($filteredWarehouseIds)) $q->whereIn('racks.storeroom_id', $filteredWarehouseIds);
+                           if ($hasUnassigned) $q->orWhereNull('racks.storeroom_id');
+                       });
+        }
+            
+        $orderItems = $orderQuery->when($startDate, fn($q) => $q->whereDate('agent_order_items.created_at', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('agent_order_items.created_at', '<=', $endDate))
             ->select(
                 DB::raw('MIN(agent_order_items.created_at) as date'),
@@ -148,17 +361,65 @@ class ProductionGoodsLedgerController extends Controller
         // Calculate Opening Balance
         $openingBalanceAmount = 0;
         if ($startDate) {
-            $inwardBefore = DomesticInventoryHistory::where('new_product_id', $id)
+            $inwardBeforeQuery = DB::table('domestic_inventory_histories')
+                ->where('new_product_id', $id)
+                ->where('new_size_set_id', $size_set_id)
                 ->whereNotIn('type', ['transfer', 'stock_consume'])
-                ->whereDate('created_at', '<', $startDate)->sum('box_quantity');
+                ->whereDate('domestic_inventory_histories.created_at', '<', $startDate);
+                
+            if (!empty($warehouseIds)) {
+                $inwardBeforeQuery->leftJoin('racks as new_rack', 'domestic_inventory_histories.new_rack_id', '=', 'new_rack.id')
+                    ->where(function($q) use ($filteredWarehouseIds, $hasUnassigned) {
+                        if (!empty($filteredWarehouseIds)) {
+                            $q->whereIn('domestic_inventory_histories.new_warehouse_id', $filteredWarehouseIds)
+                              ->orWhereIn('new_rack.storeroom_id', $filteredWarehouseIds);
+                        }
+                        if ($hasUnassigned) {
+                            $q->orWhere(function($sub) {
+                                $sub->whereNull('domestic_inventory_histories.new_warehouse_id')
+                                    ->whereNull('new_rack.storeroom_id');
+                            });
+                        }
+                    });
+            }
+            $inwardBefore = $inwardBeforeQuery->sum('box_quantity');
 
-            $historyOutwardBefore = DomesticInventoryHistory::where('old_product_id', $id)
+            $outwardBeforeQuery = DB::table('domestic_inventory_histories')
+                ->where('old_product_id', $id)
+                ->where('old_size_set_id', $size_set_id)
                 ->whereNotIn('type', ['transfer', 'stock_consume'])
-                ->whereDate('created_at', '<', $startDate)->sum('box_quantity');
+                ->whereDate('domestic_inventory_histories.created_at', '<', $startDate);
+                
+            if (!empty($warehouseIds)) {
+                $outwardBeforeQuery->leftJoin('racks as old_rack', 'domestic_inventory_histories.old_rack_id', '=', 'old_rack.id')
+                    ->where(function($q) use ($filteredWarehouseIds, $hasUnassigned) {
+                        if (!empty($filteredWarehouseIds)) {
+                            $q->whereIn('domestic_inventory_histories.old_warehouse_id', $filteredWarehouseIds)
+                              ->orWhereIn('old_rack.storeroom_id', $filteredWarehouseIds);
+                        }
+                        if ($hasUnassigned) {
+                            $q->orWhere(function($sub) {
+                                $sub->whereNull('domestic_inventory_histories.old_warehouse_id')
+                                    ->whereNull('old_rack.storeroom_id');
+                            });
+                        }
+                    });
+            }
+            $historyOutwardBefore = $outwardBeforeQuery->sum('box_quantity');
 
-            $orderOutwardBefore = DB::table('agent_order_items')
-                ->where('product_id', $id)
-                ->whereDate('created_at', '<', $startDate)->sum('box_qty');
+            $orderOutwardBeforeQuery = DB::table('agent_order_items')
+                ->where('agent_order_items.product_id', $id)
+                ->where('agent_order_items.size_set_id', $size_set_id)
+                ->whereDate('agent_order_items.created_at', '<', $startDate);
+                
+            if (!empty($warehouseIds)) {
+                $orderOutwardBeforeQuery->leftJoin('racks', 'agent_order_items.rack_id', '=', 'racks.id')
+                                        ->where(function($q) use ($filteredWarehouseIds, $hasUnassigned) {
+                                            if (!empty($filteredWarehouseIds)) $q->whereIn('racks.storeroom_id', $filteredWarehouseIds);
+                                            if ($hasUnassigned) $q->orWhereNull('racks.storeroom_id');
+                                        });
+            }
+            $orderOutwardBefore = $orderOutwardBeforeQuery->sum('agent_order_items.box_qty');
 
             $outwardBefore = $historyOutwardBefore + $orderOutwardBefore;
 
@@ -173,6 +434,11 @@ class ProductionGoodsLedgerController extends Controller
             $tx->running_balance = $balance;
         }
 
-        return compact('good', 'transactions', 'startDate', 'endDate', 'openingBalanceAmount');
+        $warehouses = !empty($filteredWarehouseIds) ? \App\Models\Storeroom::whereIn('id', $filteredWarehouseIds)->get() : collect();
+        if ($hasUnassigned) {
+            $warehouses->push((object)['id' => 'unassigned', 'name' => 'Unassigned (No Warehouse)']);
+        }
+
+        return compact('good', 'sizeSet', 'transactions', 'startDate', 'endDate', 'openingBalanceAmount', 'warehouses', 'warehouseIds');
     }
 }

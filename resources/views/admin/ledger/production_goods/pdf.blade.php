@@ -107,7 +107,9 @@
             <td width="60%">
                 <strong>Design Number:</strong> {{ $good->design_number }}<br>
                 <strong>Series:</strong> {{ $good->series?->name ?? '-' }}<br>
-                <strong>Garment:</strong> {{ $good->name_of_garment ?? '-' }}
+                <strong>Garment:</strong> {{ $good->name_of_garment ?? '-' }}<br>
+                <strong>Size Set:</strong> {{ $sizeSet->name ?? '-' }}
+                @if($warehouses->count()) <br><strong>Warehouses:</strong> {{ $warehouses->pluck('name')->implode(', ') }} @endif
             </td>
             <td width="40%" class="text-right">
                 <strong>Generated On:</strong> {{ date('d-M-Y H:i') }}<br>

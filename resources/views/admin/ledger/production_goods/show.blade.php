@@ -7,11 +7,13 @@
             <div class="container-fluid">
                 <div class="row mb-2">
                     <div class="col-sm-6">
-                        <h1>Ledger: {{ $good->design_number }} ({{ $good->series?->name }} {{ $good->name_of_garment }})</h1>
+                        <h1>Ledger: {{ $good->design_number }} ({{ $good->series?->name }} {{ $good->name_of_garment }}) <br> <small>Size Set: {{ $sizeSet->name }}</small> 
+                        @if($warehouses->count()) <br> <small>Warehouses: {{ $warehouses->pluck('name')->implode(', ') }}</small> @endif
+                        </h1>
                     </div>
                     <div class="col-sm-6">
                         <div class="float-sm-right text-right text-end">
-                            <a href="{{ route('admin.ledger.production-goods.export-pdf', ['id' => $good->id] + request()->query()) }}" class="btn btn-primary btn-sm"><i class="mdi mdi-download"></i> Download PDF</a>
+                            <a href="{{ route('admin.ledger.production-goods.export-pdf', ['id' => $good->id, 'size_set_id' => $sizeSet->id] + request()->query()) }}" class="btn btn-primary btn-sm"><i class="mdi mdi-download"></i> Download PDF</a>
                             <a href="{{ route('admin.ledger.production-goods.index') }}" class="btn btn-secondary btn-sm"><i class="mdi mdi-arrow-left"></i> Back to List</a>
                         </div>
                     </div>
@@ -23,7 +25,12 @@
             <div class="container-fluid">
                 <div class="card">
                     <div class="card-body">
-                        <form method="GET" action="{{ route('admin.ledger.production-goods.show', $good->id) }}" class="mb-4">
+                        <form method="GET" action="{{ route('admin.ledger.production-goods.show', ['id' => $good->id, 'size_set_id' => $sizeSet->id]) }}" class="mb-4">
+                            @if(request()->has('warehouse_ids'))
+                                @foreach((array)request()->query('warehouse_ids') as $whId)
+                                    <input type="hidden" name="warehouse_ids[]" value="{{ $whId }}">
+                                @endforeach
+                            @endif
                             <div class="row">
                                 <div class="col-md-3">
                                     <label>Start Date</label>
@@ -37,7 +44,7 @@
                                     <button type="submit" class="btn btn-primary w-100">Filter</button>
                                 </div>
                                 <div class="col-md-3 mt-3">
-                                    <a href="{{ route('admin.ledger.production-goods.show', $good->id) }}" class="btn btn-secondary w-100">Reset</a>
+                                    <a href="{{ route('admin.ledger.production-goods.show', ['id' => $good->id, 'size_set_id' => $sizeSet->id, 'warehouse_ids' => request()->query('warehouse_ids')]) }}" class="btn btn-secondary w-100">Reset</a>
                                 </div>
                             </div>
                         </form>
