@@ -831,7 +831,7 @@
             });
 
             // Handle Brand-wise Discount Apply
-            $('.apply-brand-discount-btn').on('click', function() {
+            $('.apply-brand-discount').on('click', function() {
                 let brandId = $(this).data('brand');
                 let discountInput = $('.brand-discount-input[data-brand="' + brandId + '"]').val();
                 let globalDiscount = parseFloat(discountInput);
