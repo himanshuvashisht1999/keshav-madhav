@@ -84,9 +84,14 @@
                                 <input type="text" name="bill_no" class="form-control form-control-sm" value="{{ request('bill_no') }}" placeholder="Enter Bill No">
                             </div>
                             <div class="col-md-2 mb-1">
-                                <button type="submit" class="btn btn-primary btn-sm btn-block shadow-sm">
-                                    <i class="fas fa-filter mr-1"></i> APPLY
-                                </button>
+                                <div class="d-flex w-100">
+                                    <button type="submit" class="btn btn-primary btn-sm shadow-sm flex-fill mr-1">
+                                        <i class="fas fa-filter"></i> Apply
+                                    </button>
+                                    <a href="{{ route('admin.agent-orders.dispatches.index') }}" class="btn btn-secondary btn-sm shadow-sm flex-fill ml-1">
+                                        <i class="fas fa-sync-alt"></i> Reset
+                                    </a>
+                                </div>
                             </div>
                         </form>
                     </div>
@@ -123,10 +128,18 @@
                                         <td>{{ $dispatch->bill_no ?? '-' }}</td>
                                         <td>{{ $dispatch->dispatch_date ? date('d M Y', strtotime($dispatch->dispatch_date)) : 'N/A' }}</td>
                                         <td><small class="text-muted">{{ Str::limit($dispatch->remark, 30) }}</small></td>
-                                        <td class="text-right">
+                                        <td class="text-right text-nowrap">
                                             <a href="{{ route('admin.agent-orders.dispatches.show', $dispatch->id) }}"
-                                                class="btn btn-primary btn-sm px-3 shadow-sm" style="border-radius: 6px;">
-                                                <i class="fas fa-eye mr-1"></i> View
+                                                class="btn btn-primary btn-sm px-2 shadow-sm" style="border-radius: 6px;" title="View Dispatch">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ route('admin.agent-orders.dispatches.download-invoice', $dispatch->id) }}"
+                                                class="btn btn-secondary btn-sm px-2 shadow-sm ml-1" style="border-radius: 6px;" title="Download Invoice">
+                                                <i class="fas fa-file-invoice"></i>
+                                            </a>
+                                            <a href="{{ route('admin.agent-orders.dispatches.download-retail-invoice-excel', $dispatch->id) }}"
+                                                class="btn btn-success btn-sm px-2 shadow-sm ml-1" style="border-radius: 6px;" title="Download Busy Invoice (Excel)">
+                                                <i class="fas fa-file-excel"></i>
                                             </a>
                                         </td>
                                     </tr>
