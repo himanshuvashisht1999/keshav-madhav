@@ -433,21 +433,7 @@ class AgentOrderController extends Controller
 
                 $total_pcs = $var['qty'] * $pcs_per_box;
 
-                $max_stock_rack = \App\Models\DomesticInventory::where('barcode', $barcode)
-                    ->where('total_boxes', '>', 0)
-                    ->orderBy('total_boxes', 'desc')
-                    ->first();
-                if (!$max_stock_rack) {
-                    $max_stock_rack = \App\Models\DomesticInventory::where('barcode', $barcode)
-                        ->orderBy('total_boxes', 'desc')
-                        ->first();
-                }
-                if (!$max_stock_rack) {
-                    $max_stock_rack = \App\Models\DomesticInventory::where('product_id', $var['product_id'])
-                        ->orderBy('total_boxes', 'desc')
-                        ->first();
-                }
-                $rack_id = $max_stock_rack ? $max_stock_rack->rack_id : null;
+                $rack_id = $this->determineRackId($var['product_id'], $var['color_id'], $var['size_set_id'], $barcode);
 
                 $items_to_create[] = [
                     'rack_id' => $rack_id,
@@ -1009,26 +995,15 @@ class AgentOrderController extends Controller
                         ->first();
                 }
 
-                if (!$inventoryInfo) {
-                    $inventoryInfo = DB::table('domestic_inventories')
-                        ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                        ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                        ->where('domestic_inventories.product_id', $item->product_id)
-                        ->where('domestic_inventories.color_id', $item->color_id)
-                        ->where('domestic_inventories.size_set_id', $item->size_set_id)
-                        ->where('domestic_inventories.total_boxes', '>', 0)
-                        ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name')
-                        ->orderByRaw("CASE WHEN LOWER(storerooms.name) = 'advance sample' THEN 1 ELSE 0 END")
-                        ->first();
-                        
-                    if ($inventoryInfo && isset($inventoryInfo->rack_id)) {
-                        DB::table('agent_order_items')
-                            ->where('id', $item->id)
-                            ->update(['rack_id' => $inventoryInfo->rack_id]);
-                    }
-                }
+                $allocated_qty = DB::table('agent_order_items')
+                    ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+                    ->where('agent_orders.status', 'pending')
+                    ->where('agent_order_items.product_id', $item->product_id)
+                    ->where('agent_order_items.color_id', $item->color_id)
+                    ->where('agent_order_items.size_set_id', $item->size_set_id)
+                    ->sum('agent_order_items.box_qty') ?? 0;
 
-                $availableLocations = DB::table('domestic_inventories')
+                $allLocations = DB::table('domestic_inventories')
                     ->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
                     ->join('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
                     ->where('domestic_inventories.product_id', $item->product_id)
@@ -1037,7 +1012,27 @@ class AgentOrderController extends Controller
                     ->where('domestic_inventories.total_boxes', '>', 0)
                     ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name', 'domestic_inventories.total_boxes as boxes')
                     ->orderByRaw("CASE WHEN LOWER(storerooms.name) = 'advance sample' THEN 1 ELSE 0 END")
+                    ->orderBy('domestic_inventories.total_boxes', 'desc')
                     ->get();
+
+                $available_global = $allLocations->sum('boxes') - $allocated_qty;
+
+                $availableLocations = $allLocations->filter(function($loc) use ($available_global) {
+                    if (strtolower($loc->warehouse_name) === 'advance sample') {
+                        return true;
+                    }
+                    return $available_global > 0;
+                })->values();
+
+                if (!$inventoryInfo && $availableLocations->count() > 0) {
+                    $inventoryInfo = $availableLocations->first();
+                        
+                    if ($inventoryInfo && isset($inventoryInfo->rack_id)) {
+                        DB::table('agent_order_items')
+                            ->where('id', $item->id)
+                            ->update(['rack_id' => $inventoryInfo->rack_id]);
+                    }
+                }
 
                 return (object) [
                     'id' => $item->id,
@@ -1524,21 +1519,7 @@ class AgentOrderController extends Controller
 
                 $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'];
 
-                $max_stock_rack = \App\Models\DomesticInventory::where('barcode', $barcode)
-                    ->where('total_boxes', '>', 0)
-                    ->orderBy('total_boxes', 'desc')
-                    ->first();
-                if (!$max_stock_rack) {
-                    $max_stock_rack = \App\Models\DomesticInventory::where('barcode', $barcode)
-                        ->orderBy('total_boxes', 'desc')
-                        ->first();
-                }
-                if (!$max_stock_rack) {
-                    $max_stock_rack = \App\Models\DomesticInventory::where('product_id', $var['product_id'])
-                        ->orderBy('total_boxes', 'desc')
-                        ->first();
-                }
-                $rack_id = $max_stock_rack ? $max_stock_rack->rack_id : null;
+                $rack_id = $this->determineRackId($var['product_id'], $var['color_id'], $var['size_set_id'], $barcode, $order->id);
 
                 $items_to_create[] = [
                     'rack_id' => $rack_id,
@@ -4146,5 +4127,75 @@ class AgentOrderController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', 'Error deleting dispatch: ' . $e->getMessage());
         }
+    }
+
+    protected function determineRackId($product_id, $color_id, $size_set_id, $barcode, $exclude_order_id = null)
+    {
+        $allocated_query = DB::table('agent_order_items')
+            ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+            ->where('agent_orders.status', 'pending')
+            ->where('agent_order_items.product_id', $product_id)
+            ->where('agent_order_items.color_id', $color_id)
+            ->where('agent_order_items.size_set_id', $size_set_id);
+            
+        if ($exclude_order_id) {
+            $allocated_query->where('agent_orders.id', '!=', $exclude_order_id);
+        }
+        
+        $allocated_qty = $allocated_query->sum('agent_order_items.box_qty') ?? 0;
+
+        $inventories = \App\Models\DomesticInventory::select('domestic_inventories.*', 'storerooms.name as storeroom_name')
+            ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+            ->where('domestic_inventories.product_id', $product_id)
+            ->where('domestic_inventories.color_id', $color_id)
+            ->where('domestic_inventories.size_set_id', $size_set_id)
+            ->where('domestic_inventories.total_boxes', '>', 0)
+            ->orderByRaw("CASE WHEN LOWER(storerooms.name) = 'advance sample' THEN 1 ELSE 0 END")
+            ->orderBy('domestic_inventories.total_boxes', 'desc')
+            ->get();
+
+        $total_physical = $inventories->sum('total_boxes');
+        $available_global = $total_physical - $allocated_qty;
+
+        $rack_id = null;
+        
+        if ($available_global > 0) {
+            $regular_rack = $inventories->first(function($inv) {
+                return strtolower($inv->storeroom_name) !== 'advance sample';
+            });
+            if ($regular_rack) {
+                $rack_id = $regular_rack->rack_id;
+            }
+        }
+
+        if (!$rack_id) {
+            $advance_rack = $inventories->first(function($inv) {
+                return strtolower($inv->storeroom_name) === 'advance sample';
+            });
+            if ($advance_rack) {
+                $rack_id = $advance_rack->rack_id;
+            }
+        }
+
+        if (!$rack_id) {
+            $max_stock_rack = \App\Models\DomesticInventory::where('barcode', $barcode)
+                ->where('total_boxes', '>', 0)
+                ->orderBy('total_boxes', 'desc')
+                ->first();
+            if (!$max_stock_rack) {
+                $max_stock_rack = \App\Models\DomesticInventory::where('barcode', $barcode)
+                    ->orderBy('total_boxes', 'desc')
+                    ->first();
+            }
+            if (!$max_stock_rack) {
+                $max_stock_rack = \App\Models\DomesticInventory::where('product_id', $product_id)
+                    ->orderBy('total_boxes', 'desc')
+                    ->first();
+            }
+            $rack_id = $max_stock_rack ? $max_stock_rack->rack_id : null;
+        }
+
+        return $rack_id;
     }
 }
