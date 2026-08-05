@@ -98,6 +98,16 @@
                                     <label>End Date</label>
                                     <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
                                 </div>
+                                <div class="col-md-3" id="parent-agents">
+                                    <label>Agent</label>
+                                    <select class="form-control select2" name="agent_id[]" multiple data-placeholder="Select Agents">
+                                        @foreach($agents as $agent)
+                                            <option value="{{ $agent->id }}" {{ (is_array(request('agent_id')) && in_array($agent->id, request('agent_id'))) ? 'selected' : '' }}>
+                                                {{ $agent->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
                                 <div class="col-md-3" id="parent-designs">
                                     <label>Design Number</label>
                                     <select class="form-control select2" name="design_number[]" multiple data-placeholder="Select Designs">
@@ -108,6 +118,8 @@
                                         @endforeach
                                     </select>
                                 </div>
+                            </div>
+                            <div class="row mb-3">
                                 <div class="col-md-3" id="parent-products">
                                     <label>Product Name</label>
                                     <select class="form-control select2" name="product_name[]" multiple data-placeholder="Select Products">
@@ -118,8 +130,6 @@
                                         @endforeach
                                     </select>
                                 </div>
-                            </div>
-                            <div class="row align-items-end">
                                 <div class="col-md-3" id="parent-sizesets">
                                     <label>Size Set</label>
                                     <select class="form-control select2" name="size_set_name[]" multiple data-placeholder="Select Size Sets">
@@ -140,7 +150,8 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-6 text-right">
+                                <div class="col-md-3">
+                                    <label class="d-none d-md-block">&nbsp;</label>
                                     <button type="submit" class="btn btn-primary" style="background-color: var(--erp-primary); border-color: var(--erp-primary);">
                                         <i class="fas fa-filter"></i> Filter
                                     </button>
@@ -171,7 +182,7 @@
                                             <td>{{ $row->product_name }}</td>
                                             <td>
                                                 <span class="badge badge-info" style="font-size: 12px; background-color: var(--erp-primary-light); color: var(--erp-primary);">
-                                                    {{ $row->customer_count }} Customers
+                                                    {{ $row->customer_count }} / {{ $totalCustomers }} ({{ round(($row->customer_count / $totalCustomers) * 100, 1) }}%) Customers
                                                 </span>
                                             </td>
                                             <td>{{ $row->total_quantity }}</td>
@@ -206,6 +217,7 @@
     $(document).ready(function() {
         if ($.fn.select2) {
             let configs = [
+                { selector: 'select[name="agent_id[]"]', parent: '#parent-agents' },
                 { selector: 'select[name="design_number[]"]', parent: '#parent-designs' },
                 { selector: 'select[name="product_name[]"]', parent: '#parent-products' },
                 { selector: 'select[name="size_set_name[]"]', parent: '#parent-sizesets' },

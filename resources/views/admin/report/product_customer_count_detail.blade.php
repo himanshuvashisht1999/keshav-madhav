@@ -103,16 +103,26 @@
                                     <label>End Date</label>
                                     <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
                                 </div>
-                                <div class="col-md-4">
-                                    <label>Order Number (SKU)</label>
-                                    <input type="text" name="order_number" class="form-control" placeholder="Search Order No..." value="{{ request('order_number') }}">
+                                <div class="col-md-2">
+                                    <label>Order No (SKU)</label>
+                                    <input type="text" name="order_number" class="form-control" placeholder="Search..." value="{{ request('order_number') }}">
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label>Customer Name</label>
-                                    <input type="text" name="customer_name" class="form-control" placeholder="Search Customer..." value="{{ request('customer_name') }}">
+                                    <input type="text" name="customer_name" class="form-control" placeholder="Search..." value="{{ request('customer_name') }}">
+                                </div>
+                                <div class="col-md-3" id="parent-agents">
+                                    <label>Agent</label>
+                                    <select class="form-control select2" name="agent_id[]" multiple data-placeholder="Select Agents">
+                                        @foreach($agents as $agent)
+                                            <option value="{{ $agent->id }}" {{ (is_array(request('agent_id')) && in_array($agent->id, request('agent_id'))) ? 'selected' : '' }}>
+                                                {{ $agent->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
-                            <div class="row align-items-end">
+                            <div class="row mb-3">
                                 <div class="col-md-3" id="parent-products">
                                     <label>Product Name</label>
                                     <select class="form-control select2" name="product_name[]" multiple data-placeholder="Select Products">
@@ -143,7 +153,8 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-3 text-right">
+                                <div class="col-md-3">
+                                    <label class="d-none d-md-block">&nbsp;</label>
                                     <button type="submit" class="btn btn-primary" style="background-color: var(--erp-primary); border-color: var(--erp-primary);">
                                         <i class="fas fa-filter"></i> Filter
                                     </button>
@@ -163,6 +174,7 @@
                                         <th>Order Date</th>
                                         <th>Order No (SKU)</th>
                                         <th>Customer Name</th>
+                                        <th>Sales Agent</th>
                                         <th>Product Name</th>
                                         <th>Color</th>
                                         <th>Size Set</th>
@@ -188,7 +200,14 @@
                                                 @if($row->order && $row->order->shop)
                                                     {{ $row->order->shop->name }}
                                                 @else
-                                                    <span class="text-muted">Unknown Customer</span>
+                                                    N/A
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($row->order && $row->order->shop && $row->order->shop->agent)
+                                                    <span class="badge badge-secondary">{{ $row->order->shop->agent->name }}</span>
+                                                @else
+                                                    N/A
                                                 @endif
                                             </td>
                                             <td>{{ $row->product_name }}</td>
@@ -225,6 +244,7 @@
     $(document).ready(function() {
         if ($.fn.select2) {
             let configs = [
+                { selector: 'select[name="agent_id[]"]', parent: '#parent-agents' },
                 { selector: 'select[name="product_name[]"]', parent: '#parent-products' },
                 { selector: 'select[name="size_set_name[]"]', parent: '#parent-sizesets' },
                 { selector: 'select[name="color_name[]"]', parent: '#parent-colors' }

@@ -20,6 +20,51 @@
 
     <section class="content">
         <div class="container-fluid">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <form id="filterForm">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <label>Start Date</label>
+                                <input type="date" name="start_date" id="start_date" class="form-control">
+                            </div>
+                            <div class="col-md-2">
+                                <label>End Date</label>
+                                <input type="date" name="end_date" id="end_date" class="form-control">
+                            </div>
+                            <div class="col-md-2">
+                                <label>Transfer No</label>
+                                <input type="text" name="transfer_no" id="transfer_no" class="form-control" placeholder="Search...">
+                            </div>
+                            <div class="col-md-3">
+                                <label>From Warehouse</label>
+                                <select name="from_warehouse_id" id="from_warehouse_id" class="form-control select2">
+                                    <option value="">All Warehouses</option>
+                                    @foreach($warehouses as $wh)
+                                        <option value="{{ $wh->id }}">{{ $wh->cutting_master_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label>To Warehouse</label>
+                                <select name="to_warehouse_id" id="to_warehouse_id" class="form-control select2">
+                                    <option value="">All Warehouses</option>
+                                    @foreach($warehouses as $wh)
+                                        <option value="{{ $wh->id }}">{{ $wh->cutting_master_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12 text-right">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                                <button type="button" id="resetFilters" class="btn btn-secondary">Clear</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <div class="table-responsive">
@@ -49,10 +94,25 @@
 @section('scripts')
 <script>
 $(function() {
-    $('#historyTable').DataTable({
+    $('.select2').select2({
+        width: '100%',
+        theme: 'bootstrap4',
+        allowClear: true
+    });
+
+    var table = $('#historyTable').DataTable({
         processing: true,
         serverSide: true,
-        ajax: "{{ route('admin.inventory.fabric_transfer.history-list') }}",
+        ajax: {
+            url: "{{ route('admin.inventory.fabric_transfer.history-list') }}",
+            data: function (d) {
+                d.start_date = $('#start_date').val();
+                d.end_date = $('#end_date').val();
+                d.transfer_no = $('#transfer_no').val();
+                d.from_warehouse_id = $('#from_warehouse_id').val();
+                d.to_warehouse_id = $('#to_warehouse_id').val();
+            }
+        },
         columns: [
             {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
             // {data: 'transfer_no', name: 'transfer_no'},
@@ -65,6 +125,17 @@ $(function() {
             {data: 'action', name: 'action', orderable: false, searchable: false},
         ],
         order: [[2, 'desc']]
+    });
+
+    $('#filterForm').on('submit', function(e) {
+        e.preventDefault();
+        table.draw();
+    });
+
+    $('#resetFilters').on('click', function() {
+        $('#filterForm')[0].reset();
+        $('.select2').val(null).trigger('change');
+        table.draw();
     });
 });
 </script>

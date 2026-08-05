@@ -922,6 +922,11 @@ class ReportController extends Controller
             ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
             ->groupBy('agent_order_items.design_number');
 
+        if ($request->filled('agent_id')) {
+            $query->join('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+                  ->whereIn('master_customers.sales_agent_id', $request->agent_id);
+        }
+
         if ($request->filled('start_date')) {
             $query->whereDate('agent_orders.order_date', '>=', $request->start_date);
         }
@@ -949,13 +954,26 @@ class ReportController extends Controller
         $products = \App\Models\AgentOrderItem::select('product_name')->distinct()->whereNotNull('product_name')->pluck('product_name');
         $sizeSets = \App\Models\AgentOrderItem::select('size_set_name')->distinct()->whereNotNull('size_set_name')->pluck('size_set_name');
         $colors = \App\Models\AgentOrderItem::select('color_name')->distinct()->whereNotNull('color_name')->pluck('color_name');
+        $agents = \App\Models\SalesAgent::where('status', 1)->get();
 
-        return view('admin.report.product_customer_count', compact('data', 'designs', 'products', 'sizeSets', 'colors'));
+        // Calculate total possible customers for percentage
+        $totalCustomers = 0;
+        if ($request->filled('agent_id')) {
+            $totalCustomers = \App\Models\MasterCustomer::where('status', 1)
+                ->whereIn('sales_agent_id', (array) $request->agent_id)
+                ->count();
+        } else {
+            $totalCustomers = \App\Models\MasterCustomer::where('status', 1)->count();
+        }
+        // Fallback to avoid division by zero
+        if ($totalCustomers == 0) $totalCustomers = 1;
+
+        return view('admin.report.product_customer_count', compact('data', 'designs', 'products', 'sizeSets', 'colors', 'agents', 'totalCustomers'));
     }
 
     public function productCustomerCountDetail($design_number, Request $request)
     {
-        $query = \App\Models\AgentOrderItem::with(['order', 'order.shop'])
+        $query = \App\Models\AgentOrderItem::with(['order', 'order.shop', 'order.shop.agent'])
             ->where('design_number', $design_number);
 
         if ($request->filled('start_date')) {
@@ -979,6 +997,11 @@ class ReportController extends Controller
                 $q->where('name', 'like', '%' . $request->customer_name . '%');
             });
         }
+        if ($request->filled('agent_id')) {
+            $query->whereHas('order.shop', function ($q) use ($request) {
+                $q->whereIn('sales_agent_id', (array) $request->agent_id);
+            });
+        }
         if ($request->filled('product_name')) {
             $query->whereIn('product_name', $request->product_name);
         }
@@ -995,7 +1018,8 @@ class ReportController extends Controller
         $products = \App\Models\AgentOrderItem::where('design_number', $design_number)->select('product_name')->distinct()->whereNotNull('product_name')->pluck('product_name');
         $sizeSets = \App\Models\AgentOrderItem::where('design_number', $design_number)->select('size_set_name')->distinct()->whereNotNull('size_set_name')->pluck('size_set_name');
         $colors = \App\Models\AgentOrderItem::where('design_number', $design_number)->select('color_name')->distinct()->whereNotNull('color_name')->pluck('color_name');
+        $agents = \App\Models\SalesAgent::where('status', 1)->get();
 
-        return view('admin.report.product_customer_count_detail', compact('items', 'design_number', 'products', 'sizeSets', 'colors'));
+        return view('admin.report.product_customer_count_detail', compact('items', 'design_number', 'products', 'sizeSets', 'colors', 'agents'));
     }
 }
