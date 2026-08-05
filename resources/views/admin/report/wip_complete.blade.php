@@ -159,30 +159,36 @@
 
                                 @if($selectedCustomer)
                                     <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-                                        <label style="font-weight: 600;">Select Orders:</label>
-                                        <select name="order_ids[]" class="form-control select2" multiple data-placeholder="-- All Orders --">
-                                            @foreach($availableOrders as $id => $sku)
-                                                <option value="{{ $id }}" {{ in_array($id, $selectedOrders) ? 'selected' : '' }}>{{ $sku }}</option>
-                                            @endforeach
-                                        </select>
+                                        <label style="font-weight: 600; white-space: nowrap;">Select Orders:</label>
+                                        <div id="parent-orders" style="flex: 1; width: 100%; position: relative;">
+                                            <select name="order_ids[]" class="form-control select2" multiple data-placeholder="-- All Orders --" style="width: 100%;">
+                                                @foreach($availableOrders as $id => $sku)
+                                                    <option value="{{ $id }}" {{ in_array($id, $selectedOrders) ? 'selected' : '' }}>{{ $sku }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-                                        <label style="font-weight: 600;">Select Designs:</label>
-                                        <select name="design_nos[]" class="form-control select2" multiple data-placeholder="-- All Designs --">
-                                            @foreach($availableDesigns as $no => $no2)
-                                                <option value="{{ $no }}" {{ in_array($no, $selectedDesigns) ? 'selected' : '' }}>{{ $no }}</option>
-                                            @endforeach
-                                        </select>
+                                        <label style="font-weight: 600; white-space: nowrap;">Select Designs:</label>
+                                        <div id="parent-designs" style="flex: 1; width: 100%; position: relative;">
+                                            <select name="design_nos[]" class="form-control select2" multiple data-placeholder="-- All Designs --" style="width: 100%;">
+                                                @foreach($availableDesigns as $no => $no2)
+                                                    <option value="{{ $no }}" {{ in_array($no, $selectedDesigns) ? 'selected' : '' }}>{{ $no }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-                                        <label style="font-weight: 600;">Select Lots:</label>
-                                        <select name="lot_nos[]" class="form-control select2" multiple data-placeholder="-- All Lots --">
-                                            @foreach($availableLots as $no => $no2)
-                                                <option value="{{ $no }}" {{ in_array($no, $selectedLots) ? 'selected' : '' }}>{{ $no }}</option>
-                                            @endforeach
-                                        </select>
+                                        <label style="font-weight: 600; white-space: nowrap;">Select Lots:</label>
+                                        <div id="parent-lots" style="flex: 1; width: 100%; position: relative;">
+                                            <select name="lot_nos[]" class="form-control select2" multiple data-placeholder="-- All Lots --" style="width: 100%;">
+                                                @foreach($availableLots as $no => $no2)
+                                                    <option value="{{ $no }}" {{ in_array($no, $selectedLots) ? 'selected' : '' }}>{{ $no }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div class="form-group" style="display: flex; gap: 8px; margin-bottom: 0; align-items: flex-end;">
@@ -238,7 +244,12 @@
                                                 <td>{{ $row['order']->sku ?? '-' }}</td>
                                                 <td>{{ $row['order']->created_at ? $row['order']->created_at->format('d M, Y') : '-' }}</td>
                                                 <td>{{ $row['set']->design_number ?? '-' }}</td>
-                                                <td>{{ $row['lot']->lot_no }}</td>
+                                                <td>
+                                                    {{ $row['lot']->lot_no }}
+                                                    <a href="{{ route('admin.report.lots.lot-details', $row['lot']->lot_no) }}" target="_blank" class="btn btn-primary" style="padding: 2px 6px; font-size: 10px; margin-left: 4px;" title="View Lot Details">
+                                                        <i class="fas fa-eye"></i> View
+                                                    </a>
+                                                </td>
                                                 <td>{{ $row['lot_quantity'] ?? 0 }}</td>
                                                 <td>
                                                     @if($row['lot']->status == 0) <span style="color: #f59e0b; font-weight: bold;">Pending</span>
@@ -292,7 +303,36 @@
     $(document).ready(function() {
         if ($.fn.select2) {
             $('.select2').select2({
-                allowClear: true
+                allowClear: true,
+                width: '100%'
+            });
+            
+            // Fix focus jump bug by destroying generic select2 and re-initializing with dropdownParent
+            let configs = [
+                { selector: 'select[name="order_ids[]"]', parent: '#parent-orders' },
+                { selector: 'select[name="design_nos[]"]', parent: '#parent-designs' },
+                { selector: 'select[name="lot_nos[]"]', parent: '#parent-lots' }
+            ];
+            
+            configs.forEach(function(item) {
+                let $el = $(item.selector);
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.select2('destroy');
+                }
+                $el.select2({
+                    dropdownParent: $(item.parent),
+                    width: '100%',
+                    allowClear: true,
+                    theme: 'bootstrap4'
+                }).on('select2:open', function() {
+                    // Force focus back to this specific search field after DOM insertion
+                    setTimeout(function() {
+                        let searchField = $(item.parent).find('.select2-search__field');
+                        if (searchField.length) {
+                            searchField.focus();
+                        }
+                    }, 50);
+                });
             });
         }
 

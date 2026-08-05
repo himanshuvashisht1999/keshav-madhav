@@ -640,6 +640,7 @@ class AgentOrderController extends Controller
 
         $customersQuery = DB::table('master_customers')
             ->select('id', 'name')
+            ->where('status', '!=', 3)
             ->where('status', 1);
 
         if ($is_direct == 1 || $agent_id === 'direct') {
@@ -2582,7 +2583,13 @@ class AgentOrderController extends Controller
         $totalGrandTotal = $query->sum('grand_total');
 
         $dispatches = $query->paginate(20);
-        $shops = DB::table('master_customers')->select('id', 'name')->get();
+        $shops = DB::table('master_customers')
+            ->where(function($q) {
+                $q->where('subtype', '!=', 'agent')
+                  ->orWhereNull('subtype');
+            })
+            ->where('status', '!=', 3)
+            ->select('id', 'name')->get();
         $vendors = DB::table('vendors')->select('id', 'name')->get();
         $agents = \App\Models\SalesAgent::select('id', 'name')->get();
 
