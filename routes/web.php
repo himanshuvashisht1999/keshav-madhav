@@ -1288,6 +1288,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
             // WIP Complete Report
             Route::get('/wip-complete', [AdminReportController::class, 'wipComplete'])->name('wip-complete');
+            Route::get('/product-customer-count', [AdminReportController::class, 'productCustomerCount'])->name('product-customer-count');
+            Route::get('/product-customer-count/{design_number}', [AdminReportController::class, 'productCustomerCountDetail'])->name('product-customer-count.detail');
         });
 
         // Ledger Reports

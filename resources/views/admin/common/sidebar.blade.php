@@ -804,6 +804,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                 </li>
 
                                 <li class="nav-item">
+                                    <a href="{{ route('admin.report.product-customer-count') }}"
+                                        class="{{ str_contains(strtolower($page_url), 'product-customer-count') ? 'nav-link active' : 'nav-link' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Product Customer Count</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
                                     <a href="{{ route('admin.report.agent-ledger.index') }}"
                                         class="{{ str_contains(strtolower($page_url), 'admin/report/agent-ledger') ? 'nav-link active' : 'nav-link' }}">
                                         <i class="far fa-circle nav-icon"></i>

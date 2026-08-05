@@ -910,4 +910,92 @@ class ReportController extends Controller
             'selectedDesigns'
         ));
     }
+
+    public function productCustomerCount(Request $request)
+    {
+        $query = \App\Models\AgentOrderItem::select(
+                'agent_order_items.design_number',
+                \DB::raw('MAX(agent_order_items.product_name) as product_name'),
+                \DB::raw('COUNT(DISTINCT agent_orders.master_customer_id) as customer_count'),
+                \DB::raw('SUM(agent_order_items.quantity) as total_quantity')
+            )
+            ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+            ->groupBy('agent_order_items.design_number');
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('agent_orders.order_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('agent_orders.order_date', '<=', $request->end_date);
+        }
+        if ($request->filled('design_number')) {
+            $query->whereIn('agent_order_items.design_number', $request->design_number);
+        }
+        if ($request->filled('product_name')) {
+            $query->whereIn('agent_order_items.product_name', $request->product_name);
+        }
+        if ($request->filled('size_set_name')) {
+            $query->whereIn('agent_order_items.size_set_name', $request->size_set_name);
+        }
+        if ($request->filled('color_name')) {
+            $query->whereIn('agent_order_items.color_name', $request->color_name);
+        }
+        
+        $query->orderByDesc('customer_count');
+        $data = $query->paginate(50);
+
+        // Fetch distinct options for filters
+        $designs = \App\Models\AgentOrderItem::select('design_number')->distinct()->whereNotNull('design_number')->pluck('design_number');
+        $products = \App\Models\AgentOrderItem::select('product_name')->distinct()->whereNotNull('product_name')->pluck('product_name');
+        $sizeSets = \App\Models\AgentOrderItem::select('size_set_name')->distinct()->whereNotNull('size_set_name')->pluck('size_set_name');
+        $colors = \App\Models\AgentOrderItem::select('color_name')->distinct()->whereNotNull('color_name')->pluck('color_name');
+
+        return view('admin.report.product_customer_count', compact('data', 'designs', 'products', 'sizeSets', 'colors'));
+    }
+
+    public function productCustomerCountDetail($design_number, Request $request)
+    {
+        $query = \App\Models\AgentOrderItem::with(['order', 'order.shop'])
+            ->where('design_number', $design_number);
+
+        if ($request->filled('start_date')) {
+            $query->whereHas('order', function ($q) use ($request) {
+                $q->whereDate('order_date', '>=', $request->start_date);
+            });
+        }
+        if ($request->filled('end_date')) {
+            $query->whereHas('order', function ($q) use ($request) {
+                $q->whereDate('order_date', '<=', $request->end_date);
+            });
+        }
+        if ($request->filled('order_number')) {
+            $query->whereHas('order', function ($q) use ($request) {
+                $orderNumber = preg_replace('/[^0-9]/', '', $request->order_number);
+                $q->where('id', 'like', '%' . $orderNumber . '%');
+            });
+        }
+        if ($request->filled('customer_name')) {
+            $query->whereHas('order.shop', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->customer_name . '%');
+            });
+        }
+        if ($request->filled('product_name')) {
+            $query->whereIn('product_name', $request->product_name);
+        }
+        if ($request->filled('size_set_name')) {
+            $query->whereIn('size_set_name', $request->size_set_name);
+        }
+        if ($request->filled('color_name')) {
+            $query->whereIn('color_name', $request->color_name);
+        }
+
+        $items = $query->latest()->paginate(50);
+
+        // Fetch distinct options for filters (restricted to this design_number)
+        $products = \App\Models\AgentOrderItem::where('design_number', $design_number)->select('product_name')->distinct()->whereNotNull('product_name')->pluck('product_name');
+        $sizeSets = \App\Models\AgentOrderItem::where('design_number', $design_number)->select('size_set_name')->distinct()->whereNotNull('size_set_name')->pluck('size_set_name');
+        $colors = \App\Models\AgentOrderItem::where('design_number', $design_number)->select('color_name')->distinct()->whereNotNull('color_name')->pluck('color_name');
+
+        return view('admin.report.product_customer_count_detail', compact('items', 'design_number', 'products', 'sizeSets', 'colors'));
+    }
 }
