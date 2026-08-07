@@ -78,7 +78,7 @@
 
                                 <div class="col-md-2">
                                     <label class="fw-bold">Unit Person</label>
-                                    <select name="unit_id[]" id="unit_id" class="form-control select2" multiple>
+                                    <select name="unit_id[]" id="unit_id" class="form-control" multiple>
                                         @php 
                                             $reqUnits = request('unit_id', []); 
                                             if(!is_array($reqUnits)) $reqUnits = [$reqUnits]; 
@@ -115,8 +115,17 @@
 
                                 <div class="col-md-2">
                                     <label class="fw-bold">Design No</label>
-                                    <input type="text" name="design_no" value="{{ request('design_no') }}" class="form-control"
-                                        placeholder="Search Design No">
+                                    <select name="design_no[]" id="design_no" class="form-control" multiple>
+                                        @php 
+                                            $reqDesigns = request('design_no', []); 
+                                            if(!is_array($reqDesigns)) $reqDesigns = [$reqDesigns]; 
+                                        @endphp
+                                        @foreach($designs as $design)
+                                            <option value="{{ $design }}" {{ in_array($design, $reqDesigns) ? 'selected' : '' }}>
+                                                {{ $design }}
+                                            </option>
+                                        @endforeach
+                                    </select>
                                 </div>
 
                                 <div class="col-md-2">
@@ -389,5 +398,21 @@
             </div>
         </section>
     </div>
+@endsection
 
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        if ($.fn.select2) {
+            $('#unit_id').select2({
+                placeholder: 'Select Unit Person',
+                width: '100%'
+            });
+            $('#design_no').select2({
+                placeholder: 'Search Design No',
+                width: '100%'
+            });
+        }
+    });
+</script>
 @endsection

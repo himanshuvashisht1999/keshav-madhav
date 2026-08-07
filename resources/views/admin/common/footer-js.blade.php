@@ -186,7 +186,7 @@
 
       // Global fix to auto-focus Select2 search field when opened
       $(document).on('select2:open', function(e) {
-          let searchField = document.querySelector('.select2-search__field');
+          let searchField = document.querySelector('.select2-container--open .select2-search__field');
           if (searchField) {
               searchField.focus();
           }

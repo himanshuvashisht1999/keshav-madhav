@@ -1779,7 +1779,12 @@ class ReportService
         
         $lotNo = $request->get('lot_no');
         $orderNo = $request->get('order_no');
-        $designNo = $request->get('design_no');
+        $designNoReq = $request->get('design_no', []);
+        if (!is_array($designNoReq) && $designNoReq) {
+            $designNoReq = [$designNoReq];
+        } elseif (!is_array($designNoReq)) {
+            $designNoReq = [];
+        }
 
         if ($productionStatus) {
             $type = 'other';
@@ -1812,9 +1817,9 @@ class ReportService
                 });
             }
             
-            if ($designNo) {
-                $query->whereHas('orderProductSet', function ($q) use ($designNo) {
-                    $q->where('design_number', $designNo);
+            if (!empty($designNoReq)) {
+                $query->whereHas('orderProductSet', function ($q) use ($designNoReq) {
+                    $q->whereIn('design_number', $designNoReq);
                 });
             }
 
@@ -1891,7 +1896,7 @@ class ReportService
             $unitIds = array_unique($unitIds);
         }
 
-        $hasFilters = $lotNo || $orderNo || $designNo || $request->filled('start_date') || $request->filled('end_date') || !empty($unitIdsReq);
+        $hasFilters = $lotNo || $orderNo || !empty($designNoReq) || $request->filled('start_date') || $request->filled('end_date') || !empty($unitIdsReq);
         $type = 'other';
 
         if ($request->get('is_pagination') && \Illuminate\Support\Facades\Cache::has('stock_pending_data_' . md5(json_encode($request->except(['page', 'is_pagination', '_']))))) {
@@ -1923,9 +1928,9 @@ class ReportService
                 $query->where('lot_no', $lotNo);
             }
 
-            if ($designNo) {
-                $query->whereHas('productSet', function ($q) use ($designNo) {
-                    $q->where('design_number', $designNo);
+            if (!empty($designNoReq)) {
+                $query->whereHas('productSet', function ($q) use ($designNoReq) {
+                    $q->whereIn('design_number', $designNoReq);
                 });
             }
 
@@ -2046,10 +2051,10 @@ class ReportService
                 $ass3Query->where($orderFilter);
             }
 
-            if ($designNo) {
-                $designFilter = function ($q) use ($designNo) {
-                    $lotNos = \App\Models\OrderLot::whereHas('orderProductSet', function ($sq) use ($designNo) {
-                        $sq->where('design_number', $designNo);
+            if (!empty($designNoReq)) {
+                $designFilter = function ($q) use ($designNoReq) {
+                    $lotNos = \App\Models\OrderLot::whereHas('orderProductSet', function ($sq) use ($designNoReq) {
+                        $sq->whereIn('design_number', $designNoReq);
                     })->pluck('lot_no')->toArray();
                     $q->whereIn('lot_no', $lotNos);
                 };
@@ -2258,6 +2263,13 @@ class ReportService
             );
         }
 
+        $designs = \App\Models\OrderProductSet::whereNotNull('design_number')
+                    ->where('design_number', '!=', '')
+                    ->select('design_number')
+                    ->distinct()
+                    ->orderBy('design_number')
+                    ->pluck('design_number');
+
         return [
             'assignments' => $assignmentsCollection,
             'totalPending' => $totalPending,
@@ -2266,6 +2278,7 @@ class ReportService
             'canCloseTasks' => $canCloseTasks,
             'stages' => $stages,
             'units' => $units,
+            'designs' => $designs,
             'selectedStage' => $stageId,
             'selectedUnit' => $unitIdsReq,
             'lotNo' => $lotNo,
