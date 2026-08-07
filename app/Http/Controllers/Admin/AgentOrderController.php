@@ -987,17 +987,12 @@ class AgentOrderController extends Controller
             $items = $itemsRaw->map(function ($item) {
                 $itemRackId = $item->item_rack_id ?? null;
                 $inventoryInfo = null;
-                if ($itemRackId) {
-                    $inventoryInfo = DB::table('racks')
-                        ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                        ->where('racks.id', $itemRackId)
-                        ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name')
-                        ->first();
-                }
-
+                $currentRackValid = false;
+                
                 $allocated_qty = DB::table('agent_order_items')
                     ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
                     ->where('agent_orders.status', 'pending')
+                    ->where('agent_order_items.id', '!=', $item->id)
                     ->where('agent_order_items.product_id', $item->product_id)
                     ->where('agent_order_items.color_id', $item->color_id)
                     ->where('agent_order_items.size_set_id', $item->size_set_id)
@@ -1014,17 +1009,25 @@ class AgentOrderController extends Controller
                     ->orderByRaw("CASE WHEN LOWER(storerooms.name) = 'advance sample' THEN 1 ELSE 0 END")
                     ->orderBy('domestic_inventories.total_boxes', 'desc')
                     ->get();
+                
+                if ($itemRackId) {
+                    $currentRackValid = $allLocations->contains('rack_id', $itemRackId);
+                    if ($currentRackValid) {
+                        $inventoryInfo = $allLocations->firstWhere('rack_id', $itemRackId);
+                    } else {
+                        // Rack doesn't have boxes anymore, but we still need its name to show if no available locations exist
+                        $inventoryInfo = DB::table('racks')
+                            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                            ->where('racks.id', $itemRackId)
+                            ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name')
+                            ->first();
+                    }
+                }
 
                 $available_global = $allLocations->sum('boxes') - $allocated_qty;
+                $availableLocations = $allLocations;
 
-                $availableLocations = $allLocations->filter(function($loc) use ($available_global) {
-                    if (strtolower($loc->warehouse_name) === 'advance sample') {
-                        return true;
-                    }
-                    return $available_global > 0;
-                })->values();
-
-                if (!$inventoryInfo && $availableLocations->count() > 0) {
+                if (!$currentRackValid && $availableLocations->count() > 0) {
                     $inventoryInfo = $availableLocations->first();
                         
                     if ($inventoryInfo && isset($inventoryInfo->rack_id)) {
