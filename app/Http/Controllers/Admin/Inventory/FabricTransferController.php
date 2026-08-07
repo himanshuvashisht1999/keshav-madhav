@@ -95,10 +95,34 @@ class FabricTransferController extends Controller
         }
     }
 
-    public function history()
+    public function history(Request $request)
     {
         $warehouses = MasterFabricWarehouse::where('status', 1)->get();
-        return view('admin.inventory.fabric_transfer.history', compact('warehouses'));
+        $fabrics = Fabric::where('status', 1)->get();
+
+        $query = FabricTransfer::with(['fromWarehouse', 'toWarehouse', 'user', 'items.fabric'])->latest();
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('transfer_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('transfer_date', '<=', $request->end_date);
+        }
+        if ($request->filled('from_warehouse_id')) {
+            $query->where('from_warehouse_id', $request->from_warehouse_id);
+        }
+        if ($request->filled('to_warehouse_id')) {
+            $query->where('to_warehouse_id', $request->to_warehouse_id);
+        }
+        if ($request->filled('fabric_id')) {
+            $query->whereHas('items', function($q) use ($request) {
+                $q->where('fabric_id', $request->fabric_id);
+            });
+        }
+
+        $transfers = $query->paginate(20)->withQueryString();
+
+        return view('admin.inventory.fabric_transfer.history', compact('warehouses', 'fabrics', 'transfers'));
     }
 
     public function historyList(Request $request)
@@ -111,14 +135,16 @@ class FabricTransferController extends Controller
         if ($request->filled('end_date')) {
             $query->whereDate('transfer_date', '<=', $request->end_date);
         }
-        if ($request->filled('transfer_no')) {
-            $query->where('transfer_no', 'like', '%' . $request->transfer_no . '%');
-        }
         if ($request->filled('from_warehouse_id')) {
             $query->where('from_warehouse_id', $request->from_warehouse_id);
         }
         if ($request->filled('to_warehouse_id')) {
             $query->where('to_warehouse_id', $request->to_warehouse_id);
+        }
+        if ($request->filled('fabric_id')) {
+            $query->whereHas('items', function($q) use ($request) {
+                $q->where('fabric_id', $request->fabric_id);
+            });
         }
 
         return DataTables::of($query)
