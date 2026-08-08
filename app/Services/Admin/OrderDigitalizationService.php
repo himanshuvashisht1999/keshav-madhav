@@ -1974,12 +1974,37 @@ class OrderDigitalizationService
             $inflow = $inflowQuery->sum('quantity');
 
             // Calculate Outflow (Total Items left this stage)
-            $outflowQuery = $out_model_name::where('from_stage_id', $stage_id)
+            $outflow = 0;
+            if ($stage_id == 1) {
+                $outflowQuery1 = \App\Models\OrderPrintingToStichingTransaction::where('from_stage_id', $stage_id)
+                    ->where('lot_no', $lot_no);
+                if ($unit_id) {
+                    $outflowQuery1->where('sub_stage_id', $unit_id);
+                }
+                $outflow += $outflowQuery1->sum('quantity');
+
+                $outflowQuery2 = \App\Models\OrderStageTransaction::where('from_stage_id', $stage_id)
+                    ->where('lot_no', $lot_no);
+                if ($unit_id) {
+                    $outflowQuery2->where('sub_stage_id', $unit_id);
+                }
+                $outflow += $outflowQuery2->sum('quantity');
+            } else {
+                $outflowQuery = $out_model_name::where('from_stage_id', $stage_id)
+                    ->where('lot_no', $lot_no);
+                if ($unit_id) {
+                    $outflowQuery->where('sub_stage_id', $unit_id);
+                }
+                $outflow = $outflowQuery->sum('quantity');
+            }
+
+            // Add Godam Outflow (items moved to godam leave their current stage)
+            $godamOutflowQuery = \App\Models\OrderGodamStageTransaction::where('from_stage_id', $stage_id)
                 ->where('lot_no', $lot_no);
             if ($unit_id) {
-                $outflowQuery->where('sub_stage_id', $unit_id);
+                $godamOutflowQuery->where('sub_stage_id', $unit_id);
             }
-            $outflow = $outflowQuery->sum('quantity');
+            $outflow += $godamOutflowQuery->sum('quantity');
 
             // If there is stock remaining, add to list
             if (($inflow - $outflow) > 0) {
