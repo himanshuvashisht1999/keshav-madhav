@@ -81,6 +81,8 @@ class InventoryController extends Controller
             'fittings.name as fitting_name',
             'patterns.name as pattern_name',
             'variants.mrp as mrp',
+            'variants.image as product_image',
+            'variants.id as variant_id',
             DB::raw('SUM(domestic_inventories.total_boxes) as total_boxes'),
             DB::raw('COALESCE(MAX(order_totals.total_qty), 0) as total_order')
         )
@@ -186,7 +188,9 @@ class InventoryController extends Controller
             'sizes.name',
             'fittings.name',
             'patterns.name',
-            'variants.mrp'
+            'variants.mrp',
+            'variants.image',
+            'variants.id'
         )->orderBy('products.design_number', 'asc');
 
         if ($request->has('load_more')) {
@@ -230,6 +234,40 @@ class InventoryController extends Controller
         // Fallback for DataTables if still used by other parts
         $data = $query->get();
         return Datatables::of($data)->addIndexColumn()->make(true);
+    }
+
+    public function getVariantImages($id)
+    {
+        $variant = \App\Models\ProductionGoodVariant::with('items.color')->find($id);
+        if (!$variant) {
+            return response()->json(['success' => false]);
+        }
+
+        $images = [];
+        // Add size set image as the first image
+        if ($variant->image) {
+            $images[] = [
+                'type' => 'size_set',
+                'url' => asset('assets/products/' . $variant->image),
+                'color' => 'Size Set'
+            ];
+        }
+
+        // Add color images
+        foreach ($variant->items as $item) {
+            if ($item->image) {
+                $images[] = [
+                    'type' => 'color',
+                    'url' => asset('assets/products/' . $item->image),
+                    'color' => $item->color ? $item->color->name : 'Color'
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'images' => $images
+        ]);
     }
 
     public function export(Request $request)
@@ -409,6 +447,8 @@ class InventoryController extends Controller
                 'fittings.name as fitting_name',
                 'patterns.name as pattern_name',
                 'variants.mrp as mrp',
+                'variants.image as product_image',
+                'variants.id as variant_id',
                 DB::raw('COALESCE(color_order_totals.color_total_order, 0) as color_total_order')
             );
 

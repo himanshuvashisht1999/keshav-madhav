@@ -2068,6 +2068,17 @@ class OrderDigitalizationService
             );
         }
 
+        // Movement within Printing (Stage 1 outflow)
+        if ($current_stage_id == 1) {
+            $outflowData = $outflowData->concat(
+                OrderPrintingStageTransactionDetail::join('order_printing_stage_transactions', 'order_printing_stage_transactions.id', '=', 'order_printing_stage_transaction_details.order_printing_stage_transaction_id')
+                    ->where('order_printing_stage_transactions.from_stage_id', $current_stage_id)
+                    ->where('order_printing_stage_transactions.lot_no', $lot_no)
+                    ->select('order_printing_stage_transaction_details.size', 'order_printing_stage_transaction_details.quantity')
+                    ->get()
+            );
+        }
+
         // Movement from Printing to Stitching (Stage 1 outflow)
         if ($current_stage_id == 1) {
             $outflowData = $outflowData->concat(

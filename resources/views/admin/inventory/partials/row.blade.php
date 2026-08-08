@@ -1,6 +1,16 @@
 <tr>
     <td class="text-center text-muted">{{ $index }}</td>
-    <td>{{ trim($row->product_name) ?: $row->design_number }}</td>
+    <td>
+        <div class="d-flex align-items-center">
+            @php
+                $imgSrc = $row->product_image ? asset('assets/products/' . $row->product_image) : asset('images/image-placeholder.png');
+            @endphp
+            <a href="javascript:void(0)" onclick="openVariantImageModal({{ $row->variant_id }}, '{{ $imgSrc }}')">
+                <img src="{{ $imgSrc }}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; margin-right: 12px;" onerror="this.src='{{ asset('images/image-placeholder.png') }}'">
+            </a>
+            <span>{{ trim($row->product_name) ?: $row->design_number }}</span>
+        </div>
+    </td>
     <td>{{ $row->design_number }}</td>
     <td>{{ $row->size_set_name }}</td>
     <td>{{ $row->fitting_name }}</td>
