@@ -85,6 +85,7 @@
                     <div class="erp-card-header">
                         <div>
                             <i class="fas fa-list mr-2"></i> Details for Design: <strong>{{ $design_number }}</strong>
+                            <span class="badge badge-success ml-3 px-2 py-1" style="font-size: 13px;">Total Sold: {{ $totalQuantitySold }}</span>
                         </div>
                         <div>
                             <a href="{{ route('admin.report.product-customer-count') }}" class="btn btn-sm btn-secondary">

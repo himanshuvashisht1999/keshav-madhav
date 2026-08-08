@@ -1012,6 +1012,7 @@ class ReportController extends Controller
             $query->whereIn('color_name', $request->color_name);
         }
 
+        $totalQuantitySold = $query->sum('quantity');
         $items = $query->latest()->paginate(50);
 
         // Fetch distinct options for filters (restricted to this design_number)
@@ -1020,6 +1021,6 @@ class ReportController extends Controller
         $colors = \App\Models\AgentOrderItem::where('design_number', $design_number)->select('color_name')->distinct()->whereNotNull('color_name')->pluck('color_name');
         $agents = \App\Models\SalesAgent::where('status', 1)->get();
 
-        return view('admin.report.product_customer_count_detail', compact('items', 'design_number', 'products', 'sizeSets', 'colors', 'agents'));
+        return view('admin.report.product_customer_count_detail', compact('items', 'design_number', 'products', 'sizeSets', 'colors', 'agents', 'totalQuantitySold'));
     }
 }
