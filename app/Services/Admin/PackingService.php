@@ -758,6 +758,7 @@ class PackingService
             $total_pcs = 0;
             $carton_count = 0;
             $datePrefix = date('ymd');
+            $deduction_queue = [];
 
             foreach ($carton_groups as $cno => $entries) {
                 $rack_id = $entries[0]['rack_id'] ?? null;
@@ -875,8 +876,13 @@ class PackingService
                                     'type' => 'packing',
                                     'responsible_unit_id' => $slip_details->stage_master_unit_id,
                                     'remarks' => "Domestic Packing: Box $box_no",
+                                    'lot_no' => !empty($entry['selected_lots']) ? $entry['selected_lots'][0] : null
                                 ]);
                                 $total_pcs += $pcs;
+                                $deduction_queue[] = [
+                                    'lots' => $entry['selected_lots'] ?? [],
+                                    'pcs' => $pcs
+                                ];
                             }
                         }
                     } else if ($entry['type'] === 'set') {
@@ -912,6 +918,10 @@ class PackingService
                                     ]);
                                     $unit_available[$detail->id] = ($unit_available[$detail->id] ?? 0) - $count;
                                     $total_pcs += $count;
+                                    $deduction_queue[] = [
+                                        'lots' => $entry['selected_lots'] ?? [],
+                                        'pcs' => $count
+                                    ];
                                 }
                             }
                         }
@@ -938,26 +948,33 @@ class PackingService
                         ]);
                         $unit_available[$did] = ($unit_available[$did] ?? 0) - $qty;
                         $total_pcs += $qty;
+                        $deduction_queue[] = [
+                            'lots' => $entry['selected_lots'] ?? [],
+                            'pcs' => $qty
+                        ];
                     }
                 }
                 $carton_count++;
             }
 
-            if ($total_pcs > 0) {
-                $orderLots = OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
+            foreach ($deduction_queue as $req) {
+                if ($req['pcs'] <= 0) continue;
+                
+                $lotsToDeduct = !empty($req['lots']) ? $req['lots'] : OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
+                
                 $orderStageTransactions = OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
                     ->where(function($q) use ($slip_details) {
                         $q->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
                           ->orWhereNull('sub_stage_id_to');
                     })
-                    ->whereIn('lot_no', $orderLots)->orderBy('id')->get();
+                    ->whereIn('lot_no', $lotsToDeduct)
+                    ->orderBy('id')->get();
 
-                $rem = $total_pcs;
+                $rem = $req['pcs'];
                 foreach ($orderStageTransactions as $tx) {
-                    if ($rem <= 0)
-                        break;
-                    if ($tx->remaining_quantity <= 0)
-                        continue;
+                    if ($rem <= 0) break;
+                    if ($tx->remaining_quantity <= 0) continue;
+                    
                     if ($tx->remaining_quantity > $rem) {
                         $tx->remaining_quantity -= $rem;
                         $rem = 0;

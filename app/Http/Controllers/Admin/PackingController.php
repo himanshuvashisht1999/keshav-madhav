@@ -132,10 +132,6 @@ class PackingController extends Controller
                 $set->setAttribute('packed_sets', $min_packed_sets ?? 0);
                 $set->setAttribute('details_data', $details);
                 return $set;
-            })->filter(function($set) {
-                return $set->details_data->contains(function($detail) {
-                    return $detail->unit_incoming_qty > 0;
-                });
             })->values();
         }
 
@@ -195,7 +191,7 @@ class PackingController extends Controller
         $orderSizeSetIds = [];
         $orderColorIds = [];
 
-        if ($order) {
+        if ($order && strtolower(trim($order->order_type)) != 'domestic') {
             $orderDesignNumbers = $order->OrderProductSets->pluck('design_number')->unique()->toArray();
             $orderSizeSetIds = $order->OrderProductSets->pluck('set_size')->unique()->toArray();
             $orderColorIds = $order->OrderProductSets->flatMap(function ($set) {
@@ -302,9 +298,10 @@ class PackingController extends Controller
 
         $storerooms = \App\Models\Storeroom::with('racks')->where('status', 1)->get();
 
-        $orderSizeSetIds = $order ? $order->OrderProductSets->pluck('set_size')->unique()->toArray() : [];
+        $isCorporate = $order && strtolower(trim($order->order_type)) != 'domestic';
+        $orderSizeSetIds = $isCorporate ? $order->OrderProductSets->pluck('set_size')->unique()->toArray() : [];
         $availableProductIds = [];
-        if ($order) {
+        if ($isCorporate) {
             foreach ($order_sets as $set) {
                 if ($set->production_goods_id) {
                     $availableProductIds[] = $set->production_goods_id;
@@ -316,7 +313,7 @@ class PackingController extends Controller
         $domestic_masters = [
             'products' => \App\Models\ProductionGoods::with('series')
                 ->where('status', 1)
-                ->when($order, function ($query) use ($availableProductIds) {
+                ->when($isCorporate, function ($query) use ($availableProductIds) {
                     $query->whereIn('id', $availableProductIds);
                 })
                 ->when(!$order && !empty($orderSizeSetIds), function ($query) use ($orderSizeSetIds) {

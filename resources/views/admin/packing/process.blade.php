@@ -877,6 +877,34 @@
                             </div>
                         </div>
                         <div class="col-md-10 p-3">
+                            <!-- Selected Lots Summary -->
+                            <div id="selectedLotsSummary" class="card border-info shadow-sm mb-4 d-none">
+                                <div class="card-body p-3 bg-info text-white rounded">
+                                    <h6 class="font-weight-bold mb-2 text-uppercase">Selected Lot(s) Summary</h6>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <small class="d-block font-weight-bold">Selected Lot(s)</small>
+                                            <span id="summaryLotNumbers" class="h6 mb-0"></span>
+                                            <div class="mt-1">
+                                                <span id="summaryDesign" class="badge badge-light text-dark border"></span>
+                                                <span id="summarySizeSet" class="badge badge-light text-dark border ml-1"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <small class="d-block font-weight-bold">Total Unit Qty</small>
+                                            <span id="summaryTotalQty" class="h6 mb-0"></span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <small class="d-block font-weight-bold">Already Packed</small>
+                                            <span id="summaryPacked" class="h6 mb-0"></span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <small class="d-block font-weight-bold">Available For Now</small>
+                                            <span id="summaryAvailable" class="h6 mb-0 font-weight-bolder text-warning"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="card bg-light border-0 shadow-sm mb-4">
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -885,7 +913,7 @@
                                         <div class="small text-muted">Populate multiple cartons at once</div>
                                     </div>
                                     <div class="row g-2">
-                                        <div class="col-md-2">
+                                        <div class="col-md-3">
                                             <div class="row no-gutters">
                                                 <div class="col-6 pr-1">
                                                     <label class="small font-weight-bold mb-0">Start</label>
@@ -899,22 +927,22 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-1">
+                                        <div class="col-md-1 d-none">
                                             <label class="small font-weight-bold mb-0">Design</label>
                                             <select id="rangeDesign" class="form-control form-control-sm"
-                                                onchange="updateRangeSizeSets()"></select>
+                                                onchange="updateRangeSizeSets()" disabled></select>
                                         </div>
-                                        <div class="col-md-1">
+                                        <div class="col-md-1 d-none">
                                             <label class="small font-weight-bold mb-0">Size Set</label>
                                             <select id="rangeSizeSet" class="form-control form-control-sm"
-                                                onchange="updateRangeColors()"></select>
+                                                onchange="updateRangeColors()" disabled></select>
                                         </div>
-                                        <div class="col-md-1">
+                                        <div class="col-md-2">
                                             <label class="small font-weight-bold mb-0">Color</label>
                                             <select id="rangeColor" class="form-control form-control-sm"
                                                 onchange="updateRangeTypeOptions()"></select>
                                         </div>
-                                        <div class="col-md-1">
+                                        <div class="col-md-2">
                                             <label class="small font-weight-bold mb-0">Type</label>
                                             <select id="rangeType" class="form-control form-control-sm"
                                                 onchange="updateRangeTypeOptions()">
@@ -1234,11 +1262,13 @@
                     setsForDesign.forEach(s => {
                         let sizeSetId = s.set_size;
                         if (!uniqueSets.some(us => us.id == sizeSetId)) {
-                            uniqueSets.push({ id: sizeSetId, name: s.size_set_name || 'N/A' });
+                            let rawName = s.size_set_name || 'N/A';
+                            let pcs = s.no_of_pcs ? ` (${s.no_of_pcs} Pcs)` : '';
+                            uniqueSets.push({ id: sizeSetId, rawName: rawName, name: rawName + pcs });
                         }
                     });
                     uniqueSets.forEach(us => {
-                        $sizeSet.append(`<option value="${us.id}">${us.name}</option>`);
+                        $sizeSet.append(`<option value="${us.id}" data-raw-name="${us.rawName}">${us.name}</option>`);
                     });
                 }
                 updateRangeColors();
@@ -1389,6 +1419,94 @@
                 }
             }
 
+            window.selectedGlobalLots = [];
+            function handleLotSelectionChange(clickedElement) {
+                if (clickedElement && $(clickedElement).is(':checked')) {
+                    let newDesign = String($(clickedElement).data('design'));
+                    let newSizeSet = String($(clickedElement).data('size-set'));
+
+                    $('.planner-lot-checkbox:checked').each(function() {
+                        if (this !== clickedElement) {
+                            let d = String($(this).data('design'));
+                            let s = String($(this).data('size-set'));
+                            if (d !== newDesign || s !== newSizeSet) {
+                                $(this).prop('checked', false);
+                            }
+                        }
+                    });
+                }
+
+                window.selectedGlobalLots = [];
+                let firstDesign = null;
+                let firstSizeSet = null;
+
+                $('.planner-lot-checkbox:checked').each(function() {
+                    let d = String($(this).data('design'));
+                    let s = String($(this).data('size-set'));
+                    
+                    if (!firstDesign) {
+                        firstDesign = d;
+                        firstSizeSet = s;
+                    }
+                    window.selectedGlobalLots.push($(this).val());
+                });
+
+                if (firstDesign) {
+                    $('#rangeDesign').val(firstDesign).trigger('change');
+                    setTimeout(() => {
+                        let sizeSetVal = "";
+                        $('#rangeSizeSet option').each(function() {
+                            let raw = $(this).data('raw-name');
+                            if (raw !== undefined && String(raw).trim() === String(firstSizeSet).trim()) {
+                                sizeSetVal = $(this).val();
+                            } else if (String($(this).text()).trim() === String(firstSizeSet).trim()) {
+                                sizeSetVal = $(this).val();
+                            }
+                        });
+                        if (sizeSetVal) {
+                            $('#rangeSizeSet').val(sizeSetVal).trigger('change');
+                        }
+                    }, 200);
+                }
+
+                if (window.selectedGlobalLots.length > 0) {
+                    let summaryLots = [];
+                    let sumTotal = 0;
+                    let sumRem = 0;
+                    let noOfPcs = 1;
+
+                    $('.planner-lot-checkbox:checked').each(function() {
+                        summaryLots.push($(this).val());
+                        sumTotal += parseFloat($(this).data('qty')) || 0;
+                        sumRem += parseFloat($(this).data('rem')) || 0;
+                    });
+                    
+                    let sumPacked = sumTotal - sumRem;
+
+                    if (firstDesign && firstSizeSet) {
+                        let setMatch = ORDER_SETS.find(s => s.design_number == firstDesign && (s.size_set_name == firstSizeSet || (s.size_measurement && s.size_measurement.name == firstSizeSet)));
+                        if (setMatch && setMatch.no_of_pcs) {
+                            noOfPcs = parseFloat(setMatch.no_of_pcs);
+                        }
+                    }
+
+                    let totalBoxes = Math.floor(sumTotal / noOfPcs);
+                    let remBoxes = Math.floor(sumRem / noOfPcs);
+                    let packedBoxes = Math.floor(sumPacked / noOfPcs);
+
+                    $('#summaryLotNumbers').text(summaryLots.join(', '));
+                    $('#summaryDesign').text(firstDesign ? 'Design: ' + firstDesign : '');
+                    $('#summarySizeSet').text(firstSizeSet ? `Size: ${firstSizeSet} (${noOfPcs} Pcs)` : '');
+                    $('#summaryTotalQty').text(`${sumTotal} Pcs (${totalBoxes} Boxes)`);
+                    $('#summaryPacked').text(`${sumPacked} Pcs (${packedBoxes} Boxes)`);
+                    $('#summaryAvailable').text(`${sumRem} Pcs (${remBoxes} Boxes)`);
+                    
+                    $('#selectedLotsSummary').removeClass('d-none');
+                } else {
+                    $('#selectedLotsSummary').addClass('d-none');
+                }
+            }
+
             function updateRangeRacks() {
                 let storeSelect = document.getElementById('rangeStore');
                 let rackSelect = document.getElementById('rangeRack');
@@ -1447,10 +1565,16 @@
                 if (UNIT_LOTS && UNIT_LOTS.length > 0) {
                     $list.append('<div class="mb-3"><strong class="small text-dark font-weight-bold">LOTS</strong></div>');
                     UNIT_LOTS.forEach(lot => {
-                        $list.append(`<div class="mb-2 pl-2 border-left border-info">
-                            <small class="d-block text-truncate font-weight-bold" title="${lot.design_number}">Lot ${lot.lot_no} (#${lot.design_number}) [${lot.size_set_name || 'N/A'}]</small>
-                            <span class="badge badge-light border text-info small">Qty: ${lot.quantity}</span>
-                            <span class="badge badge-light border text-muted small ml-1">Rem: ${lot.remaining_quantity}</span>
+                        let isChecked = window.selectedGlobalLots && window.selectedGlobalLots.includes(lot.lot_no) ? 'checked' : '';
+                        $list.append(`<div class="mb-2 pl-2 border-left border-info d-flex align-items-start">
+                            <div class="mr-2 mt-1">
+                                <input type="checkbox" class="planner-lot-checkbox" value="${lot.lot_no}" data-design="${lot.design_number}" data-size-set="${lot.size_set_name}" data-qty="${lot.quantity}" data-rem="${lot.remaining_quantity}" onchange="handleLotSelectionChange(this)" ${isChecked}>
+                            </div>
+                            <div>
+                                <small class="d-block text-truncate font-weight-bold" title="${lot.design_number}">Lot ${lot.lot_no} (#${lot.design_number}) [${lot.size_set_name || 'N/A'}]</small>
+                                <span class="badge badge-light border text-info small">Qty: ${lot.quantity}</span>
+                                <span class="badge badge-light border text-muted small ml-1">Rem: ${lot.remaining_quantity}</span>
+                            </div>
                         </div>`);
                     });
                 } else {
@@ -1660,7 +1784,8 @@
                         quantity: qty,
                         mrp: mrp,
                         price: price,
-                        barcode: barcode
+                        barcode: barcode,
+                        selected_lots: window.selectedGlobalLots || []
                     });
                 });
 
