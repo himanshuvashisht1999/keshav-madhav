@@ -119,6 +119,7 @@
                                     <th>PO No</th>
                                     <th>Order No</th>
                                     <th>Customer</th>
+                                    <th>Design Numbers</th>
                                     <th>Order Type</th>
                                     <th>Order Date</th>
                                     <th>Expected Delivery Date</th>
@@ -144,6 +145,40 @@
                 </div>
             </div>
         </section>
+    </div>
+
+    <!-- Order Sets Modal -->
+    <div class="modal fade" id="orderSetsModal" tabindex="-1" role="dialog" aria-labelledby="orderSetsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title" id="orderSetsModalLabel">Order Designs / Sets</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="orderSetsTable">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Design Number</th>
+                                    <th>Size Set</th>
+                                    <th>Color</th>
+                                    <th>Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -182,6 +217,7 @@
                     { data: 'po_number', name: 'po_number' },
                     { data: 'sku', name: 'sku' },
                     { data: 'master_customer_id', name: 'master_customer_id' },
+                    { data: 'design_number', name: 'design_number', orderable: false },
                     { data: 'order_type', name: 'order_type' },
                     { data: 'created_at', name: 'created_at' },
                     { data: 'expected_delivery_date', name: 'expected_delivery_date' },
@@ -277,6 +313,52 @@
                 e.preventDefault();
             });
 
+            // View Designs Modal logic
+            $(document).on('click', '.view-designs', function(e) {
+                e.preventDefault();
+                let orderId = $(this).data('id');
+                let tbody = $('#orderSetsTable tbody');
+                tbody.html('<tr><td colspan="4" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>');
+                $('#orderSetsModal').modal('show');
+
+                $.ajax({
+                    url: "{{ url('admin/production-order/get-order-sets') }}/" + orderId,
+                    type: 'GET',
+                    success: function(res) {
+                        if(res.success) {
+                            let html = '';
+                            let totalQty = 0;
+                            if(res.data.length > 0) {
+                                res.data.forEach(function(row) {
+                                    totalQty += parseInt(row.quantity) || 0;
+                                    html += `
+                                        <tr>
+                                            <td class="font-weight-bold">${row.design_number}</td>
+                                            <td>${row.size_set}</td>
+                                            <td>${row.color}</td>
+                                            <td class="text-center">${row.quantity}</td>
+                                        </tr>
+                                    `;
+                                });
+                                html += `
+                                    <tr class="bg-light font-weight-bold">
+                                        <td colspan="3" class="text-right">Total:</td>
+                                        <td class="text-center text-primary h6 mb-0">${totalQty}</td>
+                                    </tr>
+                                `;
+                            } else {
+                                html = '<tr><td colspan="4" class="text-center text-muted">No sets found for this order.</td></tr>';
+                            }
+                            tbody.html(html);
+                        } else {
+                            tbody.html('<tr><td colspan="4" class="text-center text-danger">Error loading data.</td></tr>');
+                        }
+                    },
+                    error: function() {
+                        tbody.html('<tr><td colspan="4" class="text-center text-danger">Failed to load order sets.</td></tr>');
+                    }
+                });
+            });
         });
 
         function deleteOrder(id) {

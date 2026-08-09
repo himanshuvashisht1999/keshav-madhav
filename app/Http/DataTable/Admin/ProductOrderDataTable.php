@@ -73,13 +73,16 @@ class ProductOrderDataTable
                 return $view . ' ' . (($queue->status != 1) ? $status : '');
             })
 
-            ->rawColumns(['action', 'product_sku', 'quantity', 'status'])
+            ->addColumn('design_number', function ($queue) {
+                return $queue->product?->design_number;
+            })
+            ->rawColumns(['action', 'status', 'design_number'])
             ->make(true);
     }
 
     public function indexListOrder($request)
     {
-        $queue = OrderMain::query()->where('order_main.status', '!=', 0);
+        $queue = OrderMain::query()->with('OrderProductSets.product')->where('order_main.status', '!=', 0);
 
         // Capture filtered query to calculate total sum across all filtered records
         $summary_query = clone $queue;
@@ -134,6 +137,15 @@ class ProductOrderDataTable
             ->editColumn('po_date', function ($queue) {
                 return $queue->po_date ? getformatDate($queue->po_date) : '-';
             })
+            ->addColumn('design_number', function ($queue) {
+                $designs = $queue->OrderProductSets->pluck('design_number')->unique()->filter()->implode(', ');
+                $display = $designs ?: 'View Designs';
+                // Limit display length to avoid huge columns if many designs exist
+                if (strlen($display) > 30) {
+                    $display = substr($display, 0, 27) . '...';
+                }
+                return '<a href="javascript:void(0)" class="view-designs font-weight-bold text-primary" data-id="' . $queue->id . '" title="View All Order Sets">' . htmlspecialchars($display) . '</a>';
+            })
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
 
@@ -151,7 +163,7 @@ class ProductOrderDataTable
                 return $view . ' ' . $edit . ' ' . $report . ' ' . $delete;
             })
 
-            ->rawColumns(['action', 'master_customer_id', 'total_pcs', 'dispatch_pcs', 'created_at', 'status'])
+            ->rawColumns(['action', 'master_customer_id', 'total_pcs', 'dispatch_pcs', 'created_at', 'status', 'design_number'])
             ->with('total_pieces_sum', number_format($total_pieces_sum))
             ->make(true);
     }

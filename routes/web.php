@@ -371,6 +371,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('/production-order')->name('product_order.')->group(function () {
 
             Route::get('/index-order', [AdminProductOrderController::class, 'indexOrder'])->name('indexOrder');
+            Route::get('/get-order-sets/{id}', [AdminProductOrderController::class, 'getOrderSets'])->name('getOrderSets');
             Route::get('/indexListOrder', [AdminProductOrderController::class, 'indexListOrder'])->name('indexListOrder');
             Route::get('/export-orders', [AdminProductOrderController::class, 'exportOrders'])->name('exportOrders');
 

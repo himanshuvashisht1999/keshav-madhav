@@ -126,13 +126,20 @@ class WarehouseInventoryController extends Controller
                  ->on('domestic_inventories.rack_id', '=', 'order_totals.rack_id');
         });
 
+        $query->leftJoin('production_goods_variants as variants', function ($join) {
+            $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
+                 ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
+        });
+
         $query->select(
             'domestic_inventories.product_id', 
             'domestic_inventories.size_set_id', 
             'domestic_inventories.rack_id',
             DB::raw('SUM(domestic_inventories.total_boxes) - MAX(COALESCE(order_totals.total_ordered_boxes, 0)) as total_boxes'),
-            DB::raw('MAX(domestic_inventories.quantity) as quantity') // Assuming pieces per box is the same, use MAX
-        )->groupBy('domestic_inventories.product_id', 'domestic_inventories.size_set_id', 'domestic_inventories.rack_id');
+            DB::raw('MAX(domestic_inventories.quantity) as quantity'), // Assuming pieces per box is the same, use MAX
+            'variants.image as product_image',
+            'variants.id as variant_id'
+        )->groupBy('domestic_inventories.product_id', 'domestic_inventories.size_set_id', 'domestic_inventories.rack_id', 'variants.image', 'variants.id');
 
         return $query;
     }
@@ -261,8 +268,15 @@ class WarehouseInventoryController extends Controller
                  ->on('domestic_inventories.rack_id', '=', 'order_totals.rack_id');
         });
 
+        $query->leftJoin('production_goods_variants as variants', function ($join) {
+            $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
+                 ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
+        });
+
         $query->select(
             'domestic_inventories.*',
+            'variants.image as product_image',
+            'variants.id as variant_id',
             DB::raw('domestic_inventories.total_boxes - COALESCE(order_totals.color_total_ordered, 0) as total_boxes')
         );
 

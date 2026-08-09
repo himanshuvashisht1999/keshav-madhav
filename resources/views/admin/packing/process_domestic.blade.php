@@ -869,7 +869,7 @@
             <input type="text" id="rangeBarcode" class="form-control form-control-sm" placeholder="Optional">
         </div>
         <div class="col-md-2 d-flex align-items-end">
-            <button type="button" class="btn btn-outline-danger btn-sm btn-block" onclick="$('#plannerTableBody').empty()">
+            <button type="button" class="btn btn-outline-danger btn-sm btn-block" onclick="$('#plannerTableBody').empty(); updateCartonPlanTotalQty();">
                 <i class="fas fa-trash-alt mr-1"></i> Clear Table
             </button>
         </div>
@@ -878,7 +878,7 @@
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0 font-weight-bold">Carton Plan</h5>
+        <h5 class="mb-0 font-weight-bold">Carton Plan <span id="cartonPlanTotalQty" class="badge badge-success ml-2 font-weight-bold" style="font-size: 14px;">Total Pcs: 0</span></h5>
         <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="addPlannerRow()">
             <i class="fas fa-plus mr-1"></i> Add Single Carton
         </button>
@@ -1240,7 +1240,76 @@
                 } else {
                     $('#rangeQty').removeAttr('max');
                 }
+                updateRangeLiveRemainingQty();
             });
+
+            $(document).on('change', '#rangeColor, #rangeType', function() {
+                updateRangeLiveRemainingQty();
+            });
+
+            function updateRangeLiveRemainingQty() {
+                let setId = $('#rangeColor').val();
+                let type = $('#rangeType').val();
+                let sizeId = $('#rangeSize').val();
+                let $indicator = $('#rangeLiveRemaining');
+
+                if (!setId) {
+                    $indicator.addClass('d-none').text('');
+                    return;
+                }
+
+                let initialAvailable = 0;
+
+                if (type === 'set' || type === 'domestic') {
+                    let sid = parseInt(setId);
+                    let minSets = null;
+                    ORDER_ITEMS.forEach(item => {
+                        if (parseInt(item.order_products_set_id) === sid) {
+                            let itemAvl = parseInt(item.unit_available_qty);
+                            let perSet = parseFloat(item.qty_per_set) || 1;
+                            let canMake = Math.floor(itemAvl / perSet);
+                            if (minSets === null || canMake < minSets) minSets = canMake;
+                        }
+                    });
+                    initialAvailable = minSets !== null ? minSets : 0;
+                } else if (type === 'loose' && sizeId) {
+                    let sid = parseInt(sizeId);
+                    ORDER_ITEMS.forEach(item => {
+                        if (parseInt(item.id) === sid) {
+                            initialAvailable = parseInt(item.unit_available_qty);
+                        }
+                    });
+                } else {
+                    $indicator.addClass('d-none').text('');
+                    return;
+                }
+
+                let plannedQty = 0;
+                $('#plannerTableBody .planner-row').each(function() {
+                    let rType = $(this).find('.planner-type').val();
+                    let rSetId = $(this).find('.planner-color').val();
+                    let rSizeId = $(this).find('.planner-content-id').val();
+                    let rQty = parseInt($(this).find('.planner-qty').val()) || 0;
+
+                    if ((type === 'set' || type === 'domestic') && (rType === 'set' || rType === 'domestic') && rSetId == setId) {
+                        plannedQty += rQty;
+                    } else if (type === 'loose' && rType === 'loose' && rSizeId == sizeId) {
+                        plannedQty += rQty;
+                    }
+                });
+
+                let remaining = initialAvailable - plannedQty;
+                let unitLabel = (type === 'set' || type === 'domestic') ? 'Boxes Left' : 'Pcs Left';
+                
+                $indicator.removeClass('d-none badge-warning badge-success badge-danger');
+                $indicator.text(remaining + ' ' + unitLabel);
+                
+                if (remaining <= 0) {
+                    $indicator.addClass('badge-danger');
+                } else {
+                    $indicator.addClass('badge-warning');
+                }
+            }
 
             function updateRangeRacks() {
                 let storeSelect = document.getElementById('rangeStore');
@@ -1374,7 +1443,7 @@
                                                     <select class="form-control form-control-sm planner-rack" style="min-width: 80px;"><option value="">Rack</option></select>
                                                 </td>
                                                 <td class="text-right">
-                                                    <button type="button" class="btn btn-link text-danger btn-sm p-0" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button>
+                                                    <button type="button" class="btn btn-link text-danger btn-sm p-0" onclick="$(this).closest('tr').remove(); updateCartonPlanTotalQty();"><i class="fas fa-trash"></i></button>
                                                 </td>
                                             </tr>`;
 
@@ -1400,7 +1469,33 @@
                     updatePlannerRackSelect($storeSelect[0]);
                     $row.find('.planner-rack').val(data.rack_id);
                 }
+
+                updateCartonPlanTotalQty();
             }
+
+            function updateCartonPlanTotalQty() {
+                let total = 0;
+                $('#plannerTableBody .planner-qty').each(function() {
+                    let qty = parseInt($(this).val()) || 0;
+                    let $row = $(this).closest('tr');
+                    let type = $row.find('.planner-type').val();
+                    let setId = $row.find('.planner-color').val();
+                    
+                    if (type === 'set' && setId) {
+                        let set = ORDER_SETS.find(s => s.id == setId);
+                        let pcsPerSet = set && set.no_of_pcs ? parseInt(set.no_of_pcs) : 7;
+                        total += (qty * pcsPerSet);
+                    } else {
+                        total += qty;
+                    }
+                });
+                $('#cartonPlanTotalQty').text('Total Pcs: ' + total);
+                updateRangeLiveRemainingQty();
+            }
+
+            $(document).on('keyup change', '.planner-qty', function() {
+                updateCartonPlanTotalQty();
+            });
 
             function updateRowSizeSets(el) {
                 let $row = $(el).closest('tr');
@@ -1458,6 +1553,7 @@
                 } else if (type === 'set' && setId) {
                     $contentSelect.append(`<option value="${setId}" selected>${setId}</option>`);
                 }
+                updateCartonPlanTotalQty();
             }
 
             function updatePlannerRackSelect(selectEl) {

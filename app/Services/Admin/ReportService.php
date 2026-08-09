@@ -1855,6 +1855,13 @@ class ReportService
                 $assignments[] = $item;
             }
 
+            $designs = \App\Models\OrderProductSet::whereNotNull('design_number')
+                        ->where('design_number', '!=', '')
+                        ->select('design_number')
+                        ->distinct()
+                        ->orderBy('design_number')
+                        ->pluck('design_number');
+
             return [
                 'assignments' => collect($assignments)->sortBy('id')->values(),
                 'type' => $type,
@@ -1862,6 +1869,7 @@ class ReportService
                 'canCloseTasks' => false,
                 'stages' => \App\Models\MasterProductStage::where('status', 1)->orderBy('sequence', 'asc')->get(),
                 'units' => \App\Models\StageMasterUnit::where('master_stage_id', 3)->where('status', 1)->get(),
+                'designs' => $designs,
                 'selectedStage' => '',
                 'selectedUnit' => $unitIdsReq,
                 'lotNo' => $request->get('lot_no'),

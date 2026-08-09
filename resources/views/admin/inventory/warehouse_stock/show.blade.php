@@ -25,9 +25,19 @@
             <div class="card shadow-sm border-0 mb-4 bg-light" style="border-radius: 12px;">
                 <div class="card-body p-3">
                     <div class="row align-items-center text-center text-md-left">
-                        <div class="col-md-3 border-right mb-2 mb-md-0">
-                            <label class="small text-muted mb-0 d-block uppercase font-weight-bold"><i class="fas fa-box text-primary mr-1"></i> Product Name</label>
-                            <span class="h6 font-weight-bold text-dark mb-0">{{ $product->series->name ?? '' }} {{ $product->name_of_garment ?? 'N/A' }}</span>
+                        <div class="col-md-3 border-right mb-2 mb-md-0 d-flex align-items-center">
+                            @if(isset($items[0]) && $items[0]->variant_id)
+                                @php
+                                    $imgSrc = $items[0]->product_image ? asset('assets/products/' . $items[0]->product_image) : asset('images/image-placeholder.png');
+                                @endphp
+                                <a href="javascript:void(0)" class="view-gallery mr-3" data-id="{{ $items[0]->variant_id }}">
+                                    <img src="{{ $imgSrc }}" alt="Product Image" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" onerror="this.src='{{ asset('images/image-placeholder.png') }}'">
+                                </a>
+                            @endif
+                            <div>
+                                <label class="small text-muted mb-0 d-block uppercase font-weight-bold"><i class="fas fa-box text-primary mr-1"></i> Product Name</label>
+                                <span class="h6 font-weight-bold text-dark mb-0">{{ $product->series->name ?? '' }} {{ $product->name_of_garment ?? 'N/A' }}</span>
+                            </div>
                         </div>
                         <div class="col-md-2 border-right mb-2 mb-md-0">
                             <label class="small text-muted mb-0 d-block uppercase font-weight-bold">Design Number</label>
@@ -118,7 +128,48 @@
     </section>
 </div>
 
-<!-- Transfer Row Modal -->
+<!-- Image Gallery Modal -->
+<div class="modal fade" id="imageGalleryModal" tabindex="-1" role="dialog" aria-labelledby="imageGalleryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="imageGalleryModalLabel">Variant Images</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body text-center">
+        <!-- Main Big Image -->
+        <div class="mb-3">
+            <a id="main-gallery-link" href="#" target="_blank">
+                <img id="main-gallery-image" src="" alt="Variant Main Image" style="width: 100%; height: auto; max-height: 400px; object-fit: contain; border-radius: 8px; border: 1px solid #ddd;">
+            </a>
+        </div>
+        <!-- Thumbnails Strip -->
+        <div class="thumbnail-strip justify-content-center" id="gallery-thumbnails" style="display: flex; gap: 10px; overflow-x: auto; padding: 10px 0;">
+            <!-- Thumbnails will be injected here via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+    .gallery-thumb {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: border-color 0.2s;
+    }
+    .gallery-thumb:hover, .gallery-thumb.active {
+        border-color: #0f62fe;
+    }
+</style>
+
+<!-- MODALS -->
 <div class="modal fade" id="transferRowModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
@@ -578,6 +629,50 @@
                 }
             });
         });
+    });
+
+    // Image Gallery Modal Logic
+    $(document).on('click', '.view-gallery', function(e) {
+        e.preventDefault();
+        let variantId = $(this).data('id');
+        if(!variantId) return;
+
+        $.ajax({
+            url: "{{ url('admin/inventory/get-variant-images') }}/" + variantId,
+            type: 'GET',
+            success: function(res) {
+                if(res.success && res.images.length > 0) {
+                    let images = res.images;
+                    $('#main-gallery-image').attr('src', images[0].url);
+                    $('#main-gallery-link').attr('href', images[0].url);
+                    
+                    let thumbHtml = '';
+                    images.forEach(function(img, index) {
+                        let activeClass = index === 0 ? 'active' : '';
+                        thumbHtml += `<div style="text-align: center;">
+                                        <img src="${img.url}" class="gallery-thumb ${activeClass}" data-full="${img.url}" alt="thumbnail">
+                                        <small class="d-block text-muted mt-1" style="font-size: 10px;">${img.color}</small>
+                                      </div>`;
+                    });
+                    $('#gallery-thumbnails').html(thumbHtml);
+                    
+                    $('#imageGalleryModal').modal('show');
+                } else {
+                    alert('No images found for this variant.');
+                }
+            },
+            error: function() {
+                alert('Failed to load images.');
+            }
+        });
+    });
+
+    $(document).on('click', '.gallery-thumb', function() {
+        let fullImg = $(this).data('full');
+        $('#main-gallery-image').attr('src', fullImg);
+        $('#main-gallery-link').attr('href', fullImg);
+        $('.gallery-thumb').removeClass('active');
+        $(this).addClass('active');
     });
 </script>
 @endsection

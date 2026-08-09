@@ -43,6 +43,27 @@ class ProductOrderController extends Controller
         return view('admin.product_order.index-order', $response);
     }
 
+    public function getOrderSets($id)
+    {
+        $orderSets = \App\Models\OrderProductSet::with(['colors', 'size_measurement', 'product'])
+            ->where('order_main_id', $id)
+            ->get();
+            
+        $data = $orderSets->map(function($set) {
+            return [
+                'design_number' => $set->design_number ?? ($set->product->design_number ?? '-'),
+                'size_set' => $set->size_measurement->name ?? '-',
+                'color' => $set->colors->name ?? '-',
+                'quantity' => $set->total_quantity ?? 0,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+
     public function indexListOrder(Request $request)
     {
         return $this->service->indexListOrder($request);

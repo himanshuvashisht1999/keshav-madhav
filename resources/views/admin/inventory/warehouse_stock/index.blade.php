@@ -191,6 +191,7 @@
                                 <thead class="bg-light contrast-text">
                                     <tr>
                                         <th class="py-3">#</th>
+                                        <th class="py-3 text-center">Image</th>
                                         <th class="py-3">Product Name</th>
                                         <th class="py-3">Design No.</th>
                                         <th class="py-3">Size Set</th>
@@ -239,7 +240,62 @@
         .form-control {
             border-radius: 8px;
         }
+
+        /* Image Gallery Modal Styles */
+        #main-gallery-image {
+            width: 100%;
+            height: auto;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .thumbnail-strip {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 10px 0;
+            scrollbar-width: thin;
+        }
+        .thumbnail-strip img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .thumbnail-strip img:hover, .thumbnail-strip img.active {
+            border-color: #0f62fe;
+        }
     </style>
+
+    <!-- Image Gallery Modal -->
+    <div class="modal fade" id="imageGalleryModal" tabindex="-1" role="dialog" aria-labelledby="imageGalleryModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="imageGalleryModalLabel">Variant Images</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body text-center">
+            <!-- Main Big Image -->
+            <div class="mb-3">
+                <a id="main-gallery-link" href="#" target="_blank">
+                    <img id="main-gallery-image" src="" alt="Variant Main Image">
+                </a>
+            </div>
+            <!-- Thumbnails Strip -->
+            <div class="thumbnail-strip justify-content-center" id="gallery-thumbnails">
+                <!-- Thumbnails will be injected here via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script>
         $(function () {
@@ -406,9 +462,62 @@
                 window.location.href = getExportUrl('excel');
             });
 
-            $('#export_excel_price').on('click', function(e) {
+            // Handle Export Price
+            $('#export_excel_price').click(function(e) {
                 e.preventDefault();
-                window.location.href = getExportUrl('excel_price');
+                let url = "{{ route('admin.inventory.warehouse_stock.export') }}?" + getFilterData() + '&type=excel_price';
+                window.location.href = url;
+            });
+
+            // Image Gallery Modal Logic
+            $(document).on('click', '.view-gallery', function(e) {
+                e.preventDefault();
+                let variantId = $(this).data('id');
+                if(!variantId) return;
+
+                // fetch images
+                $.ajax({
+                    url: "{{ url('admin/inventory/get-variant-images') }}/" + variantId,
+                    type: 'GET',
+                    success: function(res) {
+                        if(res.success && res.images.length > 0) {
+                            let images = res.images;
+                            
+                            // Set first image as main
+                            $('#main-gallery-image').attr('src', images[0].url);
+                            $('#main-gallery-link').attr('href', images[0].url);
+                            
+                            // Build thumbnails
+                            let thumbHtml = '';
+                            images.forEach(function(img, index) {
+                                let activeClass = index === 0 ? 'active' : '';
+                                thumbHtml += `<div style="text-align: center;">
+                                                <img src="${img.url}" class="gallery-thumb ${activeClass}" data-full="${img.url}" alt="thumbnail">
+                                                <small class="d-block text-muted mt-1" style="font-size: 10px;">${img.color}</small>
+                                              </div>`;
+                            });
+                            $('#gallery-thumbnails').html(thumbHtml);
+                            
+                            $('#imageGalleryModal').modal('show');
+                        } else {
+                            alert('No images found for this variant.');
+                        }
+                    },
+                    error: function() {
+                        alert('Failed to load images.');
+                    }
+                });
+            });
+
+            // Thumbnail click logic
+            $(document).on('click', '.gallery-thumb', function() {
+                let fullImg = $(this).data('full');
+                $('#main-gallery-image').attr('src', fullImg);
+                $('#main-gallery-link').attr('href', fullImg);
+                
+                // Update active state
+                $('.gallery-thumb').removeClass('active');
+                $(this).addClass('active');
             });
         });
     </script>

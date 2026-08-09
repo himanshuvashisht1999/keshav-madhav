@@ -50,7 +50,7 @@ class PackingController extends Controller
             $packing->order_main_id = null;
             $packing->save();
         }
-        return redirect()->route('admin.packing.process', ['id' => $slip_id])->with('success', 'Order selection cleared successfully.');
+        return redirect()->route('admin.packing.process', ['slip_id' => $slip_id])->with('success', 'Order selection cleared successfully.');
     }
 
     public function process(Request $request, $slip_id)
