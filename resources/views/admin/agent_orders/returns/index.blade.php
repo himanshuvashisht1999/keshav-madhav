@@ -103,8 +103,8 @@
                     </div>
                 </div>
                 @if($returns->hasPages())
-                    <div class="card-footer bg-white">
-                        {{ $returns->links() }}
+                    <div class="card-footer bg-white border-0">
+                        {{ $returns->appends(request()->query())->links() }}
                     </div>
                 @endif
             </div>

@@ -325,6 +325,8 @@ class ProductionGoodsLedgerController extends Controller
         // Fetch Order Items as Outward, grouped by order to prevent duplicate rows
         $orderQuery = DB::table('agent_order_items')
             ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+            ->leftJoin('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
+            ->leftJoin('vendors', 'agent_orders.master_vendor_id', '=', 'vendors.id')
             ->where('agent_order_items.product_id', $id)
             ->where('agent_order_items.size_set_id', $size_set_id);
             
@@ -341,19 +343,25 @@ class ProductionGoodsLedgerController extends Controller
             ->select(
                 DB::raw('MIN(agent_order_items.created_at) as date'),
                 DB::raw('SUM(agent_order_items.box_qty) as outward'),
-                'agent_orders.id as remarks'
+                'agent_orders.id as remarks',
+                'agent_orders.party_type',
+                'master_customers.name as customer_name',
+                'vendors.name as vendor_name'
             )
-            ->groupBy('agent_orders.id')
+            ->groupBy('agent_orders.id', 'agent_orders.party_type', 'master_customers.name', 'vendors.name')
             ->get();
 
         foreach ($orderItems as $order) {
+            $partyName = $order->party_type === 'vendor' ? $order->vendor_name : $order->customer_name;
+            $partyNameStr = $partyName ? " ($partyName)" : '';
+            
             $transactions->push((object)[
                 'date' => $order->date,
                 'type' => 'Outward',
                 'particulars' => 'Order Added',
                 'inward' => 0,
                 'outward' => (int)$order->outward,
-                'remarks' => 'Order No: ' . $order->remarks,
+                'remarks' => 'Order No: ' . $order->remarks . $partyNameStr,
                 'link' => route('admin.agent-orders.show', $order->remarks)
             ]);
         }

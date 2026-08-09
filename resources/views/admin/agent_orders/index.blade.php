@@ -325,8 +325,8 @@
                         </div>
                     </div>
                     @if($orders->hasPages())
-                        <div class="card-footer bg-white">
-                            {{ $orders->links() }}
+                        <div class="card-footer bg-white border-0">
+                            {{ $orders->appends(request()->query())->links() }}
                         </div>
                     @endif
                 </div>

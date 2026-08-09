@@ -193,7 +193,7 @@
             </div>
             @if($batches->hasPages())
             <div class="card-footer bg-white border-0">
-                {{ $batches->links() }}
+                {{ $batches->appends(request()->query())->links() }}
             </div>
             @endif
         </div>

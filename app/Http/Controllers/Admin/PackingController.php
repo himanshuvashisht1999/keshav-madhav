@@ -1077,17 +1077,7 @@ class PackingController extends Controller
             'sets' => $sets,
             'unit_available' => $unit_available,
             'unit_lots' => $unit_lots,
-            'packing' => \App\Models\PackingMain::where('order_main_id', $id)
-                ->where('slip_id', $request->slip_id)
-                ->with([
-                    'cartons.boxes.domesticInventory',
-                    'cartons.items',
-                    'boxes' => function ($q) {
-                        $q->whereNull('packing_carton_id');
-                    },
-                    'boxes.domesticInventory'
-                ])
-                ->first()
+            'packing' => $this->service->getPackingMainWithStructure($request->slip_id)
         ]);
     }
 

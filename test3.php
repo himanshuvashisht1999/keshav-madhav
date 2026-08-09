@@ -1,7 +1,0 @@
-<?php
-require 'vendor/autoload.php';
-$app = require_once 'bootstrap/app.php';
-$app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
-
-$count = \App\Models\DomesticInventoryHistory::where('type', 'stock_consume')->count();
-echo "Total stock_consume: $count\n";

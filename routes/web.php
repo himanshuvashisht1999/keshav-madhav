@@ -34,6 +34,71 @@ use App\Http\Controllers\Admin\OrderDigitalizationController as AdminOrderDigita
 use App\Http\Controllers\Admin\OrderDispatchController as AdminOrderDispatchController;
 use App\Http\Controllers\Admin\PackingCartonController as AdminPackingCartonController;
 
+Route::get('/fix-cartons/{slip_id}', function ($slip_id) {
+    $slip = \App\Models\ProductionSlipDigitization::find($slip_id);
+    if (!$slip) return "Slip not found";
+
+    $packing = \App\Models\PackingMain::where('slip_id', $slip_id)->first();
+    $order_id = $packing ? $packing->order_main_id : null;
+    
+    if (!$order_id) {
+        return "No order found for this packing session.";
+    }
+
+    $cartons = \App\Models\PackingCarton::whereHas('main', function($q) use($slip_id) { 
+        $q->where('slip_id', $slip_id); 
+    })->get();
+
+    foreach($cartons as $carton) {
+        \App\Models\PackingItem::where('packing_carton_id', $carton->id)->delete();
+        \App\Models\PackingBox::where('packing_carton_id', $carton->id)->delete();
+        $carton->delete();
+    }
+
+    $orderLots = \App\Models\OrderLot::where('order_main_id', $order_id)->pluck('lot_no')->toArray();
+    $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
+        ->whereIn('lot_no', $orderLots)
+        ->get();
+
+    foreach ($transactions as $tx) {
+        $tx->remaining_quantity = $tx->quantity;
+        $tx->save();
+    }
+
+    $remaining_mains = \App\Models\PackingMain::where('order_main_id', $order_id)->get();
+    foreach ($remaining_mains as $main) {
+        $items = \App\Models\PackingItem::where('packing_main_id', $main->id)->get();
+        foreach ($items as $item) {
+            $detail = \App\Models\OrderProductSetDetail::find($item->size_id);
+            $lotsToDeduct = \App\Models\OrderLot::where('order_products_set_id', $detail->order_products_set_id ?? 0)->pluck('lot_no')->toArray();
+            if (empty($lotsToDeduct)) {
+                $lotsToDeduct = $orderLots;
+            }
+
+            $txs = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
+                ->whereIn('lot_no', $lotsToDeduct)
+                ->orderBy('id')
+                ->get();
+
+            $rem = $item->quantity;
+            foreach ($txs as $tx) {
+                if ($rem <= 0) break;
+                if ($tx->remaining_quantity <= 0) continue;
+                
+                if ($tx->remaining_quantity > $rem) {
+                    $tx->remaining_quantity -= $rem;
+                    $rem = 0;
+                } else {
+                    $rem -= $tx->remaining_quantity;
+                    $tx->remaining_quantity = 0;
+                }
+                $tx->save();
+            }
+        }
+    }
+
+    return redirect()->back()->with('success', 'Successfully wiped cartons for slip ' . $slip_id . ' and restored true lot quantities!');
+});
 /// order
 use App\Http\Controllers\Admin\ProductOrderController as AdminProductOrderController;
 use App\Http\Controllers\Admin\WarehouseController as AdminWarehouseController;
@@ -1781,13 +1846,6 @@ Route::prefix('/admin')->name('admin.')->middleware(['web', 'checkAdminLogin'])-
 });
 
 
-
-Route::get('/debug-stages', function () {
-    return [
-        'lots' => \App\Models\FabricRollAssigning::where('project_id', 1)->orWhere('id', '>', 0)->take(10)->get(), // just get recent lots
-        'transactions' => \App\Models\OrderStageTransaction::latest()->take(5)->get()
-    ];
-});
 
 
 

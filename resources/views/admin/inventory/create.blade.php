@@ -842,7 +842,6 @@
                                                     <label class="label-premium">MRP *</label>
                                                     <input type="number" name="products[${idx}][mrp]" class="form-control form-control-premium mrp-input bg-light" placeholder="Price" step="0.01" min="0" readonly required>
                                                 </div>
-                                                </div>
                                             </div>
                                             <div class="text-right mt-1 mb-2">
                                                 <button type="button" class="btn btn-sm btn-outline-danger btn-remove-target" style="display: none;">

@@ -1172,7 +1172,55 @@
             let ORDER_ITEMS = @json(isset($order_sets) ? $order_sets->flatMap(fn($s) => $s->details_data ?? $s->details ?? []) : []);
             let ORDER_SETS = @json($order_sets ?? []);
             const PACKED_DATA = @json($packed_quantities ?? []);
-            const EXISTING_PACKING = @json($packing);
+            @php
+                $mappedPacking = null;
+                if ($packing) {
+                    $mappedPacking = [
+                        'id' => $packing->id,
+                        'slip_id' => $packing->slip_id,
+                        'status' => $packing->status,
+                        'cartons' => $packing->cartons ? $packing->cartons->map(function($c) {
+                            return [
+                                'id' => $c->id,
+                                'carton_no' => $c->carton_no,
+                                'boxes' => $c->boxes ? $c->boxes->map(function($b) {
+                                    $inv = $b->domesticInventory;
+                                    $fb = ($b->items && $b->items->count() > 0 && $b->items[0]->detail && $b->items[0]->detail->orderProductSet) ? $b->items[0]->detail->orderProductSet : null;
+                                    return [
+                                        'id' => $b->id,
+                                        'box_no' => $b->box_no,
+                                        'domestic_inventory' => [
+                                            'product' => ['design_number' => $inv->product->design_number ?? ($fb->product->design_number ?? 'N/A')],
+                                            'size_set' => ['name' => $inv->sizeSet->name ?? ($fb->size_measurement->name ?? 'N/A')],
+                                            'color' => ['name' => $inv->color->name ?? ($fb->colors->name ?? 'N/A')],
+                                            'pattern' => ['name' => $inv->pattern->name ?? ($fb->master_design_pattern->name ?? '-')],
+                                            'fitting' => ['name' => $inv->fitting->name ?? ($fb->master_product_fitting->name ?? '-')]
+                                        ],
+                                        'items' => $b->items ? $b->items->map(function($i) { return ['size_id' => $i->size_id, 'quantity' => $i->quantity]; })->toArray() : []
+                                    ];
+                                })->toArray() : []
+                            ];
+                        })->toArray() : [],
+                        'boxes' => $packing->boxes ? $packing->boxes->map(function($b) {
+                            $inv = $b->domesticInventory;
+                            $fb = ($b->items && $b->items->count() > 0 && $b->items[0]->detail && $b->items[0]->detail->orderProductSet) ? $b->items[0]->detail->orderProductSet : null;
+                            return [
+                                'id' => $b->id,
+                                'box_no' => $b->box_no,
+                                'domestic_inventory' => [
+                                    'product' => ['design_number' => $inv->product->design_number ?? ($fb->product->design_number ?? 'N/A')],
+                                    'size_set' => ['name' => $inv->sizeSet->name ?? ($fb->size_measurement->name ?? 'N/A')],
+                                    'color' => ['name' => $inv->color->name ?? ($fb->colors->name ?? 'N/A')],
+                                    'pattern' => ['name' => $inv->pattern->name ?? ($fb->master_design_pattern->name ?? '-')],
+                                    'fitting' => ['name' => $inv->fitting->name ?? ($fb->master_product_fitting->name ?? '-')]
+                                ],
+                                'items' => $b->items ? $b->items->map(function($i) { return ['size_id' => $i->size_id, 'quantity' => $i->quantity]; })->toArray() : []
+                            ];
+                        })->toArray() : []
+                    ];
+                }
+            @endphp
+            const EXISTING_PACKING = @json($mappedPacking);
             const UNIT_AVAILABLE = @json($unit_available ?? []);
             const CURRENT_UNIT_ID = {{ $slip->stage_master_unit_id ?? 'null' }};
             const ALL_STOREROOMS = @json($storerooms);
@@ -1880,6 +1928,7 @@
                     $.ajax({
                         url: "{{ route('admin.packing.check-carton-no') }}",
                         type: 'get',
+                        cache: false,
                         data: {
                             carton_no: cartonNo,
                             _token: $('meta[name="csrf-token"]').attr('content')
@@ -1907,7 +1956,12 @@
             function fetchOrderDetails(orderId) {
                 $('#available-items-list').html('<li class="list-group-item text-muted text-center">Loading items...</li>');
 
-                $.get("{{ route('admin.packing.orderDeps', '') }}/" + orderId, { unit_id: CURRENT_UNIT_ID, slip_id: SLIP_ID }, function (response) {
+                $.ajax({
+                    url: "{{ route('admin.packing.orderDeps', '') }}/" + orderId,
+                    type: 'GET',
+                    data: { unit_id: CURRENT_UNIT_ID, slip_id: SLIP_ID },
+                    cache: false,
+                    success: function (response) {
                     if (response.status === 'success') {
                         ORDER_ID = orderId;
                         ORDER_ITEMS = response.items || [];
@@ -1953,6 +2007,7 @@
                     } else {
                         alert("Failed to load order details.");
                     }
+                }
                 });
             }
 

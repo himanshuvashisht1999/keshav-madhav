@@ -153,7 +153,7 @@
                     </div>
                     @if($dispatches->hasPages())
                         <div class="card-footer bg-white">
-                            {{ $dispatches->links() }}
+                            {{ $dispatches->appends(request()->query())->links() }}
                         </div>
                     @endif
                 </div>

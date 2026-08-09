@@ -611,6 +611,7 @@ class PackingService
                     'box_type' => 'manual'
                 ]);
 
+                $deduction_queue = [];
                 if (isset($data['items']) && is_array($data['items'])) {
                     foreach ($data['items'] as $item) {
                         if ($item['quantity'] <= 0)
@@ -628,12 +629,11 @@ class PackingService
                             'selling_price' => $fallbackPrice,
                             'mrp' => 0
                         ]);
-                        // (Relaxed) Quantity Validation - Allow overages as requested by user
-                        /* if (($unit_available[$item['size_id']] ?? 0) < $item['quantity']) {
-                            throw new \Exception("Insufficient quantity available at unit for size ID " . $item['size_id']);
-                        } */
                         $unit_available[$item['size_id']] -= $item['quantity'];
-                        $packed_pcs += $item['quantity'];
+                        $deduction_queue[] = [
+                            'size_id' => $item['size_id'],
+                            'pcs' => $item['quantity']
+                        ];
                     }
                 }
 
@@ -657,11 +657,11 @@ class PackingService
                                         'selling_price' => $fallbackPrice,
                                         'mrp' => 0
                                     ]);
-                                    /* if (($unit_available[$detail->id] ?? 0) < $qty_to_pack) {
-                                        throw new \Exception("Insufficient quantity available at unit for size '{$detail->size}'");
-                                    } */
                                     $unit_available[$detail->id] -= $qty_to_pack;
-                                    $packed_pcs += $qty_to_pack;
+                                    $deduction_queue[] = [
+                                        'size_id' => $detail->id,
+                                        'pcs' => $qty_to_pack
+                                    ];
                                 }
                             }
                         }
@@ -676,8 +676,15 @@ class PackingService
                 // Actually, saveBox deducts. So we are fine.
             }
 
-            if ($packed_pcs > 0) {
-                $orderLots = OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
+            foreach ($deduction_queue as $req) {
+                if ($req['pcs'] <= 0) continue;
+                
+                $detail = \App\Models\OrderProductSetDetail::find($req['size_id']);
+                $orderLots = OrderLot::where('order_products_set_id', $detail->order_products_set_id ?? 0)->pluck('lot_no')->toArray();
+                if (empty($orderLots)) {
+                    $orderLots = OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
+                }
+
                 $orderStageTransactions = OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
                     ->where(function($q) use ($slip_details) {
                         $q->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
@@ -685,12 +692,11 @@ class PackingService
                     })
                     ->whereIn('lot_no', $orderLots)->orderBy('id')->get();
 
-                $rem = $packed_pcs;
+                $rem = $req['pcs'];
                 foreach ($orderStageTransactions as $tx) {
-                    if ($rem <= 0)
-                        break;
-                    if ($tx->remaining_quantity <= 0)
-                        continue;
+                    if ($rem <= 0) break;
+                    if ($tx->remaining_quantity <= 0) continue;
+                    
                     if ($tx->remaining_quantity > $rem) {
                         $tx->remaining_quantity -= $rem;
                         $rem = 0;
@@ -881,7 +887,8 @@ class PackingService
                                 $total_pcs += $pcs;
                                 $deduction_queue[] = [
                                     'lots' => $entry['selected_lots'] ?? [],
-                                    'pcs' => $pcs
+                                    'pcs' => $pcs,
+                                    'size_id' => $finalSizeId
                                 ];
                             }
                         }
@@ -920,7 +927,8 @@ class PackingService
                                     $total_pcs += $count;
                                     $deduction_queue[] = [
                                         'lots' => $entry['selected_lots'] ?? [],
-                                        'pcs' => $count
+                                        'pcs' => $count,
+                                        'size_id' => $detail->id
                                     ];
                                 }
                             }
@@ -950,7 +958,8 @@ class PackingService
                         $total_pcs += $qty;
                         $deduction_queue[] = [
                             'lots' => $entry['selected_lots'] ?? [],
-                            'pcs' => $qty
+                            'pcs' => $qty,
+                            'size_id' => $did
                         ];
                     }
                 }
@@ -960,7 +969,20 @@ class PackingService
             foreach ($deduction_queue as $req) {
                 if ($req['pcs'] <= 0) continue;
                 
-                $lotsToDeduct = !empty($req['lots']) ? $req['lots'] : OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
+                $detail = \App\Models\OrderProductSetDetail::find($req['size_id']);
+                $validLotsForSize = OrderLot::where('order_products_set_id', $detail->order_products_set_id ?? 0)->pluck('lot_no')->toArray();
+                if (empty($validLotsForSize)) {
+                    $validLotsForSize = OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
+                }
+
+                if (!empty($req['lots'])) {
+                    $lotsToDeduct = array_intersect($req['lots'], $validLotsForSize);
+                    if (empty($lotsToDeduct)) {
+                        $lotsToDeduct = $validLotsForSize;
+                    }
+                } else {
+                    $lotsToDeduct = $validLotsForSize;
+                }
                 
                 $orderStageTransactions = OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
                     ->where(function($q) use ($slip_details) {
@@ -1222,32 +1244,33 @@ class PackingService
                 $totals[$item->size_id] = ($totals[$item->size_id] ?? 0) + $item->quantity;
             }
 
-            // Reverse deductions in OrderStageTransaction
-            $orderLots = OrderLot::where('order_main_id', $order_id)->pluck('lot_no')->toArray();
             foreach ($totals as $did => $qty_to_return) {
-                // Find transactions where this qty was likely deducted from
-                // We add back to the 'remaining_quantity' of the source transactions
+                $detail = \App\Models\OrderProductSetDetail::find($did);
+                $lotsToReturn = OrderLot::where('order_products_set_id', $detail->order_products_set_id ?? 0)->pluck('lot_no')->toArray();
+                if (empty($lotsToReturn)) {
+                    $lotsToReturn = OrderLot::where('order_main_id', $order_id)->pluck('lot_no')->toArray();
+                }
+
                 $transactions = OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
                     ->where(function($q) use ($slip_details) {
                         $q->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
                           ->orWhereNull('sub_stage_id_to');
                     })
-                    ->whereIn('lot_no', $orderLots)
-                    ->orderBy('id', 'desc') // Return to latest transactions first (optional strategy)
+                    ->whereIn('lot_no', $lotsToReturn)
+                    ->orderBy('id', 'desc')
                     ->get();
 
                 $remaining_to_return = $qty_to_return;
                 foreach ($transactions as $transaction) {
-                    if ($remaining_to_return <= 0)
-                        break;
+                    if ($remaining_to_return <= 0) break;
 
-                    // How much can we return to this transaction? 
-                    // Technically, there might not be a "max" record on remaining_quantity, 
-                    // but we should probably not exceed the original 'quantity' if we had it.
-                    // However, 'remaining_quantity' is just a float field.
-                    $transaction->remaining_quantity += $remaining_to_return;
-                    $transaction->save();
-                    $remaining_to_return = 0;
+                    $space_available = $transaction->quantity - $transaction->remaining_quantity;
+                    if ($space_available > 0) {
+                        $to_add = min($remaining_to_return, $space_available);
+                        $transaction->remaining_quantity += $to_add;
+                        $transaction->save();
+                        $remaining_to_return -= $to_add;
+                    }
                 }
             }
 
