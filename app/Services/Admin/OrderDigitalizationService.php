@@ -966,7 +966,7 @@ class OrderDigitalizationService
                 $packingMain = \App\Models\PackingMain::where('slip_id', $slip->id)->first();
                 if ($packingMain) {
                     \App\Models\PackingItem::where('packing_main_id', $packingMain->id)->delete();
-                    \App\Models\PackingBox::where('packing_main_id', $packingMain->id)->delete();
+
                     \App\Models\PackingCarton::where('packing_main_id', $packingMain->id)->delete();
                     $packingMain->delete();
                 }

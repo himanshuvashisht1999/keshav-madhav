@@ -344,7 +344,9 @@
                                                     </td>
                                                     <td>
                                                         <div class="font-weight-bold text-dark">
-                                                            {{ $o->product->design_number ?? 'N/A' }}</div>
+                                                            {{ $o->product->design_number ?? 'N/A' }} 
+                                                            @if($o->lot_no) <span class="badge badge-light border ml-1">Lot: {{ $o->lot_no }}</span> @endif
+                                                        </div>
                                                         <div class="text-muted small">Color: {{ $o->color->name ?? 'N/A' }} |
                                                             Size: <span
                                                                 class="text-primary font-weight-bold">{{ $o->size->size ?? 'N/A' }}</span>
@@ -366,7 +368,7 @@
                                                             <div class="badge badge-soft-danger px-2"
                                                                 style="background: #fff5f5; border: 1px solid #ffdcdc;">
                                                                 Debit Amount: <span
-                                                                    class="font-weight-bold">₹{{ number_format($o->total_amount, 2) }}</span>
+                                                                    class="font-weight-bold text-danger">₹{{ number_format($o->total_amount ?? 0, 2) }}</span>
                                                             </div>
                                                         @else
                                                             <div class="small">
@@ -424,6 +426,7 @@
                                                             <div
                                                                 class="font-weight-bold {{ ($r->type == 'rework') ? 'text-info' : 'text-dark' }} italic">
                                                                 {{ ($r->type == 'rework') ? 'Sent for Rework / Alteration' : ($r->remarks ?: 'Inventory Move') }}
+                                                                @if($r->lot_no) <span class="badge badge-light border ml-1">Lot: {{ $r->lot_no }}</span> @endif
                                                             </div>
                                                             <div class="text-muted small">Size: <span
                                                                     class="text-dark font-weight-bold">{{ $rd->size }}</span></div>
@@ -1075,6 +1078,10 @@
                                 <div class="card-body p-3">
                                     <div class="row g-2">
                                         <div class="col-md-2">
+                                            <label class="small font-weight-bold mb-0">Lot No</label>
+                                            <select id="dom_lot" class="form-control form-control-sm select2"></select>
+                                        </div>
+                                        <div class="col-md-2">
                                             <label class="small font-weight-bold mb-0">Design</label>
                                             <select id="domDesign" class="form-control form-control-sm select2"
                                                 onchange="updateDomSizeSets()"></select>
@@ -1132,6 +1139,7 @@
                                     <thead class="bg-light">
                                         <tr class="small text-muted">
                                             <th>#</th>
+                                            <th>Lot No</th>
                                             <th>Design</th>
                                             <th>Size Set</th>
                                             <th>Color</th>
@@ -1187,6 +1195,13 @@
                         </div>
                     </div>
 
+                                        <div class="form-group mb-3">
+                        <label class="font-weight-bold text-muted small">Select Lot Number <span class="text-danger">*</span></label>
+                        <select id="rework_lot_no" class="form-control custom-select" onchange="renderreworkGrid()">
+                            <option value="">-- Select Lot --</option>
+                        </select>
+                    </div>
+
                     <div class="mb-3">
                         <label class="font-weight-bold small text-muted">SELECT ITEMS & QUANTITY</label>
                         <div class="table-responsive border rounded" style="max-height: 350px;">
@@ -1204,6 +1219,25 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+                        <h6>Processing Queue</h6>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="addReworkToQueue()"><i class="fas fa-plus"></i> Add to List</button>
+                    </div>
+                    <div class="table-responsive border rounded mb-3" style="max-height: 250px;">
+                        <table class="table table-sm mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Lot No</th>
+                                    <th>Design / Color</th>
+                                    <th>Size</th>
+                                    <th>Qty</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="reworkQueueList"></tbody>
+                        </table>
                     </div>
 
                     <div class="mb-3">
@@ -1248,12 +1282,12 @@
                                     'name' => $c->rack->name,
                                     'storeroom' => $c->rack->storeroom ? ['name' => $c->rack->storeroom->name] : null
                                 ] : null,
-                                'boxes' => $c->boxes ? $c->boxes->map(function($b) {
-                                    $inv = $b->domesticInventory;
-                                    $fb = ($b->items && $b->items->count() > 0 && $b->items[0]->detail && $b->items[0]->detail->orderProductSet) ? $b->items[0]->detail->orderProductSet : null;
+                                'boxes' => $c->items ? $c->items->map(function($b) use ($c) {
+                                    $inv = \App\Models\DomesticInventory::where('packing_carton_id', $c->id)->first();
+                                    $fb = ($b->detail && $b->detail->orderProductSet) ? $b->detail->orderProductSet : null;
                                     return [
                                         'id' => $b->id,
-                                        'box_no' => $b->box_no,
+                                        'box_no' => $inv ? $inv->box_no : $c->carton_no,
                                         'domestic_inventory' => [
                                             'product' => ['design_number' => $inv->product->design_number ?? ($fb->product->design_number ?? 'N/A')],
                                             'size_set' => ['name' => $inv->sizeSet->name ?? ($fb->size_measurement->name ?? 'N/A')],
@@ -1261,28 +1295,13 @@
                                             'pattern' => ['name' => $inv->pattern->name ?? ($fb->master_design_pattern->name ?? '-')],
                                             'fitting' => ['name' => $inv->fitting->name ?? ($fb->master_product_fitting->name ?? '-')]
                                         ],
-                                        'items' => $b->items ? $b->items->map(function($i) { return ['size_id' => $i->size_id, 'quantity' => $i->quantity]; })->toArray() : []
+                                        'items' => [['size_id' => $b->size_id, 'quantity' => $b->quantity]]
                                     ];
                                 })->toArray() : [],
-                                'items' => $c->items ? $c->items->map(function($i) { return ['size_id' => $i->size_id, 'quantity' => $i->quantity]; })->toArray() : []
+                                'items' => $c->items ? $c->items->toArray() : []
                             ];
                         })->toArray() : [],
-                        'boxes' => $packing->boxes ? $packing->boxes->map(function($b) {
-                            $inv = $b->domesticInventory;
-                            $fb = ($b->items && $b->items->count() > 0 && $b->items[0]->detail && $b->items[0]->detail->orderProductSet) ? $b->items[0]->detail->orderProductSet : null;
-                            return [
-                                'id' => $b->id,
-                                'box_no' => $b->box_no,
-                                'domestic_inventory' => [
-                                    'product' => ['design_number' => $inv->product->design_number ?? ($fb->product->design_number ?? 'N/A')],
-                                    'size_set' => ['name' => $inv->sizeSet->name ?? ($fb->size_measurement->name ?? 'N/A')],
-                                    'color' => ['name' => $inv->color->name ?? ($fb->colors->name ?? 'N/A')],
-                                    'pattern' => ['name' => $inv->pattern->name ?? ($fb->master_design_pattern->name ?? '-')],
-                                    'fitting' => ['name' => $inv->fitting->name ?? ($fb->master_product_fitting->name ?? '-')]
-                                ],
-                                'items' => $b->items ? $b->items->map(function($i) { return ['size_id' => $i->size_id, 'quantity' => $i->quantity]; })->toArray() : []
-                            ];
-                        })->toArray() : []
+                        'boxes' => []
                     ];
                 }
             @endphp
@@ -1906,9 +1925,20 @@
             }
 
             // --- DOMESTIC PACKING LOGIC ---
-            function openDomesticPackingModal() {
+            function openDomesticPackingModal(preselectLotNo = null) {
                 if (!ORDER_ID) return;
                 renderDomesticInventory();
+
+                let $domLot = $('#dom_lot');
+                $domLot.html('<option value="">Any Lot</option>');
+                let uniqueLots = [...new Set(UNIT_LOTS ? UNIT_LOTS.map(l => l.lot_no) : [])];
+                uniqueLots.forEach(lot => {
+                    $domLot.append(`<option value="${lot}">Lot ${lot}</option>`);
+                });
+                if (preselectLotNo) {
+                    $domLot.val(preselectLotNo);
+                }
+                $domLot.select2({ dropdownParent: $('#domesticPackingModal'), width: '100%' });
 
                 let $domDesign = $('#domDesign');
                 $domDesign.html('<option value="">Select Design</option>');
@@ -2030,6 +2060,7 @@
             }
 
             function addDomesticToPlanner() {
+                let lotNo = $('#dom_lot').val() || null;
                 let pid = $('#domDesign').val();
                 let ssid = $('#domSizeSet').val();
                 let cid = $('#domColor').val();
@@ -2057,10 +2088,11 @@
 
                 let row = `
                             <tr class="align-middle" 
-                                data-pid="${pid}" data-ssid="${ssid}" data-cid="${cid}" data-qty="${qty}" 
+                                data-lot="${lotNo || ''}" data-pid="${pid}" data-ssid="${ssid}" data-cid="${cid}" data-qty="${qty}" 
                                 data-rack="${rackId}" data-pattern="${pattern_id}" data-fitting="${fitting_id}" 
                                 data-mrp="${mrp}">
                                 <td>${$('#domesticTableBody tr').length + 1}</td>
+                                <td><span class="badge badge-soft-dark border font-weight-bold">${lotNo ? 'Lot '+lotNo : 'Any'}</span></td>
                                 <td class="font-weight-bold text-dark">${design}</td>
                                 <td>${sizeSet}</td>
                                 <td>${color}</td>
@@ -2090,6 +2122,7 @@
                 rows.each(function () {
                     let r = $(this);
                     boxes.push({
+                        lot_no: r.data('lot') || null,
                         product_id: r.data('pid'),
                         size_set_id: r.data('ssid'),
                         color_id: r.data('cid'),
@@ -2201,6 +2234,18 @@
                     renderAvailableItems();
                 }
                 renderStructure();
+
+                // Fetch stages for Debit and Rework modals
+                $.get("{{ route('admin.packing.reworkStages') }}", function(res) {
+                    if (res.stages) {
+                        let options = '<option value="">Select Stage</option>';
+                        res.stages.forEach(s => {
+                            options += `<option value="${s.id}">${s.name}</option>`;
+                        });
+                        $('#debitStage').html(options);
+                        $('#reworkStage').html(options);
+                    }
+                });
 
                 // Initialize Select2 if available
                 if ($('.select2').length > 0) {
@@ -2354,8 +2399,10 @@
                         let designs = [];
                         let colors = [];
                         let sizeSets = [];
+                        let totalQty = 0;
 
                         if (carton.boxes && carton.boxes.length > 0) {
+                            totalQty = carton.boxes.length;
                             carton.boxes.forEach(box => {
                                 if (box.domestic_inventory && box.domestic_inventory.product) {
                                     if(box.domestic_inventory.product.design_number) designs.push(box.domestic_inventory.product.design_number);
@@ -2368,13 +2415,16 @@
                                     if(ops.size_measurement) sizeSets.push(ops.size_measurement.name);
                                 }
                             });
-                        } else if (carton.items && carton.items.length > 0 && carton.items[0].detail && carton.items[0].detail.order_product_set) {
+                        } else if (carton.items && carton.items.length > 0) {
+                            totalQty = carton.items.reduce((sum, i) => sum + parseInt(i.quantity), 0);
                             carton.items.forEach(item => {
-                                let ops = item.detail.order_product_set;
-                                if(ops) {
-                                    if(ops.design_number) designs.push(ops.design_number);
-                                    if(ops.colors) colors.push(ops.colors.name);
-                                    if(ops.size_measurement) sizeSets.push(ops.size_measurement.name);
+                                if (item.detail && item.detail.order_product_set) {
+                                    let ops = item.detail.order_product_set;
+                                    if(ops) {
+                                        if(ops.design_number) designs.push(ops.design_number);
+                                        if(ops.colors) colors.push(ops.colors.name);
+                                        if(ops.size_measurement) sizeSets.push(ops.size_measurement.name);
+                                    }
                                 }
                             });
                         }
@@ -2398,7 +2448,7 @@
                         html += `
                                         <tr>
                                             <td class="py-2 px-3 font-weight-bold align-middle">#${carton.carton_no}</td>
-                                            <td class="py-2 px-3 text-center align-middle"><span class="badge badge-soft-primary">${carton.boxes.length}</span></td>
+                                            <td class="py-2 px-3 text-center align-middle"><span class="badge badge-soft-primary">${totalQty}</span></td>
                                             <td class="py-2 px-3 align-middle">${designNo}</td>
                                             <td class="py-2 px-3 align-middle">${colorName}</td>
                                             <td class="py-2 px-3 align-middle">${sizeSetName}</td>
@@ -2548,7 +2598,7 @@
                 if (UNIT_LOTS && UNIT_LOTS.length > 0) {
                     UNIT_LOTS.forEach(lot => {
                         html += `
-                            <li class="list-group-item bg-light pb-2 pt-2 mb-2" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <li class="list-group-item bg-light pb-2 pt-2 mb-2" style="border-radius: 8px; border: 1px solid #e5e7eb; cursor: pointer;" onclick="openDomesticPackingModal('${lot.lot_no}')">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <div>
                                         <span class="badge bg-dark mr-1">Lot ${lot.lot_no}</span>
@@ -3321,28 +3371,44 @@
             }
 
             // --- REWORK MANAGEMENT ---
-            function openReworkModal() {
+                        function openReworkModal() {
                 if (!ORDER_ID) {
                     alert('Please select an order first.');
                     return;
                 }
 
-                // 1. Populate Items List
+                // Populate Lot Dropdown
+                let uniqueLots = [...new Set(UNIT_LOTS.map(l => l.lot_no))];
+                let $lotSelect = $('#rework_lot_no');
+                $lotSelect.html('<option value="">-- Select Lot --</option>');
+                uniqueLots.forEach(lot => {
+                    $lotSelect.append(`<option value="${lot}">Lot #${lot}</option>`);
+                });
+
+                $('#reworkItemsList').empty();
+                $('#reworkQueueList').empty(); // clear previous queues
+                reworkQueue = []; // reset array
+                $('#reworkModal').modal('show');
+            }
+
+            function renderreworkGrid() {
+                let selectedLot = $('#rework_lot_no').val();
                 let $list = $('#reworkItemsList');
                 $list.empty();
-                
-                let validDesigns = UNIT_LOTS ? UNIT_LOTS.map(l => l.design_number) : [];
+                if (!selectedLot) return;
+
+                let validSetIds = UNIT_LOTS.filter(l => l.lot_no == selectedLot).map(l => Number(l.set_id));
 
                 if (ORDER_ITEMS && ORDER_ITEMS.length > 0) {
                     ORDER_ITEMS.forEach(item => {
-                        if (!validDesigns.includes(item.design_number)) return;
-                        
+                        if (!validSetIds.includes(Number(item.order_products_set_id))) return;
+
                         let avl = item.unit_available_qty || 0;
                         if (avl > 0) {
                             $list.append(`
                                         <tr>
                                             <td class="align-middle">
-                                                <div class="font-weight-bold">${item.design_number || 'N/A'}</div>
+                                                <div class="font-weight-bold text-dark">${item.design_number || 'N/A'}</div>
                                                 <div class="small text-muted">${item.color_name || 'N/A'}</div>
                                             </td>
                                             <td class="align-middle">${item.size || 'N/A'}</td>
@@ -3354,6 +3420,7 @@
                                                        data-id="${item.id}" data-max="${avl}" 
                                                        min="0" max="${avl}" value="0" oninput="validateUnitPackagingStock(this)">
                                             </td>
+                                            
                                         </tr>
                                     `);
                         }
@@ -3361,21 +3428,8 @@
                 }
 
                 if ($list.is(':empty')) {
-                    $list.append('<tr><td colspan="4" class="text-center py-4 text-muted">No pieces available at this unit to return.</td></tr>');
+                    $list.append('<tr><td colspan="4" class="text-center py-4 text-muted">No pieces available at this unit to mark for rework.</td></tr>');
                 }
-
-                // 2. Fetch Stages
-                $.get("{{ route('admin.packing.reworkStages') }}", function (response) {
-                    if (response.status === 'success') {
-                        let $stageSelect = $('#reworkStage');
-                        $stageSelect.html('<option value="">Select Stage</option>');
-                        response.stages.forEach(s => {
-                            $stageSelect.append(`<option value="${s.id}">${s.name}</option>`);
-                        });
-                    }
-                });
-
-                $('#reworkModal').modal('show');
             }
 
             function updateReworkUnits() {
@@ -3400,6 +3454,56 @@
                 });
             }
 
+
+            let reworkQueue = [];
+            function addReworkToQueue() {
+                let lotNo = $('#rework_lot_no').val();
+                if (!lotNo) {
+                    alert("Please select a lot first.");
+                    return;
+                }
+                let added = false;
+                $('.rework-qty-input').each(function () {
+                    let qty = parseInt($(this).val()) || 0;
+                    if (qty > 0) {
+                        let detailId = $(this).data('id');
+                        let item = ORDER_ITEMS.find(i => i.id == detailId);
+                        reworkQueue.push({
+                            lot_no: lotNo,
+                            detail_id: detailId,
+                            qty: qty,
+                            design_number: item ? item.design_number : '',
+                            color_name: item ? item.color_name : '',
+                            size: item ? item.size : ''
+                        });
+                        $(this).val(0); // clear input
+                        added = true;
+                    }
+                });
+                if (!added) {
+                    alert("Please enter quantity for at least one item.");
+                } else {
+                    renderReworkQueue();
+                }
+            }
+            function renderReworkQueue() {
+                let $tbody = $('#reworkQueueList');
+                $tbody.empty();
+                reworkQueue.forEach((q, index) => {
+                    $tbody.append(`<tr>
+                        <td>${q.lot_no}</td>
+                        <td>${q.design_number} / ${q.color_name}</td>
+                        <td>${q.size}</td>
+                        <td>${q.qty}</td>
+                        <td><button type="button" class="btn btn-sm btn-danger py-0 px-1" onclick="removeReworkQueue(${index})"><i class="fas fa-trash"></i></button></td>
+                    </tr>`);
+                });
+            }
+            function removeReworkQueue(index) {
+                reworkQueue.splice(index, 1);
+                renderReworkQueue();
+            }
+
             function submitReworkAssignment() {
                 let stageId = $('#reworkStage').val();
                 let unitId = $('#reworkUnit').val();
@@ -3410,16 +3514,7 @@
                     return;
                 }
 
-                let items = [];
-                $('.rework-qty-input').each(function () {
-                    let qty = parseInt($(this).val()) || 0;
-                    if (qty > 0) {
-                        items.push({
-                            detail_id: $(this).data('id'),
-                            qty: qty
-                        });
-                    }
-                });
+                let items = reworkQueue.map(q => ({ detail_id: q.detail_id, qty: q.qty, lot_no: q.lot_no }));
 
                 if (items.length === 0) {
                     alert('Please enter quantity for at least one item.');
@@ -3471,6 +3566,14 @@
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-8">
+                            
+                            
+                                                        <div class="form-group mb-3">
+                                <label class="font-weight-bold text-muted small">Select Lot Number <span class="text-danger">*</span></label>
+                                <select id="dead_lot_no" class="form-control custom-select" onchange="renderdeadGrid()">
+                                    <option value="">-- Select Lot --</option>
+                                </select>
+                            </div>
                             <h6>Select Pieces to Mark as Dead Stock</h6>
                             <div class="table-responsive border rounded" style="max-height: 400px;">
                                 <table class="table table-sm table-hover mb-0">
@@ -3485,6 +3588,24 @@
                                     <tbody id="deadStockItemsList">
                                         <!-- Dynamic rows -->
                                     </tbody>
+                                </table>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+                                <h6>Processing Queue</h6>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="addDeadToQueue()"><i class="fas fa-plus"></i> Add to List</button>
+                            </div>
+                            <div class="table-responsive border rounded mb-3" style="max-height: 250px;">
+                                <table class="table table-sm mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Lot No</th>
+                                            <th>Design / Color</th>
+                                            <th>Size</th>
+                                            <th>Qty</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="deadQueueList"></tbody>
                                 </table>
                             </div>
                         </div>
@@ -3537,6 +3658,14 @@
                 <div class="modal-body p-4">
                     <div class="row">
                         <div class="col-md-8">
+                            
+                            
+                                                        <div class="form-group mb-3">
+                                <label class="font-weight-bold text-muted small">Select Lot Number <span class="text-danger">*</span></label>
+                                <select id="sampling_lot_no" class="form-control custom-select" onchange="rendersamplingGrid()">
+                                    <option value="">-- Select Lot --</option>
+                                </select>
+                            </div>
                             <h6>Select Pieces for Sampling</h6>
                             <div class="table-responsive border rounded" style="max-height: 400px;">
                                 <table class="table table-sm table-hover mb-0">
@@ -3551,6 +3680,24 @@
                                     <tbody id="samplingItemsList">
                                         <!-- Dynamic rows -->
                                     </tbody>
+                                </table>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+                                <h6>Processing Queue</h6>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="addSamplingToQueue()"><i class="fas fa-plus"></i> Add to List</button>
+                            </div>
+                            <div class="table-responsive border rounded mb-3" style="max-height: 250px;">
+                                <table class="table table-sm mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Lot No</th>
+                                            <th>Design / Color</th>
+                                            <th>Size</th>
+                                            <th>Qty</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="samplingQueueList"></tbody>
                                 </table>
                             </div>
                         </div>
@@ -3620,6 +3767,14 @@
                             </div>
 
                             <h6>2. Select Damaged Pieces</h6>
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold text-muted small">Select Lot Number <span class="text-danger">*</span></label>
+                                <select id="debit_lot_no" class="form-control custom-select" onchange="renderdebitGrid()">
+                                    <option value="">-- Select Lot --</option>
+                                </select>
+                            </div>
+                            
+                            
                             <div class="table-responsive border rounded mb-3" style="max-height: 250px;">
                                 <table class="table table-sm table-hover mb-0">
                                     <thead class="bg-light">
@@ -3632,6 +3787,26 @@
                                         </tr>
                                     </thead>
                                     <tbody id="debitItemsList"></tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+                                <h6>Processing Queue</h6>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="addDebitToQueue()"><i class="fas fa-plus"></i> Add to List</button>
+                            </div>
+                            <div class="table-responsive border rounded mb-4" style="max-height: 250px;">
+                                <table class="table table-sm mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Lot No</th>
+                                            <th>Design / Color</th>
+                                            <th>Size</th>
+                                            <th>Qty</th>
+                                            <th>Rate(₹)</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="debitQueueList"></tbody>
                                 </table>
                             </div>
 
@@ -3706,51 +3881,60 @@
                 }
             }
 
-            function openDebitModal() {
+                        function openDebitModal() {
                 if (!ORDER_ID) {
                     alert('Please select an order first.');
                     return;
                 }
 
-                // 1. Fetch Stages for Debit
-                $.get("{{ route('admin.packing.reworkStages') }}", function (response) {
-                    if (response.status === 'success') {
-                        let $stageSelect = $('#debitStage');
-                        $stageSelect.html('<option value="">Select Stage</option>');
-                        response.stages.forEach(stage => {
-                            $stageSelect.append(`<option value="${stage.id}">${stage.name}</option>`);
-                        });
-                    }
+                // Populate Lot Dropdown
+                let uniqueLots = [...new Set(UNIT_LOTS.map(l => l.lot_no))];
+                let $lotSelect = $('#debit_lot_no');
+                $lotSelect.html('<option value="">-- Select Lot --</option>');
+                uniqueLots.forEach(lot => {
+                    $lotSelect.append(`<option value="${lot}">Lot #${lot}</option>`);
                 });
 
-                // 2. Populate Items
+                $('#debitItemsList').empty();
+                $('#debitQueueList').empty(); // clear previous queues
+                debitQueue = []; // reset array
+                $('#debitModal').modal('show');
+            }
+
+            function renderdebitGrid() {
+                let selectedLot = $('#debit_lot_no').val();
                 let $list = $('#debitItemsList');
                 $list.empty();
-                
-                let validDesigns = UNIT_LOTS ? UNIT_LOTS.map(l => l.design_number) : [];
+                if (!selectedLot) return;
+
+                let validSetIds = UNIT_LOTS.filter(l => l.lot_no == selectedLot).map(l => Number(l.set_id));
 
                 if (ORDER_ITEMS && ORDER_ITEMS.length > 0) {
                     ORDER_ITEMS.forEach(item => {
-                        if (!validDesigns.includes(item.design_number)) return;
+                        if (!validSetIds.includes(Number(item.order_products_set_id))) return;
 
                         let avl = item.unit_available_qty || 0;
                         if (avl > 0) {
                             $list.append(`
                                         <tr>
-                                            <td class="align-middle small">
-                                                <div class="font-weight-bold">${item.design_number || 'N/A'}</div>
-                                                <div class="text-muted">${item.color_name || 'N/A'}</div>
+                                            <td class="align-middle">
+                                                <div class="font-weight-bold text-dark">${item.design_number || 'N/A'}</div>
+                                                <div class="small text-muted">${item.color_name || 'N/A'}</div>
                                             </td>
-                                            <td class="align-middle small">${item.size || 'N/A'}</td>
-                                            <td class="align-middle text-center small">${avl}</td>
+                                            <td class="align-middle">${item.size || 'N/A'}</td>
+                                            <td class="align-middle text-center">
+                                                <span class="badge badge-light border px-2">${avl} Pcs</span>
+                                            </td>
                                             <td class="align-middle">
                                                 <input type="number" class="form-control form-control-sm debit-qty-input" 
                                                        data-id="${item.id}" data-max="${avl}" 
                                                        min="0" max="${avl}" value="0" oninput="validateUnitPackagingStock(this)">
                                             </td>
                                             <td class="align-middle">
-                                                <input type="number" class="form-control form-control-sm debit-rate-input" 
-                                                       placeholder="0" value="0" oninput="calculateDebitTotal()">
+                                                <div class="input-group input-group-sm">
+                                                    <div class="input-group-prepend"><span class="input-group-text px-2">₹</span></div>
+                                                    <input type="number" class="form-control debit-rate-input" placeholder="0.00" min="0" step="0.01" value="0">
+                                                </div>
                                             </td>
                                         </tr>
                                     `);
@@ -3759,15 +3943,8 @@
                 }
 
                 if ($list.is(':empty')) {
-                    $list.append('<tr><td colspan="4" class="text-center py-4 text-muted">No pieces available for debit.</td></tr>');
+                    $list.append('<tr><td colspan="4" class="text-center py-4 text-muted">No pieces available at this unit to mark for debit.</td></tr>');
                 }
-
-                // Reset fields
-                $('#debitDiscount, #debitAmount').val(0);
-                $('#debitTotalDisplay').text('0.00');
-                $('#debitRemarks').val('');
-
-                $('#debitModal').modal('show');
             }
 
             function updateDebitUnits() {
@@ -3807,8 +3984,79 @@
                 }
             }
 
+
+            let debitQueue = [];
+            function addDebitToQueue() {
+                let lotNo = $('#debit_lot_no').val();
+                if (!lotNo) {
+                    alert("Please select a lot first.");
+                    return;
+                }
+                let added = false;
+                let hasInvalidRate = false;
+                $('#debitItemsList tr').each(function () {
+                    let $qtyInput = $(this).find('.debit-qty-input');
+                    let $rateInput = $(this).find('.debit-rate-input');
+                    if($qtyInput.length === 0) return;
+                    let qty = parseInt($qtyInput.val()) || 0;
+                    let rate = parseFloat($rateInput.val()) || 0;
+                    if (qty > 0) {
+                        if (rate <= 0) {
+                            hasInvalidRate = true;
+                            return false;
+                        }
+                        let detailId = $qtyInput.data('id');
+                        let item = ORDER_ITEMS.find(i => i.id == detailId);
+                        debitQueue.push({
+                            lot_no: lotNo,
+                            detail_id: detailId,
+                            qty: qty,
+                            per_piece_amount: rate,
+                            design_number: item ? item.design_number : '',
+                            color_name: item ? item.color_name : '',
+                            size: item ? item.size : ''
+                        });
+                        $qtyInput.val(0);
+                        $rateInput.val(0);
+                        added = true;
+                    }
+                });
+                if (hasInvalidRate) {
+                    alert("Please enter a valid rate for all selected pieces.");
+                    return;
+                }
+                if (!added) {
+                    alert("Please enter quantity for at least one item.");
+                } else {
+                    renderDebitQueue();
+                    calculateDebitTotal();
+                }
+            }
+            function renderDebitQueue() {
+                let $tbody = $('#debitQueueList');
+                $tbody.empty();
+                debitQueue.forEach((q, index) => {
+                    $tbody.append(`<tr>
+                        <td>${q.lot_no}</td>
+                        <td>${q.design_number} / ${q.color_name}</td>
+                        <td>${q.size}</td>
+                        <td>${q.qty}</td>
+                        <td>${q.per_piece_amount}</td>
+                        <td><button type="button" class="btn btn-sm btn-danger py-0 px-1" onclick="removeDebitQueue(${index})"><i class="fas fa-trash"></i></button></td>
+                    </tr>`);
+                });
+            }
+            function removeDebitQueue(index) {
+                debitQueue.splice(index, 1);
+                renderDebitQueue();
+                calculateDebitTotal();
+            }
+
             function calculateDebitTotal() {
                 let subtotal = 0;
+                debitQueue.forEach(q => {
+                    subtotal += (q.qty * q.per_piece_amount);
+                });
                 $('#debitItemsList tr').each(function () {
                     let qty = parseInt($(this).find('.debit-qty-input').val()) || 0;
                     let rate = parseFloat($(this).find('.debit-rate-input').val()) || 0;
@@ -3835,25 +4083,8 @@
                     return;
                 }
 
-                let items = [];
+                let items = debitQueue.map(q => ({ detail_id: q.detail_id, qty: q.qty, lot_no: q.lot_no, per_piece_amount: q.per_piece_amount }));
                 let hasValidRate = true;
-                $('#debitItemsList tr').each(function () {
-                    let $qtyInput = $(this).find('.debit-qty-input');
-                    let $rateInput = $(this).find('.debit-rate-input');
-                    let qty = parseInt($qtyInput.val()) || 0;
-                    let rate = parseFloat($rateInput.val()) || 0;
-
-                    if (qty > 0) {
-                        if (rate <= 0) {
-                            hasValidRate = false;
-                        }
-                        items.push({
-                            detail_id: $qtyInput.data('id'),
-                            qty: qty,
-                            per_piece_amount: rate
-                        });
-                    }
-                });
 
                 if (items.length === 0) {
                     alert('Please select at least one damaged item to debit.');
@@ -3898,20 +4129,37 @@
                 });
             }
 
-            function openSamplingModal() {
+                        function openSamplingModal() {
                 if (!ORDER_ID) {
                     alert('Please select an order first.');
                     return;
                 }
 
+                // Populate Lot Dropdown
+                let uniqueLots = [...new Set(UNIT_LOTS.map(l => l.lot_no))];
+                let $lotSelect = $('#sampling_lot_no');
+                $lotSelect.html('<option value="">-- Select Lot --</option>');
+                uniqueLots.forEach(lot => {
+                    $lotSelect.append(`<option value="${lot}">Lot #${lot}</option>`);
+                });
+
+                $('#samplingItemsList').empty();
+                $('#samplingQueueList').empty(); // clear previous queues
+                samplingQueue = []; // reset array
+                $('#samplingModal').modal('show');
+            }
+
+            function rendersamplingGrid() {
+                let selectedLot = $('#sampling_lot_no').val();
                 let $list = $('#samplingItemsList');
                 $list.empty();
+                if (!selectedLot) return;
 
-                let validDesigns = UNIT_LOTS ? UNIT_LOTS.map(l => l.design_number) : [];
+                let validSetIds = UNIT_LOTS.filter(l => l.lot_no == selectedLot).map(l => Number(l.set_id));
 
                 if (ORDER_ITEMS && ORDER_ITEMS.length > 0) {
                     ORDER_ITEMS.forEach(item => {
-                        if (!validDesigns.includes(item.design_number)) return;
+                        if (!validSetIds.includes(Number(item.order_products_set_id))) return;
 
                         let avl = item.unit_available_qty || 0;
                         if (avl > 0) {
@@ -3939,8 +4187,6 @@
                 if ($list.is(':empty')) {
                     $list.append('<tr><td colspan="4" class="text-center py-4 text-muted">No pieces available at this unit for sampling.</td></tr>');
                 }
-
-                $('#samplingModal').modal('show');
             }
 
             function updateSamplingRacks() {
@@ -3958,6 +4204,56 @@
                 }
             }
 
+
+            let samplingQueue = [];
+            function addSamplingToQueue() {
+                let lotNo = $('#sampling_lot_no').val();
+                if (!lotNo) {
+                    alert("Please select a lot first.");
+                    return;
+                }
+                let added = false;
+                $('.sampling-qty-input').each(function () {
+                    let qty = parseInt($(this).val()) || 0;
+                    if (qty > 0) {
+                        let detailId = $(this).data('id');
+                        let item = ORDER_ITEMS.find(i => i.id == detailId);
+                        samplingQueue.push({
+                            lot_no: lotNo,
+                            detail_id: detailId,
+                            qty: qty,
+                            design_number: item ? item.design_number : '',
+                            color_name: item ? item.color_name : '',
+                            size: item ? item.size : ''
+                        });
+                        $(this).val(0); // clear input
+                        added = true;
+                    }
+                });
+                if (!added) {
+                    alert("Please enter quantity for at least one item.");
+                } else {
+                    renderSamplingQueue();
+                }
+            }
+            function renderSamplingQueue() {
+                let $tbody = $('#samplingQueueList');
+                $tbody.empty();
+                samplingQueue.forEach((q, index) => {
+                    $tbody.append(`<tr>
+                        <td>${q.lot_no}</td>
+                        <td>${q.design_number} / ${q.color_name}</td>
+                        <td>${q.size}</td>
+                        <td>${q.qty}</td>
+                        <td><button type="button" class="btn btn-sm btn-danger py-0 px-1" onclick="removeSamplingQueue(${index})"><i class="fas fa-trash"></i></button></td>
+                    </tr>`);
+                });
+            }
+            function removeSamplingQueue(index) {
+                samplingQueue.splice(index, 1);
+                renderSamplingQueue();
+            }
+
             function submitSampling() {
                 let rackId = $('#samplingRack').val();
                 let remarks = $('#samplingRemarks').val();
@@ -3967,16 +4263,7 @@
                     return;
                 }
 
-                let items = [];
-                $('.sampling-qty-input').each(function () {
-                    let qty = parseInt($(this).val()) || 0;
-                    if (qty > 0) {
-                        items.push({
-                            detail_id: $(this).data('id'),
-                            qty: qty
-                        });
-                    }
-                });
+                let items = samplingQueue.map(q => ({ detail_id: q.detail_id, qty: q.qty, lot_no: q.lot_no }));
 
                 if (items.length === 0) {
                     alert('Please enter quantity for at least one item.');
@@ -4012,20 +4299,37 @@
                 });
             }
 
-            function openDeadStockModal() {
+                        function openDeadStockModal() {
                 if (!ORDER_ID) {
                     alert('Please select an order first.');
                     return;
                 }
 
+                // Populate Lot Dropdown
+                let uniqueLots = [...new Set(UNIT_LOTS.map(l => l.lot_no))];
+                let $lotSelect = $('#dead_lot_no');
+                $lotSelect.html('<option value="">-- Select Lot --</option>');
+                uniqueLots.forEach(lot => {
+                    $lotSelect.append(`<option value="${lot}">Lot #${lot}</option>`);
+                });
+
+                $('#deadStockItemsList').empty();
+                $('#deadQueueList').empty(); // clear previous queues
+                deadQueue = []; // reset array
+                $('#deadStockModal').modal('show');
+            }
+
+            function renderdeadGrid() {
+                let selectedLot = $('#dead_lot_no').val();
                 let $list = $('#deadStockItemsList');
                 $list.empty();
+                if (!selectedLot) return;
 
-                let validDesigns = UNIT_LOTS ? UNIT_LOTS.map(l => l.design_number) : [];
+                let validSetIds = UNIT_LOTS.filter(l => l.lot_no == selectedLot).map(l => Number(l.set_id));
 
                 if (ORDER_ITEMS && ORDER_ITEMS.length > 0) {
                     ORDER_ITEMS.forEach(item => {
-                        if (!validDesigns.includes(item.design_number)) return;
+                        if (!validSetIds.includes(Number(item.order_products_set_id))) return;
 
                         let avl = item.unit_available_qty || 0;
                         if (avl > 0) {
@@ -4053,8 +4357,6 @@
                 if ($list.is(':empty')) {
                     $list.append('<tr><td colspan="4" class="text-center py-4 text-muted">No pieces available at this unit to mark as damage.</td></tr>');
                 }
-
-                $('#deadStockModal').modal('show');
             }
 
             const STOREROOMS = @json($storerooms);
@@ -4074,6 +4376,56 @@
                 }
             }
 
+
+            let deadQueue = [];
+            function addDeadToQueue() {
+                let lotNo = $('#dead_lot_no').val();
+                if (!lotNo) {
+                    alert("Please select a lot first.");
+                    return;
+                }
+                let added = false;
+                $('.dead-qty-input').each(function () {
+                    let qty = parseInt($(this).val()) || 0;
+                    if (qty > 0) {
+                        let detailId = $(this).data('id');
+                        let item = ORDER_ITEMS.find(i => i.id == detailId);
+                        deadQueue.push({
+                            lot_no: lotNo,
+                            detail_id: detailId,
+                            qty: qty,
+                            design_number: item ? item.design_number : '',
+                            color_name: item ? item.color_name : '',
+                            size: item ? item.size : ''
+                        });
+                        $(this).val(0); // clear input
+                        added = true;
+                    }
+                });
+                if (!added) {
+                    alert("Please enter quantity for at least one item.");
+                } else {
+                    renderDeadQueue();
+                }
+            }
+            function renderDeadQueue() {
+                let $tbody = $('#deadQueueList');
+                $tbody.empty();
+                deadQueue.forEach((q, index) => {
+                    $tbody.append(`<tr>
+                        <td>${q.lot_no}</td>
+                        <td>${q.design_number} / ${q.color_name}</td>
+                        <td>${q.size}</td>
+                        <td>${q.qty}</td>
+                        <td><button type="button" class="btn btn-sm btn-danger py-0 px-1" onclick="removeDeadQueue(${index})"><i class="fas fa-trash"></i></button></td>
+                    </tr>`);
+                });
+            }
+            function removeDeadQueue(index) {
+                deadQueue.splice(index, 1);
+                renderDeadQueue();
+            }
+
             function submitDeadStock() {
                 let rackId = $('#deadStockRack').val();
                 let remarks = $('#deadStockRemarks').val();
@@ -4083,16 +4435,7 @@
                     return;
                 }
 
-                let items = [];
-                $('.dead-qty-input').each(function () {
-                    let qty = parseInt($(this).val()) || 0;
-                    if (qty > 0) {
-                        items.push({
-                            detail_id: $(this).data('id'),
-                            qty: qty
-                        });
-                    }
-                });
+                let items = deadQueue.map(q => ({ detail_id: q.detail_id, qty: q.qty, lot_no: q.lot_no }));
 
                 if (items.length === 0) {
                     alert('Please enter quantity for at least one item.');

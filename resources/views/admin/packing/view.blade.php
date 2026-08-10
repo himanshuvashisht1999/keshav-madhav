@@ -58,9 +58,6 @@
             <div class="container-fluid">
                 @php
                     $totalCartons = $session->cartons->count();
-                    $totalBoxes = $session->boxes->count();
-                    $corpBoxes = $session->boxes->where('box_type', 'corporate')->count();
-                    $domesticBoxes = $session->boxes->whereIn('box_type', ['domestic', 'corporate_domestic', 'packing_divert'])->count();
                     $totalItems = $session->items->sum('quantity');
                     $outflowItems = $session->outflows->where('type', '!=', 'packing_divert')->sum('quantity');
                 @endphp
@@ -76,21 +73,6 @@
                                 <span class="text-muted text-uppercase x-small font-weight-bold d-block">Total
                                     Cartons</span>
                                 <h5 class="font-weight-bold mb-0">{{ $totalCartons }} Units</h5>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card shadow-sm p-3 bg-white d-flex align-items-center mb-3"
-                            style="border-radius: 15px;">
-                            <div class="icon-box bg-soft-info text-info mr-3 rounded-lg d-flex align-items-center justify-content-center"
-                                style="width: 50px; height: 50px; font-size: 1.2rem;">
-                                <i class="fas fa-boxes"></i>
-                            </div>
-                            <div>
-                                <span class="text-muted text-uppercase x-small font-weight-bold d-block">Internal
-                                    Boxes</span>
-                                <h5 class="font-weight-bold mb-0">{{ $totalBoxes }} Total</h5>
-                                <small class="text-muted">{{ $corpBoxes }} Corp | {{ $domesticBoxes }} Dom</small>
                             </div>
                         </div>
                     </div>
@@ -145,20 +127,10 @@
         <section class="content pb-5">
             <div class="container-fluid">
 
-                @php
-                    $corpBoxTypes = ['corporate', 'planner', 'bulk'];
-                    $domBoxTypes = ['domestic', 'corporate_domestic', 'packing_divert', 'domestic_planner'];
-
-                    $corpCartons = $session->cartons()->whereHas('boxes', function ($q) use ($corpBoxTypes) {
-                        $q->whereIn('box_type', $corpBoxTypes);
-                    })->get();
-                @endphp
-
-                <!-- A. CORPORATE PACKING SECTION -->
-                @if($corpCartons->count() > 0)
+                @if($session->cartons->count() > 0)
                     <div class="d-flex align-items-center mb-4 pt-2">
                         <div style="width: 30px; height: 2px; background: #007bff; margin-right: 15px;"></div>
-                        <h4 class="font-weight-bold text-dark mb-0">Corporate Order Packing</h4>
+                        <h4 class="font-weight-bold text-dark mb-0">Packed Cartons</h4>
                         <div class="flex-grow-1 ml-3" style="height: 2px; background: #dee2e6;"></div>
                     </div>
 
@@ -169,17 +141,15 @@
                                     <thead class="bg-primary text-white small text-uppercase">
                                         <tr>
                                             <th class="border-0 px-4 py-3">Carton #</th>
-                                            <th class="border-0 py-3">Corp Boxes</th>
                                             <th class="border-0 py-3">Design & Size Set</th>
                                             <th class="border-0 py-3 text-center">Total Pcs</th>
                                             <th class="border-0 py-3 pr-4">Location</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($corpCartons as $carton)
+                                        @foreach($session->cartons as $carton)
                                             @php
-                                                $corpBoxesInCarton = $carton->boxes->whereIn('box_type', $corpBoxTypes);
-                                                $summaryData = $carton->items->filter(fn($i) => $i->box && in_array($i->box->box_type, $corpBoxTypes))->map(function ($item) {
+                                                $summaryData = $carton->items->map(function ($item) {
                                                     $set = $item->detail ? $item->detail->orderProductSet : null;
                                                     return [
                                                         'design' => $set->design_number ?? 'N/A',
@@ -190,11 +160,6 @@
                                             <tr class="border-bottom">
                                                 <td class="px-4 py-3 font-weight-bold text-primary">#{{ $carton->carton_no }}</td>
                                                 <td class="py-3">
-                                                    <span class="badge badge-primary px-3 py-2">
-                                                        {{ $corpBoxesInCarton->count() }} Boxes
-                                                    </span>
-                                                </td>
-                                                <td class="py-3">
                                                     @foreach($summaryData as $sum)
                                                         <div class="small">
                                                             <span class="font-weight-bold">{{ $sum['design'] }}</span>
@@ -203,81 +168,11 @@
                                                     @endforeach
                                                 </td>
                                                 <td class="py-3 text-center">
-                                                    <span
-                                                        class="h6 font-weight-bold text-dark">{{ $carton->items->filter(fn($i) => in_array(optional($i->box)->box_type, $corpBoxTypes))->sum('quantity') }}</span>
+                                                    <span class="h6 font-weight-bold text-dark">{{ $carton->items->sum('quantity') }}</span>
                                                 </td>
                                                 <td class="py-3 pr-4 text-muted small">
                                                     {{ $carton->rack->storeroom->name ?? 'N/A' }} /
                                                     {{ $carton->rack->name ?? 'N/A' }}
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                <!-- B. DOMESTIC PACKING SECTION -->
-                @php
-                    $domBoxGroups = $session->boxes()->whereIn('box_type', $domBoxTypes)
-                        ->with(['domesticInventory.product.series', 'domesticInventory.color', 'domesticInventory.sizeSet', 'items.detail.orderProductSet', 'carton.rack.storeroom'])
-                        ->get()
-                        ->groupBy('barcode');
-                @endphp
-
-                @if($domBoxGroups->count() > 0)
-                    <div class="d-flex align-items-center mb-4 pt-2">
-                        <div style="width: 30px; height: 2px; background: #17a2b8; margin-right: 15px;"></div>
-                        <h4 class="font-weight-bold text-dark mb-0">Domestic Stock Packing</h4>
-                        <div class="flex-grow-1 ml-3" style="height: 2px; background: #dee2e6;"></div>
-                    </div>
-
-                    <div class="card shadow-sm border-0 bg-white mb-5" style="border-radius: 20px;">
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="bg-info text-white small text-uppercase">
-                                        <tr>
-                                            <th class="border-0 px-4 py-3">Barcode</th>
-                                            <th class="border-0 py-3">Dom Boxes</th>
-                                            <th class="border-0 py-3">Design & Detail</th>
-                                            <th class="border-0 py-3 pr-4 text-center">Total Pcs</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($domBoxGroups as $barcode => $group)
-                                                @php
-                                                    $firstBox = $group->first();
-                                                    $di = $firstBox->domesticInventory;
-                                                    $totalPcs = $group->flatMap->items->sum('quantity');
-                                                    
-                                                    $design = $di->product->design_number ?? ($firstBox->items->first()->detail->orderProductSet->design_number ?? 'D-Unk');
-                                                    $prodName = $di->product_name ?? 'Domestic Stock';
-                                                    $detailInfo = $di ? ($di->sizeSet->name . ' / ' . $di->color->name) : 'Misc Domestic';
-                                                @endphp
-                                                <tr class="border-bottom">
-                                                    <td class="px-4 py-3">
-                                                        <div class="font-weight-bold text-info">{{ $barcode }}</div>
-                                                    </td>
-                                                    <td class="py-3">
-                                                        <span class="badge badge-info px-3 py-2 text-white">
-                                                            {{ $group->count() }} Boxes
-                                                        </span>
-                                                    </td>
-                                                    <td class="py-3">
-                                                        <div class="small">
-                                                            <div class="font-weight-bold text-dark">{{ $prodName }}</div>
-                                                            <div class="text-muted">
-                                                                <span class="font-weight-bold">{{ $design }}</span>
-                                                                <span class="ml-1">({{ $detailInfo }})</span>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                <td class="py-3 pr-4 text-center">
-                                                    <span class="h6 font-weight-bold text-dark">{{ $totalPcs }}</span>
-                                                    <div class="x-small text-muted font-weight-bold">PCS</div>
                                                 </td>
                                             </tr>
                                         @endforeach

@@ -23,11 +23,6 @@ class PackingMain extends Model
         return $this->hasMany(PackingCarton::class , 'packing_main_id');
     }
 
-    public function boxes()
-    {
-        return $this->hasMany(PackingBox::class , 'packing_main_id');
-    }
-
     public function items()
     {
         return $this->hasMany(PackingItem::class , 'packing_main_id');

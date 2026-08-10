@@ -4,7 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\PackingMain;
-use App\Models\PackingBox;
+
 use App\Models\PackingItem;
 
 class PackingCarton extends Model
@@ -37,10 +37,6 @@ class PackingCarton extends Model
         return $this->hasMany(PackingItem::class, 'packing_carton_id');
     }
 
-    public function boxes()
-    {
-        return $this->hasMany(PackingBox::class, 'packing_carton_id');
-    }
     public function orderMain()
     {
         return $this->belongsTo(OrderMain::class, 'main_order_id', 'id' );

@@ -2525,7 +2525,7 @@ class AgentOrderController extends Controller
         }
     }
 
-    public function indexDispatches(Request $request)
+    private function buildDispatchesQuery(Request $request)
     {
         $query = \App\Models\AgentOrderDispatch::with(['shop', 'vendor', 'agent'])
             ->latest();
@@ -2563,6 +2563,86 @@ class AgentOrderController extends Controller
         if ($request->filled('agent_id')) {
             $query->where('sales_agent_id', $request->agent_id);
         }
+
+        return $query;
+    }
+
+    public function exportDispatchesPdf(Request $request)
+    {
+        $dispatches = $this->buildDispatchesQuery($request)->get();
+        $totalGrandTotal = $dispatches->sum('grand_total');
+        
+        $filters = array_filter($request->only(['shop_id', 'vendor_id', 'from_date', 'to_date', 'bill_no', 'dispatch_type', 'agent_id']));
+
+        $pdf = Pdf::loadView('admin.agent_orders.dispatches.export_pdf', compact('dispatches', 'totalGrandTotal', 'filters'))
+            ->setPaper('A4', 'landscape');
+
+        $filename = 'Dispatches_' . now()->format('d-m-Y') . '.pdf';
+        return $pdf->download($filename);
+    }
+
+    public function exportDispatchesExcel(Request $request)
+    {
+        $dispatches = $this->buildDispatchesQuery($request)->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Dispatches');
+
+        // Header row
+        $headers = ['#', 'Dispatch ID', 'Party Name', 'Party Type', 'Agent', 'Grand Total (₹)', 'Bill No', 'Date', 'Remark'];
+        $cols    = range('A', 'I');
+        foreach ($headers as $i => $h) {
+            $cell = $cols[$i] . '1';
+            $sheet->setCellValue($cell, $h);
+            $sheet->getStyle($cell)->getFont()->setBold(true);
+            $sheet->getStyle($cell)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle($cell)->getFill()->setFillType(Fill::FILL_SOLID)
+                  ->getStartColor()->setRGB('1e293b');
+            $sheet->getStyle($cell)->getFont()->getColor()->setRGB('FFFFFF');
+        }
+
+        // Data rows
+        $row = 2;
+        foreach ($dispatches as $i => $dispatch) {
+            $partyName = $dispatch->party_type === 'vendor' 
+                ? ($dispatch->vendor->name ?? 'N/A') 
+                : ($dispatch->shop->name ?? 'N/A');
+                
+            $sheet->setCellValue('A' . $row, $i + 1);
+            $sheet->setCellValue('B' . $row, '#DSP-' . str_pad($dispatch->id, 5, '0', STR_PAD_LEFT));
+            $sheet->setCellValue('C' . $row, $partyName);
+            $sheet->setCellValue('D' . $row, ucfirst($dispatch->party_type ?? 'N/A'));
+            $sheet->setCellValue('E' . $row, $dispatch->agent->name ?? 'Direct');
+            $sheet->setCellValue('F' . $row, $dispatch->grand_total);
+            $sheet->setCellValue('G' . $row, $dispatch->bill_no ?? '-');
+            $sheet->setCellValue('H' . $row, $dispatch->dispatch_date ? \Carbon\Carbon::parse($dispatch->dispatch_date)->format('d M Y') : 'N/A');
+            $sheet->setCellValue('I' . $row, $dispatch->remark);
+            
+            $sheet->getStyle('F' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+            $row++;
+        }
+
+        // Auto-size columns
+        foreach ($cols as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // Output to browser
+        $filename = 'Dispatches_' . now()->format('d-m-Y') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    }
+
+    public function indexDispatches(Request $request)
+    {
+        $query = $this->buildDispatchesQuery($request);
 
         $totalGrandTotal = $query->sum('grand_total');
 

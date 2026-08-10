@@ -98,6 +98,23 @@
                 </div>
 
                 <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 font-weight-bold">Dispatch Records</h5>
+                        <div class="d-flex align-items-center">
+                            @php $qs = http_build_query(request()->except('page')); @endphp
+                            <a href="{{ route('admin.agent-orders.dispatches.export-pdf') . ($qs ? '?' . $qs : '') }}"
+                               class="btn btn-sm btn-outline-danger px-3 shadow-sm mr-2"
+                               title="Download PDF"
+                               target="_blank">
+                                <i class="fas fa-file-pdf mr-1"></i> PDF
+                            </a>
+                            <a href="{{ route('admin.agent-orders.dispatches.export-excel') . ($qs ? '?' . $qs : '') }}"
+                               class="btn btn-sm btn-outline-success px-3 shadow-sm"
+                               title="Download Excel">
+                                <i class="fas fa-file-excel mr-1"></i> Excel
+                            </a>
+                        </div>
+                    </div>
                     <div class="card-body p-0">
                         <table class="table table-hover mb-0">
                             <thead class="bg-light">

@@ -135,7 +135,6 @@ class LotLedgerController extends Controller
         $packingMains = \App\Models\PackingMain::whereIn('slip_id', $slipIds)->get();
         
         foreach ($packingMains as $pm) {
-            $packedQty = \App\Models\PackingBox::where('packing_main_id', $pm->id)->sum('items_sum_quantity'); // This might need a join or items sum
             $packedQty = \App\Models\PackingItem::where('packing_main_id', $pm->id)->sum('quantity');
             if ($packedQty > 0) {
                 $transactions->push((object)[

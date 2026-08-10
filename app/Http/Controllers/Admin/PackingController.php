@@ -85,6 +85,7 @@ class PackingController extends Controller
         $packed_quantities = [];
         $order_sets = collect();
         $unit_available = [];
+        $unit_available_per_lot = [];
 
         if (!$order) {
             $validOrderIds = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
@@ -104,6 +105,7 @@ class PackingController extends Controller
         } else {
             $packed_quantities = $this->service->getPackedQuantitiesForOrder($order->id);
             $unit_available = $this->service->getAvailableQuantitiesAtUnit($order->id, $slip->stage_master_unit_id);
+        $unit_available_per_lot = $this->service->getAvailableQuantitiesAtUnitPerLot($order->id, $slip->stage_master_unit_id);
             $unit_incoming = $this->service->getIncomingQuantitiesAtUnit($order->id, $slip->stage_master_unit_id);
 
             // Logic to prepare sets (duplicated from JSON method for initial load)
@@ -146,6 +148,7 @@ class PackingController extends Controller
                 ->where('order_lots.order_main_id', $order->id)
                 ->select(
                     'order_stage_transactions.lot_no',
+                    'order_products_sets.id as set_id',
                     'order_products_sets.design_number',
                     'master_size_measurements.name as size_set_name',
                     'order_stage_transactions.quantity',
@@ -214,7 +217,7 @@ class PackingController extends Controller
         ];
         $order_type = strtolower(trim($order->order_type ?? ''));
 
-        return view('admin.packing.process', compact('slip', 'order', 'packing', 'storerooms', 'active_orders', 'packed_quantities', 'order_sets', 'unit_available', 'outflows', 'reworks', 'domestic_masters', 'unit_lots'));
+        return view('admin.packing.process', compact('slip', 'order', 'packing', 'storerooms', 'active_orders', 'packed_quantities', 'order_sets', 'unit_available', 'outflows', 'reworks', 'domestic_masters', 'unit_lots', 'unit_available_per_lot'));
     }
 
     public function processDomestic(Request $request, $slip_id)
@@ -262,6 +265,7 @@ class PackingController extends Controller
         if ($order) {
             $packed_quantities = $this->service->getPackedQuantitiesForOrder($order->id);
             $unit_available = $this->service->getAvailableQuantitiesAtUnit($order->id, $slip->stage_master_unit_id);
+        $unit_available_per_lot = $this->service->getAvailableQuantitiesAtUnitPerLot($order->id, $slip->stage_master_unit_id);
             $unit_incoming = $this->service->getIncomingQuantitiesAtUnit($order->id, $slip->stage_master_unit_id);
 
             $order_sets = $order->OrderProductSets->map(function ($set) use ($packed_quantities, $unit_available, $unit_incoming) {
@@ -350,7 +354,27 @@ class PackingController extends Controller
                 ->get();
         }
 
-        return view('admin.packing.process_domestic', compact('slip', 'packing', 'order', 'active_orders', 'packed_quantities', 'order_sets', 'unit_available', 'storerooms', 'outflows', 'reworks', 'domestic_masters'));
+        $unit_lots = [];
+        if ($order) {
+            $unit_lots = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
+                ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
+                ->leftJoin('master_size_measurements', 'order_products_sets.set_size', '=', 'master_size_measurements.id')
+                ->where('order_stage_transactions.to_stage_id', 11)
+                ->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
+                ->where('order_lots.order_main_id', $order->id)
+                ->select(
+                    'order_stage_transactions.lot_no',
+                    'order_products_sets.id as set_id',
+                    'order_products_sets.design_number',
+                    'master_size_measurements.name as size_set_name',
+                    'order_stage_transactions.quantity',
+                    'order_stage_transactions.remaining_quantity'
+                )
+                ->get();
+        }
+
+        return view('admin.packing.process_domestic', compact('slip', 'packing', 'order', 'active_orders', 'packed_quantities', 'order_sets', 'unit_available', 'storerooms', 'outflows', 'reworks', 'domestic_masters', 'unit_available_per_lot', 'unit_lots'));
     }
 
     public function saveDomesticBox(Request $request)
@@ -399,12 +423,12 @@ class PackingController extends Controller
             $datePrefix = date('ymd');
             $box_no = $data['box_no'] ?? null;
             if (empty($box_no)) {
-                $lastBox = \App\Models\PackingBox::where('box_no', 'LIKE', "BX-$datePrefix-%")
-                    ->orderBy('id', 'desc')
+                $lastInv = \App\Models\DomesticInventory::where('box_no', 'LIKE', "BX-$datePrefix-%")
+                    ->orderByRaw('CAST(SUBSTRING(box_no, 11) AS UNSIGNED) DESC')
                     ->first();
                 $nextSeq = 1;
-                if ($lastBox) {
-                    $parts = explode('-', $lastBox->box_no);
+                if ($lastInv) {
+                    $parts = explode('-', $lastInv->box_no);
                     $nextSeq = (int) end($parts) + 1;
                 }
                 $box_no = "BX-$datePrefix-" . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
@@ -413,19 +437,7 @@ class PackingController extends Controller
             // Calculate barcode BEFORE creating box to link them properly
             $barcode = 'D' . $data['product_id'] . 'S' . $data['size_set_id'] . 'C' . $data['color_id'];
 
-            // Create PackingBox with explicit property assignment
-            $box = new \App\Models\PackingBox();
-            $box->packing_main_id = $main->id;
-            $box->packing_carton_id = $carton->id;
-            $box->box_no = $box_no;
-            $box->box_type = 'domestic';
-            $box->barcode = (string) $barcode;
-            $box->save();
-
-            // Direct DB Update as safety measure
-            DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string) $barcode]);
-
-            \Log::channel('single')->info("Created Domestic Box ID: {$box->id} with Barcode: " . (string) $barcode);
+            \Log::channel('single')->info("Created Domestic Box: {$box_no} with Barcode: " . (string) $barcode);
 
             // Create or Update Domestic Inventory Record (stores total pieces)
 
@@ -443,7 +455,6 @@ class PackingController extends Controller
                     // 'order_main_id' => $data['order_id'],
                     'packing_main_id' => $main->id,
                     'packing_carton_id' => $carton->id,
-                    'packing_box_id' => $box->id,
                     'rack_id' => $data['rack_id'],
                     'product_id' => $data['product_id'],
                     'color_id' => $data['color_id'],
@@ -514,12 +525,17 @@ class PackingController extends Controller
                     }
 
                     // 2. Deduct from Unit-Side Stock (OrderStageTransaction at Stage 11: Packing)
-                    $stockTransactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11) // Packing Stage
+                    $stockTransactionsQuery = \App\Models\OrderStageTransaction::where('to_stage_id', 11) // Packing Stage
                         ->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
-                        ->where('remaining_quantity', '>', 0)
-                        ->whereIn('lot_no', $orderLots)
-                        ->orderBy('id')
-                        ->get();
+                        ->where('remaining_quantity', '>', 0);
+
+                    if (!empty($data['lot_no'])) {
+                        $stockTransactionsQuery->where('lot_no', $data['lot_no']);
+                    } else {
+                        $stockTransactionsQuery->whereIn('lot_no', $orderLots);
+                    }
+
+                    $stockTransactions = $stockTransactionsQuery->orderBy('id')->get();
 
                     if ($stockTransactions->isEmpty()) {
                         \Log::channel('single')->warning("No unit stock found for Stage 11 and Unit: " . $slip_details->stage_master_unit_id . " for Lot " . implode(',', $orderLots));
@@ -551,6 +567,7 @@ class PackingController extends Controller
                         'per_piece_amount' => 0,
                         'total_amount' => 0,
                         'type' => 'packing',
+                        'lot_no' => !empty($data['lot_no']) ? $data['lot_no'] : null,
                         'responsible_unit_id' => $slip_details->stage_master_unit_id,
                         'remarks' => "Box $box_no (Domestic) - Size: $sizeName",
                     ]);
@@ -565,7 +582,6 @@ class PackingController extends Controller
                     \App\Models\PackingItem::create([
                         'packing_main_id' => $main->id,
                         'packing_carton_id' => $carton->id,
-                        'packing_box_id' => $box->id,
                         'size_id' => $firstDetailId ?: 0,
                         'quantity' => ($pcsPerSet * $total_sets),
                         'selling_price' => $fallbackPrice,
@@ -607,8 +623,8 @@ class PackingController extends Controller
 
             // 1. Initial counters matching InventoryController logic
             $currentCartonNo = (int) \App\Models\DomesticInventory::max('carton_no') ?? 0;
-            $lastBox = \App\Models\PackingBox::orderByRaw('CAST(SUBSTRING(box_no, 4) AS UNSIGNED) DESC')->first();
-            $currentBoxNoInt = $lastBox ? (int) str_replace('BX-', '', $lastBox->box_no) : 0;
+            $lastInv = \App\Models\DomesticInventory::orderByRaw('CAST(SUBSTRING(box_no, 4) AS UNSIGNED) DESC')->first();
+            $currentBoxNoInt = $lastInv ? (int) str_replace('BX-', '', $lastInv->box_no) : 0;
 
             $totalBoxesCreated = 0;
             foreach ($data['boxes'] as $box_plan) {
@@ -635,19 +651,6 @@ class PackingController extends Controller
                     // 4. Barcode Calculation
                     $barcode = 'D' . $box_plan['product_id'] . 'S' . $box_plan['size_set_id'] . 'C' . $box_plan['color_id'];
 
-                    // 3. New Box
-                    // Create PackingBox with explicit property assignment
-                    $box = new \App\Models\PackingBox();
-                    $box->packing_main_id = $main->id;
-                    $box->packing_carton_id = $carton->id;
-                    $box->box_no = $box_no;
-                    $box->box_type = 'corporate_domestic';
-                    $box->barcode = (string) $barcode;
-                    $box->save();
-
-                    // Direct DB Update as safety measure
-                    DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string) $barcode]);
-
                     $currentRackId = $box_plan['rack_id'] ?? null;
 
                     $inventory = \App\Models\DomesticInventory::where([
@@ -662,7 +665,6 @@ class PackingController extends Controller
                             // 'order_main_id' => 0,
                             'packing_main_id' => $main->id,
                             'packing_carton_id' => $carton->id,
-                            'packing_box_id' => $box->id,
                             'rack_id' => $currentRackId,
                             'product_id' => $box_plan['product_id'],
                             'color_id' => $box_plan['color_id'],
@@ -690,7 +692,6 @@ class PackingController extends Controller
                     ]);
 
                     // Redundant but safe
-                    DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string) $barcode]);
 
                     // 5. Piece Deductions from Original Corporate Order
                     if (!empty($sizeSetMaster->size_group)) {
@@ -734,7 +735,6 @@ class PackingController extends Controller
                             \App\Models\PackingItem::create([
                                 'packing_main_id' => $main->id,
                                 'packing_carton_id' => $carton->id,
-                                'packing_box_id' => $box->id,
                                 'size_id' => $usedDetailId ?: 0,
                                 'quantity' => $qtyToDeduct,
                                 'selling_price' => $sellPrice,
@@ -793,21 +793,26 @@ class PackingController extends Controller
     {
         DB::beginTransaction();
         try {
-            $box = \App\Models\PackingBox::with(['domesticInventory', 'packingMain', 'items'])->findOrFail($id);
+            // Find PackingItem instead of PackingBox
+            $item = \App\Models\PackingItem::with(['carton.main', 'carton.rack'])->findOrFail($id);
+            $carton = $item->carton;
 
-            if ($box->packingMain && $box->packingMain->status == 1) {
+            if ($carton && $carton->main && $carton->main->status == 1) {
                 throw new \Exception("Cannot delete box from a finalized session.");
             }
 
-            $orderId = ($box->packingMain) ? $box->packingMain->order_main_id : null;
-            $slipId = ($box->packingMain) ? $box->packingMain->slip_id : null;
-            $boxNo = $box->box_no;
+            $orderId = ($carton->main) ? $carton->main->order_main_id : null;
+            $slipId = ($carton->main) ? $carton->main->slip_id : null;
+            
+            // Re-fetch box No if needed
+            $inv = \App\Models\DomesticInventory::where('packing_carton_id', $carton->id)->first();
+            $boxNo = $inv ? $inv->box_no : null;
 
             $slip = \App\Models\ProductionSlipDigitization::find($slipId);
             $unitId = $slip ? $slip->stage_master_unit_id : null;
 
             // 1. Revert Inventories & Deductions using Packing Items
-            $packingItems = \App\Models\PackingItem::where('packing_box_id', $box->id)->get();
+            $packingItems = \App\Models\PackingItem::where('packing_carton_id', $carton->id)->get();
 
             foreach ($packingItems as $item) {
                 // Return to Order Balance
@@ -834,12 +839,10 @@ class PackingController extends Controller
                 }
             }
 
-            $rackId = $box->carton ? $box->carton->rack_id : null;
+            $rackId = $carton ? $carton->rack_id : null;
 
-            // 2. Adjust Domestic Inventory linked to this box specifically for its rack
-            $inventory = clone $box; // Ensure we don't mess up variable scopes
-            $domesticInv = \App\Models\DomesticInventory::where('barcode', $box->barcode)
-                ->where('rack_id', $rackId)
+            // 2. Adjust Domestic Inventory linked to this carton specifically for its rack
+            $domesticInv = \App\Models\DomesticInventory::where('packing_carton_id', $carton->id)
                 ->first();
 
             if ($domesticInv) {
@@ -850,10 +853,9 @@ class PackingController extends Controller
                 }
             }
 
-            \App\Models\PackingItem::where('packing_box_id', $box->id)->delete();
+            \App\Models\PackingItem::where('packing_carton_id', $carton->id)->delete();
 
-            $cartonId = $box->packing_carton_id;
-            $box->delete();
+            $cartonId = $carton->id;
 
             // In Domestic, each box has its own carton
             if ($cartonId) {
@@ -1062,6 +1064,7 @@ class PackingController extends Controller
                 ->where('order_lots.order_main_id', $id)
                 ->select(
                     'order_stage_transactions.lot_no',
+                    'order_products_sets.id as set_id',
                     'order_products_sets.design_number',
                     'master_size_measurements.name as size_set_name',
                     'order_stage_transactions.quantity',
@@ -1146,7 +1149,7 @@ class PackingController extends Controller
         } elseif ($type == 'carton') {
             $query->where('domestic_inventories.packing_carton_id', $id);
         } elseif ($type == 'box') {
-            $query->where('domestic_inventories.packing_box_id', $id);
+            $query->where('domestic_inventories.packing_carton_id', $id);
         } else {
             return abort(404);
         }
@@ -1158,7 +1161,7 @@ class PackingController extends Controller
         }
 
         // Use DomPDF to generate PDF
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.packing.labels_print', compact('labels'));
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.packing.labels_print', compact('labels', 'unit_available_per_lot'));
 
         // Set paper size to A4
         $pdf->setPaper('A4', 'portrait');
@@ -1186,6 +1189,9 @@ class PackingController extends Controller
             'to_stage_id' => 'required',
             'to_unit_id' => 'required',
             'items' => 'required|array',
+            'items.*.detail_id' => 'required',
+            'items.*.qty' => 'required|numeric|min:1',
+            'items.*.lot_no' => 'required',
             'remarks' => 'nullable|string'
         ]);
 
@@ -1235,6 +1241,9 @@ class PackingController extends Controller
             'slip_id' => 'required',
             'rack_id' => 'required',
             'items' => 'required|array',
+            'items.*.detail_id' => 'required',
+            'items.*.qty' => 'required|numeric|min:1',
+            'items.*.lot_no' => 'required',
             'remarks' => 'nullable|string'
         ]);
 
@@ -1249,6 +1258,9 @@ class PackingController extends Controller
             'slip_id' => 'required',
             'rack_id' => 'required',
             'items' => 'required|array',
+            'items.*.detail_id' => 'required',
+            'items.*.qty' => 'required|numeric|min:1',
+            'items.*.lot_no' => 'required',
             'remarks' => 'nullable|string'
         ]);
 
@@ -1266,6 +1278,10 @@ class PackingController extends Controller
             'discount' => 'nullable|numeric',
             'total_amount' => 'required|numeric',
             'items' => 'required|array',
+            'items.*.detail_id' => 'required',
+            'items.*.qty' => 'required|numeric|min:1',
+            'items.*.per_piece_amount' => 'required|numeric|min:0',
+            'items.*.lot_no' => 'required',
             'remarks' => 'nullable|string'
         ]);
 
@@ -1312,31 +1328,19 @@ class PackingController extends Controller
                 ]);
 
                 $datePrefix = date('ymd');
-                $lastBox = \App\Models\PackingBox::where('box_no', 'LIKE', "BX-$datePrefix-%")
-                    ->orderBy('id', 'desc')
+                $lastInv = \App\Models\DomesticInventory::where('box_no', 'LIKE', "BX-$datePrefix-%")
+                    ->orderByRaw('CAST(SUBSTRING(box_no, 11) AS UNSIGNED) DESC')
                     ->first();
                 $nextSeq = 1;
-                if ($lastBox) {
-                    $parts = explode('-', $lastBox->box_no);
+                if ($lastInv) {
+                    $parts = explode('-', $lastInv->box_no);
                     $nextSeq = (int) end($parts) + 1;
                 }
                 $box_no = "BX-$datePrefix-" . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
 
                 $barcode = 'D' . $data['product_id'] . 'S' . $data['size_set_id'] . 'C' . $data['color_id'];
 
-                // Create PackingBox with barcode
-                $box = new \App\Models\PackingBox();
-                $box->packing_main_id = $main->id;
-                $box->packing_carton_id = $carton->id;
-                $box->box_no = $box_no;
-                $box->box_type = 'domestic';
-                $box->barcode = (string) $barcode;
-                $box->save();
-
-                // Direct DB Update as safety measure
-                DB::table('packing_boxes')->where('id', $box->id)->update(['barcode' => (string) $barcode]);
-
-                \Log::channel('single')->info("Created Domestic Bulk Box ID: {$box->id} with Barcode: " . (string) $barcode);
+                \Log::channel('single')->info("Created Domestic Bulk Box: {$box_no} with Barcode: " . (string) $barcode);
 
                 $actualPiecesInBox = 0;
                 if (!empty($sizeSetMaster->size_group)) {
@@ -1403,7 +1407,6 @@ class PackingController extends Controller
                             \App\Models\PackingItem::create([
                                 'packing_main_id' => $main->id,
                                 'packing_carton_id' => $carton->id,
-                                'packing_box_id' => $box->id,
                                 'size_id' => $firstDetailId ?: 0,
                                 'quantity' => $sizePiecesDeducted,
                                 'selling_price' => $fallbackPrice,
@@ -1428,7 +1431,6 @@ class PackingController extends Controller
                         'order_main_id' => $order_id,
                         'packing_main_id' => $main->id,
                         'packing_carton_id' => $carton->id,
-                        'packing_box_id' => $box->id,
                         'rack_id' => $data['rack_id'],
                         'product_id' => $data['product_id'],
                         'color_id' => $data['color_id'],
@@ -1508,26 +1510,18 @@ class PackingController extends Controller
 
     public function downloadPrn($id)
     {
-        $main = \App\Models\PackingMain::with('boxes.items')->findOrFail($id);
+        $main = \App\Models\PackingMain::with('cartons.items')->findOrFail($id);
         $allBarcodes = [];
 
-        // Define domestic box types
-        $domBoxTypes = ['domestic', 'corporate_domestic', 'packing_divert', 'domestic_planner'];
-
-        foreach ($main->boxes as $box) {
-            // Only process boxes that are of domestic types
-            if (!in_array($box->box_type, $domBoxTypes)) {
-                continue;
-            }
-
-            // As per updated user request: "if 5 boxes then 5 barcode"
-            if ($box->barcode) {
-                $allBarcodes[] = $box->barcode;
+        foreach ($main->cartons as $carton) {
+            // As per updated user request: "if 5 boxes then 5 barcode" - now cartons
+            if ($carton->barcode) {
+                $allBarcodes[] = $carton->barcode;
             }
         }
 
         if (empty($allBarcodes)) {
-            return back()->withError('No domestic labels found to generate.');
+            return back()->withError('No labels found to generate.');
         }
 
         // Use the global helper method
@@ -1537,11 +1531,10 @@ class PackingController extends Controller
             return back()->withError('Failed to generate TSPL content.');
         }
 
-        $fileName = 'domestic_barcodes_pcs_session_' . $main->id . '.prn';
-
-        return response($tspl, 200, [
-            'Content-Type' => 'application/octet-stream',
-            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        $filename = "bulk_labels_" . time() . ".prn";
+        return response((string) $tspl, 200, [
+            'Content-Type' => 'text/plain',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
 }

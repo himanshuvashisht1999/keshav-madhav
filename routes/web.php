@@ -45,54 +45,81 @@ Route::get('/fix-cartons/{slip_id}', function ($slip_id) {
         return "No order found for this packing session.";
     }
 
+        // 1. Wipe Cartons & Items
     $cartons = \App\Models\PackingCarton::whereHas('main', function($q) use($slip_id) { 
         $q->where('slip_id', $slip_id); 
     })->get();
 
     foreach($cartons as $carton) {
         \App\Models\PackingItem::where('packing_carton_id', $carton->id)->delete();
-        \App\Models\PackingBox::where('packing_carton_id', $carton->id)->delete();
         $carton->delete();
     }
 
-    $orderLots = \App\Models\OrderLot::where('order_main_id', $order_id)->pluck('lot_no')->toArray();
-    $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-        ->whereIn('lot_no', $orderLots)
-        ->get();
+    $packing = \App\Models\PackingMain::where('slip_id', $slip_id)->first();
+    $order_id = $packing ? $packing->order_main_id : null;
+    $slip = \App\Models\ProductionSlipDigitization::find($slip_id);
 
-    foreach ($transactions as $tx) {
-        $tx->remaining_quantity = $tx->quantity;
-        $tx->save();
+    if ($order_id && $slip) {
+        $orderLots = \App\Models\OrderLot::where('order_main_id', $order_id)->pluck('lot_no')->toArray();
+
+        // 2. Wipe Outflows (Dead, Damage, Sampling, Debit) for this slip & order
+        \App\Models\ProductionOutflowInventory::where('slip_id', $slip_id)
+            ->where('order_main_id', $order_id)
+            ->whereNotIn('type', ['packing', 'packing_divert'])
+            ->delete();
+
+        // 3. Wipe Reworks for this order from Packing
+        $reworks = \App\Models\OrderStageTransaction::whereIn('lot_no', $orderLots)
+            ->where('from_stage_id', 11)
+            ->where('sub_stage_id', $slip->stage_master_unit_id)
+            ->where('type', 'rework')
+            ->get();
+            
+        foreach($reworks as $rw) {
+            $rw->details()->delete();
+            $rw->delete();
+    }
+        
+        // 4. Restore Lot Quantities
+        $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
+            ->whereIn('lot_no', $orderLots)
+            ->get();
+
+        foreach ($transactions as $tx) {
+            $tx->remaining_quantity = $tx->quantity;
+            $tx->save();
     }
 
-    $remaining_mains = \App\Models\PackingMain::where('order_main_id', $order_id)->get();
-    foreach ($remaining_mains as $main) {
-        $items = \App\Models\PackingItem::where('packing_main_id', $main->id)->get();
-        foreach ($items as $item) {
-            $detail = \App\Models\OrderProductSetDetail::find($item->size_id);
-            $lotsToDeduct = \App\Models\OrderLot::where('order_products_set_id', $detail->order_products_set_id ?? 0)->pluck('lot_no')->toArray();
-            if (empty($lotsToDeduct)) {
-                $lotsToDeduct = $orderLots;
-            }
+        // 5. Re-deduct for any OTHER packing mains for this order
+        $remaining_mains = \App\Models\PackingMain::where('order_main_id', $order_id)->get();
+        foreach ($remaining_mains as $main) {
+            $items = \App\Models\PackingItem::where('packing_main_id', $main->id)->get();
+            foreach ($items as $item) {
+                $detail = \App\Models\OrderProductSetDetail::find($item->size_id);
+                $lotsToDeduct = \App\Models\OrderLot::where('order_products_set_id', $detail->order_products_set_id ?? 0)->pluck('lot_no')->toArray();
+                if (empty($lotsToDeduct)) {
+                    $lotsToDeduct = $orderLots;
+    }
 
-            $txs = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-                ->whereIn('lot_no', $lotsToDeduct)
-                ->orderBy('id')
-                ->get();
+                $txs = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
+                    ->whereIn('lot_no', $lotsToDeduct)
+                    ->orderBy('id')
+                    ->get();
 
-            $rem = $item->quantity;
-            foreach ($txs as $tx) {
-                if ($rem <= 0) break;
-                if ($tx->remaining_quantity <= 0) continue;
-                
-                if ($tx->remaining_quantity > $rem) {
-                    $tx->remaining_quantity -= $rem;
-                    $rem = 0;
-                } else {
-                    $rem -= $tx->remaining_quantity;
-                    $tx->remaining_quantity = 0;
+                $rem = $item->quantity;
+                foreach ($txs as $tx) {
+                    if ($rem <= 0) break;
+                    if ($tx->remaining_quantity <= 0) continue;
+                    
+                    if ($tx->remaining_quantity > $rem) {
+                        $tx->remaining_quantity -= $rem;
+                        $rem = 0;
+                    } else {
+                        $rem -= $tx->remaining_quantity;
+                        $tx->remaining_quantity = 0;
+                    }
+                    $tx->save();
                 }
-                $tx->save();
             }
         }
     }
@@ -653,6 +680,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
             // New Dispatch Session Routes
             Route::get('/dispatches', [AdminAgentOrderController::class, 'indexDispatches'])->name('dispatches.index');
+            Route::get('/dispatches/export/pdf', [AdminAgentOrderController::class, 'exportDispatchesPdf'])->name('dispatches.export-pdf');
+            Route::get('/dispatches/export/excel', [AdminAgentOrderController::class, 'exportDispatchesExcel'])->name('dispatches.export-excel');
             Route::get('/dispatches/{id}', [AdminAgentOrderController::class, 'dispatchShow'])->name('dispatches.show');
             Route::get('/dispatches/{id}/invoice', [AdminAgentOrderController::class, 'downloadDispatchInvoice'])->name('dispatches.download-invoice');
             Route::get('/dispatches/{id}/retail-invoice', [AdminAgentOrderController::class, 'downloadDispatchRetailInvoice'])->name('dispatches.download-retail-invoice');

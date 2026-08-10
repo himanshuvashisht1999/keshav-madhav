@@ -1,0 +1,2076 @@
+<!-- REWORK MODAL -->
+    <div class="modal fade" id="reworkModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white p-3">
+                    <h5 class="modal-title font-weight-bold mb-0"><i class="fas fa-tools mr-2"></i> Re-assign Pieces for
+                        Rework</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body pb-0">
+                    <div class="alert alert-warning py-2 mb-3">
+                        <small><i class="fas fa-info-circle mr-1"></i> Use this to return defected pieces back to a previous
+                            production unit for rework.</small>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-2">
+                            <label class="font-weight-bold small text-muted">TARGET STAGE</label>
+                            <select id="reworkStage" class="form-control" onchange="updateReworkUnits()">
+                                <option value="">Select Stage</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="font-weight-bold small text-muted">TARGET UNIT</label>
+                            <select id="reworkUnit" class="form-control">
+                                <option value="">Select Unit</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="font-weight-bold small text-muted">SELECT ITEMS & QUANTITY</label>
+                        <div class="table-responsive border rounded" style="max-height: 350px;">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="bg-light sticky-top">
+                                    <tr>
+                                        <th class="py-2">Item Detail (Design/Color)</th>
+                                        <th class="py-2">Size</th>
+                                        <th class="py-2 text-center">Avl at Unit</th>
+                                        <th class="py-2" style="width: 120px;">Rework Qty</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reworkItemsList">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="font-weight-bold small text-muted">REMARKS / DEFECT DETAILS</label>
+                        <textarea id="reworkRemarks" class="form-control" rows="2"
+                            placeholder="Describe why these pieces are being sent back..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-light px-4" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger px-5 shadow-sm font-weight-bold"
+                        onclick="submitReworkAssignment()">
+                        <i class="fas fa-paper-plane mr-1"></i> ASSIGN REWORK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+        <script>
+            let ORDER_ID = {{ $order->id ?? 'null' }};
+            const SLIP_ID = {{ $slip->id }};
+            let ORDER_ITEMS = @json(isset($order_sets) ? $order_sets->flatMap(fn($s) => $s->details_data ?? $s->details ?? []) : []);
+            let ORDER_SETS = @json($order_sets ?? []);
+            const PACKED_DATA = @json($packed_quantities ?? []);
+            @php
+                $mappedPacking = null;
+                if ($packing) {
+                    $mappedPacking = [
+                        'id' => $packing->id,
+                        'slip_id' => $packing->slip_id,
+                        'status' => $packing->status,
+                        'cartons' => $packing->cartons ? $packing->cartons->map(function($c) {
+                            return [
+                                'id' => $c->id,
+                                'carton_no' => $c->carton_no,
+                                'boxes' => $c->boxes ? $c->boxes->map(function($b) {
+                                    $inv = $b->domesticInventory;
+                                    $fb = ($b->items && $b->items->count() > 0 && $b->items[0]->detail && $b->items[0]->detail->orderProductSet) ? $b->items[0]->detail->orderProductSet : null;
+                                    return [
+                                        'id' => $b->id,
+                                        'box_no' => $b->box_no,
+                                        'domestic_inventory' => [
+                                            'product' => ['design_number' => $inv->product->design_number ?? ($fb->product->design_number ?? 'N/A')],
+                                            'size_set' => ['name' => $inv->sizeSet->name ?? ($fb->size_measurement->name ?? 'N/A')],
+                                            'color' => ['name' => $inv->color->name ?? ($fb->colors->name ?? 'N/A')],
+                                            'pattern' => ['name' => $inv->pattern->name ?? ($fb->master_design_pattern->name ?? '-')],
+                                            'fitting' => ['name' => $inv->fitting->name ?? ($fb->master_product_fitting->name ?? '-')]
+                                        ],
+                                        'items' => $b->items ? $b->items->map(function($i) { return ['size_id' => $i->size_id, 'quantity' => $i->quantity]; })->toArray() : []
+                                    ];
+                                })->toArray() : []
+                            ];
+                        })->toArray() : [],
+                        'boxes' => $packing->boxes ? $packing->boxes->map(function($b) {
+                            $inv = $b->domesticInventory;
+                            $fb = ($b->items && $b->items->count() > 0 && $b->items[0]->detail && $b->items[0]->detail->orderProductSet) ? $b->items[0]->detail->orderProductSet : null;
+                            return [
+                                'id' => $b->id,
+                                'box_no' => $b->box_no,
+                                'domestic_inventory' => [
+                                    'product' => ['design_number' => $inv->product->design_number ?? ($fb->product->design_number ?? 'N/A')],
+                                    'size_set' => ['name' => $inv->sizeSet->name ?? ($fb->size_measurement->name ?? 'N/A')],
+                                    'color' => ['name' => $inv->color->name ?? ($fb->colors->name ?? 'N/A')],
+                                    'pattern' => ['name' => $inv->pattern->name ?? ($fb->master_design_pattern->name ?? '-')],
+                                    'fitting' => ['name' => $inv->fitting->name ?? ($fb->master_product_fitting->name ?? '-')]
+                                ],
+                                'items' => $b->items ? $b->items->map(function($i) { return ['size_id' => $i->size_id, 'quantity' => $i->quantity]; })->toArray() : []
+                            ];
+                        })->toArray() : []
+                    ];
+                }
+            @endphp
+            const EXISTING_PACKING = @json($mappedPacking);
+            const UNIT_AVAILABLE = @json($unit_available ?? []);
+            const CURRENT_UNIT_ID = {{ $slip->stage_master_unit_id ?? 'null' }};
+            const ALL_STOREROOMS = @json($storerooms);
+            let ORDER_TYPE = "{{ strtolower($order->order_type ?? '') }}";
+            const DOMESTIC_MASTERS = @json($domestic_masters ?? []);
+            let UNIT_LOTS = @json($unit_lots ?? []);
+            const ALLOWED_SIZE_SET_IDS = @json($order ? $order->OrderProductSets->pluck('set_size')->unique()->toArray() : []);
+
+            // --- CORPORATE MULTI-CARTON PLANNER ---
+            function openMultiCartonPlanner() {
+                if (!ORDER_ID) return;
+                renderPlannerInventory();
+
+                // Populate Range Design dropdown
+                let uniqueDesigns = [...new Set(ORDER_SETS.map(s => s.design_number))];
+                let $rangeDesign = $('#rangeDesign');
+                $rangeDesign.html('<option value="">Select</option>');
+                uniqueDesigns.forEach(d => {
+                    $rangeDesign.append(`<option value="${d}">${d}</option>`);
+                });
+
+                $('#plannerTableBody').empty();
+                $('#multiCartonPlannerModal').modal('show');
+            }
+
+            function updateRangeSizeSets() {
+                let designId = $('#rangeDesign').val();
+                let $sizeSet = $('#rangeSizeSet');
+                $sizeSet.html('<option value="">Select</option>');
+
+                if (designId) {
+                    let setsForDesign = ORDER_SETS.filter(s => s.design_number == designId);
+                    let uniqueSets = [];
+                    setsForDesign.forEach(s => {
+                        let sizeSetId = s.set_size;
+                        if (!uniqueSets.some(us => us.id == sizeSetId)) {
+                            let rawName = s.size_set_name || 'N/A';
+                            let pcs = s.no_of_pcs ? ` (${s.no_of_pcs} Pcs)` : '';
+                            uniqueSets.push({ id: sizeSetId, rawName: rawName, name: rawName + pcs });
+                        }
+                    });
+                    uniqueSets.forEach(us => {
+                        $sizeSet.append(`<option value="${us.id}" data-raw-name="${us.rawName}">${us.name}</option>`);
+                    });
+                }
+                updateRangeColors();
+            }
+
+            function updateRangeColors() {
+                let designId = $('#rangeDesign').val();
+                let sizeSetId = $('#rangeSizeSet').val();
+                let $color = $('#rangeColor');
+                $color.html('<option value="">Select</option>');
+
+                if (designId && sizeSetId) {
+                    let filtered = ORDER_SETS.filter(s => s.design_number == designId && s.set_size == sizeSetId);
+                    filtered.forEach(s => {
+                        $color.append(`<option value="${s.id}">${s.color_name || 'N/A'}</option>`);
+                    });
+                }
+                updateRangeTypeOptions();
+            }
+
+            function updateRangeTypeOptions() {
+                let setId = $('#rangeColor').val();
+                let type = $('#rangeType').val();
+                let $sizeContainer = $('#rangeSizeContainer');
+                let $sizeSelect = $('#rangeSize');
+                let $qtyInput = $('#rangeQty');
+
+                if (type === 'loose' && setId) {
+                    $sizeContainer.removeClass('d-none');
+                    $sizeSelect.html('<option value="">Select</option>');
+                    ORDER_ITEMS.forEach(item => {
+                        if (item.order_products_set_id == setId) {
+                            $sizeSelect.append(`<option value="${item.id}" data-max="${item.unit_available_qty}">${item.size} (Avl: ${item.unit_available_qty})</option>`);
+                        }
+                    });
+                    $qtyInput.removeAttr('max');
+                } else if (type === 'set' && setId) {
+                    $sizeContainer.addClass('d-none');
+                    let sid = parseInt(setId);
+                    let minAvailableSets = null;
+                    ORDER_ITEMS.forEach(item => {
+                        if (parseInt(item.order_products_set_id) === sid) {
+                            let itemAvl = parseInt(item.unit_available_qty);
+                            let perSet = parseFloat(item.qty_per_set) || 1;
+                            let canMake = Math.floor(itemAvl / perSet);
+                            if (minAvailableSets === null || canMake < minAvailableSets) minAvailableSets = canMake;
+                        }
+                    });
+                    let maxSets = minAvailableSets !== null ? minAvailableSets : 0;
+                    $qtyInput.attr('max', maxSets);
+                    if (parseInt($qtyInput.val()) > maxSets) $qtyInput.val(maxSets);
+                } else {
+                    $sizeContainer.addClass('d-none');
+                    $qtyInput.removeAttr('max');
+                }
+            }
+
+            function validateUnitPackagingStock(input) {
+                let maxAttr = input.getAttribute('max');
+                if (maxAttr === null || maxAttr === '') return;
+
+                let max = parseInt(maxAttr);
+                let val = parseInt(input.value);
+
+                if (!isNaN(max) && val > max) {
+                    alert("Quantity cannot exceed available stock (" + max + ")");
+                    input.value = max;
+                }
+                if (val < 0) input.value = 0;
+            }
+
+            $(document).on('change', '#rangeSize', function () {
+                let max = $(this).find(':selected').data('max');
+                if (max !== undefined) {
+                    $('#rangeQty').attr('max', max);
+                    if (parseInt($('#rangeQty').val()) > max) $('#rangeQty').val(max);
+                } else {
+                    $('#rangeQty').removeAttr('max');
+                }
+                updateRangeLiveRemainingQty();
+            });
+
+            $(document).on('change', '#rangeColor, #rangeType', function() {
+                updateRangeLiveRemainingQty();
+            });
+
+            function updateRangeLiveRemainingQty() {
+                let setId = $('#rangeColor').val();
+                let type = $('#rangeType').val();
+                let sizeId = $('#rangeSize').val();
+                let $indicator = $('#rangeLiveRemaining');
+
+                if (!setId) {
+                    $indicator.addClass('d-none').text('');
+                    return;
+                }
+
+                let initialAvailable = 0;
+
+                if (type === 'set' || type === 'domestic') {
+                    let sid = parseInt(setId);
+                    let minSets = null;
+                    ORDER_ITEMS.forEach(item => {
+                        if (parseInt(item.order_products_set_id) === sid) {
+                            let itemAvl = parseInt(item.unit_available_qty);
+                            let perSet = parseFloat(item.qty_per_set) || 1;
+                            let canMake = Math.floor(itemAvl / perSet);
+                            if (minSets === null || canMake < minSets) minSets = canMake;
+                        }
+                    });
+                    initialAvailable = minSets !== null ? minSets : 0;
+                } else if (type === 'loose' && sizeId) {
+                    let sid = parseInt(sizeId);
+                    ORDER_ITEMS.forEach(item => {
+                        if (parseInt(item.id) === sid) {
+                            initialAvailable = parseInt(item.unit_available_qty);
+                        }
+                    });
+                } else {
+                    $indicator.addClass('d-none').text('');
+                    return;
+                }
+
+                let plannedQty = 0;
+                $('#plannerTableBody .planner-row').each(function() {
+                    let rType = $(this).find('.planner-type').val();
+                    let rSetId = $(this).find('.planner-color').val();
+                    let rSizeId = $(this).find('.planner-content-id').val();
+                    let rQty = parseInt($(this).find('.planner-qty').val()) || 0;
+
+                    if ((type === 'set' || type === 'domestic') && (rType === 'set' || rType === 'domestic') && rSetId == setId) {
+                        plannedQty += rQty;
+                    } else if (type === 'loose' && rType === 'loose' && rSizeId == sizeId) {
+                        plannedQty += rQty;
+                    }
+                });
+
+                let remaining = initialAvailable - plannedQty;
+                let unitLabel = (type === 'set' || type === 'domestic') ? 'Boxes Left' : 'Pcs Left';
+                
+                $indicator.removeClass('d-none badge-warning badge-success badge-danger');
+                $indicator.text(remaining + ' ' + unitLabel);
+                
+                if (remaining <= 0) {
+                    $indicator.addClass('badge-danger');
+                } else {
+                    $indicator.addClass('badge-warning');
+                }
+            }
+
+        window.selectedGlobalLots = [];
+        function handleLotSelectionChange(clickedElement) {
+            if (clickedElement && $(clickedElement).is(':checked')) {
+                let newDesign = String($(clickedElement).data('design'));
+                let newSizeSet = String($(clickedElement).data('size-set'));
+
+                $('.planner-lot-checkbox:checked').each(function() {
+                    if (this !== clickedElement) {
+                        let d = String($(this).data('design'));
+                        let s = String($(this).data('size-set'));
+                        if (d !== newDesign || s !== newSizeSet) {
+                            $(this).prop('checked', false);
+                        }
+                    }
+                });
+            }
+
+            window.selectedGlobalLots = [];
+            let firstDesign = null;
+            let firstSizeSet = null;
+
+            $('.planner-lot-checkbox:checked').each(function() {
+                let d = String($(this).data('design'));
+                let s = String($(this).data('size-set'));
+                
+                if (!firstDesign) {
+                    firstDesign = d;
+                    firstSizeSet = s;
+                }
+                window.selectedGlobalLots.push($(this).val());
+            });
+
+            if (firstDesign) {
+                $('#rangeDesign').val(firstDesign).trigger('change');
+                setTimeout(() => {
+                    let sizeSetVal = "";
+                    $('#rangeSizeSet option').each(function() {
+                        let raw = $(this).data('raw-name');
+                        if (raw !== undefined && String(raw).trim() === String(firstSizeSet).trim()) {
+                            sizeSetVal = $(this).val();
+                        } else if (String($(this).text()).trim() === String(firstSizeSet).trim()) {
+                            sizeSetVal = $(this).val();
+                        }
+                    });
+                    if (sizeSetVal) {
+                        $('#rangeSizeSet').val(sizeSetVal).trigger('change');
+                    }
+                }, 200);
+            }
+
+            if (window.selectedGlobalLots.length > 0) {
+                let summaryLots = [];
+                let sumTotal = 0;
+                let sumRem = 0;
+                let noOfPcs = 1;
+
+                $('.planner-lot-checkbox:checked').each(function() {
+                    summaryLots.push($(this).val());
+                    sumTotal += parseFloat($(this).data('qty')) || 0;
+                    sumRem += parseFloat($(this).data('rem')) || 0;
+                });
+                
+                let sumPacked = sumTotal - sumRem;
+
+                if (firstDesign && firstSizeSet) {
+                    let setMatch = ORDER_SETS.find(s => s.design_number == firstDesign && (s.size_set_name == firstSizeSet || (s.size_measurement && s.size_measurement.name == firstSizeSet)));
+                    if (setMatch && setMatch.no_of_pcs) {
+                        noOfPcs = parseFloat(setMatch.no_of_pcs);
+                    }
+                }
+
+                let totalBoxes = Math.floor(sumTotal / noOfPcs);
+                let remBoxes = Math.floor(sumRem / noOfPcs);
+                let packedBoxes = Math.floor(sumPacked / noOfPcs);
+
+                $('#summaryLotNumbers').text(summaryLots.join(', '));
+                $('#summaryDesign').text(firstDesign ? 'Design: ' + firstDesign : '');
+                $('#summarySizeSet').text(firstSizeSet ? `Size: ${firstSizeSet} (${noOfPcs} Pcs)` : '');
+                $('#summaryTotalQty').text(`${sumTotal} Pcs (${totalBoxes} Boxes)`);
+                $('#summaryPacked').text(`${sumPacked} Pcs (${packedBoxes} Boxes)`);
+                $('#summaryAvailable').text(`${sumRem} Pcs (${remBoxes} Boxes)`);
+                
+                $('#selectedLotsSummary').removeClass('d-none');
+            } else {
+                $('#selectedLotsSummary').addClass('d-none');
+            }
+        }
+
+        function updateRangeRacks() {
+                let storeSelect = document.getElementById('rangeStore');
+                let rackSelect = document.getElementById('rangeRack');
+                let selectedOption = storeSelect.options[storeSelect.selectedIndex];
+                rackSelect.innerHTML = '<option value="">Select</option>';
+                if ($(selectedOption).val()) {
+                    let racks = $(selectedOption).data('racks') || [];
+                    racks.forEach(rack => {
+                        let option = document.createElement('option');
+                        option.value = rack.id;
+                        option.text = rack.name;
+                        rackSelect.add(option);
+                    });
+                }
+            }
+
+            function addRangeToPlanner() {
+                let start = parseInt($('#rangeStart').val());
+                let end = parseInt($('#rangeEnd').val());
+                let setId = $('#rangeColor').val();
+                let designId = $('#rangeDesign').val();
+                let type = $('#rangeType').val();
+                let sizeId = $('#rangeSize').val();
+                let qty = parseInt($('#rangeQty').val()) || 1;
+                let mrp = $('#rangeMrp').val();
+                let price = $('#rangePrice').val();
+                let barcode = $('#rangeBarcode').val();
+                let storeId = $('#rangeStore').val();
+                let rackId = $('#rangeRack').val();
+
+                if (!setId || isNaN(start) || isNaN(end) || !storeId || !rackId) {
+                    alert("Please fill all details including store and rack.");
+                    return;
+                }
+
+                for (let i = start; i <= end; i++) {
+                    addPlannerRow({
+                        carton_no: i,
+                        set_id: setId,
+                        design: designId,
+                        type: type,
+                        content_id: type === 'set' ? setId : sizeId,
+                        qty: qty,
+                        mrp: mrp,
+                        price: price,
+                        barcode: barcode,
+                        store_id: storeId,
+                        rack_id: rackId
+                    });
+                }
+            }
+
+            function renderPlannerInventory() {
+                let $list = $('#plannerInventoryList');
+                $list.html('');
+                if (typeof UNIT_LOTS !== 'undefined' && UNIT_LOTS.length > 0) {
+                    $list.append('<div class="mb-3"><strong class="small text-dark font-weight-bold">AVAILABLE LOTS</strong></div>');
+                    UNIT_LOTS.forEach(lot => {
+                        let isChecked = window.selectedGlobalLots && window.selectedGlobalLots.includes(lot.lot_no) ? 'checked' : '';
+                        $list.append(`<div class="mb-2 pl-2 border-left border-info d-flex align-items-start">
+                            <div class="mr-2 mt-1">
+                                <input type="checkbox" class="planner-lot-checkbox" value="${lot.lot_no}" data-design="${lot.design_number}" data-size-set="${lot.size_set_name}" data-qty="${lot.quantity}" data-rem="${lot.remaining_quantity}" onchange="handleLotSelectionChange(this)" ${isChecked}>
+                            </div>
+                            <div>
+                                <small class="d-block text-truncate font-weight-bold" title="${lot.design_number}">Lot ${lot.lot_no} (#${lot.design_number}) [${lot.size_set_name || 'N/A'}]</small>
+                                <span class="badge badge-light border text-info small">Qty: ${lot.quantity}</span>
+                                <span class="badge badge-light border text-muted small ml-1">Rem: ${lot.remaining_quantity}</span>
+                            </div>
+                        </div>`);
+                    });
+                }
+                if (ORDER_SETS && ORDER_SETS.length > 0) {
+                    $list.append('<div class="mb-3"><strong class="small text-dark font-weight-bold">SETS</strong></div>');
+                    ORDER_SETS.forEach((set, idx) => {
+                        let minSets = null;
+                        let hasDetails = false;
+                        ORDER_ITEMS.forEach(item => {
+                            if (item.order_products_set_id == set.id) {
+                                hasDetails = true;
+                                let avl = parseInt(item.unit_available_qty) || 0;
+                                let perSet = parseFloat(item.qty_per_set) || 1;
+                                let canMake = Math.floor(avl / perSet);
+                                if (minSets === null || canMake < minSets) {
+                                    minSets = canMake;
+                                }
+                            }
+                        });
+                        let setsCount = hasDetails ? (minSets ?? 0) : 0;
+                        $list.append(`<div class="mb-2 pl-2 border-left border-primary"><small class="d-block text-truncate font-weight-bold" title="${set.design_number}">${set.design_number} (${set.size_set_name || 'N/A'})</small><span class="badge badge-light border text-primary small">Full Boxes: ${setsCount}</span></div>`);
+                    });
+                }
+                $list.append('<div class="mt-3 mb-3"><strong class="small text-dark font-weight-bold">LOOSE</strong></div>');
+                ORDER_ITEMS.forEach(item => {
+                    let avl = parseInt(item.unit_available_qty) || 0;
+                    if (avl > 0) {
+                        $list.append(`<div class="mb-2 pl-2 border-left border-success"><small class="d-block text-truncate">${item.size} (${item.design_number})</small><span class="badge badge-light border text-success small">Avl: ${avl}</span></div>`);
+                    }
+                });
+            }
+
+            function addPlannerRow(data = null) {
+                let highest = 0;
+                $('#plannerTableBody .planner-carton-no').each(function () {
+                    let val = parseInt($(this).val()) || 0;
+                    if (val > highest) highest = val;
+                });
+                let nextCartonNo = data ? data.carton_no : (highest > 0 ? highest + 1 : '');
+
+                let uniqueDesigns = [...new Set(ORDER_SETS.map(s => s.design_number))];
+
+                let html = `
+                                            <tr class="planner-row">
+                                                <td><input type="text" class="form-control form-control-sm planner-carton-no font-weight-bold" value="${nextCartonNo}"></td>
+                                                <td>
+                                                    <select class="form-control form-control-sm planner-design" style="min-width: 100px;" onchange="updateRowSizeSets(this)">
+                                                        <option value="">Select</option>
+                                                        ${uniqueDesigns.map(d => `<option value="${d}" ${data && ORDER_SETS.find(s => s.id == data.set_id)?.design_number == d ? 'selected' : ''}>${d}</option>`).join('')}
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <select class="form-control form-control-sm planner-size-set" style="min-width: 100px;" onchange="updateRowColors(this)">
+                                                        <option value="">Select</option>
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <select class="form-control form-control-sm planner-color" style="min-width: 100px;" onchange="updateRowTypeOptions(this)">
+                                                        <option value="">Select</option>
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <select class="form-control form-control-sm planner-type mb-1" onchange="updateRowTypeOptions(this)">
+                                                        <option value="set" ${data && data.type == 'set' ? 'selected' : ''}>Box (Set)</option>
+                                                        <option value="loose" ${data && data.type == 'loose' ? 'selected' : ''}>Loose</option>
+                                                    </select>
+                                                    <select class="form-control form-control-sm planner-content-id d-none" style="min-width: 80px;"></select>
+                                                </td>
+                                                <td><input type="number" class="form-control form-control-sm planner-qty" value="${data ? data.qty : 1}" min="1"></td>
+                                                <td><input type="number" class="form-control form-control-sm planner-mrp" value="${data ? data.mrp : ''}" step="0.01"></td>
+                                                <td><input type="number" class="form-control form-control-sm planner-price" value="${data ? data.price : ''}" step="0.01"></td>
+                                                <td><input type="text" class="form-control form-control-sm planner-barcode" value="${data ? data.barcode : ''}"></td>
+                                                <td>
+                                                    <select class="form-control form-control-sm planner-storeroom mb-1" onchange="updatePlannerRackSelect(this)">
+                                                        <option value="">Store</option>
+                                                        ${ALL_STOREROOMS.map(s => `<option value="${s.id}" ${data && data.store_id == s.id ? 'selected' : ''} data-racks='${JSON.stringify(s.racks)}'>${s.name}</option>`).join('')}
+                                                    </select>
+                                                    <select class="form-control form-control-sm planner-rack" style="min-width: 80px;"><option value="">Rack</option></select>
+                                                </td>
+                                                <td class="text-right">
+                                                    <button type="button" class="btn btn-link text-danger btn-sm p-0" onclick="$(this).closest('tr').remove(); updateCartonPlanTotalQty();"><i class="fas fa-trash"></i></button>
+                                                </td>
+                                            </tr>`;
+
+                let $row = $(html);
+                $('#plannerTableBody').append($row);
+
+                // Initialize cascading dropdowns for the row
+                if (data) {
+                    let $designSelect = $row.find('.planner-design');
+                    let setId = data.set_id;
+                    let set = ORDER_SETS.find(s => s.id == setId);
+
+                    updateRowSizeSets($designSelect[0]);
+                    if (set) {
+                        $row.find('.planner-size-set').val(set.set_size);
+                        updateRowColors($row.find('.planner-size-set')[0]);
+                        $row.find('.planner-color').val(setId);
+
+                        updateRowTypeOptions($row.find('.planner-color')[0], data.content_id);
+                    }
+
+                    let $storeSelect = $row.find('.planner-storeroom');
+                    updatePlannerRackSelect($storeSelect[0]);
+                    $row.find('.planner-rack').val(data.rack_id);
+                }
+
+                updateCartonPlanTotalQty();
+            }
+
+            function updateCartonPlanTotalQty() {
+                let total = 0;
+                $('#plannerTableBody .planner-qty').each(function() {
+                    let qty = parseInt($(this).val()) || 0;
+                    let $row = $(this).closest('tr');
+                    let type = $row.find('.planner-type').val();
+                    let setId = $row.find('.planner-color').val();
+                    
+                    if (type === 'set' && setId) {
+                        let set = ORDER_SETS.find(s => s.id == setId);
+                        let pcsPerSet = set && set.no_of_pcs ? parseInt(set.no_of_pcs) : 7;
+                        total += (qty * pcsPerSet);
+                    } else {
+                        total += qty;
+                    }
+                });
+                $('#cartonPlanTotalQty').text('Total Pcs: ' + total);
+                updateRangeLiveRemainingQty();
+            }
+
+            $(document).on('keyup change', '.planner-qty', function() {
+                updateCartonPlanTotalQty();
+            });
+
+            function updateRowSizeSets(el) {
+                let $row = $(el).closest('tr');
+                let productId = $(el).val();
+                let $sizeSet = $row.find('.planner-size-set');
+                $sizeSet.html('<option value="">Select</option>');
+
+                if (productId) {
+                    let setsForDesign = ORDER_SETS.filter(s => s.design_number == productId);
+                    let uniqueSets = [];
+                    setsForDesign.forEach(s => {
+                        let sizeSetId = s.set_size;
+                        if (!uniqueSets.some(us => us.id == sizeSetId)) {
+                            uniqueSets.push({ id: sizeSetId, name: s.size_set_name || 'N/A' });
+                        }
+                    });
+                    uniqueSets.forEach(us => {
+                        $sizeSet.append(`<option value="${us.id}">${us.name}</option>`);
+                    });
+                }
+                updateRowColors($sizeSet[0]);
+            }
+
+            function updateRowColors(el) {
+                let $row = $(el).closest('tr');
+                let designId = $row.find('.planner-design').val();
+                let sizeSetId = $(el).val();
+                let $color = $row.find('.planner-color');
+                $color.html('<option value="">Select</option>');
+
+                if (designId && sizeSetId) {
+                    let filtered = ORDER_SETS.filter(s => s.design_number == designId && s.set_size == sizeSetId);
+                    filtered.forEach(s => {
+                        $color.append(`<option value="${s.id}">${s.color_name || 'N/A'}</option>`);
+                    });
+                }
+                updateRowTypeOptions($color[0]);
+            }
+
+            function updateRowTypeOptions(el, selectedContentId = null) {
+                let $row = $(el).closest('tr');
+                let setId = $row.find('.planner-color').val();
+                let type = $row.find('.planner-type').val();
+                let $contentSelect = $row.find('.planner-content-id');
+
+                $contentSelect.html('').addClass('d-none');
+
+                if (type === 'loose' && setId) {
+                    $contentSelect.removeClass('d-none');
+                    ORDER_ITEMS.forEach(item => {
+                        if (item.order_products_set_id == setId) {
+                            $contentSelect.append(`<option value="${item.id}" ${selectedContentId == item.id ? 'selected' : ''}>${item.size}</option>`);
+                        }
+                    });
+                } else if (type === 'set' && setId) {
+                    $contentSelect.append(`<option value="${setId}" selected>${setId}</option>`);
+                }
+                updateCartonPlanTotalQty();
+            }
+
+            function updatePlannerRackSelect(selectEl) {
+                let $row = $(selectEl).closest('tr');
+                let $rackSelect = $row.find('.planner-rack');
+                let $selectedOption = $(selectEl).find('option:selected');
+                $rackSelect.html('<option value="">Rack</option>');
+                if ($selectedOption.val()) {
+                    let racks = $selectedOption.data('racks') || [];
+                    racks.forEach(rack => {
+                        $rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
+                    });
+                }
+            }
+
+            function submitMultiCartonPlan() {
+                let plan = [];
+                let error = null;
+
+                $('#plannerTableBody tr').each(function () {
+                    let $row = $(this);
+                    let cartonNo = $row.find('.planner-carton-no').val();
+                    let setId = $row.find('.planner-color').val();
+                    let type = $row.find('.planner-type').val();
+                    let contentId = type === 'set' ? setId : $row.find('.planner-content-id').val();
+                    let qty = parseInt($row.find('.planner-qty').val()) || 0;
+                    let mrp = $row.find('.planner-mrp').val();
+                    let price = $row.find('.planner-price').val();
+                    let barcode = $row.find('.planner-barcode').val();
+                    let rackId = $row.find('.planner-rack').val();
+
+                    if (!cartonNo || !setId || !rackId || (type === 'loose' && !contentId) || qty <= 0) {
+                        error = "Incomplete data in one or more rows.";
+                        return false;
+                    }
+
+                    plan.push({
+                        carton_no: cartonNo,
+                        rack_id: rackId,
+                        type: type,
+                        content_id: contentId,
+                        quantity: qty,
+                        mrp: mrp,
+                        price: price,
+                        barcode: barcode,
+                        selected_lots: window.selectedGlobalLots || []
+                    });
+                });
+
+                if (error) { alert(error); return; }
+                if (plan.length === 0) { alert("Add at least one carton to the plan."); return; }
+
+                let $btn = $('button[onclick="submitMultiCartonPlan()"]');
+                let originalText = $btn.html();
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Processing...');
+
+                $.ajax({
+                    url: "{{ route('admin.packing.saveMultiCartonPlan') }}",
+                    type: 'POST',
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        slip_id: SLIP_ID,
+                        order_id: ORDER_ID,
+                        plan: plan
+                    },
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert("Error: " + response.message);
+                            $btn.prop('disabled', false).html(originalText);
+                        }
+                    },
+                    error: function () {
+                        alert("Something went wrong on the server.");
+                        $btn.prop('disabled', false).html(originalText);
+                    }
+                });
+            }
+
+
+
+            function deleteOutflow(id) {
+                if (!confirm("Are you sure you want to delete this outflow entry and revert pieces to stock?")) return;
+                let url = "{{ route('admin.packing.deleteOutflow', ':id') }}".replace(':id', id);
+                $.post(url, { _token: "{{ csrf_token() }}" }, function (res) {
+                    if (res.status === 'success') { location.reload(); }
+                    else { alert("Error: " + res.message); }
+                });
+            }
+
+            function deleteRework(id) {
+                if (!confirm("Are you sure you want to delete this rework entry and revert pieces to stock?")) return;
+                let url = "{{ route('admin.packing.deleteRework', ':id') }}".replace(':id', id);
+                $.post(url, { _token: "{{ csrf_token() }}" }, function (res) {
+                    if (res.status === 'success') { location.reload(); }
+                    else { alert("Error: " + res.message); }
+                });
+            }
+
+
+
+            // Structure State
+            let packedStructure = {
+                cartons: EXISTING_PACKING ? EXISTING_PACKING.cartons : [],
+                boxes: EXISTING_PACKING ? EXISTING_PACKING.boxes : [] // Unpacked boxes
+            };
+
+            function deleteDomesticBox(id, event) {
+                if (event) event.stopPropagation();
+                if (!confirm("Are you sure you want to delete this domestic box? This will restore pieces back to unit stock.")) return;
+
+                $.ajax({
+                    url: "{{ route('admin.packing.deleteDomesticBox', ':id') }}".replace(':id', id),
+                    type: 'POST',
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        slip_id: SLIP_ID
+                    },
+                    success: function (res) {
+                        if (res.status === 'success') {
+                            toastr.success(res.message);
+                            location.reload();
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    }
+                });
+            }
+
+            $(document).ready(function () {
+
+                // Fetch stages for Debit and Rework modals
+                $.get("{{ route('admin.packing.reworkStages') }}", function(res) {
+                    if (res.stages) {
+                        let options = '<option value="">Select Stage</option>';
+                        res.stages.forEach(s => {
+                            options += `<option value="${s.id}">${s.name}</option>`;
+                        });
+                        $('#debitStage').html(options);
+                        $('#reworkStage').html(options);
+                    }
+                });
+
+                if (ORDER_ID) {
+                    renderAvailableItems();
+                }
+                renderStructure();
+
+                // Initialize Select2 with modal focus support
+                $('.select2').each(function () {
+                    let modal = $(this).closest('.modal');
+                    $(this).select2({
+                        dropdownParent: modal.length ? modal : null
+                    });
+                });
+
+                // Handle Order Selection
+                $('#orderSelect').on('change', function () {
+                    let orderId = $(this).val();
+                    let orderType = $(this).find(':selected').data('type');
+
+                    if (orderId) {
+                        if (orderType !== 'domestic') {
+                            window.location.href = "{{ route('admin.packing.process', $slip->id) }}?order_id=" + orderId;
+                            return;
+                        }
+                        // If it's already domestic and we are on domestic page, just reload with new order_id
+                        window.location.href = "{{ route('admin.packing.processDomestic', $slip->id) }}?order_id=" + orderId;
+                    }
+                });
+
+                $('#carton_no').on('blur', function () {
+                    let cartonNo = $(this).val().trim();
+
+                    if (cartonNo === '') return;
+
+                    $.ajax({
+                        url: "{{ route('admin.packing.check-carton-no') }}",
+                        type: 'get',
+                        cache: false,
+                        data: {
+                            carton_no: cartonNo,
+                            _token: $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function (res) {
+                            // console.log
+                            if (res.exists) {
+                                alert('Carton number already exists!');
+                                $('#carton_no').val('').focus();
+                            }
+                        },
+                        error: function () {
+                            alert('Something went wrong while checking carton number');
+                        }
+                    });
+                });
+
+
+                $('#openFileBtn').on('click', function () {
+                    window.open('', '_blank');
+                });
+
+            });
+
+            function fetchOrderDetails(orderId) {
+                $('#available-items-list').html('<li class="list-group-item text-muted text-center">Loading items...</li>');
+
+                $.ajax({
+                    url: "{{ route('admin.packing.orderDeps', '') }}/" + orderId,
+                    type: 'GET',
+                    data: { unit_id: CURRENT_UNIT_ID, slip_id: SLIP_ID },
+                    cache: false,
+                    success: function (response) {
+                    if (response.status === 'success') {
+                        ORDER_ID = orderId;
+                        ORDER_ITEMS = response.items || [];
+                        ORDER_SETS = response.sets || [];
+                        ORDER_TYPE = (response.order && response.order.order_type) ? response.order.order_type.toLowerCase() : "";
+
+                        // Update UI mode
+                        if (ORDER_TYPE === 'domestic') {
+                            $('#btnDomesticPacking').removeClass('d-none').show();
+                            $('#btnCorporatePacking').hide();
+                        } else {
+                            $('#btnCorporatePacking').removeClass('d-none').show();
+                            $('#btnDomesticPacking').hide();
+                        }
+
+                        // Restore existing packing session if found
+                        if (response.packing) {
+                            packedStructure.cartons = response.packing.cartons || [];
+                            packedStructure.boxes = response.packing.boxes || [];
+                        } else {
+                            packedStructure.cartons = [];
+                            packedStructure.boxes = [];
+                        }
+
+                        renderAvailableItems();
+                        renderStructure();
+                        disableActions(false);
+                        if (response.order && response.order.corporate_order_file) {
+
+                            let fileUrl = response.order.corporate_order_file;
+
+                            // If backend sends only filename
+                            if (!fileUrl.startsWith('http')) {
+                                fileUrl = '/assets/products/' + fileUrl;
+                            }
+
+                            $('#fileLink').attr('href', fileUrl).removeClass('d-none').show();
+
+                        } else {
+                            // No file available
+                            $('#fileLink').hide();
+                        }
+                    } else {
+                        alert("Failed to load order details.");
+                    }
+                }
+                });
+            }
+
+            function disableActions(disable) {
+                $('#btnCreateCarton, #btnBulkPacking, #btnFinalize, #btnCreateFirstCarton').prop('disabled', disable);
+            }
+
+            function renderStructure() {
+                let html = '';
+
+                // Aggregating all boxes for domestic display (both unpacked and in cartons)
+                let allBoxes = [...(packedStructure.boxes || [])];
+                if (packedStructure.cartons && packedStructure.cartons.length > 0) {
+                    packedStructure.cartons.forEach(carton => {
+                        if (carton.boxes && carton.boxes.length > 0) {
+                            allBoxes.push(...carton.boxes);
+                        }
+                    });
+                }
+
+                // In Domestic Packing, we ONLY show Boxes directly. No Cartons.
+                if (allBoxes.length > 0) {
+                    html += `<div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+                                        <h5 class="mb-0 text-dark font-weight-bold" style="letter-spacing: 0.5px;"><i class="fas fa-boxes mr-2 text-primary"></i>PACKED DOMESTIC BOXES</h5>
+                                        <div class="d-flex align-items-center">
+                                             <a href="{{ route('admin.packing.downloadAllDomesticBarcode', $slip->id) }}" class="btn btn-primary btn-sm mr-3 shadow-sm" style="border-radius: 20px;">
+                                                <i class="fas fa-barcode mr-1"></i> Download Barcode
+                                             </a>
+                                             <span class="badge badge-primary badge-pill px-3 py-1">${allBoxes.length} Total Boxes</span>
+                                        </div>
+                                    </div>`;
+
+                    html += `<div class="row">`;
+                    allBoxes.forEach(box => {
+                        let inv = box.domestic_inventory;
+                        let fallback = (box.items && box.items.length > 0 && box.items[0].detail?.order_product_set) ? box.items[0].detail.order_product_set : null;
+
+                        let design = inv?.product?.design_number || fallback?.product?.design_number || 'N/A';
+                        let sizeSet = inv?.size_set?.name || fallback?.size_measurement?.name || 'N/A';
+                        let color = inv?.color?.name || fallback?.colors?.name || 'N/A';
+                        let pattern = inv?.pattern?.name || fallback?.master_design_pattern?.name || '-';
+                        let fitting = inv?.fitting?.name || fallback?.master_product_fitting?.name || '-';
+
+                        html += `
+                                <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                                    <div class="card border-0 shadow-sm h-100" style="border-radius: 10px; border-top: 3px solid #17a2b8 !important; background: #ffffff;">
+                                        <div class="card-body p-2">
+                                            <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                                                <span class="small font-weight-bold text-dark"><i class="fas fa-box text-info mr-1"></i>#${box.box_no}</span>
+                                                <button class="btn btn-link text-danger btn-xs p-0" onclick="deleteDomesticBox(${box.id}, event)" title="Delete Box">
+                                                    <i class="fas fa-trash-alt" style="font-size: 10px;"></i>
+                                                </button>
+                                            </div>
+
+                                            <div class="box-details-mini" style="font-size: 10.5px; line-height: 1.4;">
+                                                <div class="mb-1 d-flex justify-content-between">
+                                                    <span class="text-muted">Design:</span>
+                                                    <span class="font-weight-bold text-truncate ml-1" style="max-width: 80px;">${design}</span>
+                                                </div>
+                                                <div class="mb-1 d-flex justify-content-between">
+                                                    <span class="text-muted">Size Set:</span>
+                                                    <span class="text-dark ml-1">${sizeSet}</span>
+                                                </div>
+                                                <div class="mb-1 d-flex justify-content-between">
+                                                    <span class="text-muted">Color:</span>
+                                                    <span class="text-dark ml-1">${color}</span>
+                                                </div>
+                                                <div class="mb-1 d-flex justify-content-between border-top pt-1 mt-1">
+                                                    <span class="text-muted small">Patt/Fit:</span>
+                                                    <span class="text-muted small ml-1 text-truncate" style="max-width: 70px;">
+                                                        ${pattern}/${fitting}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>`;
+                    });
+                    html += `</div>`;
+                }
+
+                if (html === '') {
+                    html = `<div class="text-center py-5 border rounded bg-light" style="border-style: dashed !important; border-width: 2px !important;">
+                                        <img src="https://cdni.iconscout.com/illustration/premium/thumb/empty-box-4816154-4017688.png" style="width: 120px; opacity: 0.6;" class="mb-3">
+                                        <h6 class="text-muted">No boxes created yet for this domestic order</h6>
+                                        <button class="btn btn-info btn-sm mt-3 px-4 shadow-sm" style="border-radius: 20px;" onclick="openDomesticPackingModal()">
+                                            <i class="fas fa-box mr-1"></i> Start Domestic Packing
+                                        </button>
+                                    </div>`;
+                }
+
+                $('#packing-structure-area').html(html);
+            }
+
+            function renderAvailableItems() {
+                let html = '';
+                let modalSetsHtml = '';
+
+                // Render SETS in Left Panel
+                if (ORDER_SETS && ORDER_SETS.length > 0) {
+                    ORDER_SETS.forEach((set, index) => {
+
+                        let remainingSets = set.set_quantity - set.packed_sets;
+                        if (remainingSets < 0) remainingSets = 0;
+                        let minRemaining = null; // important
+                        ORDER_ITEMS.forEach(item => {
+
+                            if (item.order_products_set_id == set.id) {
+
+                                let packed = parseInt(item.packed_qty) || 0;
+                                let total = parseInt(item.total_quantity) || 0;
+                                let remaining = total - packed;
+                                // console.log(item.size);
+                                // console.log(remaining);
+                                if (remaining < 0) remaining = 0;
+
+                                if (minRemaining === null || remaining < minRemaining) {
+                                    minRemaining = remaining;
+                                }
+                            }
+                        });
+                        // console.log(minRemaining);
+                        // Final remaining sets = min remaining of all sizes
+                        remainingSets = minRemaining ?? 0;
+
+                        // Calculate COMPLETE sets available at unit based on the size with the LEAST stock
+                        let unitAvailableSets = null;
+                        let details = set.details_data || set.details;
+                        if (details) {
+                            details.forEach(item => {
+                                let avl = parseInt(item.unit_available_qty) || 0;
+                                let perSet = parseInt(item.qty_per_set) || 1; // Number of pieces of this size in one set
+                                let possibleFromThisSize = Math.floor(avl / perSet);
+                                if (unitAvailableSets === null || possibleFromThisSize < unitAvailableSets) {
+                                    unitAvailableSets = possibleFromThisSize;
+                                }
+                            });
+                        }
+                        unitAvailableSets = unitAvailableSets ?? 0;
+
+                        let colorName = set.color_name || 'N/A';
+                        let sizeSetTitle = set.size_set_name || '';
+
+                        html += `
+                                                        <li class="list-group-item bg-light border-bottom-0 pb-1">
+                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                <div>
+                                                                    <strong class="text-dark">#${set.design_number}</strong>
+                                                                    <span class="badge badge-light border text-muted small ml-1 px-2">${colorName}</span>
+                                                                    <small class="text-secondary ml-1">[${sizeSetTitle}]</small>
+                                                                </div>
+                                                                <div>
+                                                                    <span class="badge ${unitAvailableSets > 0 ? 'bg-primary' : 'bg-warning'} shadow-sm p-2" style="border-radius: 8px;">
+                                                                        <i class="fas fa-boxes mr-1"></i> Full Sets: ${unitAvailableSets}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mt-1 d-flex justify-content-between align-items-center">
+                                                                <small class="text-muted">Set #${index + 1} (Target: ${set.set_quantity})</small>
+                                                                <span class="badge bg-secondary-light border text-dark font-weight-normal small px-2">Total Rem: ${remainingSets}</span>
+                                                            </div>
+                                                        </li>`;
+
+                        // Details
+                        if (set.details_data || set.details) {
+                            let details = set.details_data || set.details;
+                            details.forEach(item => {
+                                let packed = parseInt(item.packed_qty) || 0;
+                                let total = parseInt(item.total_quantity);
+                                let remaining = total - packed;
+                                let availableAtUnit = parseInt(item.unit_available_qty) || 0;
+                                let badgeClass = availableAtUnit === 0 ? 'bg-warning' : 'bg-info';
+
+                                html += `<li class="list-group-item d-flex justify-content-between align-items-center ps-4 py-1">
+                                                                    <small class="text-dark">Size: <strong>${item.size}</strong> <span class="text-muted ml-1">(${set.design_number})</span></small>
+                                                                    <span>
+                                                                        <small class="text-muted mr-2">Total Rem: ${remaining}</small>
+                                                                        <span class="badge ${badgeClass} badge-pill px-2">At Unit: ${availableAtUnit}</span> 
+                                                                    </span>
+                                                                </li>`;
+                            });
+                        }
+                        // console.log(set);
+                        // Modal Option for this Set
+                        if (remainingSets > 0) {
+                            let compositionText = (set.details_data || set.details).map(d => `${d.size}(${d.qty_per_set} pcs)`).join(', ');
+                            modalSetsHtml += `
+                                                                                                                                                                                                                         <div class="card mb-2 p-2 border-left-primary">
+                                                                                                                                                                                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                                                                                                                                                                                <div>
+                                                                          <strong>Set #${index + 1}</strong> <small class="text-muted">(${compositionText}), <br>Barcode -${set.bar_code}, Design No - ${set.design_number}, Colour - ${set?.colors?.name ?? ''}, </small><br>
+                                                                          <small class="text-primary">Available at Unit: ${unitAvailableSets}</small> | <small class="text-muted">Total Rem: ${remainingSets}</small>
+                                                                     </div>
+                                                                     <div class="d-flex align-items-center">
+                                                                         <input type="number" class="form-control form-control-sm set-pack-qty mr-2" style="width: 70px;" placeholder="Qty" max="${unitAvailableSets}" min="0" data-set-id="${set.id}">
+                                                                         <span>Sets</span>
+                                                                     </div>
+                                                                                                                                                                                                                            </div>
+                                                                                                                                                                                                                         </div>`;
+                        }
+                    });
+                }
+                // Create relation map
+                const orderSetMap = ORDER_SETS.reduce((acc, set) => {
+                    acc[set.id] = set;
+                    return acc;
+                }, {});
+                // Fallback for flat items if no sets (Legacy)
+                if ((!ORDER_SETS || ORDER_SETS.length === 0) && ORDER_ITEMS.length > 0) {
+                    ORDER_ITEMS.forEach(item => {
+                        let packed = parseInt(item.packed_qty) || 0;
+                        let total = parseInt(item.total_quantity);
+                        let remaining = total - packed;
+                        let badgeClass = remaining === 0 ? 'bg-success' : 'bg-primary';
+
+                        html += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                                                                                                                                                                        Size: ${item.size}
+                                                                                                                                                                                                                        <span class="badge ${badgeClass} badge-pill">${remaining} / ${total}</span>
+                                                                                                                                                                                                                    </li>`;
+                    });
+                }
+
+                if (html === '') {
+                    html = '<li class="list-group-item text-muted text-center">No items found.</li>';
+                }
+
+                $('#available-items-list').html(html);
+                $('#cartonSetsContainer').html(modalSetsHtml || '<p class="text-muted text-center py-2">No full sets available to pack.</p>');
+
+                // Also populate loose items table (optional/fallback)
+                let modalHtml = '';
+
+                if (ORDER_ITEMS && ORDER_ITEMS.length > 0) {
+                    ORDER_ITEMS.forEach(item => {
+                        let packed = parseInt(item.packed_qty) || 0;
+                        let total = parseInt(item.total_quantity);
+                        let remaining = total - packed;
+                        if (remaining > 0) {
+                            const setData = orderSetMap[item.order_products_set_id];
+                            let availableAtUnit = parseInt(item.unit_available_qty) || 0;
+                            modalHtml += `<tr>
+                                                                                                                                                                                                                            <td>${setData ? setData.bar_code : '-'}</td>
+                                                                                                                                                                                                                            <td>${setData ? setData.design_number : '-'}</td>
+                                                                                                                                                                                                                            <td>${setData && setData.colors ? setData.colors.name : '-'}</td>
+                                                                                                                                                                                                                             <td>${item.size}</td>
+                                                                                                                                                                                                                             <td>
+                                                                                                                                                                                                                                <span class="text-primary">${availableAtUnit} at Unit</span><br>
+                                                                                                                                                                                                                                <small class="text-muted">${remaining} total rem</small>
+                                                                                                                                                                                                                             </td>
+                                                                                                                                                                                                                             <td><input type="number" class="form-control form-control-sm item-pack-qty" data-size-id="${item.id}" max="${availableAtUnit}" min="0"></td>
+                                                                                                                                                                                                                        </tr>`;
+                        }
+                    });
+                }
+                $('#cartonItemsTable').html(modalHtml);
+                if (!modalSetsHtml || modalSetsHtml.trim() === '') {
+                    switchPackTab('loose');
+                }
+            }
+
+            function openCreateBoxModal() {
+                if (!ORDER_ID) return;
+                $('#createBoxModal').modal('show');
+            }
+
+            function openCreateCartonModal() {
+                if (!ORDER_ID) return;
+
+                // Populate Unpacked Boxes list
+                let html = '';
+                if (packedStructure.boxes.length > 0) {
+                    packedStructure.boxes.forEach(box => {
+                        html += `
+                                                                                                                                                                                                                    <div class="form-check">
+                                                                                                                                                                                                                        <input class="form-check-input box-select" type="checkbox" value="${box.id}" id="boxCheck${box.id}">
+                                                                                                                                                                                                                        <label class="form-check-label" for="boxCheck${box.id}">
+                                                                                                                                                                                                                            Box #${box.box_no}
+                                                                                                                                                                                                                        </label>
+                                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                                    `;
+                    });
+                } else {
+                    html = '<p class="text-muted">No unpacked boxes available.</p>';
+                }
+                $('#unpackedBoxesList').html(html);
+
+                $('#unpackedBoxesList').html(html);
+
+                // Smart Tab Selection: If no sets, default to Loose Items
+                if (ORDER_SETS && ORDER_SETS.length > 0) {
+                    switchPackTab('sets');
+                } else {
+                    switchPackTab('loose');
+                }
+
+                $('#createCartonModal').modal('show');
+            }
+
+            function updateRackSelect() {
+                let storeSelect = document.getElementById('storeroomSelect');
+                let rackSelect = document.getElementById('rackSelect');
+                let selectedOption = storeSelect.options[storeSelect.selectedIndex];
+
+                rackSelect.innerHTML = '<option value="">Select Rack</option>';
+
+                if (selectedOption.value) {
+                    let racks = JSON.parse(selectedOption.getAttribute('data-racks'));
+                    racks.forEach(rack => {
+                        let option = document.createElement('option');
+                        option.value = rack.id;
+                        option.text = rack.name;
+                        rackSelect.add(option);
+                    });
+                }
+            }
+
+            function updateBulkRackSelect() {
+                let storeSelect = document.getElementById('bulkStoreroomSelect');
+                let rackSelect = document.getElementById('bulkRackSelect');
+                let selectedOption = storeSelect.options[storeSelect.selectedIndex];
+
+                rackSelect.innerHTML = '<option value="">Select Rack</option>';
+
+                if (selectedOption.value) {
+                    let racks = JSON.parse(selectedOption.getAttribute('data-racks'));
+                    racks.forEach(rack => {
+                        let option = document.createElement('option');
+                        option.value = rack.id;
+                        option.text = rack.name;
+                        rackSelect.add(option);
+                    });
+                }
+            }
+            let bulkMode = 'set';
+
+            function switchBulkMode(mode) {
+                bulkMode = mode;
+                $('#bulk_hidden_mode').val(mode);
+
+                if (mode === 'set' || mode === 'full_sets') {
+                    $('#bulkSetWiseStorageContainer').removeClass('d-none');
+                    $('#bulkGlobalStorageContainer').addClass('d-none');
+                    renderBulkSetWiseStorage(mode);
+                } else {
+                    $('#bulkSetWiseStorageContainer').addClass('d-none');
+                    $('#bulkGlobalStorageContainer').removeClass('d-none');
+                }
+
+                calculateBulkSummary();
+            }
+
+            function renderBulkSetWiseStorage(mode) {
+                let $list = $('#bulkSetWiseStorageList');
+                $list.empty();
+
+                let setsToShow = [];
+                if (mode === 'set') {
+                    let selectedSetId = $('#bulkSetSelect').val();
+                    if (selectedSetId) {
+                        let set = ORDER_SETS.find(s => s.id == selectedSetId);
+                        if (set) setsToShow.push(set);
+                    }
+                } else {
+                    setsToShow = ORDER_SETS;
+                }
+
+                if (setsToShow.length === 0) {
+                    $list.html('<p class="text-muted text-center mb-0">No sets to assign.</p>');
+                    return;
+                }
+
+                setsToShow.forEach((set, idx) => {
+                    let setIdx = ORDER_SETS.indexOf(set);
+                    let html = `
+                                                <div class="set-storage-row mb-3 p-2 border-bottom">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="font-weight-bold text-primary">Set #${setIdx + 1} (D# ${set.design_number})</span>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <select class="form-control form-control-sm storeroom-selector" 
+                                                                    data-set-id="${set.id}"
+                                                                    onchange="updateSetRackSelect(this)">
+                                                                <option value="">Select Warehouse</option>
+                                                                ${ALL_STOREROOMS.map(s => `<option value="${s.id}" data-racks='${JSON.stringify(s.racks)}'>${s.name}</option>`).join('')}
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <select class="form-control form-control-sm rack-selector" 
+                                                                    name="set_racks[${set.id}]" 
+                                                                    data-set-id="${set.id}">
+                                                                <option value="">Select Rack</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>`;
+                    $list.append(html);
+                });
+            }
+
+            function updateSetRackSelect(selectEl) {
+                let setId = $(selectEl).data('set-id');
+                let $rackSelect = $(`.rack-selector[data-set-id="${setId}"]`);
+                let $selectedOption = $(selectEl).find('option:selected');
+
+                $rackSelect.html('<option value="">Select Rack</option>');
+                if ($selectedOption.val()) {
+                    let racks = $selectedOption.data('racks') || [];
+                    racks.forEach(rack => {
+                        $rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
+                    });
+                }
+            }
+
+            function calculateBulkSummary() {
+                let boxesPerCarton = parseInt($('#bulk_boxes_per_carton').val()) || 1;
+                let totalBoxes = 0;
+
+                if (bulkMode === 'set') {
+                    let targetInput = $('#bulk_target_sets');
+                    totalBoxes = parseInt(targetInput.val()) || 0;
+
+                    // Use Total Pieces for availability display
+                    let selectedSetId = $('#bulkSetSelect').val();
+                    let avlPcs = 0;
+                    let piecesPerSet = 7;
+                    if (selectedSetId) {
+                        let set = ORDER_SETS.find(s => s.id == selectedSetId);
+                        piecesPerSet = set.no_of_pcs || 7;
+                        ORDER_ITEMS.forEach(item => {
+                            if (item.order_products_set_id == selectedSetId) {
+                                avlPcs += (parseInt(item.unit_available_qty) || 0);
+                            }
+                        });
+                    }
+                    let avl = Math.ceil(avlPcs / piecesPerSet);
+                    $('#bulk_avail_sets').text('At Unit: ' + avlPcs + ' Pcs');
+
+                    if (totalBoxes > avl) {
+                        totalBoxes = avl;
+                        targetInput.val(avl);
+                        targetInput.addClass('is-invalid');
+                        setTimeout(() => targetInput.removeClass('is-invalid'), 1000);
+                    } else {
+                        targetInput.removeClass('is-invalid');
+                    }
+                } else if (bulkMode === 'loose') {
+                    let targetInput = $('#bulk_target_pieces');
+                    let selectedPiece = ORDER_ITEMS.find(i => i.id == $('#bulkLooseItemSelect').val());
+                    let avl = 0;
+                    if (selectedPiece) {
+                        avl = parseInt(selectedPiece.unit_available_qty) || 0;
+                    }
+                    $('#bulk_avail_pieces').text('At Unit: ' + avl);
+                    targetInput.attr('max', avl);
+
+                    totalBoxes = parseInt(targetInput.val()) || 0;
+                    if (totalBoxes > avl) {
+                        totalBoxes = avl;
+                        targetInput.val(avl);
+                        targetInput.addClass('is-invalid');
+                        setTimeout(() => targetInput.removeClass('is-invalid'), 1000);
+                    } else {
+                        targetInput.removeClass('is-invalid');
+                    }
+                } else if (bulkMode === 'full_sets') {
+                    totalBoxes = 0;
+                    if (ORDER_SETS && ORDER_SETS.length > 0) {
+                        ORDER_SETS.forEach(set => {
+                            let minRemaining = null;
+                            ORDER_ITEMS.forEach(item => {
+                                if (item.order_products_set_id == set.id) {
+                                    let availableAtUnit = parseInt(item.unit_available_qty) || 0;
+                                    let qtyPerSet = parseInt(item.qty_per_set) || (item.total_quantity / (set.set_quantity || 1)) || 1;
+                                    let setsAtUnit = Math.floor(availableAtUnit / qtyPerSet);
+                                    if (minRemaining === null || setsAtUnit < minRemaining) minRemaining = setsAtUnit;
+                                }
+                            });
+                            totalBoxes += (minRemaining || 0);
+                        });
+                    }
+                } else if (bulkMode === 'full_loose') {
+                    totalBoxes = 0;
+                    if (ORDER_ITEMS && ORDER_ITEMS.length > 0) {
+                        ORDER_ITEMS.forEach(item => {
+                            let remaining = parseInt(item.unit_available_qty) || 0;
+                            if (remaining > 0) totalBoxes += remaining;
+                        });
+                    }
+                }
+
+                if (totalBoxes > 0) {
+                    let totalCartons = Math.ceil(totalBoxes / boxesPerCarton);
+                    let fullCartons = Math.floor(totalBoxes / boxesPerCarton);
+                    let lastCartonBoxes = totalBoxes % boxesPerCarton;
+
+                    let modeLabel = (bulkMode.includes('loose') ? "Boxes (1 pc each)" : "Boxes (Sets)");
+                    let text = `<strong>${totalBoxes}</strong> ${modeLabel} in <strong>${totalCartons}</strong> Cartons.`;
+                    if (lastCartonBoxes > 0 && totalCartons > 1) {
+                        let boxLabel = (lastCartonBoxes === 1 ? "box" : "boxes");
+                        text += ` <br><small class="opacity-75">(${fullCartons} Full Cartons + 1 Partial Carton with ${lastCartonBoxes} ${boxLabel})</small>`;
+                    }
+
+                    $('#bulkSummaryText').html(text);
+                    $('#bulk_hidden_total_boxes').val(totalBoxes);
+                    $('#bulkCalculationSummary').removeClass('d-none');
+                } else {
+                    $('#bulk_hidden_total_boxes').val(0);
+                    $('#bulkCalculationSummary').addClass('d-none');
+                }
+            }
+
+            function openBulkPackingModal() {
+                if (!ORDER_ID) return;
+
+                // Reset
+                bulkMode = 'set';
+                $('#bulk_hidden_mode').val('set');
+                $('#bulk-pack-tabs a[href="#bulk-tab-sets"]').tab('show');
+                $('#bulkPackingPreviewContainer').hide();
+                $('#bulkCalculationSummary').addClass('d-none');
+                $('#bulkPackingForm')[0].reset();
+
+                // Populate Sets
+                let setSelect = $('#bulkSetSelect');
+                setSelect.html('<option value="">-- Select Set --</option>');
+                if (ORDER_SETS && ORDER_SETS.length > 0) {
+                    ORDER_SETS.forEach((set, index) => {
+                        setSelect.append(`<option value="${set.id}">Set #${index + 1} (D# ${set.design_number}, ${set.colors ? set.colors.name : ''})</option>`);
+                    });
+                }
+
+                // Populate Loose Sizes
+                let looseSelect = $('#bulkLooseItemSelect');
+                looseSelect.html('<option value="">-- Select Item (Size) --</option>');
+                if (ORDER_ITEMS && ORDER_ITEMS.length > 0) {
+                    ORDER_ITEMS.forEach(item => {
+                        let remaining = (parseInt(item.total_quantity) - (parseInt(item.packed_qty) || 0));
+                        if (remaining > 0) {
+                            let design = item.design_number || 'N/A';
+                            let color = item.color_name || 'N/A';
+                            looseSelect.append(`<option value="${item.id}">${design} / ${color} / ${item.size} (${remaining} left)</option>`);
+                        }
+                    });
+                }
+
+                $('#bulkPackingModal').modal('show');
+            }
+
+            function populateBulkSizeSet() {
+                let selectedOption = $('#bulkSetSelect option:selected');
+                let setId = selectedOption.val();
+                let $preview = $('#bulkPackingPreview');
+                let $container = $('#bulkPackingPreviewContainer');
+                let $hiddenInput = $('#bulk_hidden_size_set');
+
+                if (!setId) {
+                    $container.hide();
+                    $hiddenInput.val('');
+                    calculateBulkSummary();
+                    return;
+                }
+
+                let set = ORDER_SETS.find(s => s.id == setId);
+                if (set) {
+                    let totalUnitAvlPcs = 0;
+                    ORDER_ITEMS.forEach(item => {
+                        if (item.order_products_set_id == set.id) {
+                            totalUnitAvlPcs += (parseInt(item.unit_available_qty) || 0);
+                        }
+                    });
+                    let avlCount = Math.ceil(totalUnitAvlPcs / (set.no_of_pcs || 7));
+                    $('#bulk_avail_sets').text('At Unit: ' + avlCount);
+                    $('#bulk_target_sets').attr('max', avlCount);
+
+                    let html = '<table class="table table-sm table-bordered mb-0 bg-white"><thead><tr class="bg-secondary text-white"><th>Size</th><th>Qty</th></tr></thead><tbody>';
+                    let pcsPerBox = 0;
+                    let sizeSetArr = [];
+                    let details = set.product_set_details || set.details_data || set.details || [];
+
+                    details.forEach(d => {
+                        let qty = parseInt(d.qty_per_set) || 0;
+                        if (qty > 0) {
+                            html += `<tr><td>${d.size}</td><td>${qty} pcs</td></tr>`;
+                            pcsPerBox += qty;
+                            for (let i = 0; i < qty; i++) {
+                                sizeSetArr.push(d.size);
+                            }
+                        }
+                    });
+
+                    html += `</tbody><tfoot><tr class="font-weight-bold"><td>Pieces/Box</td><td>${pcsPerBox} pcs</td></tr></tfoot></table>`;
+                    $preview.html(html);
+                    $hiddenInput.val(sizeSetArr.join(','));
+                    $container.show();
+
+                    if (bulkMode === 'set') {
+                        renderBulkSetWiseStorage('set');
+                    }
+                } else {
+                    $container.hide();
+                    $hiddenInput.val('');
+                    $('#bulk_avail_sets').text('Avl: 0');
+                }
+                calculateBulkSummary();
+            }
+
+            function submitBulkPacking() {
+                let formData = $('#bulkPackingForm').serializeArray();
+                let data = {
+                    _token: "{{ csrf_token() }}",
+                    slip_id: SLIP_ID,
+                    order_id: ORDER_ID,
+                    items: []
+                };
+                formData.forEach(item => data[item.name] = item.value);
+
+                if (bulkMode === 'set') {
+                    if (!data.set_id) { alert("Please select a set."); return; }
+                    let target = parseInt(data.target_sets) || 0;
+                    let avl = parseInt($('#bulk_avail_sets').text().replace('Avl: ', '')) || 0;
+                    // (Relaxed) Quantity Validation - Allow overages as requested by user
+                    if (target > avl) {
+                        console.warn("Quantity exceeds available (" + avl + "). Proceeding anyway.");
+                    }
+                    data.total_boxes = target;
+                } else if (bulkMode === 'loose') {
+                    let looseItemId = $('#bulkLooseItemSelect').val();
+                    let looseQty = parseInt($('#bulk_target_pieces').val()) || 0;
+                    let avl = parseInt($('#bulk_avail_pieces').text().replace('Avl: ', '')) || 0;
+                    if (!looseItemId) { alert("Please select an item."); return; }
+                    if (looseQty <= 0) { alert("Please enter pieces to pack."); return; }
+
+                    // (Relaxed) Quantity Validation
+                    if (looseQty > avl) {
+                        console.warn("Quantity exceeds available (" + avl + "). Proceeding anyway.");
+                    }
+
+                    data.items.push({
+                        detail_id: looseItemId,
+                        qty_per_box: 1
+                    });
+                    data.total_boxes = looseQty;
+                } else {
+                    if (!data.total_boxes || data.total_boxes <= 0) {
+                        alert("No remaining items to pack for the complete order.");
+                        return;
+                    }
+                }
+
+                if (!data.boxes_per_carton || data.boxes_per_carton <= 0) {
+                    alert("Please enter carton capacity.");
+                    return;
+                }
+
+                // Collection of set-wise racks
+                if (bulkMode === 'set' || bulkMode === 'full_sets') {
+                    data.set_racks = {};
+                    $('.rack-selector').each(function () {
+                        let setId = $(this).data('set-id');
+                        let rackId = $(this).val();
+                        if (setId) {
+                            data.set_racks[setId] = rackId;
+                        }
+                    });
+
+                    // Validation: ensure all visible rack selectors have a value
+                    let allSelected = true;
+                    $('.rack-selector').each(function () {
+                        if (!$(this).val()) {
+                            allSelected = false;
+                            return false;
+                        }
+                    });
+
+                    if (!allSelected) {
+                        alert("Please select a Rack for each set.");
+                        return;
+                    }
+                } else {
+                    if (!$('#bulkStoreroomSelect').val()) {
+                        alert("Please select a Store Room.");
+                        return;
+                    }
+                    if (!$('#bulkRackSelect').val()) {
+                        alert("Please select a Rack.");
+                        return;
+                    }
+                }
+
+                let $btn = $('button[onclick="submitBulkPacking()"]');
+                $btn.prop('disabled', true).text('Processing...');
+
+                $.ajax({
+                    url: "{{ route('admin.packing.bulk-save') }}",
+                    type: 'POST',
+                    data: data,
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            toastr.success(response.message);
+                            setTimeout(() => location.reload(), 800);
+                        } else {
+                            toastr.error(response.message);
+                            $btn.prop('disabled', false).text('Bulk Create');
+                        }
+                    },
+                    error: function () {
+                        toastr.error("Something went wrong on the server.");
+                        $btn.prop('disabled', false).text('Bulk Create');
+                    }
+                });
+            }
+
+
+            function submitCreateBox() {
+                let items = [];
+                $('#boxItemsTable .item-pack-qty').each(function () {
+                    let val = $(this).val();
+                    if (val > 0) {
+                        items.push({
+                            size_id: $(this).data('size-id'),
+                            quantity: val
+                        });
+                    }
+                });
+
+                if (items.length === 0) {
+                    alert("Select at least one item");
+                    return;
+                }
+
+                $.post("{{ route('admin.packing.saveBox') }}", {
+                    _token: "{{ csrf_token() }}",
+                    slip_id: SLIP_ID,
+                    order_id: ORDER_ID,
+                    box_no: $('input[name="box_no"]').val(),
+                    items: items
+                }, function (response) {
+                    if (response.status === 'success') {
+                        $('#createBoxModal').modal('hide');
+                        toastr.success("Box Created Successfully");
+                        setTimeout(() => location.reload(), 800);
+                    } else {
+                        toastr.error(response.message);
+                    }
+                });
+            }
+
+            function submitCreateCarton() {
+                // Validation
+                let cartonNo = $('input[name="carton_no"]').val();
+                let rackId = $('#rackSelect').val();
+                let storeId = $('#storeroomSelect').val();
+
+                if (!cartonNo || cartonNo.trim() === '') {
+                    alert("Please enter a Carton Number.");
+                    return;
+                }
+                if (!storeId) {
+                    alert("Please select a Store Room.");
+                    return;
+                }
+                if (!rackId) {
+                    alert("Please select a Rack.");
+                    return;
+                }
+
+                let sets = [];
+                let error = false;
+
+                $('#cartonSetsContainer .set-pack-qty').each(function () {
+                    let val = parseInt($(this).val()) || 0;
+                    let max = parseInt($(this).attr('max')) || 0;
+
+                    if (val > max) {
+                        console.warn(`Quantity exceeds available (${max}). Proceeding anyway.`);
+                    }
+
+                    if (val > 0) {
+                        sets.push({
+                            set_id: $(this).data('set-id'),
+                            quantity: val
+                        });
+                    }
+                });
+
+                if (error) return;
+
+                let items = [];
+                $('#cartonItemsTable .item-pack-qty').each(function () {
+                    let val = parseInt($(this).val()) || 0;
+                    let max = parseInt($(this).attr('max')) || 0;
+
+                    if (val > max) {
+                        console.warn(`Quantity exceeds available (${max}). Proceeding anyway.`);
+                    }
+                    // Ideally we need looking up size name for better error, but this stops the negative data.
+
+                    if (val > 0) {
+                        items.push({
+                            size_id: $(this).data('size-id'),
+                            quantity: val
+                        });
+                    }
+                });
+
+                if (error) return;
+
+                // Boxes
+                let boxIds = [];
+                $('.box-select:checked').each(function () {
+                    boxIds.push($(this).val());
+                });
+
+                if (items.length === 0 && boxIds.length === 0 && sets.length === 0) {
+                    alert("Select at least one set, box, or item to pack.");
+                    return;
+                }
+
+                $.post("{{ route('admin.packing.saveCarton') }}", {
+                    _token: "{{ csrf_token() }}",
+                    slip_id: SLIP_ID,
+                    order_id: ORDER_ID,
+                    carton_no: cartonNo,
+                    rack_id: rackId,
+                    sets: sets,
+                    items: items,
+                    box_ids: boxIds
+                }, function (response) {
+                    if (response.status === 'success') {
+                        $('#createCartonModal').modal('hide');
+                        toastr.success("Carton Created Successfully");
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        if (response.status === 'exists') {
+                            toastr.error(response.message);
+                        } else {
+                            toastr.error("Error: " + response.message);
+                        }
+                    }
+                });
+            }
+
+            function finalizePacking() {
+                $('#finalizeSessionModal').modal('show');
+            }
+
+            function submitFinalize() {
+                let completionDate = $('#packing_completion_date').val();
+                if (!completionDate) {
+                    alert('Please select completion date and time.');
+                    return;
+                }
+
+                if (!confirm('Are you sure you want to finalize this domestic packing session? No more changes allowed.')) return;
+
+                $.post("{{ route('admin.packing.finalize') }}", {
+                    _token: "{{ csrf_token() }}",
+                    packing_main_id: EXISTING_PACKING.id,
+                    completion_date: completionDate
+                }, function (response) {
+                    if (response.status === 'success') {
+                        // 1. Trigger Barcode Download (If Domestic)
+                        if (response.order_type === 'domestic' && response.packing_main_id) {
+                            let downloadUrl = "{{ route('admin.packing.downloadSlipBarcode', ':id') }}".replace(':id', response.packing_main_id);
+                            window.open(downloadUrl, '_blank');
+                        }
+
+                        setTimeout(function () {
+                            alert("Packing Finalized Successfully!");
+                            window.location.href = "{{ route('admin.uploaded-slips.index') }}";
+                        }, 500);
+                    } else {
+                        alert("Error: " + response.message);
+                    }
+                });
+            }
+
+            function switchPackTab(tab) {
+                if (tab === 'sets') {
+                    resetForm('#createCartonForm');
+                    $('#tab-content-sets').show();
+                    $('#tab-content-loose').hide();
+                    $('#btn-tab-sets').addClass('active btn-outline-primary').removeClass('btn-outline-secondary');
+                    $('#btn-tab-loose').removeClass('active btn-outline-primary').addClass('btn-outline-secondary');
+                } else {
+                    resetForm('#createCartonForm');
+                    $('#tab-content-sets').hide();
+                    $('#tab-content-loose').show();
+                    $('#btn-tab-loose').addClass('active btn-outline-primary').removeClass('btn-outline-secondary');
+                    $('#btn-tab-sets').removeClass('active btn-outline-primary').addClass('btn-outline-secondary');
+                }
+            }
+
+            function deleteCarton(cartonId, event) {
+                if (event) event.stopPropagation();
+
+                if (!confirm("Are you sure you want to delete this carton? All items will be released and returned to the previous production stage.")) {
+                    return;
+                }
+
+                $.ajax({
+                    url: "{{ route('admin.packing.deleteCarton') }}",
+                    type: 'POST',
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        carton_id: cartonId
+                    },
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            toastr.success("Carton deleted successfully.");
+                            setTimeout(() => location.reload(), 800);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("Something went wrong on the server.");
+                    }
+                });
+            }
+            function resolveSizeName(sizeId) {
+                // Try to find in ORDER_ITEMS
+                // Note: ORDER_ITEMS might have 'id' matching 'size_id' (which is detail_id).
+                // Or 'size' (the name).
+
+                // Strategy: iterate ORDER_ITEMS, check id.
+                let found = ORDER_ITEMS.find(i => i.id == sizeId);
+                if (found) return found.size;
+
+                // Fallback: Check if it's a simple size match (less likely with new ID system but possible legacy)
+                // If not found, return ID so we at least see something.
+                return 'ID: ' + sizeId;
+            }
+            // $(document).on('blur', '.set-pack-qty', function () {
+            //     let enteredQty = $(this).val();          // input value
+            //     let setId = $(this).data('set-id');      // data-set-id
+            //     let maxQty = $(this).attr('max');        // max attribute
+
+            //     alert(
+            //         'Set ID: ' + setId +
+            //         '\nEntered Qty: ' + enteredQty +
+            //         '\nMax Allowed: ' + maxQty
+            //     );
+            // });
+            // function checkSetValidation(setId, $setQty){
+            //     if(ORDER_ITEMS && ORDER_ITEMS.length > 0) {
+            //         ORDER_ITEMS.forEach(item => {
+            //             let packed = parseInt(item.packed_qty) || 0;
+            //             let total = parseInt(item.total_quantity);
+            //             let remaining = total - packed;
+            //             if(remaining > 0 && remaining <= $setQty ) {
+
+            //             }
+            //         });
+            //     }
+            // }
+
+
+            function resetForm(formSelector) {
+                let $form = $(formSelector);
+
+                if ($form.length) {
+                    $form[0].reset();                     // inputs clear
+                    $form.find('.is-invalid').removeClass('is-invalid');
+                    $form.find('.invalid-feedback').remove();
+                }
+            }
+
+            // --- REWORK MANAGEMENT ---
+            function openReworkModal() {
+                if (!ORDER_ID) {
+                    alert('Please select an order first.');
+                    return;
+                }
+
+                // Populate Lot Dropdown
+                let uniqueLots = [...new Set(UNIT_LOTS.map(l => l.lot_no))];
+                let $lotSelect = $('#rework_lot_no');
+                $lotSelect.html('<option value="">-- Select Lot --</option>');
+                uniqueLots.forEach(lot => {
+                    $lotSelect.append(`<option value="${lot}">Lot #${lot}</option>`);
+                });
+
+                $('#reworkItemsList').empty();
+                $('#reworkQueueList').empty(); // clear previous queues
+                reworkQueue = []; // reset array
+                $('#reworkModal').modal('show');
+            }
+
+            function renderreworkGrid() {
+                let selectedLot = $('#rework_lot_no').val();
+                let $list = $('#reworkItemsList');
+                $list.empty();
+                if (!selectedLot) return;
+
+                let validSetIds = UNIT_LOTS.filter(l => l.lot_no == selectedLot).map(l => Number(l.set_id));
+
+                if (ORDER_ITEMS && ORDER_ITEMS.length > 0) {
+                    ORDER_ITEMS.forEach(item => {
+                        if (!validSetIds.includes(Number(item.order_products_set_id))) return;
+
+                        let avl = item.unit_available_qty || 0;
+                        if (avl > 0) {
+                            $list.append(`
+                                        <tr>
+                                            <td class="align-middle">
+                                                <div class="font-weight-bold text-dark">${item.design_number || 'N/A'}</div>
+                                                <div class="small text-muted">${item.color_name || 'N/A'}</div>
+                                            </td>
+                                            <td class="align-middle">${item.size || 'N/A'}</td>
+                                            <td class="align-middle text-center">
+                                                <span class="badge badge-light border px-2">${avl} Pcs</span>
+                                            </td>
+                                            <td class="align-middle">
+                                                <input type="number" class="form-control form-control-sm rework-qty-input" 
+                                                       data-id="${item.id}" data-max="${avl}" 
+                                                       min="0" max="${avl}" value="0" oninput="validateUnitPackagingStock(this)">
+                                            </td>
+                                            
+                                        </tr>
+                                    `);
+                        }
+                    });
+                }
+
+                if ($list.is(':empty')) {
+                    $list.append('<tr><td colspan="4" class="text-center py-4 text-muted">No pieces available at this unit to mark for rework.</td></tr>');
+                }
+            }
+
+            function updateReworkUnits() {
+                let stageId = $('#reworkStage').val();
+                let $unitSelect = $('#reworkUnit');
+                $unitSelect.html('<option value="">Loading...</option>');
+
+                if (!stageId) {
+                    $unitSelect.html('<option value="">Select Unit</option>');
+                    return;
+                }
+
+                $.get("{{ route('admin.packing.stageUnits', '') }}/" + stageId, function (response) {
+                    if (response.status === 'success') {
+                        $unitSelect.html('<option value="">Select Unit</option>');
+                        response.units.forEach(u => {
+                            $unitSelect.append(`<option value="${u.id}">${u.name}</option>`);
+                        });
+                    } else {
+                        $unitSelect.html('<option value="">Error loading units</option>');
+                    }
+                });
+            }
+
+
+            let reworkQueue = [];
+            function addReworkToQueue() {
+                let lotNo = $('#rework_lot_no').val();
+                if (!lotNo) {
+                    alert("Please select a lot first.");
+                    return;
+                }
+                let added = false;
+                $('.rework-qty-input').each(function () {
+                    let qty = parseInt($(this).val()) || 0;
+                    if (qty > 0) {
+                        let detailId = $(this).data('id');
+                        let item = ORDER_ITEMS.find(i => i.id == detailId);
+                        reworkQueue.push({
+                            lot_no: lotNo,
+                            detail_id: detailId,
+                            qty: qty,
+                            design_number: item ? item.design_number : '',
+                            color_name: item ? item.color_name : '',
+                            size: item ? item.size : ''
+                        });
+                        $(this).val(0); // clear input
+                        added = true;
+                    }
+                });
+                if (!added) {
+                    alert("Please enter quantity for at least one item.");
+                } else {
+                    renderReworkQueue();
+                }
+            }
+            function renderReworkQueue() {
+                let $tbody = $('#reworkQueueList');
+                $tbody.empty();
+                reworkQueue.forEach((q, index) => {
+                    $tbody.append(`<tr>
+                        <td>${q.lot_no}</td>
+                        <td>${q.design_number} / ${q.color_name}</td>
+                        <td>${q.size}</td>
+                        <td>${q.qty}</td>
+                        <td><button type="button" class="btn btn-sm btn-danger py-0 px-1" onclick="removeReworkQueue(${index})"><i class="fas fa-trash"></i></button></td>
+                    </tr>`);
+                });
+            }
+            function removeReworkQueue(index) {
+                reworkQueue.splice(index, 1);
+                renderReworkQueue();
+            }
+
+            function submitReworkAssignment() {
+                let stageId = $('#reworkStage').val();
+                let unitId = $('#reworkUnit').val();
+                let remarks = $('#reworkRemarks').val();
+
+                if (!stageId || !unitId) {
+                    alert('Please select target stage and unit.');
+                    return;
+                }
+
+                let items = reworkQueue.map(q => ({ detail_id: q.detail_id, qty: q.qty, lot_no: q.lot_no }));
+
+                if (items.length === 0) {
+                    alert('Please enter quantity for at least one item.');
+                    return;
+                }
+
+                if (!confirm('Are you sure you want to reassign these pieces for rework? This will reduce the available quantity at this unit.')) {
+                    return;
+                }
+
+                $.ajax({
+                    url: "{{ route('admin.packing.reassignRework') }}",
+                    type: 'POST',
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        order_id: ORDER_ID,
+                        slip_id: SLIP_ID,
+                        to_stage_id: stageId,
+                        to_unit_id: unitId,
+                        items: items,
+                        remarks: remarks
+                    },
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('Something went wrong on the server.');
+                    }
+                });
+            }
+
+        </script>
+    @endpush
+    <!-- DEAD STOCK MODAL -->

@@ -167,9 +167,6 @@ class OrderDispatchService
         $cartons_data = PackingCarton::with([
             'items.detail.orderProductSet.colors',
             'items.detail.orderProductSet.size_measurement',
-            'items.box.domesticInventory.product',
-            'items.box.domesticInventory.color',
-            'items.box.domesticInventory.sizeSet',
             'rack.storeroom'
         ])->whereIn('id', $dispatch_carton_ids)->get()->toArray();
 
@@ -236,7 +233,6 @@ class OrderDispatchService
                     }
                     $consolidatedGroupedItems[$groupId]['total_qty'] += $qty;
                     $consolidatedGroupedItems[$groupId]['carton_ids'][] = $carton['id'];
-                    $consolidatedGroupedItems[$groupId]['box_ids'][] = $item['packing_box_id'];
                 }
             }
 
@@ -251,9 +247,11 @@ class OrderDispatchService
             ];
         }
 
-        // Box count correction for consolidated items
+        // Carton count correction for consolidated items
         foreach ($consolidatedGroupedItems as $k => $group) {
-             $consolidatedGroupedItems[$k]['box_count'] = count(array_unique($group['box_ids']));
+             $consolidatedGroupedItems[$k]['carton_count'] = count(array_unique($group['carton_ids']));
+             // Keep box_count for backward compatibility if UI uses it
+             $consolidatedGroupedItems[$k]['box_count'] = count(array_unique($group['carton_ids']));
         }
 
         $order_dispatch_data['total_cartons'] = count($cartons_data);
@@ -292,16 +290,9 @@ class OrderDispatchService
             'dispatchCartons' => function ($q) {
                 $q->where('packing_cartons.status', 1);
                 // Filter to only include cartons that contain corporate boxes
-                $q->whereHas('boxes', function($bq) {
-                    $bq->whereNotIn('box_type', ['domestic', 'manual', 'corporate_domestic']);
-                });
             },
-            'dispatchCartons.boxes',
             'dispatchCartons.items.detail.orderProductSet.colors',
             'dispatchCartons.items.detail.orderProductSet.size_measurement', 
-            'dispatchCartons.items.box.domesticInventory.product',
-            'dispatchCartons.items.box.domesticInventory.color',
-            'dispatchCartons.items.box.domesticInventory.sizeSet',
         ])
             ->where('sku', $search_order_no)
             ->whereIn('status', [1, 2])
@@ -371,7 +362,7 @@ class OrderDispatchService
                 $cartons[] = [
                     'id' => $value->id,
                     'carton_no' => $value->carton_no,
-                    'boxes_in_carton' => $value->boxes->count(),
+                    'boxes_in_carton' => 0,
                     'contents' => implode(', ', $contents_text),
                     'pcs_in_carton' => $pcs_in_carton,
                     'sets' => array_values($sets_list), 
@@ -398,10 +389,7 @@ class OrderDispatchService
         $data = OrderMain::where('master_customer_id', $customer_id)
             ->whereIn('status', [1, 2])
             ->whereHas('dispatchCartons', function ($q) {
-                $q->where('packing_cartons.status', 1)
-                    ->whereHas('boxes', function ($bq) {
-                        $bq->whereNotIn('box_type', ['domestic', 'manual', 'corporate_domestic']);
-                    });
+                $q->where('packing_cartons.status', 1);
             })
             ->orderBy('id', 'DESC')
             ->get(['id', 'sku as order_no']);
@@ -414,10 +402,7 @@ class OrderDispatchService
     {
         $data = OrderMain::whereIn('status', [1, 2])
             ->whereHas('dispatchCartons', function ($q) {
-                $q->where('packing_cartons.status', 1)
-                    ->whereHas('boxes', function ($bq) {
-                        $bq->whereNotIn('box_type', ['domestic', 'manual', 'corporate_domestic']);
-                    });
+                $q->where('packing_cartons.status', 1);
             })
             ->orderBy('id', 'DESC')
             ->get(['id', 'sku as order_no']);

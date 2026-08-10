@@ -57,10 +57,6 @@ class DomesticInventory extends Model
         return $this->belongsTo(PackingCarton::class, 'packing_carton_id');
     }
 
-    public function box()
-    {
-        return $this->belongsTo(PackingBox::class, 'packing_box_id');
-    }
 
     public function rack()
     {

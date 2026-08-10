@@ -1,0 +1,342 @@
+public function saveBox($data)
+    {
+        DB::beginTransaction();
+        try {
+            $main = $this->getOrCreatePackingMain($data['slip_id'], $data['order_id']);
+
+            $datePrefix = date('ymd');
+            $box_no = $data['box_no'] ?? '';
+
+            // If user provides a custom manual name, we check it, but if empty, we auto-generate
+            if (empty($box_no)) {
+                $latestBox = PackingBox::where('box_no', 'LIKE', "BX-$datePrefix-%")
+                    ->orderBy('id', 'desc')
+                    ->first();
+                $nextSeq = 1;
+                if ($latestBox) {
+                    $parts = explode('-', $latestBox->box_no);
+                    $nextSeq = (int) end($parts) + 1;
+                }
+                $box_no = "BX-$datePrefix-" . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
+            }
+
+            $box = PackingBox::create([
+                'packing_main_id' => $main->id,
+                'box_no' => $box_no,
+                'box_type' => 'mixed'
+            ]);
+
+            if (isset($data['items']) && is_array($data['items'])) {
+                $slip_details = ProductionSlipDigitization::find($data['slip_id']);
+                $unit_available = $this->getAvailableQuantitiesAtUnit($data['order_id'], $slip_details->stage_master_unit_id);
+
+                foreach ($data['items'] as $item) {
+                    PackingItem::create([
+                        'packing_main_id' => $main->id,
+                        'packing_box_id' => $box->id,
+                        'size_id' => $item['size_id'],
+                        'quantity' => $item['quantity']
+                    ]);
+
+                    // (Relaxed) Quantity Validation - Allow overages as requested by user
+                    /* if (($unit_available[$item['size_id']] ?? 0) < $item['quantity']) {
+                        throw new \Exception("Insufficient quantity available at unit for size ID " . $item['size_id']);
+                    } */
+                    $unit_available[$item['size_id']] -= $item['quantity'];
+                }
+            }
+
+
+
+            DB::commit();
+            return ['status' => 'success', 'box' => $box];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function finalizePacking($main_id, $completion_date = null)
+    {
+        DB::beginTransaction();
+        try {
+            $packing_main = PackingMain::with('cartons.items', 'order')->find($main_id);
+            if (!$packing_main) {
+                throw new \Exception("Packing record not found.");
+            }
+
+            $order = $packing_main->order;
+            $is_domestic = $order && strtolower($order->order_type) == 'domestic';
+
+            // Mark Packing Main as Finalized (1)
+            $packing_main->update(['status' => 1]);
+
+            // Update Stage Timing for all lots in this slip
+            if ($completion_date) {
+                $completion_datetime = date('Y-m-d H:i:s', strtotime($completion_date));
+                
+                // Robust lot identification
+                $lotNumbers = \App\Models\OrderLot::where('production_slip_digitization_id', $packing_main->slip_id)
+                    ->pluck('lot_no')
+                    ->toArray();
+
+                // Fallback 1: Use the lot_no directly from the slip record
+                $slip = \App\Models\ProductionSlipDigitization::find($packing_main->slip_id);
+                if ($slip && $slip->lot_no) {
+                    $slipLots = explode(',', $slip->lot_no);
+                    $lotNumbers = array_unique(array_merge($lotNumbers, array_map('trim', $slipLots)));
+                }
+
+                // Fallback 2: If still empty, check all lots for the order
+                if (empty($lotNumbers) && $packing_main->order_main_id) {
+                    $lotNumbers = \App\Models\OrderLot::where('order_main_id', $packing_main->order_main_id)
+                        ->pluck('lot_no')
+                        ->toArray();
+                }
+
+                foreach ($lotNumbers as $lotNo) {
+                    if (empty($lotNo)) continue;
+                    
+                    // We update complete_date. If start/end date are missing, we set them to now as well.
+                    $timing = \App\Models\OrderLotStageTiming::where('lot_no', $lotNo)
+                        ->where('master_stage_id', 11) // Packing
+                        ->first();
+                    
+                    $timingData = ['complete_date' => $completion_datetime];
+                    if ($timing && !$timing->start_date) {
+                        $timingData['start_date'] = $completion_datetime;
+                    }
+                    if ($timing && !$timing->end_date) {
+                        $timingData['end_date'] = $completion_datetime;
+                    }
+
+                    \App\Models\OrderLotStageTiming::updateOrCreate(
+                        ['lot_no' => $lotNo, 'master_stage_id' => 11],
+                        $timingData
+                    );
+                }
+            }
+
+            // Determine status for cartons
+            $carton_status = $is_domestic ? 3 : 1; // 3=Inventory, 1=Ready for Dispatch
+
+            // Update all cartons in this session
+            PackingCarton::where('packing_main_id', $main_id)->update(['status' => $carton_status]);
+
+            // If Domestic, Move to Inventory table (Consolidated)
+            // Domestic inventory creation is already handled during box creation (saveDomesticBulk & saveMultiCartonPlan)
+
+            ProductionSlipDigitization::where('id', $packing_main->slip_id)->update([
+                'status' => 1
+            ]);
+
+            DB::commit();
+            return [
+                'status' => 'success', 
+                'message' => 'Packing finalized successfully.',
+                'order_type' => $order ? strtolower(trim($order->order_type)) : '',
+                'packing_main_id' => $packing_main->id
+            ];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function getPackedQuantitiesForOrder($order_id)
+    {
+        return PackingItem::join('packing_mains', 'packing_items.packing_main_id', '=', 'packing_mains.id')
+            ->where('packing_mains.order_main_id', $order_id)
+            ->select('packing_items.size_id', DB::raw('SUM(packing_items.quantity) as total_packed'))
+            ->groupBy('packing_items.size_id')
+            ->pluck('total_packed', 'packing_items.size_id')
+            ->toArray();
+    }
+    public function createAdHocSet($data)
+    {
+        DB::beginTransaction();
+        try {
+            // Check if Order exists
+            $order = OrderMain::findOrFail($data['order_id']);
+
+            // Create OrderProductSet
+            // We need to fill required fields. Some might be null or dummy for ad-hoc sets.
+            // Assuming 0 for price related fields if not critical for packing.
+            $set = \App\Models\OrderProductSet::create([
+                'order_main_id' => $order->id,
+                'order_id' => $order->id, // Legacy field?
+                'set_quantity' => $data['quantity'], // Total Sets requested
+                'remark' => 'Created via Ad-Hoc Packing',
+                'status' => 1,
+                // Required fields based on Model fillable (assuming nullable in DB or defaults)
+                // If strict mode is on, we might fail if we don't provide everything.
+                // Assuming basic fields are enough for now based on context.
+                'company_id' => $order->company_id ?? 1,
+            ]);
+
+            // Create Details
+            if (isset($data['items']) && is_array($data['items'])) {
+                foreach ($data['items'] as $item) {
+                    $qty_per_set = $item['qty_per_set'];
+                    $total_qty = $data['quantity'] * $qty_per_set;
+
+                    \App\Models\OrderProductSetDetail::create([
+                        'order_products_set_id' => $set->id,
+                        'size' => $item['size_name'], // String name (e.g., "22")
+                        'order_product_id' => $item['product_id'] ?? null, // Link to original product if known
+                        'total_quantity' => $total_qty,
+                        'remaining_quantity' => $total_qty, // Initially all remaining
+                        'color_id' => $item['color_id'] ?? null
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return ['status' => 'success', 'set' => $set];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+        public function deleteCarton($carton_id)
+    {
+        \DB::beginTransaction();
+        try {
+            $carton = \App\Models\PackingCarton::with(['items', 'main'])->findOrFail($carton_id);
+
+            // Safety Check: Cannot delete finalized cartons
+            if ($carton->main && $carton->main->status == 1) {
+                throw new \Exception("Cannot delete carton from a finalized session.");
+            }
+
+            // Reverse Stock Deductions EXACTLY back to the original lots
+            $slip_id = $carton->main->slip_id;
+            $order_id = $carton->main->order_main_id;
+            $slip_details = \App\Models\ProductionSlipDigitization::find($slip_id);
+
+            if (!$slip_details) {
+                throw new \Exception("Production slip details not found.");
+            }
+
+            $carton_items = \App\Models\PackingItem::where('packing_carton_id', $carton->id)->get();
+            
+            foreach ($carton_items as $item) {
+                if ($item->quantity <= 0) continue;
+                
+                if ($item->lot_no) {
+                    $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
+                        ->where(function($q) use ($slip_details) {
+                            $q->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                              ->orWhereNull('sub_stage_id_to');
+                        })
+                        ->where('lot_no', $item->lot_no)
+                        ->orderBy('id', 'desc')
+                        ->get();
+
+                    $remaining_to_return = $item->quantity;
+                    foreach ($transactions as $transaction) {
+                        if ($remaining_to_return <= 0) break;
+                        $space_available = $transaction->quantity - $transaction->remaining_quantity;
+                        if ($space_available > 0) {
+                            $to_add = min($remaining_to_return, $space_available);
+                            $transaction->remaining_quantity += $to_add;
+                            $transaction->save();
+                            $remaining_to_return -= $to_add;
+                        }
+                    }
+                } else {
+                    // Fallback to legacy behavior if lot_no is missing
+                    $detail = \App\Models\OrderProductSetDetail::find($item->size_id);
+                    $lotsToReturn = \App\Models\OrderLot::where('order_products_set_id', $detail->order_products_set_id ?? 0)->pluck('lot_no')->toArray();
+                    if (empty($lotsToReturn)) {
+                        $lotsToReturn = \App\Models\OrderLot::where('order_main_id', $order_id)->pluck('lot_no')->toArray();
+                    }
+                    $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
+                        ->where(function($q) use ($slip_details) {
+                            $q->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                              ->orWhereNull('sub_stage_id_to');
+                        })
+                        ->whereIn('lot_no', $lotsToReturn)
+                        ->orderBy('id', 'desc')
+                        ->get();
+                    $remaining_to_return = $item->quantity;
+                    foreach ($transactions as $transaction) {
+                        if ($remaining_to_return <= 0) break;
+                        $space_available = $transaction->quantity - $transaction->remaining_quantity;
+                        if ($space_available > 0) {
+                            $to_add = min($remaining_to_return, $space_available);
+                            $transaction->remaining_quantity += $to_add;
+                            $transaction->save();
+                            $remaining_to_return -= $to_add;
+                        }
+                    }
+                }
+            }
+            
+            \App\Models\PackingItem::where('packing_carton_id', $carton->id)->delete();
+            $carton->delete();
+
+            \DB::commit();
+            return ['status' => 'success', 'message' => 'Carton and associated items deleted successfully. Inventory restored.'];
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+        public function reassignRework($data)
+    {
+        DB::beginTransaction();
+        try {
+            $orderMainId = $data['order_id'];
+            $slipId = $data['slip_id'];
+            $toStageId = $data['to_stage_id'];
+            $toUnitId = $data['to_unit_id'];
+            $items = $data['items']; // [{detail_id, qty, lot_no}]
+            $remarks = $data['remarks'] ?? 'Defect return for rework';
+
+            // 1. Group by lot_no
+            $itemsByLot = collect($items)->groupBy('lot_no');
+            
+            foreach ($itemsByLot as $lotNo => $lotItems) {
+                // Calculate total Pcs for this lot
+                $totalPcs = $lotItems->sum('qty');
+                
+                if ($totalPcs <= 0) continue;
+
+                // 2. Identify the source Lot Number
+                $sourceTx = OrderStageTransaction::where('to_stage_id', 11) // Packing
+                    ->where(function($q) use ($slipMain) {
+                        $q->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
+                          ->orWhereNull('sub_stage_id_to');
+                    })
+                    ->where('lot_no', $lotNo)
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                if (!$sourceTx) {
+                    throw new \Exception("No incoming production pieces found to return for Lot $lotNo.");
+                }
+
+                // 3. Create NEW OrderStageTransaction for REWORK
+                $newTx = OrderStageTransaction::create([
+                    'company_id' => $sourceTx->company_id,
+                    'sub_company_id' => $sourceTx->sub_company_id,
+                    'project_id' => $sourceTx->project_id,
+                    'sku' => $sourceTx->sku,
+                    'order_product_id' => $sourceTx->order_product_id,
+                    'from_stage_id' => 11, // From Packing
+                    'to_stage_id' => $toStageId,
+                    'sub_stage_id' => $slipMain->stage_master_unit_id,
+                    'sub_stage_id_to' => $toUnitId,
+                    'lot_no' => $lotNo,
+                    'quantity' => $totalPcs,
+                    'remaining_quantity' => $totalPcs,
+                    'remarks' => $remarks,
+                    'production_datetime' => now(),
+                    'status' => 1,
+                    'type' => 'rework' // KEY: mark as rework
+                ]);
+
+                // 4. Create Transaction Details
+      

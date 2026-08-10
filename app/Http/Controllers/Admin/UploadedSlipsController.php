@@ -242,7 +242,7 @@ class UploadedSlipsController extends Controller
         // Fetch packing details and outflows if applicable
         if ($slip->from_stage_id == 11) {
             $data['packing_details'] = \App\Models\PackingMain::where('slip_id', $slip->id)
-                ->with(['order', 'cartons.boxes.items.detail', 'cartons.items.detail'])
+                ->with(['order', 'cartons.items.detail'])
                 ->get();
 
             $data['outflows'] = \App\Models\ProductionOutflowInventory::where('slip_id', $slip->id)
@@ -255,7 +255,7 @@ class UploadedSlipsController extends Controller
                 ->get();
         } else {
             $data['packing_details'] = \App\Models\PackingMain::where('slip_id', $slip->id)
-                ->with(['order', 'cartons.boxes.items.detail', 'cartons.items.detail'])
+                ->with(['order', 'cartons.items.detail'])
                 ->get();
             $data['outflows'] = collect();
             $data['reworks'] = collect();

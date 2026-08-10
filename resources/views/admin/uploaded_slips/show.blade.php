@@ -647,62 +647,37 @@
                                                         <span class="text-muted small">ID: {{ $carton->id }}</span>
                                                     </div>
                                                     <div class="text-end">
-                                                        <div class="h4 mb-0 fw-bold text-primary">{{ $carton->boxes->count() }}</div>
-                                                        <div class="text-uppercase text-muted fw-bold" style="font-size: 10px; letter-spacing: 1px;">Total Boxes</div>
+                                                        <div class="h4 mb-0 fw-bold text-primary">{{ $carton->items->sum('quantity') }}</div>
+                                                        <div class="text-uppercase text-muted fw-bold" style="font-size: 10px; letter-spacing: 1px;">Total Items</div>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="card-body pt-2">
                                                 @php
-                                                    $boxed_summary = []; $loose_summary = [];
-                                                    $total_boxes = $carton->boxes->count();
+                                                    $summary = [];
                                                     foreach ($carton->items as $item) {
                                                         $name = $item->detail ? $item->detail->size : ($item->size ? $item->size->name : 'ID:' . $item->size_id);
-                                                        if($item->packing_box_id) {
-                                                            $boxed_summary[$name] = ($boxed_summary[$name] ?? 0) + $item->quantity;
-                                                        } else {
-                                                            $loose_summary[$name] = ($loose_summary[$name] ?? 0) + $item->quantity;
-                                                        }
+                                                        $summary[$name] = ($summary[$name] ?? 0) + $item->quantity;
                                                     }
                                                 @endphp
 
-                                                <!-- 1. Boxed Items Summary (Divided by Boxes) -->
-                                                @if(count($boxed_summary) > 0 && $total_boxes > 0)
+                                                @if(count($summary) > 0)
                                                     <div class="p-3 bg-white rounded border mb-3">
                                                         <label class="text-uppercase text-muted fw-bold d-block mb-3" style="font-size: 11px; letter-spacing: 0.5px;">
-                                                            <i class="fas fa-boxes me-1 text-primary"></i> Contents (Per Box)
+                                                            <i class="fas fa-boxes me-1 text-primary"></i> Contents
                                                         </label>
                                                         <div class="row g-2">
-                                                            @foreach($boxed_summary as $name => $total_qty)
-                                                                @php $per_box = $total_qty / $total_boxes; @endphp
+                                                            @foreach($summary as $name => $total_qty)
                                                                 <div class="col-6">
                                                                     <div class="d-flex justify-content-between align-items-center p-2 rounded bg-light border-start border-primary" style="border-left-width: 3px !important;">
                                                                         <span class="fw-bold text-dark small">{{ $name }}</span>
-                                                                        <span class="badge bg-white text-primary border px-2 py-1">{{ number_format($per_box, 0) }} Pcs</span>
+                                                                        <span class="badge bg-white text-primary border px-2 py-1">{{ number_format($total_qty, 0) }} Pcs</span>
                                                                     </div>
                                                                 </div>
                                                             @endforeach
                                                         </div>
                                                     </div>
-                                                @endif
-
-                                                <!-- 2. Loose Items Summary (Actual piece count) -->
-                                                @if(count($loose_summary) > 0)
-                                                    <div class="p-3 bg-white rounded border border-warning" style="border-left: 4px solid #f59e0b !important; background-color: #fffbeb !important;">
-                                                        <label class="text-uppercase text-warning fw-bold d-block mb-2" style="font-size: 11px; letter-spacing: 0.5px;">
-                                                            <i class="fas fa-layer-group me-1"></i> Loose Packing Detail
-                                                        </label>
-                                                        <div class="d-flex flex-wrap gap-2">
-                                                            @foreach($loose_summary as $name => $qty)
-                                                                <div class="bg-white border rounded px-2 py-1 shadow-xs small">
-                                                                    <span class="text-muted">Size {{ $name }}:</span> <span class="fw-bold text-dark">{{ $qty }}</span>
-                                                                </div>
-                                                            @endforeach
-                                                        </div>
-                                                    </div>
-                                                @endif
-
-                                                @if(count($boxed_summary) == 0 && count($loose_summary) == 0)
+                                                @else
                                                     <div class="text-center py-4 text-muted small italic">
                                                         No itemized breakdown found.
                                                     </div>
@@ -710,7 +685,7 @@
 
                                                 <div class="mt-3 pt-3 border-top d-flex justify-content-between align-items-center px-2">
                                                     <span class="text-muted small">Total Pieces in Carton:</span>
-                                                    <span class="fw-bold text-dark h5 mb-0">{{ array_sum($boxed_summary) + array_sum($loose_summary) }}</span>
+                                                    <span class="fw-bold text-dark h5 mb-0">{{ array_sum($summary) }}</span>
                                                 </div>
                                             </div>
                                         </div>

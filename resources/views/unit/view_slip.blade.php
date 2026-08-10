@@ -487,17 +487,10 @@
                 <div class="item-card" style="border-left-color: #8b5cf6;">
                     <div class="item-header">
                         <span>📦 Carton #{{ $carton->carton_no }}</span>
-                        <span class="status-badge" style="background:#ede9fe; color:#5b21b6;">{{ $carton->boxes->count() }}
-                            Boxes</span>
+                        <span class="status-badge" style="background:#ede9fe; color:#5b21b6;">
+                            {{ $carton->items->sum('quantity') }} Items
+                        </span>
                     </div>
-                    @if($carton->boxes->isNotEmpty())
-                        <div class="subsection-label">Box Numbers</div>
-                        <div class="box-grid">
-                            @foreach($carton->boxes as $box)
-                                <div class="box-badge" style="font-size: 11px;">#{{ $box->box_no }}</div>
-                            @endforeach
-                        </div>
-                    @endif
                 </div>
             @endforeach
         </div>

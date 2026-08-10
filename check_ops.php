@@ -13,6 +13,11 @@ $controller = app(\App\Http\Controllers\Admin\PackingController::class);
 $response = $controller->getOrderDetailsJson(57, $request);
 
 $content = json_decode($response->getContent(), true);
-
 $item = $content['packing']['cartons'][0]['items'][0];
-echo json_encode($item['detail']);
+
+if (isset($item['detail']['order_product_set'])) {
+    echo "order_product_set exists in JS JSON!\n";
+    echo "KEYS: " . implode(', ', array_keys($item['detail']['order_product_set'])) . "\n";
+} else {
+    echo "order_product_set DOES NOT EXIST in JS JSON!\n";
+}

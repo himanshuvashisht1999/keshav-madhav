@@ -715,14 +715,6 @@ class InventoryController extends Controller
                         'status' => 1
                     ]);
 
-                    \App\Models\PackingBox::create([
-                        'packing_main_id' => $packingMain->id,
-                        'packing_carton_id' => $carton->id,
-                        'box_no' => $box_no,
-                        'box_type' => 'manual',
-                        'barcode' => $barcode,
-                        'domestic_inventory_id' => $inventory->id
-                    ]);
 
                     $currentCartonNo++;
                 }
@@ -917,22 +909,7 @@ class InventoryController extends Controller
                 } else {
                     $item->save();
                 }
-                // 3. Update the actual individual PackingBox records
-                $assignedBoxNos = DB::table('agent_order_items')
-                    ->whereNotNull('box_no')
-                    ->pluck('box_no');
 
-                $boxesToUpdateIds = DB::table('packing_boxes')
-                    ->where('barcode', $old_barcode)
-                    ->whereNotIn('box_no', $assignedBoxNos)
-                    ->limit($take)
-                    ->pluck('id');
-
-                if ($boxesToUpdateIds->isNotEmpty()) {
-                    DB::table('packing_boxes')
-                        ->whereIn('id', $boxesToUpdateIds)
-                        ->update(['barcode' => $new_barcode]);
-                }
                 $to_change -= $take;
             }
 

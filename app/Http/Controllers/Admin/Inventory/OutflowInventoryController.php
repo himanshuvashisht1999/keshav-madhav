@@ -335,22 +335,6 @@ class OutflowInventoryController extends Controller
                 $current_inventory->save();
             }
 
-            // 4. Update the actual individual PackingBox records
-            $assignedBoxNos = \Illuminate\Support\Facades\DB::table('agent_order_items')
-                ->whereNotNull('box_no')
-                ->pluck('box_no');
-
-            $boxesToUpdateIds = \Illuminate\Support\Facades\DB::table('packing_boxes')
-                ->where('barcode', $old_barcode)
-                ->whereNotIn('box_no', $assignedBoxNos)
-                ->limit($take)
-                ->pluck('id');
-
-            if ($boxesToUpdateIds->isNotEmpty()) {
-                \Illuminate\Support\Facades\DB::table('packing_boxes')
-                    ->whereIn('id', $boxesToUpdateIds)
-                    ->update(['barcode' => $new_barcode]);
-            }
 
             // 5. Update the History Record
             $history->new_product_id = $request->new_product_id;
