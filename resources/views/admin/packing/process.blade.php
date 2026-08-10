@@ -1602,6 +1602,30 @@
                     return;
                 }
 
+                if (start > end) {
+                    alert("Start carton number must be less than or equal to end carton number.");
+                    return;
+                }
+
+                let existingCartons = [];
+                $('#plannerTableBody .planner-carton-no').each(function () {
+                    let val = parseInt($(this).val());
+                    if (!isNaN(val)) existingCartons.push(val);
+                });
+
+                let conflict = false;
+                for (let i = start; i <= end; i++) {
+                    if (existingCartons.includes(i)) {
+                        conflict = true;
+                        break;
+                    }
+                }
+
+                if (conflict) {
+                    alert("One or more carton numbers in this range already exist in the plan! Please use a different range (e.g., if you already used 1-10, use 11-20 next) to avoid accidentally mixing different items into the same carton.");
+                    return;
+                }
+
                 for (let i = start; i <= end; i++) {
                     addPlannerRow({
                         carton_no: i,
