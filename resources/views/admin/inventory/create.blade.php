@@ -397,6 +397,23 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <!-- Size Breakdown Summary -->
+                                    <div class="size-breakdown-container mt-3 px-3 py-2 bg-light border rounded" style="display: none;">
+                                        <h6 class="text-primary font-weight-bold mb-2 border-bottom pb-1">Size Breakdown Comparison</h6>
+                                        <div class="row">
+                                            <div class="col-md-5">
+                                                <strong class="text-secondary">Source Sizes</strong>
+                                                <ul class="list-unstyled mb-0 source-size-list" style="font-size: 0.9rem;"></ul>
+                                            </div>
+                                            <div class="col-md-5">
+                                                <strong class="text-secondary">Generated Sizes</strong>
+                                                <ul class="list-unstyled mb-0 generated-size-list" style="font-size: 0.9rem;"></ul>
+                                            </div>
+                                            <div class="col-md-2 d-flex align-items-center">
+                                                <span class="size-match-status badge badge-pill w-100 py-2"></span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="targets-container">
@@ -592,6 +609,17 @@
     </div>
 
     <script>
+        const allSizeSets = {!! json_encode(\App\Models\MasterSizeMeasurement::select('id', 'name', 'set_size', 'no_of_pcs', 'size_group')->get()) !!};
+        const sizeSetsMap = {};
+        allSizeSets.forEach(s => {
+            if (s.size_group) {
+                const sizes = s.size_group.split(',').map(x => x.trim());
+                const count = sizes.length;
+                const pcs = count > 0 ? (s.no_of_pcs / count) : 0;
+                sizeSetsMap[s.id] = { sizes: sizes, pcs: pcs };
+            }
+        });
+
         $(function () {
             let itemCount = 0;
 
@@ -1251,6 +1279,7 @@
                 }
 
                 let totalConsumedPieces = 0;
+                let genSizeTally = {};
 
                 // Sum up all cards using this same source
                 $('.inventory-item-card').each(function () {
@@ -1259,16 +1288,86 @@
                             let b = parseInt($(this).find('.total-boxes-input').val()) || 0;
                             let p = parseInt($(this).find('.pcs-per-box-input').val()) || 0;
                             totalConsumedPieces += (b * p);
+
+                            // Calculate generated sizes tally
+                            let sizeSetId = $(this).find('.size-set-select').val();
+                            if (sizeSetId && sizeSetsMap[sizeSetId]) {
+                                let setInfo = sizeSetsMap[sizeSetId];
+                                setInfo.sizes.forEach(size => {
+                                    genSizeTally[size] = (genSizeTally[size] || 0) + (b * setInfo.pcs);
+                                });
+                            }
                         });
                     }
                 });
 
                 // Update Generated Pieces display across all synced cards
+                let sourceSizeSetId = null;
                 $('.inventory-item-card').each(function () {
                     if ($(this).find('.consume-source-id').val() === sourceId) {
                         $(this).find('.consume-transfer-pieces-display').text(totalConsumedPieces);
+                        if (!sourceSizeSetId) {
+                            sourceSizeSetId = $(this).find('.consume-size-set-select').val();
+                        }
                     }
                 });
+
+                // Calculate source sizes tally
+                let sourceSizeTally = {};
+                if (sourceSizeSetId && sizeSetsMap[sourceSizeSetId] && transferBoxes > 0) {
+                    let setInfo = sizeSetsMap[sourceSizeSetId];
+                    setInfo.sizes.forEach(size => {
+                        sourceSizeTally[size] = (sourceSizeTally[size] || 0) + (transferBoxes * setInfo.pcs);
+                    });
+                }
+
+                // Render Size Breakdown
+                let hasMismatch = false;
+                let breakdownContainer = currentCard.find('.size-breakdown-container');
+                let sourceList = breakdownContainer.find('.source-size-list');
+                let genList = breakdownContainer.find('.generated-size-list');
+                
+                sourceList.empty();
+                genList.empty();
+
+                if (transferBoxes > 0 || totalConsumedPieces > 0) {
+                    breakdownContainer.show();
+                    
+                    // Render Source Sizes
+                    for (let size in sourceSizeTally) {
+                        sourceList.append(`<li>Size ${size}: ${sourceSizeTally[size]} pcs</li>`);
+                    }
+
+                    // Render Generated Sizes & Check Mismatches
+                    for (let size in sourceSizeTally) {
+                        let reqQty = sourceSizeTally[size] || 0;
+                        let genQty = genSizeTally[size] || 0;
+                        let colorClass = (reqQty === genQty) ? 'text-success' : 'text-danger font-weight-bold';
+                        if (reqQty !== genQty) hasMismatch = true;
+                        
+                        genList.append(`<li class="${colorClass}">Size ${size}: ${genQty} pcs</li>`);
+                        delete genSizeTally[size];
+                    }
+
+                    // Check for extra sizes generated not in source
+                    for (let size in genSizeTally) {
+                        if (genSizeTally[size] > 0) {
+                            hasMismatch = true;
+                            genList.append(`<li class="text-danger font-weight-bold">Size ${size}: ${genSizeTally[size]} pcs (Extra)</li>`);
+                        }
+                    }
+
+                    let statusBadge = breakdownContainer.find('.size-match-status');
+                    if (hasMismatch) {
+                        statusBadge.removeClass('badge-success').addClass('badge-danger').text('Mismatch Detected');
+                        $('.btn-confirm').prop('disabled', true);
+                    } else {
+                        statusBadge.removeClass('badge-danger').addClass('badge-success').text('Sizes Match Perfectly');
+                        $('.btn-confirm').prop('disabled', false);
+                    }
+                } else {
+                    breakdownContainer.hide();
+                }
             }
 
             $(document).on('change', '.consume-warehouse-select', function () {

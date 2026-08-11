@@ -600,10 +600,72 @@ class InventoryController extends Controller
                     if (!isset($consumedSources[$sourceId])) {
                         $consumedSources[$sourceId] = [
                             'model' => DomesticInventory::find($sourceId),
-                            'total_pieces_consumed' => 0
+                            'total_pieces_consumed' => 0,
+                            'generated_items' => []
                         ];
                     }
                     $consumedSources[$sourceId]['total_pieces_consumed'] += ($item['total_boxes'] * $item['pieces_per_box']);
+                    $consumedSources[$sourceId]['generated_items'][] = $item;
+                }
+            }
+
+            if ($source_type === 'consume') {
+                $sizeSetCache = [];
+                $getSizeSetSizes = function ($sizeSetId) use (&$sizeSetCache) {
+                    if (!isset($sizeSetCache[$sizeSetId])) {
+                        $sizeSet = \App\Models\MasterSizeMeasurement::find($sizeSetId);
+                        if ($sizeSet && $sizeSet->size_group) {
+                            $sizes = explode(',', $sizeSet->size_group);
+                            $piecesPerSize = count($sizes) > 0 ? $sizeSet->no_of_pcs / count($sizes) : 0;
+                            $sizeSetCache[$sizeSetId] = ['sizes' => $sizes, 'pieces_per_size' => $piecesPerSize];
+                        } else {
+                            $sizeSetCache[$sizeSetId] = ['sizes' => [], 'pieces_per_size' => 0];
+                        }
+                    }
+                    return $sizeSetCache[$sizeSetId];
+                };
+
+                // Validate Exact Size Matching
+                foreach ($consumedSources as $sourceId => $data) {
+                    $source = $data['model'];
+                    if (!$source) continue;
+
+                    $sourceQuantity = $source->quantity > 0 ? $source->quantity : 1;
+                    $boxesToDeduct = ceil($data['total_pieces_consumed'] / $sourceQuantity);
+
+                    // Tally Source Sizes
+                    $sourceTally = [];
+                    $sourceSizeData = $getSizeSetSizes($source->size_set_id);
+                    foreach ($sourceSizeData['sizes'] as $sizeName) {
+                        $sizeName = trim($sizeName);
+                        $sourceTally[$sizeName] = ($sourceTally[$sizeName] ?? 0) + ($boxesToDeduct * $sourceSizeData['pieces_per_size']);
+                    }
+
+                    // Tally Generated Sizes
+                    $genTally = [];
+                    foreach ($data['generated_items'] as $item) {
+                        $genSizeData = $getSizeSetSizes($item['size_set_id']);
+                        foreach ($genSizeData['sizes'] as $sizeName) {
+                            $sizeName = trim($sizeName);
+                            $genTally[$sizeName] = ($genTally[$sizeName] ?? 0) + ($item['total_boxes'] * $genSizeData['pieces_per_size']);
+                        }
+                    }
+
+                    // Compare tallies
+                    foreach ($sourceTally as $sizeName => $reqQty) {
+                        $genQty = $genTally[$sizeName] ?? 0;
+                        if ($reqQty != $genQty) {
+                            throw new \Exception("Size mismatch! For consumed Design " . $source->barcode . ", size '$sizeName' requires $reqQty pieces, but you generated $genQty pieces.");
+                        }
+                        unset($genTally[$sizeName]); // Mark as checked
+                    }
+
+                    // Check for any extra sizes generated that weren't in source
+                    foreach ($genTally as $sizeName => $genQty) {
+                        if ($genQty > 0) {
+                            throw new \Exception("Size mismatch! For consumed Design " . $source->barcode . ", you generated $genQty extra pieces of size '$sizeName' which did not exist in the source boxes.");
+                        }
+                    }
                 }
             }
 
