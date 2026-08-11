@@ -237,7 +237,7 @@ class WarehouseInventoryController extends Controller
         $size_set_id = $size_set_id == 0 ? null : $size_set_id;
         $rack_id = $rack_id == 0 ? null : $rack_id;
 
-        $query = DomesticInventory::with(['product.series', 'sizeSet', 'color', 'rack.storeroom', 'carton', 'box']);
+        $query = DomesticInventory::with(['product.series', 'sizeSet', 'color', 'rack.storeroom', 'carton']);
         
         if ($product_id) {
             $query->where('domestic_inventories.product_id', $product_id);

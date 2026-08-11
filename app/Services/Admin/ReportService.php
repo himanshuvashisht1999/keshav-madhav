@@ -375,18 +375,38 @@ class ReportService
                 ->select([
                     'fabrics.id',
                     'fabrics.name',
-                    'vendors.name as vendor_name',
-                    \DB::raw('COALESCE(SUM(fabric_receipt_details.meter), 0) as total_received'),
-                    \DB::raw('COALESCE(SUM(fabric_receipt_details.remaining_quantity), 0) as total_remaining'),
-                    \DB::raw('COALESCE(SUM(fabric_receipt_details.meter - fabric_receipt_details.remaining_quantity), 0) as total_issued')
+                    'vendors.name as vendor_name'
                 ])
-                ->leftJoin('fabric_receipt_details', 'fabrics.id', '=', 'fabric_receipt_details.fabric_id')
-                ->leftJoin('vendors', 'fabrics.vendor_id', '=', 'vendors.id')
-                ->when($request->filled('warehouse_id'), function ($q) use ($request) {
-                    $q->where('fabric_receipt_details.master_fabric_warehouse_id', $request->warehouse_id);
-                })
-                ->groupBy('fabrics.id', 'fabrics.name', 'vendors.name')
-                ->having('total_received', '>', 0)
+                ->leftJoin('vendors', 'fabrics.vendor_id', '=', 'vendors.id');
+
+            if ($request->filled('warehouse_id')) {
+                $whId = $request->warehouse_id;
+                $query->selectRaw("
+                    (
+                        COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = fabrics.id AND fr.master_fabric_warehouse_id = ?), 0)
+                        +
+                        COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = fabrics.id AND ft.to_warehouse_id = ?), 0)
+                    ) as total_received", [$whId, $whId])
+                ->selectRaw("COALESCE((SELECT SUM(frd.remaining_quantity) FROM fabric_receipt_details frd WHERE frd.fabric_id = fabrics.id AND frd.master_fabric_warehouse_id = ?), 0) as total_remaining", [$whId])
+                ->selectRaw("(
+                    (
+                        COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = fabrics.id AND fr.master_fabric_warehouse_id = ?), 0)
+                        +
+                        COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = fabrics.id AND ft.to_warehouse_id = ?), 0)
+                    ) 
+                    - 
+                    COALESCE((SELECT SUM(frd.remaining_quantity) FROM fabric_receipt_details frd WHERE frd.fabric_id = fabrics.id AND frd.master_fabric_warehouse_id = ?), 0)
+                ) as total_issued", [$whId, $whId, $whId])
+                ->groupBy('fabrics.id', 'fabrics.name', 'vendors.name');
+            } else {
+                $query->selectRaw('COALESCE(SUM(fabric_receipt_details.meter), 0) as total_received')
+                    ->selectRaw('COALESCE(SUM(fabric_receipt_details.remaining_quantity), 0) as total_remaining')
+                    ->selectRaw('COALESCE(SUM(fabric_receipt_details.meter - fabric_receipt_details.remaining_quantity), 0) as total_issued')
+                    ->leftJoin('fabric_receipt_details', 'fabrics.id', '=', 'fabric_receipt_details.fabric_id')
+                    ->groupBy('fabrics.id', 'fabrics.name', 'vendors.name');
+            }
+
+            $query->having('total_received', '>', 0)
                 ->when($request->filled('qty_from'), function ($q) use ($request) {
                     $q->having('total_remaining', '>=', $request->qty_from);
                 })
@@ -420,16 +440,28 @@ class ReportService
             $fabricId = $request->fabric_id;
             $fabric = Fabric::find($fabricId);
 
-            $query = FabricReceiptDetail::query()
+            $query = \App\Models\MasterFabricWarehouse::query()
                 ->select([
-                    'master_fabric_warehouse_id',
-                    \DB::raw('SUM(meter) as total_received'),
-                    \DB::raw('SUM(remaining_quantity) as total_remaining'),
-                    \DB::raw('SUM(meter - remaining_quantity) as total_issued'),
+                    'master_fabric_warehouse.id as master_fabric_warehouse_id',
+                    'master_fabric_warehouse.cutting_master_name',
+                    \DB::raw("(
+                        COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = {$fabricId} AND fr.master_fabric_warehouse_id = master_fabric_warehouse.id), 0)
+                        +
+                        COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = {$fabricId} AND ft.to_warehouse_id = master_fabric_warehouse.id), 0)
+                    ) as total_received"),
+                    \DB::raw("(SELECT COALESCE(SUM(frd.remaining_quantity), 0) FROM fabric_receipt_details frd WHERE frd.fabric_id = {$fabricId} AND frd.master_fabric_warehouse_id = master_fabric_warehouse.id) as total_remaining"),
+                    \DB::raw("(
+                        (
+                            COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = {$fabricId} AND fr.master_fabric_warehouse_id = master_fabric_warehouse.id), 0)
+                            +
+                            COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = {$fabricId} AND ft.to_warehouse_id = master_fabric_warehouse.id), 0)
+                        ) 
+                        - 
+                        (SELECT COALESCE(SUM(frd.remaining_quantity), 0) FROM fabric_receipt_details frd WHERE frd.fabric_id = {$fabricId} AND frd.master_fabric_warehouse_id = master_fabric_warehouse.id)
+                    ) as total_issued")
                 ])
-                ->with('master_fabric_warehouse:id,cutting_master_name')
-                ->where('fabric_id', $fabricId)
-                ->groupBy('master_fabric_warehouse_id')
+                ->where('master_fabric_warehouse.status', 1)
+                ->having('total_received', '>', 0)
                 ->when($request->filled('qty_from'), function ($q) use ($request) {
                     $q->having('total_remaining', '>=', $request->qty_from);
                 })
@@ -438,6 +470,9 @@ class ReportService
                 });
 
             $data = $query->get();
+            $data->each(function($item) {
+                $item->master_fabric_warehouse = (object)['cutting_master_name' => $item->cutting_master_name];
+            });
             $totals = (object) [
                 'sum_received' => $data->sum('total_received'),
                 'sum_issued' => $data->sum('total_issued'),

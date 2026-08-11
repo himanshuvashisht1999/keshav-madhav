@@ -122,7 +122,28 @@ class FabricTransferController extends Controller
 
         $transfers = $query->paginate(20)->withQueryString();
 
-        return view('admin.inventory.fabric_transfer.history', compact('warehouses', 'fabrics', 'transfers'));
+        $total_meters_query = \App\Models\FabricTransferItem::query()
+            ->join('fabric_transfers', 'fabric_transfer_items.fabric_transfer_id', '=', 'fabric_transfers.id');
+
+        if ($request->filled('start_date')) {
+            $total_meters_query->whereDate('fabric_transfers.transfer_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $total_meters_query->whereDate('fabric_transfers.transfer_date', '<=', $request->end_date);
+        }
+        if ($request->filled('from_warehouse_id')) {
+            $total_meters_query->where('fabric_transfers.from_warehouse_id', $request->from_warehouse_id);
+        }
+        if ($request->filled('to_warehouse_id')) {
+            $total_meters_query->where('fabric_transfers.to_warehouse_id', $request->to_warehouse_id);
+        }
+        if ($request->filled('fabric_id')) {
+            $total_meters_query->where('fabric_transfer_items.fabric_id', $request->fabric_id);
+        }
+
+        $total_meters = $total_meters_query->sum('fabric_transfer_items.meter');
+
+        return view('admin.inventory.fabric_transfer.history', compact('warehouses', 'fabrics', 'transfers', 'total_meters'));
     }
 
     public function historyList(Request $request)

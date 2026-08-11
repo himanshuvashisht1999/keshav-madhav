@@ -1874,6 +1874,38 @@ Route::prefix('/admin')->name('admin.')->middleware(['web', 'checkAdminLogin'])-
     });
 });
 
+Route::get('/fix-fabric-stock', function () {
+    $rolls = \App\Models\FabricReceiptDetail::all();
+    $fixed_count = 0;
+
+    foreach ($rolls as $roll) {
+        $original_meter = (float) $roll->meter;
+        $production_used = (float) \App\Models\FabricRollAssigning::where('fabric_receipt_detail_id', $roll->id)->sum('meter');
+        $direct_sales_used = (float) \App\Models\AgentOrderFabricItem::where('fabric_receipt_detail_id', $roll->id)->sum('meter');
+        
+        $returns = 0;
+        if (\Illuminate\Support\Facades\Schema::hasTable('fabric_return_details')) {
+            $returns = (float) \Illuminate\Support\Facades\DB::table('fabric_return_details')
+                            ->where('fabric_receipt_detail_id', $roll->id)
+                            ->sum('return_meter');
+        }
+
+        $total_used = $production_used + $direct_sales_used + $returns;
+        $expected_remaining = max(0, $original_meter - $total_used);
+
+        if (round((float)$roll->remaining_quantity, 2) > round($expected_remaining, 2)) {
+            $roll->update(['remaining_quantity' => $expected_remaining]);
+            $fixed_count++;
+        }
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Stock correction completed!',
+        'fixed_rolls' => $fixed_count
+    ]);
+});
+
 
 
 

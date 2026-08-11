@@ -1290,7 +1290,7 @@ class InventoryController extends Controller
         $query = \App\Models\PackingMain::where('order_main_id', 0)
             ->where('slip_id', 0)
             ->with(['creator'])
-            ->withCount('boxes as total_boxes');
+            ->withCount('cartons as total_boxes');
 
         if ($request->has('start_date') && $request->start_date) {
             $query->whereDate('packing_date', '>=', $request->start_date);

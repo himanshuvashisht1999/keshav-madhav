@@ -39,11 +39,17 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1 class="h3 font-weight-bold text-dark mb-0">Fabric Transfer History</h1>
-                <p class="text-muted">Manage your fabric transfer history.</p>
+                <p class="text-muted mb-0">Manage your fabric transfer history.</p>
             </div>
-            <a href="{{ route('admin.inventory.fabric_transfer.index') }}" class="btn btn-primary px-4">
-                <i class="fas fa-plus mr-2"></i> New Transfer
-            </a>
+            <div class="d-flex align-items-center">
+                <div class="mr-4 px-4 py-2 rounded shadow-sm bg-white" style="border-left: 4px solid #4e73df;">
+                    <span class="text-xs font-weight-bold text-primary text-uppercase mb-1" style="font-size: 0.75rem;">Total Meters</span>
+                    <div class="h5 mb-0 font-weight-bold text-dark">{{ number_format($total_meters ?? 0, 2) }} M</div>
+                </div>
+                <a href="{{ route('admin.inventory.fabric_transfer.index') }}" class="btn btn-primary px-4 py-2">
+                    <i class="fas fa-plus mr-2"></i> New Transfer
+                </a>
+            </div>
         </div>
 
         <div class="premium-card mb-4">

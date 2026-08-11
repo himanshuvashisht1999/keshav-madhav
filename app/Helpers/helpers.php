@@ -826,7 +826,32 @@ if (!function_exists('deleteProductionSession')) {
                 $slip_id = $session->production_slip_digitization_id;
 
                 if ($session->remaining_quantity != $session->quantity) {
-                    throw new \Exception('Cannot delete. Some quantity has already been moved forward.');
+                    $canDelete = false;
+                    
+                    // If a session was manually closed (Marked as Final), its remaining_quantity is forcefully set to 0.
+                    // In this case, we verify if there are actual child sessions consuming it.
+                    if (isset($session->is_closed_for_unit) && $session->is_closed_for_unit == 1 && $session->remaining_quantity == 0) {
+                        $hasChildTransfer = \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)
+                            ->where('from_stage_id', $session->to_stage_id)
+                            ->where('id', '>', $id)->exists();
+                        $hasChildPrint = \App\Models\OrderPrintingStageTransaction::where('lot_no', $session->lot_no)
+                            ->where('from_stage_id', $session->to_stage_id)
+                            ->where('id', '>', $id)->exists();
+                        $hasChildPrintStitch = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $session->lot_no)
+                            ->where('from_stage_id', $session->to_stage_id)
+                            ->where('id', '>', $id)->exists();
+                        $hasChildGodam = \App\Models\OrderGodamStageTransaction::where('lot_no', $session->lot_no)
+                            ->where('from_stage_id', $session->to_stage_id)
+                            ->where('id', '>', $id)->exists();
+                            
+                        if (!$hasChildTransfer && !$hasChildPrint && !$hasChildPrintStitch && !$hasChildGodam) {
+                            $canDelete = true;
+                        }
+                    }
+
+                    if (!$canDelete) {
+                        throw new \Exception('Cannot delete. Some quantity has already been moved forward.');
+                    }
                 }
 
                 // Restore Source Quantity
