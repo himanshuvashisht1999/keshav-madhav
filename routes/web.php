@@ -984,6 +984,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/generate-pdf-batch/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'generatePdfFromBatch'])->name('generate-pdf-batch');
                 Route::get('/download-prn', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'downloadPrn'])->name('download-prn');
                 Route::post('/download-prn-by-barcodes', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'downloadPrnByBarcodes'])->name('download-prn-by-barcodes');
+                Route::post('/toggle-status/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'toggleStatus'])->name('toggle-status');
                 Route::delete('/destroy/{id}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'destroy'])->name('destroy');
             });
 

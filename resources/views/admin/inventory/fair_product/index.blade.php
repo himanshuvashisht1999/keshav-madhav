@@ -122,6 +122,7 @@
                             <th class="py-3">Batch No</th>
                             <th class="py-3">Sales Agents</th>
                             <th class="py-3 text-center">Total Items</th>
+                            <th class="py-3 text-center">Status</th>
                             <th class="py-3 text-right px-4">Actions</th>
                         </tr>
                     </thead>
@@ -155,7 +156,17 @@
                             <td class="align-middle text-center">
                                 <span class="badge badge-info px-3 py-2">{{ $batch->products_count }} Products</span>
                             </td>
+                            <td class="align-middle text-center">
+                                <form action="{{ route('admin.inventory.fair-product.toggle-status', $batch->id) }}" method="POST" class="d-inline" title="Toggle Status">
+                                    @csrf
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input" id="statusSwitch{{ $batch->id }}" onchange="this.form.submit()" {{ $batch->status == 1 ? 'checked' : '' }}>
+                                        <label class="custom-control-label" for="statusSwitch{{ $batch->id }}" style="cursor: pointer;"></label>
+                                    </div>
+                                </form>
+                            </td>
                             <td class="align-middle text-right px-4">
+
                                 <a href="{{ route('admin.inventory.fair-product.show', $batch->id) }}" class="btn btn-sm btn-outline-info mr-1" title="View Sample Set">
                                     <i class="fas fa-eye"></i>
                                 </a>

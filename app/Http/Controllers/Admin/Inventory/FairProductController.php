@@ -739,4 +739,11 @@ class FairProductController extends Controller
             ->header('Content-Type', 'text/plain')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
+    public function toggleStatus($id)
+    {
+        $batch = FairBatch::findOrFail($id);
+        $batch->status = !$batch->status;
+        $batch->save();
+        return redirect()->back()->with('success', 'Sample set status updated successfully');
+    }
 }

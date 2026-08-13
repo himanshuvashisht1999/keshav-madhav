@@ -1459,6 +1459,9 @@ class OrderController extends Controller
                     $agent_id = Auth::guard('sales_agent')->id();
                     $batch = \App\Models\FairBatch::find($fairProduct->fair_batch_id);
                     if ($batch) {
+                        if ($batch->status == 0) {
+                            return response()->json(['success' => false, 'message' => 'This sample set is inactive and cannot be scanned.']);
+                        }
                         $assignedAgents = is_array($batch->sales_agent_ids) ? $batch->sales_agent_ids : json_decode($batch->sales_agent_ids, true) ?? [];
                         if (!in_array((string)$agent_id, $assignedAgents, true) && !in_array((int)$agent_id, $assignedAgents, true)) {
                             return response()->json(['success' => false, 'message' => 'This sample set barcode is not assigned to your account.']);
@@ -1588,6 +1591,7 @@ class OrderController extends Controller
                         'size_set_name' => DB::table('master_size_measurements')->where('id', $sizeSetId)->value('name'),
                         'mrp' => $mrp,
                         'unit_price' => $unit_price,
+                        'image' => $main_image ? asset('assets/products/' . $main_image) : null,
                         'colors' => $availableColors
                     ];
                 }
