@@ -823,6 +823,15 @@ class PackingService
                         $stockSet = \App\Models\OrderProductSet::with('product_set_details')->find($entry['content_id']);
                         if (!$stockSet) throw new \Exception("Stock Set not found for domestic entry.");
 
+                        // Sync fitting and pattern from corporate order set to production_goods product if not set
+                        $prod = \App\Models\ProductionGoods::find($entry['product_id']);
+                        if ($prod && (empty($prod->master_product_fitting_id) || empty($prod->master_pattern_id))) {
+                            $prod->update([
+                                'master_product_fitting_id' => $stockSet->master_product_fitting_id ?? $prod->master_product_fitting_id,
+                                'master_pattern_id' => $stockSet->master_design_pattern_id ?? $prod->master_pattern_id
+                            ]);
+                        }
+
                         $ss_total = $stockSet->set_quantity > 0 ? $stockSet->set_quantity : 1;
                         $pcs_per_box = 0;
                         foreach ($stockSet->product_set_details as $detail) {
@@ -1396,10 +1405,11 @@ class PackingService
             }
 
             // 2. Revert Deduction from available transactions (for backend validation pool)
-            $receivedTxs = \App\Models\OrderStageTransaction::where('sku', $outflow->orderMain->sku)
+            $packingUnitId = $slip->stage_master_unit_id;
+            $receivedTxs = \App\Models\OrderStageTransaction::where('lot_no', $outflow->lot_no)
                 ->where('to_stage_id', 11) // In Packing
-                ->where(function($q) use ($unitId) {
-                    $q->where('sub_stage_id_to', $unitId)
+                ->where(function($q) use ($packingUnitId) {
+                    $q->where('sub_stage_id_to', $packingUnitId)
                       ->orWhereNull('sub_stage_id_to');
                 })
                 ->where('status', 1)
@@ -1408,12 +1418,15 @@ class PackingService
 
             $rem = $outflow->quantity;
             foreach ($receivedTxs as $tx) {
-                if ($rem <= 0)
-                    break;
-                // Add back to remaining_quantity
-                $tx->remaining_quantity += $rem;
-                $tx->save();
-                $rem = 0;
+                if ($rem <= 0) break;
+                
+                $space_available = $tx->quantity - $tx->remaining_quantity;
+                if ($space_available > 0) {
+                    $to_add = min($rem, $space_available);
+                    $tx->remaining_quantity += $to_add;
+                    $tx->save();
+                    $rem -= $to_add;
+                }
             }
 
             $outflow->delete();
@@ -1430,12 +1443,12 @@ class PackingService
         DB::beginTransaction();
         try {
             $rework = \App\Models\OrderStageTransaction::findOrFail($id);
-            if ($rework->type !== 'rework') {
+            if ($rework->type !== 'rework' && (int)$rework->type !== 0) {
                 throw new \Exception("Only rework movement records can be deleted from here.");
             }
 
             // 1. Revert Deduction from Incoming Packing pool
-            $sourceTxs = \App\Models\OrderStageTransaction::where('sku', $rework->sku)
+            $sourceTxs = \App\Models\OrderStageTransaction::where('lot_no', $rework->lot_no)
                 ->where('to_stage_id', 11)
                 ->where(function($q) use ($rework) {
                     $q->where('sub_stage_id_to', $rework->sub_stage_id)
@@ -1473,6 +1486,12 @@ class PackingService
                 throw new \Exception("Packing session not found for this slip.");
             }
 
+            $is_domestic = false;
+            $order = \App\Models\OrderMain::find($main->order_main_id);
+            if ($order && $order->order_type === 'domestic') {
+                $is_domestic = true;
+            }
+
             // 1. Revert All Outflows (Dead/Sampling/Debit)
             $outflows = \App\Models\ProductionOutflowInventory::where('slip_id', $slipId)->get();
             foreach ($outflows as $outflow) {
@@ -1496,6 +1515,18 @@ class PackingService
                 // We use the existing deleteCarton but remove the finalized check temporarily
                 $carton->main->status = 0; // Temporarily un-finalize to allow deletion
                 $carton->main->save();
+
+                if ($is_domestic) {
+                    $packingItems = \App\Models\PackingItem::where('packing_carton_id', $carton->id)->get();
+                    foreach ($packingItems as $item) {
+                        $od = \App\Models\OrderProductSetDetail::find($item->size_id);
+                        if ($od) {
+                            $od->remaining_quantity += $item->quantity;
+                            $od->save();
+                        }
+                    }
+                }
+
                 $this->deleteCarton($carton->id);
             }
 

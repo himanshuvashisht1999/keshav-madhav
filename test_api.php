@@ -1,4 +1,1 @@
-<?php
-$service = app(\App\Services\Admin\OrderDigitalizationService::class);
-$details = $service->getLotDetailsForHandSlip('671', 1, 1);
-echo json_encode($details);
+<?php require __DIR__.'/vendor/autoload.php'; \ = require_once __DIR__.'/bootstrap/app.php'; \ = \->make(Illuminate\Contracts\Console\Kernel::class); \->bootstrap(); \ = \App\Models\ProductionGoods::first(); echo json_encode(['product_id' => \->id]);
