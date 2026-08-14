@@ -34,98 +34,6 @@ use App\Http\Controllers\Admin\OrderDigitalizationController as AdminOrderDigita
 use App\Http\Controllers\Admin\OrderDispatchController as AdminOrderDispatchController;
 use App\Http\Controllers\Admin\PackingCartonController as AdminPackingCartonController;
 
-Route::get('/fix-cartons/{slip_id}', function ($slip_id) {
-    $slip = \App\Models\ProductionSlipDigitization::find($slip_id);
-    if (!$slip) return "Slip not found";
-
-    $packing = \App\Models\PackingMain::where('slip_id', $slip_id)->first();
-    $order_id = $packing ? $packing->order_main_id : null;
-    
-    if (!$order_id) {
-        return "No order found for this packing session.";
-    }
-
-        // 1. Wipe Cartons & Items
-    $cartons = \App\Models\PackingCarton::whereHas('main', function($q) use($slip_id) { 
-        $q->where('slip_id', $slip_id); 
-    })->get();
-
-    foreach($cartons as $carton) {
-        \App\Models\PackingItem::where('packing_carton_id', $carton->id)->delete();
-        $carton->delete();
-    }
-
-    $packing = \App\Models\PackingMain::where('slip_id', $slip_id)->first();
-    $order_id = $packing ? $packing->order_main_id : null;
-    $slip = \App\Models\ProductionSlipDigitization::find($slip_id);
-
-    if ($order_id && $slip) {
-        $orderLots = \App\Models\OrderLot::where('order_main_id', $order_id)->pluck('lot_no')->toArray();
-
-        // 2. Wipe Outflows (Dead, Damage, Sampling, Debit) for this slip & order
-        \App\Models\ProductionOutflowInventory::where('slip_id', $slip_id)
-            ->where('order_main_id', $order_id)
-            ->whereNotIn('type', ['packing', 'packing_divert'])
-            ->delete();
-
-        // 3. Wipe Reworks for this order from Packing
-        $reworks = \App\Models\OrderStageTransaction::whereIn('lot_no', $orderLots)
-            ->where('from_stage_id', 11)
-            ->where('sub_stage_id', $slip->stage_master_unit_id)
-            ->where('type', 'rework')
-            ->get();
-            
-        foreach($reworks as $rw) {
-            $rw->details()->delete();
-            $rw->delete();
-    }
-        
-        // 4. Restore Lot Quantities
-        $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-            ->whereIn('lot_no', $orderLots)
-            ->get();
-
-        foreach ($transactions as $tx) {
-            $tx->remaining_quantity = $tx->quantity;
-            $tx->save();
-    }
-
-        // 5. Re-deduct for any OTHER packing mains for this order
-        $remaining_mains = \App\Models\PackingMain::where('order_main_id', $order_id)->get();
-        foreach ($remaining_mains as $main) {
-            $items = \App\Models\PackingItem::where('packing_main_id', $main->id)->get();
-            foreach ($items as $item) {
-                $detail = \App\Models\OrderProductSetDetail::find($item->size_id);
-                $lotsToDeduct = \App\Models\OrderLot::where('order_products_set_id', $detail->order_products_set_id ?? 0)->pluck('lot_no')->toArray();
-                if (empty($lotsToDeduct)) {
-                    $lotsToDeduct = $orderLots;
-    }
-
-                $txs = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-                    ->whereIn('lot_no', $lotsToDeduct)
-                    ->orderBy('id')
-                    ->get();
-
-                $rem = $item->quantity;
-                foreach ($txs as $tx) {
-                    if ($rem <= 0) break;
-                    if ($tx->remaining_quantity <= 0) continue;
-                    
-                    if ($tx->remaining_quantity > $rem) {
-                        $tx->remaining_quantity -= $rem;
-                        $rem = 0;
-                    } else {
-                        $rem -= $tx->remaining_quantity;
-                        $tx->remaining_quantity = 0;
-                    }
-                    $tx->save();
-                }
-            }
-        }
-    }
-
-    return redirect()->back()->with('success', 'Successfully wiped cartons for slip ' . $slip_id . ' and restored true lot quantities!');
-});
 /// order
 use App\Http\Controllers\Admin\ProductOrderController as AdminProductOrderController;
 use App\Http\Controllers\Admin\WarehouseController as AdminWarehouseController;
@@ -1887,37 +1795,8 @@ Route::prefix('/admin')->name('admin.')->middleware(['web', 'checkAdminLogin'])-
     });
 });
 
-Route::get('/fix-fabric-stock', function () {
-    $rolls = \App\Models\FabricReceiptDetail::all();
-    $fixed_count = 0;
 
-    foreach ($rolls as $roll) {
-        $original_meter = (float) $roll->meter;
-        $production_used = (float) \App\Models\FabricRollAssigning::where('fabric_receipt_detail_id', $roll->id)->sum('meter');
-        $direct_sales_used = (float) \App\Models\AgentOrderFabricItem::where('fabric_receipt_detail_id', $roll->id)->sum('meter');
-        
-        $returns = 0;
-        if (\Illuminate\Support\Facades\Schema::hasTable('fabric_return_details')) {
-            $returns = (float) \Illuminate\Support\Facades\DB::table('fabric_return_details')
-                            ->where('fabric_receipt_detail_id', $roll->id)
-                            ->sum('return_meter');
-        }
 
-        $total_used = $production_used + $direct_sales_used + $returns;
-        $expected_remaining = max(0, $original_meter - $total_used);
-
-        if (round((float)$roll->remaining_quantity, 2) > round($expected_remaining, 2)) {
-            $roll->update(['remaining_quantity' => $expected_remaining]);
-            $fixed_count++;
-        }
-    }
-
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Stock correction completed!',
-        'fixed_rolls' => $fixed_count
-    ]);
-});
 
 
 

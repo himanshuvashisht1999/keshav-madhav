@@ -76,21 +76,24 @@ class OrderDigitalizationService
             }
 
             foreach ($lotNos as $lotNo) {
-                $exists = OrderLot::where('lot_no', $lotNo)
-                    ->where('production_slip_digitization_id', '!=', $request->production_slip_digitization_id)
-                    ->exists();
-
-                if ($exists) {
-                    throw new \Exception("Lot No {$lotNo} already exists. Please use a unique Lot No.");
+                $existingLot = OrderLot::where('lot_no', $lotNo)->first();
+                if ($existingLot) {
+                    if ($existingLot->order_products_set_id != $order_product_set->id) {
+                        throw new \Exception("Lot No {$lotNo} already exists for a different design/size set.");
+                    }
+                    if ($existingLot->production_slip_digitization_id != $request->production_slip_digitization_id) {
+                        throw new \Exception("Lot No {$lotNo} already exists on a different production slip.");
+                    }
+                    $save_lot = $existingLot;
+                } else {
+                    $save_lot = new OrderLot;
+                    $save_lot->order_main_id = $order_product_set->orderMain?->id;
+                    $save_lot->order_products_set_id = $order_product_set->id;
+                    $save_lot->production_slip_digitization_id = $request->production_slip_digitization_id;
+                    $save_lot->lot_no = $lotNo;
+                    $save_lot->production_datetime = $request->production_datetime;
+                    $save_lot->save();
                 }
-
-                $save_lot = new OrderLot;
-                $save_lot->order_main_id = $order_product_set->orderMain?->id;
-                $save_lot->order_products_set_id = $order_product_set->id;
-                $save_lot->production_slip_digitization_id = $request->production_slip_digitization_id;
-                $save_lot->lot_no = $lotNo;
-                $save_lot->production_datetime = $request->production_datetime;
-                $save_lot->save();
 
                 // ✅ NEW: Update Cutting Stage with actual Lot No for future timing updates
                 \App\Models\OrderCuttingStage::where('set_product_id', $order_product_set->id)
