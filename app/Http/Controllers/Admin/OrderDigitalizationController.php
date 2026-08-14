@@ -288,7 +288,7 @@ class OrderDigitalizationController extends Controller
 
     public function getLotDetailsForHandSlip(Request $request)
     {
-        $details = $this->service->getLotDetailsForHandSlip($request->lot_no, $request->from_stage_id, $request->movement_type);
+        $details = $this->service->getLotDetailsForHandSlip($request->lot_no, $request->from_stage_id, $request->movement_type, $request->production_slip_digitization_id);
         return response()->json($details);
     }
 

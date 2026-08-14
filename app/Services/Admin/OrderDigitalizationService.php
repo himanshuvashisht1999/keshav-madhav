@@ -2023,8 +2023,17 @@ class OrderDigitalizationService
         return $availableLots;
     }
 
-    public function getLotDetailsForHandSlip($lot_no, $current_stage_id, $movement_type = 1)
+    public function getLotDetailsForHandSlip($lot_no, $current_stage_id, $movement_type = 1, $production_slip_digitization_id = null)
     {
+        // Get the current unit ID from the production slip
+        $unit_id = null;
+        if ($production_slip_digitization_id) {
+            $slip = ProductionSlipDigitization::find($production_slip_digitization_id);
+            $unit_id = $slip ? $slip->stage_master_unit_id : null;
+        }
+
+        /*
+        // ORIGINAL LOT-LEVEL INFLOW (COMMENTED OUT)
         // 1. Calculate Inflow (Total Items entered this stage) per size
         $inflowData = collect();
 
@@ -2047,7 +2056,43 @@ class OrderDigitalizationService
                     ->get()
             );
         }
+        */
 
+        // NEW UNIT-LEVEL INFLOW
+        $inflowData = collect();
+
+        // Standard stage transactions (To current stage, filtered by sub_stage_id_to for this unit)
+        $inflowQuery = OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transactions.id', '=', 'order_stage_transaction_details.order_stage_transaction_id')
+            ->where('order_stage_transactions.to_stage_id', $current_stage_id)
+            ->where('order_stage_transactions.lot_no', $lot_no);
+        if ($unit_id) {
+            $inflowQuery->where('order_stage_transactions.sub_stage_id_to', $unit_id);
+        }
+        $inflowData = $inflowData->concat($inflowQuery->select('order_stage_transaction_details.size', 'order_stage_transaction_details.quantity')->get());
+
+        // Printing specific transactions (If stage is Printing)
+        if ($current_stage_id == 1) {
+            $printingInflowQuery = OrderPrintingStageTransactionDetail::join('order_printing_stage_transactions', 'order_printing_stage_transactions.id', '=', 'order_printing_stage_transaction_details.order_printing_stage_transaction_id')
+                ->where('order_printing_stage_transactions.to_stage_id', $current_stage_id)
+                ->where('order_printing_stage_transactions.lot_no', $lot_no);
+            if ($unit_id) {
+                $printingInflowQuery->where('order_printing_stage_transactions.sub_stage_id_to', $unit_id);
+            }
+            $inflowData = $inflowData->concat($printingInflowQuery->select('order_printing_stage_transaction_details.size', 'order_printing_stage_transaction_details.quantity')->get());
+        }
+
+        // Cutting specific (Stage 3): Pull cut quantities from FabricRollAssigning details for this unit
+        if ($current_stage_id == 3) {
+            $cuttingQuery = \App\Models\FabricRollAssigningsDetail::join('production_fabric_roll_assigning', 'production_fabric_roll_assigning.id', '=', 'fabric_roll_assignings_detail.production_fabric_roll_assigning_id')
+                ->where('production_fabric_roll_assigning.lot_no', $lot_no);
+            if ($unit_id) {
+                $cuttingQuery->where('production_fabric_roll_assigning.stage_master_unit_id', $unit_id);
+            }
+            $inflowData = $inflowData->concat($cuttingQuery->select('fabric_roll_assignings_detail.size', 'fabric_roll_assignings_detail.quantity')->get());
+        }
+
+        /*
+        // ORIGINAL LOT-LEVEL OUTFLOW (COMMENTED OUT)
         // 2. Calculate Outflow (What already LEFT this stage) per size
         $outflowData = collect();
 
@@ -2101,6 +2146,61 @@ class OrderDigitalizationService
                 ->select('order_godam_stage_transaction_details.size', 'order_godam_stage_transaction_details.quantity')
                 ->get()
         );
+        */
+
+        // NEW UNIT-LEVEL OUTFLOW
+        $outflowData = collect();
+
+        // Standard stage transactions (From current stage, filtered by sub_stage_id for this unit)
+        $outflowQuery = OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transactions.id', '=', 'order_stage_transaction_details.order_stage_transaction_id')
+            ->where('order_stage_transactions.from_stage_id', $current_stage_id)
+            ->where('order_stage_transactions.lot_no', $lot_no);
+        if ($unit_id) {
+            $outflowQuery->where('order_stage_transactions.sub_stage_id', $unit_id);
+        }
+        $outflowData = $outflowData->concat($outflowQuery->select('order_stage_transaction_details.size', 'order_stage_transaction_details.quantity')->get());
+
+        // Movement to Printing (Stage 3 outflow)
+        if ($current_stage_id == 3) {
+            $printingOutflowQuery = OrderPrintingStageTransactionDetail::join('order_printing_stage_transactions', 'order_printing_stage_transactions.id', '=', 'order_printing_stage_transaction_details.order_printing_stage_transaction_id')
+                ->where('order_printing_stage_transactions.from_stage_id', $current_stage_id)
+                ->where('order_printing_stage_transactions.lot_no', $lot_no);
+            if ($unit_id) {
+                $printingOutflowQuery->where('order_printing_stage_transactions.sub_stage_id', $unit_id);
+            }
+            $outflowData = $outflowData->concat($printingOutflowQuery->select('order_printing_stage_transaction_details.size', 'order_printing_stage_transaction_details.quantity')->get());
+        }
+
+        // Movement within Printing (Stage 1 outflow)
+        if ($current_stage_id == 1) {
+            $printingInternalOutflowQuery = OrderPrintingStageTransactionDetail::join('order_printing_stage_transactions', 'order_printing_stage_transactions.id', '=', 'order_printing_stage_transaction_details.order_printing_stage_transaction_id')
+                ->where('order_printing_stage_transactions.from_stage_id', $current_stage_id)
+                ->where('order_printing_stage_transactions.lot_no', $lot_no);
+            if ($unit_id) {
+                $printingInternalOutflowQuery->where('order_printing_stage_transactions.sub_stage_id', $unit_id);
+            }
+            $outflowData = $outflowData->concat($printingInternalOutflowQuery->select('order_printing_stage_transaction_details.size', 'order_printing_stage_transaction_details.quantity')->get());
+        }
+
+        // Movement from Printing to Stitching (Stage 1 outflow)
+        if ($current_stage_id == 1) {
+            $printingToStitchingOutflowQuery = OrderPrintingToStichingTransactionDetail::join('order_printing_to_stiching_transactions', 'order_printing_to_stiching_transactions.id', '=', 'order_printing_to_stiching_transaction_details.order_printing_to_stiching_transaction_id')
+                ->where('order_printing_to_stiching_transactions.from_stage_id', $current_stage_id)
+                ->where('order_printing_to_stiching_transactions.lot_no', $lot_no);
+            if ($unit_id) {
+                $printingToStitchingOutflowQuery->where('order_printing_to_stiching_transactions.sub_stage_id', $unit_id);
+            }
+            $outflowData = $outflowData->concat($printingToStitchingOutflowQuery->select('order_printing_to_stiching_transaction_details.size', 'order_printing_to_stiching_transaction_details.quantity')->get());
+        }
+
+        // Movement to Godam (any stage to 13)
+        $godamOutflowQuery = OrderGodamStageTransactionDetail::join('order_godam_stage_transactions', 'order_godam_stage_transactions.id', '=', 'order_godam_stage_transaction_details.order_godam_stage_transaction_id')
+            ->where('order_godam_stage_transactions.from_stage_id', $current_stage_id)
+            ->where('order_godam_stage_transactions.lot_no', $lot_no);
+        if ($unit_id) {
+            $godamOutflowQuery->where('order_godam_stage_transactions.sub_stage_id', $unit_id);
+        }
+        $outflowData = $outflowData->concat($godamOutflowQuery->select('order_godam_stage_transaction_details.size', 'order_godam_stage_transaction_details.quantity')->get());
 
         $inventory = [];
         foreach ($inflowData as $item) {
