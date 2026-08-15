@@ -8,24 +8,30 @@
                 <label class="small font-weight-bold">Design</label>
                 <select id="domesticDesign" class="form-control form-control-sm">
                     <option value="">Select Design</option>
-                    @php
-                        $designsToRender = $isDomesticOrder ? $all_designs : $unique_designs;
-                    @endphp
-                    @foreach($designsToRender as $design)
-                    <option value="{{ $design }}">{{ $design }}</option>
+                    @foreach($designs_with_ids as $d)
+                    <option value="{{ $d->design_number }}" data-product-id="{{ $d->id }}">{{ $d->design_number }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="col-md-2 mb-2">
                 <label class="small font-weight-bold">Size Set</label>
-                <select id="domesticSizeSet" class="form-control form-control-sm" disabled>
+                <select id="domesticSizeSet" class="form-control form-control-sm">
                     <option value="">Select Size Set</option>
+                    @foreach($filtered_size_sets as $set)
+                        @php
+                            $sizesJson = json_encode(array_map('trim', explode(',', $set->size_group)));
+                        @endphp
+                        <option value="{{ $set->id }}" data-sizes="{{ htmlentities($sizesJson) }}">{{ $set->name }} ({{ $set->no_of_pcs }} pcs)</option>
+                    @endforeach
                 </select>
             </div>
             <div class="col-md-2 mb-2">
                 <label class="small font-weight-bold">Color</label>
-                <select id="domesticColor" class="form-control form-control-sm" disabled>
+                <select id="domesticColor" class="form-control form-control-sm">
                     <option value="">Select Color</option>
+                    @foreach($all_master_colors as $color)
+                        <option value="{{ $color->id }}">{{ $color->name }}</option>
+                    @endforeach
                 </select>
             </div>
             <div class="col-md-2 mb-2">

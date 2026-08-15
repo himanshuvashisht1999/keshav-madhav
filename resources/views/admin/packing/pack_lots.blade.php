@@ -1827,7 +1827,7 @@
             // Fetch size sets for this design via API
             $.ajax({
                 url: "{{ route('admin.packing.apiGetSizeSets', $slip_id) }}",
-                data: { design_number: design },
+                data: { design_number: design, for_planner: 1 },
                 success: function(response) {
                     if (response.status === 'success' && response.size_sets) {
                         response.size_sets.forEach(set => {
@@ -2156,43 +2156,11 @@
             });
         }
 
-        // 1. Design change → load filtered Size Sets via AJAX
+        // 1. Design change -> set product id
         $('#domesticDesign').change(function() {
-            let design = $(this).val();
-            let $sizeSet = $('#domesticSizeSet');
-            let $color = $('#domesticColor');
-
-            // Reset dependents
-            $sizeSet.html('<option value="">Select Size Set</option>').prop('disabled', true);
-            $color.html('<option value="">Select Color</option>').prop('disabled', true);
-            $('#domesticDesign').data('product-id', '');
-
-            // Reset qty field
-            $('#domesticQty').val('').prop('disabled', true).removeAttr('max');
-            $('#domesticQtyInfo').text('Select size set first').removeClass('text-success text-danger text-warning').addClass('text-muted');
-
-            if (!design) return;
-
-            $sizeSet.html('<option value="">Loading...</option>').prop('disabled', true);
-            $.ajax({
-                url: "{{ route('admin.packing.apiGetSizeSets', $slip_id) }}",
-                type: 'GET',
-                data: { design_number: design },
-                success: function(res) {
-                    $sizeSet.html('<option value="">Select Size Set</option>');
-                    if (res.status === 'success' && res.size_sets.length > 0) {
-                        res.size_sets.forEach(function(ss) {
-                            $sizeSet.append(`<option value="${ss.id}" data-sizes="${(ss.required_sizes || []).join(',')}">${ss.name} (${ss.no_of_pcs} pcs)</option>`);
-                        });
-                        $sizeSet.prop('disabled', false);
-                    } else {
-                        $sizeSet.html('<option value="">No Size Sets Found</option>');
-                    }
-                },
-                error: function() {
-                    $sizeSet.html('<option value="">Error loading size sets</option>');
-                }
-            });
+            let productId = $(this).find('option:selected').data('product-id');
+            $(this).data('product-id', productId);
+            updateDomesticMaxQty();
         });
 
         function updateDomesticMaxQty() {
@@ -2217,11 +2185,12 @@
                 $qtyInfo.text('No size configuration found').addClass('text-danger');
                 return;
             }
-            let requiredSizesArray = requiredSizesStr.split(',').map(s => s.trim().toUpperCase());
+            let requiredSizesArray = JSON.parse(requiredSizesStr);
 
             // Count occurrences of each size in the set
             let sizeCounts = {};
             requiredSizesArray.forEach(size => {
+                size = size.toString().trim().toUpperCase();
                 sizeCounts[size] = (sizeCounts[size] || 0) + 1;
             });
 
@@ -2255,64 +2224,9 @@
             }
         }
 
-        // 2. Size Set change → load filtered Colors + product_id via AJAX
+        // 2. Size Set change
         $('#domesticSizeSet').change(function() {
-            let design = $('#domesticDesign').val();
-            let sizeSetId = $(this).val();
-            let $color = $('#domesticColor');
-
-            $color.html('<option value="">Select Color</option>').prop('disabled', true);
-            $('#domesticDesign').data('product-id', '');
-
             updateDomesticMaxQty();
-
-            if (!design || !sizeSetId) return;
-
-            $color.html('<option value="">Loading...</option>').prop('disabled', true);
-
-            $.ajax({
-                url: "{{ route('admin.packing.apiGetMasterData', $slip_id) }}",
-                type: 'GET',
-                data: { design_number: design, size_set_id: sizeSetId },
-                success: function(res) {
-                    $color.html('<option value="">Select Color</option>');
-                    if (res.status === 'success') {
-                        $('#domesticDesign').data('product-id', res.product_id);
-                        
-                        let minSets = 999999;
-                        if (res.available_balances) {
-                            let requiredSizesStr = $('#domesticSizeSet option:selected').attr('data-sizes');
-                            let requiredSizes = [];
-                            if (requiredSizesStr) {
-                                requiredSizes = requiredSizesStr.split(',').map(s => s.trim().toUpperCase());
-                            }
-                            
-                            requiredSizes.forEach(sz => {
-                                let bal = res.available_balances[sz] || 0;
-                                minSets = Math.min(minSets, bal);
-                            });
-                        }
-                        if (minSets === 999999) minSets = 0;
-                        $('#domesticDesign').data('max-sets', minSets);
-
-                        if (res.colors && res.colors.length > 0) {
-                            res.colors.forEach(function(c) {
-                                $color.append(`<option value="${c.id}">${c.name}</option>`);
-                            });
-                            $color.prop('disabled', false);
-                        } else {
-                            $color.html('<option value="">No Colors Found</option>');
-                        }
-                    } else {
-                        $color.html('<option value="">Not Found</option>');
-                    }
-                    updateDomesticMaxQty();
-                },
-                error: function() {
-                    $color.html('<option value="">Error loading colors</option>');
-                    updateDomesticMaxQty();
-                }
-            });
         });
 
         // Trigger max qty update on color selection change
@@ -2583,7 +2497,7 @@
 
             $.ajax({
                 url: "{{ route('admin.packing.apiGetSizeSets', $slip_id) }}",
-                data: { design_number: design },
+                data: { design_number: design, for_sampling: 1 },
                 success: function(res) {
                     if (res.status === 'success' && res.size_sets) {
                         res.size_sets.forEach(set => {

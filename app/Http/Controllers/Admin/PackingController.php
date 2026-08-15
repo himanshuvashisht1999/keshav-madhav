@@ -551,7 +551,39 @@ class PackingController extends Controller
             return $lot->remaining_quantity > 0 || $has_session_activity;
         })->values();
 
-        return view('admin.packing.pack_lots', compact('slip_id', 'packing', 'order', 'lots_data', 'set_details', 'unique_designs', 'unique_colors', 'storerooms', 'saved_cartons', 'saved_reworks', 'saved_dead', 'saved_sampling', 'saved_debit', 'all_master_colors', 'all_size_sets', 'saved_domestic', 'all_designs', 'packed_by_lot_size', 'rework_by_lot_size', 'outflow_by_lot_size'));
+        // Calculate available sizes from selected lots
+        $available_sizes = [];
+        foreach ($set_details as $setId => $details) {
+            foreach ($details as $detail) {
+                if ($detail->size) {
+                    $available_sizes[] = trim(strtoupper($detail->size));
+                }
+            }
+        }
+        $available_sizes = array_unique($available_sizes);
+
+        $filtered_size_sets = \App\Models\MasterSizeMeasurement::where('status', 1)->get()->filter(function($sizeSet) use ($available_sizes) {
+            if (empty($sizeSet->size_group)) return false;
+            $sizes = array_map(function($s) {
+                return trim(strtoupper($s));
+            }, explode(',', $sizeSet->size_group));
+            
+            foreach ($sizes as $sz) {
+                if (!in_array($sz, $available_sizes)) {
+                    return false;
+                }
+            }
+            return true;
+        })->values();
+
+        $designs_with_ids = \App\Models\ProductionGoods::where('status', 1)
+            ->whereNotNull('design_number')
+            ->orderBy('design_number')
+            ->get(['id', 'design_number'])
+            ->unique('design_number')
+            ->values();
+
+        return view('admin.packing.pack_lots', compact('slip_id', 'packing', 'order', 'lots_data', 'set_details', 'unique_designs', 'unique_colors', 'storerooms', 'saved_cartons', 'saved_reworks', 'saved_dead', 'saved_sampling', 'saved_debit', 'all_master_colors', 'all_size_sets', 'filtered_size_sets', 'designs_with_ids', 'saved_domestic', 'all_designs', 'packed_by_lot_size', 'rework_by_lot_size', 'outflow_by_lot_size'));
     }
 
     public function resetSlip($slip_id)
@@ -568,22 +600,31 @@ class PackingController extends Controller
     public function apiGetSizeSets(Request $request, $slip_id)
     {
         $design = $request->design_number;
+        $for_sampling = $request->for_sampling;
+        $for_planner = $request->for_planner;
         
-        $selected_lots = \App\Models\PackingSelectedLot::where('slip_id', $slip_id)->pluck('lot_no')->toArray();
-        $lots_size_set_ids = \Illuminate\Support\Facades\DB::table('order_lots')
-            ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
-            ->whereIn('order_lots.lot_no', $selected_lots)
-            ->where('order_products_sets.design_number', $design)
-            ->pluck('order_products_sets.set_size')
-            ->unique()
-            ->toArray();
-        
-        $products = \App\Models\ProductionGoods::with(['variants' => function($q) use ($lots_size_set_ids) {
-                $q->whereIn('master_size_measurement_id', $lots_size_set_ids)->with('sizeSet');
-            }])
-            ->where('design_number', $design)
-            ->where('status', 1)
-            ->get();
+        if ($for_sampling || $for_planner) {
+            $selected_lots = \App\Models\PackingSelectedLot::where('slip_id', $slip_id)->pluck('lot_no')->toArray();
+            $lots_size_set_ids = \Illuminate\Support\Facades\DB::table('order_lots')
+                ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
+                ->whereIn('order_lots.lot_no', $selected_lots)
+                ->where('order_products_sets.design_number', $design)
+                ->pluck('order_products_sets.set_size')
+                ->unique()
+                ->toArray();
+            
+            $products = \App\Models\ProductionGoods::with(['variants' => function($q) use ($lots_size_set_ids) {
+                    $q->whereIn('master_size_measurement_id', $lots_size_set_ids)->with('sizeSet');
+                }])
+                ->where('design_number', $design)
+                ->where('status', 1)
+                ->get();
+        } else {
+            $products = \App\Models\ProductionGoods::with(['variants.sizeSet'])
+                ->where('design_number', $design)
+                ->where('status', 1)
+                ->get();
+        }
             
         $size_sets = [];
         foreach ($products as $product) {
@@ -2243,6 +2284,9 @@ class PackingController extends Controller
                 if (!$sizeSetMaster)
                     continue;
 
+                // Ensure product variant and color mapping exist in database
+                $this->ensureProductVariantExists($data['product_id'], $data['size_set_id'], $data['color_id']);
+
                 $total_sets = (int) $data['quantity'];
 
                 // Sync fitting and pattern from corporate order set to production_goods product if not set
@@ -2295,40 +2339,19 @@ class PackingController extends Controller
                             $remToDeduct = $pcsPerSet * 1; // 1 set per box
                             $sizePiecesDeducted = 0;
 
-                            // 1. Order Deduction
-                            $orderDetails = \App\Models\OrderProductSetDetail::whereHas('orderProductSet', function ($q) use ($order_id) {
-                                $q->where('order_main_id', $order_id);
-                            })
-                                ->where('size', (string) $sizeName)
-                                ->where('remaining_quantity', '>', 0)
-                                ->get();
-
-                            $remOrder = $remToDeduct;
-                            $firstDetailId = 0;
-                            $firstDetailRecord = null;
-                            foreach ($orderDetails as $od) {
-                                if ($remOrder <= 0)
-                                    break;
-                                if ($firstDetailId == 0) {
-                                    $firstDetailId = $od->id;
-                                    $firstDetailRecord = $od;
-                                }
-                                $deduct = min($od->remaining_quantity, $remOrder);
-                                $od->remaining_quantity -= $deduct;
-                                $od->save();
-                                $remOrder -= $deduct;
-                            }
-
-                            // 2. Unit Stock Deduction
-                            $stockTransactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-                                ->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
-                                ->where('remaining_quantity', '>', 0)
-                                ->whereIn('lot_no', $orderLots)
-                                ->orderBy('id')
+                            // 1. Get Stage Transactions for this size from selected lots and process deductions
+                            $stockTransactions = \App\Models\OrderStageTransaction::where('order_stage_transactions.to_stage_id', 11)
+                                ->where('order_stage_transactions.sub_stage_id_to', $slip_details->stage_master_unit_id)
+                                ->where('order_stage_transactions.remaining_quantity', '>', 0)
+                                ->whereIn('order_stage_transactions.lot_no', $orderLots)
+                                ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
+                                ->join('order_products_set_details', 'order_lots.order_products_set_id', '=', 'order_products_set_details.order_products_set_id')
+                                ->where('order_products_set_details.size', (string) $sizeName)
+                                ->select('order_stage_transactions.*', 'order_products_set_details.id as matching_size_detail_id')
+                                ->orderBy('order_stage_transactions.id')
                                 ->get();
 
                             $remTrans = $remToDeduct;
-                            $sizePiecesDeducted = 0;
                             foreach ($stockTransactions as $tx) {
                                 if ($remTrans <= 0)
                                     break;
@@ -2339,16 +2362,25 @@ class PackingController extends Controller
                                 $sizePiecesDeducted += $dedTrans;
 
                                 if ($dedTrans > 0) {
-                                    // Calculate fallback price from order
-                                    $fallbackPrice = 0;
-                                    if ($firstDetailRecord && $firstDetailRecord->orderProductSet && $firstDetailRecord->orderProductSet->total_quantity > 0) {
-                                        $fallbackPrice = $firstDetailRecord->orderProductSet->basic_amount / $firstDetailRecord->orderProductSet->total_quantity;
+                                    // Deduct from matching size detail balance
+                                    $od = \App\Models\OrderProductSetDetail::with('orderProductSet')->find($tx->matching_size_detail_id);
+                                    if ($od) {
+                                        $od->remaining_quantity = max(0, $od->remaining_quantity - $dedTrans);
+                                        $od->save();
+                                        
+                                        // Calculate fallback price from order
+                                        $fallbackPrice = 0;
+                                        if ($od->orderProductSet && $od->orderProductSet->total_quantity > 0) {
+                                            $fallbackPrice = $od->orderProductSet->basic_amount / $od->orderProductSet->total_quantity;
+                                        }
+                                    } else {
+                                        $fallbackPrice = 0;
                                     }
 
                                     \App\Models\PackingItem::create([
                                         'packing_main_id' => $main->id,
                                         'packing_carton_id' => $carton->id,
-                                        'size_id' => $firstDetailId ?: 0,
+                                        'size_id' => $tx->matching_size_detail_id,
                                         'lot_no' => $tx->lot_no,
                                         'quantity' => $dedTrans,
                                         'selling_price' => $fallbackPrice,
@@ -2564,5 +2596,35 @@ class PackingController extends Controller
             'Content-Type' => 'text/plain',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
+    }
+
+    private function ensureProductVariantExists($product_id, $size_set_id, $color_id)
+    {
+        // 1. Find or create ProductionGoodVariant
+        $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $product_id)
+            ->where('master_size_measurement_id', $size_set_id)
+            ->first();
+            
+        if (!$variant) {
+            $variant = \App\Models\ProductionGoodVariant::create([
+                'production_goods_id' => $product_id,
+                'master_size_measurement_id' => $size_set_id,
+                'mrp' => 0
+            ]);
+        }
+        
+        // 2. Find or create ProductionGoodVariantItem
+        $item = \App\Models\ProductionGoodVariantItem::where('variant_id', $variant->id)
+            ->where('master_color_id', $color_id)
+            ->first();
+            
+        if (!$item) {
+            $barcode = 'D' . $product_id . 'S' . $size_set_id . 'C' . $color_id;
+            \App\Models\ProductionGoodVariantItem::create([
+                'variant_id' => $variant->id,
+                'master_color_id' => $color_id,
+                'barcode' => $barcode
+            ]);
+        }
     }
 }
