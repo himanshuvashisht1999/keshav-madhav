@@ -467,7 +467,7 @@ class PackingController extends Controller
         })->unique('id')->values();
         $storerooms = \App\Models\Storeroom::where('status', 1)->get();
 
-        $saved_cartons = \App\Models\PackingCarton::with(['items'])
+        $saved_cartons = \App\Models\PackingCarton::with(['items.detail.orderProductSet.size_measurement'])
             ->where('packing_main_id', $packing->id)
             ->where('status', 1)
             ->get();
@@ -509,14 +509,21 @@ class PackingController extends Controller
             ->unique()
             ->values();
 
-        $packed_by_lot_size = \App\Models\PackingItem::whereIn('lot_no', $selected_lots)
-            ->select('lot_no', 'size_id', DB::raw('SUM(quantity) as total'))
-            ->groupBy('lot_no', 'size_id')
+        $packed_by_lot_size = \App\Models\PackingItem::join('order_products_set_details', 'packing_items.size_id', '=', 'order_products_set_details.id')
+            ->whereIn('packing_items.lot_no', $selected_lots)
+            ->where('packing_items.packing_main_id', $packing->id)
+            ->select('packing_items.lot_no', 'order_products_set_details.size', DB::raw('SUM(packing_items.quantity) as total'))
+            ->groupBy('packing_items.lot_no', 'order_products_set_details.size')
             ->get()
+            ->map(function($item) {
+                $item->size = trim(strtoupper($item->size));
+                return $item;
+            })
             ->groupBy('lot_no');
 
         $rework_by_lot_size = \App\Models\OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transaction_details.order_stage_transaction_id', '=', 'order_stage_transactions.id')
             ->whereIn('order_stage_transactions.lot_no', $selected_lots)
+            ->where('order_stage_transactions.production_slip_digitization_id', $slip_id)
             ->where('order_stage_transactions.from_stage_id', 11)
             ->where('order_stage_transactions.type', 'rework')
             ->select('order_stage_transactions.lot_no', 'order_stage_transaction_details.size', DB::raw('SUM(order_stage_transaction_details.quantity) as total'))
@@ -524,11 +531,25 @@ class PackingController extends Controller
             ->get()
             ->groupBy('lot_no');
 
-        $outflow_by_lot_size = \App\Models\ProductionOutflowInventory::whereIn('lot_no', $selected_lots)
-            ->select('lot_no', 'size_id', DB::raw('SUM(quantity) as total'))
-            ->groupBy('lot_no', 'size_id')
+        $outflow_by_lot_size = \App\Models\ProductionOutflowInventory::join('order_products_set_details', 'production_outflow_inventories.size_id', '=', 'order_products_set_details.id')
+            ->whereIn('production_outflow_inventories.lot_no', $selected_lots)
+            ->where('production_outflow_inventories.slip_id', $slip_id)
+            ->select('production_outflow_inventories.lot_no', 'order_products_set_details.size', DB::raw('SUM(production_outflow_inventories.quantity) as total'))
+            ->groupBy('production_outflow_inventories.lot_no', 'order_products_set_details.size')
             ->get()
+            ->map(function($item) {
+                $item->size = trim(strtoupper($item->size));
+                return $item;
+            })
             ->groupBy('lot_no');
+
+        $lots_data = $lots_data->filter(function($lot) use ($packed_by_lot_size, $rework_by_lot_size, $outflow_by_lot_size) {
+            $packed_for_lot = isset($packed_by_lot_size[$lot->lot_no]) ? $packed_by_lot_size[$lot->lot_no]->sum('total') : 0;
+            $rework_for_lot = isset($rework_by_lot_size[$lot->lot_no]) ? $rework_by_lot_size[$lot->lot_no]->sum('total') : 0;
+            $outflow_for_lot = isset($outflow_by_lot_size[$lot->lot_no]) ? $outflow_by_lot_size[$lot->lot_no]->sum('total') : 0;
+            $has_session_activity = ($packed_for_lot > 0 || $rework_for_lot > 0 || $outflow_for_lot > 0);
+            return $lot->remaining_quantity > 0 || $has_session_activity;
+        })->values();
 
         return view('admin.packing.pack_lots', compact('slip_id', 'packing', 'order', 'lots_data', 'set_details', 'unique_designs', 'unique_colors', 'storerooms', 'saved_cartons', 'saved_reworks', 'saved_dead', 'saved_sampling', 'saved_debit', 'all_master_colors', 'all_size_sets', 'saved_domestic', 'all_designs', 'packed_by_lot_size', 'rework_by_lot_size', 'outflow_by_lot_size'));
     }
@@ -585,56 +606,204 @@ class PackingController extends Controller
         $design = $request->design_number;
         $size_set_id = $request->size_set_id;
         
-        $product = \App\Models\ProductionGoods::with(['variants' => function($q) use ($size_set_id) {
-            $q->where('master_size_measurement_id', $size_set_id)->with(['items.color', 'sizeSet']);
-        }])
-        ->where('design_number', $design)
-        ->where('status', 1)
-        ->first();
-        
-        if ($product && $product->variants->isNotEmpty()) {
-            $variant = $product->variants->first();
-            $colors = $variant->items->map(function($item) {
-                return $item->color ? ['id' => $item->color->id, 'name' => $item->color->name] : null;
-            })->filter()->values();
-
-            // Get total available remaining quantity in packing for this design
-            $slip = \App\Models\ProductionSlipDigitization::find($slip_id);
-            $available_pieces = 0;
-            if ($slip) {
-                $available_pieces = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-                    ->where('sub_stage_id_to', $slip->stage_master_unit_id)
-                    ->where('status', 1)
-                    ->where('sku', 'LIKE', "%{$design}%")
-                    ->sum('remaining_quantity');
-                
-                // Fallback: sum all transactions for this slip's unit
-                if ($available_pieces == 0) {
-                    $available_pieces = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-                        ->where('sub_stage_id_to', $slip->stage_master_unit_id)
-                        ->where('status', 1)
-                        ->sum('remaining_quantity');
-                }
-            }
-
-            $no_of_pcs = $variant->sizeSet ? ($variant->sizeSet->no_of_pcs ?: 1) : 1;
-            $max_sets = $no_of_pcs > 0 ? floor($available_pieces / $no_of_pcs) : $available_pieces;
-
-            return response()->json([
-                'status' => 'success',
-                'product_id' => $product->id,
-                'mrp' => $variant->mrp,
-                'price' => $variant->price ?? 0,
-                'colors' => $colors,
-                'available_pieces' => (int) $available_pieces,
-                'no_of_pcs' => (int) $no_of_pcs,
-                'max_sets' => (int) $max_sets,
+        // Find or create product dynamically
+        $product = \App\Models\ProductionGoods::where('design_number', $design)
+            ->where('status', 1)
+            ->first();
+            
+        if (!$product) {
+            $product = \App\Models\ProductionGoods::create([
+                'design_number' => $design,
+                'name' => 'Design ' . $design,
+                'sku' => 'DSN-' . $design,
+                'status' => 1
             ]);
         }
+        
+        if (is_string($size_set_id) && strpos($size_set_id, 'loose_') === 0) {
+            $singleSize = str_replace('loose_', '', $size_set_id);
+            $sizeSetModel = \App\Models\MasterSizeMeasurement::where('size_group', $singleSize)
+                ->where('no_of_pcs', 1)
+                ->where('status', 1)
+                ->first();
 
-        return response()->json(['status' => 'not_found']);
+            if (!$sizeSetModel) {
+                $sizeSetModel = \App\Models\MasterSizeMeasurement::create([
+                    'name' => "{$singleSize} (1 pcs)",
+                    'size_group' => $singleSize,
+                    'no_of_pcs' => 1,
+                    'status' => 1
+                ]);
+            }
+            $size_set_id = $sizeSetModel->id;
+        } else {
+            $size_set_id = empty($size_set_id) ? null : $size_set_id;
+        }
+        
+        // Find or create variant dynamically
+        $variant = null;
+        if ($size_set_id) {
+            $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $product->id)
+                ->where('master_size_measurement_id', $size_set_id)
+                ->first();
+                
+            if (!$variant) {
+                $variant = \App\Models\ProductionGoodVariant::create([
+                    'production_goods_id' => $product->id,
+                    'master_size_measurement_id' => $size_set_id,
+                    'mrp' => 0,
+                    'price' => 0,
+                    'status' => 1
+                ]);
+            }
+        }
+        
+        $mrp = $variant ? $variant->mrp : 0;
+        $price = $variant ? ($variant->price ?? 0) : 0;
+        
+        $colors = \App\Models\MasterColor::where('status', 1)->orderBy('name')->get(['id', 'name']);
+        
+        // Calculate size-wise available balances from the selected lots (regardless of design number)
+        $packing = \App\Models\PackingMain::where('slip_id', $slip_id)->first();
+        $selected_lots = \App\Models\PackingSelectedLot::where('slip_id', $slip_id)->pluck('lot_no')->toArray();
+        
+        $packed_by_lot_size = \App\Models\PackingItem::join('order_products_set_details', 'packing_items.size_id', '=', 'order_products_set_details.id')
+            ->whereIn('packing_items.lot_no', $selected_lots)
+            ->where('packing_items.packing_main_id', $packing ? $packing->id : 0)
+            ->select('packing_items.lot_no', 'order_products_set_details.size', \DB::raw('SUM(packing_items.quantity) as total'))
+            ->groupBy('packing_items.lot_no', 'order_products_set_details.size')
+            ->get()
+            ->map(function($item) {
+                $item->size = trim(strtoupper($item->size));
+                return $item;
+            })
+            ->groupBy('lot_no');
+
+        $rework_by_lot_size = \App\Models\OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transaction_details.order_stage_transaction_id', '=', 'order_stage_transactions.id')
+            ->whereIn('order_stage_transactions.lot_no', $selected_lots)
+            ->where('order_stage_transactions.production_slip_digitization_id', $slip_id)
+            ->where('order_stage_transactions.from_stage_id', 11)
+            ->where('order_stage_transactions.type', 'rework')
+            ->select('order_stage_transactions.lot_no', 'order_stage_transaction_details.size', \DB::raw('SUM(order_stage_transaction_details.quantity) as total'))
+            ->groupBy('order_stage_transactions.lot_no', 'order_stage_transaction_details.size')
+            ->get()
+            ->groupBy('lot_no');
+
+        $outflow_by_lot_size = \App\Models\ProductionOutflowInventory::join('order_products_set_details', 'production_outflow_inventories.size_id', '=', 'order_products_set_details.id')
+            ->whereIn('production_outflow_inventories.lot_no', $selected_lots)
+            ->where('production_outflow_inventories.slip_id', $slip_id)
+            ->select('production_outflow_inventories.lot_no', 'order_products_set_details.size', \DB::raw('SUM(production_outflow_inventories.quantity) as total'))
+            ->groupBy('production_outflow_inventories.lot_no', 'order_products_set_details.size')
+            ->get()
+            ->map(function($item) {
+                $item->size = trim(strtoupper($item->size));
+                return $item;
+            })
+            ->groupBy('lot_no');
+
+        $lots_data = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+            ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
+            ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
+            ->leftJoin('master_size_measurements', 'order_products_sets.set_size', '=', 'master_size_measurements.id')
+            ->where('order_stage_transactions.to_stage_id', 11)
+            ->whereIn('order_stage_transactions.lot_no', $selected_lots)
+            ->select(
+                'order_stage_transactions.id as transaction_id',
+                'order_stage_transactions.lot_no',
+                'order_products_sets.id as set_id',
+                'order_stage_transactions.remaining_quantity'
+            )
+            ->get();
+            
+        $set_ids = $lots_data->pluck('set_id')->unique()->toArray();
+        $set_details = \App\Models\OrderProductSetDetail::whereIn('order_products_set_id', $set_ids)->get()->groupBy('order_products_set_id');
+
+        $available_pieces = 0;
+        $available_balances = [];
+        
+        foreach ($lots_data as $lot) {
+            if (isset($set_details[$lot->set_id])) {
+                $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
+                $packed_for_lot = isset($packed_by_lot_size[$lot->lot_no]) ? $packed_by_lot_size[$lot->lot_no]->sum('total') : 0;
+                $rework_for_lot = isset($rework_by_lot_size[$lot->lot_no]) ? $rework_by_lot_size[$lot->lot_no]->sum('total') : 0;
+                $outflow_for_lot = isset($outflow_by_lot_size[$lot->lot_no]) ? $outflow_by_lot_size[$lot->lot_no]->sum('total') : 0;
+                $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
+                
+                foreach ($set_details[$lot->set_id] as $detail) {
+                    $sizeName = trim(strtoupper($detail->size));
+                    $original_size_qty = $total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0;
+                    
+                    $packed_qty = 0;
+                    if (isset($packed_by_lot_size[$lot->lot_no])) {
+                        $item = $packed_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                        if ($item) $packed_qty = $item->total;
+                    }
+                    $rework_qty = 0;
+                    if (isset($rework_by_lot_size[$lot->lot_no])) {
+                        $item = $rework_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                        if ($item) $rework_qty = $item->total;
+                    }
+                    $outflow_qty = 0;
+                    if (isset($outflow_by_lot_size[$lot->lot_no])) {
+                        $item = $outflow_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                        if ($item) $outflow_qty = $item->total;
+                    }
+                    
+                    $live = max(0, $original_size_qty - $packed_qty - $rework_qty - $outflow_qty);
+                    $available_pieces += $live;
+                    
+                    if (!isset($available_balances[$sizeName])) {
+                        $available_balances[$sizeName] = 0;
+                    }
+                    $available_balances[$sizeName] += $live;
+                }
+            }
+        }
+        
+        $no_of_pcs = 1;
+        if ($size_set_id) {
+            $sizeSetModel = \App\Models\MasterSizeMeasurement::find($size_set_id);
+            $no_of_pcs = $sizeSetModel ? ($sizeSetModel->no_of_pcs ?: 1) : 1;
+        }
+        
+        $max_sets = $no_of_pcs > 0 ? floor($available_pieces / $no_of_pcs) : $available_pieces;
+        
+        // Fetch variant details for color dropdown
+        $variant_first = null;
+        if ($size_set_id) {
+            $variant_first = \App\Models\ProductionGoodVariant::where('production_goods_id', $product->id)
+                ->where('master_size_measurement_id', $size_set_id)
+                ->first();
+        }
+        
+        $colors_list = [];
+        if ($variant_first) {
+            $colors_list = \App\Models\ProductionGoodVariantItem::where('variant_id', $variant_first->id)
+                ->with('color')
+                ->get()
+                ->map(function($item) {
+                    return $item->color ? ['id' => $item->color->id, 'name' => $item->color->name] : null;
+                })
+                ->filter()
+                ->values()
+                ->all();
+        }
+        if (empty($colors_list)) {
+            $colors_list = \App\Models\MasterColor::where('status', 1)->orderBy('name')->get(['id', 'name'])->toArray();
+        }
+        
+        return response()->json([
+            'status' => 'success',
+            'product_id' => $product->id,
+            'mrp' => $mrp,
+            'price' => $price,
+            'colors' => $colors_list,
+            'available_pieces' => (int) $available_pieces,
+            'no_of_pcs' => (int) $no_of_pcs,
+            'max_sets' => (int) $max_sets,
+            'available_balances' => $available_balances
+        ]);
     }
-
 
     public function apiSaveCartonPlan(Request $request, $slip_id)
     {
@@ -1847,6 +2016,29 @@ class PackingController extends Controller
     {
         $result = $this->service->deleteOutflow($id);
         return response()->json($result);
+    }
+
+    public function bulkDeleteOutflow(Request $request)
+    {
+        $ids = $request->ids;
+        if (empty($ids) || !is_array($ids)) {
+            return response()->json(['status' => 'error', 'message' => 'No records selected.']);
+        }
+
+        DB::beginTransaction();
+        try {
+            foreach ($ids as $id) {
+                $res = $this->service->deleteOutflow($id);
+                if (isset($res['status']) && $res['status'] === 'error') {
+                    throw new \Exception($res['message'] ?? 'Failed to delete record ID: ' . $id);
+                }
+            }
+            DB::commit();
+            return response()->json(['status' => 'success', 'message' => 'Selected records deleted successfully.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        }
     }
 
     public function deleteRework($id)

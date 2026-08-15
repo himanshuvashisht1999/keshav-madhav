@@ -1195,6 +1195,7 @@ class PackingService
                     'remaining_quantity' => $totalPcs,
                     'remarks' => $remarks,
                     'production_datetime' => now(),
+                    'production_slip_digitization_id' => $slipId,
                     'status' => 1,
                     'type' => 'rework' // KEY: mark as rework
                 ]);

@@ -83,15 +83,21 @@
 
 <hr class="my-4">
 
-<h6 class="font-weight-bold mb-3">Saved Domestic Boxes <span class="badge badge-secondary">{{ $saved_domestic->count() }}</span></h6>
+<div class="d-flex align-items-center mb-3">
+    <h6 class="font-weight-bold mb-0">Saved Domestic Boxes <span class="badge badge-secondary">{{ $saved_domestic->count() }}</span></h6>
+    <button type="button" class="btn btn-xs btn-danger ml-3 btn-bulk-delete-domestic" style="display:none;"><i class="fas fa-trash-alt"></i> Delete Selected (<span class="selected-count">0</span>)</button>
+</div>
 <div class="table-responsive bg-white rounded shadow-sm border mb-3" style="max-height: 400px; overflow-y: auto;">
     <table class="table table-hover table-sm text-center align-middle mb-0">
         <thead class="bg-light">
             <tr>
+                <th width="3%" class="text-center"><input type="checkbox" class="select-all-domestic"></th>
                 <th>Box/Carton NO</th>
                 <th>Design</th>
                 <th>Size Set</th>
                 <th>Color</th>
+                <th>Pcs/Box</th>
+                <th>Total Boxes</th>
                 <th>Total Pcs</th>
                 <th>Storage Rack</th>
                 <th>Barcode</th>
@@ -101,11 +107,14 @@
         <tbody>
             @forelse($saved_domestic as $dom)
             <tr>
+                <td class="text-center"><input type="checkbox" class="domestic-chk" value="{{ $dom->id }}"></td>
                 <td class="font-weight-bold text-primary">{{ $dom->box_no }} (Carton #{{ $dom->carton_no }})</td>
                 <td>{{ $dom->product->design_number ?? 'N/A' }}</td>
                 <td>{{ $dom->sizeSet->name ?? 'N/A' }}</td>
                 <td>{{ $dom->color->name ?? 'N/A' }}</td>
                 <td>{{ $dom->quantity }} pcs</td>
+                <td><strong class="text-primary">{{ $dom->total_boxes }}</strong></td>
+                <td><strong class="text-success">{{ $dom->quantity * $dom->total_boxes }} pcs</strong></td>
                 <td>
                     @if($dom->rack)
                         <span class="badge badge-info">{{ $dom->rack->storeroom->name ?? '' }} / {{ $dom->rack->name }}</span>
@@ -122,7 +131,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="8" class="text-muted py-4">No domestic packing saved for this slip yet.</td>
+                <td colspan="11" class="text-muted py-4">No domestic packing saved for this slip yet.</td>
             </tr>
             @endforelse
         </tbody>

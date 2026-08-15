@@ -125,7 +125,19 @@
             <i class="fas fa-box-open mr-2 text-primary"></i> 
             Step 2: Pack Selected Lots | <span class="text-muted" style="font-size: 1rem; font-weight: normal;">Slip #{{ $slip_id }}</span>
         </h1>
-        <div>
+        <div class="d-flex" style="gap: 8px;">
+            @php $slip = \App\Models\ProductionSlipDigitization::find($slip_id); @endphp
+            @if($slip && $slip->slip_file)
+                <button type="button" class="btn btn-erp btn-info text-white" data-toggle="modal" data-target="#slipModal">
+                    <i class="fas fa-image mr-1"></i> View Production Slip
+                </button>
+            @endif
+            <button type="button" id="btnResetSlip" class="btn btn-erp btn-outline-danger">
+                <i class="fas fa-trash-restore mr-1"></i> Reset Slip
+            </button>
+            <button type="button" id="btnFinalizePacking" class="btn btn-erp btn-success text-white">
+                <i class="fas fa-check-circle mr-1"></i> Finalize Packing
+            </button>
             <a href="{{ route('admin.packing.processNew', $slip_id) }}" class="btn btn-erp btn-erp-default">
                 <i class="fas fa-arrow-left text-muted"></i> Back to Selection
             </a>
@@ -142,20 +154,123 @@
             </div>
         @endif
 
-        <div class="erp-card p-0">
-            <div class="table-responsive">
-                <table class="table erp-table table-sm table-bordered mb-0" style="font-size: 0.85rem;">
-                    <thead class="thead-light">
+        @php
+            $consolidated_sizes = [];
+            foreach ($lots_data as $lot) {
+                if (isset($set_details[$lot->set_id])) {
+                    $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
+                    
+                    // Sum up deductions for this lot in the current slip session first
+                    $packed_for_lot = 0;
+                    if (isset($packed_by_lot_size[$lot->lot_no])) {
+                        $packed_for_lot = $packed_by_lot_size[$lot->lot_no]->sum('total');
+                    }
+                    $rework_for_lot = 0;
+                    if (isset($rework_by_lot_size[$lot->lot_no])) {
+                        $rework_for_lot = $rework_by_lot_size[$lot->lot_no]->sum('total');
+                    }
+                    $outflow_for_lot = 0;
+                    if (isset($outflow_by_lot_size[$lot->lot_no])) {
+                        $outflow_for_lot = $outflow_by_lot_size[$lot->lot_no]->sum('total');
+                    }
+                    
+                    $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
+                    
+                    foreach ($set_details[$lot->set_id] as $detail) {
+                        $sizeName = trim(strtoupper($detail->size));
+                        
+                        $original_size_qty = 0;
+                        if ($total_set_qty > 0) {
+                            $original_size_qty = floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty));
+                        }
+                        
+                        $packed_qty = 0;
+                        if (isset($packed_by_lot_size[$lot->lot_no])) {
+                            $item = $packed_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                            if ($item) $packed_qty = $item->total;
+                        }
+
+                        $rework_qty = 0;
+                        if (isset($rework_by_lot_size[$lot->lot_no])) {
+                            $item = $rework_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                            if ($item) $rework_qty = $item->total;
+                        }
+
+                        $outflow_qty = 0;
+                        if (isset($outflow_by_lot_size[$lot->lot_no])) {
+                            $item = $outflow_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                            if ($item) $outflow_qty = $item->total;
+                        }
+
+                        $live_remaining_for_size = max(0, $original_size_qty - $packed_qty - $rework_qty - $outflow_qty);
+
+                        if (!isset($consolidated_sizes[$sizeName])) {
+                            $consolidated_sizes[$sizeName] = [
+                                'size' => $detail->size,
+                                'breakdown' => 0,
+                                'live' => 0
+                            ];
+                        }
+                        $consolidated_sizes[$sizeName]['breakdown'] += $live_remaining_for_size;
+                        $consolidated_sizes[$sizeName]['live'] += $live_remaining_for_size;
+                    }
+                }
+            }
+            ksort($consolidated_sizes);
+        @endphp
+
+        <!-- Permanent Consolidated Size Breakdown Bar (Sticky Page-level) -->
+        <div class="card border shadow-sm mb-3" style="position: sticky; top: 0; z-index: 1040; background-color: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px);">
+            <div class="card-body px-3 py-2">
+                <div class="d-flex align-items-center flex-wrap" style="gap: 12px; font-size: 0.82rem;">
+                    <span class="font-weight-bold text-secondary"><i class="fas fa-chart-pie mr-1 text-info"></i> Consolidated Size Wise Stocks:</span>
+                    <div class="d-flex flex-wrap" style="gap: 8px;">
+                        @foreach($consolidated_sizes as $szName => $data)
+                        @php
+                            $cleanSize = str_replace([' ', '.'], '-', trim(strtoupper($data['size'])));
+                        @endphp
+                        <div class="border rounded px-2 py-1 bg-light d-flex align-items-center" style="gap: 5px;">
+                            <span class="font-weight-bold text-dark">{{ strtoupper($data['size']) }}:</span>
+                            <span class="badge badge-light text-primary border py-0 px-1">Lot: <span class="consolidated-lot-val" data-size="{{ $szName }}">{{ $data['breakdown'] }}</span></span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card erp-card border shadow-sm mb-3">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center py-2 px-3" data-toggle="collapse" data-target="#collapseLotsTable" aria-expanded="false" aria-controls="collapseLotsTable" style="cursor: pointer;">
+                <span class="font-weight-bold text-dark" style="font-size: 0.95rem;">
+                    <i class="fas fa-list mr-1 text-primary"></i> 
+                    Selected Lots Summary ({{ count($lots_data) }} Lots Selected — Total Pending: {{ collect($lots_data)->sum('remaining_quantity') }} pcs)
+                </span>
+                <span class="btn btn-sm btn-link text-primary font-weight-bold p-0 text-decoration-none">
+                    <i class="fas fa-chevron-down mr-1"></i> Toggle Detailed Breakdown
+                </span>
+            </div>
+            <div id="collapseLotsTable" class="collapse">
+                <div class="card-body p-0" style="max-height: 250px; overflow-y: auto;">
+                    <div class="table-responsive">
+                        <table class="table erp-table table-sm table-bordered mb-0" style="font-size: 0.85rem;">
+                     <thead class="thead-light">
                         <tr>
                             <th width="15%">Lot NO</th>
-                            <th width="20%">Design / Profile</th>
+                            <th width="25%">Design / Profile</th>
                             <th width="15%" class="text-center">Total Pending</th>
-                            <th width="35%">Sizes Breakdown (Size : Qty)</th>
-                            <th width="15%">Remaining (Live)</th>
+                             <th width="45%">Sizes Wise Breakdown</th>
                         </tr>
                     </thead>
+                    @php
+                        $grand_total_pending = 0;
+                        $grand_total_breakdown = 0;
+                        $grand_total_remaining = 0;
+                    @endphp
                     <tbody>
                         @foreach($lots_data as $lot)
+                        @php
+                            $grand_total_pending += $lot->remaining_quantity;
+                        @endphp
                         <tr>
                             <td class="font-weight-bold align-middle">
                                 <span class="erp-badge erp-badge-info">LOT-{{ str_pad($lot->lot_no, 4, '0', STR_PAD_LEFT) }}</span>
@@ -169,43 +284,41 @@
                                 {{ $lot->remaining_quantity }}
                             </td>
                             <td class="align-middle">
-                                <div class="d-flex flex-wrap" style="gap: 8px;">
-                                    @if(isset($set_details[$lot->set_id]))
-                                        @php
-                                            $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
-                                        @endphp
-                                        @foreach($set_details[$lot->set_id] as $detail)
-                                        @php
-                                            if($total_set_qty > 0) {
-                                                $pending_for_size = floor($lot->remaining_quantity * ($detail->total_quantity / $total_set_qty));
-                                            } else {
-                                                $pending_for_size = 0;
-                                            }
-                                        @endphp
-                                        <div style="border: 1px solid #dee2e6; border-radius: 3px; padding: 2px 8px; background: #f8f9fa;">
-                                            <span class="text-muted mr-1">{{ $detail->size }}:</span> 
-                                            <strong class="text-primary">{{ $pending_for_size }}</strong>
-                                        </div>
-                                        @endforeach
-                                    @else
-                                        <span class="text-muted">No size data</span>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="align-middle">
-                                <div class="d-flex flex-wrap" style="gap: 8px;">
-                                    @if(isset($set_details[$lot->set_id]))
-                                        @foreach($set_details[$lot->set_id] as $detail)
-                                        @php
+                                @if(isset($set_details[$lot->set_id]))
+                                    @php
+                                        $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
+                                        
+                                        // Sum up deductions for this lot in the current slip session first
+                                        $packed_for_lot = 0;
+                                        if (isset($packed_by_lot_size[$lot->lot_no])) {
+                                            $packed_for_lot = $packed_by_lot_size[$lot->lot_no]->sum('total');
+                                        }
+                                        $rework_for_lot = 0;
+                                        if (isset($rework_by_lot_size[$lot->lot_no])) {
+                                            $rework_for_lot = $rework_by_lot_size[$lot->lot_no]->sum('total');
+                                        }
+                                        $outflow_for_lot = 0;
+                                        if (isset($outflow_by_lot_size[$lot->lot_no])) {
+                                            $outflow_for_lot = $outflow_by_lot_size[$lot->lot_no]->sum('total');
+                                        }
+                                        
+                                        $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
+                                        
+                                        $total_breakdown_qty = 0;
+                                        $total_live_remaining = 0;
+                                        
+                                        $sizes_data = [];
+                                        foreach($set_details[$lot->set_id] as $detail) {
                                             $sizeName = trim(strtoupper($detail->size));
+                                            
                                             $original_size_qty = 0;
                                             if ($total_set_qty > 0) {
-                                                $original_size_qty = floor($lot->quantity * ($detail->total_quantity / $total_set_qty));
+                                                $original_size_qty = floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty));
                                             }
                                             
                                             $packed_qty = 0;
                                             if (isset($packed_by_lot_size[$lot->lot_no])) {
-                                                $item = $packed_by_lot_size[$lot->lot_no]->where('size_id', $detail->id)->first();
+                                                $item = $packed_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
                                                 if ($item) $packed_qty = $item->total;
                                             }
 
@@ -217,24 +330,64 @@
 
                                             $outflow_qty = 0;
                                             if (isset($outflow_by_lot_size[$lot->lot_no])) {
-                                                $item = $outflow_by_lot_size[$lot->lot_no]->where('size_id', $detail->id)->first();
+                                                $item = $outflow_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
                                                 if ($item) $outflow_qty = $item->total;
                                             }
 
-                                            $pending_for_size = max(0, $original_size_qty - $packed_qty - $rework_qty - $outflow_qty);
-                                        @endphp
-                                        <div class="border rounded px-2 py-1 bg-white border-success">
-                                            <span class="text-muted mr-1">{{ strtoupper($detail->size) }}:</span>
-                                            <strong class="text-success live-qty-span" id="live-qty-{{ $lot->transaction_id }}-{{ str_replace([' ', '.'], '-', trim(strtoupper($detail->size))) }}">{{ $pending_for_size }}</strong>
+                                            $live_remaining_for_size = max(0, $original_size_qty - $packed_qty - $rework_qty - $outflow_qty);
+                                            $total_live_remaining += $live_remaining_for_size;
+                                            $total_breakdown_qty += $live_remaining_for_size;
+                                            
+                                            $sizes_data[] = [
+                                                'size' => $detail->size,
+                                                'breakdown' => $live_remaining_for_size,
+                                                'live' => $live_remaining_for_size,
+                                                'clean_size' => str_replace([' ', '.'], '-', trim(strtoupper($detail->size)))
+                                            ];
+                                        }
+                                        
+                                        $grand_total_breakdown += $total_breakdown_qty;
+                                        $grand_total_remaining += $total_live_remaining;
+                                    @endphp
+                                    
+                                    <div class="d-flex flex-wrap" style="gap: 6px;">
+                                        @foreach($sizes_data as $sd)
+                                        <div class="border rounded px-2 py-1 bg-white border-secondary d-flex align-items-center" style="gap: 5px; font-size: 0.8rem; line-height: 1.2;">
+                                            <span class="font-weight-bold text-dark">{{ strtoupper($sd['size']) }}:</span>
+                                            <span class="badge badge-light text-primary border py-0 px-1" title="Lot Qty Breakdown">Lot: {{ $sd['breakdown'] }}</span>
                                         </div>
                                         @endforeach
-                                    @endif
-                                </div>
+                                    </div>
+                                    
+                                    <div class="w-100 mt-1 border-top pt-1 d-flex justify-content-between align-items-center" style="font-size: 0.75rem;">
+                                        <span class="text-muted">Sizes: {{ count($sizes_data) }}</span>
+                                        <div class="d-flex align-items-center" style="gap: 10px;">
+                                            <span>Total Breakdown: <strong class="text-primary">{{ $total_breakdown_qty }} pcs</strong></span>
+                                        </div>
+                                    </div>
+                                @else
+                                    <span class="text-muted">No size data</span>
+                                @endif
                             </td>
                         </tr>
                         @endforeach
                     </tbody>
-                </table>
+                    <tfoot class="bg-light font-weight-bold">
+                        <tr>
+                            <td colspan="2" class="text-right align-middle" style="font-size: 0.9rem;">Grand Total Selected Lots:</td>
+                            <td class="text-center align-middle text-success font-weight-bold" style="font-size: 1.15rem;">
+                                {{ $grand_total_pending }}
+                            </td>
+                            <td class="align-middle">
+                                <div class="d-flex justify-content-end align-items-center" style="gap: 15px;">
+                                    <span>Grand Total Breakdown: <strong class="text-primary" style="font-size: 0.95rem;">{{ $grand_total_breakdown }} pcs</strong></span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tfoot>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -285,11 +438,6 @@
                             <i class="fas fa-minus-circle text-warning"></i> Debit
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link font-weight-bold" id="tab-manage-tab" data-toggle="tab" href="#tab-manage" role="tab">
-                            <i class="fas fa-cog text-secondary"></i> Manage Slip
-                        </a>
-                    </li>
                 </ul>
             </div>
             <div class="card-body p-4">
@@ -323,23 +471,36 @@
                                         <input type="number" id="plannerEnd" class="form-control form-control-sm" placeholder="e.g. 10">
                                     </div>
                                     <div class="col-md-2 mb-2">
+                                        <label class="small font-weight-bold">Type</label>
+                                        <select id="plannerType" class="form-control form-control-sm select2">
+                                            <option value="Box" selected>Box</option>
+                                            <option value="Loose">Loose</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-2">
                                         <label class="small font-weight-bold">Design</label>
-                                        <select id="plannerDesign" class="form-control form-control-sm">
+                                        <select id="plannerDesign" class="form-control form-control-sm select2">
                                             <option value="">Select Design</option>
                                             @foreach($unique_designs as $design)
                                             <option value="{{ $design }}">{{ $design }}</option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-2 mb-2">
+                                    <div class="col-md-2 mb-2" id="sizeSetCol">
                                         <label class="small font-weight-bold">Size Set</label>
-                                        <select id="plannerSizeSet" class="form-control form-control-sm" disabled>
+                                        <select id="plannerSizeSet" class="form-control form-control-sm select2" disabled>
                                             <option value="">Select Size Set</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-2" id="singleSizeCol" style="display: none;">
+                                        <label class="small font-weight-bold">Size</label>
+                                        <select id="plannerSingleSize" class="form-control form-control-sm select2">
+                                            <option value="">Select Size</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2 mb-2">
                                         <label class="small font-weight-bold">Color</label>
-                                        <select id="plannerColor" class="form-control form-control-sm">
+                                        <select id="plannerColor" class="form-control form-control-sm select2">
                                             <option value="">Select Color</option>
                                         </select>
                                     </div>
@@ -357,7 +518,7 @@
                                     </div>
                                     <div class="col-md-2 mb-2">
                                         <label class="small font-weight-bold">Warehouse</label>
-                                        <select id="plannerWarehouse" class="form-control form-control-sm">
+                                        <select id="plannerWarehouse" class="form-control form-control-sm select2">
                                             <option value="">Select Store Room</option>
                                             @foreach($storerooms as $room)
                                             <option value="{{ $room->id }}">{{ $room->name }}</option>
@@ -366,7 +527,7 @@
                                     </div>
                                     <div class="col-md-2 mb-2">
                                         <label class="small font-weight-bold">Rack (Optional)</label>
-                                        <select id="plannerRack" class="form-control form-control-sm">
+                                        <select id="plannerRack" class="form-control form-control-sm select2">
                                             <option value="">Select Rack</option>
                                         </select>
                                     </div>
@@ -374,8 +535,8 @@
                                         <label class="small font-weight-bold">Barcode (Optional)</label>
                                         <input type="text" id="plannerBarcode" class="form-control form-control-sm" placeholder="Optional">
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <button class="btn btn-primary btn-sm w-100" id="btnAddRange">
+                                    <div class="col-md-12 d-flex justify-content-end mt-2">
+                                        <button class="btn btn-primary btn-sm px-4" id="btnAddRange">
                                             <i class="fas fa-plus mr-1"></i> Add Range
                                         </button>
                                     </div>
@@ -416,12 +577,34 @@
 
                         <hr class="my-4">
 
-                        <h6 class="font-weight-bold mb-3">Saved Cartons <span class="badge badge-secondary">{{ $saved_cartons->count() }}</span></h6>
+                        @php
+                            $saved_grand_total_pieces = 0;
+                            $saved_grand_total_sets = 0;
+                            foreach ($saved_cartons as $sc) {
+                                $total_qty = $sc->items->sum('quantity');
+                                $no_of_pcs = 1;
+                                if ($sc->items->first() && 
+                                    $sc->items->first()->detail && 
+                                    $sc->items->first()->detail->orderProductSet && 
+                                    $sc->items->first()->detail->orderProductSet->size_measurement) {
+                                    $no_of_pcs = $sc->items->first()->detail->orderProductSet->size_measurement->no_of_pcs ?: 1;
+                                }
+                                $total_sets = $no_of_pcs > 0 ? ($total_qty / $no_of_pcs) : 0;
+                                $saved_grand_total_pieces += $total_qty;
+                                $saved_grand_total_sets += $total_sets;
+                            }
+                        @endphp
+                        <div class="d-flex align-items-center mb-3">
+                            <h6 class="font-weight-bold mb-0">Saved Cartons <span class="badge badge-secondary">{{ $saved_cartons->count() }}</span> — Total Sets: <span class="badge badge-info">{{ round($saved_grand_total_sets, 2) }}</span></h6>
+                            <button type="button" class="btn btn-xs btn-danger ml-3 btn-bulk-delete-cartons" style="display:none;"><i class="fas fa-trash-alt"></i> Delete Selected (<span class="selected-count">0</span>)</button>
+                        </div>
                         <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                             <table class="table erp-table table-sm table-bordered">
                                 <thead class="thead-light sticky-top">
                                     <tr>
+                                        <th width="3%" class="text-center"><input type="checkbox" class="select-all-cartons"></th>
                                         <th>ID</th>
+                                        <th>Total Sets</th>
                                         <th>Carton NO</th>
                                         <th>Total Pcs</th>
                                         <th>Design</th>
@@ -438,6 +621,15 @@
                                         $size_set = 'N/A';
                                         $color = 'N/A';
                                         $total_qty = $sc->items->sum('quantity');
+
+                                        $no_of_pcs = 1;
+                                        if ($sc->items->first() && 
+                                            $sc->items->first()->detail && 
+                                            $sc->items->first()->detail->orderProductSet && 
+                                            $sc->items->first()->detail->orderProductSet->size_measurement) {
+                                            $no_of_pcs = $sc->items->first()->detail->orderProductSet->size_measurement->no_of_pcs ?: 1;
+                                        }
+                                        $total_sets = $no_of_pcs > 0 ? ($total_qty / $no_of_pcs) : 0;
 
                                         if ($sc->note) {
                                             $meta = json_decode($sc->note, true);
@@ -459,7 +651,9 @@
                                         }
                                     @endphp
                                     <tr>
+                                        <td class="text-center"><input type="checkbox" class="carton-chk" value="{{ $sc->id }}"></td>
                                         <td>{{ $sc->id }}</td>
+                                        <td class="font-weight-bold text-info">{{ round($total_sets, 2) }}</td>
                                         <td class="font-weight-bold">{{ $sc->carton_no }}</td>
                                         <td>{{ $total_qty }}</td>
                                         <td>{{ $design }}</td>
@@ -474,10 +668,21 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted py-4">No cartons saved yet.</td>
+                                        <td colspan="10" class="text-center text-muted py-4">No cartons saved yet.</td>
                                     </tr>
                                     @endforelse
                                 </tbody>
+                                @if($saved_cartons->count() > 0)
+                                <tfoot class="bg-light font-weight-bold">
+                                    <tr>
+                                        <td colspan="2" class="text-right">Grand Total:</td>
+                                        <td class="text-info">{{ round($saved_grand_total_sets, 2) }} Sets</td>
+                                        <td>{{ $saved_cartons->count() }} Cartons</td>
+                                        <td class="text-success">{{ $saved_grand_total_pieces }} Pcs</td>
+                                        <td colspan="5"></td>
+                                    </tr>
+                                </tfoot>
+                                @endif
                             </table>
                         </div>
 
@@ -529,26 +734,31 @@
                                                 </td>
                                                 <td>
                                                     @if(isset($set_details[$lot->set_id]))
-                                                        <div class="d-flex flex-wrap" style="gap: 10px;">
+                                                        <div class="d-flex flex-column" style="gap: 5px; max-width: 280px;">
+                                                            <div class="row no-gutters font-weight-bold text-muted border-bottom pb-1 mb-1" style="font-size: 0.75rem;">
+                                                                <div class="col-7">Size</div>
+                                                                <div class="col-5 text-center">Qty</div>
+                                                            </div>
                                                             @foreach($set_details[$lot->set_id] as $detail)
                                                                 @php
                                                                     $sizeName = trim(strtoupper($detail->size));
                                                                     $cleanSize = preg_replace('/[\s\.]/', '-', $sizeName);
                                                                     $inputId = "rework-input-{$lot->transaction_id}-{$cleanSize}";
                                                                 @endphp
-                                                                <div class="input-group input-group-sm" style="width: 120px;">
-                                                                    <div class="input-group-prepend">
-                                                                        <span class="input-group-text font-weight-bold">{{ $sizeName }}</span>
+                                                                <div class="row no-gutters align-items-center mb-1" style="font-size: 0.8rem;">
+                                                                    <div class="col-7 text-dark font-weight-bold">{{ $sizeName }}</div>
+                                                                    <div class="col-5">
+                                                                        <input type="number" 
+                                                                            id="{{ $inputId }}" 
+                                                                            class="form-control form-control-sm text-center font-weight-bold rework-qty-input border py-0" 
+                                                                            style="height: 26px;"
+                                                                            data-transaction-id="{{ $lot->transaction_id }}"
+                                                                            data-lot-no="{{ $lot->lot_no }}"
+                                                                            data-detail-id="{{ $detail->id }}"
+                                                                            data-size-name="{{ $sizeName }}"
+                                                                            min="0" 
+                                                                            placeholder="0">
                                                                     </div>
-                                                                    <input type="number" 
-                                                                        id="{{ $inputId }}" 
-                                                                        class="form-control rework-qty-input" 
-                                                                        data-transaction-id="{{ $lot->transaction_id }}"
-                                                                        data-lot-no="{{ $lot->lot_no }}"
-                                                                        data-detail-id="{{ $detail->id }}"
-                                                                        data-size-name="{{ $sizeName }}"
-                                                                        min="0" 
-                                                                        placeholder="0">
                                                                 </div>
                                                             @endforeach
                                                         </div>
@@ -562,11 +772,15 @@
                         </form>
 
                         <hr class="my-4">
-                        <h6 class="font-weight-bold mb-3 text-danger">Saved Rework Records <span class="badge badge-secondary">{{ count($saved_reworks ?? []) }}</span></h6>
+                        <div class="d-flex align-items-center mb-3">
+                            <h6 class="font-weight-bold mb-0 text-danger">Saved Rework Records <span class="badge badge-secondary">{{ count($saved_reworks ?? []) }}</span></h6>
+                            <button type="button" class="btn btn-xs btn-danger ml-3 btn-bulk-delete-rework" style="display:none;"><i class="fas fa-trash-alt"></i> Delete Selected (<span class="selected-count">0</span>)</button>
+                        </div>
                         <div class="table-responsive">
                             <table class="table erp-table table-sm table-bordered">
                                 <thead class="thead-light">
                                     <tr>
+                                        <th width="3%" class="text-center"><input type="checkbox" class="select-all-rework"></th>
                                         <th>LOT NO</th>
                                         <th>To Stage</th>
                                         <th>To Unit</th>
@@ -578,6 +792,7 @@
                                 <tbody>
                                     @forelse($saved_reworks ?? [] as $rw)
                                         <tr>
+                                            <td class="text-center"><input type="checkbox" class="rework-chk" value="{{ $rw->id }}"></td>
                                             <td class="font-weight-bold">{{ $rw->lot_no }}</td>
                                             <td>{{ $rw->toStage->name ?? 'N/A' }}</td>
                                             <td>{{ $rw->toUnit->name ?? 'N/A' }}</td>
@@ -594,7 +809,7 @@
                                             </td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="6" class="text-center text-muted py-3">No rework records found.</td></tr>
+                                        <tr><td colspan="7" class="text-center text-muted py-3">No rework records found.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -648,26 +863,31 @@
                                                 </td>
                                                 <td>
                                                     @if(isset($set_details[$lot->set_id]))
-                                                        <div class="d-flex flex-wrap" style="gap: 10px;">
+                                                        <div class="d-flex flex-column" style="gap: 5px; max-width: 280px;">
+                                                            <div class="row no-gutters font-weight-bold text-muted border-bottom pb-1 mb-1" style="font-size: 0.75rem;">
+                                                                <div class="col-7">Size</div>
+                                                                <div class="col-5 text-center">Qty</div>
+                                                            </div>
                                                             @foreach($set_details[$lot->set_id] as $detail)
                                                                 @php
                                                                     $sizeName = trim(strtoupper($detail->size));
                                                                     $cleanSize = preg_replace('/[\s\.]/', '-', $sizeName);
                                                                     $inputId = "damage-input-{$lot->transaction_id}-{$cleanSize}";
                                                                 @endphp
-                                                                <div class="input-group input-group-sm" style="width: 120px;">
-                                                                    <div class="input-group-prepend">
-                                                                        <span class="input-group-text font-weight-bold">{{ $sizeName }}</span>
+                                                                <div class="row no-gutters align-items-center mb-1" style="font-size: 0.8rem;">
+                                                                    <div class="col-7 text-dark font-weight-bold">{{ $sizeName }}</div>
+                                                                    <div class="col-5">
+                                                                        <input type="number" 
+                                                                            id="{{ $inputId }}" 
+                                                                            class="form-control form-control-sm text-center font-weight-bold damage-qty-input border py-0" 
+                                                                            style="height: 26px;"
+                                                                            data-transaction-id="{{ $lot->transaction_id }}"
+                                                                            data-lot-no="{{ $lot->lot_no }}"
+                                                                            data-detail-id="{{ $detail->id }}"
+                                                                            data-size-name="{{ $sizeName }}"
+                                                                            min="0" 
+                                                                            placeholder="0">
                                                                     </div>
-                                                                    <input type="number" 
-                                                                        id="{{ $inputId }}" 
-                                                                        class="form-control damage-qty-input" 
-                                                                        data-transaction-id="{{ $lot->transaction_id }}"
-                                                                        data-lot-no="{{ $lot->lot_no }}"
-                                                                        data-detail-id="{{ $detail->id }}"
-                                                                        data-size-name="{{ $sizeName }}"
-                                                                        min="0" 
-                                                                        placeholder="0">
                                                                 </div>
                                                             @endforeach
                                                         </div>
@@ -681,11 +901,15 @@
                         </form>
 
                         <hr class="my-4">
-                        <h6 class="font-weight-bold mb-3 text-dark">Saved Dead Records <span class="badge badge-secondary">{{ count($saved_dead ?? []) }}</span></h6>
+                        <div class="d-flex align-items-center mb-3">
+                            <h6 class="font-weight-bold mb-0 text-dark">Saved Dead Records <span class="badge badge-secondary">{{ count($saved_dead ?? []) }}</span></h6>
+                            <button type="button" class="btn btn-xs btn-danger ml-3 btn-bulk-delete-dead" style="display:none;"><i class="fas fa-trash-alt"></i> Delete Selected (<span class="selected-count">0</span>)</button>
+                        </div>
                         <div class="table-responsive">
                             <table class="table erp-table table-sm table-bordered">
                                 <thead class="thead-light">
                                     <tr>
+                                        <th width="3%" class="text-center"><input type="checkbox" class="select-all-dead"></th>
                                         <th>LOT NO</th>
                                         <th>Storeroom / Rack</th>
                                         <th>Size</th>
@@ -697,6 +921,7 @@
                                 <tbody>
                                     @forelse($saved_dead ?? [] as $sd)
                                         <tr>
+                                            <td class="text-center"><input type="checkbox" class="dead-chk" value="{{ $sd->id }}"></td>
                                             <td class="font-weight-bold">{{ $sd->lot_no }}</td>
                                             <td>
                                                 {{ $sd->rack->storeroom->name ?? 'N/A' }} / {{ $sd->rack->name ?? 'N/A' }}
@@ -711,7 +936,7 @@
                                             </td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="6" class="text-center text-muted py-3">No dead records found.</td></tr>
+                                        <tr><td colspan="7" class="text-center text-muted py-3">No dead records found.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -720,115 +945,136 @@
                     <div class="tab-pane fade" id="tab-sampling" role="tabpanel">
                         <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-flask"></i> Sampling</h5>
                         
-                        <form id="samplingForm">
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label>Select Storeroom / Rack <span class="text-danger">*</span></label>
-                                    <select id="samplingRack" class="form-control form-control-sm select2" required>
-                                        <option value="">-- Select Rack --</option>
-                                        @foreach($storerooms as $store)
-                                            <optgroup label="{{ $store->name }}">
-                                                @foreach($store->racks as $rack)
-                                                    <option value="{{ $rack->id }}">{{ $rack->name }}</option>
-                                                @endforeach
-                                            </optgroup>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label>Remarks</label>
-                                    <input type="text" id="samplingRemarks" class="form-control form-control-sm" placeholder="Optional notes...">
-                                </div>
-                                <div class="col-md-3 d-flex align-items-end">
-                                    <button type="button" id="btnSaveSampling" class="btn btn-sm btn-primary w-100">
-                                        <i class="fas fa-save"></i> Save Sampling Stock
-                                    </button>
+                        <div class="card bg-light border-0 shadow-sm mb-4">
+                            <div class="card-body p-3">
+                                <h6 class="font-weight-bold mb-3 small text-uppercase text-primary">Quick Add Sampling</h6>
+                                <div class="row align-items-end">
+                                     <div class="col-md-2 mb-2">
+                                        <label class="small font-weight-bold">Design</label>
+                                        <select id="samplingDesign" class="form-control form-control-sm select2">
+                                            <option value="">Select Design</option>
+                                            @foreach($all_designs as $design)
+                                            <option value="{{ $design }}">{{ $design }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-2">
+                                        <label class="small font-weight-bold">Size Set</label>
+                                        <select id="samplingSizeSet" class="form-control form-control-sm select2" disabled>
+                                            <option value="">Select Size Set</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-2">
+                                        <label class="small font-weight-bold">Color</label>
+                                        <select id="samplingColor" class="form-control form-control-sm select2" disabled>
+                                            <option value="">Select Color</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-2">
+                                        <label class="small font-weight-bold">Quantity (Sets)</label>
+                                        <input type="number" id="samplingQty" class="form-control form-control-sm" min="1" placeholder="e.g. 5" disabled>
+                                        <small id="samplingQtyInfo" class="text-muted d-block mt-1" style="font-size: 0.72rem;">Select size set first</small>
+                                    </div>
+                                    <div class="col-md-2 mb-2">
+                                        <label class="small font-weight-bold">Storage Rack</label>
+                                        <select id="samplingRack" class="form-control form-control-sm select2">
+                                            <option value="">Select Storage</option>
+                                            @foreach($storerooms as $store)
+                                                <optgroup label="{{ $store->name }}">
+                                                    @foreach($store->racks as $rack)
+                                                        <option value="{{ $rack->id }}">{{ $rack->name }}</option>
+                                                    @endforeach
+                                                </optgroup>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-2">
+                                        <button type="button" id="btnAddSampling" class="btn btn-sm btn-info w-100 font-weight-bold text-uppercase">
+                                            <i class="fas fa-plus"></i> Add
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                                <table class="table erp-table table-sm table-bordered">
-                                    <thead class="thead-light sticky-top">
-                                        <tr>
-                                            <th>LOT NO</th>
-                                            <th>DESIGN / COLOR</th>
-                                            <th>SIZE WISE SAMPLING QTY</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($lots_data as $lot)
-                                            <tr>
-                                                <td class="font-weight-bold">{{ $lot->lot_no }}</td>
-                                                <td>
-                                                    <div>{{ $lot->design_number }}</div>
-                                                    <small class="text-muted">{{ $lot->color_name }}</small>
-                                                </td>
-                                                <td>
-                                                    @if(isset($set_details[$lot->set_id]))
-                                                        <div class="d-flex flex-wrap" style="gap: 10px;">
-                                                            @foreach($set_details[$lot->set_id] as $detail)
-                                                                @php
-                                                                    $sizeName = trim(strtoupper($detail->size));
-                                                                    $cleanSize = preg_replace('/[\s\.]/', '-', $sizeName);
-                                                                    $inputId = "sampling-input-{$lot->transaction_id}-{$cleanSize}";
-                                                                @endphp
-                                                                <div class="input-group input-group-sm" style="width: 120px;">
-                                                                    <div class="input-group-prepend">
-                                                                        <span class="input-group-text font-weight-bold">{{ $sizeName }}</span>
-                                                                    </div>
-                                                                    <input type="number" 
-                                                                        id="{{ $inputId }}" 
-                                                                        class="form-control sampling-qty-input" 
-                                                                        data-transaction-id="{{ $lot->transaction_id }}"
-                                                                        data-lot-no="{{ $lot->lot_no }}"
-                                                                        data-detail-id="{{ $detail->id }}"
-                                                                        data-size-name="{{ $sizeName }}"
-                                                                        min="0" 
-                                                                        placeholder="0">
-                                                                </div>
-                                                            @endforeach
-                                                        </div>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </form>
+                        </div>
 
-                        <hr class="my-4">
-                        <h6 class="font-weight-bold mb-3 text-primary">Saved Sampling Records <span class="badge badge-secondary">{{ count($saved_sampling ?? []) }}</span></h6>
-                        <div class="table-responsive">
-                            <table class="table erp-table table-sm table-bordered">
-                                <thead class="thead-light">
+                        <div class="table-responsive bg-white rounded shadow-sm border mb-3">
+                            <table class="table table-hover table-sm text-center align-middle mb-0" id="samplingTable">
+                                <thead class="bg-light">
                                     <tr>
-                                        <th>LOT NO</th>
-                                        <th>Storeroom / Rack</th>
-                                        <th>Size</th>
+                                        <th>Design</th>
+                                        <th>Size Set</th>
+                                        <th>Color</th>
+                                        <th>Rack</th>
                                         <th>Qty</th>
-                                        <th>Remarks</th>
-                                        <th>Action</th>
+                                        <th style="width: 80px;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($saved_sampling ?? [] as $sd)
-                                        <tr>
-                                            <td class="font-weight-bold">{{ $sd->lot_no }}</td>
-                                            <td>
-                                                {{ $sd->rack->storeroom->name ?? 'N/A' }} / {{ $sd->rack->name ?? 'N/A' }}
-                                            </td>
-                                            <td><span class="badge badge-light border">{{ $sd->size->size ?? 'Unknown' }}</span></td>
-                                            <td>{{ $sd->quantity }}</td>
-                                            <td>{{ $sd->remarks ?? '-' }}</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-danger py-0 px-2 btn-delete-outflow" data-id="{{ $sd->id }}">
-                                                    <i class="fas fa-trash"></i> Delete
-                                                </button>
-                                            </td>
-                                        </tr>
+                                    <tr id="samplingEmptyRow">
+                                        <td colspan="6" class="text-muted py-4">No items added to sampling queue yet.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-end mb-4">
+                            <button type="button" id="btnSaveSamplingBulk" class="btn btn-primary font-weight-bold">
+                                <i class="fas fa-save mr-1"></i> Submit Sampling
+                            </button>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex align-items-center mb-3">
+                            <h6 class="font-weight-bold mb-0">Saved Domestic Boxes (including Sampling) <span class="badge badge-secondary">{{ $saved_domestic->count() }}</span></h6>
+                            <button type="button" class="btn btn-xs btn-danger ml-3 btn-bulk-delete-domestic" style="display:none;"><i class="fas fa-trash-alt"></i> Delete Selected (<span class="selected-count">0</span>)</button>
+                        </div>
+                        <div class="table-responsive bg-white rounded shadow-sm border mb-3" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-hover table-sm text-center align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th width="3%" class="text-center"><input type="checkbox" class="select-all-domestic"></th>
+                                        <th>Box/Carton NO</th>
+                                        <th>Design</th>
+                                        <th>Size Set</th>
+                                        <th>Color</th>
+                                        <th>Pcs/Box</th>
+                                        <th>Total Boxes</th>
+                                        <th>Total Pcs</th>
+                                        <th>Storage Rack</th>
+                                        <th>Barcode</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($saved_domestic as $dom)
+                                    <tr>
+                                        <td class="text-center"><input type="checkbox" class="domestic-chk" value="{{ $dom->id }}"></td>
+                                        <td class="font-weight-bold text-primary">{{ $dom->box_no }} (Carton #{{ $dom->carton_no }})</td>
+                                        <td>{{ $dom->product->design_number ?? 'N/A' }}</td>
+                                        <td>{{ $dom->sizeSet->name ?? 'N/A' }}</td>
+                                        <td>{{ $dom->color->name ?? 'N/A' }}</td>
+                                        <td>{{ $dom->quantity }} pcs</td>
+                                        <td><strong class="text-primary">{{ $dom->total_boxes }}</strong></td>
+                                        <td><strong class="text-success">{{ $dom->quantity * $dom->total_boxes }} pcs</strong></td>
+                                        <td>
+                                            @if($dom->rack)
+                                                <span class="badge badge-info">{{ $dom->rack->storeroom->name ?? '' }} / {{ $dom->rack->name }}</span>
+                                            @else
+                                                <span class="text-muted">N/A</span>
+                                            @endif
+                                        </td>
+                                        <td><code>{{ $dom->barcode }}</code></td>
+                                        <td>
+                                            <button class="btn btn-xs btn-outline-danger btn-delete-domestic" data-id="{{ $dom->id }}">
+                                                <i class="fas fa-trash-alt"></i> Delete
+                                            </button>
+                                        </td>
+                                    </tr>
                                     @empty
-                                        <tr><td colspan="6" class="text-center text-muted py-3">No sampling records found.</td></tr>
+                                    <tr>
+                                        <td colspan="11" class="text-muted py-4">No domestic packing saved for this slip yet.</td>
+                                    </tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -904,7 +1150,12 @@
                                                 </td>
                                                 <td>
                                                     @if(isset($set_details[$lot->set_id]))
-                                                        <div class="d-flex flex-wrap" style="gap: 10px;">
+                                                        <div class="d-flex flex-column" style="gap: 5px; max-width: 340px;">
+                                                            <div class="row no-gutters font-weight-bold text-muted border-bottom pb-1 mb-1" style="font-size: 0.75rem;">
+                                                                <div class="col-5">Size</div>
+                                                                <div class="col-3 text-center">Qty</div>
+                                                                <div class="col-4 text-center">Rate (₹)</div>
+                                                            </div>
                                                             @foreach($set_details[$lot->set_id] as $detail)
                                                                 @php
                                                                     $sizeName = trim(strtoupper($detail->size));
@@ -912,20 +1163,23 @@
                                                                     $qtyId = "debit-qty-{$lot->transaction_id}-{$cleanSize}";
                                                                     $rateId = "debit-rate-{$lot->transaction_id}-{$cleanSize}";
                                                                 @endphp
-                                                                <div class="border border-warning rounded p-2 text-center" style="width: 260px; background: #fff;">
-                                                                    <strong class="text-dark d-block mb-2">{{ $sizeName }}</strong>
-                                                                    <div class="d-flex flex-nowrap" style="gap: 5px;">
-                                                                        <div class="input-group input-group-sm" style="flex: 1; min-width: 0;">
-                                                                            <input type="number" id="{{ $qtyId }}" class="form-control text-center debit-qty-input" 
-                                                                                data-transaction-id="{{ $lot->transaction_id }}"
-                                                                                data-lot-no="{{ $lot->lot_no }}"
-                                                                                data-detail-id="{{ $detail->id }}"
-                                                                                data-size-name="{{ $sizeName }}"
-                                                                                min="0" placeholder="Qty">
-                                                                        </div>
-                                                                        <div class="input-group input-group-sm" style="flex: 1; min-width: 0;">
-                                                                            <div class="input-group-prepend"><span class="input-group-text px-1">₹</span></div>
-                                                                            <input type="number" id="{{ $rateId }}" class="form-control px-1 text-center debit-rate-input" min="0" placeholder="Rate">
+                                                                <div class="row no-gutters align-items-center mb-1" style="font-size: 0.8rem;">
+                                                                    <div class="col-5 text-dark font-weight-bold">{{ $sizeName }}</div>
+                                                                    <div class="col-3 px-1">
+                                                                        <input type="number" id="{{ $qtyId }}" class="form-control form-control-sm text-center debit-qty-input border py-0" 
+                                                                            style="height: 26px;"
+                                                                            data-transaction-id="{{ $lot->transaction_id }}"
+                                                                            data-lot-no="{{ $lot->lot_no }}"
+                                                                            data-detail-id="{{ $detail->id }}"
+                                                                            data-size-name="{{ $sizeName }}"
+                                                                            min="0" placeholder="0">
+                                                                    </div>
+                                                                    <div class="col-4 px-1">
+                                                                        <div class="input-group input-group-sm">
+                                                                            <div class="input-group-prepend" style="height: 26px;"><span class="input-group-text px-1" style="font-size: 0.7rem; border-radius: 4px 0 0 4px; display: flex; align-items: center; justify-content: center;">₹</span></div>
+                                                                            <input type="number" id="{{ $rateId }}" class="form-control form-control-sm text-center debit-rate-input border py-0 px-1" 
+                                                                                style="height: 26px; border-radius: 0 4px 4px 0;"
+                                                                                min="0" placeholder="0">
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -941,11 +1195,15 @@
                         </form>
 
                         <hr class="my-4">
-                        <h6 class="font-weight-bold mb-3 text-warning">Saved Debit Records <span class="badge badge-secondary">{{ count($saved_debit ?? []) }}</span></h6>
+                        <div class="d-flex align-items-center mb-3">
+                            <h6 class="font-weight-bold mb-0 text-warning">Saved Debit Records <span class="badge badge-secondary">{{ count($saved_debit ?? []) }}</span></h6>
+                            <button type="button" class="btn btn-xs btn-danger ml-3 btn-bulk-delete-debit" style="display:none;"><i class="fas fa-trash-alt"></i> Delete Selected (<span class="selected-count">0</span>)</button>
+                        </div>
                         <div class="table-responsive">
                             <table class="table erp-table table-sm table-bordered">
                                 <thead class="thead-light">
                                     <tr>
+                                        <th width="3%" class="text-center"><input type="checkbox" class="select-all-debit"></th>
                                         <th>LOT NO</th>
                                         <th>Responsible</th>
                                         <th>Rack</th>
@@ -958,6 +1216,7 @@
                                 <tbody>
                                     @forelse($saved_debit ?? [] as $sd)
                                         <tr>
+                                            <td class="text-center"><input type="checkbox" class="debit-chk" value="{{ $sd->id }}"></td>
                                             <td class="font-weight-bold">{{ $sd->lot_no }}</td>
                                             <td>
                                                 <small>{{ $sd->responsibleStage->name ?? 'N/A' }} <br> <b>{{ $sd->responsibleUnit->name ?? 'N/A' }}</b></small>
@@ -973,27 +1232,49 @@
                                             </td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="7" class="text-center text-muted py-3">No debit records found.</td></tr>
+                                        <tr><td colspan="8" class="text-center text-muted py-3">No debit records found.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="tab-manage" role="tabpanel">
-                        <h5 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-cog"></i> Manage Slip</h5>
-                        <div class="d-flex" style="gap: 15px;">
-                            <button type="button" id="btnResetSlip" class="btn btn-outline-danger">
-                                <i class="fas fa-trash-restore mr-1"></i> Reset Slip
-                            </button>
-                            <button type="button" id="btnFinalizePacking" class="btn btn-success">
-                                <i class="fas fa-check mr-1"></i> Finalize Packing
-                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
+    </div>
+</div>
+
+<!-- Production Slip Modal -->
+<div class="modal fade" id="slipModal" tabindex="-1" role="dialog" aria-labelledby="slipModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content text-dark">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold" id="slipModalLabel">
+                    <i class="fas fa-file-invoice mr-1 text-primary"></i> Production Slip Image
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center bg-light">
+                @if(isset($slip) && $slip->slip_file)
+                    <div class="img-wrapper p-2 bg-white border rounded shadow-sm d-inline-block">
+                        <img src="{{ asset('assets/production_slips/' . $slip->slip_file) }}" class="img-fluid rounded" alt="Production Slip" style="max-height: 75vh; object-fit: contain; cursor: zoom-in;" onclick="window.open(this.src, '_blank')">
+                    </div>
+                    <div class="mt-2 text-muted small">
+                        <i class="fas fa-search-plus mr-1"></i> Click on the image to open in full size
+                    </div>
+                @else
+                    <div class="alert alert-warning my-3">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> No production slip file found for this session.
+                    </div>
+                @endif
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 @endsection
@@ -1017,36 +1298,52 @@
             if (SET_DETAILS[setId]) {
                 let totalSetQty = SET_DETAILS[setId].reduce((sum, d) => sum + parseInt(d.total_quantity || 0), 0);
                 if (totalSetQty > 0) {
+                    // Sum up all packed, rework and outflow for this lot in the current session
+                    let totalPackedForLot = 0;
+                    if (PACKED_BY_LOT_SIZE[lot.lot_no]) {
+                        totalPackedForLot = PACKED_BY_LOT_SIZE[lot.lot_no].reduce((sum, p) => sum + (parseInt(p.total) || 0), 0);
+                    }
+                    let totalReworkForLot = 0;
+                    if (REWORK_BY_LOT_SIZE[lot.lot_no]) {
+                        totalReworkForLot = REWORK_BY_LOT_SIZE[lot.lot_no].reduce((sum, r) => sum + (parseInt(r.total) || 0), 0);
+                    }
+                    let totalOutflowForLot = 0;
+                    if (OUTFLOW_BY_LOT_SIZE[lot.lot_no]) {
+                        totalOutflowForLot = OUTFLOW_BY_LOT_SIZE[lot.lot_no].reduce((sum, o) => sum + (parseInt(o.total) || 0), 0);
+                    }
+
+                    let startingLotQty = parseInt(lot.remaining_quantity || 0) + totalPackedForLot + totalReworkForLot + totalOutflowForLot;
+
                     SET_DETAILS[setId].forEach(detail => {
                         let sizeName = detail.size.toString().trim().toUpperCase();
                         
-                        // Calculate original lot quantity for this size
-                        let originalSizeQty = Math.floor(parseInt(lot.quantity || 0) * (parseInt(detail.total_quantity || 0) / totalSetQty));
+                        // Calculate starting quantity for this size before current session deductions
+                        let originalSizeQty = Math.floor(startingLotQty * (parseInt(detail.total_quantity || 0) / totalSetQty));
 
                         // Find packed quantity
                         let packedQty = 0;
                         if (PACKED_BY_LOT_SIZE[lot.lot_no]) {
-                            let match = PACKED_BY_LOT_SIZE[lot.lot_no].find(p => p.size_id == detail.id);
+                            let match = PACKED_BY_LOT_SIZE[lot.lot_no].find(p => p.size && p.size.toString().trim().toUpperCase() === sizeName);
                             if (match) packedQty = parseInt(match.total) || 0;
                         }
 
                         // Find rework quantity
                         let reworkQty = 0;
                         if (REWORK_BY_LOT_SIZE[lot.lot_no]) {
-                            let match = REWORK_BY_LOT_SIZE[lot.lot_no].find(r => r.size.toString().trim().toUpperCase() === sizeName);
+                            let match = REWORK_BY_LOT_SIZE[lot.lot_no].find(r => r.size && r.size.toString().trim().toUpperCase() === sizeName);
                             if (match) reworkQty = parseInt(match.total) || 0;
                         }
 
                         // Find outflow quantity
                         let outflowQty = 0;
                         if (OUTFLOW_BY_LOT_SIZE[lot.lot_no]) {
-                            let match = OUTFLOW_BY_LOT_SIZE[lot.lot_no].find(o => o.size_id == detail.id);
+                            let match = OUTFLOW_BY_LOT_SIZE[lot.lot_no].find(o => o.size && o.size.toString().trim().toUpperCase() === sizeName);
                             if (match) outflowQty = parseInt(match.total) || 0;
                         }
 
                         let pendingForSize = Math.max(0, originalSizeQty - packedQty - reworkQty - outflowQty);
 
-                        if (pendingForSize > 0) {
+                        if (pendingForSize >= 0) {
                             expandedLots.push({
                                 transaction_id: lot.transaction_id,
                                 lot_no: lot.lot_no,
@@ -1060,34 +1357,50 @@
                 }
             }
         });
+        
+        // Populate plannerSingleSize select with unique sizes from expandedLots
+        let uniqueSizes = [...new Set(expandedLots.map(l => l.size))].sort();
+        let $singleSizeSelect = $('#plannerSingleSize');
+        if ($singleSizeSelect.length) {
+            $singleSizeSelect.html('<option value="">Select Size</option>');
+            uniqueSizes.forEach(size => {
+                $singleSizeSelect.append(`<option value="${size}">${size}</option>`);
+            });
+            $singleSizeSelect.trigger('change');
+        }
     }
 
     function updateLiveRemainingUI() {
-        $('.live-qty-span').text('0');
-        expandedLots.forEach(lot => {
-            let cleanSize = lot.size.replace(/[\s\.]/g, '-');
-            let spanId = `#live-qty-${lot.transaction_id}-${cleanSize}`;
-            
-            // Calculate pending rework, damage, sampling, and debit typed in inputs
-            let reworkInputId = `#rework-input-${lot.transaction_id}-${cleanSize}`;
-            let reworkVal = parseInt($(reworkInputId).val()) || 0;
-            
-            let damageInputId = `#damage-input-${lot.transaction_id}-${cleanSize}`;
-            let damageVal = parseInt($(damageInputId).val()) || 0;
-            
-            let samplingInputId = `#sampling-input-${lot.transaction_id}-${cleanSize}`;
-            let samplingVal = parseInt($(samplingInputId).val()) || 0;
-
-            let debitInputId = `#debit-qty-${lot.transaction_id}-${cleanSize}`;
-            let debitVal = parseInt($(debitInputId).val()) || 0;
-            
-            let displayQty = lot.remaining_quantity - reworkVal - damageVal - samplingVal - debitVal;
-            $(spanId).text(displayQty);
-        });
+        // Live tracking display is removed
     }
 
     $(document).ready(function() {
+        // Tab persistence logic
+        let activeTab = localStorage.getItem('activePackingTab');
+        if (activeTab) {
+            $(`#packingTabs a[href="${activeTab}"]`).tab('show');
+        }
+        $('#packingTabs a').on('shown.bs.tab', function (e) {
+            localStorage.setItem('activePackingTab', $(e.target).attr('href'));
+        });
+
+        $('.select2').select2({ width: '100%' });
         initAvailableSizes();
+
+        $('#plannerType').change(function() {
+            let type = $(this).val();
+            if (type === 'Loose') {
+                $('#sizeSetCol').hide();
+                $('#singleSizeCol').show();
+                $('#plannerSizeSet').val('').trigger('change');
+                fetchPlannerMasterData();
+            } else {
+                $('#sizeSetCol').show();
+                $('#singleSizeCol').hide();
+                $('#plannerSingleSize').val('').trigger('change');
+                fetchPlannerMasterData();
+            }
+        });
 
         // Dynamically cap inputs and update live remaining UI
         $(document).on('input', '.rework-qty-input, .damage-qty-input, .sampling-qty-input, .debit-qty-input', function() {
@@ -1111,7 +1424,7 @@
 
         // Fetch Rework Stages
         // Fetch Rework Stages (Shared for Rework and Debit)
-        $.get(`/admin/packing/rework-stages`, function(res) {
+        $.get("{{ route('admin.packing.reworkStages') }}", function(res) {
             if(res.status === 'success') {
                 let options = '<option value="">-- Stage --</option>';
                 res.stages.forEach(s => {
@@ -1128,7 +1441,7 @@
             let $unit = $('#reworkUnit');
             $unit.html('<option value="">-- Select Unit --</option>');
             if(!stageId) return;
-            $.get(`/admin/packing/stage-units/${stageId}`, function(res) {
+            $.get("{{ route('admin.packing.stageUnits', '') }}/" + stageId, function(res) {
                 if(res.status === 'success') {
                     res.units.forEach(u => {
                         $unit.append(`<option value="${u.id}">${u.name}</option>`);
@@ -1169,7 +1482,7 @@
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
 
             $.ajax({
-                url: `/admin/packing/reassign-rework`,
+                url: "{{ route('admin.packing.reassignRework') }}",
                 type: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
@@ -1182,7 +1495,10 @@
                 },
                 success: function(res) {
                     if (res.status === 'success') {
-                        window.location.reload();
+                        toastr.success(res.message || 'Defect/Rework successfully reassigned.');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
                     } else {
                         alert(res.message);
                         $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Rework');
@@ -1203,7 +1519,7 @@
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
             $.ajax({
-                url: `/admin/packing/delete-rework/${id}`,
+                url: "{{ route('admin.packing.deleteRework', '') }}/" + id,
                 type: 'POST',
                 data: { _token: '{{ csrf_token() }}' },
                 success: function(res) {
@@ -1252,7 +1568,7 @@
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
 
             $.ajax({
-                url: `/admin/packing/record-dead-stock`,
+                url: "{{ route('admin.packing.recordDeadStock') }}",
                 type: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
@@ -1264,7 +1580,10 @@
                 },
                 success: function(res) {
                     if (res.status === 'success') {
-                        window.location.reload();
+                        toastr.success(res.message || 'Dead/Damage stock successfully saved.');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
                     } else {
                         alert(res.message);
                         $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Dead Stock');
@@ -1285,7 +1604,7 @@
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
             $.ajax({
-                url: `/admin/packing/delete-outflow/${id}`,
+                url: "{{ route('admin.packing.deleteOutflow', '') }}/" + id,
                 type: 'POST',
                 data: { _token: '{{ csrf_token() }}' },
                 success: function(res) {
@@ -1334,7 +1653,7 @@
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
 
             $.ajax({
-                url: `/admin/packing/record-sampling-stock`,
+                url: "{{ route('admin.packing.recordSamplingStock') }}",
                 type: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
@@ -1346,7 +1665,10 @@
                 },
                 success: function(res) {
                     if (res.status === 'success') {
-                        window.location.reload();
+                        toastr.success(res.message || 'Sampling stock successfully saved.');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
                     } else {
                         alert(res.message);
                         $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Sampling Stock');
@@ -1368,7 +1690,7 @@
                 $('#debitUnit').html('<option value="">-- Unit --</option>').prop('disabled', true).trigger('change');
                 return;
             }
-            $.get(`/admin/packing/stage-units/${stageId}`, function(res) {
+            $.get("{{ route('admin.packing.stageUnits', '') }}/" + stageId, function(res) {
                 if(res.status === 'success') {
                     let options = '<option value="">-- Unit --</option>';
                     res.units.forEach(function(un) {
@@ -1405,9 +1727,7 @@
             $('.debit-qty-input').each(function() {
                 let val = parseInt($(this).val()) || 0;
                 if (val > 0) {
-                    let transId = $(this).data('transaction-id');
-                    let cleanSize = $(this).attr('id').split('-').pop(); // gets size part
-                    let rate = parseFloat($(`#debit-rate-${transId}-${cleanSize}`).val()) || 0;
+                    let rate = parseFloat($(this).closest('.row').find('.debit-rate-input').val()) || 0;
                     
                     items.push({
                         detail_id: $(this).data('detail-id'),
@@ -1432,7 +1752,7 @@
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
 
             $.ajax({
-                url: `/admin/packing/record-unit-debit`,
+                url: "{{ route('admin.packing.recordUnitDebit') }}",
                 type: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
@@ -1448,7 +1768,10 @@
                 },
                 success: function(res) {
                     if (res.status === 'success') {
-                        window.location.reload();
+                        toastr.success(res.message || 'Debit record successfully saved.');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
                     } else {
                         alert(res.message);
                         $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Debit');
@@ -1461,41 +1784,21 @@
             });
         });
 
-        // 1. When Design changes, fetch valid Size Sets
-        $('#plannerDesign').change(function() {
-            let design = $(this).val();
-            let $sizeSetSelect = $('#plannerSizeSet');
-            $sizeSetSelect.html('<option value="">Select Size Set</option>').prop('disabled', true);
-            $('#plannerMrp').val('');
-            $('#plannerPrice').val('');
+        function fetchPlannerMasterData() {
+            let design = $('#plannerDesign').val();
+            let type = $('#plannerType').val();
+            let sizeSetId = $('#plannerSizeSet').val();
+            
+            if (type === 'Loose') {
+                let singleSize = $('#plannerSingleSize').val();
+                sizeSetId = singleSize ? 'loose_' + singleSize : '';
+            }
             
             if (!design) return;
-
-            // Fetch size sets for this design via API
-            $.ajax({
-                url: `/admin/packing/process-new/${SLIP_ID}/api/get-size-sets`,
-                data: { design_number: design },
-                success: function(response) {
-                    if (response.status === 'success' && response.size_sets) {
-                        response.size_sets.forEach(set => {
-                            let sizesJson = JSON.stringify(set.required_sizes).replace(/"/g, '&quot;');
-                            $sizeSetSelect.append(`<option value="${set.id}" data-sizes="${sizesJson}">${set.name}</option>`);
-                        });
-                        $sizeSetSelect.prop('disabled', false);
-                    }
-                }
-            });
-        });
-
-        // 2. When Size Set changes, fetch MRP/Price
-        $('#plannerSizeSet').change(function() {
-            let design = $('#plannerDesign').val();
-            let sizeSetId = $(this).val();
-            
-            if (!design || !sizeSetId) return;
+            if (type !== 'Loose' && !sizeSetId) return;
 
             $.ajax({
-                url: `/admin/packing/process-new/${SLIP_ID}/api/get-master-data`,
+                url: "{{ route('admin.packing.apiGetMasterData', $slip_id) }}",
                 data: { design_number: design, size_set_id: sizeSetId },
                 success: function(response) {
                     if (response.status === 'success') {
@@ -1503,27 +1806,68 @@
                         if (response.price) $('#plannerPrice').val(response.price);
                         
                         let $colorSelect = $('#plannerColor');
-                        $colorSelect.html('<option value="">Select Color</option>');
+                        $colorSelect.html('<option value="">Select Color</option>').trigger('change');
                         if (response.colors && response.colors.length > 0) {
                             response.colors.forEach(function(c) {
                                 $colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
                             });
                         }
+                        $colorSelect.trigger('change');
                     }
                 }
             });
+        }
+
+        // 1. When Design changes, fetch valid Size Sets
+        $('#plannerDesign').change(function() {
+            let design = $(this).val();
+            let $sizeSetSelect = $('#plannerSizeSet');
+            $sizeSetSelect.html('<option value="">Select Size Set</option>').prop('disabled', true).trigger('change');
+            $('#plannerMrp').val('');
+            $('#plannerPrice').val('');
+            
+            if (!design) return;
+
+            // Fetch size sets for this design via API
+            $.ajax({
+                url: "{{ route('admin.packing.apiGetSizeSets', $slip_id) }}",
+                data: { design_number: design },
+                success: function(response) {
+                    if (response.status === 'success' && response.size_sets) {
+                        response.size_sets.forEach(set => {
+                            let sizesJson = JSON.stringify(set.required_sizes).replace(/"/g, '&quot;');
+                            $sizeSetSelect.append(`<option value="${set.id}" data-sizes="${sizesJson}">${set.name} (${set.no_of_pcs} pcs)</option>`);
+                        });
+                        $sizeSetSelect.prop('disabled', false).trigger('change');
+                    }
+                }
+            });
+
+            if ($('#plannerType').val() === 'Loose') {
+                fetchPlannerMasterData();
+            }
+        });
+
+        // 2. When Size Set changes, fetch MRP/Price
+        $('#plannerSizeSet').change(function() {
+            fetchPlannerMasterData();
+        });
+
+        // When Single Size changes (for Loose type), fetch MRP/Price/Colors
+        $('#plannerSingleSize').change(function() {
+            fetchPlannerMasterData();
         });
         
         // Storage Rack logic
         $('#plannerWarehouse').change(function() {
             let warehouseId = $(this).val();
             let $rackSelect = $('#plannerRack');
-            $rackSelect.html('<option value="">Select Rack</option>');
+            $rackSelect.html('<option value="">Select Rack</option>').trigger('change');
             
             if (!warehouseId) return;
             
             $.ajax({
-                url: `/admin/inventory/warehouse-stock/racks/${warehouseId}`,
+                url: "{{ route('admin.inventory.warehouse_stock.racks', '') }}/" + warehouseId,
                 type: 'GET',
                 success: function(data) {
                     if (data && data.length > 0) {
@@ -1531,6 +1875,7 @@
                             $rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
                         });
                     }
+                    $rackSelect.trigger('change');
                 }
             });
         });
@@ -1539,8 +1884,10 @@
             let start = parseInt($('#plannerStart').val());
             let end = parseInt($('#plannerEnd').val());
             let design = $('#plannerDesign').val();
+            let type = $('#plannerType').val();
             let sizeSetId = $('#plannerSizeSet').val();
             let sizeSetName = $('#plannerSizeSet option:selected').text();
+            let singleSize = $('#plannerSingleSize').val();
             let colorId = $('#plannerColor').val();
             let colorName = $('#plannerColor option:selected').text();
             let qty = parseInt($('#plannerQty').val());
@@ -1551,39 +1898,57 @@
             let rackId = $('#plannerRack').val();
             let barcode = $('#plannerBarcode').val();
             
-            if (!start || !end || !design || !sizeSetId || !warehouseId || !qty) {
-                alert('Please fill all required fields (Start, End, Design, Size Set, Qty, Warehouse).');
-                return;
+            if (type === 'Loose') {
+                if (!start || !end || !design || !singleSize || !warehouseId || !qty) {
+                    alert('Please fill all required fields (Start, End, Design, Size, Qty, Warehouse).');
+                    return;
+                }
+            } else {
+                if (!start || !end || !design || !sizeSetId || !warehouseId || !qty) {
+                    alert('Please fill all required fields (Start, End, Design, Size Set, Qty, Warehouse).');
+                    return;
+                }
             }
+
             if (start > end) {
                 alert('Start carton cannot be greater than end carton.');
                 return;
             }
 
-            // Figure out the required sizes for 1 carton (qty * set required sizes)
-            let $selectedOption = $('#plannerSizeSet option:selected');
-            let requiredSizesJson = $selectedOption.attr('data-sizes');
-            
-            if (!requiredSizesJson) {
-                alert('Invalid size set data.');
-                return;
+            let requiredDetails = [];
+            if (type === 'Loose') {
+                sizeSetId = 'loose_' + singleSize;
+                sizeSetName = 'Loose (' + singleSize + ')';
+                requiredDetails = [{ size: singleSize, total_quantity: 1 }];
+            } else {
+                // Figure out the required sizes for 1 carton (qty * set required sizes)
+                let $selectedOption = $('#plannerSizeSet option:selected');
+                let requiredSizesJson = $selectedOption.attr('data-sizes');
+                
+                if (!requiredSizesJson) {
+                    alert('Invalid size set data.');
+                    return;
+                }
+                
+                let requiredSizesArray = [];
+                try {
+                    requiredSizesArray = JSON.parse(requiredSizesJson.replace(/&quot;/g, '"'));
+                } catch (e) {
+                    alert('Failed to parse sizes.');
+                    return;
+                }
+                
+                requiredDetails = requiredSizesArray.map(size => {
+                    return { size: size, total_quantity: 1 };
+                });
             }
-            
-            let requiredSizesArray = [];
-            try {
-                requiredSizesArray = JSON.parse(requiredSizesJson.replace(/&quot;/g, '"'));
-            } catch (e) {
-                alert('Failed to parse sizes.');
-                return;
-            }
-            
-            let requiredDetails = requiredSizesArray.map(size => {
-                return { size: size, total_quantity: 1 };
-            });
 
             // Total sets per carton is 'qty'
             let setsPerCarton = qty;
             
+            let tempLots = JSON.parse(JSON.stringify(expandedLots));
+            let rangeSucceeded = true;
+
             for (let i = start; i <= end; i++) {
                 // Determine sizes needed for THIS carton
                 let cartonItems = [];
@@ -1593,30 +1958,40 @@
                     let neededPcs = detail.total_quantity * setsPerCarton; // e.g. 1 S per set * 1 set = 1 pc
                     let sizeName = detail.size.toString().trim().toUpperCase();
                     
-                    // 1. match color first
-                    let lot = expandedLots.find(l => l.size === sizeName && l.color_id == colorId && l.remaining_quantity >= neededPcs);
-                    if (!lot) {
-                        // 2. fallback to any lot
-                        lot = expandedLots.find(l => l.size === sizeName && l.remaining_quantity >= neededPcs);
+                    // Filter matching lots with remaining stock in simulated temp memory
+                    let matchingLots = tempLots.filter(l => l.size === sizeName && l.color_id == colorId && l.remaining_quantity > 0);
+                    if (matchingLots.length === 0) {
+                        matchingLots = tempLots.filter(l => l.size === sizeName && l.remaining_quantity > 0);
                     }
-                    
-                    if (!lot) {
+
+                    let totalAvailable = matchingLots.reduce((sum, l) => sum + l.remaining_quantity, 0);
+                    if (totalAvailable < neededPcs) {
                         sizesFulfilled = false;
                     } else {
-                        // Deduct from available memory
-                        lot.remaining_quantity -= neededPcs;
-                        cartonItems.push({
-                            size_id: lot.size_id,
-                            size_name: sizeName,
-                            quantity: neededPcs,
-                            transaction_id: lot.transaction_id,
-                            lot_no: lot.lot_no
-                        });
+                        let remainingToDeduct = neededPcs;
+                        for (let lot of matchingLots) {
+                            if (remainingToDeduct <= 0) break;
+                            
+                            let deduct = Math.min(lot.remaining_quantity, remainingToDeduct);
+                            
+                            // Deduct from simulated lot copy
+                            lot.remaining_quantity -= deduct;
+                            remainingToDeduct -= deduct;
+
+                            cartonItems.push({
+                                size_id: lot.size_id,
+                                size_name: sizeName,
+                                quantity: deduct,
+                                transaction_id: lot.transaction_id,
+                                lot_no: lot.lot_no
+                            });
+                        }
                     }
                 });
 
                 if (!sizesFulfilled) {
                     alert(`Not enough pending quantity for Carton ${i}. Stopping range addition.`);
+                    rangeSucceeded = false;
                     break;
                 }
 
@@ -1636,6 +2011,10 @@
                     barcode: barcode,
                     items: cartonItems // Sizes required for this carton
                 });
+            }
+
+            if (rangeSucceeded) {
+                expandedLots = tempLots;
             }
 
             renderPlannerTable();
@@ -1666,7 +2045,7 @@
                         <td>${carton.design}</td>
                         <td>${carton.size_set_name}</td>
                         <td>${carton.color_name}</td>
-                        <td>${carton.qty} Sets</td>
+                        <td>${carton.qty}</td>
                         <td>${carton.mrp}</td>
                         <td>${carton.price}</td>
                         <td>${carton.warehouse_name}</td>
@@ -1702,7 +2081,7 @@
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
 
             $.ajax({
-                url: `/admin/packing/process-new/${SLIP_ID}/api/save-carton-plan`,
+                url: "{{ route('admin.packing.apiSaveCartonPlan', $slip_id) }}",
                 type: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
@@ -1732,7 +2111,7 @@
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
             $.ajax({
-                url: `/admin/packing/process-new/${SLIP_ID}/api/delete-carton/${id}`,
+                url: "{{ route('admin.packing.apiDeleteCarton', ['slip_id' => $slip_id, 'carton_id' => 'PLACEHOLDER']) }}".replace('PLACEHOLDER', id),
                 type: 'DELETE',
                 data: { _token: '{{ csrf_token() }}' },
                 success: function(res) {
@@ -1800,14 +2179,14 @@
 
             $sizeSet.html('<option value="">Loading...</option>').prop('disabled', true);
             $.ajax({
-                url: `/admin/packing/process-new/${SLIP_ID}/api/get-size-sets`,
+                url: "{{ route('admin.packing.apiGetSizeSets', $slip_id) }}",
                 type: 'GET',
                 data: { design_number: design },
                 success: function(res) {
                     $sizeSet.html('<option value="">Select Size Set</option>');
                     if (res.status === 'success' && res.size_sets.length > 0) {
                         res.size_sets.forEach(function(ss) {
-                            $sizeSet.append(`<option value="${ss.id}" data-sizes="${(ss.required_sizes || []).join(',')}">${ss.name}</option>`);
+                            $sizeSet.append(`<option value="${ss.id}" data-sizes="${(ss.required_sizes || []).join(',')}">${ss.name} (${ss.no_of_pcs} pcs)</option>`);
                         });
                         $sizeSet.prop('disabled', false);
                     } else {
@@ -1896,13 +2275,30 @@
             $color.html('<option value="">Loading...</option>').prop('disabled', true);
 
             $.ajax({
-                url: `/admin/packing/process-new/${SLIP_ID}/api/get-master-data`,
+                url: "{{ route('admin.packing.apiGetMasterData', $slip_id) }}",
                 type: 'GET',
                 data: { design_number: design, size_set_id: sizeSetId },
                 success: function(res) {
                     $color.html('<option value="">Select Color</option>');
                     if (res.status === 'success') {
                         $('#domesticDesign').data('product-id', res.product_id);
+                        
+                        let minSets = 999999;
+                        if (res.available_balances) {
+                            let requiredSizesStr = $('#domesticSizeSet option:selected').attr('data-sizes');
+                            let requiredSizes = [];
+                            if (requiredSizesStr) {
+                                requiredSizes = requiredSizesStr.split(',').map(s => s.trim().toUpperCase());
+                            }
+                            
+                            requiredSizes.forEach(sz => {
+                                let bal = res.available_balances[sz] || 0;
+                                minSets = Math.min(minSets, bal);
+                            });
+                        }
+                        if (minSets === 999999) minSets = 0;
+                        $('#domesticDesign').data('max-sets', minSets);
+
                         if (res.colors && res.colors.length > 0) {
                             res.colors.forEach(function(c) {
                                 $color.append(`<option value="${c.id}">${c.name}</option>`);
@@ -2093,7 +2489,7 @@
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Submitting...');
 
             $.ajax({
-                url: `/admin/packing/save-domestic-bulk`,
+                url: "{{ route('admin.packing.saveDomesticBulk') }}",
                 type: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
@@ -2119,27 +2515,240 @@
 
         // Delete Domestic Box/Diversion
         $(document).on('click', '.btn-delete-domestic', function() {
-            if (!confirm('Are you sure you want to delete this domestic diversion? This will restore the quantities.')) return;
+            if (!confirm('Are you sure you want to delete this domestic entry? This will restore all quantities back to stock.')) return;
             
             let id = $(this).data('id');
             let $btn = $(this);
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
             $.ajax({
-                url: `/admin/packing/process-new/${SLIP_ID}/api/delete-domestic/${id}`,
-                type: 'DELETE',
+                url: "{{ route('admin.packing.deleteDomesticBox', 'PLACEHOLDER') }}".replace('PLACEHOLDER', id),
+                type: 'POST',
                 data: { _token: '{{ csrf_token() }}' },
                 success: function(res) {
                     if (res.status === 'success') {
+                        alert(res.message || 'Deleted successfully.');
                         window.location.reload();
                     } else {
-                        alert(res.message || 'Failed to delete domestic diversion.');
+                        alert(res.message || 'Failed to delete domestic entry.');
                         $btn.prop('disabled', false).html('<i class="fas fa-trash-alt"></i> Delete');
                     }
                 },
-                error: function() {
-                    alert('Error deleting domestic diversion.');
+                error: function(xhr) {
+                    let msg = 'Error deleting domestic entry.';
+                    try { msg = xhr.responseJSON.message || msg; } catch(e){}
+                    alert(msg);
                     $btn.prop('disabled', false).html('<i class="fas fa-trash-alt"></i> Delete');
+                }
+            });
+        });
+
+        // ---------------- SAMPLING DIVERSION LOGIC ---------------- //
+        let samplingQueue = [];
+
+        function renderSamplingTable() {
+            let $tbody = $('#samplingTable tbody');
+            $tbody.empty();
+            if (samplingQueue.length === 0) {
+                $tbody.append('<tr id="samplingEmptyRow"><td colspan="6" class="text-muted py-4">No items added to sampling queue yet.</td></tr>');
+                return;
+            }
+
+            samplingQueue.forEach((item, index) => {
+                $tbody.append(`
+                    <tr>
+                        <td>${item.design_number}</td>
+                        <td>${item.size_set_name}</td>
+                        <td>${item.color_name}</td>
+                        <td>${item.rack_name || 'N/A'}</td>
+                        <td>${item.quantity} sets</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-remove-sampling" data-index="${index}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+        }
+
+        $('#samplingDesign').change(function() {
+            let design = $(this).val();
+            let $sizeSet = $('#samplingSizeSet');
+            let $color = $('#samplingColor');
+            $sizeSet.html('<option value="">Select Size Set</option>').prop('disabled', true).trigger('change');
+            $color.html('<option value="">Select Color</option>').prop('disabled', true).trigger('change');
+            $('#samplingDesign').data('product-id', '');
+            $('#samplingDesign').data('max-sets', 0);
+            $('#samplingQty').val('').prop('disabled', true).removeAttr('max');
+            $('#samplingQtyInfo').text('Select size set first').removeClass('text-success text-danger text-warning').addClass('text-muted');
+
+            if (!design) return;
+
+            $.ajax({
+                url: "{{ route('admin.packing.apiGetSizeSets', $slip_id) }}",
+                data: { design_number: design },
+                success: function(res) {
+                    if (res.status === 'success' && res.size_sets) {
+                        res.size_sets.forEach(set => {
+                            let sizesJson = JSON.stringify(set.required_sizes).replace(/"/g, '&quot;');
+                            $sizeSet.append(`<option value="${set.id}" data-sizes="${sizesJson}">${set.name} (${set.no_of_pcs} pcs)</option>`);
+                        });
+                        $sizeSet.prop('disabled', false).trigger('change');
+                    }
+                }
+            });
+        });
+
+        $('#samplingSizeSet').change(function() {
+            let design = $('#samplingDesign').val();
+            let sizeSetId = $(this).val();
+            let $color = $('#samplingColor');
+            $color.html('<option value="">Select Color</option>').prop('disabled', true).trigger('change');
+            $('#samplingDesign').data('product-id', '');
+            updateSamplingMaxQty();
+
+            if (!design || !sizeSetId) return;
+
+            $.ajax({
+                url: "{{ route('admin.packing.apiGetMasterData', $slip_id) }}",
+                data: { design_number: design, size_set_id: sizeSetId },
+                success: function(res) {
+                    if (res.status === 'success') {
+                        if (res.colors) {
+                            res.colors.forEach(c => {
+                                $color.append(`<option value="${c.id}">${c.name}</option>`);
+                            });
+                            $color.prop('disabled', false).trigger('change');
+                        }
+                        $('#samplingDesign').data('product-id', res.product_id);
+                        
+                        let minSets = 999999;
+                        if (res.available_balances) {
+                            let requiredSizesStr = $('#samplingSizeSet option:selected').attr('data-sizes');
+                            let requiredSizes = [];
+                            try { requiredSizes = JSON.parse(requiredSizesStr); } catch(e) {}
+                            
+                            requiredSizes.forEach(sz => {
+                                let bal = res.available_balances[sz] || 0;
+                                minSets = Math.min(minSets, bal);
+                            });
+                        }
+                        if (minSets === 999999) minSets = 0;
+                        $('#samplingDesign').data('max-sets', minSets);
+                        
+                        updateSamplingMaxQty();
+                    }
+                }
+            });
+        });
+
+        $('#samplingColor').change(updateSamplingMaxQty);
+
+        function updateSamplingMaxQty() {
+            let design = $('#samplingDesign').val();
+            let sizeSetId = $('#samplingSizeSet').val();
+            let colorId = $('#samplingColor').val();
+            let $qty = $('#samplingQty');
+            let $qtyInfo = $('#samplingQtyInfo');
+
+            $qty.val('').prop('disabled', true).removeAttr('max').removeClass('is-invalid is-valid');
+            $qtyInfo.text('Select Design, Size Set, and Color first').removeClass('text-success text-danger text-warning').addClass('text-muted');
+
+            if (!design || !sizeSetId || !colorId) return;
+
+            let maxSets = parseInt($('#samplingDesign').data('max-sets')) || 0;
+            let queuedQty = samplingQueue
+                .filter(item => item.design_number === design && item.size_set_id === sizeSetId && item.color_id == colorId)
+                .reduce((sum, item) => sum + item.quantity, 0);
+
+            let remainingSets = Math.max(0, maxSets - queuedQty);
+
+            $qty.attr('max', remainingSets).prop('disabled', remainingSets <= 0);
+            if (remainingSets > 0) {
+                $qtyInfo.text(`Available: ${remainingSets} sets`).removeClass('text-danger text-warning text-muted').addClass('text-success');
+            } else {
+                $qtyInfo.text('No complete sets available').removeClass('text-success text-warning text-muted').addClass('text-danger');
+            }
+        }
+
+        $('#btnAddSampling').click(function() {
+            let design = $('#samplingDesign').val();
+            let sizeSetId = $('#samplingSizeSet').val();
+            let sizeSetName = $('#samplingSizeSet option:selected').text();
+            let colorId = $('#samplingColor').val();
+            let colorName = $('#samplingColor option:selected').text();
+            let qty = parseInt($('#samplingQty').val());
+            let rackId = $('#samplingRack').val();
+            let rackName = $('#samplingRack option:selected').text();
+            let productId = $('#samplingDesign').data('product-id');
+
+            if (!design || !sizeSetId || !colorId || !qty || qty <= 0) {
+                alert('Please select Design, Size Set, Color and enter Qty.');
+                return;
+            }
+
+            let maxSets = parseInt($('#samplingQty').attr('max')) || 0;
+            if (qty > maxSets) {
+                alert(`Cannot add. Only ${maxSets} sets remaining.`);
+                return;
+            }
+
+            samplingQueue.push({
+                product_id: productId,
+                design_number: design,
+                size_set_id: sizeSetId,
+                size_set_name: sizeSetName,
+                color_id: colorId,
+                color_name: colorName,
+                quantity: qty,
+                rack_id: rackId,
+                rack_name: rackName
+            });
+
+            $('#samplingQty').val('');
+            renderSamplingTable();
+            updateSamplingMaxQty();
+        });
+
+        $(document).on('click', '.btn-remove-sampling', function() {
+            let index = $(this).data('index');
+            samplingQueue.splice(index, 1);
+            renderSamplingTable();
+            updateSamplingMaxQty();
+        });
+
+        $('#btnSaveSamplingBulk').click(function() {
+            if (samplingQueue.length === 0) {
+                alert('Sampling queue is empty.');
+                return;
+            }
+
+            let $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
+
+            $.ajax({
+                url: "{{ route('admin.packing.saveDomesticBulk') }}",
+                method: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    order_id: "{{ $order->id ?? '' }}",
+                    slip_id: "{{ $slip_id }}",
+                    boxes: samplingQueue
+                },
+                success: function(res) {
+                    if (res.status === 'success') {
+                        alert('Sampling saved to domestic inventory successfully.');
+                        localStorage.setItem('activePackingTab', '#tab-sampling');
+                        location.reload();
+                    } else {
+                        alert(res.message || 'Failed to save sampling.');
+                        $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Submit Sampling');
+                    }
+                },
+                error: function() {
+                    alert('Error saving sampling.');
+                    $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Submit Sampling');
                 }
             });
         });
@@ -2210,6 +2819,177 @@
             });
         });
 
+        // Generic helper function to manage checkbox state and show/hide Delete Selected buttons
+        function setupBulkDelete(selectAllClass, chkClass, deleteBtnClass) {
+            $(document).on('change', selectAllClass, function() {
+                let isChecked = $(this).is(':checked');
+                $(chkClass).prop('checked', isChecked).trigger('change');
+            });
+
+            $(document).on('change', chkClass, function() {
+                let totalSelected = $(chkClass + ':checked').length;
+                let $btn = $(deleteBtnClass);
+                
+                if (totalSelected > 0) {
+                    $btn.find('.selected-count').text(totalSelected);
+                    $btn.fadeIn(150);
+                } else {
+                    $btn.fadeOut(150);
+                }
+                
+                // Update select-all check state
+                let totalCheckboxes = $(chkClass).length;
+                $(selectAllClass).prop('checked', totalSelected === totalCheckboxes && totalCheckboxes > 0);
+            });
+        }
+
+        // Setup for all 5 listings
+        setupBulkDelete('.select-all-cartons', '.carton-chk', '.btn-bulk-delete-cartons');
+        setupBulkDelete('.select-all-rework', '.rework-chk', '.btn-bulk-delete-rework');
+        setupBulkDelete('.select-all-dead', '.dead-chk', '.btn-bulk-delete-dead');
+        setupBulkDelete('.select-all-debit', '.debit-chk', '.btn-bulk-delete-debit');
+        setupBulkDelete('.select-all-domestic', '.domestic-chk', '.btn-bulk-delete-domestic');
+
+        // Handle Cartons bulk delete
+        $(document).on('click', '.btn-bulk-delete-cartons', function() {
+            let ids = $('.carton-chk:checked').map(function() { return $(this).val(); }).get();
+            if (!confirm(`Are you sure you want to delete ${ids.length} selected cartons?`)) return;
+            
+            let $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Deleting...');
+            
+            $.ajax({
+                url: "{{ route('admin.packing.bulkDeleteCartons', $slip_id) }}",
+                type: 'POST',
+                data: { _token: '{{ csrf_token() }}', ids: ids },
+                success: function(res) {
+                    if (res.status === 'success') {
+                        toastr.success(res.message);
+                        window.location.reload();
+                    } else {
+                        toastr.error(res.message || 'Failed to delete selected cartons.');
+                        $btn.prop('disabled', false).html('<i class="fas fa-trash-alt mr-1"></i> Delete Selected');
+                    }
+                },
+                error: function() {
+                    toastr.error('Error occurred during bulk deletion.');
+                    $btn.prop('disabled', false).html('<i class="fas fa-trash-alt mr-1"></i> Delete Selected');
+                }
+            });
+        });
+
+        // Handle Rework bulk delete
+        $(document).on('click', '.btn-bulk-delete-rework', function() {
+            let ids = $('.rework-chk:checked').map(function() { return $(this).val(); }).get();
+            if (!confirm(`Are you sure you want to delete ${ids.length} selected rework records?`)) return;
+            
+            let $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Deleting...');
+            
+            $.ajax({
+                url: "{{ route('admin.packing.bulkDeleteRework') }}",
+                type: 'POST',
+                data: { _token: '{{ csrf_token() }}', ids: ids },
+                success: function(res) {
+                    if (res.status === 'success') {
+                        toastr.success(res.message);
+                        window.location.reload();
+                    } else {
+                        toastr.error(res.message || 'Failed to delete selected rework records.');
+                        $btn.prop('disabled', false).html('<i class="fas fa-trash-alt mr-1"></i> Delete Selected');
+                    }
+                },
+                error: function() {
+                    toastr.error('Error occurred during bulk deletion.');
+                    $btn.prop('disabled', false).html('<i class="fas fa-trash-alt mr-1"></i> Delete Selected');
+                }
+            });
+        });
+
+        // Handle Dead Stock bulk delete
+        $(document).on('click', '.btn-bulk-delete-dead', function() {
+            let ids = $('.dead-chk:checked').map(function() { return $(this).val(); }).get();
+            if (!confirm(`Are you sure you want to delete ${ids.length} selected dead stock records?`)) return;
+            
+            let $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Deleting...');
+            
+            $.ajax({
+                url: "{{ route('admin.packing.bulkDeleteOutflow') }}",
+                type: 'POST',
+                data: { _token: '{{ csrf_token() }}', ids: ids },
+                success: function(res) {
+                    if (res.status === 'success') {
+                        toastr.success(res.message);
+                        window.location.reload();
+                    } else {
+                        toastr.error(res.message || 'Failed to delete selected dead stock records.');
+                        $btn.prop('disabled', false).html('<i class="fas fa-trash-alt mr-1"></i> Delete Selected');
+                    }
+                },
+                error: function() {
+                    toastr.error('Error occurred during bulk deletion.');
+                    $btn.prop('disabled', false).html('<i class="fas fa-trash-alt mr-1"></i> Delete Selected');
+                }
+            });
+        });
+
+        // Handle Debit bulk delete
+        $(document).on('click', '.btn-bulk-delete-debit', function() {
+            let ids = $('.debit-chk:checked').map(function() { return $(this).val(); }).get();
+            if (!confirm(`Are you sure you want to delete ${ids.length} selected debit records?`)) return;
+            
+            let $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Deleting...');
+            
+            $.ajax({
+                url: "{{ route('admin.packing.bulkDeleteOutflow') }}",
+                type: 'POST',
+                data: { _token: '{{ csrf_token() }}', ids: ids },
+                success: function(res) {
+                    if (res.status === 'success') {
+                        toastr.success(res.message);
+                        window.location.reload();
+                    } else {
+                        toastr.error(res.message || 'Failed to delete selected debit records.');
+                        $btn.prop('disabled', false).html('<i class="fas fa-trash-alt mr-1"></i> Delete Selected');
+                    }
+                },
+                error: function() {
+                    toastr.error('Error occurred during bulk deletion.');
+                    $btn.prop('disabled', false).html('<i class="fas fa-trash-alt mr-1"></i> Delete Selected');
+                }
+            });
+        });
+
+        // Handle Domestic bulk delete
+        $(document).on('click', '.btn-bulk-delete-domestic', function() {
+            let ids = $('.domestic-chk:checked').map(function() { return $(this).val(); }).get();
+            if (!confirm(`Are you sure you want to delete ${ids.length} selected domestic entries? This will restore stock.`)) return;
+            
+            let $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Deleting...');
+            
+            $.ajax({
+                url: "{{ route('admin.packing.bulkDeleteDomestic') }}",
+                type: 'POST',
+                data: { _token: '{{ csrf_token() }}', ids: ids },
+                success: function(res) {
+                    if (res.status === 'success') {
+                        toastr.success(res.message);
+                        window.location.reload();
+                    } else {
+                        toastr.error(res.message || 'Failed to delete selected domestic entries.');
+                        $btn.prop('disabled', false).html('<i class="fas fa-trash-alt mr-1"></i> Delete Selected');
+                    }
+                },
+                error: function() {
+                    toastr.error('Error occurred during bulk deletion.');
+                    $btn.prop('disabled', false).html('<i class="fas fa-trash-alt mr-1"></i> Delete Selected');
+                }
+            });
+        });
+
     });
 </script>
 
@@ -2230,6 +3010,58 @@
         border: none;
         border-bottom: 2px solid var(--erp-primary);
         background-color: transparent;
+    }
+    .size-qty-card {
+        display: flex;
+        align-items: center;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        background-color: #fff;
+        overflow: hidden;
+        width: 140px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .size-qty-card:focus-within {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    .size-qty-label {
+        background-color: #f1f3f5;
+        color: #495057;
+        font-weight: 700;
+        font-size: 0.75rem;
+        padding: 0.35rem 0.5rem;
+        white-space: nowrap;
+        border-right: 1px solid #ced4da;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 80px;
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .size-qty-input-custom {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        text-align: center;
+        font-weight: bold;
+        color: #212529;
+        font-size: 0.85rem;
+        padding: 0.25rem;
+        width: 100%;
+        height: auto !important;
+        background: transparent;
+    }
+    .size-qty-input-custom::-webkit-outer-spin-button,
+    .size-qty-input-custom::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    .size-qty-input-custom[type=number] {
+        -moz-appearance: textfield;
     }
 </style>
 @endpush

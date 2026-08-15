@@ -442,6 +442,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/delete-domestic-box/{id}', [AdminPackingController::class, 'deleteDomesticBox'])->name('deleteDomesticBox');
             Route::post('/delete-outflow/{id}', [AdminPackingController::class, 'deleteOutflow'])->name('deleteOutflow');
             Route::post('/delete-rework/{id}', [AdminPackingController::class, 'deleteRework'])->name('deleteRework');
+            Route::post('/bulk-delete-cartons/{slip_id}', [AdminPackingController::class, 'bulkDeleteCartons'])->name('bulkDeleteCartons');
+            Route::post('/bulk-delete-rework', [AdminPackingController::class, 'bulkDeleteRework'])->name('bulkDeleteRework');
+            Route::post('/bulk-delete-outflow', [AdminPackingController::class, 'bulkDeleteOutflow'])->name('bulkDeleteOutflow');
+            Route::post('/bulk-delete-domestic', [AdminPackingController::class, 'bulkDeleteDomestic'])->name('bulkDeleteDomestic');
             Route::get('/download-outflow-barcode/{id}', [AdminPackingController::class, 'downloadOutflowBarcode'])->name('downloadOutflowBarcode');
 
             // Rework Routes
@@ -808,7 +812,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/warehouse-stock/update-attributes', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'updateAttributes'])->name('warehouse_stock.update_attributes');
             Route::post('/warehouse-stock/delete-boxes', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'deleteBoxes'])->name('warehouse_stock.delete_boxes');
             Route::post('/warehouse-stock/transfer', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'transfer'])->name('warehouse_stock.transfer');
-            Route::get('/warehouse-stock/racks/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'getRacksByStoreroom']);
+            Route::get('/warehouse-stock/racks/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'getRacksByStoreroom'])->name('warehouse_stock.racks');
             Route::get('/warehouse-stock/download-slip/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'downloadSlip'])->name('warehouse_stock.download_slip');
 
             // Stock Transfer Routes
@@ -1756,11 +1760,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/process-new/{slip_id}/pack-lots', [\App\Http\Controllers\Admin\PackingController::class, 'packLots'])->name('packLots');
             
             // API routes for Multi-Carton Planner
-            Route::get('/process-new/{slip_id}/api/get-size-sets', [\App\Http\Controllers\Admin\PackingController::class, 'apiGetSizeSets']);
-            Route::get('/process-new/{slip_id}/api/get-master-data', [\App\Http\Controllers\Admin\PackingController::class, 'apiGetMasterData']);
-            Route::post('/process-new/{slip_id}/api/save-carton-plan', [\App\Http\Controllers\Admin\PackingController::class, 'apiSaveCartonPlan']);
-            Route::delete('/process-new/{slip_id}/api/delete-carton/{carton_id}', [\App\Http\Controllers\Admin\PackingController::class, 'apiDeleteCarton']);
-            Route::delete('/process-new/{slip_id}/api/delete-domestic/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'apiDeleteDomestic']);
+            Route::get('/process-new/{slip_id}/api/get-size-sets', [\App\Http\Controllers\Admin\PackingController::class, 'apiGetSizeSets'])->name('apiGetSizeSets');
+            Route::get('/process-new/{slip_id}/api/get-master-data', [\App\Http\Controllers\Admin\PackingController::class, 'apiGetMasterData'])->name('apiGetMasterData');
+            Route::post('/process-new/{slip_id}/api/save-carton-plan', [\App\Http\Controllers\Admin\PackingController::class, 'apiSaveCartonPlan'])->name('apiSaveCartonPlan');
+            Route::delete('/process-new/{slip_id}/api/delete-carton/{carton_id}', [\App\Http\Controllers\Admin\PackingController::class, 'apiDeleteCarton'])->name('apiDeleteCarton');
+            Route::delete('/process-new/{slip_id}/api/delete-domestic/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'apiDeleteDomestic'])->name('apiDeleteDomestic');
             
             Route::get('/view/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'view'])->name('view');
             Route::post('/save-carton', [\App\Http\Controllers\Admin\PackingController::class, 'saveCarton'])->name('saveCarton');
