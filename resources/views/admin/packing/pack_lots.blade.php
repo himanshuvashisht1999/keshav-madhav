@@ -953,7 +953,7 @@
                                         <label class="small font-weight-bold">Design</label>
                                         <select id="samplingDesign" class="form-control form-control-sm select2">
                                             <option value="">Select Design</option>
-                                            @foreach($all_designs as $design)
+                                            @foreach($unique_designs as $design)
                                             <option value="{{ $design }}">{{ $design }}</option>
                                             @endforeach
                                         </select>
@@ -1026,54 +1026,50 @@
                         <hr class="my-4">
 
                         <div class="d-flex align-items-center mb-3">
-                            <h6 class="font-weight-bold mb-0">Saved Domestic Boxes (including Sampling) <span class="badge badge-secondary">{{ $saved_domestic->count() }}</span></h6>
-                            <button type="button" class="btn btn-xs btn-danger ml-3 btn-bulk-delete-domestic" style="display:none;"><i class="fas fa-trash-alt"></i> Delete Selected (<span class="selected-count">0</span>)</button>
+                            <h6 class="font-weight-bold mb-0 text-primary">Saved Sampling Records <span class="badge badge-secondary">{{ count($saved_sampling ?? []) }}</span></h6>
+                            <button type="button" class="btn btn-xs btn-danger ml-3 btn-bulk-delete-sampling" style="display:none;"><i class="fas fa-trash-alt"></i> Delete Selected (<span class="selected-count">0</span>)</button>
                         </div>
                         <div class="table-responsive bg-white rounded shadow-sm border mb-3" style="max-height: 400px; overflow-y: auto;">
-                            <table class="table table-hover table-sm text-center align-middle mb-0">
+                            <table class="table erp-table table-sm table-bordered text-center align-middle mb-0">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th width="3%" class="text-center"><input type="checkbox" class="select-all-domestic"></th>
-                                        <th>Box/Carton NO</th>
+                                        <th width="3%" class="text-center"><input type="checkbox" class="select-all-sampling-outflow"></th>
+                                        <th>LOT NO</th>
                                         <th>Design</th>
-                                        <th>Size Set</th>
                                         <th>Color</th>
-                                        <th>Pcs/Box</th>
-                                        <th>Total Boxes</th>
-                                        <th>Total Pcs</th>
-                                        <th>Storage Rack</th>
-                                        <th>Barcode</th>
+                                        <th>Size</th>
+                                        <th>Storeroom / Rack</th>
+                                        <th>Qty</th>
+                                        <th>Remarks</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($saved_domestic as $dom)
+                                    @forelse($saved_sampling ?? [] as $ss)
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="domestic-chk" value="{{ $dom->id }}"></td>
-                                        <td class="font-weight-bold text-primary">{{ $dom->box_no }} (Carton #{{ $dom->carton_no }})</td>
-                                        <td>{{ $dom->product->design_number ?? 'N/A' }}</td>
-                                        <td>{{ $dom->sizeSet->name ?? 'N/A' }}</td>
-                                        <td>{{ $dom->color->name ?? 'N/A' }}</td>
-                                        <td>{{ $dom->quantity }} pcs</td>
-                                        <td><strong class="text-primary">{{ $dom->total_boxes }}</strong></td>
-                                        <td><strong class="text-success">{{ $dom->quantity * $dom->total_boxes }} pcs</strong></td>
+                                        <td class="text-center"><input type="checkbox" class="sampling-outflow-chk" value="{{ $ss->id }}"></td>
+                                        <td class="font-weight-bold">{{ $ss->lot_no }}</td>
+                                        <td>{{ $ss->product->design_number ?? 'N/A' }}</td>
+                                        <td><span class="badge badge-secondary">{{ $ss->color->name ?? 'N/A' }}</span></td>
+                                        <td><span class="badge badge-light border">{{ $ss->size->size ?? 'N/A' }}</span></td>
                                         <td>
-                                            @if($dom->rack)
-                                                <span class="badge badge-info">{{ $dom->rack->storeroom->name ?? '' }} / {{ $dom->rack->name }}</span>
+                                            @if($ss->rack)
+                                                <span class="badge badge-info">{{ $ss->rack->storeroom->name ?? '' }} / {{ $ss->rack->name }}</span>
                                             @else
                                                 <span class="text-muted">N/A</span>
                                             @endif
                                         </td>
-                                        <td><code>{{ $dom->barcode }}</code></td>
+                                        <td><strong>{{ $ss->quantity }}</strong></td>
+                                        <td>{{ $ss->remarks ?? '-' }}</td>
                                         <td>
-                                            <button class="btn btn-xs btn-outline-danger btn-delete-domestic" data-id="{{ $dom->id }}">
+                                            <button class="btn btn-xs btn-outline-danger btn-delete-outflow" data-id="{{ $ss->id }}">
                                                 <i class="fas fa-trash-alt"></i> Delete
                                             </button>
                                         </td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="11" class="text-muted py-4">No domestic packing saved for this slip yet.</td>
+                                        <td colspan="9" class="text-muted py-4">No sampling records saved for this slip yet.</td>
                                     </tr>
                                     @endforelse
                                 </tbody>
@@ -2612,7 +2608,7 @@
 
             $.ajax({
                 url: "{{ route('admin.packing.apiGetMasterData', $slip_id) }}",
-                data: { design_number: design, size_set_id: sizeSetId },
+                data: { design_number: design, size_set_id: sizeSetId, for_sampling: 1 },
                 success: function(res) {
                     if (res.status === 'success') {
                         if (res.colors) {
@@ -2728,7 +2724,7 @@
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
 
             $.ajax({
-                url: "{{ route('admin.packing.saveDomesticBulk') }}",
+                url: "{{ route('admin.packing.saveSamplingBulk') }}",
                 method: "POST",
                 data: {
                     _token: "{{ csrf_token() }}",
@@ -2738,9 +2734,11 @@
                 },
                 success: function(res) {
                     if (res.status === 'success') {
-                        alert('Sampling saved to domestic inventory successfully.');
+                        toastr.success(res.message || 'Sampling saved successfully.');
                         localStorage.setItem('activePackingTab', '#tab-sampling');
-                        location.reload();
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
                     } else {
                         alert(res.message || 'Failed to save sampling.');
                         $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Submit Sampling');
@@ -2849,6 +2847,7 @@
         setupBulkDelete('.select-all-dead', '.dead-chk', '.btn-bulk-delete-dead');
         setupBulkDelete('.select-all-debit', '.debit-chk', '.btn-bulk-delete-debit');
         setupBulkDelete('.select-all-domestic', '.domestic-chk', '.btn-bulk-delete-domestic');
+        setupBulkDelete('.select-all-sampling-outflow', '.sampling-outflow-chk', '.btn-bulk-delete-sampling');
 
         // Handle Cartons bulk delete
         $(document).on('click', '.btn-bulk-delete-cartons', function() {
@@ -2980,6 +2979,34 @@
                         window.location.reload();
                     } else {
                         toastr.error(res.message || 'Failed to delete selected domestic entries.');
+                        $btn.prop('disabled', false).html('<i class="fas fa-trash-alt mr-1"></i> Delete Selected');
+                    }
+                },
+                error: function() {
+                    toastr.error('Error occurred during bulk deletion.');
+                    $btn.prop('disabled', false).html('<i class="fas fa-trash-alt mr-1"></i> Delete Selected');
+                }
+            });
+        });
+
+        // Handle Sampling bulk delete
+        $(document).on('click', '.btn-bulk-delete-sampling', function() {
+            let ids = $('.sampling-outflow-chk:checked').map(function() { return $(this).val(); }).get();
+            if (!confirm(`Are you sure you want to delete ${ids.length} selected sampling records?`)) return;
+            
+            let $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Deleting...');
+            
+            $.ajax({
+                url: "{{ route('admin.packing.bulkDeleteOutflow') }}",
+                type: 'POST',
+                data: { _token: '{{ csrf_token() }}', ids: ids },
+                success: function(res) {
+                    if (res.status === 'success') {
+                        toastr.success(res.message);
+                        window.location.reload();
+                    } else {
+                        toastr.error(res.message || 'Failed to delete selected sampling records.');
                         $btn.prop('disabled', false).html('<i class="fas fa-trash-alt mr-1"></i> Delete Selected');
                     }
                 },
