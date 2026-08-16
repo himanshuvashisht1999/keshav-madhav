@@ -604,8 +604,7 @@ class PackingController extends Controller
         $for_planner = $request->for_planner;
 
         if ($for_sampling) {
-            // For sampling: load size sets directly from the selected lots, not from ProductionGoods variants
-            // This ensures size sets show even if no variant is created yet for this design
+            // For sampling: load size sets strictly tied to the selected lots
             $selected_lots = \App\Models\PackingSelectedLot::where('slip_id', $slip_id)->pluck('lot_no')->toArray();
             $lots_size_set_ids = \Illuminate\Support\Facades\DB::table('order_lots')
                 ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
@@ -641,27 +640,49 @@ class PackingController extends Controller
         }
 
         if ($for_planner) {
+            // For planner: load all size sets that can be made from the available lot sizes
             $selected_lots = \App\Models\PackingSelectedLot::where('slip_id', $slip_id)->pluck('lot_no')->toArray();
-            $lots_size_set_ids = \Illuminate\Support\Facades\DB::table('order_lots')
+            $available_sizes = \Illuminate\Support\Facades\DB::table('order_lots')
                 ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
+                ->join('order_products_set_details', 'order_products_sets.id', '=', 'order_products_set_details.order_products_set_id')
                 ->whereIn('order_lots.lot_no', $selected_lots)
                 ->where('order_products_sets.design_number', $design)
-                ->pluck('order_products_sets.set_size')
+                ->pluck('order_products_set_details.size')
+                ->map(function($size) { return trim(strtoupper($size)); })
                 ->unique()
                 ->toArray();
 
-            $products = \App\Models\ProductionGoods::with(['variants' => function($q) use ($lots_size_set_ids) {
-                    $q->whereIn('master_size_measurement_id', $lots_size_set_ids)->with('sizeSet');
-                }])
-                ->where('design_number', $design)
-                ->where('status', 1)
-                ->get();
-        } else {
-            $products = \App\Models\ProductionGoods::with(['variants.sizeSet'])
-                ->where('design_number', $design)
-                ->where('status', 1)
-                ->get();
+            $allSizeMeasurements = \App\Models\MasterSizeMeasurement::where('status', 1)->get();
+            $size_sets = [];
+            
+            foreach ($allSizeMeasurements as $sm) {
+                if (empty($sm->size_group)) continue;
+                
+                $sizes = array_map(function($s) { return trim(strtoupper($s)); }, explode(',', $sm->size_group));
+                
+                // Check if this size set is a subset of available_sizes
+                $canBeMade = empty(array_diff($sizes, $available_sizes));
+                
+                if ($canBeMade) {
+                    $size_sets[] = [
+                        'id' => $sm->id,
+                        'name' => $sm->name,
+                        'required_sizes' => $sizes,
+                        'no_of_pcs' => $sm->no_of_pcs
+                    ];
+                }
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'size_sets' => $size_sets
+            ]);
         }
+
+        $products = \App\Models\ProductionGoods::with(['variants.sizeSet'])
+            ->where('design_number', $design)
+            ->where('status', 1)
+            ->get();
 
         $size_sets = [];
         foreach ($products as $product) {
@@ -912,48 +933,17 @@ class PackingController extends Controller
         try {
             $now = now();
             
-            $selected_lots = \App\Models\PackingSelectedLot::where('slip_id', $slip_id)->pluck('lot_no')->toArray();
-            $lots_data = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
-                ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
-                ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
-                ->where('order_stage_transactions.to_stage_id', 11)
-                ->whereIn('order_stage_transactions.lot_no', $selected_lots)
-                ->select(
-                    'order_stage_transactions.id as transaction_id',
-                    'order_stage_transactions.lot_no',
-                    'order_products_sets.id as set_id',
-                    'order_products_sets.color_id',
-                    'order_stage_transactions.remaining_quantity'
-                )
-                ->get();
-                
-            $set_ids = $lots_data->pluck('set_id')->unique()->toArray();
-            $set_details = \App\Models\OrderProductSetDetail::whereIn('order_products_set_id', $set_ids)->get()->groupBy('order_products_set_id');
-            
-            $expanded_lots = collect();
-            foreach ($lots_data as $lot) {
-                if (isset($set_details[$lot->set_id])) {
-                    $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
-                    foreach ($set_details[$lot->set_id] as $detail) {
-                        if ($total_set_qty > 0) {
-                            $pending_for_size = floor($lot->remaining_quantity * ($detail->total_quantity / $total_set_qty));
-                            if ($pending_for_size > 0) {
-                                $expanded_lots->push((object)[
-                                    'transaction_id' => $lot->transaction_id,
-                                    'lot_no' => $lot->lot_no,
-                                    'color_id' => $lot->color_id,
-                                    'size' => trim(strtoupper($detail->size)),
-                                    'remaining_quantity' => $pending_for_size
-                                ]);
-                            }
-                        }
-                    }
-                }
-            }
-            
             $stageTransactionsToUpdate = [];
 
             foreach ($cartons as $carton) {
+                // Ensure product variant exists if it's a Box type (numeric size_set_id)
+                if (isset($carton['size_set_id']) && is_numeric($carton['size_set_id']) && isset($carton['design']) && isset($carton['color_id'])) {
+                    $product = \App\Models\ProductionGoods::where('design_number', $carton['design'])->first();
+                    if ($product) {
+                        $this->ensureProductVariantExists($product->id, $carton['size_set_id'], $carton['color_id']);
+                    }
+                }
+
                 $cartonModel = \App\Models\PackingCarton::create([
                     'packing_main_id' => $packing->id,
                     'carton_no' => $carton['carton_no'],
@@ -971,47 +961,42 @@ class PackingController extends Controller
 
                 if (isset($carton['items']) && is_array($carton['items'])) {
                     foreach ($carton['items'] as $item) {
-                        // Find best lot for this item
-                        $lot = $expanded_lots->first(function($l) use ($item, $carton) {
-                            return $l->size == trim(strtoupper($item['size_name'])) && 
-                                   $l->color_id == $carton['color_id'] && 
-                                   $l->remaining_quantity >= $item['quantity'];
-                        });
+                        $transaction_id = $item['transaction_id'] ?? null;
+                        $lot_no = $item['lot_no'] ?? null;
 
-                        if (!$lot) {
-                            $lot = $expanded_lots->first(function($l) use ($item) {
-                                return $l->size == trim(strtoupper($item['size_name'])) && 
-                                       $l->remaining_quantity >= $item['quantity'];
-                            });
+                        if (!$transaction_id || !$lot_no) {
+                            throw new \Exception("Missing lot information for size {$item['size_name']}");
                         }
-
-                        if (!$lot) {
-                            throw new \Exception("Insufficient quantity for size {$item['size_name']}");
-                        }
-
-                        $lot->remaining_quantity -= $item['quantity'];
 
                         \App\Models\PackingItem::create([
                             'packing_main_id' => $packing->id,
                             'packing_carton_id' => $cartonModel->id,
                             'size_id' => $item['size_id'] ?? 0,
-                            'lot_no' => $lot->lot_no,
+                            'lot_no' => $lot_no,
                             'total_boxes' => 1,
                             'quantity' => $item['quantity'],
                             'mrp' => $carton['mrp'] ?? 0,
                             'selling_price' => $carton['price'] ?? 0
                         ]);
 
-                        if (!isset($stageTransactionsToUpdate[$lot->transaction_id])) {
-                            $stageTransactionsToUpdate[$lot->transaction_id] = 0;
+                        if (!isset($stageTransactionsToUpdate[$transaction_id])) {
+                            $stageTransactionsToUpdate[$transaction_id] = 0;
                         }
-                        $stageTransactionsToUpdate[$lot->transaction_id] += $item['quantity'];
+                        $stageTransactionsToUpdate[$transaction_id] += $item['quantity'];
                     }
                 }
             }
             
-            // Deduct remaining quantities efficiently
+            // Validate and Deduct remaining quantities efficiently
+            $transactionIds = array_keys($stageTransactionsToUpdate);
+            $transactions = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                ->whereIn('id', $transactionIds)
+                ->pluck('remaining_quantity', 'id');
+
             foreach($stageTransactionsToUpdate as $tId => $deductQty) {
+                if (!isset($transactions[$tId]) || $transactions[$tId] < $deductQty) {
+                    throw new \Exception("Insufficient overall quantity in lot.");
+                }
                 \Illuminate\Support\Facades\DB::table('order_stage_transactions')
                     ->where('id', $tId)
                     ->decrement('remaining_quantity', $deductQty);
