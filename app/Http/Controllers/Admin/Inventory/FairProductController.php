@@ -695,7 +695,8 @@ class FairProductController extends Controller
 
         if ($samples->isEmpty()) return back()->with('error', 'No products found in this batch.');
 
-        $tspl = generateFairBulkTspl($samples);
+        $type = $request->get('type', 'barcode');
+        $tspl = generateFairBulkTspl($samples, $type);
         
         $filename = "Fair_Batch_" . $batchId . "_" . date('Ymd_His') . ".prn";
         
@@ -731,7 +732,8 @@ class FairProductController extends Controller
 
         if ($finalSamples->isEmpty()) return back()->with('error', 'No products found for the provided barcodes.');
 
-        $tspl = generateFairBulkTspl($finalSamples);
+        $type = $request->get('type', 'barcode');
+        $tspl = generateFairBulkTspl($finalSamples, $type);
         
         $filename = "Fair_Custom_" . date('Ymd_His') . ".prn";
         

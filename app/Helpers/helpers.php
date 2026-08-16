@@ -538,7 +538,7 @@ CLS
     return $tspl;
 }
 
-function generateFairBulkTspl($samples)
+function generateFairBulkTspl($samples, $type = 'barcode')
 {
     $labels = [];
     foreach ($samples as $sample) {
@@ -590,8 +590,12 @@ CLS
             $tspl .= "TEXT 20,260,\"2\",0,2,2,\"{$left->fitting_name}\"\n";
             // Increase height of WSP line
             $tspl .= "TEXT 20,320,\"2\",0,2,3,\"{$left->wsp}\"\n";
-            // Barcode more bottom
-            $tspl .= "BARCODE 20,420,\"128\",120,0,0,3,6,\"{$left->barcode}\"\n";
+            // Barcode/QR more bottom
+            if ($type === 'qrcode') {
+                $tspl .= "QRCODE 20,420,H,6,A,0,\"{$left->barcode}\"\n";
+            } else {
+                $tspl .= "BARCODE 20,420,\"128\",120,0,0,3,6,\"{$left->barcode}\"\n";
+            }
             // Barcode text under Barcode
             $tspl .= "TEXT 20,560,\"2\",0,1,1,\"{$left->barcode}\"\n";
         }
@@ -603,8 +607,12 @@ CLS
             $tspl .= "TEXT 420,260,\"2\",0,2,2,\"{$right->fitting_name}\"\n";
             // Increase height of WSP line
             $tspl .= "TEXT 420,320,\"2\",0,2,3,\"{$right->wsp}\"\n";
-            // Barcode more bottom
-            $tspl .= "BARCODE 420,420,\"128\",120,0,0,3,6,\"{$right->barcode}\"\n";
+            // Barcode/QR more bottom
+            if ($type === 'qrcode') {
+                $tspl .= "QRCODE 420,420,H,6,A,0,\"{$right->barcode}\"\n";
+            } else {
+                $tspl .= "BARCODE 420,420,\"128\",120,0,0,3,6,\"{$right->barcode}\"\n";
+            }
             // Barcode text under Barcode
             $tspl .= "TEXT 420,560,\"2\",0,1,1,\"{$right->barcode}\"\n";
         }

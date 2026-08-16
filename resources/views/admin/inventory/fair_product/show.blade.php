@@ -60,6 +60,9 @@
                 <a href="{{ route('admin.inventory.fair-product.download-prn') }}?batch_id={{ $batch->id }}" class="btn btn-outline-dark px-3 mr-1" title="Download PRN (Printer)">
                     <i class="fas fa-print"></i> PRN
                 </a>
+                <a href="{{ route('admin.inventory.fair-product.download-prn') }}?batch_id={{ $batch->id }}&type=qrcode" class="btn btn-outline-info px-3 mr-1" title="Download PRN (QR Code)">
+                    <i class="fas fa-qrcode"></i> PRN (QR)
+                </a>
                 <a href="{{ route('admin.inventory.fair-product.edit', $batch->id) }}" class="btn btn-warning px-3">
                     <i class="fas fa-edit mr-2"></i> Edit Batch
                 </a>

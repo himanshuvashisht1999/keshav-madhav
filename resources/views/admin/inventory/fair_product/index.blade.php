@@ -173,15 +173,28 @@
                                 <a href="{{ route('admin.inventory.fair-product.edit', $batch->id) }}" class="btn btn-sm btn-outline-warning mr-1" title="Edit Sample Set">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="{{ route('admin.inventory.fair-product.generate-pdf-batch', $batch->id) }}?show_wsp=yes" class="btn btn-sm btn-outline-success mr-1" title="PDF with WSP">
-                                    <i class="fas fa-file-invoice-dollar"></i> WSP
-                                </a>
-                                <a href="{{ route('admin.inventory.fair-product.generate-pdf-batch', $batch->id) }}?show_wsp=no" class="btn btn-sm btn-outline-primary mr-1" title="PDF No Price">
-                                    <i class="fas fa-file-pdf"></i> NO WSP
-                                </a>
-                                <a href="{{ route('admin.inventory.fair-product.download-prn') }}?batch_id={{ $batch->id }}" class="btn btn-sm btn-outline-dark mr-1" title="Download PRN (Printer)">
-                                    <i class="fas fa-print"></i> PRN
-                                </a>
+                                <div class="dropdown d-inline-block mr-1">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="downloadDropdown{{ $batch->id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Download Options">
+                                        <i class="fas fa-download"></i> Downloads
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="downloadDropdown{{ $batch->id }}">
+                                        <h6 class="dropdown-header">PDF Downloads</h6>
+                                        <a class="dropdown-item text-success" href="{{ route('admin.inventory.fair-product.generate-pdf-batch', $batch->id) }}?show_wsp=yes">
+                                            <i class="fas fa-file-invoice-dollar mr-2"></i> PDF with WSP
+                                        </a>
+                                        <a class="dropdown-item text-primary" href="{{ route('admin.inventory.fair-product.generate-pdf-batch', $batch->id) }}?show_wsp=no">
+                                            <i class="fas fa-file-pdf mr-2"></i> PDF No WSP
+                                        </a>
+                                        <div class="dropdown-divider"></div>
+                                        <h6 class="dropdown-header">PRN Downloads</h6>
+                                        <a class="dropdown-item text-dark" href="{{ route('admin.inventory.fair-product.download-prn') }}?batch_id={{ $batch->id }}">
+                                            <i class="fas fa-barcode mr-2"></i> PRN (Barcode)
+                                        </a>
+                                        <a class="dropdown-item text-info" href="{{ route('admin.inventory.fair-product.download-prn') }}?batch_id={{ $batch->id }}&type=qrcode">
+                                            <i class="fas fa-qrcode mr-2"></i> PRN (QR Code)
+                                        </a>
+                                    </div>
+                                </div>
                                 <form action="{{ route('admin.inventory.fair-product.destroy', $batch->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this entire sample set batch?')">
                                     @csrf
                                     @method('DELETE')
@@ -234,8 +247,11 @@
                     </div>
                     <div class="modal-footer border-top-0 pt-0">
                         <button type="button" class="btn btn-sm btn-secondary shadow-sm px-3" data-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-sm btn-dark shadow-sm px-3">
-                            <i class="fas fa-print mr-1"></i> Generate Custom PRN
+                        <button type="submit" name="type" value="barcode" class="btn btn-sm btn-dark shadow-sm px-3">
+                            <i class="fas fa-print mr-1"></i> Generate Custom PRN (Barcode)
+                        </button>
+                        <button type="submit" name="type" value="qrcode" class="btn btn-sm btn-info shadow-sm px-3">
+                            <i class="fas fa-qrcode mr-1"></i> Generate Custom PRN (QR)
                         </button>
                     </div>
                 </form>
